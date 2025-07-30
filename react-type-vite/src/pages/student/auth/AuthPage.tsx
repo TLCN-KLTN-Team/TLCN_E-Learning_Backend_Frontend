@@ -1,5 +1,5 @@
-import LoginPage from "@/components/auth/LoginPage";
-import RegisterPage from "@/components/auth/RegisterPage";
+import LoginPage from "@/components/student/auth/LoginPage";
+import RegisterPage from "@/components/student/auth/RegisterPage";
 import { useState } from "react";
 
 const AuthPage = () => {
