@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { Button } from "../../ui/button";
 import AuthLayout from "./AuthLayout";
+import { useAuth } from "@/context/auth-context/useAuth";
+import { toast } from "react-toastify";
 
 const LoginPage = () => {
+  const { login } = useAuth(); // Assuming useAuth is a custom hook to access auth context
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,6 +27,13 @@ const LoginPage = () => {
     e.preventDefault();
     // Handle login logic here
     console.log("Login attempt:", formData);
+    login(formData.email, formData.password)
+      .then(() => {
+        toast.success("Login successful!");
+      })
+      .catch((error) => {
+        console.error("Login failed:", error);
+      });
   };
 
   const handleSocialLogin = (provider: "google" | "facebook") => {
