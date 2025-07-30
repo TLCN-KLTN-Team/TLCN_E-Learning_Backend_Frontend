@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: chat-app
+  data:
+    mongodb:
+      uri: mongodb://root:root@localhost:27017/chat_app?authSource=admin
+      database: chat_app
+      auto-index-creation: true
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+# self-defined configs
+openapi:
+  services:
+    api-docs: chat-app
+    server: http://localhost:${server.port}
+    title: Chat App APIs
+    version: 1.0.0
+    license:
+      name: Apache 2.0
+      url: https://springdoc.org
+
+jwt:
+  secretKey: XrlXd50JgElviZ+G7WjSvJiMMapYK+vznAV/CUPSGvvLgsB/898dipwLOvGECplI
+
+server:
+  port: 8090
+  servlet:
+    context-path: /chat
