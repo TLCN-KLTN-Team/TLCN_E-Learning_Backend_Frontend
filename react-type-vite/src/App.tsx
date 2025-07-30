@@ -1,12 +1,15 @@
-import { useState } from "react";
-import "./App.css";
-import { Button } from "./components/ui/button";
+import { Route, Routes } from "react-router-dom";
+import Home from "./pages/home/Home";
+import RegisterPage from "./components/auth/RegisterPage";
+import AuthPage from "./pages/auth/AuthPage";
 
 function App() {
   return (
-    <>
-      <Button>Check</Button>
-    </>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<AuthPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+    </Routes>
   );
 }
 
