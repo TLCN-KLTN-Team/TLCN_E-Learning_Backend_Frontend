@@ -75,10 +75,10 @@ html {
 }
 
 /* Focus Styles */
-*:focus-visible {
+/* *:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
-}
+} */
 
 /* Selection Styles */
 ::selection {
@@ -211,4 +211,47 @@ img {
   .container {
     max-width: 1536px;
   }
+}
+
+/* Custom Input Styles - Fix hover effects */
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Remove default browser input styles that cause black hover */
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="text"]:hover {
+  background-color: #fafafa !important;
+  border-color: #60a5fa !important;
+  box-shadow: none !important;
+}
+
+/* Enhanced focus styles */
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus {
+  background-color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+/* Override any conflicting Tailwind or browser styles */
+.auth-input {
+  background-color: white;
+  transition: all 0.2s ease-in-out;
+}
+
+.auth-input:hover {
+  background-color: #fafafa !important;
+  border-color: #60a5fa !important;
+}
+
+.auth-input:focus {
+  background-color: white !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
 }
