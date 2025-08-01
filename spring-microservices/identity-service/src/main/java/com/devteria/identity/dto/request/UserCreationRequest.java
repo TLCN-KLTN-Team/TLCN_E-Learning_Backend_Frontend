@@ -2,6 +2,7 @@ package com.devteria.identity.dto.request;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -23,6 +24,9 @@ public class UserCreationRequest {
     @Size(min = 6, message = "INVALID_PASSWORD")
     String password;
 
+    @Size(min = 6, message = "INVALID_CONFIRM_PASSWORD")
+    String confirmPassword;
+
     @Email(message = "INVALID_EMAIL")
     @NotBlank(message = "EMAIL_IS_REQUIRED")
     String email;
@@ -33,5 +37,4 @@ public class UserCreationRequest {
     @DobConstraint(min = 10, message = "INVALID_DOB")
     LocalDate dob;
 
-    String city;
 }
