@@ -1,43 +1,269 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
 import AuthLayout from "./AuthLayout";
+import { useAuth } from "@/context/auth-context/useAuth";
+import { useNavigate } from "react-router-dom";
+import type { RegisterData } from "@/context/auth-context/types";
+import { toast } from "react-toastify";
+import { isAfter } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+// Utility functions for date formatting
+function formatDate(date: Date | undefined) {
+  if (!date) {
+    return "";
+  }
+
+  return date.toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function isValidDate(date: Date | undefined) {
+  if (!date) {
+    return false;
+  }
+  return !isNaN(date.getTime());
+}
+
+// Interface for form errors
+interface FormErrors {
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  dob?: string;
+  agreeToTerms?: string;
+}
 
 const RegisterPage = () => {
-  const [formData, setFormData] = useState({
-    fullName: "",
+  const [formData, setFormData] = useState<RegisterData>({
+    username: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
+    dob: undefined,
     agreeToTerms: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+  const [dobOpen, setDobOpen] = useState(false);
+  const [dobMonth, setDobMonth] = useState<Date | undefined>(undefined);
+  const [dobValue, setDobValue] = useState("");
+
+  const { user, register } = useAuth();
+
+  const navigate = useNavigate();
+
+  // Sync dobValue with formData.dob
+  useEffect(() => {
+    if (formData.dob) {
+      setDobValue(formatDate(formData.dob));
+      setDobMonth(formData.dob);
+    }
+  }, [formData.dob]);
+
+  // Validation functions
+  const validateField = (name: string, value: unknown): string | undefined => {
+    switch (name) {
+      case "firstName":
+        if (!value || (typeof value === "string" && value.trim().length < 2)) {
+          return "First name must be at least 2 characters";
+        }
+        break;
+      case "lastName":
+        if (!value || (typeof value === "string" && value.trim().length < 2)) {
+          return "Last name must be at least 2 characters";
+        }
+        break;
+      case "username":
+        if (!value || (typeof value === "string" && value.trim().length < 3)) {
+          return "Username must be at least 3 characters";
+        }
+        if (typeof value === "string" && !/^[a-zA-Z0-9_]+$/.test(value)) {
+          return "Username can only contain letters, numbers, and underscores";
+        }
+        break;
+      case "email":
+        if (!value) {
+          return "Email is required";
+        }
+        if (
+          typeof value === "string" &&
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+        ) {
+          return "Please enter a valid email address";
+        }
+        break;
+      case "password":
+        if (!value) {
+          return "Password is required";
+        }
+        if (typeof value === "string" && value.length < 8) {
+          return "Password must be at least 8 characters";
+        }
+        if (
+          typeof value === "string" &&
+          !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)
+        ) {
+          return "Password must contain at least one uppercase letter, one lowercase letter, and one number";
+        }
+        break;
+      case "confirmPassword":
+        if (!value) {
+          return "Please confirm your password";
+        }
+        if (value !== formData.password) {
+          return "Passwords do not match";
+        }
+        break;
+      case "dob": {
+        if (!value) {
+          return "Date of birth is required";
+        }
+        const today = new Date();
+        const birthDate = new Date(value as string);
+        const age = today.getFullYear() - birthDate.getFullYear();
+        if (age < 13) {
+          return "You must be at least 13 years old";
+        }
+        if (isAfter(birthDate, today)) {
+          return "Date of birth cannot be in the future";
+        }
+        break;
+      }
+      case "agreeToTerms":
+        if (!value) {
+          return "You must agree to the terms and conditions";
+        }
+        break;
+    }
+    return undefined;
+  };
+
+  const handleFieldBlur = (fieldName: string) => {
+    setTouchedFields((prev) => new Set(prev).add(fieldName));
+    const error = validateField(
+      fieldName,
+      formData[fieldName as keyof RegisterData]
+    );
+    setErrors((prev) => ({
+      ...prev,
+      [fieldName]: error,
+    }));
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === "checkbox" ? checked : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: newValue,
     }));
+
+    // Real-time validation
+    if (touchedFields.has(name)) {
+      const error = validateField(name, newValue);
+      setErrors((prev) => ({
+        ...prev,
+        [name]: error,
+      }));
+    }
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setFormData((prev) => ({
+      ...prev,
+      dob: date,
+    }));
+    setDobValue(formatDate(date));
+    setDobMonth(date);
+    setDobOpen(false);
+
+    // Validate date
+    const error = validateField("dob", date);
+    setErrors((prev) => ({
+      ...prev,
+      dob: error,
+    }));
+  };
+
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDobValue(value);
+
+    const date = new Date(value);
+    if (isValidDate(date)) {
+      setFormData((prev) => ({
+        ...prev,
+        dob: date,
+      }));
+      setDobMonth(date);
+
+      // Validate date
+      const error = validateField("dob", date);
+      setErrors((prev) => ({
+        ...prev,
+        dob: error,
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
+    // Validate all fields
+    const newErrors: FormErrors = {};
+    Object.keys(formData).forEach((key) => {
+      const error = validateField(key, formData[key as keyof RegisterData]);
+      if (error) {
+        newErrors[key as keyof FormErrors] = error;
+      }
+    });
 
-    if (!formData.agreeToTerms) {
-      alert("Please agree to the terms and conditions!");
+    setErrors(newErrors);
+
+    // Check if there are any errors
+    if (Object.keys(newErrors).length > 0) {
+      toast.error("Please fix the errors before submitting");
       return;
     }
 
     // Handle registration logic here
     console.log("Registration attempt:", formData);
+
+    // call register
+    if (user) {
+      navigate("/");
+    }
+
+    register(formData)
+      .then(() => {
+        toast.success("Registration successfully! You can now log in.");
+        navigate("/login");
+      })
+      .catch((error) => {
+        console.error("Registration failed:", error);
+        toast.error(error.message || "Registration failed");
+      });
   };
 
   const handleSocialLogin = (provider: "google" | "facebook") => {
@@ -45,19 +271,98 @@ const RegisterPage = () => {
     console.log(`Register with ${provider}`);
   };
 
-  const passwordsMatch = formData.password === formData.confirmPassword;
-  const isPasswordValid = formData.password.length >= 8;
-
   return (
     <AuthLayout
-      title="Sign up for Eduport!"
+      title="Sign up for OpenEdu!"
       subtitle="Join our community and start learning today."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Full Name Field */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
+            <label htmlFor="firstName" className="label-base text-gray-700">
+              First Name *
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                required
+                value={formData.firstName}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("firstName")}
+                className={cn(
+                  "auth-input w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                  errors.firstName
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="First Name"
+              />
+            </div>
+            {errors.firstName && (
+              <p className="caption text-red-500">{errors.firstName}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="lastName" className="label-base text-gray-700">
+              Last Name *
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("lastName")}
+                className={cn(
+                  "auth-input w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                  errors.lastName
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="Last Name"
+              />
+            </div>
+            {errors.lastName && (
+              <p className="caption text-red-500">{errors.lastName}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Username Field */}
         <div className="space-y-2">
-          <label htmlFor="fullName" className="label-base text-gray-700">
-            Full Name *
+          <label htmlFor="username" className="label-base text-gray-700">
+            Username *
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -74,16 +379,25 @@ const RegisterPage = () => {
               </svg>
             </div>
             <input
-              id="fullName"
-              name="fullName"
+              id="username"
+              name="username"
               type="text"
               required
-              value={formData.fullName}
+              value={formData.username}
               onChange={handleInputChange}
-              className="auth-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 body-base placeholder-gray-400"
-              placeholder="Full Name"
+              onBlur={() => handleFieldBlur("username")}
+              className={cn(
+                "auth-input w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                errors.username
+                  ? "border-red-300 focus:border-red-500"
+                  : "border-gray-300 focus:border-blue-500"
+              )}
+              placeholder="Username"
             />
           </div>
+          {errors.username && (
+            <p className="caption text-red-500">{errors.username}</p>
+          )}
         </div>
 
         {/* Email Field */}
@@ -109,10 +423,19 @@ const RegisterPage = () => {
               required
               value={formData.email}
               onChange={handleInputChange}
-              className="auth-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 body-base placeholder-gray-400"
+              onBlur={() => handleFieldBlur("email")}
+              className={cn(
+                "auth-input w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                errors.email
+                  ? "border-red-300 focus:border-red-500"
+                  : "border-gray-300 focus:border-blue-500"
+              )}
               placeholder="E-mail"
             />
           </div>
+          {errors.email && (
+            <p className="caption text-red-500">{errors.email}</p>
+          )}
         </div>
 
         {/* Password Field */}
@@ -141,11 +464,13 @@ const RegisterPage = () => {
               required
               value={formData.password}
               onChange={handleInputChange}
-              className={`auth-input w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400 ${
-                isPasswordValid
-                  ? "border-gray-300 focus:border-blue-500"
-                  : "border-red-300 focus:border-red-500"
-              }`}
+              onBlur={() => handleFieldBlur("password")}
+              className={cn(
+                "auth-input w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                errors.password
+                  ? "border-red-300 focus:border-red-500"
+                  : "border-gray-300 focus:border-blue-500"
+              )}
               placeholder="Password"
             />
             <button
@@ -176,10 +501,8 @@ const RegisterPage = () => {
               </svg>
             </button>
           </div>
-          {!isPasswordValid && formData.password.length > 0 && (
-            <p className="caption text-red-500">
-              Password must be at least 8 characters
-            </p>
+          {errors.password && (
+            <p className="caption text-red-500">{errors.password}</p>
           )}
         </div>
 
@@ -209,11 +532,13 @@ const RegisterPage = () => {
               required
               value={formData.confirmPassword}
               onChange={handleInputChange}
-              className={`auth-input w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400 ${
-                passwordsMatch || formData.confirmPassword === ""
-                  ? "border-gray-300 focus:border-blue-500"
-                  : "border-red-300 focus:border-red-500"
-              }`}
+              onBlur={() => handleFieldBlur("confirmPassword")}
+              className={cn(
+                "auth-input w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                errors.confirmPassword
+                  ? "border-red-300 focus:border-red-500"
+                  : "border-gray-300 focus:border-blue-500"
+              )}
               placeholder="Confirm Password"
             />
             <button
@@ -244,38 +569,108 @@ const RegisterPage = () => {
               </svg>
             </button>
           </div>
-          {!passwordsMatch && formData.confirmPassword.length > 0 && (
-            <p className="caption text-red-500">Passwords do not match</p>
+          {errors.confirmPassword && (
+            <p className="caption text-red-500">{errors.confirmPassword}</p>
           )}
         </div>
 
-        {/* Terms Agreement */}
-        <div className="flex items-start space-x-2">
-          <input
-            id="agreeToTerms"
-            name="agreeToTerms"
-            type="checkbox"
-            checked={formData.agreeToTerms}
-            onChange={handleInputChange}
-            className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-          />
-          <label htmlFor="agreeToTerms" className="body-small text-gray-700">
-            I agree to the{" "}
-            <a href="#" className="link-primary">
-              Terms and Conditions
-            </a>{" "}
-            and{" "}
-            <a href="#" className="link-primary">
-              Privacy Policy
-            </a>
+        {/* Date of Birth Field */}
+        <div className="space-y-2">
+          <label htmlFor="dob" className="label-base text-gray-700">
+            Date of Birth *
           </label>
+          <div className="relative flex gap-2">
+            <Input
+              id="dob"
+              value={dobValue}
+              placeholder="June 01, 2000"
+              className={cn(
+                "bg-background pr-10",
+                errors.dob
+                  ? "border-red-300 focus:border-red-500"
+                  : "border-gray-300 focus:border-blue-500"
+              )}
+              onChange={handleDateInputChange}
+              onBlur={() => handleFieldBlur("dob")}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setDobOpen(true);
+                }
+              }}
+            />
+            <Popover open={dobOpen} onOpenChange={setDobOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date-picker"
+                  variant="ghost"
+                  className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                >
+                  <CalendarIcon className="size-3.5" />
+                  <span className="sr-only">Select date</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-0 z-[9999] bg-white shadow-xl border rounded-md"
+                align="end"
+                alignOffset={-8}
+                sideOffset={10}
+                style={{
+                  zIndex: 9999,
+                }}
+              >
+                <Calendar
+                  mode="single"
+                  selected={formData.dob}
+                  captionLayout="dropdown"
+                  month={dobMonth}
+                  onMonthChange={setDobMonth}
+                  onSelect={handleDateSelect}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date("1900-01-01")
+                  }
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          {errors.dob && <p className="caption text-red-500">{errors.dob}</p>}
+        </div>
+
+        {/* Terms Agreement */}
+        <div className="space-y-2">
+          <div className="flex items-start space-x-2">
+            <input
+              id="agreeToTerms"
+              name="agreeToTerms"
+              type="checkbox"
+              checked={formData.agreeToTerms}
+              onChange={handleInputChange}
+              onBlur={() => handleFieldBlur("agreeToTerms")}
+              className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="agreeToTerms" className="body-small text-gray-700">
+              I agree to the{" "}
+              <a href="#" className="link-primary">
+                Terms and Conditions
+              </a>{" "}
+              and{" "}
+              <a href="#" className="link-primary">
+                Privacy Policy
+              </a>
+            </label>
+          </div>
+          {errors.agreeToTerms && (
+            <p className="caption text-red-500">{errors.agreeToTerms}</p>
+          )}
         </div>
 
         {/* Register Button */}
         <Button
           type="submit"
           disabled={
-            !formData.agreeToTerms || !isPasswordValid || !passwordsMatch
+            Object.keys(errors).some(
+              (key) => errors[key as keyof FormErrors]
+            ) || !formData.agreeToTerms
           }
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 rounded-lg btn-text transition-colors"
         >
