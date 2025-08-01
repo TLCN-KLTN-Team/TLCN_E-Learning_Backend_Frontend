@@ -59,11 +59,6 @@ public class UserService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-        var profileRequest = profileMapper.toProfileCreationRequest(request);
-        profileRequest.setUserId(user.getId());
-
-        var profile = profileClient.createProfile(profileRequest);
-
 //        NotificationEvent notificationEvent = NotificationEvent.builder()
 //                .channel("EMAIL")
 //                .recipient(request.getEmail())
@@ -75,7 +70,6 @@ public class UserService {
 //        kafkaTemplate.send("notification-delivery", notificationEvent);
 
         var userCreationResponse = userMapper.toUserResponse(user);
-        userCreationResponse.setId(profile.getResult().getId());
 
         return userCreationResponse;
     }

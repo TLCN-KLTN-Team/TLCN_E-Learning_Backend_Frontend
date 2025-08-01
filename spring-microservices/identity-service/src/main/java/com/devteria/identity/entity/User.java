@@ -27,6 +27,15 @@ public class User {
     @Column(name = "email", unique = true, columnDefinition = "VARCHAR(255) COLLATE utf8mb4_unicode_ci")
     String email;
 
+    @Column(name = "first_name")
+    String firstName;
+    @Column(name = "last_name")
+    String lastName;
+    String dob;
+
+//    @OneToOne(cascade = CascadeType.ALL)
+//    Address address;
+
     @Column(name = "email_verified", nullable = false, columnDefinition = "boolean default false")
     boolean emailVerified;
 
