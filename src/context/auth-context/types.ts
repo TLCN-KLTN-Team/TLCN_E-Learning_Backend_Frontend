@@ -30,4 +30,5 @@ export interface RegisterData {
   firstName: string;
   lastName: string;
   dob?: Date;
+  agreeToTerms: boolean;
 }
