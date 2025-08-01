@@ -1,18 +1,30 @@
-import type { User } from "@/context/auth-context/types";
+import type { RegisterData, User } from "@/context/auth-context/types";
 import axiosInstance from "../shared/axiosInstance";
 import type { ApiResponse } from "../shared/apiResponse";
 
 interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
-export const login = async (request: LoginRequest): Promise<User> => {
+interface AuthenticationResponse {
+  token: string;
+  expiryTime: Date;
+}
+
+export const doLogin = async (
+  username: string,
+  password: string
+): Promise<AuthenticationResponse> => {
   try {
-    const response = await axiosInstance.post<ApiResponse<User>>(
-      "/identity/auth/login",
-      request
-    );
+    const request: LoginRequest = {
+      username,
+      password,
+    };
+
+    const response = await axiosInstance.post<
+      ApiResponse<AuthenticationResponse>
+    >("/identity/auth/token", request);
     return response.data.result;
   } catch (error: any) {
     // Bạn có thể log hoặc xử lý error chi tiết hơn ở đây
@@ -20,35 +32,38 @@ export const login = async (request: LoginRequest): Promise<User> => {
   }
 };
 
-export const register = async (userData: User): Promise<User> => {
+export const doRegister = async (userData: RegisterData): Promise<User> => {
   try {
     const response = await axiosInstance.post<ApiResponse<User>>(
-      "/identity/auth/register",
+      "/identity/users/registration",
       userData
     );
     return response.data.result;
   } catch (error: any) {
     // Bạn có thể log hoặc xử lý error chi tiết hơn ở đây
-    throw new Error(
-      error.response?.data?.result.message || "Registration failed"
-    );
+    throw new Error(error.response?.data?.result || "Registration failed");
   }
 };
 
-export const logout = async (): Promise<void> => {
+export const doLogout = async (): Promise<void> => {
   localStorage.clear();
 };
 
 export const getMe = async (): Promise<User> => {
   try {
     const response = await axiosInstance.get<ApiResponse<User>>(
-      "/identity/auth/me"
+      "/identity/users/me",
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+        },
+      }
     );
     return response.data.result;
   } catch (error: any) {
     // Bạn có thể log hoặc xử lý error chi tiết hơn ở đây
     throw new Error(
-      error.response?.data?.result.message || "Failed to fetch user data"
+      error.response?.data?.result || "Failed to fetch user data"
     );
   }
 };
