@@ -1,19 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../ui/button";
 import AuthLayout from "./AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
-  const { login } = useAuth(); // Assuming useAuth is a custom hook to access auth context
+  const { user, login } = useAuth();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
     rememberMe: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      console.log("User is already logged in:", user);
+      // redirect to home
+      navigate("/");
+    }
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -27,12 +37,14 @@ const LoginPage = () => {
     e.preventDefault();
     // Handle login logic here
     console.log("Login attempt:", formData);
-    login(formData.email, formData.password)
+    login(formData.username, formData.password)
       .then(() => {
         toast.success("Login successful!");
+        navigate("/");
       })
       .catch((error) => {
         console.error("Login failed:", error);
+        toast.error(error.message || "Login failed");
       });
   };
 
@@ -43,7 +55,7 @@ const LoginPage = () => {
 
   return (
     <AuthLayout
-      title="Login into Eduport!"
+      title="Login into OpenEdu!"
       subtitle="Nice to see you! Please log in with your account."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,14 +76,14 @@ const LoginPage = () => {
               </svg>
             </div>
             <input
-              id="email"
-              name="email"
-              type="email"
+              id="username"
+              name="username"
+              type="text"
               required
-              value={formData.email}
+              value={formData.username}
               onChange={handleInputChange}
               className="auth-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 body-base placeholder-gray-400"
-              placeholder="E-mail"
+              placeholder="Username"
             />
           </div>
         </div>

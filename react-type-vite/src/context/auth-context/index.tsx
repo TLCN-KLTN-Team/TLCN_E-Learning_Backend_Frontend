@@ -4,6 +4,7 @@ import { AuthContext } from "./context";
 import type { AuthContextType, User, RegisterData } from "./types";
 
 import { getMe } from "../../services/api/authApi";
+import { doLogin, doRegister } from "../../services/api/authApi";
 
 // Define Provider props type
 interface AuthProviderProps {
@@ -41,18 +42,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     try {
       // TODO: Implement actual login logic with your API
       console.log("Login attempt:", { email, password });
+      const loginData = await doLogin(email, password);
 
-      // Mock user data - replace with actual API call
-      const mockUser: User = {
-        id: "1",
-        username: "johndoe",
-        email,
-        firstName: "John Doe",
-        lastName: "Doe",
-        role: "student",
-      };
+      localStorage.setItem("jwt", loginData.token);
 
-      setUser(mockUser);
+      const userData = await getMe(); // Fetch user data after login
+
+      setUser(userData);
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -62,9 +58,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = (): void => {
+    localStorage.clear();
     setUser(null);
-    // TODO: Clear any stored tokens, localStorage, etc.
-    localStorage.removeItem("authToken");
   };
 
   const register = async (userData: RegisterData): Promise<void> => {
@@ -73,17 +68,9 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       // TODO: Implement actual registration logic with your API
       console.log("Register attempt:", userData);
 
-      // Mock registration - replace with actual API call
-      const newUser: User = {
-        id: Date.now().toString(),
-        email: userData.email,
-        username: userData.username,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        role: "student", // Default role, adjust as needed
-      };
+      const registeredData = await doRegister(userData);
 
-      setUser(newUser);
+      setUser(registeredData);
     } catch (error) {
       console.error("Registration failed:", error);
       throw error;

@@ -3,7 +3,11 @@ import RegisterPage from "@/components/student/auth/RegisterPage";
 import { useState } from "react";
 
 const AuthPage = () => {
-  const [currentPage, setCurrentPage] = useState<"login" | "register">("login");
+  const [currentPage, setCurrentPage] = useState<boolean>(true);
+
+  const togglePage = () => {
+    setCurrentPage((prev) => !prev);
+  };
 
   return (
     <div className="min-h-screen">
@@ -11,9 +15,9 @@ const AuthPage = () => {
       <div className="fixed top-4 right-4 z-50">
         <div className="bg-white rounded-lg shadow-lg p-2 flex space-x-2">
           <button
-            onClick={() => setCurrentPage("login")}
+            onClick={togglePage}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              currentPage === "login"
+              currentPage === true
                 ? "bg-blue-600 text-white"
                 : "text-gray-600 hover:bg-gray-100"
             }`}
@@ -21,9 +25,9 @@ const AuthPage = () => {
             Login
           </button>
           <button
-            onClick={() => setCurrentPage("register")}
+            onClick={togglePage}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              currentPage === "register"
+              currentPage === false
                 ? "bg-blue-600 text-white"
                 : "text-gray-600 hover:bg-gray-100"
             }`}
@@ -34,7 +38,7 @@ const AuthPage = () => {
       </div>
 
       {/* Content */}
-      {currentPage === "login" ? <LoginPage /> : <RegisterPage />}
+      {currentPage === true ? <LoginPage /> : <RegisterPage />}
     </div>
   );
 };
