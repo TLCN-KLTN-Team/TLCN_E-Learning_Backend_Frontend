@@ -28,7 +28,7 @@ export const doLogin = async (
     return response.data.result;
   } catch (error: any) {
     // Bạn có thể log hoặc xử lý error chi tiết hơn ở đây
-    throw new Error(error.response?.data?.result.message || "Login failed");
+    throw new Error(error.response?.data?.result || "Login failed");
   }
 };
 
