@@ -1,46 +1,48 @@
 package com.devteria.identity.exception;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 import jakarta.validation.ConstraintViolation;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.devteria.identity.dto.request.ApiResponse;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@ControllerAdvice
+@RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    private static final String MIN_ATTRIBUTE = "min";
+    private static final String MIN_ATTRIBUTE = "1";
 
     @ExceptionHandler(value = Exception.class)
     ResponseEntity<ApiResponse> handlingRuntimeException(RuntimeException exception) {
-        log.error("Exception: ", exception);
-        ApiResponse apiResponse = new ApiResponse();
+        log.error("Runtime exception: ", exception);
 
-        apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
-
-        return ResponseEntity.badRequest().body(apiResponse);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.builder()
+                        .code(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode())
+                        .message(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage())
+                        .build());
     }
 
     @ExceptionHandler(value = AppException.class)
     ResponseEntity<ApiResponse> handlingAppException(AppException exception) {
         ErrorCode errorCode = exception.getErrorCode();
-        ApiResponse apiResponse = new ApiResponse();
 
-        apiResponse.setCode(errorCode.getCode());
-        apiResponse.setMessage(errorCode.getMessage());
-
-        return ResponseEntity.status(errorCode.getStatusCode()).body(apiResponse);
+        return ResponseEntity.status(errorCode.getStatusCode())
+                .body(ApiResponse.builder()
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
+                        .build());
     }
 
     @ExceptionHandler(value = AccessDeniedException.class)
@@ -54,37 +56,58 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    // 1. Xử lý validation errors (bean validation)
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     ResponseEntity<ApiResponse> handlingValidation(MethodArgumentNotValidException exception) {
+        // Lấy field error đầu tiên để xác định error code chính
         String enumKey = exception.getFieldError().getDefaultMessage();
 
         ErrorCode errorCode = ErrorCode.INVALID_KEY;
         Map<String, Object> attributes = null;
+
         try {
             errorCode = ErrorCode.valueOf(enumKey);
 
-            var constraintViolation =
-                    exception.getBindingResult().getAllErrors().getFirst().unwrap(ConstraintViolation.class);
+            var constraintViolation = exception.getBindingResult()
+                    .getAllErrors().getFirst()
+                    .unwrap(ConstraintViolation.class);
 
             attributes = constraintViolation.getConstraintDescriptor().getAttributes();
-
-            log.info(attributes.toString());
+            log.info("Validation attributes: {}", attributes);
 
         } catch (IllegalArgumentException e) {
-
+            log.warn("Invalid error code key: {}", enumKey);
         }
 
-        ApiResponse apiResponse = new ApiResponse();
+        // Collect all field errors for detailed response
+        Map<String, String> fieldErrors = new HashMap<>();
+        Map<String, Object> finalAttributes = attributes;
+        exception.getBindingResult().getFieldErrors().forEach(error -> {
+            String fieldName = error.getField();
+            String errorMessage = error.getDefaultMessage();
 
-        apiResponse.setCode(errorCode.getCode());
-        apiResponse.setMessage(
-                Objects.nonNull(attributes)
+            try {
+                ErrorCode fieldErrorCode = ErrorCode.valueOf(errorMessage);
+                // Apply attribute mapping if needed
+                String finalMessage = Objects.nonNull(finalAttributes)
+                        ? mapAttribute(fieldErrorCode.getMessage(), finalAttributes)
+                        : fieldErrorCode.getMessage();
+                fieldErrors.put(fieldName, finalMessage);
+            } catch (IllegalArgumentException ex) {
+                fieldErrors.put(fieldName, errorMessage);
+            }
+        });
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .code(errorCode.getCode())
+                .message(Objects.nonNull(attributes)
                         ? mapAttribute(errorCode.getMessage(), attributes)
-                        : errorCode.getMessage());
+                        : errorCode.getMessage())
+                .errors(fieldErrors) // Thêm chi tiết lỗi từng field
+                .build();
 
         return ResponseEntity.badRequest().body(apiResponse);
     }
-
     private String mapAttribute(String message, Map<String, Object> attributes) {
         String minValue = String.valueOf(attributes.get(MIN_ATTRIBUTE));
 
