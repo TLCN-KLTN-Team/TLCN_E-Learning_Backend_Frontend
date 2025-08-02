@@ -82,8 +82,13 @@ html {
 
 /* Selection Styles */
 ::selection {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background-color: #066ac9;
+  color: white;
+}
+
+::-moz-selection {
+  background-color: #066ac9;
+  color: white;
 }
 
 /* Scrollbar Styles */
