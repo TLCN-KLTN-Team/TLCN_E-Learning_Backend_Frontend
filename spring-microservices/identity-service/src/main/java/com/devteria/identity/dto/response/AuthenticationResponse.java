@@ -1,6 +1,7 @@
 package com.devteria.identity.dto.response;
 
 import java.util.Date;
+import java.util.Set;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -11,6 +12,9 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AuthenticationResponse {
-    String token;
-    Date expiryTime;
+    String accessToken;
+    String refreshToken;
+    long expiryTime;
+    long refreshExpiryTime;
+    Set<String> roles;
 }
