@@ -1,11 +1,13 @@
 // Export all types
 export type { User, AuthContextType, RegisterData } from "./types";
+export type { Theme, ThemeContextType } from "./context";
 
-// Export context
-export { AuthContext } from "./context";
+// Export contexts
+export { AuthContext, ThemeContext } from "./context";
 
-// Export hook
+// Export hooks
 export { useAuth } from "./useAuth";
+export { useTheme } from "./useTheme";
 
-// Export provider component
-export { default as AuthProvider } from "./index";
+// Export provider components
+export { ThemeProvider } from "./ThemeProvider";
