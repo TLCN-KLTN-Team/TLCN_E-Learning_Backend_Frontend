@@ -1,12 +1,20 @@
-import LoginPage from "@/components/student/auth/LoginPage";
-import RegisterPage from "@/components/student/auth/RegisterPage";
+import LoginPage from "@/pages/student/auth/LoginPage";
+import RegisterPage from "@/pages/student/auth/RegisterPage";
 import { useState } from "react";
 
-const AuthPage = () => {
-  const [currentPage, setCurrentPage] = useState<boolean>(true);
+interface AuthPageProps {
+  isLoggin: boolean;
+}
 
-  const togglePage = () => {
-    setCurrentPage((prev) => !prev);
+const AuthPage = ({ isLoggin }: AuthPageProps) => {
+  const [currentPage, setCurrentPage] = useState<boolean>(isLoggin);
+
+  const showLogin = () => {
+    setCurrentPage(true);
+  };
+
+  const showRegister = () => {
+    setCurrentPage(false);
   };
 
   return (
@@ -15,7 +23,7 @@ const AuthPage = () => {
       <div className="fixed top-4 right-4 z-50">
         <div className="bg-white rounded-lg shadow-lg p-2 flex space-x-2">
           <button
-            onClick={togglePage}
+            onClick={showLogin}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               currentPage === true
                 ? "bg-blue-600 text-white"
@@ -25,7 +33,7 @@ const AuthPage = () => {
             Login
           </button>
           <button
-            onClick={togglePage}
+            onClick={showRegister}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               currentPage === false
                 ? "bg-blue-600 text-white"

@@ -8,62 +8,94 @@ interface LoginRequest {
 }
 
 interface AuthenticationResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiryTime: number;
+  refreshExpiryTime: number;
+  roles: string[];
+}
+
+interface IntrospectRequest {
   token: string;
-  expiryTime: Date;
+}
+
+interface IntrospectResponse {
+  valid: boolean;
+  userId?: string;
+  username?: string;
+  scope?: string;
+  iat?: number;
+  exp?: number;
 }
 
 export const doLogin = async (
   username: string,
   password: string
 ): Promise<AuthenticationResponse> => {
-  try {
-    const request: LoginRequest = {
-      username,
-      password,
-    };
+  const request: LoginRequest = {
+    username,
+    password,
+  };
 
-    const response = await axiosInstance.post<
-      ApiResponse<AuthenticationResponse>
-    >("/identity/auth/token", request);
-    return response.data.result;
-  } catch (error: any) {
-    // Bạn có thể log hoặc xử lý error chi tiết hơn ở đây
-    throw new Error(error.response?.data?.result.message || "Login failed");
-  }
+  const response = await axiosInstance.post<
+    ApiResponse<AuthenticationResponse>
+  >("/identity/auth/token", request);
+
+  // Lưu tokens vào localStorage
+  const authorizationData = response.data.result;
+
+  localStorage.setItem("authorizationData", JSON.stringify(authorizationData));
+
+  return {
+    token: authorizationData.accessToken,
+    expiryTime: new Date(authorizationData.accessToken),
+  } as any;
 };
 
 export const doRegister = async (userData: RegisterData): Promise<User> => {
-  try {
-    const response = await axiosInstance.post<ApiResponse<User>>(
-      "/identity/users/registration",
-      userData
-    );
-    return response.data.result;
-  } catch (error: any) {
-    // Bạn có thể log hoặc xử lý error chi tiết hơn ở đây
-    throw new Error(error.response?.data?.result || "Registration failed");
-  }
+  const response = await axiosInstance.post<ApiResponse<User>>(
+    "/identity/users/registration",
+    userData
+  );
+  return response.data.result;
 };
 
 export const doLogout = async (): Promise<void> => {
-  localStorage.clear();
+  try {
+    // Có thể gọi API logout nếu backend hỗ trợ
+    // await axiosInstance.post("/identity/auth/logout");
+  } finally {
+    localStorage.clear();
+  }
 };
 
 export const getMe = async (): Promise<User> => {
-  try {
-    const response = await axiosInstance.get<ApiResponse<User>>(
-      "/identity/users/me",
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("jwt")}`,
-        },
-      }
-    );
-    return response.data.result;
-  } catch (error: any) {
-    // Bạn có thể log hoặc xử lý error chi tiết hơn ở đây
-    throw new Error(
-      error.response?.data?.result || "Failed to fetch user data"
-    );
-  }
+  const response = await axiosInstance.get<ApiResponse<User>>(
+    "/identity/users/me"
+  );
+  return response.data.result;
+};
+
+export const introspectToken = async (
+  token: string
+): Promise<IntrospectResponse> => {
+  const request: IntrospectRequest = { token };
+  const response = await axiosInstance.post<ApiResponse<IntrospectResponse>>(
+    "/identity/auth/introspect",
+    request
+  );
+  return response.data.result;
+};
+
+export const refreshAuthToken = async (
+  refreshToken: string
+): Promise<AuthenticationResponse> => {
+  const response = await axiosInstance.post<
+    ApiResponse<AuthenticationResponse>
+  >("/identity/auth/refresh", { token: refreshToken });
+
+  const authorizationData = response.data.result;
+  localStorage.setItem("authorizationData", JSON.stringify(authorizationData));
+
+  return response.data.result;
 };
