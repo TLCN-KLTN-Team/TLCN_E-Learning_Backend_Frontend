@@ -153,7 +153,7 @@ const LoginPage = () => {
               type="checkbox"
               checked={formData.rememberMe}
               onChange={handleInputChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
             />
             <label
               htmlFor="rememberMe"
@@ -162,7 +162,7 @@ const LoginPage = () => {
               Remember me
             </label>
           </div>
-          <a href="#" className="link-secondary body-small">
+          <a href="#" className="link-secondary body-small text-gray-700">
             Forgot password?
           </a>
         </div>
