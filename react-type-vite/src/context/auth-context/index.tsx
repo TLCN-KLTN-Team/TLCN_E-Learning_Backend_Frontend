@@ -5,6 +5,7 @@ import type { AuthContextType, User, RegisterData } from "./types";
 
 import { getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
+import { useNavigate } from "react-router-dom";
 
 // Define Provider props type
 interface AuthProviderProps {
@@ -14,44 +15,52 @@ interface AuthProviderProps {
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const isAuthenticated = !!user;
 
   useEffect(() => {
     const token = localStorage.getItem("jwt");
-    if (token) {
-      const fetchUser = async () => {
-        setIsLoading(true);
-        try {
-          const fetchedUser = await getMe(); // Assuming getMe fetches the current user
-          setUser(fetchedUser);
-        } catch (error) {
-          console.error("Failed to fetch user data:", error);
-          setUser(null);
-        } finally {
-          setIsLoading(false);
-        }
-      };
+    const tokenExpiry = localStorage.getItem("tokenExpiry");
 
-      fetchUser();
+    if (token && tokenExpiry) {
+      // Kiểm tra token có hết hạn không
+      const expiryTime = parseInt(tokenExpiry);
+      if (Date.now() < expiryTime) {
+        const fetchUser = async () => {
+          setIsLoading(true);
+          try {
+            const fetchedUser = await getMe();
+            setUser(fetchedUser);
+          } catch (error) {
+            console.error("Failed to fetch user data:", error);
+            // Nếu fetch user thất bại, clear localStorage
+            localStorage.clear();
+            setUser(null);
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        fetchUser();
+      } else {
+        // Token đã hết hạn, clear localStorage
+        localStorage.clear();
+      }
     }
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual login logic with your API
       console.log("Login attempt:", { email, password });
       const loginData = await doLogin(email, password);
 
-      localStorage.setItem("jwt", loginData.token);
-
       const userData = await getMe(); // Fetch user data after login
-
       setUser(userData);
     } catch (error) {
       console.error("Login failed:", error);
-      throw error;
+      throw error; // Re-throw để component có thể handle
     } finally {
       setIsLoading(false);
     }
@@ -65,15 +74,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual registration logic with your API
       console.log("Register attempt:", userData);
 
       const registeredData = await doRegister(userData);
-
       setUser(registeredData);
     } catch (error) {
       console.error("Registration failed:", error);
-      throw error;
+      throw error; // Re-throw để component có thể handle
     } finally {
       setIsLoading(false);
     }

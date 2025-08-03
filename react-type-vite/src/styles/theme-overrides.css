@@ -1,0 +1,50 @@
+/* Light/Dark Mode Overrides */
+
+/* Ensure pure white background in light mode */
+html:not(.dark) {
+  background-color: white !important;
+}
+
+html:not(.dark) body {
+  background-color: white !important;
+}
+
+/* Ensure consistent dark background in dark mode */
+html.dark {
+  background-color: #24292d !important;
+}
+
+html.dark body {
+  background-color: #24292d !important;
+}
+
+/* Remove any default gray backgrounds in light mode */
+html:not(.dark) .bg-gray-50 {
+  background-color: white !important;
+}
+
+html:not(.dark) .bg-gray-100 {
+  background-color: #f8f9fa !important;
+}
+
+/* Ensure proper contrast for borders in light mode */
+html:not(.dark) .border-gray-200 {
+  border-color: #e5e7eb !important;
+}
+
+/* Consistent selection color across themes */
+::selection {
+  background-color: #066ac9 !important;
+  color: white !important;
+}
+
+::-moz-selection {
+  background-color: #066ac9 !important;
+  color: white !important;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease,
+    color 0.3s ease;
+}
