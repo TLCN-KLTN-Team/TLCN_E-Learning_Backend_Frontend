@@ -13,6 +13,10 @@ export const useTokenExpiry = () => {
       ? JSON.parse(authorizationDataJson)
       : null;
 
+    if (!authorizationData) {
+      return;
+    }
+
     const tokenExpiry = authorizationData.expiryTime;
     const refreshTokenExpiry = authorizationData.refreshExpiryTime;
 

@@ -153,7 +153,7 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Nhập email của bạn"
-                className="px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-bs-primary/20 focus:border-bs-primary flex-1 lg:w-64"
+                className="px-4 py-2 border border-border rounded-lg text-foreground placeholder:text-muted-foreground flex-1 lg:w-64"
               />
               <button className="bg-bs-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-bs-primary-dark transition-colors whitespace-nowrap">
                 Đăng ký
@@ -165,7 +165,7 @@ const Footer = () => {
         {/* Bottom Footer */}
         <div className="border-t border-border py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2024 E-Learning Platform. Tất cả quyền được bảo lưu.</p>
+            <p>© 2025 E-Learning Platform. Built with ❤️ by Devzeus.</p>
             <div className="flex items-center space-x-6">
               <a href="#" className="hover:text-bs-primary transition-colors">
                 Chính sách bảo mật
