@@ -20,16 +20,17 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = !!user;
 
   useEffect(() => {
-    const token = localStorage.getItem("jwt");
-    const tokenExpiry = localStorage.getItem("tokenExpiry");
+    const authorizationDataJson = localStorage.getItem("authorizationData");
+    const authorizationData: {
+      accessToken?: string;
+      expiryTime?: number;
+    } = JSON.parse(authorizationDataJson || "{}");
+    const token = authorizationData.accessToken;
+    const tokenExpiry = authorizationData.expiryTime;
 
     if (token && tokenExpiry) {
-      // Kiểm tra token có hết hạn không
-      console.log("Đang ở trong useEffect của AuthProvider");
-      console.log("Token trong useEffect:", token);
-      console.log("Token Expiry trong useEffect:", tokenExpiry);
-      const expiryTime = parseInt(tokenExpiry);
-      if (Date.now() < expiryTime) {
+      // Kiểm tra token có hết hạn không (expiryTime là timestamp)
+      if (Date.now() < tokenExpiry) {
         const fetchUser = async () => {
           setIsLoading(true);
           try {
@@ -57,9 +58,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     try {
       console.log("Login attempt:", { email, password });
-      await doLogin(email, password); 
+      
+      await doLogin(email, password);
 
-      const userData = await getMe(); // Fetch user data after login
+      // Fetch user data after successful login
+      const userData = await getMe();
       setUser(userData);
       if (userData && userData.role) {
         const isTeacher = userData.role === "TEACHER"; // so sánh chuỗi
@@ -82,6 +85,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const logout = (): void => {
     localStorage.clear();
     setUser(null);
+    // navigate("/login"); // Tạm comment để test
   };
 
   const register = async (userData: RegisterData): Promise<void> => {

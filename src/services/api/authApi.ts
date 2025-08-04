@@ -46,10 +46,7 @@ export const doLogin = async (
 
   localStorage.setItem("authorizationData", JSON.stringify(authorizationData));
 
-  return {
-    token: authorizationData.accessToken,
-    expiryTime: new Date(authorizationData.accessToken),
-  } as any;
+  return authorizationData;
 };
 
 export const doRegister = async (userData: RegisterData): Promise<User> => {
