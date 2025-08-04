@@ -303,7 +303,7 @@ const RegisterPage = () => {
                 onChange={handleInputChange}
                 onBlur={() => handleFieldBlur("firstName")}
                 className={cn(
-                  "auth-input w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                  "auth-input text-gray-700 w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
                   errors.firstName
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
@@ -344,7 +344,7 @@ const RegisterPage = () => {
                 onChange={handleInputChange}
                 onBlur={() => handleFieldBlur("lastName")}
                 className={cn(
-                  "auth-input w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                  "auth-input text-gray-700 w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
                   errors.lastName
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
@@ -388,7 +388,7 @@ const RegisterPage = () => {
               onChange={handleInputChange}
               onBlur={() => handleFieldBlur("username")}
               className={cn(
-                "auth-input w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                "auth-input text-gray-700 w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
                 errors.username
                   ? "border-red-300 focus:border-red-500"
                   : "border-gray-300 focus:border-blue-500"
@@ -428,7 +428,7 @@ const RegisterPage = () => {
               onChange={handleInputChange}
               onBlur={() => handleFieldBlur("email")}
               className={cn(
-                "auth-input w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                "auth-input text-gray-700 w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
                 errors.email
                   ? "border-red-300 focus:border-red-500"
                   : "border-gray-300 focus:border-blue-500"
@@ -469,7 +469,7 @@ const RegisterPage = () => {
               onChange={handleInputChange}
               onBlur={() => handleFieldBlur("password")}
               className={cn(
-                "auth-input w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                "auth-input text-gray-700 w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
                 errors.password
                   ? "border-red-300 focus:border-red-500"
                   : "border-gray-300 focus:border-blue-500"
@@ -539,7 +539,7 @@ const RegisterPage = () => {
               onChange={handleInputChange}
               onBlur={() => handleFieldBlur("confirmPassword")}
               className={cn(
-                "auth-input w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                "auth-input text-gray-700 w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
                 errors.confirmPassword
                   ? "border-red-300 focus:border-red-500"
                   : "border-gray-300 focus:border-blue-500"
@@ -592,7 +592,7 @@ const RegisterPage = () => {
               value={dobValue}
               placeholder="June 01, 2000"
               className={cn(
-                "bg-background pr-10 py-6 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400 w-full",
+                "bg-background text-gray-700 pr-10 py-6 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400 w-full",
                 errors.dob
                   ? "border-red-300 focus:border-red-500"
                   : "border-gray-300 focus:border-blue-500"
@@ -655,7 +655,7 @@ const RegisterPage = () => {
               checked={formData.agreeToTerms}
               onChange={handleInputChange}
               onBlur={() => handleFieldBlur("agreeToTerms")}
-              className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              className="text-gray-700 mt-1 w-4 h-4 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
             />
             <label htmlFor="agreeToTerms" className="body-small text-gray-700">
               I agree to the{" "}
