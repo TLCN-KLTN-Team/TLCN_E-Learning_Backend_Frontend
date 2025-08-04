@@ -3,7 +3,7 @@ import { Button } from "../../../components/ui/button";
 import AuthLayout from "../../../components/student/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import GoogleButton from "@/components/student/shared/GoogleButton";
 import FacebookButton from "@/components/student/shared/FacebookButton";
 
@@ -24,7 +24,7 @@ const LoginPage = () => {
       // redirect to home
       navigate("/");
     }
-  });
+  }, [user, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -78,7 +78,7 @@ const LoginPage = () => {
               required
               value={formData.username}
               onChange={handleInputChange}
-              className="auth-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 body-base placeholder-gray-400"
+              className="auth-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 body-base placeholder-gray-400 text-gray-700"
               placeholder="Username"
             />
           </div>
@@ -110,7 +110,7 @@ const LoginPage = () => {
               required
               value={formData.password}
               onChange={handleInputChange}
-              className="auth-input w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 body-base placeholder-gray-400"
+              className="auth-input w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 body-base placeholder-gray-400 text-gray-700"
               placeholder="Password"
             />
             <button
@@ -153,7 +153,7 @@ const LoginPage = () => {
               type="checkbox"
               checked={formData.rememberMe}
               onChange={handleInputChange}
-              className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
             <label
               htmlFor="rememberMe"
@@ -162,9 +162,12 @@ const LoginPage = () => {
               Remember me
             </label>
           </div>
-          <a href="#" className="link-secondary body-small text-gray-700">
+          <NavLink
+            to="/forgot-password"
+            className="link-secondary body-small text-black"
+          >
             Forgot password?
-          </a>
+          </NavLink>
         </div>
 
         {/* Login Button */}
