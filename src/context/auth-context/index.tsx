@@ -25,6 +25,9 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
     if (token && tokenExpiry) {
       // Kiểm tra token có hết hạn không
+      console.log("Đang ở trong useEffect của AuthProvider");
+      console.log("Token trong useEffect:", token);
+      console.log("Token Expiry trong useEffect:", tokenExpiry);
       const expiryTime = parseInt(tokenExpiry);
       if (Date.now() < expiryTime) {
         const fetchUser = async () => {
@@ -54,10 +57,20 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     try {
       console.log("Login attempt:", { email, password });
-      const loginData = await doLogin(email, password);
+      await doLogin(email, password); 
 
       const userData = await getMe(); // Fetch user data after login
       setUser(userData);
+      if (userData && userData.role) {
+        const isTeacher = userData.role === "TEACHER"; // so sánh chuỗi
+        if (isTeacher) {
+          navigate("/teacher/home");
+        } else {
+          navigate("/"); // Default redirection for other roles
+        }
+      } else {
+        navigate("/"); // Fallback redirection
+      }
     } catch (error) {
       console.error("Login failed:", error);
       throw error; // Re-throw để component có thể handle
