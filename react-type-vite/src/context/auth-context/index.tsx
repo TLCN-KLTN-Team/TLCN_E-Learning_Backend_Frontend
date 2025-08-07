@@ -5,7 +5,6 @@ import type { AuthContextType, User, RegisterData } from "./types";
 
 import { getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
-import { useNavigate } from "react-router-dom";
 
 // Define Provider props type
 interface AuthProviderProps {
@@ -15,7 +14,6 @@ interface AuthProviderProps {
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const navigate = useNavigate();
 
   const isAuthenticated = !!user;
 

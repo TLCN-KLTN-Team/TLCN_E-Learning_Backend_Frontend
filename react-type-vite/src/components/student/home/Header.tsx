@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
+import { getAvartarFromName } from "@/utils/callApiUtils";
 
 interface MenuItem {
   name: string;
@@ -165,7 +166,14 @@ const Header = () => {
 
   const navigation = [
     { name: "Trang chủ", href: "#home" },
-    { name: "Khóa học", href: "#courses" },
+    {
+      name: "Khóa học",
+      href: "#courses",
+      features: [
+        { name: "Trang học tập số", href: "/e-learning" },
+        { name: "Không gian học tập", href: "/workspace" },
+      ],
+    },
     { name: "Về chúng tôi", href: "#about" },
     { name: "Liên hệ", href: "#contact" },
   ];
@@ -205,13 +213,51 @@ const Header = () => {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
             {navigation.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-foreground hover:text-bs-primary transition-colors font-medium"
-              >
-                {item.name}
-              </a>
+              <div key={item.name} className="relative">
+                {item.features && item.features.length > 0 ? (
+                  <div className="group relative">
+                    <a
+                      href={item.href}
+                      className="text-foreground hover:text-bs-primary transition-colors font-medium cursor-pointer flex items-center space-x-1"
+                    >
+                      <span>{item.name}</span>
+                      <svg
+                        className="w-4 h-4 transition-transform group-hover:rotate-180"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </a>
+                    <div className="absolute left-0 top-full pt-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300 ease-in-out z-50">
+                      <div className="bg-background border border-border shadow-lg rounded-lg p-4 min-w-[200px] whitespace-nowrap">
+                        {item.features.map((feature) => (
+                          <NavLink
+                            key={feature.name}
+                            to={feature.href}
+                            className="block px-3 py-2 text-sm text-foreground hover:text-bs-primary hover:bg-muted rounded-md transition-colors"
+                          >
+                            {feature.name}
+                          </NavLink>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <a
+                    href={item.href}
+                    className="text-foreground hover:text-bs-primary transition-colors font-medium"
+                  >
+                    {item.name}
+                  </a>
+                )}
+              </div>
             ))}
           </nav>
 
@@ -460,7 +506,7 @@ const Header = () => {
                             className="w-full h-full rounded-full object-cover"
                           />
                         ) : (
-                          getAvatarInitials(user.firstName, user.lastName)
+                          getAvartarFromName(user.firstName + user.lastName)
                         )}
                       </div>
                       <div>
