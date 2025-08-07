@@ -135,6 +135,8 @@ public class AuthenticationService {
             return userRepository.save(newUser);
         });
 
+        log.info("USER INFO RESPONSE: {}", user);
+
         return toAuthenticationResponse(getAuthorizationData(user));
     }
 
