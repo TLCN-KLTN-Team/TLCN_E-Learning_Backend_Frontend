@@ -278,7 +278,7 @@ const RegisterPage = () => {
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
             <label htmlFor="firstName" className="label-base text-gray-700">
-              First Name *
+              Full Name *
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

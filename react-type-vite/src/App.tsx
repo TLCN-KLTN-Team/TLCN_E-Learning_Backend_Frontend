@@ -8,6 +8,7 @@ import AuthProvider from "./context/auth-context";
 import ScrollProgressBar from "./components/ui/ScrollProgressBar";
 import NotFound from "./pages/NotFound";
 import ForgotPasswordPage from "./pages/student/auth/ForgotPasswordPage";
+import WorkspacePage from "./pages/workspace/WorkspacePage";
 
 function App() {
   // Khởi tạo token expiry monitoring
@@ -25,6 +26,8 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           {/* Add other routes as needed */}
           <Route path="*" element={<NotFound />} />
+
+          <Route path="/workspace" element={<WorkspacePage />} />
         </Routes>
       </AuthProvider>
     </ThemeProvider>
