@@ -20,8 +20,6 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (user) {
-      console.log("User is already logged in:", user);
-      // redirect to home
       navigate("/");
     }
   }, [user, navigate]);
@@ -36,23 +34,21 @@ const LoginPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempt:", formData);
     login(formData.username, formData.password)
       .then(() => {
-        toast.success("Login successful!");
+        toast.success("Đăng nhập thành công!");
         navigate("/");
       })
       .catch((error) => {
         console.error("Login failed:", error);
-        toast.error(error.message || "Login failed");
+        toast.error(error.message || "Đăng nhập thất bại");
       });
   };
 
   return (
     <AuthLayout
-      title="Login into OpenEdu!"
-      subtitle="Nice to see you! Please log in with your account."
+      title="Đăng nhập vào OpenEdu!"
+      subtitle="Rất vui được gặp bạn! Vui lòng đăng nhập để tiếp tục."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Username Field */}
@@ -185,7 +181,7 @@ const LoginPage = () => {
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-2 bg-white text-gray-500 body-small">
-              Or logging with
+              Hoặc đăng nhập với
             </span>
           </div>
         </div>
@@ -199,9 +195,9 @@ const LoginPage = () => {
         {/* Sign Up Link */}
         <div className="text-center">
           <p className="body-small text-gray-600">
-            Don't have an account?
+            Chưa có tài khoản?
             <a href="/register" className="link-primary ml-1">
-              Signup here
+              Đăng ký ngay!
             </a>
           </p>
         </div>

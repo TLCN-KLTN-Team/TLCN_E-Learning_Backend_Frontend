@@ -87,73 +87,75 @@ const RegisterPage = () => {
     switch (name) {
       case "firstName":
         if (!value || (typeof value === "string" && value.trim().length < 2)) {
-          return "First name must be at least 2 characters";
+          return "First name phải ít nhất 2 ký tự";
         }
         break;
       case "lastName":
         if (!value || (typeof value === "string" && value.trim().length < 2)) {
-          return "Last name must be at least 2 characters";
+          return "Last name phải ít nhất 2 ký tự";
         }
         break;
       case "username":
         if (!value || (typeof value === "string" && value.trim().length < 3)) {
-          return "Username must be at least 3 characters";
+          return "Username phải ít nhất 3 ký tự";
         }
         if (typeof value === "string" && !/^[a-zA-Z0-9_]+$/.test(value)) {
-          return "Username can only contain letters, numbers, and underscores";
+          return "Username chỉ có thể chứa chữ cái, số và dấu gạch dưới (_)";
         }
         break;
       case "email":
         if (!value) {
-          return "Email is required";
+          return "Email là bắt buộc";
         }
         if (
           typeof value === "string" &&
           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
         ) {
-          return "Please enter a valid email address";
+          return "Please nhập một email hợp lệ";
         }
         break;
       case "password":
         if (!value) {
-          return "Password is required";
+          return "Password là bắt buộc";
         }
         if (
           typeof value === "string" &&
-          !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)
+          !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(
+            value
+          )
         ) {
-          return "Password must contain at least one uppercase letter, one lowercase letter, and one number";
+          return "Password phải chứa ít nhất một chữ IN HOA, một chữ thường, một số, và một ký tự đặc biệt";
         }
         if (typeof value === "string" && value.length < 6) {
-          return "Password must be at least 8 characters";
+          return "Password phải ít nhất 6 ký tự";
         }
         break;
       case "confirmPassword":
         if (!value) {
-          return "Please confirm your password";
+          return "Vui lòng xác nhận mật khẩu của bạn";
         }
         if (value !== formData.password) {
-          return "Passwords do not match";
+          return "Mật khẩu không khớp, vui lòng thử lại";
         }
         break;
       case "dob": {
         if (!value) {
-          return "Date of birth is required";
+          return "Vui lòng chọn ngày sinh của bạn";
         }
         const today = new Date();
         const birthDate = new Date(value as string);
         const age = today.getFullYear() - birthDate.getFullYear();
         if (age < 13) {
-          return "You must be at least 13 years old";
+          return "Yêu cầu từ 13 tuổi trở lên để đăng ký";
         }
         if (isAfter(birthDate, today)) {
-          return "Date of birth cannot be in the future";
+          return "Ngày sinh không thể trong tương lai";
         }
         break;
       }
       case "agreeToTerms":
         if (!value) {
-          return "You must agree to the terms and conditions";
+          return "Bạn phải đồng ý với các điều khoản và điều kiện để đăng ký";
         }
         break;
     }
@@ -249,9 +251,6 @@ const RegisterPage = () => {
       return;
     }
 
-    // Handle registration logic here
-    console.log("Registration attempt:", formData);
-
     // call register
     if (user) {
       navigate("/");
@@ -259,26 +258,26 @@ const RegisterPage = () => {
 
     register(formData)
       .then(() => {
-        toast.success("Registration successfully! You can now log in.");
+        toast.success("Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.");
         navigate("/login");
       })
       .catch((error) => {
-        console.error("Registration failed:", error);
-        toast.error(error.message || "Registration failed");
+        console.error("Đăng ký thất bại:", error);
+        toast.error(error.message || "Đăng ký thất bại");
       });
   };
 
   return (
     <AuthLayout
-      title="Sign up for OpenEdu!"
-      subtitle="Join our community and start learning today."
+      title="Đăng ký vào OpenEdu!"
+      subtitle="Tham gia cộng đồng học tập của chúng tôi ngay hôm nay!"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Full Name Field */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
             <label htmlFor="firstName" className="label-base text-gray-700">
-              Full Name *
+              First Name *
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -658,13 +657,13 @@ const RegisterPage = () => {
               className="text-gray-700 mt-1 w-4 h-4 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
             />
             <label htmlFor="agreeToTerms" className="body-small text-gray-700">
-              I agree to the{" "}
+              Tôi đồng ý với{" "}
               <a href="#" className="link-primary">
-                Terms and Conditions
+                Điều khoản & Điều kiện
               </a>{" "}
-              and{" "}
+              và{" "}
               <a href="#" className="link-primary">
-                Privacy Policy
+                Chính sách bảo mật
               </a>
             </label>
           </div>
@@ -685,7 +684,7 @@ const RegisterPage = () => {
           }
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 rounded-lg btn-text transition-colors"
         >
-          Create Account
+          Tạo tài khoản
         </Button>
 
         {/* Divider */}
@@ -695,7 +694,7 @@ const RegisterPage = () => {
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-2 bg-white text-gray-500 body-small">
-              Or continue with
+              Hoặc tiếp tục với
             </span>
           </div>
         </div>
@@ -709,9 +708,9 @@ const RegisterPage = () => {
         {/* Sign In Link */}
         <div className="text-center">
           <p className="body-small text-gray-600">
-            Already have an account?
+            Đã có tài khoản?
             <a href="/login" className="link-primary ml-1">
-              Sign in here
+              Đăng nhập ngay!
             </a>
           </p>
         </div>
