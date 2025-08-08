@@ -26,7 +26,7 @@ const AuthLayout = ({
           {/* Welcome Text at Top */}
           <div className="space-y-4">
             <h1 className="heading-1 text-gray-800">
-              Welcome to our largest community
+              Welcome to our educational ecosystem!
             </h1>
             <p className="body-large text-gray-600">
               Let's learn something new today!
