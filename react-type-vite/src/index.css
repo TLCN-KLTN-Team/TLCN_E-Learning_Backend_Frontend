@@ -1,71 +1,287 @@
 @import "tailwindcss";
 @import "./styles/typography.css";
+@import "./styles/bootstrap-utilities.css";
 
-/* CSS Custom Properties */
-:root {
-  --radius: 0.5rem;
+/* Bootstrap Theme Variables */
+:root,
+[data-bs-theme="light"] {
+  --bs-blue: #1d3b53;
+  --bs-indigo: #6610f2;
+  --bs-purple: #6f42c1;
+  --bs-pink: #e83e8c;
+  --bs-red: #d6293e;
+  --bs-orange: #fd7e14;
+  --bs-yellow: #f7c32e;
+  --bs-green: #0cbc87;
+  --bs-teal: #20c997;
+  --bs-cyan: #17a2b8;
+  --bs-black: #000;
+  --bs-white: #fff;
+  --bs-gray-100: #f5f7f9;
+  --bs-gray-200: #eff1f2;
+  --bs-gray-300: #dde0e3;
+  --bs-gray-400: #cfd3d7;
+  --bs-gray-500: #9a9ea4;
+  --bs-gray-600: #747579;
+  --bs-gray-700: #404448;
+  --bs-gray-800: #24292d;
+  --bs-gray-900: #0b0f13;
+  --bs-primary: #066ac9;
+  --bs-white: #fff;
+  --bs-secondary: #9a9ea4;
+  --bs-success: #0cbc87;
+  --bs-info: #17a2b8;
+  --bs-warning: #f7c32e;
+  --bs-danger: #d6293e;
+  --bs-light: #f5f7f9;
+  --bs-dark: #24292d;
+  --bs-orange: #fd7e14;
+  --bs-purple: #6f42c1;
+  --bs-blue: #1d3b53;
+  --bs-primary-dark: #0557a8;
+  --bs-primary-rgb: 6, 106, 201;
+  --bs-white-rgb: 255, 255, 255;
+  --bs-secondary-rgb: 154, 158, 164;
+  --bs-success-rgb: 12, 188, 135;
+  --bs-info-rgb: 23, 162, 184;
+  --bs-warning-rgb: 247, 195, 46;
+  --bs-danger-rgb: 214, 41, 62;
+  --bs-light-rgb: 245, 247, 249;
+  --bs-dark-rgb: 36, 41, 45;
+  --bs-orange-rgb: 253, 126, 20;
+  --bs-purple-rgb: 111, 66, 193;
+  --bs-blue-rgb: 29, 59, 83;
+  --bs-primary-text-emphasis: #044a8d;
+  --bs-secondary-text-emphasis: #6c6f73;
+  --bs-success-text-emphasis: #08845f;
+  --bs-info-text-emphasis: #107181;
+  --bs-warning-text-emphasis: #ad8920;
+  --bs-danger-text-emphasis: #961d2b;
+  --bs-light-text-emphasis: #404448;
+  --bs-dark-text-emphasis: #191d20;
+  --bs-primary-bg-subtle: #cde1f4;
+  --bs-secondary-bg-subtle: #ebeced;
+  --bs-success-bg-subtle: #cef2e7;
+  --bs-info-bg-subtle: #d1ecf1;
+  --bs-warning-bg-subtle: #fdf3d5;
+  --bs-danger-bg-subtle: #f7d4d8;
+  --bs-light-bg-subtle: #fafbfc;
+  --bs-dark-bg-subtle: #d3d4d5;
+  --bs-primary-border-subtle: #9bc3e9;
+  --bs-secondary-border-subtle: #d7d8db;
+  --bs-success-border-subtle: #9ee4cf;
+  --bs-info-border-subtle: #a2dae3;
+  --bs-warning-border-subtle: #fce7ab;
+  --bs-danger-border-subtle: #efa9b2;
+  --bs-light-border-subtle: #eff1f2;
+  --bs-dark-border-subtle: #a7a9ab;
+  --bs-white-rgb: 255, 255, 255;
+  --bs-black-rgb: 0, 0, 0;
+  --bs-font-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --bs-font-monospace: SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --bs-gradient: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15),
+    rgba(255, 255, 255, 0)
+  );
+  --bs-body-font-family: "Roboto", sans-serif;
+  --bs-body-font-size: 0.9375rem;
+  --bs-body-font-weight: 400;
+  --bs-body-line-height: 1.5;
+  --bs-body-color: #747579;
+  --bs-body-color-rgb: 116, 117, 121;
+  --bs-body-bg: #fff;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-emphasis-color: #000;
+  --bs-emphasis-color-rgb: 0, 0, 0;
+  --bs-secondary-color: #cfd3d7;
+  --bs-secondary-color-rgb: 207, 211, 215;
+  --bs-secondary-bg: #eff1f2;
+  --bs-secondary-bg-rgb: 239, 241, 242;
+  --bs-tertiary-color: rgba(116, 117, 121, 0.5);
+  --bs-tertiary-color-rgb: 116, 117, 121;
+  --bs-tertiary-bg: #f5f7f9;
+  --bs-tertiary-bg-rgb: 245, 247, 249;
+  --bs-heading-color: var(--bs-gray-800);
+  --bs-link-color: #066ac9;
+  --bs-link-color-rgb: 6, 106, 201;
+  --bs-link-decoration: none;
+  --bs-link-hover-color: #0555a1;
+  --bs-link-hover-color-rgb: 5, 85, 161;
+  --bs-code-color: #d63384;
+  --bs-highlight-color: #212529;
+  --bs-highlight-bg: #fff3cd;
+  --bs-border-width: 1px;
+  --bs-border-style: solid;
+  --bs-border-color: var(--bs-gray-300);
+  --bs-border-color-translucent: rgba(0, 0, 0, 0.175);
+  --bs-border-radius: 0.325rem;
+  --bs-border-radius-sm: 0.2rem;
+  --bs-border-radius-lg: 0.5rem;
+  --bs-border-radius-xl: 1rem;
+  --bs-border-radius-xxl: 2rem;
+  --bs-border-radius-2xl: var(--bs-border-radius-xxl);
+  --bs-border-radius-pill: 50rem;
+  --bs-box-shadow: 0px 0px 40px rgba(29, 58, 83, 0.15);
+  --bs-box-shadow-sm: 0 0.125rem 0.25rem rgba(29, 58, 83, 0.15);
+  --bs-box-shadow-lg: 0 1rem 3rem rgba(29, 58, 83, 0.15);
+  --bs-box-shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.075);
+  --bs-focus-ring-width: 0.25rem;
+  --bs-focus-ring-opacity: 0.25;
+  --bs-focus-ring-color: rgba(13, 110, 253, 0.25);
+  --bs-form-valid-color: #198754;
+  --bs-form-valid-border-color: #198754;
+  --bs-form-invalid-color: #dc3545;
+  --bs-form-invalid-border-color: #dc3545;
 
-  /* Light theme colors */
-  --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 3.9%;
-  --primary: 0 0% 9%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 96.1%;
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 45.1%;
-  --accent: 0 0% 96.1%;
-  --accent-foreground: 0 0% 9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 89.8%;
-  --input: 0 0% 89.8%;
-  --ring: 0 0% 3.9%;
+  /* Custom radius for compatibility */
+  --radius: 0.325rem;
 
-  /* Education theme colors */
-  --education-primary: 217 91% 60%;
-  --education-secondary: 142 76% 36%;
-  --education-accent: 38 92% 50%;
-  --education-success: 142 71% 45%;
-  --education-warning: 38 92% 50%;
-  --education-error: 0 84% 60%;
+  /* Compatibility mapping for existing components - Updated for Tailwind */
+  --background: 255 255 255;
+  --foreground: 116 117 121;
+  --card: 255 255 255;
+  --card-foreground: 116 117 121;
+  --popover: 255 255 255;
+  --popover-foreground: 116 117 121;
+  --primary: 6 106 201;
+  --primary-foreground: 255 255 255;
+  --secondary: 239 241 242;
+  --secondary-foreground: 36 41 45;
+  --muted: 245 247 249;
+  --muted-foreground: 116 117 121;
+  --accent: 6 106 201;
+  --accent-foreground: 255 255 255;
+  --destructive: 214 41 62;
+  --destructive-foreground: 255 255 255;
+  --border: 221 224 227;
+  --input: 239 241 242;
+  --ring: 6 106 201;
+
+  /* Education theme colors - adapted to Bootstrap variables */
+  --education-primary: var(--bs-primary);
+  --education-secondary: var(--bs-success);
+  --education-accent: var(--bs-warning);
+  --education-success: var(--bs-success);
+  --education-warning: var(--bs-warning);
+  --education-error: var(--bs-danger);
 }
 
-/* Dark theme */
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+  --bs-body-color: #dee2e6;
+  --bs-body-color-rgb: 222, 226, 230;
+  --bs-body-bg: #212529;
+  --bs-body-bg-rgb: 33, 37, 41;
+  --bs-emphasis-color: #fff;
+  --bs-emphasis-color-rgb: 255, 255, 255;
+  --bs-secondary-color: #dde0e3;
+  --bs-secondary-color-rgb: 221, 224, 227;
+  --bs-secondary-bg: #343a40;
+  --bs-secondary-bg-rgb: 52, 58, 64;
+  --bs-tertiary-color: rgba(222, 226, 230, 0.5);
+  --bs-tertiary-color-rgb: 222, 226, 230;
+  --bs-tertiary-bg: #2b3035;
+  --bs-tertiary-bg-rgb: 43, 48, 53;
+  --bs-primary-text-emphasis: #6ea8fe;
+  --bs-secondary-text-emphasis: #a7acb1;
+  --bs-success-text-emphasis: #75b798;
+  --bs-info-text-emphasis: #6edff6;
+  --bs-warning-text-emphasis: #ffda6a;
+  --bs-danger-text-emphasis: #ea868f;
+  --bs-light-text-emphasis: #f8f9fa;
+  --bs-dark-text-emphasis: #dee2e6;
+  --bs-primary-bg-subtle: #031633;
+  --bs-secondary-bg-subtle: #161719;
+  --bs-success-bg-subtle: #051b11;
+  --bs-info-bg-subtle: #032830;
+  --bs-warning-bg-subtle: #332701;
+  --bs-danger-bg-subtle: #2c0b0e;
+  --bs-light-bg-subtle: #343a40;
+  --bs-dark-bg-subtle: #1a1d20;
+  --bs-primary-border-subtle: #084298;
+  --bs-secondary-border-subtle: #41464b;
+  --bs-success-border-subtle: #0f5132;
+  --bs-info-border-subtle: #087990;
+  --bs-warning-border-subtle: #997404;
+  --bs-danger-border-subtle: #842029;
+  --bs-light-border-subtle: #495057;
+  --bs-dark-border-subtle: #343a40;
+  --bs-heading-color: inherit;
+  --bs-link-color: #066ac9;
+  --bs-link-hover-color: #0555a1;
+  --bs-link-color-rgb: 6, 106, 201;
+  --bs-link-hover-color-rgb: 5, 85, 161;
+  --bs-code-color: #e685b5;
+  --bs-highlight-color: #dee2e6;
+  --bs-highlight-bg: #664d03;
+  --bs-border-color: #495057;
+  --bs-border-color-translucent: rgba(255, 255, 255, 0.15);
+  --bs-form-valid-color: #75b798;
+  --bs-form-valid-border-color: #75b798;
+  --bs-form-invalid-color: #ea868f;
+  --bs-form-invalid-border-color: #ea868f;
+
+  /* Compatibility mapping for dark theme - Updated for Tailwind */
+  --background: 33 37 41;
+  --foreground: 222 226 230;
+  --card: 52 58 64;
+  --card-foreground: 222 226 230;
+  --popover: 52 58 64;
+  --popover-foreground: 222 226 230;
+  --primary: 6 106 201;
+  --primary-foreground: 255 255 255;
+  --secondary: 52 58 64;
+  --secondary-foreground: 222 226 230;
+  --muted: 43 48 53;
+  --muted-foreground: 221 224 227;
+  --accent: 6 106 201;
+  --accent-foreground: 255 255 255;
+  --destructive: 214 41 62;
+  --destructive-foreground: 255 255 255;
+  --border: 73 80 87;
+  --input: 52 58 64;
+  --ring: 6 106 201;
+}
+
+/* Legacy dark theme support - Updated for Tailwind */
 .dark {
-  --background: 0 0% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 9%;
-  --secondary: 0 0% 14.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 14.9%;
-  --muted-foreground: 0 0% 63.9%;
-  --accent: 0 0% 14.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 14.9%;
-  --input: 0 0% 14.9%;
-  --ring: 0 0% 83.1%;
+  --background: 33 37 41;
+  --foreground: 222 226 230;
+  --card: 52 58 64;
+  --card-foreground: 222 226 230;
+  --popover: 52 58 64;
+  --popover-foreground: 222 226 230;
+  --primary: 6 106 201;
+  --primary-foreground: 255 255 255;
+  --secondary: 52 58 64;
+  --secondary-foreground: 222 226 230;
+  --muted: 43 48 53;
+  --muted-foreground: 221 224 227;
+  --accent: 6 106 201;
+  --accent-foreground: 255 255 255;
+  --destructive: 214 41 62;
+  --destructive-foreground: 255 255 255;
+  --border: 73 80 87;
+  --input: 52 58 64;
+  --ring: 6 106 201;
 }
 
 /* Base Styles */
 * {
-  border-color: hsl(var(--border));
+  border-color: var(--bs-border-color);
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  font-family: var(--bs-body-font-family);
+  font-size: var(--bs-body-font-size);
+  font-weight: var(--bs-body-font-weight);
+  line-height: var(--bs-body-line-height);
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
@@ -76,14 +292,14 @@ html {
 
 /* Focus Styles */
 *:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: var(--bs-focus-ring-width) solid var(--bs-focus-ring-color);
   outline-offset: 2px;
 }
 
 /* Selection Styles */
 ::selection {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background-color: var(--bs-primary);
+  color: var(--bs-white);
 }
 
 /* Scrollbar Styles */
@@ -93,16 +309,16 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: var(--bs-light);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
+  background: rgba(var(--bs-gray-600), 0.3);
+  border-radius: var(--bs-border-radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: rgba(var(--bs-gray-600), 0.5);
 }
 
 /* Form Styles */
@@ -211,4 +427,123 @@ img {
   .container {
     max-width: 1536px;
   }
+}
+
+/* Override any conflicting Tailwind or browser styles */
+.auth-input {
+  background-color: var(--bs-white);
+  transition: all 0.2s ease-in-out;
+  border-radius: var(--bs-border-radius);
+}
+
+.auth-input:hover {
+  background-color: var(--bs-gray-100) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+.auth-input:focus {
+  background-color: var(--bs-white) !important;
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 var(--bs-focus-ring-width) var(--bs-focus-ring-color) !important;
+}
+
+/* Link Hover Effects - Underline Animation */
+.link-hover-effect {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.link-hover-effect::before {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-dark);
+  transition: width 0.3s ease;
+}
+
+.link-hover-effect:hover::before {
+  width: 100%;
+}
+
+/* Dark theme support for underline */
+.dark .link-hover-effect::before,
+[data-bs-theme="dark"] .link-hover-effect::before {
+  background-color: var(--bs-white);
+}
+
+/* Global link styles */
+a {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a::before {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-dark);
+  transition: width 0.3s ease;
+}
+
+a:hover::before {
+  width: 100%;
+}
+
+/* Dark theme support */
+.dark a::before,
+[data-bs-theme="dark"] a::before {
+  background-color: var(--bs-white);
+}
+
+/* Exclude button links and specific elements */
+button a::before,
+.no-underline::before,
+.no-hover-effect::before {
+  display: none;
+}
+
+/* Navigation specific styles */
+nav a {
+  position: relative;
+}
+
+nav a::before {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-primary);
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+nav a:hover::before {
+  width: 100%;
+}
+
+/* Dropdown Z-Index Override */
+.dropdown-menu {
+  z-index: 99999 !important;
+  position: absolute !important;
+  background-color: var(--bs-body-bg) !important;
+  border: 1px solid var(--bs-border-color) !important;
+}
+
+.dropdown-backdrop {
+  z-index: 99998 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background-color: rgba(0, 0, 0, 0.1) !important;
 }

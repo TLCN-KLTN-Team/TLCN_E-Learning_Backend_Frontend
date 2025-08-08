@@ -2,6 +2,7 @@ package com.devteria.identity.dto.response;
 
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

@@ -1,15 +1,36 @@
 import { Route, Routes } from "react-router-dom";
-import Home from "./pages/home/Home";
-import RegisterPage from "./components/auth/RegisterPage";
-import AuthPage from "./pages/auth/AuthPage";
+import Home from "./pages/student/home/Home";
+import AuthPage from "./pages/student/auth/AuthPage";
+import { useTokenExpiry } from "./hooks/useTokenExpiry";
+import Authenticate from "./pages/student/auth/Authenticate";
+import { ThemeProvider } from "./context/theme-context";
+import AuthProvider from "./context/auth-context";
+import ScrollProgressBar from "./components/ui/ScrollProgressBar";
+import NotFound from "./pages/NotFound";
+import ForgotPasswordPage from "./pages/student/auth/ForgotPasswordPage";
+import WorkspacePage from "./pages/workspace/WorkspacePage";
 
 function App() {
+  // Khởi tạo token expiry monitoring
+  useTokenExpiry();
+
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<AuthPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-    </Routes>
+    <ThemeProvider defaultTheme="system">
+      <AuthProvider>
+        <ScrollProgressBar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<AuthPage isLoggin={true} />} />
+          <Route path="/register" element={<AuthPage isLoggin={false} />} />
+          <Route path="/auth/callback" element={<Authenticate />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          {/* Add other routes as needed */}
+          <Route path="*" element={<NotFound />} />
+
+          <Route path="/workspace" element={<WorkspacePage />} />
+        </Routes>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

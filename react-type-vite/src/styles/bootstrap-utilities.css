@@ -1,0 +1,191 @@
+/* Bootstrap Utility Classes for Tailwind Integration */
+
+/* Text Colors */
+.text-bs-primary {
+  color: var(--bs-primary) !important;
+}
+.text-bs-secondary {
+  color: var(--bs-secondary) !important;
+}
+.text-bs-success {
+  color: var(--bs-success) !important;
+}
+.text-bs-danger {
+  color: var(--bs-danger) !important;
+}
+.text-bs-warning {
+  color: var(--bs-warning) !important;
+}
+.text-bs-info {
+  color: var(--bs-info) !important;
+}
+
+/* Background Colors */
+.bg-bs-primary {
+  background-color: var(--bs-primary) !important;
+}
+.bg-bs-secondary {
+  background-color: var(--bs-secondary) !important;
+}
+.bg-bs-success {
+  background-color: var(--bs-success) !important;
+}
+.bg-bs-danger {
+  background-color: var(--bs-danger) !important;
+}
+.bg-bs-warning {
+  background-color: var(--bs-warning) !important;
+}
+.bg-bs-info {
+  background-color: var(--bs-info) !important;
+}
+.bg-bs-light {
+  background-color: var(--bs-light) !important;
+}
+.bg-bs-dark {
+  background-color: var(--bs-dark) !important;
+}
+
+/* Subtle Backgrounds */
+.bg-bs-primary-subtle {
+  background-color: var(--bs-primary-bg-subtle) !important;
+}
+.bg-bs-secondary-subtle {
+  background-color: var(--bs-secondary-bg-subtle) !important;
+}
+.bg-bs-success-subtle {
+  background-color: var(--bs-success-bg-subtle) !important;
+}
+.bg-bs-danger-subtle {
+  background-color: var(--bs-danger-bg-subtle) !important;
+}
+.bg-bs-warning-subtle {
+  background-color: var(--bs-warning-bg-subtle) !important;
+}
+.bg-bs-info-subtle {
+  background-color: var(--bs-info-bg-subtle) !important;
+}
+
+/* Border Colors */
+.border-bs-primary {
+  border-color: var(--bs-primary) !important;
+}
+.border-bs-secondary {
+  border-color: var(--bs-secondary) !important;
+}
+.border-bs-success {
+  border-color: var(--bs-success) !important;
+}
+.border-bs-danger {
+  border-color: var(--bs-danger) !important;
+}
+.border-bs-warning {
+  border-color: var(--bs-warning) !important;
+}
+.border-bs-info {
+  border-color: var(--bs-info) !important;
+}
+
+/* Bootstrap Box Shadows */
+.shadow-bs {
+  box-shadow: var(--bs-box-shadow) !important;
+}
+.shadow-bs-sm {
+  box-shadow: var(--bs-box-shadow-sm) !important;
+}
+.shadow-bs-lg {
+  box-shadow: var(--bs-box-shadow-lg) !important;
+}
+
+/* Bootstrap Border Radius */
+.rounded-bs {
+  border-radius: var(--bs-border-radius) !important;
+}
+.rounded-bs-sm {
+  border-radius: var(--bs-border-radius-sm) !important;
+}
+.rounded-bs-lg {
+  border-radius: var(--bs-border-radius-lg) !important;
+}
+.rounded-bs-xl {
+  border-radius: var(--bs-border-radius-xl) !important;
+}
+.rounded-bs-pill {
+  border-radius: var(--bs-border-radius-pill) !important;
+}
+
+/* Bootstrap Focus Ring */
+.focus-ring:focus {
+  outline: var(--bs-focus-ring-width) solid var(--bs-focus-ring-color) !important;
+  outline-offset: var(--bs-focus-ring-width) !important;
+}
+
+/* Education Theme Specific */
+.bg-education-primary {
+  background-color: var(--education-primary) !important;
+}
+.bg-education-secondary {
+  background-color: var(--education-secondary) !important;
+}
+.bg-education-accent {
+  background-color: var(--education-accent) !important;
+}
+.text-education-primary {
+  color: var(--education-primary) !important;
+}
+.text-education-secondary {
+  color: var(--education-secondary) !important;
+}
+.text-education-accent {
+  color: var(--education-accent) !important;
+}
+
+/* Responsive Bootstrap Grid Compatible Classes */
+.bs-container {
+  width: 100%;
+  padding-right: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+  padding-left: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 576px) {
+  .bs-container {
+    max-width: 540px;
+  }
+}
+
+@media (min-width: 768px) {
+  .bs-container {
+    max-width: 720px;
+  }
+}
+
+@media (min-width: 992px) {
+  .bs-container {
+    max-width: 960px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .bs-container {
+    max-width: 1140px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .bs-container {
+    max-width: 1320px;
+  }
+}
+
+/* Theme transition animations */
+* {
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
+}
+
+/* Prevent transition on theme change for better UX */
+.no-transition * {
+  transition: none !important;
+}
