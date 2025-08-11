@@ -11,10 +11,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class WorkspaceResponse {
+public class BasicChannelResponse {
     String id;
-    String name;
-    String description;
-    String avatarUrl;
-    List<BasicChannelResponse> channels;
+    String participantHash;
+    String channelName;
 }

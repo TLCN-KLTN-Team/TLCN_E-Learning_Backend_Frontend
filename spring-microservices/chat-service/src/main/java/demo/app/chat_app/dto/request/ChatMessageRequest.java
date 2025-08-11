@@ -12,5 +12,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ChatMessageRequest {
     String channelId;
-    String message;
+    String content; // Renamed from 'message' to 'content' to match usage
+    String recipientId; // For direct messages
+    String messageType; // TEXT, IMAGE, FILE, etc.
 }
