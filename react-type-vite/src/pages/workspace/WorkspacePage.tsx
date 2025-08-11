@@ -585,16 +585,20 @@ const WorkspacePageContent = () => {
                             className="flex items-start space-x-3 bg-blue-50/5 p-3 rounded-lg border border-blue-500/20"
                           >
                             <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-medium">
-                              {message.senderName.charAt(0).toUpperCase()}
+                              {message.sender.firstName
+                                ?.charAt(0)
+                                .toUpperCase()}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-baseline space-x-2">
                                 <span className="font-semibold text-white">
-                                  {message.senderName}
+                                  {message.sender.firstName
+                                    ?.charAt(0)
+                                    .toUpperCase()}
                                 </span>
                                 <span className="text-xs text-gray-400">
                                   {new Date(
-                                    message.timestamp
+                                    message.createdDate
                                   ).toLocaleTimeString("vi-VN", {
                                     hour: "2-digit",
                                     minute: "2-digit",
@@ -605,7 +609,7 @@ const WorkspacePageContent = () => {
                                 </span>
                               </div>
                               <p className="text-gray-300 mt-1">
-                                {message.content}
+                                {message.message}
                               </p>
                             </div>
                           </div>
