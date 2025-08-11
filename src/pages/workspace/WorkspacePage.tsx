@@ -23,30 +23,16 @@ import InvitePeopleModal from "@/components/student/workspace/InvitePeopleModal"
 import type {
   WorkspaceResponse,
   ChannelResponse,
-  ChatMessageRequest,
+  ChatMessageResponse,
 } from "@/services/api/workspaceApi";
 import type { PaginatedResponse } from "@/services/shared/apiResponse";
-import { getWorkspaces, sendMessage } from "@/services/api/workspaceApi";
+import { getWorkspaces, getChannel } from "@/services/api/workspaceApi";
 import { getAvartarFromName } from "@/utils/callApiUtils";
+import { useSafeChatWebSocket } from "@/hooks/useSafeChatWebSocket";
+import ChatErrorBoundary from "@/components/student/workspace/ChatErrorBoundary";
+import { useAuth } from "@/context/auth-context/useAuth";
 
-// Types
-interface User {
-  id: string;
-  name: string;
-  avatar: string;
-  role: "student" | "teacher";
-}
-
-// Dummy Data
-const currentUser: User = {
-  id: "1",
-  name: "Nguyễn Văn An",
-  avatar:
-    "https://ui-avatars.com/api/?name=Nguyen+Van+An&background=3b82f6&color=fff",
-  role: "teacher",
-};
-
-const WorkspacePage = () => {
+const WorkspacePageContent = () => {
   const [workspacesData, setWorkspacesData] =
     useState<PaginatedResponse<WorkspaceResponse> | null>(null);
   const [visibleWorkspaceCount, setVisibleWorkspaceCount] = useState(6);
@@ -54,10 +40,33 @@ const WorkspacePage = () => {
     useState<WorkspaceResponse | null>(null);
   const [selectedChannel, setSelectedChannel] =
     useState<ChannelResponse | null>(null);
+  const [channelMessages, setChannelMessages] = useState<ChatMessageResponse[]>(
+    []
+  );
   const [newMessage, setNewMessage] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const { user } = useAuth();
+
+  // Initialize WebSocket chat with safety wrapper
+  const {
+    isConnected,
+    messages: wsMessages,
+    errors: wsErrors,
+    connect,
+    disconnect,
+    subscribeToChannel,
+    subscribeToDirectMessages,
+    subscribeToErrors,
+    sendMessage: sendWebSocketMessage,
+    clearErrors,
+    error: safeChatError,
+    isInitialized,
+    clearError,
+  } = useSafeChatWebSocket();
 
   // Set default channel when workspace changes
   useEffect(() => {
@@ -67,7 +76,72 @@ const WorkspacePage = () => {
     }
   }, [selectedWorkspace]);
 
-  // handle when component mounts at first time
+  // Load channel messages when channel changes (FIXED - Remove duplicate subscription)
+  useEffect(() => {
+    if (selectedChannel) {
+      setIsLoadingMessages(true);
+      getChannel(selectedChannel.id)
+        .then((channelData) => {
+          setChannelMessages(channelData.messages || []);
+        })
+        .catch((error) => {
+          console.error("Error loading channel messages:", error);
+          setChannelMessages([]);
+        })
+        .finally(() => {
+          setIsLoadingMessages(false);
+        });
+    } else {
+      setChannelMessages([]);
+    }
+  }, [selectedChannel]); // Remove isConnected and subscribeToChannel to prevent loops
+
+  // Simple subscription effect - only run when connection status or channel changes
+  useEffect(() => {
+    if (!isConnected || !selectedChannel) {
+      return;
+    }
+
+    console.log(
+      `🔗 Setting up subscriptions for channel: ${selectedChannel.id}`
+    );
+
+    // Subscribe to all channels at once
+    const unsubscribeChannel = subscribeToChannel(selectedChannel.id);
+    const unsubscribeDirectMessages = subscribeToDirectMessages();
+    const unsubscribeErrors = subscribeToErrors();
+
+    return () => {
+      console.log(`🔗 Cleaning up subscriptions`);
+      unsubscribeChannel?.();
+      unsubscribeDirectMessages?.();
+      unsubscribeErrors?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, selectedChannel?.id]); // Only depend on connection status and channel id to prevent infinite loops
+
+  // Initialize WebSocket connection only once
+  useEffect(() => {
+    let mounted = true;
+
+    const initConnection = () => {
+      if (mounted) {
+        connect();
+      }
+    };
+
+    // Delay connection to avoid multiple rapid connections
+    const connectionTimer = setTimeout(initConnection, 100);
+
+    return () => {
+      mounted = false;
+      clearTimeout(connectionTimer);
+      disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty to prevent re-connections on every render
+
+  // Handle when component mounts at first time
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -78,6 +152,7 @@ const WorkspacePage = () => {
       }
     };
 
+    // Load initial workspaces with minimal data
     getWorkspaces(0, 6).then((data) => {
       console.log("Fetched workspaces:", data);
       setWorkspacesData(data);
@@ -89,23 +164,46 @@ const WorkspacePage = () => {
     };
   }, []);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedChannel) return;
+  const handleSendMessage = async () => {
+    console.log("🚀 handleSendMessage called", {
+      newMessage,
+      selectedChannel,
+      isConnected,
+    });
 
-    // In real app, this would send to API
-    const request: ChatMessageRequest = {
-      channelId: selectedChannel.id,
-      message: newMessage.trim(),
-    };
-    console.log("Sending message:", newMessage);
-    sendMessage(request)
-      .then((data) => {
-        console.log("Message send successfully:", data);
-      })
-      .catch((error) => {
-        console.error("Error sending message:", error);
+    if (!newMessage.trim() || !selectedChannel) {
+      console.warn("❌ Cannot send message: missing content or channel");
+      return;
+    }
+
+    if (!isConnected) {
+      console.warn("❌ Cannot send message: WebSocket not connected");
+      alert("Kết nối real-time bị mất. Vui lòng thử lại sau.");
+      return;
+    }
+
+    try {
+      console.log("📤 Sending message via WebSocket...");
+
+      // Send via WebSocket directly to broker
+      sendWebSocketMessage({
+        channelId: selectedChannel.id,
+        content: newMessage.trim(),
       });
-    setNewMessage("");
+
+      console.log("✅ Message sent successfully");
+      setNewMessage("");
+
+      // Clear any previous errors
+      clearError();
+    } catch (error) {
+      console.error("❌ Error sending message:", error);
+
+      // Show user-friendly error
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      alert(`Không thể gửi tin nhắn: ${errorMessage}`);
+    }
   };
 
   const handleWorkspaceSelect = (workspace: WorkspaceResponse) => {
@@ -215,7 +313,7 @@ const WorkspacePage = () => {
         )}
 
         {/* Add Workspace Button (only for teachers) */}
-        {currentUser.role === "teacher" && (
+        {user?.role === "teacher" && (
           <div className="w-12 h-12 bg-gray-700 hover:bg-green-600 rounded-2xl hover:rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer group relative">
             <Plus className="w-6 h-6 text-green-400 group-hover:text-white" />
             <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
@@ -231,8 +329,8 @@ const WorkspacePage = () => {
             onClick={() => setShowUserDropdown(!showUserDropdown)}
           >
             <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
+              src={getAvartarFromName(`${user?.firstName} ${user?.lastName}`)}
+              alt={user?.firstName || "User"}
               className="w-full h-full object-cover"
             />
           </div>
@@ -242,10 +340,10 @@ const WorkspacePage = () => {
             <div className="absolute bottom-16 left-0 bg-gray-800 rounded-lg shadow-lg py-2 w-48 z-20 border border-gray-700">
               <div className="px-4 py-2 border-b border-gray-700">
                 <div className="font-semibold text-white text-sm">
-                  {currentUser.name}
+                  {user?.firstName} {user?.lastName}
                 </div>
                 <div className="text-gray-400 text-xs">
-                  {currentUser.role === "teacher" ? "Giảng viên" : "Sinh viên"}
+                  {user?.role === "teacher" ? "Giảng viên" : "Sinh viên"}
                 </div>
               </div>
               <button
@@ -308,7 +406,7 @@ const WorkspacePage = () => {
                   <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                     Kênh văn bản
                   </h3>
-                  {currentUser.role === "teacher" && (
+                  {user?.role === "teacher" && (
                     <button className="text-gray-400 hover:text-white">
                       <Plus className="w-4 h-4" />
                     </button>
@@ -394,75 +492,141 @@ const WorkspacePage = () => {
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto bg-gray-800">
-              {/* Channel Welcome Message */}
-              {!selectedChannel.messages ||
-              selectedChannel.messages.length === 0 ? (
-                <div className="p-6 pt-16">
-                  <div className="flex items-center mb-4">
-                    <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
-                      <Hash className="w-8 h-8 text-white" />
-                    </div>
-                  </div>
-                  <h1 className="text-3xl font-bold text-white mb-2">
-                    Welcome to #{selectedChannel.channelName}!
-                  </h1>
-                  <p className="text-gray-300 mb-4">
-                    This is the start of the #{selectedChannel.channelName}{" "}
-                    channel.
-                  </p>
-                  {currentUser.role === "teacher" && (
-                    <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit Channel
-                    </button>
-                  )}
+              {/* Loading state */}
+              {isLoadingMessages ? (
+                <div className="p-6 pt-16 text-center">
+                  <div className="text-gray-400">Loading messages...</div>
                 </div>
               ) : (
-                <div className="p-4 space-y-4">
-                  {selectedChannel.messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className="flex items-start space-x-3"
-                    >
-                      <img
-                        src={
-                          message.sender.avatarUrl ||
-                          `https://ui-avatars.com/api/?name=${
-                            message.sender.firstName || "User"
-                          }+${
-                            message.sender.lastName || ""
-                          }&background=3b82f6&color=fff`
-                        }
-                        alt={`${message.sender.firstName || "User"} ${
-                          message.sender.lastName || ""
-                        }`}
-                        className="w-10 h-10 rounded-full"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-baseline space-x-2">
-                          <span className="font-semibold text-white">
-                            {message.sender.firstName ||
-                              message.sender.username ||
-                              "Anonymous"}{" "}
-                            {message.sender.lastName || ""}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {new Date(message.createdDate).toLocaleTimeString(
-                              "vi-VN",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
-                          </span>
-                          {message.me && (
-                            <span className="text-xs text-blue-400">(You)</span>
-                          )}
+                <>
+                  {/* Channel Welcome Message or Messages */}
+                  {channelMessages.length === 0 ? (
+                    <div className="p-6 pt-16">
+                      <div className="flex items-center mb-4">
+                        <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
+                          <Hash className="w-8 h-8 text-white" />
                         </div>
-                        <p className="text-gray-300 mt-1">{message.message}</p>
                       </div>
+                      <h1 className="text-3xl font-bold text-white mb-2">
+                        Welcome to #{selectedChannel.channelName}!
+                      </h1>
+                      <p className="text-gray-300 mb-4">
+                        This is the start of the #{selectedChannel.channelName}{" "}
+                        channel.
+                      </p>
+                      {user?.role === "teacher" && (
+                        <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit Channel
+                        </button>
+                      )}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="p-4 space-y-4">
+                      {/* Display existing messages from API */}
+                      {channelMessages.map((message) => (
+                        <div
+                          key={message.id}
+                          className="flex items-start space-x-3"
+                        >
+                          <img
+                            src={
+                              message.sender.avatarUrl ||
+                              `https://ui-avatars.com/api/?name=${
+                                message.sender.firstName ||
+                                message.sender.username ||
+                                "User"
+                              }+${
+                                message.sender.lastName || ""
+                              }&background=3b82f6&color=fff`
+                            }
+                            alt={`${
+                              message.sender.firstName ||
+                              message.sender.username ||
+                              "User"
+                            } ${message.sender.lastName || ""}`}
+                            className="w-10 h-10 rounded-full"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-baseline space-x-2">
+                              <span className="font-semibold text-white">
+                                {message.sender.firstName ||
+                                  message.sender.username ||
+                                  "Anonymous"}{" "}
+                                {message.sender.lastName || ""}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(
+                                  message.createdDate
+                                ).toLocaleTimeString("vi-VN", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              {message.me && (
+                                <span className="text-xs text-blue-400">
+                                  (You)
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-gray-300 mt-1">
+                              {message.message}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Display real-time WebSocket messages */}
+                      {wsMessages
+                        .filter((msg) => msg.channelId === selectedChannel.id)
+                        .map((message) => (
+                          <div
+                            key={`ws-${message.id}`}
+                            className="flex items-start space-x-3 bg-blue-50/5 p-3 rounded-lg border border-blue-500/20"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-medium">
+                              {message.senderName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-baseline space-x-2">
+                                <span className="font-semibold text-white">
+                                  {message.senderName}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  {new Date(
+                                    message.timestamp
+                                  ).toLocaleTimeString("vi-VN", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                  Live
+                                </span>
+                              </div>
+                              <p className="text-gray-300 mt-1">
+                                {message.content}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* WebSocket connection status */}
+              {!isConnected && (
+                <div className="px-4 py-2 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 text-sm">
+                  ⚠️ Real-time chat disconnected. Messages will still be sent.
+                </div>
+              )}
+
+              {/* Error display */}
+              {wsErrors.length > 0 && (
+                <div className="px-4 py-2 bg-red-100 border-l-4 border-red-500 text-red-700 text-sm">
+                  ❌ {wsErrors[0].message}
+                  {wsErrors.length > 1 && ` (+${wsErrors.length - 1} more)`}
                 </div>
               )}
             </div>
@@ -475,36 +639,84 @@ const WorkspacePage = () => {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && !e.shiftKey && handleSendMessage()
+                  }
                   placeholder={`Message #${selectedChannel.channelName}`}
-                  className="w-full px-12 py-3 bg-gray-700 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  disabled={!isConnected}
+                  className="w-full px-12 py-3 bg-gray-700 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                   <button
                     className="text-gray-400 hover:text-white"
                     title="Upload file"
+                    disabled={!isConnected}
                   >
                     <File className="w-5 h-5" />
                   </button>
                   <button
                     className="text-gray-400 hover:text-white"
                     title="GIF"
+                    disabled={!isConnected}
                   >
                     <Gift className="w-5 h-5" />
                   </button>
                   <button
                     className="text-gray-400 hover:text-white"
                     title="Emoji"
+                    disabled={!isConnected}
                   >
                     <Smile className="w-5 h-5" />
                   </button>
                   <button
-                    className="text-gray-400 hover:text-white border-l pl-2"
-                    title="Emoji"
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim() || !isConnected}
+                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white p-2 rounded-md transition-colors"
+                    title="Send message"
                   >
-                    <Send className="w-5 h-5" onClick={handleSendMessage} />
+                    <Send className="w-4 h-4" />
                   </button>
                 </div>
+              </div>
+
+              {/* Connection and status info */}
+              <div className="flex items-center justify-between mt-2 text-xs">
+                <div className="flex items-center space-x-4 text-gray-400">
+                  <span
+                    className={`flex items-center space-x-1 ${
+                      isConnected ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        isConnected ? "bg-green-400" : "bg-red-400"
+                      }`}
+                    ></div>
+                    <span>
+                      {isConnected ? "Real-time chat active" : "Connecting..."}
+                    </span>
+                  </span>
+                  {wsMessages.length > 0 && (
+                    <span className="text-blue-400">
+                      {
+                        wsMessages.filter(
+                          (m) => m.channelId === selectedChannel.id
+                        ).length
+                      }{" "}
+                      live messages
+                    </span>
+                  )}
+                </div>
+                {wsErrors.length > 0 && (
+                  <button
+                    onClick={() => {
+                      clearErrors();
+                    }}
+                    className="text-red-400 hover:text-red-300 underline"
+                  >
+                    Clear errors ({wsErrors.length})
+                  </button>
+                )}
               </div>
             </div>
           </>
@@ -530,6 +742,15 @@ const WorkspacePage = () => {
         channelName={selectedChannel?.channelName || "general"}
       />
     </div>
+  );
+};
+
+// Main WorkspacePage component wrapped with error boundary
+const WorkspacePage = () => {
+  return (
+    <ChatErrorBoundary>
+      <WorkspacePageContent />
+    </ChatErrorBoundary>
   );
 };
 
