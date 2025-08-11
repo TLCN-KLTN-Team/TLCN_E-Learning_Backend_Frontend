@@ -3,23 +3,13 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import { useRef, useState, useCallback } from "react";
 import SockJS from "sockjs-client";
 import { useAuth } from "@/context/auth-context/useAuth";
+import type { ChatMessageResponse } from "@/services/api/workspaceApi";
 
 // Types for WebSocket communication
 export interface ChatMessageRequest {
   channelId: string;
   content: string;
   recipientId?: string; // For direct messages
-}
-
-export interface ChatMessageResponse {
-  id: string;
-  channelId?: string;
-  content: string;
-  senderId: string;
-  senderName: string;
-  recipientId?: string;
-  timestamp: string;
-  messageType: "CHAT" | "JOIN" | "LEAVE";
 }
 
 export interface WebSocketError {
@@ -141,7 +131,7 @@ export const useChatWebSocket = () => {
 
     console.log(`📡 Subscribing to channel: ${channelId}`);
     const subscription = clientRef.current.subscribe(
-      `/topic/channel`,
+      `/topic/channel/${channelId}`,
       (message: IMessage) => {
         try {
           const chatMessage: ChatMessageResponse = JSON.parse(message.body);
