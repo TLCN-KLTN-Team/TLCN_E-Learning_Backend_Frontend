@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 
@@ -43,13 +44,13 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     @Override
-    public ChatMessageResponse createMessage(ChatMessageRequest request) {
+    public ChatMessageResponse createMessage(ChatMessageRequest request, Principal principal) {
         // Validate and get channel
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
         // Get current user
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String userId = principal.getName();
 
         // Find sender participant info
         Participant sender = channel.getParticipants().stream()
@@ -61,7 +62,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         ChatMessage message = ChatMessage.builder()
                 .sender(sender)
                 .channelId(request.getChannelId())
-                .message(request.getMessage())
+                .message(request.getContent())
                 .createdDate(Instant.now())
                 .updatedDate(Instant.now())
                 .build();

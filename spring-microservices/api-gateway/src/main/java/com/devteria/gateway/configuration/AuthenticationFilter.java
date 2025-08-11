@@ -25,6 +25,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerResponse;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -43,6 +44,8 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             "/notification/email/send",
             "/file/media/download/.*",
             "/profile/users/.*",
+            "/server/ws/.*",
+            "/server/ws/info/.*",
     };
 
     @Value("${app.api-prefix}")
@@ -53,28 +56,82 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         log.info("Enter authentication filter....");
 
+        ServerHttpRequest request = exchange.getRequest();
+        log.info("Request URI: " + request.getURI());
+
+        // Bỏ qua preflight request
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod().toString())) {
+            return chain.filter(exchange);
+        }
+
+        // Kiểm tra nếu là WebSocket handshake
+        if (isWebSocketHandshake(request)) {
+            return handleWebSocketAuthentication(exchange, chain);
+        }
+
         if (isPublicEndpoint(exchange.getRequest()))
             return chain.filter(exchange);
 
-        // Get token from authorization header
+        return handleHttpAuthentication(exchange, chain);
+    }
+
+    private Mono<Void> handleHttpAuthentication(ServerWebExchange exchange, GatewayFilterChain chain) {
+        // Logic authentication cũ cho HTTP requests
         List<String> authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
         if (CollectionUtils.isEmpty(authHeader))
             return unauthenticated(exchange.getResponse());
 
         String token = authHeader.getFirst().replace("Bearer ", "");
-        log.info("Token: {}", token);
 
-        return identityService.introspect(token).flatMap(introspectResponse -> {
-            if (introspectResponse.getResult().isValid())
-                return chain.filter(exchange);
-            else
-                return unauthenticated(exchange.getResponse());
-        }).onErrorResume(throwable -> unauthenticated(exchange.getResponse()));
+        return identityService.introspect(token)
+                .timeout(Duration.ofSeconds(5))
+                .flatMap(introspectResponse -> {
+                    if (introspectResponse.getResult().isValid()) {
+                        log.info("HTTP authentication successful. Token: {}", token);
+                        return chain.filter(exchange);
+                    } else {
+                        return unauthenticated(exchange.getResponse());
+                    }
+                })
+                .onErrorResume(throwable -> unauthenticated(exchange.getResponse()));
+    }
+
+    private Mono<Void> handleWebSocketAuthentication(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+
+        // Lấy token từ query parameter cho WebSocket
+        String token = request.getQueryParams().getFirst("token");
+
+        if (token == null || token.isEmpty()) {
+            log.warn("WebSocket connection attempted without token");
+            return unauthenticated(exchange.getResponse());
+        }
+
+        return identityService.introspect(token)
+                .timeout(Duration.ofSeconds(5))
+                .flatMap(introspectResponse -> {
+                    if (introspectResponse.getResult().isValid()) {
+                        log.info("Request path: {}", request.getURI().getPath());
+                        log.info("WebSocket authentication successful. Token: {}", token);
+                        return chain.filter(exchange);
+                    } else {
+                        return unauthenticated(exchange.getResponse());
+                    }
+                })
+                .onErrorResume(throwable -> {
+                    log.error("WebSocket authentication error", throwable);
+                    return unauthenticated(exchange.getResponse());
+                });
     }
 
     @Override
     public int getOrder() {
         return -1;
+    }
+
+    private boolean isWebSocketHandshake(ServerHttpRequest request) {
+        return "websocket".equalsIgnoreCase(request.getHeaders().getFirst("Upgrade")) ||
+                request.getURI().getPath().contains("/ws/");
     }
 
     private boolean isPublicEndpoint(ServerHttpRequest request){
