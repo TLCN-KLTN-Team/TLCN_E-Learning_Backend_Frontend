@@ -22,7 +22,7 @@ export interface ChannelResponse {
   id: string;
   participantHash?: string | null;
   channelName: string;
-  participants: Participant[];
+  participants?: Participant[];
   messages?: ChatMessageResponse[] | null;
 }
 
@@ -32,7 +32,7 @@ export interface WorkspaceResponse {
   description: string;
   avatarUrl: string;
   channels: ChannelResponse[];
-  members: Participant[];
+  members?: Participant[];
 }
 
 export interface ChatMessageRequest {
@@ -65,6 +65,15 @@ export const sendMessage = async (
   const response = await axiosInstance.post<ApiResponse<ChatMessageResponse>>(
     `/server/messages/send`,
     request
+  );
+  return response.data.result;
+};
+
+export const getChannel = async (
+  channelId: string
+): Promise<ChannelResponse> => {
+  const response = await axiosInstance.get<ApiResponse<ChannelResponse>>(
+    `/server/channels/${channelId}`
   );
   return response.data.result;
 };
