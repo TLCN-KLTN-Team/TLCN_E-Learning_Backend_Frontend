@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import {
   useChatWebSocket,
   type ChatMessageRequest,
-  type ChatMessageResponse,
   type WebSocketError,
 } from "@/hooks/useChatWebSocket";
+import type { ChatMessageResponse } from "@/services/api/workspaceApi";
 
 interface SafeChatWebSocketReturn {
   isConnected: boolean;
