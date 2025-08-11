@@ -8,14 +8,18 @@ import {
   ShoppingCart,
   BookOpen,
   Bell,
+  BellDot,
+  BellRing,
   CreditCard,
   Globe,
   HelpCircle,
   LogOut,
+  UserCircle,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
-import { getAvartarFromName } from "@/utils/callApiUtils";
+import lightLogo from "@/assets/open-edu-light.png";
+import darkLogo from "@/assets/open-edu-dark.png";
 
 interface MenuItem {
   name: string;
@@ -54,7 +58,6 @@ const Header = () => {
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
-    console.log("User data from Auth Context:", user);
     const handleClickOutside = (event: MouseEvent) => {
       if (
         profileRef.current &&
@@ -124,11 +127,11 @@ const Header = () => {
       items: [
         {
           name: "Thông báo.",
-          icon: Bell,
+          icon: BellRing,
           href: "/notifications",
           badge: "Hơn 9",
         },
-        { name: "Tin nhắn", icon: Bell, href: "/messages", badge: "Hơn 9" },
+        { name: "Tin nhắn", icon: BellDot, href: "/messages", badge: "Hơn 9" },
       ],
     },
     {
@@ -144,7 +147,7 @@ const Header = () => {
           icon: CreditCard,
           href: "/payment-methods",
         },
-        { name: "Thuê bao", icon: CreditCard, href: "/subscriptions" },
+        { name: "Gói đăng ký", icon: CreditCard, href: "/subscriptions" },
         { name: "Ưu đãi Udemy", icon: Settings, href: "/offers" },
         { name: "Lịch sử mua", icon: ShoppingCart, href: "/purchase-history" },
       ],
@@ -152,6 +155,7 @@ const Header = () => {
     {
       section: "Khác",
       items: [
+        { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
         {
           name: "Ngôn ngữ",
           icon: Globe,
@@ -159,7 +163,6 @@ const Header = () => {
           badge: "Tiếng Việt",
         },
         { name: "Hỗ sợ công khai", icon: HelpCircle, href: "/public-profile" },
-        { name: "Chỉnh sửa hồ sơ", icon: User, href: "/edit-profile" },
       ],
     },
   ];
@@ -197,16 +200,12 @@ const Header = () => {
           {/* Logo */}
           <NavLink
             to="/"
-            className="flex items-center max-w-[120px] lg:max-w-[150px] decoration-none no-hover-effect"
+            className="flex items-center max-w-[140px] lg:max-w-[180px] decoration-none no-hover-effect"
           >
             <img
-              src={
-                theme === "dark"
-                  ? "/src/assets/images/logo-light.svg"
-                  : "/src/assets/images/logo.svg"
-              }
-              alt="E-Learning Platform"
-              className="h-6 lg:h-8 w-fit"
+              src={theme === "light" ? darkLogo : lightLogo}
+              alt="OpenEdu - E-Learning Platform"
+              className="h-8 lg:h-10 w-auto max-w-full object-contain"
             />
           </NavLink>
 
@@ -235,13 +234,17 @@ const Header = () => {
                         />
                       </svg>
                     </a>
-                    <div className="absolute left-0 top-full pt-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300 ease-in-out z-50">
-                      <div className="bg-background border border-border shadow-lg rounded-lg p-4 min-w-[200px] whitespace-nowrap">
-                        {item.features.map((feature) => (
+                    <div className="absolute left-0 top-full pt-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300 ease-in-out z-[999]">
+                      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-lg p-3 min-w-[220px] whitespace-nowrap backdrop-blur-sm">
+                        {item.features.map((feature, index) => (
                           <NavLink
                             key={feature.name}
                             to={feature.href}
-                            className="block px-3 py-2 text-sm text-foreground hover:text-bs-primary hover:bg-muted rounded-md transition-colors"
+                            className={`block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200 font-medium ${
+                              index > 0
+                                ? "border-t border-gray-100 dark:border-gray-700"
+                                : ""
+                            }`}
                           >
                             {feature.name}
                           </NavLink>
@@ -261,7 +264,7 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Desktop Actions */}
+          {/* Desktop Actions when responsive*/}
           <div className="hidden lg:flex items-center space-x-4">
             <ThemeToggle />
             {user ? (
@@ -478,9 +481,9 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu when zoom out*/}
         {isMenuOpen && (
-          <div className="lg:hidden bg-background border-t border-border">
+          <div className="lg:hidden bg-background border-t border-border z-[999]">
             <nav className="py-4 space-y-2">
               {navigation.map((item) => (
                 <a
@@ -506,7 +509,7 @@ const Header = () => {
                             className="w-full h-full rounded-full object-cover"
                           />
                         ) : (
-                          getAvartarFromName(user.firstName + user.lastName)
+                          getAvatarInitials(user.firstName, user.lastName)
                         )}
                       </div>
                       <div>
