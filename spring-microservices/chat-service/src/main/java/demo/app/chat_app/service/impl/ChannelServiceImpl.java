@@ -1,6 +1,7 @@
 package demo.app.chat_app.service.impl;
 
 import demo.app.chat_app.dto.request.ChannelCreationRequest;
+import demo.app.chat_app.dto.response.BasicChannelResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.dto.response.ChatMessageResponse;
 import demo.app.chat_app.exception.AppException;
@@ -84,10 +85,46 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     @Override
+    public BasicChannelResponse getBasicChannelById(String channelId) {
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        return BasicChannelResponse.builder()
+                .id(channel.getId())
+                .channelName(channel.getChannelName())
+                .participantHash(channel.getParticipantHash())
+                .build();
+    }
+
+    @Override
+    public List<BasicChannelResponse> getBasicChannels(String workspaceId) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // Verify workspace exists and user has access
+        Workspace workspace = workspaceRepository.findById(workspaceId)
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
+
+        if (!workspace.getOwnerId().equals(userId) && !workspace.hasMember(userId)) {
+            throw new AppException(ErrorCode.INSUFFICIENT_PERMISSIONS);
+        }
+
+        // Get channels where user is participant (more efficient than loading all workspace channels)
+        List<Channel> channels = channelRepository.findByWorkspaceIdAndParticipantUserId(workspaceId, userId);
+
+
+        List<BasicChannelResponse> channelResponse = channels.stream()
+                .map(channelMapper::toBasicChannelResponse)
+                .toList();
+        return channelResponse;
+    }
+
+    @Override
     public ChannelResponse getChannelById(String id) {
-    Channel channel = channelRepository.findById(id)
+        Channel channel = channelRepository.findById(id)
             .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-        return channelMapper.toResponse(channel);
+        ChannelResponse channelResponse = channelMapper.toResponse(channel);
+        List<ChatMessageResponse> messages = chatMessageService.getMessages(channel.getId());
+        channelResponse.setMessages(messages);
+        return channelResponse;
     }
 
     @Override
