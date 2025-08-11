@@ -19,15 +19,15 @@ import java.util.List;
 public class ChatMessageController {
     ChatMessageService chatMessageService;
 
-    @PostMapping("/send")
-    public ApiResponse<ChatMessageResponse> sendMessage(
-            @Valid @RequestBody ChatMessageRequest request) {
-        ChatMessageResponse response = chatMessageService.createMessage(request);
-        return ApiResponse.<ChatMessageResponse>builder()
-                .result(response)
-                .message("Message sent successfully")
-                .build();
-    }
+//    @PostMapping("/send")
+//    public ApiResponse<ChatMessageResponse> sendMessage(
+//            @Valid @RequestBody ChatMessageRequest request) {
+//        ChatMessageResponse response = chatMessageService.createMessage(request);
+//        return ApiResponse.<ChatMessageResponse>builder()
+//                .result(response)
+//                .message("Message sent successfully")
+//                .build();
+//    }
 
     @GetMapping("/{channelId}")
     public ApiResponse<List<ChatMessageResponse>> getMessages(

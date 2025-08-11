@@ -1,5 +1,6 @@
 package demo.app.chat_app.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,28 +13,34 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
+            "/server/ws/**", // WebSocket endpoint từ API Gateway
+            "/server/ws/info/**", // SockJS info endpoint
+            "/ws/**", // WebSocket endpoint trực tiếp
+            "/ws/info/**", // SockJS info endpoint cho direct access
+            "/actuator/health", // Health check endpoint
     };
 
     private final CustomJwtDecoder customJwtDecoder;
-
-    public SecurityConfig(CustomJwtDecoder customJwtDecoder) {
-        this.customJwtDecoder = customJwtDecoder;
-    }
+    private final RequestLoggingFilter requestLoggingFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(request -> request
-                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+        httpSecurity.addFilterBefore(requestLoggingFilter, BasicAuthenticationFilter.class)
+                .authorizeHttpRequests(request -> request
+                .requestMatchers(PUBLIC_ENDPOINTS).permitAll() // Allow all HTTP methods for WebSocket endpoints
                 .anyRequest().authenticated());
 
-        httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
+        httpSecurity.oauth2ResourceServer(oauth2 ->
+                oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customJwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
