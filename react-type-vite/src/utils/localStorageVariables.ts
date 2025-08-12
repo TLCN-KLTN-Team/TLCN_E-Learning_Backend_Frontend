@@ -53,3 +53,17 @@ export const getRefreshTokenExpiryTime = () => {
   }
   return null;
 };
+
+export const getRoles = () => {
+  const authorizationData = localStorage.getItem("authorizationData");
+  if (authorizationData) {
+    try {
+      const parsedData = JSON.parse(authorizationData);
+      return parsedData.roles;
+    } catch (error) {
+      console.error("Error parsing authorizationData:", error);
+      return null;
+    }
+  }
+  return null;
+};
