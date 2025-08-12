@@ -32,7 +32,6 @@ export interface WorkspaceResponse {
   description: string;
   avatarUrl: string;
   channels: ChannelResponse[];
-  members?: Participant[];
 }
 
 export interface ChatMessageRequest {

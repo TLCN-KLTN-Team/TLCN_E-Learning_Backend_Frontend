@@ -8,7 +8,6 @@ import ScrollProgressBar from "./components/ui/ScrollProgressBar";
 import NotFound from "./pages/NotFound";
 import ForgotPasswordPage from "./pages/student/auth/ForgotPasswordPage";
 import WorkspacePage from "./pages/workspace/WorkspacePage";
-import ChatWebSocket from "./pages/workspace/ChatWebSocket";
 import Authenticate from "./pages/student/auth/Authenticate";
 
 function App() {
@@ -29,7 +28,6 @@ function App() {
           <Route path="*" element={<NotFound />} />
 
           <Route path="/workspace" element={<WorkspacePage />} />
-          <Route path="/websocket" element={<ChatWebSocket />} />
         </Routes>
       </AuthProvider>
     </ThemeProvider>
