@@ -15,6 +15,7 @@ import {
   Send,
   PlusCircle,
   MoreHorizontal,
+  FileUser,
 } from "lucide-react";
 
 import InvitePeopleButton from "@/components/student/workspace/InvitePeopleButton";
@@ -31,6 +32,7 @@ import { getAvartarFromName } from "@/utils/callApiUtils";
 import { useSafeChatWebSocket } from "@/hooks/useSafeChatWebSocket";
 import ChatErrorBoundary from "@/components/student/workspace/ChatErrorBoundary";
 import { useAuth } from "@/context/auth-context/useAuth";
+import { getRoles } from "@/utils/localStorageVariables";
 
 const WorkspacePageContent = () => {
   const [workspacesData, setWorkspacesData] =
@@ -51,6 +53,8 @@ const WorkspacePageContent = () => {
 
   const { user } = useAuth();
 
+  const pageSize = 6; // Number of workspaces to lazy load
+
   // Initialize WebSocket chat with safety wrapper
   const {
     isConnected,
@@ -67,14 +71,6 @@ const WorkspacePageContent = () => {
     isInitialized,
     clearError,
   } = useSafeChatWebSocket();
-
-  // Set default channel when workspace changes
-  useEffect(() => {
-    if (selectedWorkspace && selectedWorkspace.channels) {
-      // Set the first channel as default, or null if no channels
-      setSelectedChannel(selectedWorkspace.channels[0] || null);
-    }
-  }, [selectedWorkspace]);
 
   // Load channel messages when channel changes (FIXED - Remove duplicate subscription)
   useEffect(() => {
@@ -153,7 +149,7 @@ const WorkspacePageContent = () => {
     };
 
     // Load initial workspaces with minimal data
-    getWorkspaces(0, 6).then((data) => {
+    getWorkspaces(0, pageSize).then((data) => {
       console.log("Fetched workspaces:", data);
       setWorkspacesData(data);
     });
@@ -172,12 +168,10 @@ const WorkspacePageContent = () => {
     });
 
     if (!newMessage.trim() || !selectedChannel) {
-      console.warn("❌ Cannot send message: missing content or channel");
       return;
     }
 
     if (!isConnected) {
-      console.warn("❌ Cannot send message: WebSocket not connected");
       alert("Kết nối real-time bị mất. Vui lòng thử lại sau.");
       return;
     }
@@ -217,8 +211,8 @@ const WorkspacePageContent = () => {
   const loadMoreWorkspaces = () => {
     if (!workspacesData) return;
 
-    const nextPage = Math.floor(visibleWorkspaceCount / 6);
-    getWorkspaces(nextPage, 6)
+    const nextPage = Math.floor(visibleWorkspaceCount / pageSize);
+    getWorkspaces(nextPage, pageSize)
       .then((data) => {
         // Append new workspaces to existing ones
         setWorkspacesData((prev) =>
@@ -229,7 +223,7 @@ const WorkspacePageContent = () => {
               }
             : data
         );
-        setVisibleWorkspaceCount((prev) => prev + 6);
+        setVisibleWorkspaceCount((prev) => prev + pageSize);
       })
       .catch((error) => {
         console.error("Error loading more workspaces:", error);
@@ -272,7 +266,7 @@ const WorkspacePageContent = () => {
           <div
             key={workspace.id}
             onClick={() => handleWorkspaceSelect(workspace)}
-            className="relative group"
+            className="relative"
           >
             {/* Active indicator */}
             {selectedWorkspace?.id === workspace.id && (
@@ -280,7 +274,7 @@ const WorkspacePageContent = () => {
             )}
 
             <div
-              className={`w-12 h-12 rounded-2xl hover:rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer text-white font-bold text-sm ${
+              className={`w-12 h-12 rounded-2xl hover:rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer text-white font-bold text-sm group relative ${
                 selectedWorkspace?.id === workspace.id ? "rounded-xl" : ""
               }`}
             >
@@ -290,11 +284,11 @@ const WorkspacePageContent = () => {
                   className="w-full h-full rounded-2xl hover:rounded-xl object-cover"
                 />
               )}
-            </div>
 
-            {/* Tooltip */}
-            <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 top-1/2 transform -translate-y-1/2">
-              {workspace.name}
+              {/* Tooltip - chỉ hiện khi hover vào avatar */}
+              <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 top-1/2 transform -translate-y-1/2">
+                {workspace.name}
+              </div>
             </div>
           </div>
         ))}
@@ -313,7 +307,7 @@ const WorkspacePageContent = () => {
         )}
 
         {/* Add Workspace Button (only for teachers) */}
-        {user?.role === "teacher" && (
+        {getRoles().includes("TEACHER") && (
           <div className="w-12 h-12 bg-gray-700 hover:bg-green-600 rounded-2xl hover:rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer group relative">
             <Plus className="w-6 h-6 text-green-400 group-hover:text-white" />
             <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
@@ -342,9 +336,10 @@ const WorkspacePageContent = () => {
                 <div className="font-semibold text-white text-sm">
                   {user?.firstName} {user?.lastName}
                 </div>
-                <div className="text-gray-400 text-xs">
-                  {user?.role === "teacher" ? "Giảng viên" : "Sinh viên"}
-                </div>
+                <span className="text-gray-400 text-md flex items-center">
+                  <FileUser />{" "}
+                  {getRoles().includes("TEACHER") ? "Giảng viên" : "Sinh viên"}
+                </span>
               </div>
               <button
                 className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors text-sm"
@@ -508,13 +503,13 @@ const WorkspacePageContent = () => {
                         </div>
                       </div>
                       <h1 className="text-3xl font-bold text-white mb-2">
-                        Welcome to #{selectedChannel.channelName}!
+                        Welcome to #{selectedChannel.channelName} !
                       </h1>
                       <p className="text-gray-300 mb-4">
                         This is the start of the #{selectedChannel.channelName}{" "}
                         channel.
                       </p>
-                      {user?.role === "teacher" && (
+                      {getRoles().includes("TEACHER") && (
                         <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
                           <Edit className="w-4 h-4 mr-1" />
                           Edit Channel
