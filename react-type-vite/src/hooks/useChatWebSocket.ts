@@ -1,4 +1,4 @@
-import { getAccessToken } from "@/services/shared/localStorageVariables";
+import { getAccessToken } from "@/utils/localStorageVariables";
 import { Client, type IMessage } from "@stomp/stompjs";
 import { useRef, useState, useCallback } from "react";
 import SockJS from "sockjs-client";

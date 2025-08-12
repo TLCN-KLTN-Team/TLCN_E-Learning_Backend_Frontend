@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useAuth } from "../../../context/auth-context/useAuth";
 import axiosInstance from "../../../services/shared/axiosInstance";
 
 const Authenticate = () => {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Animate progress bar với tốc độ chậm hơn để phù hợp với thời gian xử lý
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           return 100;
         }
-        // Tăng progress chậm hơn để phù hợp với thời gian đợi
-        const increment = Math.random() * 4 + 1; // Random từ 1-5 (chậm hơn)
-        return Math.min(prev + increment, 90); // Giới hạn ở 90% cho đến khi hoàn thành
+        const increment = Math.random() * 4 + 1;
+        return Math.min(prev + increment, 90);
       });
     }, 300); // Tăng interval lên 300ms
 
@@ -37,50 +33,12 @@ const Authenticate = () => {
             }
           });
         }
-
-        // Tăng delay để đảm bảo Google redirect hoàn toàn
         await new Promise((resolve) => setTimeout(resolve, 1500));
-
         // Retry logic để đợi authorization code từ URL
-        let code = null;
-        let retryCount = 0;
-        const maxRetries = 10;
-
-        while (!code && retryCount < maxRetries) {
-          const urlParams = new URLSearchParams(window.location.search);
-          code = urlParams.get("code");
-
-          if (!code) {
-            console.log(
-              `Retry ${
-                retryCount + 1
-              }/${maxRetries}: Waiting for authorization code...`
-            );
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            retryCount++;
-          }
-        }
-
-        console.log("Current URL:", window.location.href);
-        console.log("Authorization code from URL:", code);
-
-        if (!code) {
-          throw new Error(
-            "Không tìm thấy mã xác thực từ Google sau nhiều lần thử. Vui lòng thử đăng nhập lại."
-          );
-        }
-
-        console.log("Making authentication request to backend with axios...");
+        const code = new URLSearchParams(window.location.search).get("code");
 
         const response = await axiosInstance.post(
-          `/identity/auth/outbound/authenticate?code=${code}`,
-          {},
-          {
-            timeout: 30000, // 30 giây timeout
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+          `/identity/auth/outbound/authenticate?code=${code}`
         );
 
         console.log("Response status:", response.status);
@@ -96,19 +54,12 @@ const Authenticate = () => {
 
           console.log("Refreshing user data...");
           // Refresh user data ngay lập tức để cập nhật AuthContext
-          await refreshUser();
 
           // Set progress bar to 100% khi hoàn thành
           setProgress(100);
           await new Promise((resolve) => setTimeout(resolve, 800));
-
-          console.log("Redirecting to home page...");
-          // Redirect ngay lập tức về trang chủ
-          navigate("/", { replace: true });
-
           // Hiển thị toast thành công ở góc phải màn hình
           setTimeout(() => {
-            console.log("Showing success toast...");
             toast.success("Xác thực Google thành công! 🎉", {
               position: "top-right",
               autoClose: 5000,
@@ -117,15 +68,13 @@ const Authenticate = () => {
               pauseOnHover: true,
               draggable: true,
             });
+            window.location.href = "/";
           }, 300);
         } else {
           throw new Error("Không nhận được access token từ server");
         }
       } catch (err: unknown) {
-        console.error("Authentication error:", err);
-
         let errorMessage = "Đăng nhập Google thất bại. Vui lòng thử lại.";
-
         // Handle axios errors
         if (err && typeof err === "object" && "code" in err) {
           if (err.code === "ECONNABORTED") {
@@ -159,7 +108,7 @@ const Authenticate = () => {
     return () => {
       clearInterval(progressInterval);
     };
-  }, [navigate, refreshUser]);
+  }, [navigate]);
 
   const handleRetry = () => {
     navigate("/login", { replace: true });

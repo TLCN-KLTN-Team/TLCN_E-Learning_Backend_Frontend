@@ -5,10 +5,7 @@ import type { AuthContextType, User, RegisterData } from "./types";
 
 import { getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
-import {
-  getAccessToken,
-  getExpiryTime,
-} from "@/services/shared/localStorageVariables";
+import { getAccessToken, getExpiryTime } from "@/utils/localStorageVariables";
 
 // Define Provider props type
 interface AuthProviderProps {
