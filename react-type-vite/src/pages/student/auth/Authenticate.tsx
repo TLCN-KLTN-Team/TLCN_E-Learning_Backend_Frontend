@@ -41,9 +41,6 @@ const Authenticate = () => {
           `/identity/auth/outbound/authenticate?code=${code}`
         );
 
-        console.log("Response status:", response.status);
-        console.log("Authentication response:", response.data);
-
         if (response.data.result) {
           console.log("Saving authorization data to localStorage...");
           // Lưu authorizationData vào localStorage
@@ -52,24 +49,10 @@ const Authenticate = () => {
             JSON.stringify(response.data.result)
           );
 
-          console.log("Refreshing user data...");
-          // Refresh user data ngay lập tức để cập nhật AuthContext
-
           // Set progress bar to 100% khi hoàn thành
           setProgress(100);
           await new Promise((resolve) => setTimeout(resolve, 800));
-          // Hiển thị toast thành công ở góc phải màn hình
-          setTimeout(() => {
-            toast.success("Xác thực Google thành công! 🎉", {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-            });
-            window.location.href = "/";
-          }, 300);
+          window.location.href = "/";
         } else {
           throw new Error("Không nhận được access token từ server");
         }

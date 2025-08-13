@@ -3,7 +3,6 @@ import type { ApiResponse, PaginatedResponse } from "../shared/apiResponse";
 
 export interface Participant {
   userId: string;
-  username?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   avatarUrl?: string | null;

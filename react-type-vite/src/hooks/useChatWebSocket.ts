@@ -67,18 +67,18 @@ export const useChatWebSocket = () => {
         isConnectingRef.current = false;
 
         // Add user to WebSocket session using correct destination
-        if (user?.username) {
-          stompClient.publish({
-            destination: "/app/chat.addUser",
-            body: JSON.stringify({
-              sender: user.username,
-              type: "JOIN",
-            }),
-            headers: {
-              "content-type": "application/json",
-            },
-          });
-        }
+        // if (user?.username) {
+        //   stompClient.publish({
+        //     destination: "/app/chat.addUser",
+        //     body: JSON.stringify({
+        //       sender: user.username,
+        //       type: "JOIN",
+        //     }),
+        //     headers: {
+        //       "content-type": "application/json",
+        //     },
+        //   });
+        // }
       },
       onDisconnect: () => {
         console.log("❌ Disconnected from WebSocket");
@@ -131,7 +131,7 @@ export const useChatWebSocket = () => {
 
     console.log(`📡 Subscribing to channel: ${channelId}`);
     const subscription = clientRef.current.subscribe(
-      `/topic/channel/${channelId}`,
+      `/topic/channel.${channelId}`,
       (message: IMessage) => {
         try {
           const chatMessage: ChatMessageResponse = JSON.parse(message.body);
