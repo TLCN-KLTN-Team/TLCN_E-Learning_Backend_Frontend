@@ -205,7 +205,7 @@ const Header = () => {
             <img
               src={theme === "light" ? darkLogo : lightLogo}
               alt="OpenEdu - E-Learning Platform"
-              className="h-8 lg:h-10 w-auto max-w-full object-contain"
+              className="h-6 lg:h-8 w-auto max-w-full object-contain"
             />
           </NavLink>
 
