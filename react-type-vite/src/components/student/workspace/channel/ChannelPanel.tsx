@@ -1,0 +1,73 @@
+import { useState } from "react";
+import type {
+  WorkspaceResponse,
+  ChannelResponse,
+} from "@/services/api/workspaceApi";
+import ChannelList from "./ChannelList";
+import InvitePeopleButton from "@/components/student/workspace/InvitePeopleButton";
+import InvitePeopleModal from "@/components/student/workspace/InvitePeopleModal";
+
+interface ChannelPanelProps {
+  selectedWorkspace: WorkspaceResponse | null;
+  selectedChannel: ChannelResponse | null;
+  onChannelSelect: (channel: ChannelResponse) => void;
+}
+
+const ChannelPanel = ({
+  selectedWorkspace,
+  selectedChannel,
+  onChannelSelect,
+}: ChannelPanelProps) => {
+  const [showInviteModal, setShowInviteModal] = useState(false);
+
+  return (
+    <>
+      <div className="w-64 bg-gray-900 flex flex-col border-l border-gray-200">
+        {/* Server Name Header */}
+        <div className="p-4 border-b border-gray-600 flex items-center justify-between">
+          <h2 className="text-white font-semibold">
+            {selectedWorkspace?.name || "Chọn workspace"}
+          </h2>
+          <button className="text-gray-400 hover:text-white">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Channels */}
+        {selectedWorkspace && (
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-2">
+              {/* Text Channels */}
+              <ChannelList
+                channels={selectedWorkspace.channels || []}
+                selectedChannel={selectedChannel}
+                onChannelSelect={onChannelSelect}
+              />
+
+              {/* Invite People Button */}
+              <div className="mt-4 px-2">
+                <InvitePeopleButton onClick={() => setShowInviteModal(true)} />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Invite People Modal */}
+      <InvitePeopleModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        workspaceName={selectedWorkspace?.name || ""}
+        channelName={selectedChannel?.channelName || "general"}
+      />
+    </>
+  );
+};
+
+export default ChannelPanel;
