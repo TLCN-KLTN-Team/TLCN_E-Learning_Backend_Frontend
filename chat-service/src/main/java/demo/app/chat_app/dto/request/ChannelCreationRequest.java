@@ -15,5 +15,5 @@ public class ChannelCreationRequest {
     String workspaceId;
     String name;
     String description;
-    List<Participant> members;
+    List<String> memberIds;
 }
