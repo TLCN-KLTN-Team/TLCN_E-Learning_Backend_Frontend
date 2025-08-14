@@ -1,8 +1,17 @@
 import axiosInstance from "../shared/axiosInstance";
 import type { ApiResponse, PaginatedResponse } from "../shared/apiResponse";
 
+export interface UserResponse {
+  id: string;
+  firstName: string;
+  lastName: string;
+  mssv: string;
+  avatarUrl?: string | null;
+}
+
 export interface Participant {
   userId: string;
+  mssv: string;
   firstName?: string | null;
   lastName?: string | null;
   avatarUrl?: string | null;
@@ -23,6 +32,13 @@ export interface ChannelResponse {
   channelName: string;
   participants?: Participant[];
   messages?: ChatMessageResponse[] | null;
+}
+
+export interface CreateChannelRequest {
+  workspaceId: string;
+  name: string;
+  description?: string;
+  members?: Participant[];
 }
 
 export interface WorkspaceResponse {
@@ -72,6 +88,25 @@ export const getChannel = async (
 ): Promise<ChannelResponse> => {
   const response = await axiosInstance.get<ApiResponse<ChannelResponse>>(
     `/server/channels/${channelId}`
+  );
+  return response.data.result;
+};
+
+export const getStudentsByMSSV = async (
+  mssv: string
+): Promise<UserResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<UserResponse[]>>(
+    `/identity/users/students?mssv=${mssv}`
+  );
+  return response.data.result;
+};
+
+export const createChannel = async (
+  request: CreateChannelRequest
+): Promise<ChannelResponse> => {
+  const response = await axiosInstance.post<ApiResponse<ChannelResponse>>(
+    `/server/channels/create`,
+    request
   );
   return response.data.result;
 };
