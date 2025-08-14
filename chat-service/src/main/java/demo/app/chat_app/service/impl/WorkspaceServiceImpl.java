@@ -154,12 +154,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 .map(workspaceMapper::toResponse)
                 .toList();
 
-        responses.stream()
-                .forEach(response -> {
-                    List<BasicChannelResponse> channels = channelService.getBasicChannels(response.getId());
-                    response.setChannels(channels);
-                });
-
         return PageResponse.<WorkspaceResponse>builder()
                 .content(responses)
                 .pageNumber(workspaces.getNumber())

@@ -4,6 +4,7 @@ import demo.app.chat_app.dto.request.ChannelCreationRequest;
 import demo.app.chat_app.dto.response.BasicChannelResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.dto.response.ChatMessageResponse;
+import demo.app.chat_app.dto.response.UserProfileResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChannelMapper;
@@ -24,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,11 +47,6 @@ public class ChannelServiceImpl implements ChannelService {
         // Verify workspace exists and user has permission
         Workspace workspace = workspaceRepository.findById(request.getWorkspaceId())
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
-                
-        // Check if user is owner or member of workspace
-        if (!workspace.getOwnerId().equals(userId) && !workspace.hasMember(userId)) {
-            throw new AppException(ErrorCode.INSUFFICIENT_PERMISSIONS);
-        }
 
         // Check if channel name already exists in workspace
         Optional<Channel> existingChannel = channelRepository
@@ -58,20 +55,18 @@ public class ChannelServiceImpl implements ChannelService {
             throw new AppException(ErrorCode.CHANNEL_ALREADY_EXISTS);
         }
 
-        List<Participant> participants = request.getMemberIds().stream()
-                .map(memberId -> {
-                    var userResponse = getUserClient.getUser(memberId);
-                    if (userResponse.getResult() == null) {
+        List<Participant> participants = new ArrayList<>();
+
+        request.getMemberIds().stream()
+                .forEach(memberId -> {
+                    UserProfileResponse user = getUserClient.getUser(memberId).getResult();
+                    if (user == null) {
                         throw new AppException(ErrorCode.USER_NOT_EXISTED);
                     }
-                    return Participant.builder()
-                            .userId(userResponse.getResult().getId())
-                            .firstName(userResponse.getResult().getFirstName())
-                            .lastName(userResponse.getResult().getLastName())
-                            .mssv(userResponse.getResult().getMssv())
-                            .avatarUrl(userResponse.getResult().getAvatar())
-                            .build();
-                }).toList();
+                    participants.add(toParticipant(user));
+                });
+        Participant creator = toParticipant(getUserClient.getUser(userId).getResult());
+        participants.add(creator);
 
         Channel channel = Channel.builder()
                 .channelName(request.getName())
@@ -89,6 +84,16 @@ public class ChannelServiceImpl implements ChannelService {
         workspaceRepository.save(workspace);
 
         return channelMapper.toBasicChannelResponse(channel);
+    }
+
+    private Participant toParticipant(UserProfileResponse user) {
+        return Participant.builder()
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .mssv(user.getMssv())
+                .avatarUrl(user.getAvatar())
+                .build();
     }
 
     @Override
