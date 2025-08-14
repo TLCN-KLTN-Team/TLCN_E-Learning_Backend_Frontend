@@ -35,9 +35,6 @@ public class Channel {
     @Indexed
     String workspaceId; // ID of the workspace this channel belongs to
     
-    // Remove embedded messages - store separately for better performance
-    // List<ChatMessage> messages;
-    
     List<Participant> participants; // List of participants in the channel
 
     @CreatedDate

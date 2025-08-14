@@ -1,11 +1,16 @@
-import { useState } from "react";
-import type {
-  WorkspaceResponse,
-  ChannelResponse,
-} from "@/services/api/workspaceApi";
+import { useEffect, useState } from "react";
+import type { WorkspaceResponse } from "@/services/api/workspaceApi";
 import ChannelList from "./ChannelList";
-import InvitePeopleButton from "@/components/student/workspace/InvitePeopleButton";
-import InvitePeopleModal from "@/components/student/workspace/InvitePeopleModal";
+import InvitePeopleButton from "@/components/student/workspace/channel/InvitePeopleButton";
+import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
+import { PackagePlus } from "lucide-react";
+import AddChannelModal from "./AddChannelModal";
+import {
+  getBasicChannelsByWorkspaceId,
+  type BasicChannelResponse,
+  type ChannelResponse,
+} from "@/services/api/channelApi";
+import { toast } from "react-toastify";
 
 interface ChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;
@@ -19,6 +24,45 @@ const ChannelPanel = ({
   onChannelSelect,
 }: ChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAddChannel, setShowAddChannel] = useState(false);
+  const [channels, setChannels] = useState<BasicChannelResponse[]>([]);
+
+  // Function to handle new channel creation
+  const handleChannelCreated = (newChannel: ChannelResponse) => {
+    // Convert ChannelResponse to BasicChannelResponse format
+    const basicChannel: BasicChannelResponse = {
+      id: newChannel.id,
+      channelName: newChannel.channelName,
+      participantHash: newChannel.participantHash || null,
+    };
+    
+    // Add new channel to the list
+    setChannels(prevChannels => [...prevChannels, basicChannel]);
+    
+    // Note: We could auto-select the new channel here if desired:
+    // onChannelSelect(newChannel);
+  };
+
+  useEffect(() => {
+    if (selectedWorkspace) {
+      // Fetch channels from workspaceId
+      const fetchChannels = async () => {
+        try {
+          const chennelsData: BasicChannelResponse[] =
+            await getBasicChannelsByWorkspaceId(selectedWorkspace.id);
+          if (chennelsData) {
+            console.log("Fetched channels:", chennelsData);
+            setChannels(chennelsData);
+          } else {
+            setChannels([]);
+          }
+        } catch (error) {
+          toast.error("Không thể tải kênh " + error);
+        }
+      };
+      fetchChannels();
+    }
+  }, [selectedWorkspace]);
 
   return (
     <>
@@ -45,13 +89,24 @@ const ChannelPanel = ({
             <div className="p-2">
               {/* Text Channels */}
               <ChannelList
-                channels={selectedWorkspace.channels || []}
+                channels={channels || []}
                 selectedChannel={selectedChannel}
                 onChannelSelect={onChannelSelect}
               />
 
+              {/* Add Channel Button */}
+              <div className="px-2 my-2">
+                <button
+                  className="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded-lg px-4 py-2 transition-colors"
+                  onClick={() => setShowAddChannel(true)}
+                >
+                  <PackagePlus className="w-4 h-4 mr-2" />
+                  <span className="text-sm">Thêm kênh</span>
+                </button>
+              </div>
+
               {/* Invite People Button */}
-              <div className="mt-4 px-2">
+              <div className="px-2">
                 <InvitePeopleButton onClick={() => setShowInviteModal(true)} />
               </div>
             </div>
@@ -65,6 +120,14 @@ const ChannelPanel = ({
         onClose={() => setShowInviteModal(false)}
         workspaceName={selectedWorkspace?.name || ""}
         channelName={selectedChannel?.channelName || "general"}
+      />
+
+      {/* Add Channel Modal */}
+      <AddChannelModal
+        isOpen={showAddChannel}
+        onClose={() => setShowAddChannel(false)}
+        workspace={selectedWorkspace}
+        onChannelCreated={handleChannelCreated}
       />
     </>
   );
