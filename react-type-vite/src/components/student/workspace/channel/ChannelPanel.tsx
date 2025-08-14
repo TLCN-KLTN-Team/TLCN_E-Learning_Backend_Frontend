@@ -4,8 +4,10 @@ import type {
   ChannelResponse,
 } from "@/services/api/workspaceApi";
 import ChannelList from "./ChannelList";
-import InvitePeopleButton from "@/components/student/workspace/InvitePeopleButton";
-import InvitePeopleModal from "@/components/student/workspace/InvitePeopleModal";
+import InvitePeopleButton from "@/components/student/workspace/channel/InvitePeopleButton";
+import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
+import { PackagePlus } from "lucide-react";
+import AddChannelModal from "./AddChannelModal";
 
 interface ChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;
@@ -19,6 +21,21 @@ const ChannelPanel = ({
   onChannelSelect,
 }: ChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAddChannel, setShowAddChannel] = useState(false);
+
+  const handleCreateChannel = (channelData: {
+    name: string;
+    type: "text" | "voice" | "forum";
+    isPrivate: boolean;
+  }) => {
+    // TODO: Implement API call to create channel
+    console.log("Creating channel:", channelData);
+
+    // For now, just show success message
+    alert(
+      `Channel "${channelData.name}" (${channelData.type}) được tạo thành công!`
+    );
+  };
 
   return (
     <>
@@ -50,8 +67,19 @@ const ChannelPanel = ({
                 onChannelSelect={onChannelSelect}
               />
 
+              {/* Add Channel Button */}
+              <div className="px-2 my-2">
+                <button
+                  className="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded-lg px-4 py-2 transition-colors"
+                  onClick={() => setShowAddChannel(true)}
+                >
+                  <PackagePlus className="w-4 h-4 mr-2" />
+                  <span className="text-sm">Thêm kênh</span>
+                </button>
+              </div>
+
               {/* Invite People Button */}
-              <div className="mt-4 px-2">
+              <div className="px-2">
                 <InvitePeopleButton onClick={() => setShowInviteModal(true)} />
               </div>
             </div>
@@ -65,6 +93,13 @@ const ChannelPanel = ({
         onClose={() => setShowInviteModal(false)}
         workspaceName={selectedWorkspace?.name || ""}
         channelName={selectedChannel?.channelName || "general"}
+      />
+
+      {/* Add Channel Modal */}
+      <AddChannelModal
+        isOpen={showAddChannel}
+        onClose={() => setShowAddChannel(false)}
+        onCreateChannel={handleCreateChannel}
       />
     </>
   );

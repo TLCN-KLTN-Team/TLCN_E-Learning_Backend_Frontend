@@ -46,7 +46,7 @@ const WorkspaceList = ({
             )}
 
             {/* Tooltip */}
-            <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 top-1/2 transform -translate-y-1/2">
+            <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap top-1/2 transform -translate-y-1/2 pointer-events-none z-50">
               {workspace.name}
             </div>
           </div>
@@ -60,7 +60,7 @@ const WorkspaceList = ({
           className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-2xl hover:rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer group relative"
         >
           <MoreHorizontal className="w-5 h-5 text-gray-400 group-hover:text-white" />
-          <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+          <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
             Xem thêm workspaces
           </div>
         </div>
@@ -70,7 +70,7 @@ const WorkspaceList = ({
       {getRoles().includes("TEACHER") && (
         <div className="w-12 h-12 bg-gray-700 hover:bg-green-600 rounded-2xl hover:rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer group relative">
           <Plus className="w-6 h-6 text-green-400 group-hover:text-white" />
-          <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+          <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
             Thêm workspace
           </div>
         </div>

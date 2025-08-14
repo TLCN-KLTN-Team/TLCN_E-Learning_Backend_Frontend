@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PlusCircle, File, Gift, Smile, Send } from "lucide-react";
+import { PlusCircle, File, Gift, Smile, Send, ImagePlus } from "lucide-react";
 import type {
   ChannelResponse,
   ChatMessageResponse,
@@ -53,13 +53,6 @@ const MessageInput = ({
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
           <button
             className="text-gray-400 hover:text-white"
-            title="Upload file"
-            disabled={!isConnected}
-          >
-            <File className="w-5 h-5" />
-          </button>
-          <button
-            className="text-gray-400 hover:text-white"
             title="GIF"
             disabled={!isConnected}
           >
@@ -71,6 +64,20 @@ const MessageInput = ({
             disabled={!isConnected}
           >
             <Smile className="w-5 h-5" />
+          </button>
+          <button
+            className="text-gray-400 hover:text-white"
+            title="Upload file"
+            disabled={!isConnected}
+          >
+            <File className="w-5 h-5" />
+          </button>
+          <button
+            className="text-gray-400 hover:text-white"
+            title="Upload image"
+            disabled={!isConnected}
+          >
+            <ImagePlus className="w-5 h-5" />
           </button>
           <button
             onClick={handleSendMessage}
