@@ -1,15 +1,13 @@
 package demo.app.chat_app.controller;
 
+import demo.app.chat_app.dto.request.ChannelCreationRequest;
 import demo.app.chat_app.dto.response.ApiResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.service.ChannelService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,5 +34,49 @@ public class ChannelController {
                 .result(channels)
                 .message("Channels retrieved successfully")
                 .build();
+    }
+
+    @PostMapping("/create")
+    public ApiResponse<ChannelResponse> createChannel(@RequestBody ChannelCreationRequest request){
+        try{
+            ChannelResponse channelResponse = channelService.createChannel(request);
+            return ApiResponse.<ChannelResponse>builder()
+                    .result(channelResponse)
+                    .message("Channel created successfully")
+                    .build();
+        }catch (Exception e){
+            return ApiResponse.<ChannelResponse>builder()
+                    .message("Failed to create channel: " + e.getMessage())
+                    .build();
+        }
+    }
+    @PutMapping("/update/{channelId}")
+    public ApiResponse<ChannelResponse> updateChannel(@RequestBody ChannelCreationRequest request,
+                                                      @PathVariable String channelId){
+        try{
+            ChannelResponse channelResponse = channelService.updateChannel(channelId, request);
+            return ApiResponse.<ChannelResponse>builder()
+                    .result(channelResponse)
+                    .message("Channel updated successfully")
+                    .build();
+        }catch (Exception e){
+            return ApiResponse.<ChannelResponse>builder()
+                    .message("Failed to update channel: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @DeleteMapping("/delete/{channelId}")
+    public ApiResponse<Void> deleteChannel(@PathVariable String channelId) {
+        try {
+            channelService.deleteChannel(channelId);
+            return ApiResponse.<Void>builder()
+                    .message("Channel deleted successfully")
+                    .build();
+        } catch (Exception e) {
+            return ApiResponse.<Void>builder()
+                    .message("Failed to delete channel: " + e.getMessage())
+                    .build();
+        }
     }
 }
