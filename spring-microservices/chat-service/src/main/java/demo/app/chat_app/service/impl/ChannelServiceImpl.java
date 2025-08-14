@@ -142,7 +142,6 @@ public class ChannelServiceImpl implements ChannelService {
         // Get channels where user is participant (more efficient than loading all workspace channels)
         List<Channel> channels = channelRepository.findByWorkspaceIdAndParticipantUserId(workspaceId, userId);
 
-        
         List<ChannelResponse> channelResponse = channelMapper.toResponseList(channels);
         channelResponse.stream()
                 .forEach(channel -> {
