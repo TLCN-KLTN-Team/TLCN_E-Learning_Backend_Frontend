@@ -41,7 +41,6 @@ export const useWorkspace = () => {
       );
       const channelToSelect = generalChannel || selectedWorkspace.channels[0];
 
-      console.log("Auto-selecting channel:", channelToSelect.channelName);
       setSelectedChannel(channelToSelect);
     } else {
       setSelectedChannel(null);

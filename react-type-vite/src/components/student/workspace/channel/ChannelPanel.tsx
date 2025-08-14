@@ -23,20 +23,6 @@ const ChannelPanel = ({
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddChannel, setShowAddChannel] = useState(false);
 
-  const handleCreateChannel = (channelData: {
-    name: string;
-    type: "text" | "voice" | "forum";
-    isPrivate: boolean;
-  }) => {
-    // TODO: Implement API call to create channel
-    console.log("Creating channel:", channelData);
-
-    // For now, just show success message
-    alert(
-      `Channel "${channelData.name}" (${channelData.type}) được tạo thành công!`
-    );
-  };
-
   return (
     <>
       <div className="w-64 bg-gray-900 flex flex-col border-l border-gray-200">
@@ -99,7 +85,7 @@ const ChannelPanel = ({
       <AddChannelModal
         isOpen={showAddChannel}
         onClose={() => setShowAddChannel(false)}
-        onCreateChannel={handleCreateChannel}
+        workspace={selectedWorkspace}
       />
     </>
   );

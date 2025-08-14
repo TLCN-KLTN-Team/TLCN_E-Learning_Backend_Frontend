@@ -92,13 +92,7 @@ const AddChannelModal = ({
           workspaceId: workspace?.id || "",
           description: channelDescription.trim(),
           name: channelName.trim(),
-          members: selectedStudents.map((student) => ({
-            userId: student.id,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            mssv: student.mssv,
-            avatarUrl: student.avatarUrl || null,
-          })),
+          memberIds: selectedStudents.map((student) => student.id),
         });
 
         if (newChannel) {
