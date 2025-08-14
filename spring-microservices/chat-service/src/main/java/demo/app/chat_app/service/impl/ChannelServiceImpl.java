@@ -8,10 +8,13 @@ import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChannelMapper;
 import demo.app.chat_app.model.Channel;
+import demo.app.chat_app.model.Participant;
 import demo.app.chat_app.model.Workspace;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
+import demo.app.chat_app.repository.httpclient.GetListUsersClient;
+import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.ChannelService;
 import demo.app.chat_app.service.ChatMessageService;
 import lombok.AccessLevel;
@@ -32,9 +35,11 @@ public class ChannelServiceImpl implements ChannelService {
     ChannelRepository channelRepository;
     ChannelMapper channelMapper;
     ChatMessageService chatMessageService;
+    private final GetUserClient getUserClient;
+    private final GetListUsersClient getListUsersClient;
 
     @Override
-    public ChannelResponse createChannel(ChannelCreationRequest request) {
+    public BasicChannelResponse createChannel(ChannelCreationRequest request) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         
         // Verify workspace exists and user has permission
@@ -53,11 +58,26 @@ public class ChannelServiceImpl implements ChannelService {
             throw new AppException(ErrorCode.CHANNEL_ALREADY_EXISTS);
         }
 
+        List<Participant> participants = request.getMemberIds().stream()
+                .map(memberId -> {
+                    var userResponse = getUserClient.getUser(memberId);
+                    if (userResponse.getResult() == null) {
+                        throw new AppException(ErrorCode.USER_NOT_EXISTED);
+                    }
+                    return Participant.builder()
+                            .userId(userResponse.getResult().getId())
+                            .firstName(userResponse.getResult().getFirstName())
+                            .lastName(userResponse.getResult().getLastName())
+                            .mssv(userResponse.getResult().getMssv())
+                            .avatarUrl(userResponse.getResult().getAvatar())
+                            .build();
+                }).toList();
+
         Channel channel = Channel.builder()
                 .channelName(request.getName())
                 .description(request.getDescription())
                 .workspaceId(request.getWorkspaceId())
-                .participants(workspace.getMembers()) // Initialize with all workspace members
+                .participants(participants)
                 .createdAt(Instant.now())
                 .build();
 
@@ -68,7 +88,7 @@ public class ChannelServiceImpl implements ChannelService {
         workspace.setUpdatedAt(Instant.now());
         workspaceRepository.save(workspace);
 
-        return channelMapper.toResponse(channel);
+        return channelMapper.toBasicChannelResponse(channel);
     }
 
     @Override

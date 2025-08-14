@@ -2,6 +2,7 @@ package demo.app.chat_app.controller;
 
 import demo.app.chat_app.dto.request.ChannelCreationRequest;
 import demo.app.chat_app.dto.response.ApiResponse;
+import demo.app.chat_app.dto.response.BasicChannelResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.service.ChannelService;
 import lombok.AccessLevel;
@@ -37,19 +38,20 @@ public class ChannelController {
     }
 
     @PostMapping("/create")
-    public ApiResponse<ChannelResponse> createChannel(@RequestBody ChannelCreationRequest request){
+    public ApiResponse<BasicChannelResponse> createChannel(@RequestBody ChannelCreationRequest request){
         try{
-            ChannelResponse channelResponse = channelService.createChannel(request);
-            return ApiResponse.<ChannelResponse>builder()
+            BasicChannelResponse channelResponse = channelService.createChannel(request);
+            return ApiResponse.<BasicChannelResponse>builder()
                     .result(channelResponse)
                     .message("Channel created successfully")
                     .build();
         }catch (Exception e){
-            return ApiResponse.<ChannelResponse>builder()
+            return ApiResponse.<BasicChannelResponse>builder()
                     .message("Failed to create channel: " + e.getMessage())
                     .build();
         }
     }
+
     @PutMapping("/update/{channelId}")
     public ApiResponse<ChannelResponse> updateChannel(@RequestBody ChannelCreationRequest request,
                                                       @PathVariable String channelId){
@@ -78,5 +80,14 @@ public class ChannelController {
                     .message("Failed to delete channel: " + e.getMessage())
                     .build();
         }
+    }
+
+    @GetMapping("/basic/{workspaceId}")
+    public ApiResponse<List<BasicChannelResponse>> getBasicChannelsByWorkspace(@PathVariable String workspaceId) {
+        List<BasicChannelResponse> channels = channelService.getBasicChannels(workspaceId);
+        return ApiResponse.<List<BasicChannelResponse>>builder()
+                .result(channels)
+                .message("Basic channels retrieved successfully")
+                .build();
     }
 }
