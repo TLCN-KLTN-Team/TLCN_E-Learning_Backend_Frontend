@@ -1,13 +1,16 @@
-import { useState } from "react";
-import type {
-  WorkspaceResponse,
-  ChannelResponse,
-} from "@/services/api/workspaceApi";
+import { useEffect, useState } from "react";
+import type { WorkspaceResponse } from "@/services/api/workspaceApi";
 import ChannelList from "./ChannelList";
 import InvitePeopleButton from "@/components/student/workspace/channel/InvitePeopleButton";
 import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
 import { PackagePlus } from "lucide-react";
 import AddChannelModal from "./AddChannelModal";
+import {
+  getBasicChannelsByWorkspaceId,
+  type BasicChannelResponse,
+  type ChannelResponse,
+} from "@/services/api/channelApi";
+import { toast } from "react-toastify";
 
 interface ChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;
@@ -22,6 +25,44 @@ const ChannelPanel = ({
 }: ChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddChannel, setShowAddChannel] = useState(false);
+  const [channels, setChannels] = useState<BasicChannelResponse[]>([]);
+
+  // Function to handle new channel creation
+  const handleChannelCreated = (newChannel: ChannelResponse) => {
+    // Convert ChannelResponse to BasicChannelResponse format
+    const basicChannel: BasicChannelResponse = {
+      id: newChannel.id,
+      channelName: newChannel.channelName,
+      participantHash: newChannel.participantHash || null,
+    };
+    
+    // Add new channel to the list
+    setChannels(prevChannels => [...prevChannels, basicChannel]);
+    
+    // Note: We could auto-select the new channel here if desired:
+    // onChannelSelect(newChannel);
+  };
+
+  useEffect(() => {
+    if (selectedWorkspace) {
+      // Fetch channels from workspaceId
+      const fetchChannels = async () => {
+        try {
+          const chennelsData: BasicChannelResponse[] =
+            await getBasicChannelsByWorkspaceId(selectedWorkspace.id);
+          if (chennelsData) {
+            console.log("Fetched channels:", chennelsData);
+            setChannels(chennelsData);
+          } else {
+            setChannels([]);
+          }
+        } catch (error) {
+          toast.error("Không thể tải kênh " + error);
+        }
+      };
+      fetchChannels();
+    }
+  }, [selectedWorkspace]);
 
   return (
     <>
@@ -48,7 +89,7 @@ const ChannelPanel = ({
             <div className="p-2">
               {/* Text Channels */}
               <ChannelList
-                channels={selectedWorkspace.channels || []}
+                channels={channels || []}
                 selectedChannel={selectedChannel}
                 onChannelSelect={onChannelSelect}
               />
@@ -86,6 +127,7 @@ const ChannelPanel = ({
         isOpen={showAddChannel}
         onClose={() => setShowAddChannel(false)}
         workspace={selectedWorkspace}
+        onChannelCreated={handleChannelCreated}
       />
     </>
   );

@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import type {
   WorkspaceResponse,
-  ChannelResponse,
-  ChatMessageResponse,
   Participant,
 } from "@/services/api/workspaceApi";
 import type { PaginatedResponse } from "@/services/shared/apiResponse";
-import { getWorkspaces, getChannel } from "@/services/api/workspaceApi";
+import { getWorkspaces } from "@/services/api/workspaceApi";
+import {
+  getChannel,
+  type ChannelResponse,
+  type ChatMessageResponse,
+} from "@/services/api/channelApi";
 
 export const useWorkspace = () => {
   const [workspacesData, setWorkspacesData] =
@@ -32,20 +35,16 @@ export const useWorkspace = () => {
     });
   }, []);
 
-  // Auto select general channel when workspace changes
-  useEffect(() => {
-    if (selectedWorkspace && selectedWorkspace.channels.length > 0) {
-      // Find general channel first, otherwise use first channel
-      const generalChannel = selectedWorkspace.channels.find(
-        (channel) => channel.channelName.toLowerCase() === "general"
-      );
-      const channelToSelect = generalChannel || selectedWorkspace.channels[0];
+  // // Auto select general channel when workspace changes
+  // useEffect(() => {
+  //   if (selectedWorkspace) {
+  //     // Find general channel first, otherwise use first channel
 
-      setSelectedChannel(channelToSelect);
-    } else {
-      setSelectedChannel(null);
-    }
-  }, [selectedWorkspace]);
+  //     setSelectedChannel(channelToSelect);
+  //   } else {
+  //     setSelectedChannel(null);
+  //   }
+  // }, [selectedWorkspace]);
 
   // Load channel messages when channel changes
   useEffect(() => {
