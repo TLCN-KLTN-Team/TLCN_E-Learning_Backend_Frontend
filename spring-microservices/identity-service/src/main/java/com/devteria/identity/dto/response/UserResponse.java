@@ -19,5 +19,6 @@ public class UserResponse {
     String firstName;
     String lastName;
     String avatarUrl;
+    String mssv;
     Set<RoleResponse> roles;
 }

@@ -29,6 +29,13 @@ public class SecurityConfig {
             "/actuator/health", // Health check endpoint
     };
 
+    private static final String[] SWAGGER_ENDPOINTS = {
+            "/v3/api-docs/**", // Swagger API docs
+            "/swagger-ui/**", // Swagger UI
+            "/swagger-ui.html", // Swagger UI HTML
+            "/webjars/**" // WebJars for Swagger UI
+    };
+
     private final CustomJwtDecoder customJwtDecoder;
     private final RequestLoggingFilter requestLoggingFilter;
 
@@ -36,7 +43,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.addFilterBefore(requestLoggingFilter, BasicAuthenticationFilter.class)
                 .authorizeHttpRequests(request -> request
-                .requestMatchers(PUBLIC_ENDPOINTS).permitAll() // Allow all HTTP methods for WebSocket endpoints
+                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                 .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 ->
