@@ -9,17 +9,19 @@ import {
   UserPlus,
   UserMinus,
 } from "lucide-react";
-import { createChannel, getStudentsByMSSV } from "@/services/api/workspaceApi";
+import { getStudentsByMSSV } from "@/services/api/workspaceApi";
 import type {
-  ChannelResponse,
   UserResponse,
   WorkspaceResponse,
 } from "@/services/api/workspaceApi";
+import { createChannel, type ChannelResponse } from "@/services/api/channelApi";
+import { toast } from "react-toastify";
 
 interface AddChannelModalProps {
   isOpen: boolean;
   onClose: () => void;
   workspace: WorkspaceResponse | null;
+  onChannelCreated?: (newChannel: ChannelResponse) => void;
 }
 
 type ChannelType = "text" | "voice" | "forum";
@@ -28,6 +30,7 @@ const AddChannelModal = ({
   isOpen,
   onClose,
   workspace,
+  onChannelCreated,
 }: AddChannelModalProps) => {
   const [selectedType, setSelectedType] = useState<ChannelType>("text");
   const [channelName, setChannelName] = useState("");
@@ -97,6 +100,16 @@ const AddChannelModal = ({
 
         if (newChannel) {
           console.log("New channel created:", newChannel);
+
+          // Call the callback to update the channel list in parent component
+          if (onChannelCreated) {
+            onChannelCreated(newChannel);
+          }
+
+          // Show success message
+          toast.success(
+            `Channel "${newChannel.channelName}" đã được tạo thành công!`
+          );
         }
 
         // Reset form
@@ -110,7 +123,7 @@ const AddChannelModal = ({
         onClose();
       } catch (error) {
         console.error("Error creating channel:", error);
-        // You can add error handling UI here
+        toast.error("Không thể tạo channel. Vui lòng thử lại!");
       }
     }
   };
