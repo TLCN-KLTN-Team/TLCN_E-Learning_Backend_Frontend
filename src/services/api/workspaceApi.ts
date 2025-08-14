@@ -26,6 +26,12 @@ export interface ChatMessageResponse {
   createdDate: string;
 }
 
+export interface BasicChannelResponse {
+  id: string;
+  channelName: string;
+  participantHash?: string | null;
+}
+
 export interface ChannelResponse {
   id: string;
   participantHash?: string | null;
@@ -38,7 +44,7 @@ export interface CreateChannelRequest {
   workspaceId: string;
   name: string;
   description?: string;
-  members?: Participant[];
+  memberIds?: string[];
 }
 
 export interface WorkspaceResponse {
@@ -71,6 +77,15 @@ export const getWorkspaceById = async (
     `/server/workspaces/${getWorkspaceById}`
   );
   return respoonse.data.result;
+};
+
+export const getBasicChannelByWorkspaceId = async (
+  workspaceId: string
+): Promise<BasicChannelResponse> => {
+  const response = await axiosInstance.get<ApiResponse<BasicChannelResponse>>(
+    `/server/channels/basic/${workspaceId}`
+  );
+  return response.data.result;
 };
 
 export const sendMessage = async (
