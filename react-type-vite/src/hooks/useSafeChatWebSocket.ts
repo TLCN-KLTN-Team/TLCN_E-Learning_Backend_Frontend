@@ -4,7 +4,7 @@ import {
   type ChatMessageRequest,
   type WebSocketError,
 } from "@/hooks/useChatWebSocket";
-import type { ChatMessageResponse } from "@/services/api/workspaceApi";
+import type { ChatMessageResponse } from "@/services/api/channelApi";
 
 interface SafeChatWebSocketReturn {
   isConnected: boolean;
