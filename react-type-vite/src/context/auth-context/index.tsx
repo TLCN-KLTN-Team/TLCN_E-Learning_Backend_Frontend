@@ -104,6 +104,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const checkAuth = (): boolean => {
+    const authorizationData = localStorage.getItem("authorizationData");
+    if (!authorizationData) return false;
+
+    return true; // Nếu có authorizationData, coi như đã xác thực
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated,
@@ -112,6 +119,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     logout,
     register,
     refreshUser,
+    checkAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
