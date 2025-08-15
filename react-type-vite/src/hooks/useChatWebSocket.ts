@@ -3,7 +3,7 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import { useRef, useState, useCallback } from "react";
 import SockJS from "sockjs-client";
 import { useAuth } from "@/context/auth-context/useAuth";
-import type { ChatMessageResponse } from "@/services/api/workspaceApi";
+import type { ChatMessageResponse } from "@/services/api/channelApi";
 
 // Types for WebSocket communication
 export interface ChatMessageRequest {
