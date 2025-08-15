@@ -3,6 +3,7 @@ package demo.app.chat_app.service.impl;
 import demo.app.chat_app.dto.request.ChannelCreationRequest;
 import demo.app.chat_app.dto.request.CreateWorkspacesRequest;
 import demo.app.chat_app.dto.request.WorkspaceCreationRequest;
+import demo.app.chat_app.dto.response.BasicChannelResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.dto.response.PageResponse;
 import demo.app.chat_app.dto.response.WorkspaceResponse;
@@ -96,8 +97,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         workspace = workspaceRepository.save(workspace);
 
         WorkspaceResponse workspaceResponse = workspaceMapper.toResponse(workspace);
-        List<ChannelResponse> channelResponse = channelService.getChannels(workspace.getId());
-        workspaceResponse.setChannels(channelResponse);
         return workspaceResponse;
     }
 
@@ -154,12 +153,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 .stream()
                 .map(workspaceMapper::toResponse)
                 .toList();
-
-        responses.stream()
-                .forEach(response -> {
-                    List<ChannelResponse> channels = channelService.getChannels(response.getId());
-                    response.setChannels(channels);
-                });
 
         return PageResponse.<WorkspaceResponse>builder()
                 .content(responses)

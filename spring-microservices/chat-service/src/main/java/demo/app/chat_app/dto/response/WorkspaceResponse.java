@@ -16,6 +16,4 @@ public class WorkspaceResponse {
     String name;
     String description;
     String avatarUrl;
-    List<ChannelResponse> channels;
-    List<Participant> members;
 }

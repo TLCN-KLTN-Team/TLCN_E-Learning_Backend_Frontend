@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Search, Hash } from "lucide-react";
 
 interface Friend {
@@ -23,6 +23,23 @@ const InvitePeopleModal = ({
 }: InvitePeopleModalProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [inviteLink] = useState("https://discord.gg/ZJsPaNPm");
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   // Mock friends data
   const friends: Friend[] = [
@@ -75,10 +92,17 @@ const InvitePeopleModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray bg-opacity-50 flex items-center justify-center">
-      <div className="bg-gray-800 rounded-lg w-[480px] max-h-[600px] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-[2px] transition-all duration-300"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative bg-gray-900 rounded-lg w-[480px] max-h-[600px] overflow-hidden shadow-2xl border border-gray-700 transform transition-all duration-300 scale-100 z-10">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
           <div>
             <h2 className="text-white font-semibold text-lg">
               Invite friends to {workspaceName}'s server
@@ -90,14 +114,14 @@ const InvitePeopleModal = ({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-gray-700"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-4 bg-gray-900">
           {/* Search */}
           <div className="relative mb-4">
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -106,37 +130,52 @@ const InvitePeopleModal = ({
               placeholder="Search for friends"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-900 text-white placeholder-gray-400 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="w-full pl-10 pr-4 py-2 bg-gray-800 text-white placeholder-gray-400 rounded border border-gray-600 focus:border-blue-500 focus:outline-none transition-colors"
             />
           </div>
 
           {/* Friends List */}
-          <div className="max-h-64 overflow-y-auto mb-6">
-            {filteredFriends.map((friend) => (
-              <div
-                key={friend.id}
-                className="flex items-center justify-between py-2"
-              >
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={friend.avatar}
-                    alt={friend.name}
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <span className="text-white text-sm">{friend.name}</span>
-                </div>
-                <button
-                  onClick={() => handleInviteFriend(friend.id)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm font-medium transition-colors"
-                >
-                  Invite
-                </button>
+          <div className="max-h-64 overflow-y-auto mb-6 bg-gray-800 rounded border border-gray-700">
+            {filteredFriends.length === 0 ? (
+              <div className="p-4 text-center text-gray-400">
+                {searchTerm ? "No friends found" : "No friends to invite"}
               </div>
-            ))}
+            ) : (
+              <div className="p-2">
+                {filteredFriends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    className="flex items-center justify-between py-2 px-2 hover:bg-gray-700 rounded transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <img
+                        src={friend.avatar}
+                        alt={friend.name}
+                        className="w-8 h-8 rounded-full"
+                      />
+                      <div>
+                        <span className="text-white text-sm font-medium">
+                          {friend.name}
+                        </span>
+                        <div className="text-gray-400 text-xs">
+                          @{friend.username}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleInviteFriend(friend.id)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                    >
+                      Invite
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Invite Link Section */}
-          <div>
+          <div className="bg-gray-800 p-4 rounded border border-gray-700">
             <h3 className="text-white font-medium mb-3">
               Or, Send A Server Invite Link To A Friend
             </h3>
@@ -145,7 +184,7 @@ const InvitePeopleModal = ({
                 type="text"
                 value={inviteLink}
                 readOnly
-                className="flex-1 px-3 py-2 bg-gray-900 text-white border border-gray-600 rounded focus:outline-none"
+                className="flex-1 px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none"
               />
               <button
                 onClick={handleCopyLink}

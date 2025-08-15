@@ -5,6 +5,7 @@ import type { AuthContextType, User, RegisterData } from "./types";
 
 import { getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
+import { getAccessToken, getExpiryTime } from "@/utils/localStorageVariables";
 
 // Define Provider props type
 interface AuthProviderProps {
@@ -18,13 +19,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = !!user;
 
   useEffect(() => {
-    const authorizationDataJson = localStorage.getItem("authorizationData");
-    const authorizationData: {
-      accessToken?: string;
-      expiryTime?: number;
-    } = JSON.parse(authorizationDataJson || "{}");
-    const token = authorizationData.accessToken;
-    const tokenExpiry = authorizationData.expiryTime;
+    const token = getAccessToken();
+    const tokenExpiry = getExpiryTime();
 
     if (token && tokenExpiry) {
       // Kiểm tra token có hết hạn không (expiryTime là timestamp)
@@ -72,7 +68,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const logout = (): void => {
     localStorage.clear();
     setUser(null);
-    // navigate("/login"); // Tạm comment để test
   };
 
   const register = async (userData: RegisterData): Promise<void> => {
@@ -90,6 +85,32 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const refreshUser = async (): Promise<void> => {
+    const token = getAccessToken();
+    const tokenExpiry = getExpiryTime();
+
+    if (token && tokenExpiry && Date.now() < tokenExpiry) {
+      setIsLoading(true);
+      try {
+        const fetchedUser = await getMe();
+        setUser(fetchedUser);
+      } catch (error) {
+        console.error("Failed to refresh user data:", error);
+        localStorage.clear();
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const checkAuth = (): boolean => {
+    const authorizationData = localStorage.getItem("authorizationData");
+    if (!authorizationData) return false;
+
+    return true; // Nếu có authorizationData, coi như đã xác thực
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated,
@@ -97,6 +118,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     register,
+    refreshUser,
+    checkAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

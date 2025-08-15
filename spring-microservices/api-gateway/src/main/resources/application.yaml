@@ -22,7 +22,22 @@ spring:
           - Path=${app.api-prefix}/profile/users/**
           filters:
           - StripPrefix=2
-        - id: chat_service
+        # WebSocket route with Upgrade header. when the client requests a WebSocket connection, it will match this route.
+        - id: chat_service_websocket
+          uri: http://localhost:8090
+          predicates:
+            - Path=${app.api-prefix}/server/ws/**
+            - Header=Upgrade,websocket
+          filters:
+            - StripPrefix=2
+        - id: chat_service_sockjs_info
+          uri: http://localhost:8090
+          predicates:
+            - Path=${app.api-prefix}/server/ws/info/**
+          filters:
+            - StripPrefix=2
+        # HTTP route for chat service. This route is used for regular HTTP requests.
+        - id: chat_service_http
           uri: http://localhost:8090
           predicates:
             - Path=${app.api-prefix}/server/**
