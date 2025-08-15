@@ -11,6 +11,7 @@ import WorkspacePage from "./pages/workspace/WorkspacePage";
 import Authenticate from "./pages/student/auth/Authenticate";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import EditProfile from "./pages/student/home/EditProfile";
+import Contact from "./pages/student/home/Contact";
 
 function App() {
   // Khởi tạo token expiry monitoring
@@ -27,6 +28,7 @@ function App() {
           <Route path="/register" element={<AuthPage isLoggin={false} />} />
           <Route path="/auth/callback" element={<Authenticate />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/contact" element={<Contact />} />
 
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>

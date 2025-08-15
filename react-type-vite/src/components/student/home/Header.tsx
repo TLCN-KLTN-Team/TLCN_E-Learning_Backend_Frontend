@@ -6,7 +6,6 @@ import {
   User,
   Settings,
   ShoppingCart,
-  BookOpen,
   BellDot,
   BellRing,
   CreditCard,
@@ -176,7 +175,7 @@ const Header = () => {
       ],
     },
     { name: "Về chúng tôi", href: "#about" },
-    { name: "Liên hệ", href: "#contact" },
+    { name: "Liên hệ", href: "/contact" },
   ];
 
   // const homeNavigation = [
