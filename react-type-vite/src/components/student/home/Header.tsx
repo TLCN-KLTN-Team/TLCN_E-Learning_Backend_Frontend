@@ -113,7 +113,7 @@ const Header = () => {
       section: "Học tập",
       items: [
         { name: "Giỏ hàng của tôi", icon: ShoppingCart, href: "/cart" },
-        { name: "Mong muốn", icon: BookOpen, href: "/wishlist" },
+        { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
         {
           name: "Bảng điều khiển của giảng viên",
           icon: User,
@@ -154,7 +154,6 @@ const Header = () => {
     {
       section: "Khác",
       items: [
-        { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
         {
           name: "Ngôn ngữ",
           icon: Globe,
@@ -167,7 +166,7 @@ const Header = () => {
   ];
 
   const navigation = [
-    { name: "Trang chủ", href: "#home" },
+    { name: "Trang chủ", href: "/" },
     {
       name: "Khóa học",
       href: "#courses",
