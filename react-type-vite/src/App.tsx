@@ -10,6 +10,7 @@ import ForgotPasswordPage from "./pages/student/auth/ForgotPasswordPage";
 import WorkspacePage from "./pages/workspace/WorkspacePage";
 import Authenticate from "./pages/student/auth/Authenticate";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import EditProfile from "./pages/student/home/EditProfile";
 
 function App() {
   // Khởi tạo token expiry monitoring
@@ -30,6 +31,7 @@ function App() {
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/workspace" element={<WorkspacePage />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
             {/* Thêm các protected routes khác ở đây */}
           </Route>
 
