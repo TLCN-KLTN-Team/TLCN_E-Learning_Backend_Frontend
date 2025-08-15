@@ -20,6 +20,7 @@ export interface AuthContextType {
   logout: () => void;
   register: (userData: RegisterData) => Promise<void>;
   refreshUser: () => Promise<void>;
+  checkAuth: () => boolean;
 }
 
 // Define Register data type

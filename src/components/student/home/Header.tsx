@@ -7,7 +7,6 @@ import {
   Settings,
   ShoppingCart,
   BookOpen,
-  Bell,
   BellDot,
   BellRing,
   CreditCard,
