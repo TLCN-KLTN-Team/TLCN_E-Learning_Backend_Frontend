@@ -27,14 +27,16 @@ public class ChatMessage {
     @Indexed
     String channelId; // ID of the channel this message belongs to
 
-    String message;
-    
+    String content;
+
     Participant sender;
 
     @Builder.Default
     MessageType messageType = MessageType.TEXT;
 
-    List<Attachment> attachments; // List of attachments (images, files, etc.)
+    List<MessageAttachment> attachments; // List of attachments (images, files, etc.)
+
+    // add emojis or reactions if needed
 
     @Indexed
     Instant createdDate;
