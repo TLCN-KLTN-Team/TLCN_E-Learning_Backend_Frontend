@@ -23,6 +23,11 @@ public enum ErrorCode {
     CHANNEL_ALREADY_EXISTS(1013, "Channel already exists in workspace", HttpStatus.BAD_REQUEST),
     MESSAGE_NOT_FOUND(1014, "Message not found", HttpStatus.NOT_FOUND),
     INSUFFICIENT_PERMISSIONS(1015, "Insufficient permissions to perform this action", HttpStatus.FORBIDDEN),
+    SEND_MESSAGE_FAILED(1016, "Failed to send message", HttpStatus.INTERNAL_SERVER_ERROR),
+    FILE_SIZE_TOO_LARGE(1017, "File size exceeds the limit or empty", HttpStatus.PAYLOAD_TOO_LARGE),
+    FILE_TYPE_NOT_SUPPORTED(1018, "File type not supported", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    CLOUDINARY_IO_EXCEPTION(1019, "Cloudinary IO exception", HttpStatus.INTERNAL_SERVER_ERROR),
+    CLOUDINARY_UPLOAD_FAILED(1019, "Failed to upload file to Cloudinary", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

@@ -13,6 +13,5 @@ import lombok.experimental.FieldDefaults;
 public class ChatMessageRequest {
     String channelId;
     String content; // Renamed from 'message' to 'content' to match usage
-    String recipientId; // For direct messages
-    String messageType; // TEXT, IMAGE, FILE, etc.
+    // if we have attachments, they handle receive in controller
 }
