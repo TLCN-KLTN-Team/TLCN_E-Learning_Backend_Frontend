@@ -47,6 +47,11 @@ app:
   file:
     max-size: 20971520 # 20MB = 2 * 10 * 1024 * 1024 bytes
 
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+
 server:
   port: 8090
   servlet:
