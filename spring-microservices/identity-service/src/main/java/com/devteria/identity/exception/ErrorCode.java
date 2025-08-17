@@ -47,6 +47,10 @@ public enum ErrorCode {
     FILE_TOO_LARGE(1020, "File size exceeds maximum limit", HttpStatus.BAD_REQUEST),
     INVALID_FILE_FORMAT(1021, "Invalid file format", HttpStatus.BAD_REQUEST),
     FILE_UPLOAD_FAILED(1022, "File upload failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // Teacher related errors
+    TEACHER_EXISTED(1023, "Teacher already exists", HttpStatus.BAD_REQUEST),
+    TEACHER_NOT_EXISTED(1024, "Teacher does not exist", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

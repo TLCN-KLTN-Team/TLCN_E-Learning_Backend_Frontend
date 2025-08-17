@@ -1,2 +1,18 @@
-package com.devteria.identity.dto.request;public class TeacherUpdateRequest {
+package com.devteria.identity.dto.request;
+
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class TeacherUpdateRequest {
+    String teacherId;
+    String departmentId;
+    String educationalUnitId;
+    String description;
+    String socialUrl;
+    String bankAccountNumber;
 }

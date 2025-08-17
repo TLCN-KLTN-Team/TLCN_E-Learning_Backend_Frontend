@@ -32,7 +32,11 @@ public class AuthenticationController {
 
     @PostMapping("/token")
     ApiResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
+        System.out.println("📥 Received authentication request:");
+        System.out.println("Email: " + request.getUsername());
+        System.out.println("Password: " + request.getPassword());
         var result = authenticationService.authenticate(request);
+        System.out.println ("Ket qua: " + result.getAccessToken() + " " + result.getRoles() + " " + result.getRefreshToken() + " " + result.getExpiryTime() + " " + result.getRefreshExpiryTime());
         return ApiResponse.<AuthenticationResponse>builder().result(result).build();
     }
 

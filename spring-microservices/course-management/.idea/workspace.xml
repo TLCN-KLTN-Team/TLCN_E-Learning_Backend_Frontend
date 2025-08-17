@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="0912f276-795b-457c-857b-483c01cf7216" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../course-management.zip" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/src/main/java/com/hoangphihiep/CourseManagementApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/src/main/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/course-management/src/test/java/com/hoangphihiep/CourseManagementApplicationTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../react-type-vite/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../react-type-vite/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../react-type-vite/src/components/admin/admin-dashboard.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../react-type-vite/src/context/auth-context/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../react-type-vite/src/context/auth-context/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../react-type-vite/src/context/auth-context/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../react-type-vite/src/context/auth-context/types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../react-type-vite/src/pages/student/auth/LoginPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../react-type-vite/src/pages/student/auth/LoginPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../react-type-vite/src/pages/teacher/home/Home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../react-type-vite/src/pages/teacher/home/Home.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../identity-service/src/main/java/com/devteria/identity/controller/AuthenticationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../identity-service/src/main/java/com/devteria/identity/controller/AuthenticationController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../identity-service/src/main/java/com/devteria/identity/service/AuthenticationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../identity-service/src/main/java/com/devteria/identity/service/AuthenticationService.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 4
+}]]></component>
+  <component name="ProjectId" id="31KJEYu4ZAjK45JjccWwW0NdSow" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "git-widget-placeholder": "feature/course-management",
+    "last_opened_file_path": "C:/Users/phihi_6b0xaz1/Desktop/Course_Management/TLCN_E-Learning/spring-microservices",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="CourseManagementApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="course-management" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.hoangphihiep.CourseManagementApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0912f276-795b-457c-857b-483c01cf7216" name="Changes" comment="" />
+      <created>1755266720140</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1755266720140</updated>
+      <workItem from="1755266721166" duration="42000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
