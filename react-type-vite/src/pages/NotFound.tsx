@@ -15,7 +15,7 @@ const NotFound = () => {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mt-12 mb-2 text-red-700">
               404 - Not Found
             </h1>
-            <h2 className="text-2xl md:text-3xl lg:text-4xl text-black font-bold mt-4">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mt-4">
               Oh no! Something went wrong.
             </h2>
             <p className="text-muted-foreground mt-4 mb-8">

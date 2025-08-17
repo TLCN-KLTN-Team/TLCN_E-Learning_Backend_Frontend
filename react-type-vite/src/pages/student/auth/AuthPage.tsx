@@ -24,6 +24,7 @@ const AuthPage = ({ isLoggin }: AuthPageProps) => {
   return (
     <div className="min-h-screen">
       {/* Navigation Toggle */}
+
       <div className="fixed top-4 right-4 z-50">
         <div className="bg-white rounded-lg shadow-lg p-2 flex space-x-2">
           <button
