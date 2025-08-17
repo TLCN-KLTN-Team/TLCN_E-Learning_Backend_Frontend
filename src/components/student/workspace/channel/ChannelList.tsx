@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
-import type { ChannelResponse } from "@/services/api/workspaceApi";
 import { useAuth } from "@/context/auth-context/useAuth";
+import type { ChannelResponse } from "@/services/api/channelApi";
 
 interface ChannelListProps {
   channels: ChannelResponse[];

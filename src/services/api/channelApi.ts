@@ -55,6 +55,16 @@ export const getChannel = async (
   return response.data.result;
 };
 
+export const createChannel = async (
+  request: CreateChannelRequest
+): Promise<ChannelResponse> => {
+  const response = await axiosInstance.post<ApiResponse<ChannelResponse>>(
+    `/server/channels/create`,
+    request
+  );
+  return response.data.result;
+};
+
 export const sendMessage = async (
   request: ChatMessageRequest
 ): Promise<ChatMessageResponse> => {
@@ -65,12 +75,17 @@ export const sendMessage = async (
   return response.data.result;
 };
 
-export const createChannel = async (
-  request: CreateChannelRequest
-): Promise<ChannelResponse> => {
-  const response = await axiosInstance.post<ApiResponse<ChannelResponse>>(
-    `/server/channels/create`,
-    request
+const sendMessageWithFiles = async (
+  formData: FormData
+): Promise<ChatMessageResponse> => {
+  const response = await axiosInstance.post<ApiResponse<ChatMessageResponse>>(
+    `/server/messages/sendWithFiles`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
   return response.data.result;
 };
