@@ -39,6 +39,13 @@ public class UserController {
                 .build();
     }
 
+    @GetMapping("/students")
+    ApiResponse<List<UserResponse>> getUsersByMSSV(@RequestParam String mssv) {
+        return ApiResponse.<List<UserResponse>>builder()
+                .result(userService.getUsersByMSSV(mssv))
+                .build();
+    }
+
     @GetMapping("/{userId}")
     ApiResponse<UserResponse> getUser(@PathVariable("userId") String userId) {
         return ApiResponse.<UserResponse>builder()

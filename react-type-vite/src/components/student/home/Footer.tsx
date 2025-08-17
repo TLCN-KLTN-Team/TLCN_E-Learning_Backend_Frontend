@@ -1,5 +1,7 @@
 import { useTheme } from "../../../context/theme-context";
 import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import lightLogo from "@/assets/open-edu-light.png";
+import darkLogo from "@/assets/open-edu-dark.png";
 
 const Footer = () => {
   const { theme } = useTheme();
@@ -86,13 +88,9 @@ const Footer = () => {
           <div className="lg:col-span-1">
             <div className="mb-6">
               <img
-                src={
-                  theme === "dark"
-                    ? "/src/assets/images/logo-light.svg"
-                    : "/src/assets/images/logo.svg"
-                }
+                src={theme === "light" ? darkLogo : lightLogo}
                 alt="E-Learning Platform"
-                className="h-10 w-auto mb-4"
+                className="max-h-[200px] w-auto mb-4"
               />
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Nền tảng học trực tuyến hàng đầu, cung cấp các khóa học chất

@@ -6,15 +6,18 @@ import {
   User,
   Settings,
   ShoppingCart,
-  BookOpen,
-  Bell,
+  BellDot,
+  BellRing,
   CreditCard,
   Globe,
   HelpCircle,
   LogOut,
+  UserCircle,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
+import lightLogo from "@/assets/open-edu-light.png";
+import darkLogo from "@/assets/open-edu-dark.png";
 
 interface MenuItem {
   name: string;
@@ -53,7 +56,6 @@ const Header = () => {
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
-    console.log("User data from Auth Context:", user);
     const handleClickOutside = (event: MouseEvent) => {
       if (
         profileRef.current &&
@@ -110,7 +112,7 @@ const Header = () => {
       section: "Học tập",
       items: [
         { name: "Giỏ hàng của tôi", icon: ShoppingCart, href: "/cart" },
-        { name: "Mong muốn", icon: BookOpen, href: "/wishlist" },
+        { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
         {
           name: "Bảng điều khiển của giảng viên",
           icon: User,
@@ -123,11 +125,11 @@ const Header = () => {
       items: [
         {
           name: "Thông báo.",
-          icon: Bell,
+          icon: BellRing,
           href: "/notifications",
           badge: "Hơn 9",
         },
-        { name: "Tin nhắn", icon: Bell, href: "/messages", badge: "Hơn 9" },
+        { name: "Tin nhắn", icon: BellDot, href: "/messages", badge: "Hơn 9" },
       ],
     },
     {
@@ -143,7 +145,7 @@ const Header = () => {
           icon: CreditCard,
           href: "/payment-methods",
         },
-        { name: "Thuê bao", icon: CreditCard, href: "/subscriptions" },
+        { name: "Gói đăng ký", icon: CreditCard, href: "/subscriptions" },
         { name: "Ưu đãi Udemy", icon: Settings, href: "/offers" },
         { name: "Lịch sử mua", icon: ShoppingCart, href: "/purchase-history" },
       ],
@@ -158,16 +160,22 @@ const Header = () => {
           badge: "Tiếng Việt",
         },
         { name: "Hỗ sợ công khai", icon: HelpCircle, href: "/public-profile" },
-        { name: "Chỉnh sửa hồ sơ", icon: User, href: "/edit-profile" },
       ],
     },
   ];
 
   const navigation = [
-    { name: "Trang chủ", href: "#home" },
-    { name: "Khóa học", href: "#courses" },
+    { name: "Trang chủ", href: "/" },
+    {
+      name: "Khóa học",
+      href: "#courses",
+      features: [
+        { name: "Trang học tập số", href: "/e-learning" },
+        { name: "Không gian học tập", href: "/workspace" },
+      ],
+    },
     { name: "Về chúng tôi", href: "#about" },
-    { name: "Liên hệ", href: "#contact" },
+    { name: "Liên hệ", href: "/contact" },
   ];
 
   // const homeNavigation = [
@@ -189,33 +197,71 @@ const Header = () => {
           {/* Logo */}
           <NavLink
             to="/"
-            className="flex items-center max-w-[120px] lg:max-w-[150px] decoration-none no-hover-effect"
+            className="flex items-center max-w-[140px] lg:max-w-[180px] decoration-none no-hover-effect"
           >
             <img
-              src={
-                theme === "dark"
-                  ? "/src/assets/images/logo-light.svg"
-                  : "/src/assets/images/logo.svg"
-              }
-              alt="E-Learning Platform"
-              className="h-6 lg:h-8 w-fit"
+              src={theme === "light" ? darkLogo : lightLogo}
+              alt="OpenEdu - E-Learning Platform"
+              className="h-6 lg:h-8 w-auto max-w-full object-contain"
             />
           </NavLink>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
             {navigation.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-foreground hover:text-bs-primary transition-colors font-medium"
-              >
-                {item.name}
-              </a>
+              <div key={item.name} className="relative">
+                {item.features && item.features.length > 0 ? (
+                  <div className="group relative">
+                    <a
+                      href={item.href}
+                      className="text-foreground hover:text-bs-primary transition-colors font-medium cursor-pointer flex items-center space-x-1"
+                    >
+                      <span>{item.name}</span>
+                      <svg
+                        className="w-4 h-4 transition-transform group-hover:rotate-180"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </a>
+                    <div className="absolute left-0 top-full pt-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300 ease-in-out z-[999]">
+                      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-lg p-3 min-w-[220px] whitespace-nowrap backdrop-blur-sm">
+                        {item.features.map((feature, index) => (
+                          <NavLink
+                            key={feature.name}
+                            to={feature.href}
+                            className={`block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200 font-medium ${
+                              index > 0
+                                ? "border-t border-gray-100 dark:border-gray-700"
+                                : ""
+                            }`}
+                          >
+                            {feature.name}
+                          </NavLink>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <a
+                    href={item.href}
+                    className="text-foreground hover:text-bs-primary transition-colors font-medium"
+                  >
+                    {item.name}
+                  </a>
+                )}
+              </div>
             ))}
           </nav>
 
-          {/* Desktop Actions */}
+          {/* Desktop Actions when responsive*/}
           <div className="hidden lg:flex items-center space-x-4">
             <ThemeToggle />
             {user ? (
@@ -432,9 +478,9 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu when zoom out*/}
         {isMenuOpen && (
-          <div className="lg:hidden bg-background border-t border-border">
+          <div className="lg:hidden bg-background border-t border-border z-[999]">
             <nav className="py-4 space-y-2">
               {navigation.map((item) => (
                 <a
