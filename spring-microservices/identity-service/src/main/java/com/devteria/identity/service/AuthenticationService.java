@@ -146,13 +146,29 @@ public class AuthenticationService {
 
     // logic authen & login with username, not social login
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
+
+        System.out.println("=== [AUTHENTICATE] Nhận request: ===");
+        System.out.println("Username: " + request.getUsername());
+        System.out.println("Password: " + request.getPassword());
+
         var user = userRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
+        System.out.println("✅ Tìm thấy người dùng: " + user.getUsername());
+        System.out.println("Mật khẩu trong DB: " + user.getPassword());
+
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
+        System.out.println("So sánh mật khẩu: " + (authenticated ? "✅ Khớp" : "❌ Không khớp"));
+
         if (!authenticated) throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+
+        var authData = getAuthorizationData(user);
+        System.out.println("🎟️ Dữ liệu authorization đã tạo: " + authData);
+
+        AuthenticationResponse response = toAuthenticationResponse(authData);
+        System.out.println("📦 Trả về AuthenticationResponse: " + response);
 
         return toAuthenticationResponse(getAuthorizationData(user));
     }
@@ -198,12 +214,25 @@ public class AuthenticationService {
             user.getRoles().forEach(role -> roles.add(role.getName()));
         }
 
+        System.out.println("Access token: " + accessToken);
+        System.out.println("Access token expiry: " + accessTokenExpiry);
+        System.out.println("Refresh token: " + refreshToken);
+        System.out.println("Refresh token expiry: " + refreshTokenExpiry);
+        System.out.println("Roles: " + roles);
+
         return new AuthorizationData(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry, roles);
     }
 
     // generate token for user
     private String generateToken(User user, Instant expiry, String tokenType) {
+
+        System.out.println("=== Bắt đầu generateToken ===");
+        System.out.println("User ID: " + user.getId());
+        System.out.println("Token Type: " + tokenType);
+        System.out.println("Thời gian hết hạn: " + expiry);
+
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+        System.out.println("JWSHeader: " + header.toJSONObject());
 
         JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .subject(user.getId())
@@ -219,13 +248,18 @@ public class AuthenticationService {
         }
 
         JWTClaimsSet jwtClaimsSet = claimsBuilder.build();
+        System.out.println("JWTClaimsSet: " + jwtClaimsSet.toJSONObject());
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
 
         JWSObject jwsObject = new JWSObject(header, payload);
+        System.out.println("JWSObject trước khi ký: " + jwsObject.getPayload());
 
         try {
             jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            String serializedToken = jwsObject.serialize();
+            System.out.println("Serialized Token: " + serializedToken);
+            System.out.println("=== Kết thúc generateToken ===");
             return jwsObject.serialize();
         } catch (JOSEException e) {
             log.error("Cannot create token", e);

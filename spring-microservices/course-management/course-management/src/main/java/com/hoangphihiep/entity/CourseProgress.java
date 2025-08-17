@@ -1,0 +1,62 @@
+package com.hoangphihiep.entity;
+
+import java.io.Serializable;
+import java.sql.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.devteria.identity.entity.User;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@Table(name="course_progress")
+@NamedQuery(name="CourseProgress.findAll", query="SELECT cp from CourseProgress cp")
+public class CourseProgress implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
+
+    @Column(name = "user_id")
+    private int idUser;
+
+    @ManyToOne
+    @JoinColumn(name = "course_id", nullable = false)
+    private Course course;
+
+    @Column(name = "progress_percentage")
+    private double progressPercentage;
+
+    @Column(name = "start_date")
+    private Date startDate;
+
+    @Column(name = "complete_date")
+    private Date completeDate;
+
+    @Column(name = "is_completed")
+    private boolean isCompleted;
+
+    @OneToMany(mappedBy = "courseProgress", cascade = CascadeType.ALL)
+    private Set<LessonProgress> lessonProgresses = new HashSet<>();
+}
