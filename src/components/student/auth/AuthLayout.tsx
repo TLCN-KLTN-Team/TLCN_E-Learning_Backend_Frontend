@@ -3,6 +3,7 @@ import ava1 from "../../../assets/images/avatar/01.jpg";
 import ava2 from "../../../assets/images/avatar/02.jpg";
 import ava3 from "../../../assets/images/avatar/03.jpg";
 import ava4 from "../../../assets/images/avatar/04.jpg";
+import uteLogo from "../../../assets/images/logo/ute-logo.jpg";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -25,7 +26,7 @@ const AuthLayout = ({
           {/* Welcome Text at Top */}
           <div className="space-y-4">
             <h1 className="heading-1 text-gray-800">
-              Welcome to our largest community
+              Welcome to our educational ecosystem!
             </h1>
             <p className="body-large text-gray-600">
               Let's learn something new today!
@@ -75,7 +76,7 @@ const AuthLayout = ({
       </div>
 
       {/* Right Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-14">
         <div className="w-full max-w-md space-y-6">
           {/* Header */}
           <div className="text-center space-y-2">
@@ -85,7 +86,18 @@ const AuthLayout = ({
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+          <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
+            <div
+              onClick={() => (window.location.href = "/")}
+              className="text-center mb-4 cursor-pointer"
+            >
+              <img
+                src={uteLogo}
+                alt="University Logo"
+                className="w-24 h-24 mx-auto mb-4 rounded border-2 border-gray-200 shadow-sm"
+              />
+            </div>
+
             {children}
           </div>
         </div>
