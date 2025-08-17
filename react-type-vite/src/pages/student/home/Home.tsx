@@ -23,6 +23,7 @@ import avatar09 from "@/assets/images/avatar/09.jpg";
 
 const Home = () => {
   // Sample data for subjects section
+  console.log("Có vào trong Home.tsx");
   const subjects = [
     {
       id: "it",

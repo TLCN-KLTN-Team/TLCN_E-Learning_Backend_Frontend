@@ -8,7 +8,13 @@ export interface User {
   dob?: Date;
   avatar?: string;
   isVerified?: boolean;
-  role: string; // e.g., "student", "educator", "admin"
+  roles: Role[]; // e.g., "student", "educator", "admin"
+}
+
+export interface Role {
+  name: string;
+  description: string;
+  permissions: string[]; // hoặc kiểu phù hợp
 }
 
 // Define Auth Context type
