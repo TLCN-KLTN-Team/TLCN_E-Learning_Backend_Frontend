@@ -22,7 +22,7 @@ const LoginPage = () => {
     if (user) {
       console.log("User is already logged in:", user);
       // redirect to home
-      navigate("/");
+      
     }
   }, [user, navigate]);
 
@@ -41,7 +41,6 @@ const LoginPage = () => {
     login(formData.username, formData.password)
       .then(() => {
         toast.success("Login successful!");
-        navigate("/");
       })
       .catch((error) => {
         console.error("Login failed:", error);
