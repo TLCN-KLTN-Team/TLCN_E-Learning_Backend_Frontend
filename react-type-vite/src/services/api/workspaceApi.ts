@@ -1,28 +1,6 @@
 import axiosInstance from "../shared/axiosInstance";
 import type { ApiResponse, PaginatedResponse } from "../shared/apiResponse";
-
-export interface UserResponse {
-  id: string;
-  firstName: string;
-  lastName: string;
-  mssv: string;
-  avatarUrl?: string | null;
-}
-
-export interface Participant {
-  userId: string;
-  mssv: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  avatarUrl?: string | null;
-}
-
-export interface WorkspaceResponse {
-  id: string;
-  name: string;
-  description: string;
-  avatarUrl: string;
-}
+import type { UserResponse, WorkspaceResponse } from "@/types/chat.types";
 
 export const getWorkspaces = async (
   pageNumber: number,

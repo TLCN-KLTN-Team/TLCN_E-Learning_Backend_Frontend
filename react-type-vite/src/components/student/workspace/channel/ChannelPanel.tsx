@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import type { WorkspaceResponse } from "@/services/api/workspaceApi";
 import ChannelList from "./ChannelList";
 import InvitePeopleButton from "@/components/student/workspace/channel/InvitePeopleButton";
 import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
 import { PackagePlus } from "lucide-react";
 import AddChannelModal from "./AddChannelModal";
-import {
-  getBasicChannelsByWorkspaceId,
-  type BasicChannelResponse,
-  type ChannelResponse,
-} from "@/services/api/channelApi";
+
 import { toast } from "react-toastify";
+import type {
+  BasicChannelResponse,
+  ChannelResponse,
+  WorkspaceResponse,
+} from "@/types/chat.types";
+import { getBasicChannelsByWorkspaceId } from "@/services/api/channelApi";
 
 interface ChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;
@@ -35,10 +36,10 @@ const ChannelPanel = ({
       channelName: newChannel.channelName,
       participantHash: newChannel.participantHash || null,
     };
-    
+
     // Add new channel to the list
-    setChannels(prevChannels => [...prevChannels, basicChannel]);
-    
+    setChannels((prevChannels) => [...prevChannels, basicChannel]);
+
     // Note: We could auto-select the new channel here if desired:
     // onChannelSelect(newChannel);
   };

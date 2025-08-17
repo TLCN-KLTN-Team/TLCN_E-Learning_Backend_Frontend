@@ -1,4 +1,4 @@
-import type { ChannelResponse } from "@/services/api/channelApi";
+import type { ChannelResponse } from "@/types/chat.types";
 import {
   Hash,
   Users,

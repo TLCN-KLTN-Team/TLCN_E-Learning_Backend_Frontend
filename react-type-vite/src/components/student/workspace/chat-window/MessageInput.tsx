@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import {
   PlusCircle,
   Gift,
@@ -9,10 +9,7 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import type {
-  ChannelResponse,
-  ChatMessageResponse,
-} from "@/services/api/channelApi";
+import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
 
 interface MessageInputProps {
   selectedChannel: ChannelResponse;
@@ -43,8 +40,33 @@ const MessageInput = ({
 }: MessageInputProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
+  const [lastSentMessage, setLastSentMessage] = useState<string>("");
+  const [lastMessageId, setLastMessageId] = useState<string>("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Track the latest message from current channel for messageId
+  useEffect(() => {
+    const channelMessages = wsMessages.filter(
+      (msg) => msg.channelId === selectedChannel.id
+    );
+    if (channelMessages.length > 0) {
+      const latestMessage = channelMessages[channelMessages.length - 1];
+      // Check if this is a message we just sent by comparing content
+      if (latestMessage.me && latestMessage.content === lastSentMessage) {
+        setLastMessageId(latestMessage.id);
+        console.log("🎯 Got messageId for file upload:", latestMessage.id);
+      }
+    }
+  }, [wsMessages, selectedChannel.id, lastSentMessage]);
+
+  // Upload files when messageId is available
+  // useEffect(() => {
+  //   if (lastMessageId && selectedFiles.length > 0) {
+  //     uploadFilesForMessage(lastMessageId);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [lastMessageId]); // Only trigger when messageId changes
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -57,9 +79,16 @@ const MessageInput = ({
     if (!newMessage.trim() && selectedFiles.length === 0) return;
     if (!isConnected) return;
 
+    const messageContent = newMessage.trim();
+
+    // Store the message content to match with WebSocket response
+    setLastSentMessage(messageContent);
+
+    onSendMessage(messageContent);
+
     const formData = new FormData();
+    formData.append("messageId", lastMessageId);
     formData.append("channelId", selectedChannel.id);
-    formData.append("message", newMessage.trim());
 
     // Add files to formData
     selectedFiles.forEach((fileItem, index) => {
@@ -70,20 +99,13 @@ const MessageInput = ({
     try {
       console.log("Sending message with files:", {
         channelId: selectedChannel.id,
-        message: newMessage.trim(),
-        files: selectedFiles.map((f) => ({
-          name: f.name,
-          type: f.type,
-          size: f.size,
-          preview: f.preview,
-        })),
+        message: messageContent,
       });
     } catch (error) {
       console.error("Error sending message:", error);
       return;
     }
 
-    onSendMessage(newMessage.trim());
     setNewMessage("");
   };
 
@@ -233,9 +255,19 @@ const MessageInput = ({
           </button>
           <button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim() || !isConnected}
-            className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white p-2 rounded-md transition-colors"
-            title="Send message"
+            disabled={
+              (!newMessage.trim() && selectedFiles.length === 0) || !isConnected
+            }
+            className={`${
+              selectedFiles.length > 0
+                ? "bg-green-500 hover:bg-green-600"
+                : "bg-blue-500 hover:bg-blue-600"
+            } disabled:bg-gray-500 disabled:cursor-not-allowed text-white p-2 rounded-md transition-colors`}
+            title={
+              selectedFiles.length > 0
+                ? `Send message with ${selectedFiles.length} files`
+                : "Send message"
+            }
           >
             <Send className="w-4 h-4" />
           </button>
@@ -278,6 +310,13 @@ const MessageInput = ({
           </button>
         )}
       </div>
+
+      {/* Debug info - show messageId when available */}
+      {lastMessageId && (
+        <div className="mt-2 text-xs text-green-400">
+          📎 MessageId ready for file upload: {lastMessageId}
+        </div>
+      )}
     </div>
   );
 };
