@@ -1,41 +1,12 @@
 import axiosInstance from "../shared/axiosInstance";
 import type { ApiResponse } from "../shared/apiResponse";
-import type { Participant } from "./workspaceApi";
-
-export interface BasicChannelResponse {
-  id: string;
-  channelName: string;
-  participantHash?: string | null;
-}
-
-export interface ChatMessageResponse {
-  id: string;
-  channelId?: string | null;
-  me: boolean;
-  message: string;
-  sender: Participant;
-  createdDate: string;
-}
-
-export interface ChannelResponse {
-  id: string;
-  participantHash?: string | null;
-  channelName: string;
-  participants?: Participant[];
-  messages?: ChatMessageResponse[] | null;
-}
-
-export interface CreateChannelRequest {
-  workspaceId: string;
-  name: string;
-  description?: string;
-  memberIds?: string[];
-}
-
-export interface ChatMessageRequest {
-  channelId: string;
-  message: string;
-}
+import type {
+  BasicChannelResponse,
+  ChannelResponse,
+  ChatMessageRequest,
+  ChatMessageResponse,
+  CreateChannelRequest,
+} from "@/types/chat.types";
 
 export const getBasicChannelsByWorkspaceId = async (
   workspaceId: string
@@ -71,21 +42,6 @@ export const sendMessage = async (
   const response = await axiosInstance.post<ApiResponse<ChatMessageResponse>>(
     `/server/messages/send`,
     request
-  );
-  return response.data.result;
-};
-
-const sendMessageWithFiles = async (
-  formData: FormData
-): Promise<ChatMessageResponse> => {
-  const response = await axiosInstance.post<ApiResponse<ChatMessageResponse>>(
-    `/server/messages/sendWithFiles`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
   );
   return response.data.result;
 };

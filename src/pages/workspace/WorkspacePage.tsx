@@ -14,7 +14,6 @@ const WorkspacePageContent = () => {
   const {
     selectedWorkspace,
     selectedChannel,
-    channelMessages,
     participants,
     isLoadingMessages,
     handleWorkspaceSelect,
@@ -142,7 +141,6 @@ const WorkspacePageContent = () => {
       {/* Chat Area */}
       <ChatWindow
         selectedChannel={selectedChannel}
-        channelMessages={channelMessages}
         participants={participants}
         isLoadingMessages={isLoadingMessages}
         isConnected={isConnected}
