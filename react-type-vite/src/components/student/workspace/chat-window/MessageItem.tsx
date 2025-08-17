@@ -1,4 +1,4 @@
-import type { ChatMessageResponse } from "@/services/api/workspaceApi";
+import type { ChatMessageResponse } from "@/types/chat.types";
 
 interface MessageItemProps {
   message: ChatMessageResponse;
@@ -12,15 +12,19 @@ const MessageItem = ({
   showAvatar = true,
   showTimestamp = true,
 }: MessageItemProps) => {
+  const fullName = `${message.sender.firstName || ""} ${
+    message.sender.lastName || ""
+  }`.trim();
+
   const avatarUrl =
     message.sender.avatarUrl ||
-    `https://ui-avatars.com/api/?name=${
-      message.sender.firstName || message.sender.username || "User"
-    }+${message.sender.lastName || ""}&background=3b82f6&color=fff`;
+    `https://ui-avatars.com/api/?name=${fullName || "User"}+${
+      message.sender.lastName || ""
+    }&background=3b82f6&color=fff`;
 
-  const displayName = `${
-    message.sender.firstName || message.sender.username || "Anonymous"
-  } ${message.sender.lastName || ""}`.trim();
+  const displayName = `${fullName || "Anonymous"} ${
+    message.sender.lastName || ""
+  }`.trim();
 
   const messageTime = new Date(message.createdDate).toLocaleTimeString(
     "vi-VN",
@@ -58,7 +62,7 @@ const MessageItem = ({
           </div>
         )}
         <p className={`text-gray-300 ${showTimestamp ? "mt-1" : "mt-0"}`}>
-          {message.message}
+          {message.content}
         </p>
       </div>
     </div>
