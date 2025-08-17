@@ -1,11 +1,12 @@
 import { Hash, Edit } from "lucide-react";
-import type {
-  ChatMessageResponse,
-  ChannelResponse,
-} from "@/services/api/workspaceApi";
+
 import { getRoles } from "@/utils/localStorageVariables";
 import MessageItem from "./MessageItem";
 import SessionDivider from "./SessionDivider";
+import type {
+  ChannelResponse,
+  ChatMessageResponse,
+} from "@/services/api/channelApi";
 
 interface MessageListProps {
   selectedChannel: ChannelResponse;

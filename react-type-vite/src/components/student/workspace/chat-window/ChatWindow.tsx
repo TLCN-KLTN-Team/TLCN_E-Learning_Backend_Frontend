@@ -1,13 +1,13 @@
 import { useState } from "react";
-import type {
-  ChannelResponse,
-  ChatMessageResponse,
-  Participant,
-} from "@/services/api/workspaceApi";
+import type { Participant } from "@/services/api/workspaceApi";
 import ChatHeader from "./ChatHeader";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
+import type {
+  ChannelResponse,
+  ChatMessageResponse,
+} from "@/services/api/channelApi";
 
 interface ChatWindowProps {
   selectedChannel: ChannelResponse | null;
