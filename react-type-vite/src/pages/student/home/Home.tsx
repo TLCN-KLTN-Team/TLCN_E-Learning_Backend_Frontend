@@ -6,6 +6,7 @@ import TestimonialsSlider from "../../../components/student/home/TestimonialsSli
 import BackToTop from "../../../components/ui/BackToTop";
 import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
+import EducationalUnitLinked from "@/components/student/home/EducationalUnitLinked";
 
 // Import images
 import element06 from "@/assets/images/element/06.svg";
@@ -82,6 +83,8 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Google Auth Loader Overlay */}
+
       {/* Header */}
       <Header />
 
@@ -115,19 +118,23 @@ const Home = () => {
 
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                  Let Us Help You
+                  <p>Bạn là học viên tự do. Muốn tìm khóa học chất lượng?</p>
+                  <p>Để chúng tôi giúp bạn!</p>
                 </h2>
                 <p className="text-muted-foreground mb-4 text-sm">
-                  How promotion excellent curiosity yet attempted happiness Gay
-                  prosperous impression had conviction For every delay death ask
-                  to style Me mean able my by in they Extremity.
+                  Làm thế nào sự khuyến khích và tính tò mò tuyệt vời lại có thể
+                  mang đến hạnh phúc. Những ấn tượng tươi sáng và thịnh vượng đi
+                  cùng niềm tin mạnh mẽ. Mỗi sự trì hoãn là một cái chết – hãy
+                  thể hiện phong cách của bạn với những kiến thức từ chúng tôi.
+                  Tôi – với khả năng và ý chí – sẽ vượt qua cùng những khó khăn
+                  trong gian khó.
                 </p>
                 <ul className="space-y-3 mb-6">
                   {[
-                    "Setup and installation takes less time",
-                    "Professional and easy to use software",
-                    "Perfect for any device with pixel-perfect design",
-                    "Setup and installation too fast",
+                    "Việc cài đặt và thiết lập mất ít thời gian",
+                    "Phần mềm chuyên nghiệp và dễ sử dụng",
+                    "Cung cấp nền tảng học số đa dụng và linh hoạt",
+                    "Có sẵn các khóa học từ cơ bản đến nâng cao",
                   ].map((item, index) => (
                     <li key={index} className="flex items-center space-x-2">
                       <ArrowRight
@@ -160,14 +167,13 @@ const Home = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
               <div className="relative z-10">
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                  Learn on your mobile Anytime
+                  Bạn đang là sinh viên của trường đại học hoặc cao đẳng?
                 </h2>
                 <p className="text-muted-foreground mb-6 text-sm">
-                  How promotion excellent curiosity yet attempted happiness Gay
-                  prosperous impression had conviction For every delay death ask
-                  to style Me mean able my by in they Extremity. had conviction
-                  For every delay death ask to style Me mean able my by in they
-                  Extremity.
+                  Tại thanh điều hướng, chọn Mục lục "Khóa học" và chọn "Trang
+                  học tập số", chọn Trường của bạn (đã được liên kết với chúng
+                  tôi) để truy cập vào các khóa học và tài liệu học tập được
+                  cung cấp.
                 </p>
                 <div className="flex space-x-3">
                   <a
@@ -252,7 +258,7 @@ const Home = () => {
                       Get a Free Tutorial of
                     </h6>
                     <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                      Exclusive Bootstrap 5 Responsive Website Coding Course
+                      Nhận khóa học miễn phí từ chúng tôi
                     </h3>
                   </div>
 
@@ -266,6 +272,9 @@ const Home = () => {
             </div>
           </div>
         </section>
+
+        {/* Educational Unit Linked Section */}
+        <EducationalUnitLinked />
 
         {/* Testimonials Section */}
         <section className="py-12 lg:py-16 px-6 lg:px-8 bg-muted relative">
@@ -281,10 +290,13 @@ const Home = () => {
           <div className="container mx-auto relative z-10">
             <div className="text-center mb-12">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                Our Customer Feedback
+                Phản hồi từ học viên
               </h2>
-              <p className="text-muted-foreground text-sm">
-                Perceived end knowledge certainly day sweetness why cordially
+              <p className="text-muted-foreground">
+                Những phản hồi từ học viên của chúng tôi là nguồn động lực lớn
+                nhất để chúng tôi không ngừng cải thiện và phát triển. Hãy cùng
+                lắng nghe những chia sẻ chân thành từ những người đã trải nghiệm
+                khóa học của chúng tôi.
               </p>
             </div>
 

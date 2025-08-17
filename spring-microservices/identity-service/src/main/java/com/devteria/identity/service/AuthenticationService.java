@@ -127,6 +127,10 @@ public class AuthenticationService {
         User user = userRepository.findByUsername(userInfo.getEmail()).orElseGet(() -> {
             User newUser = User.builder()
                     .username(userInfo.getEmail())
+                    .email(userInfo.getEmail())
+                    .firstName(userInfo.getGivenName())
+                    .lastName(userInfo.getFamilyName())
+                    .avatarUrl(userInfo.getPicture())
                     .emailVerified(userInfo.isVerifiedEmail())
                     .roles(Collections.singleton(
                             Role.builder().name(PredefinedRole.USER_ROLE).build()))
@@ -134,6 +138,8 @@ public class AuthenticationService {
             log.info("NEW USER: {}", newUser);
             return userRepository.save(newUser);
         });
+
+        log.info("USER INFO RESPONSE: {}", user);
 
         return toAuthenticationResponse(getAuthorizationData(user));
     }
