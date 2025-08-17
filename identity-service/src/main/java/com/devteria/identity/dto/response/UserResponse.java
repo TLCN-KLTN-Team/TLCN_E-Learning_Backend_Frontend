@@ -1,5 +1,6 @@
 package com.devteria.identity.dto.response;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,5 +20,6 @@ public class UserResponse {
     String firstName;
     String lastName;
     String avatarUrl;
+    LocalDate dob;
     Set<RoleResponse> roles;
 }
