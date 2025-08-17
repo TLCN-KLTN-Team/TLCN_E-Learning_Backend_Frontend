@@ -35,6 +35,10 @@ public class User {
     String lastName;
     String dob;
 
+    String avatarUrl;
+
+    String mssv; // Mã số sinh viên, if applicable
+
 //    @OneToOne(cascade = CascadeType.ALL)
 //    Address address;
 

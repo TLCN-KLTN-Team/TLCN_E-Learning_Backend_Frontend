@@ -19,6 +19,13 @@
 
   <!-- Theme initialization script - Prevents FOUC -->
   <script src="/theme-init.js"></script>
+
+  <!-- Global polyfill for SockJS -->
+  <script>
+    if (typeof global === 'undefined') {
+      var global = globalThis;
+    }
+  </script>
 </head>
 
 <body>
