@@ -110,6 +110,19 @@
 			<artifactId>spring-messaging</artifactId>
 		</dependency>
 
+		<!--Read data from .env-->
+		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.cloudinary</groupId>
+			<artifactId>cloudinary-http44</artifactId>
+			<version>1.36.0</version> <!-- hoặc version mới hơn -->
+		</dependency>
+
 
 	</dependencies>
 

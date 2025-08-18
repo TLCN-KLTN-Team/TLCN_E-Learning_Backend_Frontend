@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import type {
-  WorkspaceResponse,
-  Participant,
-} from "@/services/api/workspaceApi";
 import type { PaginatedResponse } from "@/services/shared/apiResponse";
 import { getWorkspaces } from "@/services/api/workspaceApi";
 import {
   getChannel,
-  type ChannelResponse,
-  type ChatMessageResponse,
+  getBasicChannelsByWorkspaceId,
 } from "@/services/api/channelApi";
+import type {
+  ChannelResponse,
+  Participant,
+  WorkspaceResponse,
+} from "@/types/chat.types";
 
 export const useWorkspace = () => {
   const [workspacesData, setWorkspacesData] =
@@ -19,9 +19,6 @@ export const useWorkspace = () => {
     useState<WorkspaceResponse | null>(null);
   const [selectedChannel, setSelectedChannel] =
     useState<ChannelResponse | null>(null);
-  const [channelMessages, setChannelMessages] = useState<ChatMessageResponse[]>(
-    []
-  );
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
@@ -35,37 +32,56 @@ export const useWorkspace = () => {
     });
   }, []);
 
-  // // Auto select general channel when workspace changes
-  // useEffect(() => {
-  //   if (selectedWorkspace) {
-  //     // Find general channel first, otherwise use first channel
+  // Auto select general channel when workspace changes
+  useEffect(() => {
+    if (selectedWorkspace) {
+      // Find general channel first, otherwise use first channel
+      const fetchChannelsAndSelectGeneral = async () => {
+        try {
+          const channels = await getBasicChannelsByWorkspaceId(
+            selectedWorkspace.id
+          );
+          if (channels && channels.length > 0) {
+            // Look for "general" channel first
+            const generalChannel = channels.find(
+              (ch) => ch.channelName.toLowerCase() === "general"
+            );
 
-  //     setSelectedChannel(channelToSelect);
-  //   } else {
-  //     setSelectedChannel(null);
-  //   }
-  // }, [selectedWorkspace]);
+            const channelToSelect = generalChannel || channels[0];
 
-  // Load channel messages when channel changes
+            // Convert BasicChannelResponse to ChannelResponse for selection
+            const fullChannel = await getChannel(channelToSelect.id);
+            setSelectedChannel(fullChannel);
+          }
+        } catch (error) {
+          console.error("Error auto-selecting channel:", error);
+          setSelectedChannel(null);
+        }
+      };
+
+      fetchChannelsAndSelectGeneral();
+    } else {
+      setSelectedChannel(null);
+    }
+  }, [selectedWorkspace]);
+
+  // Load channel data when channel changes
   useEffect(() => {
     if (selectedChannel) {
       setIsLoadingMessages(true);
       getChannel(selectedChannel.id)
         .then((channelData) => {
           console.log("Loaded channel data:", channelData);
-          setChannelMessages(channelData.messages || []);
           setParticipants(channelData.participants || []);
         })
         .catch((error) => {
-          console.error("Error loading channel messages:", error);
-          setChannelMessages([]);
+          console.error("Error loading channel data:", error);
           setParticipants([]);
         })
         .finally(() => {
           setIsLoadingMessages(false);
         });
     } else {
-      setChannelMessages([]);
       setParticipants([]);
     }
   }, [selectedChannel]);
@@ -115,7 +131,6 @@ export const useWorkspace = () => {
     workspacesData,
     selectedWorkspace,
     selectedChannel,
-    channelMessages,
     participants,
     isLoadingMessages,
     handleWorkspaceSelect,
@@ -123,6 +138,5 @@ export const useWorkspace = () => {
     loadMoreWorkspaces,
     getVisibleWorkspaces,
     hasMoreWorkspaces,
-    setChannelMessages,
   };
 };

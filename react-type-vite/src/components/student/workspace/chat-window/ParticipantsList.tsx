@@ -1,5 +1,5 @@
+import type { Participant } from "@/types/chat.types";
 import { X, User } from "lucide-react";
-import type { Participant } from "@/services/api/workspaceApi";
 
 interface ParticipantsListProps {
   participants: Participant[];

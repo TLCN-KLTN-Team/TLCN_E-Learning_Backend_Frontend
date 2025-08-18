@@ -10,8 +10,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ChatMessageRequest {
-    String channelId;
-    String content; // Renamed from 'message' to 'content' to match usage
-    // if we have attachments, they handle receive in controller
+public class AttachmentUploadRequest {
+    String messageId;      // Message ID to attach the file to
+    String channelId;      // Channel ID for validation
+    String fileName;       // Original file name
+    String contentType;    // File content type
 }
