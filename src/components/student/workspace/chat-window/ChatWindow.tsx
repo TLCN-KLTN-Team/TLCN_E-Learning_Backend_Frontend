@@ -1,17 +1,16 @@
 import { useState } from "react";
-import type {
-  ChannelResponse,
-  ChatMessageResponse,
-  Participant,
-} from "@/services/api/workspaceApi";
 import ChatHeader from "./ChatHeader";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
+import type {
+  ChannelResponse,
+  ChatMessageResponse,
+  Participant,
+} from "@/types/chat.types";
 
 interface ChatWindowProps {
   selectedChannel: ChannelResponse | null;
-  channelMessages: ChatMessageResponse[];
   participants: Participant[];
   isLoadingMessages: boolean;
   isConnected: boolean;
@@ -23,7 +22,6 @@ interface ChatWindowProps {
 
 const ChatWindow = ({
   selectedChannel,
-  channelMessages,
   participants,
   isLoadingMessages,
   isConnected,
@@ -67,7 +65,6 @@ const ChatWindow = ({
         <div className="flex-1 overflow-y-auto bg-gray-800">
           <MessageList
             selectedChannel={selectedChannel}
-            channelMessages={channelMessages}
             wsMessages={wsMessages}
             isLoadingMessages={isLoadingMessages}
             isConnected={isConnected}

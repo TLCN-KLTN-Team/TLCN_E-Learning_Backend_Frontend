@@ -1,15 +1,15 @@
 import { Hash, Edit } from "lucide-react";
-import type {
-  ChatMessageResponse,
-  ChannelResponse,
-} from "@/services/api/workspaceApi";
+
 import { getRoles } from "@/utils/localStorageVariables";
 import MessageItem from "./MessageItem";
 import SessionDivider from "./SessionDivider";
+import { useEffect, useState } from "react";
+import { getMessagesByChannelId } from "@/services/api/messageApi";
+import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
+import { useAuth } from "@/context/auth-context/useAuth";
 
 interface MessageListProps {
   selectedChannel: ChannelResponse;
-  channelMessages: ChatMessageResponse[];
   wsMessages: ChatMessageResponse[];
   isLoadingMessages: boolean;
   isConnected: boolean;
@@ -18,12 +18,15 @@ interface MessageListProps {
 
 const MessageList = ({
   selectedChannel,
-  channelMessages,
   wsMessages,
   isLoadingMessages,
   isConnected,
   wsErrors,
 }: MessageListProps) => {
+  const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const { user } = useAuth();
+
   // Function to determine if messages should be grouped
   const shouldGroupMessages = (
     currentMessage: ChatMessageResponse,
@@ -40,6 +43,26 @@ const MessageList = ({
 
     return isSameSender && timeDifference <= timeDifferenceThreshold;
   };
+
+  useEffect(() => {
+    if (selectedChannel) {
+      setLoading(true);
+      const fetchMessages = async () => {
+        const messagesData = await getMessagesByChannelId(selectedChannel.id);
+        console.log("Fetched messages:", messagesData);
+
+        // Set 'me' property for messages from API
+        const messagesWithMe = messagesData.map((msg) => ({
+          ...msg,
+          me: user?.id === msg.sender.userId,
+        }));
+
+        setMessages(messagesWithMe);
+        setLoading(false);
+      };
+      fetchMessages();
+    }
+  }, [selectedChannel, user?.id]);
 
   // Function to render messages with grouping logic
   const renderMessages = (
@@ -68,8 +91,15 @@ const MessageList = ({
       </div>
     );
   }
+  if (loading) {
+    return (
+      <div className="p-6 pt-16 text-center">
+        <div className="text-gray-400">Loading messages...</div>
+      </div>
+    );
+  }
 
-  if (channelMessages.length === 0) {
+  if (messages.length === 0) {
     return (
       <div className="p-6 pt-16">
         <div className="flex items-center mb-4">
@@ -97,7 +127,7 @@ const MessageList = ({
     <>
       <div className="p-4 space-y-4">
         {/* Display existing messages from API */}
-        {renderMessages(channelMessages, false)}
+        {renderMessages(messages, false)}
 
         {/* Show session divider if there are WebSocket messages */}
         {wsMessages.filter((msg) => msg.channelId === selectedChannel.id)

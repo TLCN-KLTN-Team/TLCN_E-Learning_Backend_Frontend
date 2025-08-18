@@ -10,12 +10,13 @@ import {
   UserMinus,
 } from "lucide-react";
 import { getStudentsByMSSV } from "@/services/api/workspaceApi";
+import { toast } from "react-toastify";
 import type {
+  ChannelResponse,
   UserResponse,
   WorkspaceResponse,
-} from "@/services/api/workspaceApi";
-import { createChannel, type ChannelResponse } from "@/services/api/channelApi";
-import { toast } from "react-toastify";
+} from "@/types/chat.types";
+import { createChannel } from "@/services/api/channelApi";
 
 interface AddChannelModalProps {
   isOpen: boolean;
