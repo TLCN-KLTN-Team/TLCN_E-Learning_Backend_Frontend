@@ -1,5 +1,6 @@
 package demo.app.chat_app.model;
 
+import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -34,21 +35,13 @@ public class ChatMessage {
     @Builder.Default
     MessageType messageType = MessageType.TEXT;
 
-    List<MessageAttachment> attachments; // List of attachments (images, files, etc.)
-
-    // add emojis or reactions if needed
+    String fileUrl; // URL for message type FILE or IMAGE
 
     @Indexed
     Instant createdDate;
-    
     @Indexed
     Instant updatedDate;
-    
-    // Message status fields
-    boolean edited;
-    boolean deleted;
-    String parentMessageId; // For reply functionality
-    
-    // Message reactions/interactions
-    List<String> reactions; // User IDs who reacted
+
+    @Builder.Default
+    boolean isActive = true; // Soft delete support
 }
