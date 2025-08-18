@@ -2,7 +2,6 @@ export const MessageType = {
   TEXT: "TEXT",
   IMAGE: "IMAGE",
   FILE: "FILE",
-  MIXED: "MIXED",
 } as const;
 
 export const AttachmentType = {
@@ -24,3 +23,4 @@ export const MessageStatus = {
 export type MessageType = (typeof MessageType)[keyof typeof MessageType];
 export type AttachmentType =
   (typeof AttachmentType)[keyof typeof AttachmentType];
+export type MessageStatus = (typeof MessageStatus)[keyof typeof MessageStatus];

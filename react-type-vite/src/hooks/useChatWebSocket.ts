@@ -230,6 +230,74 @@ export const useChatWebSocket = () => {
     };
   }, [user?.username]); // Keep user dependency but avoid other unstable deps
 
+  // Listen file uploads
+  const subscribeToMultipleFilesUploads = useCallback(
+    (channelId: string) => {
+      if (!clientRef.current?.connected) {
+        console.error("WebSocket not connected for file uploads");
+        return () => {}; // Return stable function
+      }
+
+      console.log(`📎 Subscribing to file uploads for channel: ${channelId}`);
+      const subscription = clientRef.current.subscribe(
+        `/topic/channel/${channelId}/attachments`,
+        // Response from server
+        (message: IMessage) => {
+          try {
+            const response = JSON.parse(message.body);
+            console.log("📤 Received file upload response:", response);
+
+            // Handle both array and single message response
+            let messages: ChatMessageResponse[];
+            if (Array.isArray(response)) {
+              messages = response;
+            } else if (response && typeof response === "object") {
+              // Single message response
+              messages = [response];
+            } else {
+              console.warn("Invalid file upload response format:", response);
+              return;
+            }
+
+            setMessages((prev) => {
+              // Set 'me' property and filter for current channel
+              const processedMessages = messages
+                .filter((msg) => msg.channelId === channelId)
+                .map((msg) => ({
+                  ...msg,
+                  me: user?.id === msg.sender.userId,
+                }));
+
+              // Avoid duplicates
+              const newMessages = processedMessages.filter(
+                (msg) => !prev.some((m) => m.id === msg.id)
+              );
+
+              if (newMessages.length > 0) {
+                console.log(
+                  `✅ Adding ${newMessages.length} new file messages to wsMessages`
+                );
+                return [...prev, ...newMessages];
+              }
+
+              return prev;
+            });
+          } catch (error) {
+            console.error("Error parsing file upload messages:", error);
+          }
+        }
+      );
+
+      return () => {
+        console.log(
+          `📎 Unsubscribing from file uploads for channel: ${channelId}`
+        );
+        subscription.unsubscribe();
+      };
+    },
+    [user?.id]
+  );
+
   // Send message to channel
   const sendMessage = useCallback(
     (messageRequest: ChatMessageRequest) => {
@@ -316,6 +384,7 @@ export const useChatWebSocket = () => {
     subscribeToChannel,
     subscribeToDirectMessages,
     subscribeToErrors,
+    subscribeToMultipleFilesUploads,
     sendMessage,
     clearMessages,
     clearErrors,
