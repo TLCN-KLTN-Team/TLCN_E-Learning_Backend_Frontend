@@ -16,6 +16,9 @@ interface SafeChatWebSocketReturn {
   subscribeToChannel: (channelId: string) => (() => void) | undefined;
   subscribeToDirectMessages: () => (() => void) | undefined;
   subscribeToErrors: () => (() => void) | undefined;
+  subscribeToMultipleFilesUploads: (
+    channelId: string
+  ) => (() => void) | undefined;
   connect: () => void;
   disconnect: () => void;
   clearErrors: () => void;
@@ -92,6 +95,21 @@ export const useSafeChatWebSocket = (): SafeChatWebSocketReturn => {
     }
   }, [webSocket]);
 
+  const safeSubscribeToMultipleFilesUploads = useCallback(
+    (channelId: string) => {
+      try {
+        return webSocket.subscribeToMultipleFilesUploads(channelId);
+      } catch (err) {
+        console.error("Error subscribing to file uploads:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        setError(errorMessage);
+        return () => {};
+      }
+    },
+    [webSocket]
+  );
+
   const safeConnect = useCallback(() => {
     try {
       webSocket.connect();
@@ -121,6 +139,7 @@ export const useSafeChatWebSocket = (): SafeChatWebSocketReturn => {
     subscribeToChannel: safeSubscribeToChannel,
     subscribeToDirectMessages: safeSubscribeToDirectMessages,
     subscribeToErrors: safeSubscribeToErrors,
+    subscribeToMultipleFilesUploads: safeSubscribeToMultipleFilesUploads,
     connect: safeConnect,
     disconnect: safeDisconnect,
     clearErrors: webSocket.clearErrors,

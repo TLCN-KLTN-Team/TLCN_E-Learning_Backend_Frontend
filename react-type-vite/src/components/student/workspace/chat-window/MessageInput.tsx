@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import {
   PlusCircle,
   Gift,
@@ -10,6 +10,8 @@ import {
   X,
 } from "lucide-react";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
+import type { FileItem } from "@/types/file.types";
+import { uploadMultipleFiles } from "@/services/api/fileUploadApi";
 
 interface MessageInputProps {
   selectedChannel: ChannelResponse;
@@ -18,16 +20,6 @@ interface MessageInputProps {
   wsErrors: Array<{ message: string }>;
   onSendMessage: (content: string) => void;
   onClearErrors: () => void;
-}
-
-interface FileItem {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url?: string; // For images
-  file?: File; // For other files
-  preview: string; // Base64 or URL for preview
 }
 
 const MessageInput = ({
@@ -40,33 +32,9 @@ const MessageInput = ({
 }: MessageInputProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
-  const [lastSentMessage, setLastSentMessage] = useState<string>("");
-  const [lastMessageId, setLastMessageId] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Track the latest message from current channel for messageId
-  useEffect(() => {
-    const channelMessages = wsMessages.filter(
-      (msg) => msg.channelId === selectedChannel.id
-    );
-    if (channelMessages.length > 0) {
-      const latestMessage = channelMessages[channelMessages.length - 1];
-      // Check if this is a message we just sent by comparing content
-      if (latestMessage.me && latestMessage.content === lastSentMessage) {
-        setLastMessageId(latestMessage.id);
-        console.log("🎯 Got messageId for file upload:", latestMessage.id);
-      }
-    }
-  }, [wsMessages, selectedChannel.id, lastSentMessage]);
-
-  // Upload files when messageId is available
-  // useEffect(() => {
-  //   if (lastMessageId && selectedFiles.length > 0) {
-  //     uploadFilesForMessage(lastMessageId);
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [lastMessageId]); // Only trigger when messageId changes
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -75,38 +43,67 @@ const MessageInput = ({
     }
   };
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() && selectedFiles.length === 0) return;
-    if (!isConnected) return;
-
-    const messageContent = newMessage.trim();
-
-    // Store the message content to match with WebSocket response
-    setLastSentMessage(messageContent);
-
-    onSendMessage(messageContent);
+  const uploadFilesForMessage = async () => {
+    setIsUploading(true);
+    console.log("📤 Starting file upload...");
 
     const formData = new FormData();
-    formData.append("messageId", lastMessageId);
+    selectedFiles.forEach((fileItem) => {
+      formData.append("files", fileItem.file ? fileItem.file : new Blob());
+    });
     formData.append("channelId", selectedChannel.id);
 
-    // Add files to formData
-    selectedFiles.forEach((fileItem, index) => {
-      formData.append(`files[${index}]`, fileItem.file || new Blob());
-      formData.append(`fileTypes[${index}]`, fileItem.type);
-    });
+    try {
+      const uploadAtachmentsResults = await uploadMultipleFiles(formData);
+      console.log("✅ File upload completed:", uploadAtachmentsResults);
+    } catch (error) {
+      console.error("❌ File upload failed:", error);
+      throw new Error("Failed to upload files: " + error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    const hasMessage = newMessage.trim().length > 0;
+    const hasFiles = selectedFiles.length > 0;
+
+    // Validate input
+    if (!hasMessage && !hasFiles) return;
+    if (!isConnected) return;
 
     try {
-      console.log("Sending message with files:", {
-        channelId: selectedChannel.id,
-        message: messageContent,
-      });
-    } catch (error) {
-      console.error("Error sending message:", error);
-      return;
-    }
+      if (hasMessage && hasFiles) {
+        // Send both message and files
+        console.log("📤 Sending message with files");
+        // Send message first
+        onSendMessage(newMessage.trim());
 
-    setNewMessage("");
+        // Upload files
+        await uploadFilesForMessage();
+      } else if (hasMessage && !hasFiles) {
+        // Send only message
+        console.log("💬 Sending text message only");
+
+        // Send message
+        onSendMessage(newMessage.trim());
+      } else if (!hasMessage && hasFiles) {
+        // Upload only files
+        console.log("📎 Uploading files only");
+
+        // Upload files without message
+        await uploadFilesForMessage();
+      }
+
+      // Clear input and files after successful operation
+      setNewMessage("");
+      setSelectedFiles([]);
+
+      console.log("✅ Operation completed successfully");
+    } catch (error) {
+      console.error("❌ Error in handleSendMessage:", error);
+      // Don't clear inputs if there was an error
+    }
   };
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>, type: string) => {
@@ -121,6 +118,8 @@ const MessageInput = ({
     }));
 
     setSelectedFiles((prev) => [...prev, ...newFiles]);
+
+    console.log("Selected files:", newFiles);
     e.target.value = ""; // Reset input value
   };
 
@@ -239,24 +238,26 @@ const MessageInput = ({
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white disabled:opacity-50"
             title="Upload file"
-            disabled={!isConnected}
+            disabled={!isConnected || isUploading}
           >
             <FilePlus className="w-5 h-5" />
           </button>
           <button
             onClick={() => imageInputRef.current?.click()}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white disabled:opacity-50"
             title="Upload image"
-            disabled={!isConnected}
+            disabled={!isConnected || isUploading}
           >
             <ImagePlus className="w-5 h-5" />
           </button>
           <button
             onClick={handleSendMessage}
             disabled={
-              (!newMessage.trim() && selectedFiles.length === 0) || !isConnected
+              (!newMessage.trim() && selectedFiles.length === 0) ||
+              !isConnected ||
+              isUploading
             }
             className={`${
               selectedFiles.length > 0
@@ -264,12 +265,18 @@ const MessageInput = ({
                 : "bg-blue-500 hover:bg-blue-600"
             } disabled:bg-gray-500 disabled:cursor-not-allowed text-white p-2 rounded-md transition-colors`}
             title={
-              selectedFiles.length > 0
+              isUploading
+                ? "Uploading files..."
+                : selectedFiles.length > 0
                 ? `Send message with ${selectedFiles.length} files`
                 : "Send message"
             }
           >
-            <Send className="w-4 h-4" />
+            {isUploading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </button>
         </div>
       </div>
@@ -311,10 +318,11 @@ const MessageInput = ({
         )}
       </div>
 
-      {/* Debug info - show messageId when available */}
-      {lastMessageId && (
-        <div className="mt-2 text-xs text-green-400">
-          📎 MessageId ready for file upload: {lastMessageId}
+      {/* Upload status */}
+      {isUploading && (
+        <div className="mt-2 flex items-center space-x-2 text-xs text-blue-400">
+          <div className="w-3 h-3 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+          <span>Uploading {selectedFiles.length} files...</span>
         </div>
       )}
     </div>

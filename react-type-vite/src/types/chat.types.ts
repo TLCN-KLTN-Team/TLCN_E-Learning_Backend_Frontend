@@ -1,4 +1,4 @@
-import type { AttachmentType, MessageType } from "./chat.enums";
+import type { MessageType } from "./chat.enums";
 
 export interface UserResponse {
   id: string;
@@ -55,13 +55,12 @@ export interface ChatMessageResponse {
   content: string;
   sender: Participant;
   messageType: MessageType;
-  attachments?: AttachmentResponse[] | null;
+  fileUrl?: string | null;
   createdDate: string;
 }
 export interface AttachmentResponse {
-  id: string;
-  fileName: string;
-  contentType: string;
-  fileSize: number;
-  attachmentType: AttachmentType;
+  success: boolean;
+  message: string;
+  messageId?: string; // Optional, if the upload was part of a message
+  fileUrl: string;
 }
