@@ -14,7 +14,6 @@ const WorkspacePageContent = () => {
   const {
     selectedWorkspace,
     selectedChannel,
-    channelMessages,
     participants,
     isLoadingMessages,
     handleWorkspaceSelect,
@@ -34,6 +33,7 @@ const WorkspacePageContent = () => {
     subscribeToChannel,
     subscribeToDirectMessages,
     subscribeToErrors,
+    subscribeToMultipleFilesUploads,
     sendMessage: sendWebSocketMessage,
     clearErrors,
     clearError,
@@ -53,12 +53,16 @@ const WorkspacePageContent = () => {
     const unsubscribeChannel = subscribeToChannel(selectedChannel.id);
     const unsubscribeDirectMessages = subscribeToDirectMessages();
     const unsubscribeErrors = subscribeToErrors();
+    const unsubscribeFileUploads = subscribeToMultipleFilesUploads(
+      selectedChannel.id
+    );
 
     return () => {
       console.log(`🔗 Cleaning up subscriptions`);
       unsubscribeChannel?.();
       unsubscribeDirectMessages?.();
       unsubscribeErrors?.();
+      unsubscribeFileUploads?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, selectedChannel?.id]); // Only depend on connection status and channel id to prevent infinite loops
@@ -142,7 +146,6 @@ const WorkspacePageContent = () => {
       {/* Chat Area */}
       <ChatWindow
         selectedChannel={selectedChannel}
-        channelMessages={channelMessages}
         participants={participants}
         isLoadingMessages={isLoadingMessages}
         isConnected={isConnected}

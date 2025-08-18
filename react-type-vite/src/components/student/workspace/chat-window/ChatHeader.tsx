@@ -1,3 +1,4 @@
+import type { ChannelResponse } from "@/types/chat.types";
 import {
   Hash,
   Users,
@@ -7,7 +8,6 @@ import {
   Search,
   HelpCircle,
 } from "lucide-react";
-import type { ChannelResponse } from "@/services/api/workspaceApi";
 
 interface ChatHeaderProps {
   selectedChannel: ChannelResponse;
