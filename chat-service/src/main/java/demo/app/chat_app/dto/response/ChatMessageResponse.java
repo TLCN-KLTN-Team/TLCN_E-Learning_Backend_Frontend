@@ -1,6 +1,7 @@
 package demo.app.chat_app.dto.response;
 
 import demo.app.chat_app.model.Participant;
+import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -19,7 +20,8 @@ public class ChatMessageResponse {
     boolean me;
     String content;
     Participant sender;
-    Instant createdDate;
     MessageType messageType;
-    List<AttachmentResponse> attachments;
+    String fileUrl;
+    Instant createdDate;
+    boolean uploadedFiles;
 }

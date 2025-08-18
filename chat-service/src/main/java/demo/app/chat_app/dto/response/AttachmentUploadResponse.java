@@ -1,6 +1,6 @@
 package demo.app.chat_app.dto.response;
 
-import demo.app.chat_app.model.MessageAttachment;
+import demo.app.chat_app.model.enums.MessageStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -9,9 +9,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class FileUploadResponse {
+public class AttachmentUploadResponse {
     boolean success;
-    String message;
-    MessageAttachment attachment;
-    String temporaryMessageId; // Used for temporary storage before final upload
+    String message; // success or error message
+    String messageId;
+    String fileUrl;
 }

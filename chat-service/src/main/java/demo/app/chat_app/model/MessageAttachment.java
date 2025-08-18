@@ -19,16 +19,13 @@ public class MessageAttachment {
     @MongoId
     String id; // Unique identifier for the attachment
 
-    @Indexed
-    String messageId; // ID of the message this attachment belongs to
-
     String fileName; // Name of the file being attached
 
     String contentType; // Type of the file (e.g., image/png, application/pdf)
 
     long fileSize; // Size of the file in bytes
 
-    String fileUrl; // URL where the attachment is stored (e.g., in a cloud storage service)
+    String fileUrl; // where store file, I will use cloudinary.
 
     AttachmentType attachmentType;
 
