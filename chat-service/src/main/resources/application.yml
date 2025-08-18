@@ -27,6 +27,15 @@ openapi:
 jwt:
   secretKey: XrlXd50JgElviZ+G7WjSvJiMMapYK+vznAV/CUPSGvvLgsB/898dipwLOvGECplI
 
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+
+app:
+  file:
+    max-size: 10485760 # 10 MB
+
 server:
   port: 8090
   servlet:

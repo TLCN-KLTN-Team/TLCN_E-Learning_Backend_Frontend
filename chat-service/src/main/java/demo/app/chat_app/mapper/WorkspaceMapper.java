@@ -7,6 +7,5 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface WorkspaceMapper {
-    @Mapping(target = "channels", ignore = true) // Will be populated separately via service layer
     WorkspaceResponse toResponse(Workspace workspace);
 }

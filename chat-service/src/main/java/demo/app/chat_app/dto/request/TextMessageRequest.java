@@ -10,8 +10,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ChatMessageRequest {
+public class TextMessageRequest {
     String channelId;
-    String content; // Renamed from 'message' to 'content' to match usage
-    // if we have attachments, they handle receive in controller
+    String content;
+    String clientMessageId; // UUID from frontend for tracking
 }

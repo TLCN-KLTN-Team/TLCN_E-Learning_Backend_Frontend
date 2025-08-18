@@ -1,17 +1,24 @@
 package demo.app.chat_app.service.impl;
 
 import demo.app.chat_app.dto.request.ChatMessageRequest;
+import demo.app.chat_app.dto.request.TextMessageRequest;
+import demo.app.chat_app.dto.response.AttachmentResponse;
 import demo.app.chat_app.dto.response.ChatMessageResponse;
 import demo.app.chat_app.dto.response.PageResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChatMessageMapper;
+import demo.app.chat_app.mapper.MessageAttachmentMapper;
 import demo.app.chat_app.model.*;
+import demo.app.chat_app.model.enums.AttachmentType;
+import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
+import demo.app.chat_app.repository.MessageAttachmentRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.repository.httpclient.ProfileClient;
 import demo.app.chat_app.service.ChatMessageService;
+import demo.app.chat_app.service.util.CloudinaryService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -22,9 +29,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -33,18 +44,11 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ChatMessageServiceImpl implements ChatMessageService {
     ChatMessageRepository chatMessageRepository;
-    ProfileClient profileClient;
     ChatMessageMapper chatMessageMapper;
     ChannelRepository channelRepository;
-    WorkspaceRepository workspaceRepository;
 
     @Override
-    public boolean existsConversation(String conversationId) {
-        return false;
-    }
-
-    @Override
-    public ChatMessageResponse createMessage(ChatMessageRequest request, Principal principal) {
+    public ChatMessageResponse sendMessage(ChatMessageRequest request, Principal principal) {
         // Validate and get channel
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
@@ -62,11 +66,11 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         ChatMessage message = ChatMessage.builder()
                 .sender(sender)
                 .channelId(request.getChannelId())
-                .message(request.getContent())
+                .content(request.getContent())
                 .createdDate(Instant.now())
                 .updatedDate(Instant.now())
                 .build();
-        
+
         message = chatMessageRepository.save(message);
 
         return this.toChatMessageResponse(message);
@@ -77,6 +81,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         boolean isMe = chatMessage.getSender().getUserId().equals(userId);
         chatMessageResponse.setMe(isMe);
+        chatMessageResponse.setMessageType(chatMessage.getMessageType());
 
         return chatMessageResponse;
     }
@@ -132,5 +137,63 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .totalPages(messagePage.getTotalPages())
                 .last(messagePage.isLast())
                 .build();
+    }
+
+    // ======== NEW METHODS FOR SEPARATED ARCHITECTURE ========
+    
+    @Override
+    public ChatMessageResponse sendTextMessage(TextMessageRequest request, Principal principal) {
+        // Validate and get channel
+        Channel channel = channelRepository.findById(request.getChannelId())
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        // Get current user
+        String userId = principal.getName();
+
+        // Find sender participant info
+        Participant sender = channel.getParticipants().stream()
+                .filter(p -> p.getUserId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL));
+
+        // Create and save message with PENDING status (for file uploads)
+        ChatMessage message = ChatMessage.builder()
+                .sender(sender)
+                .channelId(request.getChannelId())
+                .content(request.getContent())
+                .createdDate(Instant.now())
+                .updatedDate(Instant.now())
+                .build();
+
+        message = chatMessageRepository.save(message);
+        log.info("Text message created with ID: {}", message.getId());
+
+        return this.toChatMessageResponse(message);
+    }
+
+    @Override
+    public ChatMessageResponse getMessageById(String messageId) {
+        ChatMessage message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NOT_FOUND));
+        
+        // Check if user has access to this message's channel
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        Channel channel = channelRepository.findById(message.getChannelId())
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+                
+        if (!channel.hasParticipant(userId)) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
+        }
+
+        return this.toChatMessageResponse(message);
+    }
+
+
+    private ChatMessageResponse toUploadedResponse(ChatMessage chatMessage, String userId) {
+        var chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatMessage);
+        boolean isMe = chatMessage.getSender().getUserId().equals(userId);
+        chatMessageResponse.setMe(isMe);
+
+        return chatMessageResponse;
     }
 }
