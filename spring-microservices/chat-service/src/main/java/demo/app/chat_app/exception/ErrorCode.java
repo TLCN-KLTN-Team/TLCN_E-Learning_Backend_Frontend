@@ -28,6 +28,11 @@ public enum ErrorCode {
     FILE_TYPE_NOT_SUPPORTED(1018, "File type not supported", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
     CLOUDINARY_IO_EXCEPTION(1019, "Cloudinary IO exception", HttpStatus.INTERNAL_SERVER_ERROR),
     CLOUDINARY_UPLOAD_FAILED(1019, "Failed to upload file to Cloudinary", HttpStatus.INTERNAL_SERVER_ERROR),
+    CLOUDINARY_DELETE_FAILED(1024, "Failed to delete file from Cloudinary", HttpStatus.INTERNAL_SERVER_ERROR),
+    FILE_EMPTY(1020, "File is empty", HttpStatus.BAD_REQUEST),
+    INVALID_MESSAGE_STATUS(1021, "Invalid message status", HttpStatus.BAD_REQUEST),
+    ATTACHMENT_NOT_FOUND(1022, "Attachment not found", HttpStatus.NOT_FOUND),
+    UPLOAD_IN_PROGRESS(1023, "Upload is in progress", HttpStatus.ACCEPTED),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

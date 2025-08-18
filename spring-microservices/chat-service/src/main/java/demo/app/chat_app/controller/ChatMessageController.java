@@ -25,46 +25,6 @@ import java.util.List;
 public class ChatMessageController {
     ChatMessageService chatMessageService;
 
-//    @PostMapping("/send")
-//    public ApiResponse<ChatMessageResponse> sendMessage(
-//            @Valid @RequestBody ChatMessageRequest request) {
-//        ChatMessageResponse response = chatMessageService.createMessage(request);
-//        return ApiResponse.<ChatMessageResponse>builder()
-//                .result(response)
-//                .message("Message sent successfully")
-//                .build();
-//    }
-
-    @PostMapping("/send")
-    public ApiResponse<?> sendMessage(@RequestPart("channelId") String channelId,
-                            @RequestPart("content") String content,
-                            @RequestPart(value = "attachments", required = false) MultipartFile[] attachments,
-                            Principal principal) {
-        try {
-            SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
-            ChatMessageRequest request = new ChatMessageRequest();
-            request.setChannelId(channelId);
-            request.setContent(content);
-            if (attachments == null){
-                // we just send text message
-                ChatMessageResponse response = chatMessageService.sendMessage(request, principal);
-                return ApiResponse.<ChatMessageResponse>builder()
-                        .result(response)
-                        .message("Message sent successfully")
-                        .build();
-            }else {
-                // handle file and message
-                ChatMessageResponse response = chatMessageService.sendMessageWithAttachments(request, attachments, principal);
-                return ApiResponse.<ChatMessageResponse>builder()
-                        .result(response)
-                        .message("Message with attachments sent successfully")
-                        .build();
-            }
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.SEND_MESSAGE_FAILED);
-        }
-    }
-
     @GetMapping("/{channelId}")
     public ApiResponse<List<ChatMessageResponse>> getMessages(
             @PathVariable String channelId) {
