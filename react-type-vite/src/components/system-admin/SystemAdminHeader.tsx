@@ -1,4 +1,5 @@
-import type React from "react"
+import { Search, Bell } from "lucide-react";
+import type React from "react";
 
 const SystemAdminHeader: React.FC = () => {
   return (
@@ -8,36 +9,19 @@ const SystemAdminHeader: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Tìm kiếm..."
-              className="w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Tìm kiếm tài khoản, đơn vị, khóa học..."
+              className="w-96 pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg bg-gray-50 focus:bg-white
+                         placeholder-gray-500 text-gray-900 transition-all duration-200
+                         hover:border-gray-300 hover:bg-white"
             />
-            <svg
-              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
           {/* Notifications */}
           <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 17h5l-5 5v-5zM4 19h10a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
+            <Bell className="w-6 h-6" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
               3
             </span>
@@ -56,7 +40,7 @@ const SystemAdminHeader: React.FC = () => {
         </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default SystemAdminHeader
+export default SystemAdminHeader;
