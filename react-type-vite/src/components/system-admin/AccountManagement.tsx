@@ -85,19 +85,22 @@ const AccountManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Quản lý Tài khoản</h2>
-        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+          Quản lý Tài khoản
+        </h2>
+        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 self-start md:self-auto">
           <Plus className="w-5 h-5" />
-          Tạo tài khoản
+          <span className="hidden sm:inline">Tạo tài khoản</span>
+          <span className="sm:hidden">Tạo</span>
         </button>
       </div>
 
-      <div className="flex space-x-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-6">
         <select
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value)}
-          className="border border-gray-300 text-gray-900 rounded-lg px-3 py-2"
+          className="border border-gray-300 text-gray-900 rounded-lg px-3 py-2 w-full sm:w-auto"
         >
           <option value="all">Tất cả vai trò</option>
           <option value="system_admin">Quản trị hệ thống</option>

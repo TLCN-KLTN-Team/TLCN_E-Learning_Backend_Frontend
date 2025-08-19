@@ -59,21 +59,24 @@ const RevenueManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Quản lý Doanh thu</h2>
-        <div className="flex space-x-4">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+          Quản lý Doanh thu
+        </h2>
+        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="border border-gray-300 text-gray-900 rounded-lg px-3 py-2"
+            className="border border-gray-300 text-gray-900 rounded-lg px-3 py-2 w-full sm:w-auto"
           >
             <option value="2024-01">Tháng 1/2024</option>
             <option value="2023-12">Tháng 12/2023</option>
             <option value="2023-11">Tháng 11/2023</option>
           </select>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 justify-center">
             <Download className="w-4 h-4" />
-            Xuất báo cáo
+            <span className="hidden sm:inline">Xuất báo cáo</span>
+            <span className="sm:hidden">Xuất</span>
           </button>
         </div>
       </div>
