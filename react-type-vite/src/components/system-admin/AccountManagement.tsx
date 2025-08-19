@@ -1,7 +1,16 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Shield,
+  User,
+  GraduationCap,
+  Users,
+} from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 const AccountManagement: React.FC = () => {
   const [accounts, setAccounts] = useState([
@@ -37,12 +46,17 @@ const AccountManagement: React.FC = () => {
       status: "inactive",
       lastLogin: "2024-01-10 14:20",
     },
-  ])
+  ]);
 
-  const [selectedRole, setSelectedRole] = useState("all")
+  const headerStyles =
+    "px-6 py-3 text-left text-sm font-bold text-gray-900 uppercase tracking-wider";
+
+  const [selectedRole, setSelectedRole] = useState("all");
 
   const filteredAccounts =
-    selectedRole === "all" ? accounts : accounts.filter((account) => account.role === selectedRole)
+    selectedRole === "all"
+      ? accounts
+      : accounts.filter((account) => account.role === selectedRole);
 
   const getRoleName = (role: string) => {
     const roleNames = {
@@ -50,27 +64,43 @@ const AccountManagement: React.FC = () => {
       unit_admin: "Quản lý đơn vị",
       teacher: "Giảng viên",
       student: "Học viên",
+    };
+    return roleNames[role as keyof typeof roleNames] || role;
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case "system_admin":
+        return <Shield className="w-4 h-4" />;
+      case "unit_admin":
+        return <Users className="w-4 h-4" />;
+      case "teacher":
+        return <GraduationCap className="w-4 h-4" />;
+      case "student":
+        return <User className="w-4 h-4" />;
+      default:
+        return <User className="w-4 h-4" />;
     }
-    return roleNames[role as keyof typeof roleNames] || role
-  }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Quản lý Tài khoản</h2>
-        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Tạo tài khoản
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+          Quản lý Tài khoản
+        </h2>
+        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 self-start md:self-auto">
+          <Plus className="w-5 h-5" />
+          <span className="hidden sm:inline">Tạo tài khoản</span>
+          <span className="sm:hidden">Tạo</span>
         </button>
       </div>
 
-      <div className="flex space-x-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-6">
         <select
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2"
+          className="border border-gray-300 text-gray-900 rounded-lg px-3 py-2 w-full sm:w-auto"
         >
           <option value="all">Tất cả vai trò</option>
           <option value="system_admin">Quản trị hệ thống</option>
@@ -85,21 +115,11 @@ const AccountManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tài khoản
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Vai trò
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đăng nhập cuối
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
+                <th className={headerStyles}>Tài khoản</th>
+                <th className={headerStyles}>Vai trò</th>
+                <th className={headerStyles}>Trạng thái</th>
+                <th className={headerStyles}>Đăng nhập cuối</th>
+                <th className={headerStyles}>Thao tác</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -109,37 +129,55 @@ const AccountManagement: React.FC = () => {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-700">{account.name.charAt(0)}</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {account.name.charAt(0)}
+                          </span>
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{account.name}</div>
-                        <div className="text-sm text-gray-500">{account.email}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {account.name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {account.email}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {getRoleIcon(account.role)}
                       {getRoleName(account.role)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        account.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        account.status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
                       }`}
                     >
                       {account.status === "active" ? "Hoạt động" : "Tạm khóa"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{account.lastLogin}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {account.lastLogin}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">Sửa</button>
-                      <button className="text-yellow-600 hover:text-yellow-900">
+                      <button className="text-blue-600 hover:text-blue-900 flex items-center gap-1">
+                        <Edit className="w-4 h-4" />
+                        Sửa
+                      </button>
+                      <button className="text-yellow-600 hover:text-yellow-900 flex items-center gap-1">
+                        <Shield className="w-4 h-4" />
                         {account.status === "active" ? "Khóa" : "Mở khóa"}
                       </button>
-                      <button className="text-red-600 hover:text-red-900">Xóa</button>
+                      <button className="text-red-600 hover:text-red-900 flex items-center gap-1">
+                        <Trash2 className="w-4 h-4" />
+                        Xóa
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -149,7 +187,7 @@ const AccountManagement: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AccountManagement
+export default AccountManagement;
