@@ -1,50 +1,70 @@
-import type React from "react"
+import { Search, Bell, Menu } from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 
-const SystemAdminHeader: React.FC = () => {
+interface SystemAdminHeaderProps {
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (isOpen: boolean) => void;
+}
+
+const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
+  isSidebarOpen,
+  setIsSidebarOpen,
+}) => {
+  const modalRef = useRef<HTMLElement>(null);
+  const [isNoficationOpen, setIsNotificationOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (modalRef.current && !modalRef.current.contains(target)) {
+        setIsNotificationOpen(false);
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isNoficationOpen, isProfileOpen]);
+
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+    <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="lg:hidden p-2 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Search */}
           <div className="relative">
             <input
               type="text"
-              placeholder="Tìm kiếm..."
-              className="w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Tìm kiếm tài khoản, đơn vị, khóa học..."
+              className="w-64 md:w-96 pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg bg-gray-50 focus:bg-white
+                         placeholder-gray-500 text-gray-900 transition-all duration-200
+                         hover:border-gray-300 hover:bg-white text-sm md:text-base"
             />
-            <svg
-              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           {/* Notifications */}
           <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 17h5l-5 5v-5zM4 19h10a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            <Bell className="w-5 h-5 md:w-6 md:h-6" />
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 md:h-5 md:w-5 flex items-center justify-center text-[10px] md:text-xs">
               3
             </span>
           </button>
 
           {/* Profile */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 md:space-x-3">
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">SA</span>
             </div>
@@ -56,7 +76,7 @@ const SystemAdminHeader: React.FC = () => {
         </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default SystemAdminHeader
+export default SystemAdminHeader;
