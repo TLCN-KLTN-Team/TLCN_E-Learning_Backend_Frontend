@@ -62,18 +62,21 @@ const CategoryManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Quản lý Danh mục</h2>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+          Quản lý Danh mục
+        </h2>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 self-start md:self-auto"
         >
           <Plus className="w-5 h-5" />
-          Thêm danh mục
+          <span className="hidden sm:inline">Thêm danh mục</span>
+          <span className="sm:hidden">Thêm</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-purple-100">

@@ -10,9 +10,11 @@ import AccountManagement from "../../components/system-admin/AccountManagement";
 import CategoryManagement from "../../components/system-admin/CategoryManagement";
 import RevenueManagement from "../../components/system-admin/RevenueManagement";
 import SystemStatistics from "../../components/system-admin/SystemStatistics";
+import "../../styles/system-admin.css";
 
 const SystemAdminDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -50,14 +52,21 @@ const SystemAdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 system-admin">
       <SystemAdminSidebar
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
         activeSection={activeSection}
         setActiveSection={setActiveSection}
       />
-      <div className="flex-1 ml-64 flex flex-col bg-gray-50">
-        <SystemAdminHeader />
-        <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+      <div
+        className={`flex-1 flex flex-col bg-gray-50 transition-all duration-300`}
+      >
+        <SystemAdminHeader
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+        />
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-50">
           {renderContent()}
         </main>
       </div>

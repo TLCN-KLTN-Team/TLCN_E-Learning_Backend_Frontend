@@ -59,16 +59,17 @@ const TrainingUnitsManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
           Quản lý Đơn vị Đào tạo
         </h2>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 self-start md:self-auto"
         >
           <Plus className="w-5 h-5" />
-          Thêm đơn vị
+          <span className="hidden sm:inline">Thêm đơn vị</span>
+          <span className="sm:hidden">Thêm</span>
         </button>
       </div>
 
@@ -77,12 +78,22 @@ const TrainingUnitsManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className={headerStyles}>Đơn vị đào tạo</th>
-                <th className={headerStyles}>Mã đơn vị</th>
+                <th className={`${headerStyles} min-w-[200px]`}>
+                  Đơn vị đào tạo
+                </th>
+                <th className={`${headerStyles} hidden md:table-cell`}>
+                  Mã đơn vị
+                </th>
                 <th className={headerStyles}>Trạng thái</th>
-                <th className={headerStyles}>Học viên</th>
-                <th className={headerStyles}>Khóa học</th>
-                <th className={headerStyles}>Doanh thu</th>
+                <th className={`${headerStyles} hidden lg:table-cell`}>
+                  Học viên
+                </th>
+                <th className={`${headerStyles} hidden lg:table-cell`}>
+                  Khóa học
+                </th>
+                <th className={`${headerStyles} hidden xl:table-cell`}>
+                  Doanh thu
+                </th>
                 <th className={headerStyles}>Thao tác</th>
               </tr>
             </thead>
@@ -92,12 +103,19 @@ const TrainingUnitsManagement: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-gray-400" />
-                      <div className="text-sm font-medium text-gray-900">
-                        {unit.name}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {unit.name}
+                        </div>
+                        {/* Show mobile info */}
+                        <div className="md:hidden text-xs text-gray-500 mt-1">
+                          {unit.code} • {unit.students.toLocaleString()} học
+                          viên
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                     <div className="text-sm text-gray-900">{unit.code}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -111,33 +129,33 @@ const TrainingUnitsManagement: React.FC = () => {
                       {unit.status === "active" ? "Hoạt động" : "Tạm dừng"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
                     <div className="flex items-center gap-1">
                       <Users className="w-4 h-4 text-gray-400" />
                       {unit.students.toLocaleString()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
                     <div className="flex items-center gap-1">
                       <BookOpen className="w-4 h-4 text-gray-400" />
                       {unit.courses}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden xl:table-cell">
                     <div className="flex items-center gap-1">
                       <DollarSign className="w-4 h-4 text-gray-400" />
                       {unit.revenue.toLocaleString()} VNĐ
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 flex items-center gap-1">
+                    <div className="flex space-x-1 md:space-x-2">
+                      <button className="text-blue-600 hover:text-blue-900 flex items-center gap-1 p-1">
                         <Edit className="w-4 h-4" />
-                        Sửa
+                        <span className="hidden md:inline">Sửa</span>
                       </button>
-                      <button className="text-red-600 hover:text-red-900 flex items-center gap-1">
+                      <button className="text-red-600 hover:text-red-900 flex items-center gap-1 p-1">
                         <Trash2 className="w-4 h-4" />
-                        Xóa
+                        <span className="hidden md:inline">Xóa</span>
                       </button>
                     </div>
                   </td>

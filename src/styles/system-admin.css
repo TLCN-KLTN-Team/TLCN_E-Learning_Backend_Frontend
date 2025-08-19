@@ -1,0 +1,108 @@
+/* System Admin Specific Styles */
+
+/* No transitions for system admin links */
+.system-admin a,
+.system-admin button {
+  transition: none !important;
+}
+
+.system-admin a:hover,
+.system-admin button:hover {
+  transition: none !important;
+}
+
+/* Responsive breakpoints for system admin */
+@media (max-width: 768px) {
+  /* Header adjustments */
+  .system-admin-header {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Sidebar mobile overlay */
+  .system-admin-sidebar-overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  /* Table responsive adjustments */
+  .system-admin-table {
+    font-size: 0.875rem;
+  }
+
+  .system-admin-table th,
+  .system-admin-table td {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Very small screens */
+  .system-admin-table th,
+  .system-admin-table td {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Stack form elements */
+  .system-admin-form-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+/* Smooth transitions for responsive elements */
+.system-admin-sidebar {
+  transition: transform 0.3s ease-in-out;
+}
+
+.system-admin-main {
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* Ensure proper z-index stacking */
+.system-admin-sidebar {
+  z-index: 50;
+}
+
+.system-admin-overlay {
+  z-index: 40;
+}
+
+/* Stats cards responsive */
+.system-admin-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .system-admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .system-admin-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Mobile responsive utilities */
+.mobile-hidden {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-hidden {
+    display: block;
+  }
+}
+
+.mobile-only {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+}
