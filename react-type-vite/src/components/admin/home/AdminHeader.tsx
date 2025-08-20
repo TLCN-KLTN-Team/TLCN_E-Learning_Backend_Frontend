@@ -31,6 +31,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const [theme, setTheme] = useState("auto");
   const modalRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -119,6 +120,17 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                     ref={searchRef}
                     type="search"
                     placeholder="Search"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        if (searchValue) {
+                          setSearchValue("");
+                        } else if (isMobile) {
+                          setIsSearchExpanded(false);
+                        }
+                      }
+                    }}
                     className={`w-full pl-4 ml-4 pr-12 py-2 bg-gray-100 bg-opacity-60 border-2 rounded-lg focus:outline-none focus:bg-white text-sm md:text-base ${
                       isMobile && isSearchExpanded
                         ? "search-input-expanded"
@@ -133,12 +145,33 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                   <button
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-transparent border-0 p-2"
                     onClick={() => {
-                      if (isMobile && isSearchExpanded) {
+                      if (searchValue) {
+                        // Clear search if there's text
+                        setSearchValue("");
+                        searchRef.current?.focus();
+                      } else if (isMobile && isSearchExpanded) {
+                        // Close search on mobile if empty
                         setIsSearchExpanded(false);
                       }
                     }}
                   >
-                    <Search className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    {searchValue ? (
+                      <svg
+                        className="w-4 h-4 md:w-5 md:h-5 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    ) : (
+                      <Search className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    )}
                   </button>
                 </div>
               )}
