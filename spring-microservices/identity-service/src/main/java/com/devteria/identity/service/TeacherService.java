@@ -1,24 +1,30 @@
 package com.devteria.identity.service;
 
-import com.devteria.identity.dto.request.TeacherCreationRequest;
-import com.devteria.identity.dto.request.TeacherUpdateRequest;
+import com.devteria.identity.constant.PredefinedRole;
+import com.devteria.identity.entity.Role;
+import com.devteria.identity.repository.RoleRepository;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.devteria.identity.dto.request.TeacherRequest;
+import com.devteria.identity.dto.request.UserCreationRequest;
 import com.devteria.identity.dto.response.TeacherResponse;
 import com.devteria.identity.entity.Teacher;
-import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.TeacherMapper;
-import com.devteria.identity.mapper.UserMapper;
 import com.devteria.identity.repository.TeacherRepository;
-import com.devteria.identity.repository.UserRepository;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -27,39 +33,56 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeacherService {
 
     TeacherRepository teacherRepository;
-    UserRepository userRepository;
     TeacherMapper teacherMapper;
-    UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
+    RoleRepository roleRepository;
 
     @Transactional
-    public TeacherResponse createTeacher(TeacherCreationRequest request) {
-        log.info("Creating teacher with teacherId: {}", request.getTeacherId());
+    public TeacherResponse createTeacher(TeacherRequest request) {
+        HashSet<Role> roles = new HashSet<>();
 
-        // Check if teacher ID already exists
-        if (teacherRepository.existsByTeacherId(request.getTeacherId())) {
-            throw new AppException(ErrorCode.TEACHER_EXISTED);
+        roleRepository.findById(PredefinedRole.TEACHER_ROLE).ifPresent(roles::add);
+
+        // Tạo trực tiếp Teacher (không cần tạo User riêng)
+        Teacher teacher = Teacher.builder()
+                // User fields
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword())) // Nhớ encode password
+                .email(request.getEmail())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .dob(request.getDob())
+                .emailVerified(false) // hoặc giá trị default
+                .roles(roles)
+
+                // Teacher specific fields
+                .teacherId(request.getTeacherId())
+                .idDepartment(Integer.parseInt(request.getDepartmentId()))
+                .idEducational(Integer.parseInt(request.getEducationalUnitId()))
+                .description(request.getDescription())
+                .socialUrl(request.getSocialUrl())
+                .bankAccountNumber(request.getBankAccountNumber())
+                .build();
+
+        try {
+            teacher = teacherRepository.save(teacher);
+            return teacherMapper.toTeacherResponse(teacher);
+        } catch (DataIntegrityViolationException exception) {
+            log.error("Error creating teacher: {}", exception.getMessage());
+            throw new AppException(ErrorCode.USER_EXISTED);
         }
-
-        // Create teacher entity directly from request
-        Teacher teacher = teacherMapper.toTeacher(request);
-
-        // Save teacher
-        teacher = teacherRepository.save(teacher);
-
-        // Create response
-        TeacherResponse response = teacherMapper.toTeacherResponse(teacher);
-
-        log.info("Teacher created successfully with ID: {}", teacher.getId());
-        return response;
     }
 
-    public Page<TeacherResponse> getAllTeachers(String teacherId, String departmentId,
-                                                String educationalUnitId, Pageable pageable) {
-        log.info("Getting teachers with filters - teacherId: {}, departmentId: {}, educationalUnitId: {}",
-                teacherId, departmentId, educationalUnitId);
+    public Page<TeacherResponse> getAllTeachers(
+            String teacherId, String departmentId, String educationalUnitId, Pageable pageable) {
+        log.info(
+                "Getting teachers with filters - teacherId: {}, departmentId: {}, educationalUnitId: {}",
+                teacherId,
+                departmentId,
+                educationalUnitId);
 
-        Page<Teacher> teachers = teacherRepository.findTeachersWithFilters(
-                teacherId, departmentId, educationalUnitId, pageable);
+        Page<Teacher> teachers =
+                teacherRepository.findTeachersWithFilters(teacherId, departmentId, educationalUnitId, pageable);
 
         return teachers.map(teacherMapper::toTeacherResponse);
     }
@@ -67,8 +90,8 @@ public class TeacherService {
     public TeacherResponse getTeacherById(String id) {
         log.info("Getting teacher by ID: {}", id);
 
-        Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
+        Teacher teacher =
+                teacherRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
 
         return teacherMapper.toTeacherResponse(teacher);
     }
@@ -76,23 +99,24 @@ public class TeacherService {
     public TeacherResponse getTeacherByTeacherId(String teacherId) {
         log.info("Getting teacher by teacherId: {}", teacherId);
 
-        Teacher teacher = teacherRepository.findByTeacherId(teacherId)
+        Teacher teacher = teacherRepository
+                .findByTeacherId(teacherId)
                 .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
 
         return teacherMapper.toTeacherResponse(teacher);
     }
 
     @Transactional
-    public TeacherResponse updateTeacher(String id, TeacherUpdateRequest request) {
+    public TeacherResponse updateTeacher(String id, TeacherRequest request) {
         log.info("Updating teacher with ID: {}", id);
 
-        Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
+        Teacher teacher =
+                teacherRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
 
         // Check if new teacherId already exists (if provided and different)
-        if (request.getTeacherId() != null &&
-                !request.getTeacherId().equals(teacher.getTeacherId()) &&
-                teacherRepository.existsByTeacherId(request.getTeacherId())) {
+        if (request.getTeacherId() != null
+                && !request.getTeacherId().equals(teacher.getTeacherId())
+                && teacherRepository.existsByTeacherId(request.getTeacherId())) {
             throw new AppException(ErrorCode.TEACHER_EXISTED);
         }
 

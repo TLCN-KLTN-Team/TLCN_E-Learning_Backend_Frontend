@@ -52,6 +52,8 @@ public class Section implements Serializable {
 
     private Date createdAt;
 
+    private Date updateAt;
+
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     @ToString.Exclude
     private Set<Lesson> lessons = new HashSet<>();

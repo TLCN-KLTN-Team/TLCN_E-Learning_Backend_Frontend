@@ -48,5 +48,5 @@ public class Cart implements Serializable {
     private Set<Course> courses = new HashSet<>();
 
     @Column(name = "user_id")
-    private int idUser;
+    private String idUser;
 }

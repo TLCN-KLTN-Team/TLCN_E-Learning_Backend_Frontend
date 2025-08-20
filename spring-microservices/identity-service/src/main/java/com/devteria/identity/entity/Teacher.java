@@ -1,6 +1,7 @@
 package com.devteria.identity.entity;
 
 import jakarta.persistence.*;
+
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -11,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class Teacher extends User{
+public class Teacher extends User {
 
     private String teacherId;
 

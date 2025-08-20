@@ -40,7 +40,7 @@ public class FavoriteCourse implements Serializable {
     private int id;
 
     @Column(name = "user_id")
-    private int idUser;
+    private String idUser;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

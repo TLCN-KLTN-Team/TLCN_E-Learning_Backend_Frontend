@@ -10,7 +10,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.devteria.event.dto.NotificationEvent;
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.UserCreationRequest;
 import com.devteria.identity.dto.request.UserUpdateRequest;
@@ -59,15 +58,15 @@ public class UserService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-//        NotificationEvent notificationEvent = NotificationEvent.builder()
-//                .channel("EMAIL")
-//                .recipient(request.getEmail())
-//                .subject("Welcome to bookteria")
-//                .body("Hello, " + request.getUsername())
-//                .build();
-//
-//        // Publish message to kafka
-//        kafkaTemplate.send("notification-delivery", notificationEvent);
+        //        NotificationEvent notificationEvent = NotificationEvent.builder()
+        //                .channel("EMAIL")
+        //                .recipient(request.getEmail())
+        //                .subject("Welcome to bookteria")
+        //                .body("Hello, " + request.getUsername())
+        //                .build();
+        //
+        //        // Publish message to kafka
+        //        kafkaTemplate.send("notification-delivery", notificationEvent);
 
         var userCreationResponse = userMapper.toUserResponse(user);
 
@@ -114,13 +113,11 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('USER')")
-    public List<UserResponse> getUsersByMSSV(String mssv){
+    public List<UserResponse> getUsersByMSSV(String mssv) {
         List<User> users = userRepository.findByMssvContainingIgnoreCase(mssv);
         if (users.isEmpty()) {
             throw new AppException(ErrorCode.USER_NOT_EXISTED);
         }
-        return users.stream()
-                .map(userMapper::toUserResponse)
-                .toList();
+        return users.stream().map(userMapper::toUserResponse).toList();
     }
 }

@@ -42,8 +42,8 @@ public class Notification implements Serializable {
     private LocalDateTime sentDate;
 
     @Column(name = "sender_id")
-    private int senderId;
+    private String senderId;
 
     @Column(name = "receiver_id")
-    private int receiverId;
+    private String receiverId;
 }

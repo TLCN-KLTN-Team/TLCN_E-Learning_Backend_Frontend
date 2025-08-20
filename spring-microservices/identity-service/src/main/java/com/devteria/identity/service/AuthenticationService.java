@@ -6,7 +6,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -89,6 +88,7 @@ public class AuthenticationService {
 
         return IntrospectResponse.builder().valid(isValid).build();
     }
+
     public AuthenticationResponse refreshToken(RefreshRequest request) throws ParseException, JOSEException {
         var signedJWT = verifyRefreshToken(request.getToken());
 
@@ -102,8 +102,7 @@ public class AuthenticationService {
 
         var userId = signedJWT.getJWTClaimsSet().getSubject();
 
-        var user =
-                userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        var user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
         return toAuthenticationResponse(getAuthorizationData(user));
     }
@@ -190,7 +189,7 @@ public class AuthenticationService {
     }
 
     // convert data to response
-    private AuthenticationResponse toAuthenticationResponse(AuthorizationData data){
+    private AuthenticationResponse toAuthenticationResponse(AuthorizationData data) {
         return AuthenticationResponse.builder()
                 .accessToken(data.accessToken())
                 .refreshToken(data.refreshToken())
@@ -336,6 +335,12 @@ public class AuthenticationService {
         return stringJoiner.toString();
     }
 
-    // record to hold authorization data. record in new Java version is immutable and provides a concise way to define data classes.
-    private record AuthorizationData(String accessToken, String refreshToken, Instant accessTokenExpiry, Instant refreshTokenExpiry, Set<String> roles) {}
+    // record to hold authorization data. record in new Java version is immutable and provides a concise way to define
+    // data classes.
+    private record AuthorizationData(
+            String accessToken,
+            String refreshToken,
+            Instant accessTokenExpiry,
+            Instant refreshTokenExpiry,
+            Set<String> roles) {}
 }
