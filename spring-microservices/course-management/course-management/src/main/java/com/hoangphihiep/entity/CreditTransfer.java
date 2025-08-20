@@ -25,7 +25,7 @@ public class CreditTransfer implements Serializable {
     private Long id;
 
     @Column(name = "student_id")
-    private int idStudent;
+    private String idStudent;
 
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -51,7 +51,7 @@ public class CreditTransfer implements Serializable {
     private LocalDateTime requestDate;
 
     @Column(name = "approved_by")
-    private int approvedById;
+    private String approvedById;
 
     @Column(name = "approved_date")
     private LocalDateTime approvedDate;

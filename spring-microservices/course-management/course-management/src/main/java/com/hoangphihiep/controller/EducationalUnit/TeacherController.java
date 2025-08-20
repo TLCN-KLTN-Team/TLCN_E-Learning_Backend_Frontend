@@ -1,9 +1,9 @@
 package com.hoangphihiep.controller.EducationalUnit;
 
-import com.hoangphihiep.dto.request.TeacherCreateRequest;
-import com.hoangphihiep.dto.request.TeacherUpdateRequest;
+import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.TeacherResponse;
+import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.service.TeacherService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ public class TeacherController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<TeacherResponse>> createTeacher(@Valid @RequestBody TeacherCreateRequest request) {
+    public ResponseEntity<ApiResponse<TeacherResponse>> createTeacher(@Valid @RequestBody TeacherRequest request) {
         log.info("REST request to create teacher with username: {}", request.getUsername());
         ApiResponse<TeacherResponse> response = teacherService.createTeacher(request);
         return ResponseEntity.ok(response);
@@ -49,7 +49,7 @@ public class TeacherController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TeacherResponse>> updateTeacher(
             @PathVariable String id,
-            @Valid @RequestBody TeacherUpdateRequest request) {
+            @Valid @RequestBody TeacherRequest request) {
 
         log.info("REST request to update teacher with id: {}", id);
         ApiResponse<TeacherResponse> response = teacherService.updateTeacher(id, request);

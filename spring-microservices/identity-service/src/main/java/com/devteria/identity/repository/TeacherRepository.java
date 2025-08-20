@@ -1,6 +1,7 @@
 package com.devteria.identity.repository;
 
-import com.devteria.identity.entity.Teacher;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import com.devteria.identity.entity.Teacher;
 
 @Repository
 public interface TeacherRepository extends JpaRepository<Teacher, String> {
@@ -17,14 +18,12 @@ public interface TeacherRepository extends JpaRepository<Teacher, String> {
 
     boolean existsByTeacherId(String teacherId);
 
-    @Query("SELECT t FROM Teacher t WHERE " +
-            "(:teacherId IS NULL OR t.teacherId LIKE %:teacherId%) AND " +
-            "(:departmentId IS NULL OR t.idDepartment = :departmentId) AND " +
-            "(:educationalUnitId IS NULL OR t.idEducational = :educationalUnitId)")
+    @Query("SELECT t FROM Teacher t WHERE " + "(:teacherId IS NULL OR t.teacherId LIKE %:teacherId%) AND "
+            + "(:departmentId IS NULL OR t.idDepartment = :departmentId) AND "
+            + "(:educationalUnitId IS NULL OR t.idEducational = :educationalUnitId)")
     Page<Teacher> findTeachersWithFilters(
             @Param("teacherId") String teacherId,
             @Param("departmentId") String departmentId,
             @Param("educationalUnitId") String educationalUnitId,
-            Pageable pageable
-    );
+            Pageable pageable);
 }

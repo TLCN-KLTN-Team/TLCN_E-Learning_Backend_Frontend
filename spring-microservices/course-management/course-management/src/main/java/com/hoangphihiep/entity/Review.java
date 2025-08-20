@@ -47,7 +47,7 @@ public class Review implements Serializable{
     private Course course;
 
     @Column(name = "user_id")
-    private int createdById;
+    private String createdById;
 
     @Column(name = "created_at")
     private Date createdAt;

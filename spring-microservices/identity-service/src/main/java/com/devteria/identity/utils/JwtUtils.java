@@ -1,4 +1,3 @@
 package com.devteria.identity.utils;
 
-public class JwtUtils {
-}
+public class JwtUtils {}

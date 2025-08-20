@@ -39,7 +39,7 @@ public class CourseProgress implements Serializable {
     private int id;
 
     @Column(name = "user_id")
-    private int idUser;
+    private String idUser;
 
     @ManyToOne
     @JoinColumn(name = "course_id", nullable = false)
