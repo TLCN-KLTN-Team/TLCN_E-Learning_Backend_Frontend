@@ -36,7 +36,8 @@ public class AuthenticationController {
         System.out.println("Email: " + request.getUsername());
         System.out.println("Password: " + request.getPassword());
         var result = authenticationService.authenticate(request);
-        System.out.println ("Ket qua: " + result.getAccessToken() + " " + result.getRoles() + " " + result.getRefreshToken() + " " + result.getExpiryTime() + " " + result.getRefreshExpiryTime());
+        System.out.println("Ket qua: " + result.getAccessToken() + " " + result.getRoles() + " "
+                + result.getRefreshToken() + " " + result.getExpiryTime() + " " + result.getRefreshExpiryTime());
         return ApiResponse.<AuthenticationResponse>builder().result(result).build();
     }
 

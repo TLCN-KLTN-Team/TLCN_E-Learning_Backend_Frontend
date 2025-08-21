@@ -1,6 +1,7 @@
 package com.hoangphihiep.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -39,9 +40,13 @@ public class Answer implements Serializable {
 
     @Column(name = "is_correct")
     @JsonProperty("isCorrect")
-    private boolean isCorrect;
+    private Boolean isCorrect;
 
     private int orderIndex;
+
+    private Date createdAt;
+
+    private Date updateAt;
 
     @ManyToOne
     @JoinColumn(name = "question_id")

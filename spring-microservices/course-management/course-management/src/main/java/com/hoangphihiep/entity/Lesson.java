@@ -1,6 +1,7 @@
 package com.hoangphihiep.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,6 +47,10 @@ public class Lesson implements Serializable {
 
     @Column(name = "is_free_lesson")
     private Boolean isFreeLesson;
+
+    private Date createdAt;
+
+    private Date updateAt;
 
     @ManyToOne
     @JoinColumn(name = "section_id")

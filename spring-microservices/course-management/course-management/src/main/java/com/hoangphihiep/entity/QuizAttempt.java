@@ -18,7 +18,7 @@ public class QuizAttempt {
     private int id;
 
     @Column(name = "user_id")
-    private int idUser;
+    private String idUser;
 
     private double score;
     private double totalScore;

@@ -1,20 +1,22 @@
 package com.devteria.identity.controller;
 
-import com.devteria.identity.dto.request.ApiResponse;
-import com.devteria.identity.dto.request.TeacherCreationRequest;
-import com.devteria.identity.dto.request.TeacherUpdateRequest;
-import com.devteria.identity.dto.response.TeacherResponse;
-import com.devteria.identity.service.TeacherService;
 import jakarta.validation.Valid;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
+
+import com.devteria.identity.dto.request.ApiResponse;
+import com.devteria.identity.dto.request.TeacherRequest;
+import com.devteria.identity.dto.response.TeacherResponse;
+import com.devteria.identity.service.TeacherService;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/teachers")
@@ -26,7 +28,7 @@ public class TeacherController {
     TeacherService teacherService;
 
     @PostMapping
-    public ApiResponse<TeacherResponse> createTeacher(@Valid @RequestBody TeacherCreationRequest request) {
+    public ApiResponse<TeacherResponse> createTeacher(@Valid @RequestBody TeacherRequest request) {
         log.info("Creating teacher with teacherId: {}", request.getTeacherId());
         return ApiResponse.<TeacherResponse>builder()
                 .result(teacherService.createTeacher(request))
@@ -43,11 +45,11 @@ public class TeacherController {
             @RequestParam(required = false) String departmentId,
             @RequestParam(required = false) String educationalUnitId) {
 
-        log.info("Getting teachers - page: {}, size: {}, sortBy: {}, sortDir: {}",
-                page, size, sortBy, sortDir);
+        log.info("Getting teachers - page: {}, size: {}, sortBy: {}, sortDir: {}", page, size, sortBy, sortDir);
 
-        Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ApiResponse.<Page<TeacherResponse>>builder()
@@ -73,8 +75,7 @@ public class TeacherController {
 
     @PutMapping("/{id}")
     public ApiResponse<TeacherResponse> updateTeacher(
-            @PathVariable String id,
-            @Valid @RequestBody TeacherUpdateRequest request) {
+            @PathVariable String id, @Valid @RequestBody TeacherRequest request) {
         log.info("Updating teacher with ID: {}", id);
         return ApiResponse.<TeacherResponse>builder()
                 .result(teacherService.updateTeacher(id, request))

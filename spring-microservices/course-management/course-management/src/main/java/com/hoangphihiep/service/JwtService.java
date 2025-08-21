@@ -12,6 +12,20 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.UUID;
 
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jwt.JWTClaimsSet;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 @Service
 @Slf4j
 public class JwtService {
@@ -22,7 +36,32 @@ public class JwtService {
     @Value("${jwt.valid-duration:3600}")
     private long validDuration;
 
+    // Cache để lưu token, tránh generate liên tục
+    private final ConcurrentMap<String, TokenInfo> tokenCache = new ConcurrentHashMap<>();
+
+    private static class TokenInfo {
+        String token;
+        Instant expiration;
+
+        TokenInfo(String token, Instant expiration) {
+            this.token = token;
+            this.expiration = expiration;
+        }
+
+        boolean isExpired() {
+            return Instant.now().isAfter(expiration.minus(300, ChronoUnit.SECONDS)); // Refresh 5 minutes before expiry
+        }
+    }
+
     public String generateServiceToken() {
+        String cacheKey = "course-management-service";
+        TokenInfo cachedToken = tokenCache.get(cacheKey);
+
+        // Return cached token if still valid
+        if (cachedToken != null && !cachedToken.isExpired()) {
+            return cachedToken.token;
+        }
+
         try {
             JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
@@ -35,8 +74,8 @@ public class JwtService {
                     .issueTime(new Date())
                     .expirationTime(Date.from(expiration))
                     .jwtID(UUID.randomUUID().toString())
-                    .claim("token_type", "access") // Match identity-service token type
-                    .claim("scope", "ROLE_ADMIN") // Match identity-service scope format
+                    .claim("token_type", "access")
+                    .claim("scope", "ROLE_ADMIN") // Make sure this matches identity service expectations
                     .build();
 
             Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -45,7 +84,11 @@ public class JwtService {
             jwsObject.sign(new MACSigner(signerKey.getBytes()));
 
             String token = jwsObject.serialize();
-            log.debug("Generated service token for course-management with ROLE_ADMIN scope");
+
+            // Cache the token
+            tokenCache.put(cacheKey, new TokenInfo(token, expiration));
+
+            log.debug("Generated and cached new service token for course-management");
             return token;
 
         } catch (JOSEException e) {
@@ -56,11 +99,16 @@ public class JwtService {
 
     public boolean isTokenValid(String token) {
         try {
-            // Basic validation - in production, should verify signature and expiration
             return token != null && !token.isEmpty();
         } catch (Exception e) {
             log.error("Token validation failed", e);
             return false;
         }
+    }
+
+    // Method to clear cache if needed
+    public void clearTokenCache() {
+        tokenCache.clear();
+        log.debug("Token cache cleared");
     }
 }

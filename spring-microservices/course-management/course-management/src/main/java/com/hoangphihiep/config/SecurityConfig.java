@@ -15,7 +15,14 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/teachers/**",
-            "/actuator/**"
+            "/api/v1/courses/**",
+            "/api/v1/sections/**",
+            "/api/v1/quizzes/**",
+            "/api/v1/questions/**",
+            "/api/v1/lessons/**",
+            "/api/v1/answers/**",
+            "/actuator/**",
+            "/actuator/health/**"
     };
 
     @Bean

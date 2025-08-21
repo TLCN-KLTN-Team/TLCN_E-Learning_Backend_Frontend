@@ -1,6 +1,5 @@
 package com.devteria.identity.dto.response;
 
-import java.util.Date;
 import java.util.Set;
 
 import lombok.*;

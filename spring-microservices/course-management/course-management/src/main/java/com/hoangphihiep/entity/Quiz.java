@@ -1,6 +1,7 @@
 package com.hoangphihiep.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -59,6 +60,10 @@ public class Quiz implements Serializable {
     private Boolean showResults;
 
     private Boolean isPublished;
+
+    private Date createdAt;
+
+    private Date updateAt;
 
     @ManyToOne
     @JoinColumn(name = "section_id")
