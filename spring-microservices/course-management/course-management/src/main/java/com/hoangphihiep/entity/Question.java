@@ -1,6 +1,7 @@
 package com.hoangphihiep.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +40,10 @@ public class Question implements Serializable {
 
     @Column(name = "score")
     private int score;
+
+    private Date createdAt;
+
+    private Date updateAt;
 
     @OneToMany(mappedBy = "question",fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Answer> answers = new HashSet<>();

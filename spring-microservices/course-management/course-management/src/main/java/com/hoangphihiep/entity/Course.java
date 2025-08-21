@@ -70,7 +70,7 @@ public class Course implements Serializable {
     private Boolean isApproved;
 
     @Column(name = "teacher_id")
-    private int idTeacher;
+    private String idTeacher;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private Set<Review> review = new HashSet<>();

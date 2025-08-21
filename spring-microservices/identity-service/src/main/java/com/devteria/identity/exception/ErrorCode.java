@@ -34,7 +34,10 @@ public enum ErrorCode {
 
     // Authentication & Authorization
     UNAUTHENTICATED(1006, "Authentication required", HttpStatus.UNAUTHORIZED), // Sửa message rõ ràng hơn
-    UNAUTHORIZED(1007, "You do not have permission to access this resource", HttpStatus.FORBIDDEN), // Sửa message rõ ràng hơn
+    UNAUTHORIZED(
+            1007,
+            "You do not have permission to access this resource",
+            HttpStatus.FORBIDDEN), // Sửa message rõ ràng hơn
     INVALID_TOKEN(1015, "Invalid or expired token", HttpStatus.UNAUTHORIZED),
     TOKEN_EXPIRED(1016, "Token has expired", HttpStatus.UNAUTHORIZED),
 

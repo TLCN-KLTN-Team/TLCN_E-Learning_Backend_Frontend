@@ -26,7 +26,7 @@ public class Payout implements Serializable {
     private Long id;
 
     @Column(name = "teacher_id")
-    private int idTeacher;
+    private String idTeacher;
 
     @Column(name = "amount", nullable = false)
     private double amount;

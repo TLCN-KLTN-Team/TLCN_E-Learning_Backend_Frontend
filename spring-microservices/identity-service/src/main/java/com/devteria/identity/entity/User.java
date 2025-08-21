@@ -31,16 +31,18 @@ public class User {
 
     @Column(name = "first_name")
     String firstName;
+
     @Column(name = "last_name")
     String lastName;
+
     String dob;
 
     String avatarUrl;
 
     String mssv; // Mã số sinh viên, if applicable
 
-//    @OneToOne(cascade = CascadeType.ALL)
-//    Address address;
+    //    @OneToOne(cascade = CascadeType.ALL)
+    //    Address address;
 
     @Column(name = "email_verified", nullable = false, columnDefinition = "boolean default false")
     boolean emailVerified;

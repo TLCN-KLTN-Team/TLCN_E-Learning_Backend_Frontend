@@ -30,7 +30,7 @@ public class RefundRequest implements Serializable {
     private OrderItem orderItem;
 
     @Column(name = "user_id")
-    private int idUser;
+    private String idUser;
 
     @Column(name = "reason", columnDefinition = "TEXT")
     private String reason;
@@ -45,7 +45,7 @@ public class RefundRequest implements Serializable {
     private LocalDateTime processedDate;
 
     @Column(name = "processed_by_id")
-    private int processedById;
+    private String processedById;
 
     @Column(name = "admin_notes", columnDefinition = "TEXT")
     private String adminNotes;

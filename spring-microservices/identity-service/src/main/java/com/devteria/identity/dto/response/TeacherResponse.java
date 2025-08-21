@@ -1,5 +1,7 @@
 package com.devteria.identity.dto.response;
 
+import java.util.Set;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -9,12 +11,20 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TeacherResponse {
-    String id;
-    String teacherId;
-    String departmentId;
-    String educationalUnitId;
-    String description;
-    String socialUrl;
-    String bankAccountNumber;
-    UserResponse user;
+    private String id;
+    private String username;
+    private String email;
+    private String firstName;
+    private String lastName;
+    private String dob;
+    private boolean emailVerified;
+    private Set<RoleResponse> roles;
+
+    // Teacher specific fields
+    private String teacherId;
+    private String departmentId;
+    private String educationalId;
+    private String description;
+    private String socialUrl;
+    private String bankAccountNumber;
 }

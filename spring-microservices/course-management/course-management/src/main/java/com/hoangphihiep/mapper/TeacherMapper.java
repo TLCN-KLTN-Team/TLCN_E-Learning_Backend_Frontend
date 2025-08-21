@@ -1,8 +1,6 @@
 package com.hoangphihiep.mapper;
 
-import com.hoangphihiep.dto.request.TeacherCreateRequest;
-import com.hoangphihiep.dto.request.TeacherUpdateRequest;
-import com.hoangphihiep.dto.response.TeacherResponse;
+import com.hoangphihiep.dto.request.TeacherRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -11,7 +9,7 @@ import java.util.Map;
 @Component
 public class TeacherMapper {
 
-    public Map<String, Object> toCreateRequestMap(TeacherCreateRequest request) {
+    public Map<String, Object> toCreateRequestMap(TeacherRequest request) {
         Map<String, Object> map = new HashMap<>();
 
         // User information
@@ -38,7 +36,7 @@ public class TeacherMapper {
         return map;
     }
 
-    public Map<String, Object> toUpdateRequestMap(TeacherUpdateRequest request) {
+    public Map<String, Object> toUpdateRequestMap(TeacherRequest request) {
         Map<String, Object> map = new HashMap<>();
 
         // User information

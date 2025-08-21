@@ -42,7 +42,7 @@ public class Discussion implements Serializable{
     private String content;
 
     @Column(name = "user_id")
-    private int idUser;
+    private String idUser;
 
     @Column(name = "asked_at", nullable = false)
     private LocalDateTime askedAt;
