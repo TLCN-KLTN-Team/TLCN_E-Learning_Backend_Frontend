@@ -429,13 +429,13 @@ const Header = () => {
               <>
                 <NavLink
                   to="/login"
-                  className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:text-bs-primary transition-colors font-medium no-hover-effect"
+                  className="bg-gray-500 text-white px-6 py-2 rounded-lg transition-colors font-medium hover:bg-gray-600 no-hover-effect"
                 >
                   Đăng nhập
                 </NavLink>
                 <NavLink
                   to="/register"
-                  className="bg-bs-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-bs-primary-dark transition-colors no-hover-effect"
+                  className="bg-bs-primary text-white px-6 py-2 rounded-lg font-medium transition-colors no-hover-effect"
                 >
                   Đăng ký
                 </NavLink>

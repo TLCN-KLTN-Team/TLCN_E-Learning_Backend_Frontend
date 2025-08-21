@@ -98,11 +98,6 @@ const RegisterPage = () => {
           return "First name phải ít nhất 2 ký tự";
         }
         break;
-      case "lastName":
-        if (!value || (typeof value === "string" && value.trim().length < 2)) {
-          return "Last name phải ít nhất 2 ký tự";
-        }
-        break;
       case "username":
         if (!value || (typeof value === "string" && value.trim().length < 3)) {
           return "Username phải ít nhất 3 ký tự";
@@ -290,7 +285,6 @@ const RegisterPage = () => {
               className="block text-sm font-semibold text-gray-900"
             >
               First Name
-              <span className="text-red-500 ml-1">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -310,7 +304,7 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                     : "border-gray-300 focus:border-transparent"
                 )}
-                placeholder="Enter your first name"
+                placeholder="Nhập first name"
               />
             </div>
             {errors.firstName && (
@@ -324,7 +318,7 @@ const RegisterPage = () => {
               htmlFor="lastName"
               className="block text-sm font-semibold text-gray-900"
             >
-              Last Name
+              Last Name <span className="font-light">(optional)</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -344,14 +338,8 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Last Name"
               />
             </div>
-            {errors.lastName && (
-              <p className="text-sm text-red-400 font-medium">
-                {errors.lastName}
-              </p>
-            )}
           </div>
         </div>
 
@@ -363,7 +351,7 @@ const RegisterPage = () => {
               htmlFor="username"
               className="block text-sm font-semibold text-gray-900"
             >
-              Username *
+              Username
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -383,7 +371,7 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Username"
+                placeholder="Nhập username"
               />
             </div>
             {errors.username && (
@@ -399,7 +387,7 @@ const RegisterPage = () => {
               htmlFor="email"
               className="block text-sm font-semibold text-gray-900"
             >
-              Email address *
+              Email address
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -419,7 +407,7 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="E-mail"
+                placeholder="Nhập e-mail"
               />
             </div>
             {errors.email && (
@@ -436,7 +424,7 @@ const RegisterPage = () => {
               htmlFor="password"
               className="block text-sm font-semibold text-gray-900"
             >
-              Password *
+              Password
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -456,13 +444,14 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Password"
+                placeholder="Nhập password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-r-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset group z-10"
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
               >
                 {showPassword ? (
                   <EyeClosed className="w-5 h-5 transition-transform duration-200" />
@@ -484,7 +473,7 @@ const RegisterPage = () => {
               htmlFor="confirmPassword"
               className="block text-sm font-semibold text-gray-900"
             >
-              Confirm Password *
+              Confirm Password
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -504,13 +493,14 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Confirm Password"
+                placeholder="Nhập confirm password"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-r-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset group z-10"
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
               >
                 {showConfirmPassword ? (
                   <EyeClosed className="w-5 h-5 transition-transform duration-200" />
@@ -528,14 +518,14 @@ const RegisterPage = () => {
         </div>
 
         {/* Date of Birth and Gender Fields */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6">
           {/* Date of Birth Field */}
           <div className="space-y-2">
             <label
               htmlFor="dob"
               className="block text-sm font-semibold text-gray-900"
             >
-              Date of Birth *
+              Date of Birth
             </label>
             <div className="relative flex gap-2">
               <Input
@@ -563,6 +553,7 @@ const RegisterPage = () => {
                     id="date-picker"
                     variant="ghost"
                     className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                    tabIndex={-1}
                   >
                     <CalendarIcon className="size-3.5" />
                     <span className="sr-only">Select date</span>
@@ -570,9 +561,12 @@ const RegisterPage = () => {
                 </PopoverTrigger>
                 <PopoverContent
                   className="w-auto p-0 z-[9999] bg-white shadow-xl border border-gray-200 rounded-lg"
-                  align="end"
+                  align="start"
+                  side="bottom"
+                  sideOffset={8}
                   alignOffset={-8}
-                  sideOffset={10}
+                  onEscapeKeyDown={() => setDobOpen(false)}
+                  onPointerDownOutside={() => setDobOpen(false)}
                   style={{
                     zIndex: 9999,
                     backgroundColor: "white",

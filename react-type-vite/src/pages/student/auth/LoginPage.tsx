@@ -72,11 +72,11 @@ const LoginPage = () => {
               value={formData.username}
               onChange={handleInputChange}
               className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400"
-              placeholder="Enter your username or email"
+              placeholder="devzeus || devzeus@gmail.com"
               aria-describedby="username-description"
             />
             <span id="username-description" className="sr-only">
-              Please enter your username or email address
+              Nhập tên đăng nhập hoặc email của bạn
             </span>
           </div>
         </div>
@@ -110,14 +110,18 @@ const LoginPage = () => {
               value={formData.password}
               onChange={handleInputChange}
               className="w-full h-12 pl-10 pr-12 border border-gray-300 rounded-lg focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400"
-              placeholder="Enter your password"
+              placeholder="••••••••"
               aria-describedby="password-description"
+              style={{
+                letterSpacing: showPassword ? "normal" : "0.2em",
+              }}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-r-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset group z-10"
               aria-label={showPassword ? "Hide password" : "Show password"}
+              tabIndex={-1}
             >
               {showPassword ? (
                 <EyeClosed className="w-5 h-5 transition-transform duration-200" />
@@ -126,7 +130,7 @@ const LoginPage = () => {
               )}
             </button>
             <span id="password-description" className="sr-only">
-              Please enter your password
+              Nhập mật khẩu ở đây
             </span>
           </div>
         </div>
@@ -142,7 +146,7 @@ const LoginPage = () => {
             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
           />
           <label htmlFor="rememberMe" className="ml-3 text-sm text-gray-700">
-            Keep me signed in
+            Ghi nhớ đăng nhập
           </label>
         </div>
 
@@ -151,7 +155,7 @@ const LoginPage = () => {
           type="submit"
           className="w-full h-12 bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg"
         >
-          Sign In
+          Đăng nhập
         </Button>
 
         {/* Divider */}
@@ -161,7 +165,7 @@ const LoginPage = () => {
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-4 bg-white text-gray-600 font-medium">
-              Or continue with
+              Hoặc
             </span>
           </div>
         </div>
@@ -175,12 +179,12 @@ const LoginPage = () => {
         {/* Sign Up Link */}
         <div className="text-center pt-4">
           <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
+            Chưa có tài khoản?{" "}
             <a
               href="/register"
               className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
-              Sign up here
+              Đăng ký tại đây
             </a>
           </p>
         </div>
