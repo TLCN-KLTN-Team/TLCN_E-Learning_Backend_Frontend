@@ -39,7 +39,7 @@ const AuthLayout = ({
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-purple-900/40"></div>
 
         {/* Centered Register Form with better padding */}
-        <div className="relative z-10 w-full max-w-4xl mx-auto">
+        <div className="relative z-10 w-full max-w-2xl">
           {/* Form with enhanced padding */}
           <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-6 lg:p-8">
             {/* Header */}
@@ -50,7 +50,7 @@ const AuthLayout = ({
               </h2>
               <p className="text-sm text-gray-600">{subtitle}</p>
             </div>
-            <div className="max-w-3xl mx-auto">{children}</div>
+            <div className="max-w-3xl">{children}</div>
           </div>
         </div>
       </div>

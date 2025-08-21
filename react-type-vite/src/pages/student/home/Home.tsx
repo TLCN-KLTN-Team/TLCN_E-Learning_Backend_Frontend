@@ -8,6 +8,9 @@ import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
 import EducationalUnitLinked from "@/components/student/home/EducationalUnitLinked";
 
+// Import link hover effects for homepage
+import "../../../styles/link-hover-effects.css";
+
 // Import images
 import element06 from "@/assets/images/element/06.svg";
 import element07 from "@/assets/images/element/07.svg";
@@ -82,7 +85,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground homepage-links">
       {/* Google Auth Loader Overlay */}
 
       {/* Header */}
