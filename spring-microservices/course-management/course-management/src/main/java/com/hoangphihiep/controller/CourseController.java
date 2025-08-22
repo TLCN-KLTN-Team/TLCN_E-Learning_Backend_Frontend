@@ -13,67 +13,52 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/courses")
+@RequestMapping("/courses")
 @RequiredArgsConstructor
 @Slf4j
 public class CourseController {
 
     private final CourseService courseService;
     @PostMapping
-    public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
-            @Valid @RequestBody CourseRequest request) {
-        log.info("Creating course with name: {}", request.getCourseName());
-        ApiResponse<CourseResponse> response = courseService.createCourse(request);
-        return ResponseEntity.ok(response);
+    public ApiResponse<CourseResponse> createCourse(@Valid @RequestBody CourseRequest request) {
+        CourseResponse response = courseService.createCourse(request);
+
+        return ApiResponse.<CourseResponse>builder()
+                .result(response)
+                .build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<CourseResponse>> updateCourse(
+    public ApiResponse<CourseResponse> updateCourse(
             @PathVariable Integer id,
             @Valid @RequestBody CourseRequest request) {
-        log.info("Updating course with id: {}", id);
-        ApiResponse<CourseResponse> response = courseService.updateCourse(id, request);
-        return ResponseEntity.ok(response);
-    }
+        CourseResponse response = courseService.updateCourse(id, request);
 
-    @PutMapping("/{id}/detailed")
-    public ResponseEntity<ApiResponse<CourseResponse>> updateCourseWithDetails(
-            @PathVariable Integer id,
-            @Valid @RequestBody CourseRequest request) {
-        log.info("Updating course with detailed components for id: {}", id);
-        ApiResponse<CourseResponse> response = courseService.updateCourseWithDetails(id, request);
-        return ResponseEntity.ok(response);
+        return ApiResponse.<CourseResponse>builder()
+                .result(response)
+                .build();
     }
-
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CourseResponse>>> getAllCourses(
+    public ApiResponse<List<CourseResponse>> getAllCourses(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "") String search) {
-        log.info("Getting all courses - page: {}, size: {}, search: {}", page, size, search);
-        ApiResponse<List<CourseResponse>> response = courseService.getAllCourses(page, size, search);
-        return ResponseEntity.ok(response);
+        return ApiResponse.<List<CourseResponse>>builder()
+                .result(courseService.getAllCourses(page, size, search))
+                .build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CourseResponse>> getCourseById(@PathVariable Integer id) {
-        log.info("Getting course by id: {}", id);
-        ApiResponse<CourseResponse> response = courseService.getCourseById(id);
-        return ResponseEntity.ok(response);
+    public ApiResponse<CourseResponse> getCourseById(@PathVariable Integer id) {
+        return ApiResponse.<CourseResponse>builder()
+                .result(courseService.getCourseById(id))
+                .build();
     }
 
     @GetMapping("/teacher/{teacherId}")
-    public ResponseEntity<ApiResponse<List<CourseResponse>>> getCoursesByTeacher(
-            @PathVariable String teacherId) {
-        log.info("Getting courses by teacher: {}", teacherId);
-        ApiResponse<List<CourseResponse>> response = courseService.getCoursesByTeacher(teacherId);
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteCourse(@PathVariable Integer id) {
-        log.info("Deleting course with id: {}", id);
-        ApiResponse<Void> response = courseService.deleteCourse(id);
-        return ResponseEntity.ok(response);
+    public ApiResponse<List<CourseResponse>> getCoursesByTeacher(@PathVariable String teacherId) {
+        return ApiResponse.<List<CourseResponse>>builder()
+                .result(courseService.getCoursesByTeacher(teacherId))
+                .build();
     }
 }
