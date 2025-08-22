@@ -1,6 +1,7 @@
-import { Search, Bell, Menu } from "lucide-react";
+import { Search, Bell, Menu, X } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import AdminProfile from "../shared/AdminProfile";
 
 interface SystemAdminHeaderProps {
   isSidebarOpen: boolean;
@@ -14,6 +15,7 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
   const modalRef = useRef<HTMLElement>(null);
   const [isNoficationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -29,6 +31,16 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
     };
   }, [isNoficationOpen, isProfileOpen]);
 
+  const escapeKeyHandler = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      setSearchValue("");
+    }
+  };
+
+  const handleSearchClear = () => {
+    setSearchValue("");
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-4">
       <div className="flex items-center justify-between">
@@ -42,15 +54,22 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
           </button>
 
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex items-center">
             <input
               type="text"
               placeholder="Tìm kiếm tài khoản, đơn vị, khóa học..."
-              className="w-64 md:w-96 pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg bg-gray-50 focus:bg-white
-                         placeholder-gray-500 text-gray-900 transition-all duration-200
+              className="w-64 md:w-96 pl-10 pr-4 py-2.5 border-1 border-gray-200 rounded-lg bg-gray-50 focus:bg-white
+                         placeholder-gray-500 text-gray-800 transition-all duration-200
                          hover:border-gray-300 hover:bg-white text-sm md:text-base"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => escapeKeyHandler(e)}
             />
             <Search className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
+            <X
+              className="absolute right-3 top-3 text-gray-900"
+              onClick={handleSearchClear}
+            />
           </div>
         </div>
 
@@ -64,14 +83,20 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
           </button>
 
           {/* Profile */}
-          <div className="flex items-center space-x-2 md:space-x-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">SA</span>
-            </div>
-            <div className="hidden md:block">
-              <p className="text-sm font-medium text-gray-900">System Admin</p>
-              <p className="text-xs text-gray-500">admin@system.com</p>
-            </div>
+          <div className="relative">
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden p-0 ring-2 ring-transparent hover:ring-blue-200 transition-all"
+            >
+              <img
+                src="/placeholder.svg?height=40&width=40&text=SA"
+                alt="System Admin Profile"
+                className="w-full h-full object-cover rounded-full"
+              />
+            </button>
+
+            {/* Profile Dropdown */}
+            {isProfileOpen && <AdminProfile />}
           </div>
         </div>
       </div>

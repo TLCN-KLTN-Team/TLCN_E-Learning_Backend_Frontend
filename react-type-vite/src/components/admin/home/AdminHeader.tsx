@@ -2,22 +2,12 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-  Bell,
-  Search,
-  Menu,
-  User,
-  Settings,
-  Info,
-  LogOut,
-  Sun,
-  Moon,
-  Monitor,
-} from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import "../../../styles/admin.css";
 import { useResponsive } from "../../../hooks/useResponsive";
 
 import openEduIcon from "@/assets/open-edu-dark.png";
+import AdminProfile from "@/components/shared/AdminProfile";
 
 interface AdminHeaderProps {
   isSidebarOpen: boolean;
@@ -31,7 +21,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [theme, setTheme] = useState("auto");
+  const [searchValue, setSearchValue] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const { isMobile } = useResponsive();
@@ -119,7 +109,18 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                     ref={searchRef}
                     type="search"
                     placeholder="Search"
-                    className={`w-full pl-4 ml-4 pr-12 py-2 bg-gray-100 bg-opacity-60 border-2 rounded-lg focus:outline-none focus:bg-white text-sm md:text-base ${
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        if (searchValue) {
+                          setSearchValue("");
+                        } else if (isMobile) {
+                          setIsSearchExpanded(false);
+                        }
+                      }
+                    }}
+                    className={`w-full pl-4 ml-4 pr-12 py-2 text-gray-900 bg-opacity-60 border-2 rounded-lg focus:outline-none hover:none text-sm md:text-base ${
                       isMobile && isSearchExpanded
                         ? "search-input-expanded"
                         : ""
@@ -133,12 +134,33 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                   <button
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-transparent border-0 p-2"
                     onClick={() => {
-                      if (isMobile && isSearchExpanded) {
+                      if (searchValue) {
+                        // Clear search if there's text
+                        setSearchValue("");
+                        searchRef.current?.focus();
+                      } else if (isMobile && isSearchExpanded) {
+                        // Close search on mobile if empty
                         setIsSearchExpanded(false);
                       }
                     }}
                   >
-                    <Search className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    {searchValue ? (
+                      <svg
+                        className="w-4 h-4 md:w-5 md:h-5 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    ) : (
+                      <Search className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                    )}
                   </button>
                 </div>
               )}
@@ -286,79 +308,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
               </button>
 
               {/* Profile Dropdown */}
-              {isProfileOpen && (
-                <div
-                  className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border z-50"
-                  ref={modalRef}
-                >
-                  <div className="p-3">
-                    <div className="flex items-center">
-                      <div className="mr-3 mb-3">
-                        <img
-                          src="/placeholder.svg?height=40&width=40&text=LF"
-                          alt="Profile"
-                          className="w-10 h-10 rounded-full shadow"
-                        />
-                      </div>
-                      <div>
-                        <h6 className="font-semibold mt-2">Lori Ferguson</h6>
-                        <p className="text-sm text-gray-600 m-0">
-                          example@gmail.com
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <hr className="my-0" />
-                  <div className="py-0">
-                    <button className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center">
-                      <User className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </button>
-                    <button className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Account Settings
-                    </button>
-                    <button className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center">
-                      <Info className="w-4 h-4 mr-2" />
-                      Help
-                    </button>
-                    <button className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </button>
-                  </div>
-                  <hr className="my-0" />
-                  {/* Dark mode options */}
-                  <div className="p-2">
-                    <div className="bg-gray-100 rounded-lg p-1 flex items-center mt-2">
-                      <button
-                        onClick={() => setTheme("light")}
-                        className={`btn btn-sm mb-0 flex items-center justify-center px-2 py-1 rounded text-xs ${
-                          theme === "light" ? "bg-white shadow" : ""
-                        }`}
-                      >
-                        <Sun className="w-3 h-3 mr-1" /> Light
-                      </button>
-                      <button
-                        onClick={() => setTheme("dark")}
-                        className={`btn btn-sm mb-0 flex items-center justify-center px-2 py-1 rounded text-xs ${
-                          theme === "dark" ? "bg-white shadow" : ""
-                        }`}
-                      >
-                        <Moon className="w-3 h-3 mr-1" /> Dark
-                      </button>
-                      <button
-                        onClick={() => setTheme("auto")}
-                        className={`btn btn-sm mb-0 flex items-center justify-center px-2 py-1 rounded text-xs ${
-                          theme === "auto" ? "bg-white shadow active" : ""
-                        }`}
-                      >
-                        <Monitor className="w-3 h-3 mr-1" /> Auto
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {isProfileOpen && <AdminProfile />}
             </div>
           </div>
         </div>
