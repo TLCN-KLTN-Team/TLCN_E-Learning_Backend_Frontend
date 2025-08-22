@@ -13,6 +13,7 @@ import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.LessonMapper;
 import com.hoangphihiep.mapper.QuizMapper;
+import com.hoangphihiep.mapper.SectionMapper;
 import com.hoangphihiep.repository.CourseRepository;
 import com.hoangphihiep.repository.SectionRepository;
 import com.hoangphihiep.repository.LessonRepository;
@@ -41,13 +42,13 @@ public class SectionService {
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
-    private final LessonMapper lessonMapper;
+    private final SectionMapper sectionMapper;
 
     public List<SectionResponse> getAllSections() {
         try {
             return sectionRepository.findAll()
                     .stream()
-                    .map(this::mapToResponse)
+                    .map(sectionMapper::toSectionResponse)
                     .toList();
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
@@ -62,7 +63,7 @@ public class SectionService {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
 
-        return mapToResponse(section);
+        return sectionMapper.toSectionResponse(section);
     }
 
     public List<SectionResponse> getSectionsByCourseId(Integer courseId) {
@@ -75,7 +76,7 @@ public class SectionService {
         try {
             List<Section> sections = sectionRepository.findByCourseIdOrderByOrderIndex(courseId);
             return sections.stream()
-                    .map(this::mapToResponse)
+                    .map(sectionMapper::toSectionResponse)
                     .toList();
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
@@ -150,7 +151,7 @@ public class SectionService {
                 upsertQuizzes(request.getQuizzes(), savedSection);
             }
 
-            return mapToResponse(savedSection);
+            return sectionMapper.toSectionResponse(savedSection);
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {
@@ -553,31 +554,5 @@ public class SectionService {
         }
     }
 
-    public SectionResponse mapToResponse(Section section) {
-        return SectionResponse.builder()
-                .id(section.getId())
-                .courseId(section.getCourse() != null ? section.getCourse().getId() : null)
-                .courseName(section.getCourse() != null ? section.getCourse().getCourseName() : null)
-                .title(section.getTitle())
-                .description(section.getDescription())
-                .orderIndex(section.getOrderIndex())
-                .isPublished(section.getIsPublished())
-                .createdAt(section.getCreatedAt())
-                .updateAt(section.getUpdateAt())
-                .quizs(
-                        section.getQuizs() != null
-                                ? section.getQuizs().stream()
-                                .map(quizMapper::toQuizResponse)
-                                .collect(Collectors.toSet())
-                                : new HashSet<>()
-                )
-                .lessons(
-                        section.getLessons() != null
-                                ? section.getLessons().stream()
-                                .map(lessonMapper::toLessonResponse)
-                                .collect(Collectors.toSet())
-                                : new HashSet<>()
-                )
-                .build();
-    }
+
 }
