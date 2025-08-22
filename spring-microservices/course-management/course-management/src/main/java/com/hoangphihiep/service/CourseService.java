@@ -8,6 +8,7 @@ import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseType;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.mapper.CourseMapper;
 import com.hoangphihiep.repository.CourseRepository;
 import com.hoangphihiep.repository.CourseTypeRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseTypeRepository courseTypeRepository;
-    private final SectionService sectionService;
+    private final CourseMapper courseMapper;
 
     // Constants for validation
     private static final int MIN_COURSE_NAME_LENGTH = 3;
@@ -55,7 +56,7 @@ public class CourseService {
             Page<Course> coursePage = courseRepository.findBySearch(search, pageable);
 
             return coursePage.getContent().stream()
-                    .map(this::mapToResponse)
+                    .map(courseMapper::toCourseResponse)
                     .toList();
         } catch (Exception e) {
             log.error("Error occurred while fetching courses", e);
@@ -71,7 +72,7 @@ public class CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        return mapToResponse(course);
+        return courseMapper.toCourseResponse(course);
     }
 
     @Transactional
@@ -98,7 +99,7 @@ public class CourseService {
             Course savedCourse = courseRepository.save(course);
             log.info("Created new course with ID: {}", savedCourse.getId());
 
-            return mapToResponse(savedCourse);
+            return courseMapper.toCourseResponse(savedCourse);
         } catch (DataIntegrityViolationException e) {
             log.error("Data integrity violation while creating course", e);
             throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION);
@@ -136,7 +137,7 @@ public class CourseService {
             Course updatedCourse = courseRepository.save(course);
             log.info("Updated course with ID: {}", updatedCourse.getId());
 
-            return mapToResponse(updatedCourse);
+            return courseMapper.toCourseResponse(updatedCourse);
         } catch (DataIntegrityViolationException e) {
             log.error("Data integrity violation while updating course", e);
             throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION);
@@ -155,7 +156,7 @@ public class CourseService {
         try {
             List<Course> courses = courseRepository.findByIdTeacher(teacherId);
             return courses.stream()
-                    .map(this::mapToResponse)
+                    .map(courseMapper::toCourseResponse)
                     .toList();
         } catch (Exception e) {
             log.error("Error occurred while fetching courses by teacher: {}", teacherId, e);
@@ -195,7 +196,7 @@ public class CourseService {
             Course publishedCourse = courseRepository.save(course);
             log.info("Published course with ID: {}", publishedCourse.getId());
 
-            return mapToResponse(publishedCourse);
+            return courseMapper.toCourseResponse(publishedCourse);
         } catch (Exception e) {
             log.error("Unexpected error while publishing course", e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
@@ -326,37 +327,5 @@ public class CourseService {
         if (request.getStatus() != null) {
             course.setStatus(request.getStatus());
         }
-    }
-
-    private CourseResponse mapToResponse(Course course) {
-        CourseTypeResponse courseTypeResponse = null;
-        if (course.getCourseType() != null) {
-            courseTypeResponse = CourseTypeResponse.builder()
-                    .id(course.getCourseType().getId())
-                    .courseTypeName(course.getCourseType().getCourseTypeName())
-                    .build();
-        }
-
-        return CourseResponse.builder()
-                .id(course.getId())
-                .courseName(course.getCourseName())
-                .courseType(courseTypeResponse)
-                .coursePrice(course.getCoursePrice())
-                .visibility(course.getVisibility())
-                .publishedAt(course.getPublishedAt())
-                .createdAt(course.getCreatedAt())
-                .updatedAt(course.getUpdatedAt())
-                .isApproved(course.getIsApproved())
-                .idTeacher(course.getIdTeacher())
-                .status(course.getStatus())
-                .sections(
-                        course.getSections() != null
-                                ? course.getSections().stream()
-                                .map(sectionService::mapToResponse)
-                                .collect(Collectors.toSet())
-                                : new HashSet<>()
-                )
-                .reviewsCount(course.getReview() != null ? course.getReview().size() : 0)
-                .build();
     }
 }
