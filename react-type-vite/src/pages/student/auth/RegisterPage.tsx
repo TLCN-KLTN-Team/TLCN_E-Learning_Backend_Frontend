@@ -7,7 +7,15 @@ import { useNavigate } from "react-router-dom";
 import type { RegisterData } from "@/context/auth-context/types";
 import { toast } from "react-toastify";
 import { isAfter } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Eye,
+  EyeClosed,
+  LockKeyhole,
+  Mail,
+  User,
+  UserRound,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -88,11 +96,6 @@ const RegisterPage = () => {
       case "firstName":
         if (!value || (typeof value === "string" && value.trim().length < 2)) {
           return "First name phải ít nhất 2 ký tự";
-        }
-        break;
-      case "lastName":
-        if (!value || (typeof value === "string" && value.trim().length < 2)) {
-          return "Last name phải ít nhất 2 ký tự";
         }
         break;
       case "username":
@@ -271,27 +274,21 @@ const RegisterPage = () => {
     <AuthLayout
       title="Đăng ký vào OpenEdu!"
       subtitle="Tham gia cộng đồng học tập của chúng tôi ngay hôm nay!"
+      isRegister={true}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Full Name Field */}
-        <div className="grid grid-cols-2 gap-2">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Full Name Fields */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label htmlFor="firstName" className="label-base text-gray-700">
-              First Name *
+            <label
+              htmlFor="firstName"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              First Name
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="w-5 h-5 text-gray-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <User className="w-5 h-5 text-gray-400" />
               </div>
               <input
                 id="firstName"
@@ -302,12 +299,12 @@ const RegisterPage = () => {
                 onChange={handleInputChange}
                 onBlur={() => handleFieldBlur("firstName")}
                 className={cn(
-                  "auth-input text-gray-700 w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                  "w-full h-11 pl-9 pr-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400",
                   errors.firstName
-                    ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
+                    ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                    : "border-gray-300 focus:border-transparent"
                 )}
-                placeholder="First Name"
+                placeholder="Nhập first name"
               />
             </div>
             {errors.firstName && (
@@ -317,22 +314,15 @@ const RegisterPage = () => {
             )}
           </div>
           <div className="space-y-2">
-            <label htmlFor="lastName" className="label-base text-gray-700">
-              Last Name *
+            <label
+              htmlFor="lastName"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Last Name <span className="font-light">(optional)</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="w-5 h-5 text-gray-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <User className="w-4 h-4 text-gray-400" />
               </div>
               <input
                 id="lastName"
@@ -343,305 +333,264 @@ const RegisterPage = () => {
                 onChange={handleInputChange}
                 onBlur={() => handleFieldBlur("lastName")}
                 className={cn(
-                  "auth-input text-gray-700 w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
+                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
                   errors.lastName
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Last Name"
               />
             </div>
-            {errors.lastName && (
+          </div>
+        </div>
+
+        {/* Username and Email Fields */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Username Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="username"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Username
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <UserRound className="w-4 h-4 text-gray-400" />
+              </div>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                value={formData.username}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("username")}
+                className={cn(
+                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  errors.username
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="Nhập username"
+              />
+            </div>
+            {errors.username && (
               <p className="text-sm text-red-400 font-medium">
-                {errors.lastName}
+                {errors.username}
+              </p>
+            )}
+          </div>
+
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Email address
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Mail className="w-4 h-4 text-gray-400" />
+              </div>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("email")}
+                className={cn(
+                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  errors.email
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="Nhập e-mail"
+              />
+            </div>
+            {errors.email && (
+              <p className="text-sm text-red-400 font-medium">{errors.email}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Password Fields */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Password Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Password
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <LockKeyhole className="w-4 h-4 text-gray-400" />
+              </div>
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={formData.password}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("password")}
+                className={cn(
+                  "auth-input text-gray-700 w-full pl-9 pr-12 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  errors.password
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="Nhập password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-r-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset group z-10"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeClosed className="w-5 h-5 transition-transform duration-200" />
+                ) : (
+                  <Eye className="w-5 h-5 transition-transform duration-200" />
+                )}
+              </button>
+            </div>
+            {errors.password && (
+              <p className="text-sm text-red-400 font-medium">
+                {errors.password}
+              </p>
+            )}
+          </div>
+
+          {/* Confirm Password Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Confirm Password
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <LockKeyhole className="w-4 h-4 text-gray-400" />
+              </div>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("confirmPassword")}
+                className={cn(
+                  "auth-input text-gray-700 w-full pl-9 pr-12 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  errors.confirmPassword
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="Nhập confirm password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-r-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset group z-10"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? (
+                  <EyeClosed className="w-5 h-5 transition-transform duration-200" />
+                ) : (
+                  <Eye className="w-5 h-5 transition-transform duration-200" />
+                )}
+              </button>
+            </div>
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-400 font-medium">
+                {errors.confirmPassword}
               </p>
             )}
           </div>
         </div>
 
-        {/* Username Field */}
-        <div className="space-y-2">
-          <label htmlFor="username" className="label-base text-gray-700">
-            Username *
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="w-5 h-5 text-gray-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              required
-              value={formData.username}
-              onChange={handleInputChange}
-              onBlur={() => handleFieldBlur("username")}
-              className={cn(
-                "auth-input text-gray-700 w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
-                errors.username
-                  ? "border-red-300 focus:border-red-500"
-                  : "border-gray-300 focus:border-blue-500"
-              )}
-              placeholder="Username"
-            />
-          </div>
-          {errors.username && (
-            <p className="text-sm text-red-400 font-medium">
-              {errors.username}
-            </p>
-          )}
-        </div>
-
-        {/* Email Field */}
-        <div className="space-y-2">
-          <label htmlFor="email" className="label-base text-gray-700">
-            Email address *
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="w-5 h-5 text-gray-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-              </svg>
-            </div>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={handleInputChange}
-              onBlur={() => handleFieldBlur("email")}
-              className={cn(
-                "auth-input text-gray-700 w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
-                errors.email
-                  ? "border-red-300 focus:border-red-500"
-                  : "border-gray-300 focus:border-blue-500"
-              )}
-              placeholder="E-mail"
-            />
-          </div>
-          {errors.email && (
-            <p className="text-sm text-red-400 font-medium">{errors.email}</p>
-          )}
-        </div>
-
-        {/* Password Field */}
-        <div className="space-y-2">
-          <label htmlFor="password" className="label-base text-gray-700">
-            Password *
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="w-5 h-5 text-gray-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              required
-              value={formData.password}
-              onChange={handleInputChange}
-              onBlur={() => handleFieldBlur("password")}
-              className={cn(
-                "auth-input text-gray-700 w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
-                errors.password
-                  ? "border-red-300 focus:border-red-500"
-                  : "border-gray-300 focus:border-blue-500"
-              )}
-              placeholder="Password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-blue-50 rounded-r-lg transition-colors"
+        {/* Date of Birth and Gender Fields */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Date of Birth Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="dob"
+              className="block text-sm font-semibold text-gray-900"
             >
-              <svg
-                className="w-5 h-5 text-gray-500 hover:text-blue-600 transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-              >
-                {showPassword ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 11-4.243-4.243m4.242 4.242L9.88 9.88"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.639 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.639 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
+              Date of Birth
+            </label>
+            <div className="relative flex gap-2">
+              <Input
+                id="dob"
+                value={dobValue}
+                placeholder="June 01, 2000"
+                className={cn(
+                  "bg-background text-gray-700 pr-10 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 w-full transition-all",
+                  errors.dob
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
                 )}
-              </svg>
-            </button>
-          </div>
-          {errors.password && (
-            <p className="text-sm text-red-400 font-medium">
-              {errors.password}
-            </p>
-          )}
-        </div>
-
-        {/* Confirm Password Field */}
-        <div className="space-y-2">
-          <label htmlFor="confirmPassword" className="label-base text-gray-700">
-            Confirm Password *
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="w-5 h-5 text-gray-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              required
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              onBlur={() => handleFieldBlur("confirmPassword")}
-              className={cn(
-                "auth-input text-gray-700 w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400",
-                errors.confirmPassword
-                  ? "border-red-300 focus:border-red-500"
-                  : "border-gray-300 focus:border-blue-500"
-              )}
-              placeholder="Confirm Password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-blue-50 rounded-r-lg transition-colors"
-            >
-              <svg
-                className="w-5 h-5 text-gray-500 hover:text-blue-600 transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-              >
-                {showConfirmPassword ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 11-4.243-4.243m4.242 4.242L9.88 9.88"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.639 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.639 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                )}
-              </svg>
-            </button>
-          </div>
-          {errors.confirmPassword && (
-            <p className="text-sm text-red-400 font-medium">
-              {errors.confirmPassword}
-            </p>
-          )}
-        </div>
-
-        {/* Date of Birth Field */}
-        <div className="space-y-2">
-          <label htmlFor="dob" className="label-base text-gray-700">
-            Date of Birth *
-          </label>
-          <div className="relative flex gap-2">
-            <Input
-              id="dob"
-              value={dobValue}
-              placeholder="June 01, 2000"
-              className={cn(
-                "bg-background text-gray-700 pr-10 py-6 border rounded-lg focus:ring-2 focus:ring-blue-500 body-base placeholder-gray-400 w-full",
-                errors.dob
-                  ? "border-red-300 focus:border-red-500"
-                  : "border-gray-300 focus:border-blue-500"
-              )}
-              onChange={handleDateInputChange}
-              onBlur={() => handleFieldBlur("dob")}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setDobOpen(true);
-                }
-              }}
-            />
-            <Popover open={dobOpen} onOpenChange={setDobOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date-picker"
-                  variant="ghost"
-                  className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
-                >
-                  <CalendarIcon className="size-3.5" />
-                  <span className="sr-only">Select date</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto p-0 z-[9999] bg-white shadow-xl border rounded-md"
-                align="end"
-                alignOffset={-8}
-                sideOffset={10}
-                style={{
-                  zIndex: 9999,
-                }}
-              >
-                <Calendar
-                  mode="single"
-                  selected={formData.dob}
-                  captionLayout="dropdown"
-                  month={dobMonth}
-                  onMonthChange={setDobMonth}
-                  onSelect={handleDateSelect}
-                  disabled={(date) =>
-                    date > new Date() || date < new Date("1900-01-01")
+                onChange={handleDateInputChange}
+                onBlur={() => handleFieldBlur("dob")}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setDobOpen(true);
                   }
-                />
-              </PopoverContent>
-            </Popover>
+                }}
+              />
+              <Popover open={dobOpen} onOpenChange={setDobOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date-picker"
+                    variant="ghost"
+                    className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                    tabIndex={-1}
+                  >
+                    <CalendarIcon className="size-3.5" />
+                    <span className="sr-only">Select date</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-0 z-[9999] bg-white shadow-xl border border-gray-200 rounded-lg"
+                  align="start"
+                  side="bottom"
+                  sideOffset={8}
+                  alignOffset={-8}
+                  onEscapeKeyDown={() => setDobOpen(false)}
+                  onPointerDownOutside={() => setDobOpen(false)}
+                  style={{
+                    zIndex: 9999,
+                    backgroundColor: "white",
+                  }}
+                >
+                  <Calendar
+                    mode="single"
+                    selected={formData.dob}
+                    captionLayout="dropdown"
+                    month={dobMonth}
+                    onMonthChange={setDobMonth}
+                    onSelect={handleDateSelect}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                    className="bg-white"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            {errors.dob && (
+              <p className="text-sm text-red-400 font-medium">{errors.dob}</p>
+            )}
           </div>
-          {errors.dob && (
-            <p className="text-sm text-red-400 font-medium">{errors.dob}</p>
-          )}
         </div>
 
         {/* Terms Agreement */}
@@ -682,9 +631,9 @@ const RegisterPage = () => {
               (key) => errors[key as keyof FormErrors]
             ) || !formData.agreeToTerms
           }
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 rounded-lg btn-text transition-colors"
+          className="w-full h-12 bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg"
         >
-          Tạo tài khoản
+          Create Account
         </Button>
 
         {/* Divider */}
@@ -706,11 +655,14 @@ const RegisterPage = () => {
         </div>
 
         {/* Sign In Link */}
-        <div className="text-center">
-          <p className="body-small text-gray-600">
-            Đã có tài khoản?
-            <a href="/login" className="link-primary ml-1">
-              Đăng nhập ngay!
+        <div className="text-center pt-4">
+          <p className="text-sm text-gray-600">
+            Already have an account?{" "}
+            <a
+              href="/login"
+              className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Sign in here
             </a>
           </p>
         </div>

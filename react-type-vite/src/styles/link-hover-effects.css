@@ -1,0 +1,152 @@
+/* Link Hover Effects - Underline Animation */
+/* Chỉ áp dụng khi có class .link-hover-enabled hoặc trong container có class này */
+
+.link-hover-enabled .link-hover-effect,
+.link-hover-effect {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.link-hover-enabled .link-hover-effect::before,
+.link-hover-effect::before {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-dark);
+  transition: width 0.3s ease;
+}
+
+.link-hover-enabled .link-hover-effect:hover::before,
+.link-hover-effect:hover::before {
+  width: 100%;
+}
+
+/* Dark theme support for underline */
+.dark .link-hover-enabled .link-hover-effect::before,
+[data-bs-theme="dark"] .link-hover-enabled .link-hover-effect::before,
+.dark .link-hover-effect::before,
+[data-bs-theme="dark"] .link-hover-effect::before {
+  background-color: var(--bs-white);
+}
+
+/* Auto hover effect cho tất cả links trong container có class .link-hover-enabled */
+.link-hover-enabled a {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.link-hover-enabled a::before {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-dark);
+  transition: width 0.3s ease;
+}
+
+.link-hover-enabled a:hover::before {
+  width: 100%;
+}
+
+/* Dark theme support */
+.dark .link-hover-enabled a::before,
+[data-bs-theme="dark"] .link-hover-enabled a::before {
+  background-color: var(--bs-white);
+}
+
+/* Exclude button links và specific elements */
+.link-hover-enabled button a::before,
+.link-hover-enabled .no-underline::before,
+.link-hover-enabled .no-hover-effect::before,
+.homepage-links button a::before,
+.homepage-links .no-underline::before,
+.homepage-links .no-hover-effect::before,
+.landing-page button a::before,
+.landing-page .no-underline::before,
+.landing-page .no-hover-effect::before {
+  display: none !important;
+}
+
+/* Navigation specific styles trong container có hover effects */
+.link-hover-enabled nav a {
+  position: relative;
+}
+
+.link-hover-enabled nav a::before {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-primary);
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.link-hover-enabled nav a:hover::before {
+  width: 100%;
+}
+
+/* Homepage specific styles */
+.homepage-links a {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.homepage-links a::before {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-primary);
+  transition: width 0.3s ease;
+}
+
+.homepage-links a:hover::before {
+  width: 100%;
+}
+
+/* Disable hover effect for specific classes in homepage */
+.homepage-links a.no-hover-effect::before,
+.homepage-links .no-hover-effect::before,
+.homepage-links .no-underline::before {
+  display: none !important;
+}
+
+/* Dark theme support for homepage */
+.dark .homepage-links a::before,
+[data-bs-theme="dark"] .homepage-links a::before {
+  background-color: var(--bs-white);
+}
+
+/* Landing page specific styles */
+.landing-page a {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.landing-page a::before {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--bs-primary);
+  transition: width 0.3s ease;
+}
+
+.landing-page a:hover::before {
+  width: 100%;
+}
