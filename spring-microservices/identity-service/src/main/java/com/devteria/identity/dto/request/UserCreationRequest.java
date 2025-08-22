@@ -33,6 +33,5 @@ public class UserCreationRequest {
     String firstName;
     String lastName;
 
-    @DobConstraint(min = 10, message = "INVALID_DOB")
     String dob;
 }
