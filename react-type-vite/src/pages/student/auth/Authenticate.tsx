@@ -17,7 +17,7 @@ const Authenticate = () => {
         const increment = Math.random() * 4 + 1;
         return Math.min(prev + increment, 90);
       });
-    }, 300); // Tăng interval lên 300ms
+    }, 300);
 
     const authenticateUser = async () => {
       try {

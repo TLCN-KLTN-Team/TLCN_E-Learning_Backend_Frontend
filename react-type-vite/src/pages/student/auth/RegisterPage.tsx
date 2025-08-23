@@ -1,50 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
 import AuthLayout from "../../../components/student/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { useNavigate } from "react-router-dom";
 import type { RegisterData } from "@/context/auth-context/types";
 import { toast } from "react-toastify";
 import { isAfter } from "date-fns";
-import {
-  Calendar as CalendarIcon,
-  Eye,
-  EyeClosed,
-  LockKeyhole,
-  Mail,
-  User,
-  UserRound,
-} from "lucide-react";
+import { Eye, EyeClosed, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import GoogleButton from "@/components/student/shared/GoogleButton";
 import FacebookButton from "@/components/student/shared/FacebookButton";
-
-// Utility functions for date formatting
-function formatDate(date: Date | undefined) {
-  if (!date) {
-    return "";
-  }
-
-  return date.toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function isValidDate(date: Date | undefined) {
-  if (!date) {
-    return false;
-  }
-  return !isNaN(date.getTime());
-}
 
 // Interface for form errors
 interface FormErrors {
@@ -74,21 +39,10 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
-  const [dobOpen, setDobOpen] = useState(false);
-  const [dobMonth, setDobMonth] = useState<Date | undefined>(undefined);
-  const [dobValue, setDobValue] = useState("");
 
   const { user, register } = useAuth();
 
   const navigate = useNavigate();
-
-  // Sync dobValue with formData.dob
-  useEffect(() => {
-    if (formData.dob) {
-      setDobValue(formatDate(formData.dob));
-      setDobMonth(formData.dob);
-    }
-  }, [formData.dob]);
 
   // Validation functions
   const validateField = (name: string, value: unknown): string | undefined => {
@@ -196,44 +150,6 @@ const RegisterPage = () => {
     }
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    setFormData((prev) => ({
-      ...prev,
-      dob: date,
-    }));
-    setDobValue(formatDate(date));
-    setDobMonth(date);
-    setDobOpen(false);
-
-    // Validate date
-    const error = validateField("dob", date);
-    setErrors((prev) => ({
-      ...prev,
-      dob: error,
-    }));
-  };
-
-  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setDobValue(value);
-
-    const date = new Date(value);
-    if (isValidDate(date)) {
-      setFormData((prev) => ({
-        ...prev,
-        dob: date,
-      }));
-      setDobMonth(date);
-
-      // Validate date
-      const error = validateField("dob", date);
-      setErrors((prev) => ({
-        ...prev,
-        dob: error,
-      }));
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -272,77 +188,11 @@ const RegisterPage = () => {
 
   return (
     <AuthLayout
-      title="Đăng ký vào OpenEdu!"
-      subtitle="Tham gia cộng đồng học tập của chúng tôi ngay hôm nay!"
+      title="Welcome to OpenEdu!"
+      subtitle="Tạo tài khoản của bạn để bắt đầu hành trình học tập."
       isRegister={true}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Full Name Fields */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label
-              htmlFor="firstName"
-              className="block text-sm font-semibold text-gray-900"
-            >
-              First Name
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="w-5 h-5 text-gray-400" />
-              </div>
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
-                required
-                value={formData.firstName}
-                onChange={handleInputChange}
-                onBlur={() => handleFieldBlur("firstName")}
-                className={cn(
-                  "w-full h-11 pl-9 pr-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400",
-                  errors.firstName
-                    ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                    : "border-gray-300 focus:border-transparent"
-                )}
-                placeholder="Nhập first name"
-              />
-            </div>
-            {errors.firstName && (
-              <p className="text-sm text-red-400 font-medium">
-                {errors.firstName}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label
-              htmlFor="lastName"
-              className="block text-sm font-semibold text-gray-900"
-            >
-              Last Name <span className="font-light">(optional)</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="w-4 h-4 text-gray-400" />
-              </div>
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
-                required
-                value={formData.lastName}
-                onChange={handleInputChange}
-                onBlur={() => handleFieldBlur("lastName")}
-                className={cn(
-                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
-                  errors.lastName
-                    ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
-                )}
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Username and Email Fields */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Username Field */}
@@ -513,82 +363,6 @@ const RegisterPage = () => {
               <p className="text-sm text-red-400 font-medium">
                 {errors.confirmPassword}
               </p>
-            )}
-          </div>
-        </div>
-
-        {/* Date of Birth and Gender Fields */}
-        <div className="grid grid-cols-2 gap-6">
-          {/* Date of Birth Field */}
-          <div className="space-y-2">
-            <label
-              htmlFor="dob"
-              className="block text-sm font-semibold text-gray-900"
-            >
-              Date of Birth
-            </label>
-            <div className="relative flex gap-2">
-              <Input
-                id="dob"
-                value={dobValue}
-                placeholder="June 01, 2000"
-                className={cn(
-                  "bg-background text-gray-700 pr-10 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 w-full transition-all",
-                  errors.dob
-                    ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
-                )}
-                onChange={handleDateInputChange}
-                onBlur={() => handleFieldBlur("dob")}
-                onKeyDown={(e) => {
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    setDobOpen(true);
-                  }
-                }}
-              />
-              <Popover open={dobOpen} onOpenChange={setDobOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="date-picker"
-                    variant="ghost"
-                    className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
-                    tabIndex={-1}
-                  >
-                    <CalendarIcon className="size-3.5" />
-                    <span className="sr-only">Select date</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-0 z-[9999] bg-white shadow-xl border border-gray-200 rounded-lg"
-                  align="start"
-                  side="bottom"
-                  sideOffset={8}
-                  alignOffset={-8}
-                  onEscapeKeyDown={() => setDobOpen(false)}
-                  onPointerDownOutside={() => setDobOpen(false)}
-                  style={{
-                    zIndex: 9999,
-                    backgroundColor: "white",
-                  }}
-                >
-                  <Calendar
-                    mode="single"
-                    selected={formData.dob}
-                    captionLayout="dropdown"
-                    month={dobMonth}
-                    onMonthChange={setDobMonth}
-                    onSelect={handleDateSelect}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    className="bg-white"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            {errors.dob && (
-              <p className="text-sm text-red-400 font-medium">{errors.dob}</p>
             )}
           </div>
         </div>

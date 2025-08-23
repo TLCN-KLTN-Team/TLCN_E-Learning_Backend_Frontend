@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 
@@ -32,12 +32,6 @@ const TestimonialsSlider = ({ testimonials }: TestimonialsSliderProps) => {
 
   const scrollNext = useCallback(() => {
     if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (emblaApi) {
-      console.log("Embla carousel initialized");
-    }
   }, [emblaApi]);
 
   return (

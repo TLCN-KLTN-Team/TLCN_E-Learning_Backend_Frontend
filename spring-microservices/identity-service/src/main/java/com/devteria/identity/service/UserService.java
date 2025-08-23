@@ -2,7 +2,12 @@ package com.devteria.identity.service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.devteria.identity.dto.request.RoleUpdateRequest;
+import io.micrometer.common.util.StringUtils;
+import org.apache.catalina.util.StringUtil;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,6 +54,16 @@ public class UserService {
 
         roleRepository.findById(PredefinedRole.USER_ROLE).ifPresent(roles::add);
 
+        Set<String> requestedRoles = request.getRoles();
+        if (requestedRoles != null && !requestedRoles.isEmpty()) {
+            requestedRoles.stream().forEach(role -> {
+                    Role existingRole = roleRepository.findById(role).orElseThrow(
+                            () -> new AppException(ErrorCode.ROLE_NOT_EXISTED)
+                    );
+                    roles.add(existingRole);
+            });
+        }
+
         user.setRoles(roles);
         user.setEmailVerified(false);
 
@@ -79,7 +94,14 @@ public class UserService {
 
         User user = userRepository.findById(name).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        return userMapper.toUserResponse(user);
+        UserResponse response = userMapper.toUserResponse(user);
+        response.setRoles(
+                user.getRoles().stream()
+                        .map(Role::getName)
+                        .collect(Collectors.toSet())
+        );
+
+        return response;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -87,9 +109,22 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         userMapper.updateUser(user, request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getPassword() != null || StringUtils.isEmpty(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
         var roles = roleRepository.findAllById(request.getRoles());
+        user.setRoles(new HashSet<>(roles));
+
+        return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse updateUserRoles(RoleUpdateRequest req) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        var roles = roleRepository.findAllById(req.roles());
         user.setRoles(new HashSet<>(roles));
 
         return userMapper.toUserResponse(userRepository.save(user));

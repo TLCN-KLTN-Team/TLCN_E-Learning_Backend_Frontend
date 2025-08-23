@@ -7,6 +7,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 import GoogleButton from "@/components/student/shared/GoogleButton";
 import FacebookButton from "@/components/student/shared/FacebookButton";
 import { Eye, EyeClosed, LockKeyhole, Mail } from "lucide-react";
+import { getRoles } from "@/utils/localStorageVariables";
+import { getRoleBasedRedirectPath } from "@/utils/roleUtils";
 
 const LoginPage = () => {
   const { user, login } = useAuth();
@@ -18,12 +20,7 @@ const LoginPage = () => {
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
-  }, [user, navigate]);
+  const currentPath = window.location.pathname;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -37,19 +34,29 @@ const LoginPage = () => {
     e.preventDefault();
     login(formData.username, formData.password)
       .then(() => {
+        const roles = getRoles();
+        console.log(roles);
+        const url = getRoleBasedRedirectPath(roles);
+        navigate(url, { replace: true });
+
         toast.success("Đăng nhập thành công!");
-        navigate("/");
       })
       .catch((error) => {
-        console.error("Login failed:", error);
         toast.error(error.message || "Đăng nhập thất bại");
       });
   };
 
+  useEffect(() => {
+    if (user && currentPath === "/login") {
+      toast.success("Phiên đăng nhập còn hiệu lực.");
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate, currentPath]);
+
   return (
     <AuthLayout
-      title="Đăng nhập vào OpenEdu!"
-      subtitle="Rất vui được gặp bạn! Vui lòng đăng nhập để tiếp tục."
+      title="Welcome back!"
+      subtitle="Nhập thông tin tài khoản của bạn để đăng nhập."
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Username Field */}
