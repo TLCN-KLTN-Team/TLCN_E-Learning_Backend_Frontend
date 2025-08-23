@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { MapPin, Star, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -96,12 +96,6 @@ const EducationalUnitLinked = ({
 
   const scrollNext = useCallback(() => {
     if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (emblaApi) {
-      console.log("Educational Units carousel initialized");
-    }
   }, [emblaApi]);
 
   const renderStars = (rating: number) => {

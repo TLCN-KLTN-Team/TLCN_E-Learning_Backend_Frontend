@@ -9,15 +9,11 @@ interface AuthPageProps {
 const AuthPage = ({ isLoggin }: AuthPageProps) => {
   const [currentPage, setCurrentPage] = useState<boolean>(isLoggin);
 
-  console.log("Rendering AuthPage - currentPage:", currentPage);
-
   const showLogin = () => {
-    console.log("Switching to Login page");
     setCurrentPage(true);
   };
 
   const showRegister = () => {
-    console.log("Switching to Register page");
     setCurrentPage(false);
   };
 
