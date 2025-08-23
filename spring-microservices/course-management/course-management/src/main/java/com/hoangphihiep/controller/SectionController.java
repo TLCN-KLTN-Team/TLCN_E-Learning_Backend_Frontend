@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/sections")
+@RequestMapping("/sections")
 @RequiredArgsConstructor
 @Slf4j
 public class SectionController {
@@ -22,42 +22,40 @@ public class SectionController {
     private final SectionService sectionService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<List<SectionResponse>>> createSections(
-            @Valid @RequestBody CourseRequest request) {
-        log.info("Creating/updating {} sections for course id: {}",
-                request.getSections().size(), request.getId());
-        ApiResponse<List<SectionResponse>> response = sectionService.createSections(request);
-        return ResponseEntity.ok(response);
+    public ApiResponse<List<SectionResponse>> createSections(@Valid @RequestBody CourseRequest request) {
+        List<SectionResponse> responses = sectionService.createSections(request);
+
+        return ApiResponse.<List<SectionResponse>>builder()
+                .result(responses)
+                .build();
     }
-
-
-
     @GetMapping
-    public ResponseEntity<ApiResponse<List<SectionResponse>>> getAllSections() {
-        log.info("Getting all sections");
-        ApiResponse<List<SectionResponse>> response = sectionService.getAllSections();
-        return ResponseEntity.ok(response);
+    public ApiResponse<List<SectionResponse>> getAllSections() {
+        return ApiResponse.<List<SectionResponse>>builder()
+                .result(sectionService.getAllSections())
+                .build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<SectionResponse>> getSectionById(@PathVariable Integer id) {
-        log.info("Getting section by id: {}", id);
-        ApiResponse<SectionResponse> response = sectionService.getSectionById(id);
-        return ResponseEntity.ok(response);
+    public ApiResponse<SectionResponse> getSectionById(@PathVariable Integer id) {
+        SectionResponse response = sectionService.getSectionById(id);
+        return ApiResponse.<SectionResponse>builder()
+                .result(response)
+                .build();
     }
 
     @GetMapping("/course/{courseId}")
-    public ResponseEntity<ApiResponse<List<SectionResponse>>> getSectionsByCourseId(
-            @PathVariable Integer courseId) {
-        log.info("Getting sections by course id: {}", courseId);
-        ApiResponse<List<SectionResponse>> response = sectionService.getSectionsByCourseId(courseId);
-        return ResponseEntity.ok(response);
+    public ApiResponse<List<SectionResponse>> getSectionsByCourseId(@PathVariable Integer courseId) {
+        List<SectionResponse> responses = sectionService.getSectionsByCourseId(courseId);
+        return ApiResponse.<List<SectionResponse>>builder()
+                .result(responses)
+                .build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteSection(@PathVariable Integer id) {
-        log.info("Deleting section with id: {} (cascade delete enabled)", id);
-        ApiResponse<Void> response = sectionService.deleteSection(id);
-        return ResponseEntity.ok(response);
+    public ApiResponse<Void> deleteSection(@PathVariable Integer id) {
+        sectionService.deleteSection(id);
+        return ApiResponse.<Void>builder()
+                .build();
     }
 }

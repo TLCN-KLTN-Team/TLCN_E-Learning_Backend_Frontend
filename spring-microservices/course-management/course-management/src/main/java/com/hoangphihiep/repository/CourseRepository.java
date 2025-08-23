@@ -26,4 +26,6 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
 
     @Query("SELECT c FROM Course c WHERE c.courseType.id = :courseTypeId")
     List<Course> findByCourseTypeId(@Param("courseTypeId") int courseTypeId);
+
+    boolean existsByCourseName(String courseName);
 }
