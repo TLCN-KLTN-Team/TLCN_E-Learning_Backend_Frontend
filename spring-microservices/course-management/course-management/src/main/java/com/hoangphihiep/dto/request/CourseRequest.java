@@ -34,7 +34,5 @@ public class CourseRequest {
 
     private Integer status = 1;
 
-    @Valid
-    @NotEmpty(message = "Sections list cannot be empty")
     private Set<SectionRequest> sections;
 }
