@@ -54,7 +54,11 @@ public enum ErrorCode {
     // Teacher related errors
     TEACHER_EXISTED(1023, "Teacher already exists", HttpStatus.BAD_REQUEST),
     TEACHER_NOT_EXISTED(1024, "Teacher does not exist", HttpStatus.NOT_FOUND),
-    ;
+
+    // Role errors
+    ROLE_NOT_EXISTED(1025, "Role does not exist", HttpStatus.NOT_FOUND);
+
+
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;

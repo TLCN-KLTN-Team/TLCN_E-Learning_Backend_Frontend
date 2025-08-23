@@ -31,8 +31,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
             const fetchedUser = await getMe();
             setUser(fetchedUser);
           } catch (error) {
-            console.error("Failed to fetch user data:", error);
             // Nếu fetch user thất bại, clear localStorage
+            console.error("Failed to fetch user data:", error);
             localStorage.clear();
             setUser(null);
           } finally {
@@ -51,29 +51,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      console.log("Login attempt:", { email, password });
-
       await doLogin(email, password);
 
       // Fetch user data after successful login
       const userData = await getMe();
-      console.log("Thông tin user:", userData);
-      const roleName = userData.roles?.[0]?.name;
-      console.log("Thông tin role user:", roleName);
       setUser(userData);
-      if (roleName) {
-        const isTeacher = roleName === "TEACHER";
-        if (isTeacher) {
-          console.log("Có vào phần teacher home page", isTeacher);
-          navigate("/teacher/home");
-        } else {
-          console.log("Không phải teacher home page");
-          navigate("/");
-        }
-      } else {
-        console.log("Không phải teacher home page 1");
-        navigate("/");
-      }
     } catch (error) {
       console.error("Login failed:", error);
       throw error; // Re-throw để component có thể handle
@@ -84,14 +66,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = (): void => {
     localStorage.clear();
+    sessionStorage.clear(); // Xóa cả sessionStorage để reset first login flag
     setUser(null);
   };
 
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      console.log("Register attempt:", userData);
-
       const registeredData = await doRegister(userData);
       setUser(registeredData);
     } catch (error) {

@@ -5,6 +5,8 @@ import ava3 from "../../../assets/images/avatar/03.jpg";
 import ava4 from "../../../assets/images/avatar/04.jpg";
 import { useTheme } from "@/context/theme-context";
 
+import authLogo from "@/assets/auth-logo.png";
+
 interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
@@ -42,13 +44,24 @@ const AuthLayout = ({
         <div className="relative z-10 w-full max-w-2xl">
           {/* Form with enhanced padding */}
           <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-6 lg:p-8">
-            {/* Header */}
-            <div className="text-center space-y-2 mb-6">
-              <div className="text-2xl mb-1">👋</div>
-              <h2 className="text-xl lg:text-2xl font-bold text-gray-900">
-                {title}
-              </h2>
-              <p className="text-sm text-gray-600">{subtitle}</p>
+            {/* Header với logo và welcome message */}
+            <div className="text-center space-y-4 mb-6">
+              {/* Logo */}
+              <div className="flex justify-center mb-4">
+                <img
+                  src={authLogo}
+                  alt="OpenEdu Logo"
+                  className="w-10 h-10 object-contain"
+                />
+              </div>
+
+              {/* Welcome Message */}
+              <div className="space-y-2">
+                <h2 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  {title}
+                </h2>
+                <p className="text-sm text-gray-600">{subtitle}</p>
+              </div>
             </div>
             <div className="max-w-3xl">{children}</div>
           </div>
@@ -120,13 +133,22 @@ const AuthLayout = ({
         <div className="w-full max-w-md lg:max-w-lg space-y-4">
           {/* Form with enhanced styling */}
           <div className="bg-white rounded-xl shadow-xl p-6 lg:p-8">
-            {/* Header */}
-            <div className="text-center space-y-3 mb-8">
-              <div className="text-3xl mb-2">👋</div>
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                {title}
-              </h2>
-              <p className="text-sm lg:text-base text-gray-600">{subtitle}</p>
+            {/* Header với logo và welcome message */}
+            <div className="text-center space-y-4 mb-8">
+              {/* Logo */}
+              <div className="flex justify-center mb-6">
+                <img
+                  src={authLogo}
+                  alt="OpenEdu Logo"
+                  className="w-12 h-12 object-contain"
+                />
+              </div>
+
+              {/* Welcome Message */}
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+                <p className="text-sm text-gray-600">{subtitle}</p>
+              </div>
             </div>
             {children}
           </div>
