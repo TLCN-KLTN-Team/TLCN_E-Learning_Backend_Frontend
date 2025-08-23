@@ -22,5 +22,5 @@ public class UserResponse {
 
     LocalDate dob;
     String mssv;
-    Set<RoleResponse> roles;
+    Set<String> roles;
 }

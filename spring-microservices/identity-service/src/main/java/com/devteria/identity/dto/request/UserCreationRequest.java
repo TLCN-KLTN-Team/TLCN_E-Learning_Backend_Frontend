@@ -9,6 +9,8 @@ import com.devteria.identity.validator.DobConstraint;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Set;
+
 @Data
 @Getter
 @Setter
@@ -30,9 +32,5 @@ public class UserCreationRequest {
     @NotBlank(message = "EMAIL_IS_REQUIRED")
     String email;
 
-    String firstName;
-    String lastName;
-
-    @DobConstraint(min = 10, message = "INVALID_DOB")
-    String dob;
+    Set<String> roles;
 }
