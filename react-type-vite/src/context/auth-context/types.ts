@@ -8,7 +8,7 @@ export interface User {
   dob?: Date;
   avatar?: string;
   isVerified?: boolean;
-  roles: Role[]; // e.g., "student", "educator", "admin"
+  roles: string[]; // e.g., "student", "educator", "admin"
 }
 
 export interface Role {

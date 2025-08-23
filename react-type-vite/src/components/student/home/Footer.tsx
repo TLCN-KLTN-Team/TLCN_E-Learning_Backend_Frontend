@@ -1,83 +1,12 @@
 import { useTheme } from "../../../context/theme-context";
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import lightLogo from "@/assets/open-edu-light.png";
 import darkLogo from "@/assets/open-edu-dark.png";
 
+import { footerSections } from "@/components/student/home/data/footerData";
+import { socialLinks } from "@/components/student/home/data/socialData";
+
 const Footer = () => {
   const { theme } = useTheme();
-
-  const footerSections = [
-    {
-      title: "Về chúng tôi",
-      links: [
-        { name: "Giới thiệu", href: "#about" },
-        { name: "Đội ngũ", href: "#team" },
-        { name: "Tuyển dụng", href: "#careers" },
-        { name: "Tin tức", href: "#news" },
-      ],
-    },
-    {
-      title: "Khóa học",
-      links: [
-        { name: "Công nghệ thông tin", href: "#it" },
-        { name: "Kinh doanh", href: "#business" },
-        { name: "Thiết kế", href: "#design" },
-        { name: "Marketing", href: "#marketing" },
-      ],
-    },
-    {
-      title: "Hỗ trợ",
-      links: [
-        { name: "Trung tâm hỗ trợ", href: "#support" },
-        { name: "Liên hệ", href: "#contact" },
-        { name: "FAQ", href: "#faq" },
-        { name: "Chính sách", href: "#policy" },
-      ],
-    },
-  ];
-
-  const socialLinks = [
-    {
-      name: "Facebook",
-      href: "#",
-      icon: (
-        <Facebook
-          size={20}
-          className="text-blue-600 group-hover:scale-110 transition-transform"
-        />
-      ),
-    },
-    {
-      name: "Instagram",
-      href: "#",
-      icon: (
-        <Instagram
-          size={20}
-          className="text-pink-500 group-hover:scale-110 transition-transform"
-        />
-      ),
-    },
-    {
-      name: "Twitter",
-      href: "#",
-      icon: (
-        <Twitter
-          size={20}
-          className="text-blue-400 group-hover:scale-110 transition-transform"
-        />
-      ),
-    },
-    {
-      name: "LinkedIn",
-      href: "#",
-      icon: (
-        <Linkedin
-          size={20}
-          className="text-blue-700 group-hover:scale-110 transition-transform"
-        />
-      ),
-    },
-  ];
 
   return (
     <footer className="bg-muted/50 border-t border-border p-12 lg:p-16">
