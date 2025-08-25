@@ -5,11 +5,14 @@ import demo.app.chat_app.dto.response.ChatMessageResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.service.ChatMessageService;
+import demo.app.chat_app.websocket.WebsocketSessionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -28,13 +31,16 @@ public class ChatRealtimeController {
      * Files should be uploaded separately via REST API
      */
     @MessageMapping("/chat.sendMessage")
-    public void sendTextMessage(@Payload TextMessageRequest request, Principal principal) {
+    public void sendTextMessage(@Payload TextMessageRequest request, SimpMessageHeaderAccessor accessor) {
         try {
-            SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
+            String userId = WebsocketSessionUtil.getCurrentUserId(accessor);
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(userId, null, null);
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             log.info("Received text message for channel: {}", request.getChannelId());
             
             // Send text message immediately (placeholder with PENDING status)
-            ChatMessageResponse response = chatMessageService.sendTextMessage(request, principal);
+            ChatMessageResponse response = chatMessageService.sendTextMessage(request);
             
             // Broadcast to channel subscribers
             messagingTemplate.convertAndSend(
@@ -46,12 +52,6 @@ public class ChatRealtimeController {
             
         } catch (Exception e) {
             log.error("Failed to send text message", e);
-            // Send error message back to sender
-            messagingTemplate.convertAndSendToUser(
-                principal.getName(), 
-                "/queue/errors", 
-                "Failed to send message: " + e.getMessage()
-            );
             throw new AppException(ErrorCode.SEND_MESSAGE_FAILED);
         }
     }

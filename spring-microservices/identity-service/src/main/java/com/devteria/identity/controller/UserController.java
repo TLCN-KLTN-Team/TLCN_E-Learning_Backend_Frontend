@@ -2,7 +2,6 @@ package com.devteria.identity.controller;
 
 import java.util.List;
 
-import com.devteria.identity.dto.request.RoleUpdateRequest;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.*;
@@ -74,10 +73,10 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping("/roles")
-    ApiResponse<UserResponse> updateRoles(@RequestBody RoleUpdateRequest request){
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.updateUserRoles(request))
-                .build();
-    }
+//    @PutMapping("/roles")
+//    ApiResponse<UserResponse> updateRoles(@RequestBody RoleUpdateRequest request){
+//        return ApiResponse.<UserResponse>builder()
+//                .result(userService.updateUserRoles(request))
+//                .build();
+//    }
 }
