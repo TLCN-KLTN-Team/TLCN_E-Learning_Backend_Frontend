@@ -33,6 +33,8 @@ public enum ErrorCode {
     INVALID_MESSAGE_STATUS(1021, "Invalid message status", HttpStatus.BAD_REQUEST),
     ATTACHMENT_NOT_FOUND(1022, "Attachment not found", HttpStatus.NOT_FOUND),
     UPLOAD_IN_PROGRESS(1023, "Upload is in progress", HttpStatus.ACCEPTED),
+
+    END_TIME_INVALID(1025, "End time must be in the future", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

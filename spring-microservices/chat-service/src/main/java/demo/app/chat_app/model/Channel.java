@@ -1,5 +1,6 @@
 package demo.app.chat_app.model;
 
+import demo.app.chat_app.model.enums.ChannelStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.CreatedDate;
@@ -36,6 +37,12 @@ public class Channel {
     String workspaceId; // ID of the workspace this channel belongs to
     
     List<Participant> participants; // List of participants in the channel
+
+    boolean isPrivate;
+
+    long endedAt; // Optional end time for the channel
+    @Builder.Default
+    ChannelStatus status= ChannelStatus.ACTIVE;
 
     @CreatedDate
     @Indexed

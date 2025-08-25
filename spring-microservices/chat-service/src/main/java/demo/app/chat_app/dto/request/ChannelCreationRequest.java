@@ -4,6 +4,7 @@ import demo.app.chat_app.model.Participant;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -16,4 +17,6 @@ public class ChannelCreationRequest {
     String name;
     String description;
     List<String> memberIds;
+    boolean isPrivate;
+    long endTime;
 }
