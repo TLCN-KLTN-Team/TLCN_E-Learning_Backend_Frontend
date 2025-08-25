@@ -35,6 +35,8 @@ export interface ChannelResponse {
   channelName: string;
   participants?: Participant[];
   messages?: ChatMessageResponse[] | null;
+  isPrivate: boolean;
+  endTime: number; // ISO 8601 format
 }
 
 export interface CreateChannelRequest {
@@ -42,6 +44,7 @@ export interface CreateChannelRequest {
   name: string;
   description?: string;
   memberIds?: string[];
+  isPrivate: boolean;
 }
 
 export interface ChatMessageRequest {
