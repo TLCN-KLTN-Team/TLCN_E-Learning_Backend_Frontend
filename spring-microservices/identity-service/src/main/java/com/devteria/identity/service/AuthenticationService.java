@@ -145,29 +145,17 @@ public class AuthenticationService {
 
     // logic authen & login with username, not social login
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-
-        System.out.println("=== [AUTHENTICATE] Nhận request: ===");
-        System.out.println("Username: " + request.getUsername());
-        System.out.println("Password: " + request.getPassword());
-
         var user = userRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        System.out.println("✅ Tìm thấy người dùng: " + user.getUsername());
-        System.out.println("Mật khẩu trong DB: " + user.getPassword());
-
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
-
-        System.out.println("So sánh mật khẩu: " + (authenticated ? "✅ Khớp" : "❌ Không khớp"));
 
         if (!authenticated) throw new AppException(ErrorCode.INVALID_CREDENTIALS);
 
         var authData = getAuthorizationData(user);
-        System.out.println("🎟️ Dữ liệu authorization đã tạo: " + authData);
 
         AuthenticationResponse response = toAuthenticationResponse(authData);
-        System.out.println("📦 Trả về AuthenticationResponse: " + response);
 
         return toAuthenticationResponse(getAuthorizationData(user));
     }

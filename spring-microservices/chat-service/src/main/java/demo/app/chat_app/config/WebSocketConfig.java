@@ -17,16 +17,12 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-    private final WebSocketAuthenticationInterceptor interceptor;
-    private final WebSocketAuthInterceptor webSocketAuthInterceptor;
-    private final CustomHandshakeHandler customHandshakeHandler;
+    private final WebSocketAuthInterceptor interceptor;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         log.info("Registering stomp endpoints");
         registry.addEndpoint("/ws")
-                .addInterceptors(interceptor)
-                .setHandshakeHandler(customHandshakeHandler)
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
         log.info("Registering stomp endpoints completed");
@@ -47,10 +43,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         log.info("Message broker configured successfully");
     }
 
-//    @Override
-//    public void configureClientInboundChannel(ChannelRegistration registration) {
-//        log.info("Configuring client inbound channel");
-//        registration.interceptors(webSocketAuthInterceptor);
-//        log.info("Client inbound channel configured successfully");
-//    }
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(interceptor);
+    }
 }

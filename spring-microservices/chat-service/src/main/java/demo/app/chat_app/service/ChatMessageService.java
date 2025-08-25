@@ -15,7 +15,7 @@ public interface ChatMessageService {
     ChatMessageResponse sendMessage(ChatMessageRequest request, Principal principal);
 
     // New methods for separated architecture
-    ChatMessageResponse sendTextMessage(TextMessageRequest request, Principal principal);
+    ChatMessageResponse sendTextMessage(TextMessageRequest request);
     ChatMessageResponse getMessageById(String messageId);
 
     List<ChatMessageResponse> getMessages(String channelId);

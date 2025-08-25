@@ -25,7 +25,7 @@ openapi:
       url: https://springdoc.org
 
 jwt:
-  secretKey: XrlXd50JgElviZ+G7WjSvJiMMapYK+vznAV/CUPSGvvLgsB/898dipwLOvGECplI
+  secretKey: D0iwggWH/ZIxH2ZqhGNlJ8DtjECo2jiiDLU7Dg5bm94hjHCbS8wMK9MyJLCYJCyi
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
