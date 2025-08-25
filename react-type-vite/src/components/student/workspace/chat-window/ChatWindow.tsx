@@ -3,6 +3,7 @@ import ChatHeader from "./ChatHeader";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
+import ChannelWorkspace from "../channel/ChannelWorkspace";
 import type {
   ChannelResponse,
   ChatMessageResponse,
@@ -35,6 +36,18 @@ const ChatWindow = ({
   const toggleParticipants = () => {
     setShowParticipants(!showParticipants);
   };
+
+  // Check if this is a timed exercise channel
+  const isExerciseChannel = () => {
+    return selectedChannel?.endTime && selectedChannel.endTime > 0;
+  };
+
+  // Handle channel expiration
+  const handleChannelExpired = () => {
+    console.log("Channel expired, redirecting to channel list...");
+    // Could add navigation logic here or emit event to parent
+  };
+
   if (!selectedChannel) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-700">
@@ -46,6 +59,20 @@ const ChatWindow = ({
             Chọn một workspace và kênh từ sidebar để xem tin nhắn
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // If this is an exercise channel, show the workspace interface
+  if (isExerciseChannel()) {
+    return (
+      <div className="flex-1 flex flex-col bg-gray-100">
+        <ChannelWorkspace
+          channelId={selectedChannel.id}
+          channelName={selectedChannel.channelName}
+          endTime={new Date(selectedChannel.endTime).toISOString()}
+          onChannelExpired={handleChannelExpired}
+        />
       </div>
     );
   }
