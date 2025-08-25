@@ -45,3 +45,7 @@ export const sendMessage = async (
   );
   return response.data.result;
 };
+
+export const softDeleteChannel = async (channelId: string): Promise<void> => {
+  await axiosInstance.delete(`/server/channels/${channelId}/soft-delete`);
+};

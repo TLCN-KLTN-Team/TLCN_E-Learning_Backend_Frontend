@@ -38,6 +38,13 @@ const AddChannelModal = ({
   const [channelDescription, setChannelDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
 
+  // Time duration states
+  const [selectedDuration, setSelectedDuration] = useState<string>("5");
+  const [customDuration, setCustomDuration] = useState<string>("");
+  const [durationUnit, setDurationUnit] = useState<"minutes" | "hours">(
+    "minutes"
+  );
+
   // Student search states
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserResponse[]>([]);
@@ -65,7 +72,10 @@ const AddChannelModal = ({
     setSearchQuery(query);
     if (query.trim()) {
       const results = await searchStudents(query);
-      setSearchResults(results);
+      const leftStudents = results.filter(
+        (student) => !selectedStudents.find((s) => s.id === student.id)
+      );
+      setSearchResults(leftStudents);
     } else {
       setSearchResults([]);
     }
@@ -84,6 +94,18 @@ const AddChannelModal = ({
     setSelectedStudents(selectedStudents.filter((s) => s.id !== studentId));
   };
 
+  // Simple function to get duration in minutes
+  const getDurationInMinutes = (): number => {
+    if (customDuration) {
+      const duration = parseInt(customDuration);
+      return durationUnit === "hours" ? duration * 60 : duration;
+    } else if (selectedDuration) {
+      const duration = parseInt(selectedDuration);
+      return durationUnit === "hours" ? duration * 60 : duration;
+    }
+    return 15; // Default 15 minutes
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -97,7 +119,9 @@ const AddChannelModal = ({
           description: channelDescription.trim(),
           name: channelName.trim(),
           memberIds: selectedStudents.map((student) => student.id),
+          isPrivate: isPrivate,
         });
+        console.log("🚀 Creating channel with data:", newChannel);
 
         if (newChannel) {
           console.log("New channel created:", newChannel);
@@ -409,6 +433,109 @@ const AddChannelModal = ({
               )}
             </div>
 
+            {/* TIME TO END CHANNEL */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-5 h-5 text-gray-400">⏰</div>
+                <div>
+                  <h4 className="text-white font-medium">Channel Duration</h4>
+                  <p className="text-sm text-gray-400">
+                    Set how long this channel will remain active.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {/* Preset Duration Options */}
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300 font-medium">
+                    Quick Duration
+                  </label>
+                  <select
+                    value={
+                      selectedDuration
+                        ? `${selectedDuration}-${durationUnit}`
+                        : ""
+                    }
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const [value, unit] = e.target.value.split("-");
+                        setSelectedDuration(value);
+                        setDurationUnit(unit as "minutes" | "hours");
+                        setCustomDuration("");
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="5-minutes">5 minutes</option>
+                    <option value="15-minutes">15 minutes</option>
+                    <option value="45-minutes">45 minutes</option>
+                    <option value="1-hours">1 hour</option>
+                  </select>
+                </div>
+
+                {/* Custom Duration Input */}
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300 font-medium">
+                    Custom Duration
+                  </label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      value={customDuration}
+                      onChange={(e) => {
+                        setCustomDuration(e.target.value);
+                        if (e.target.value) {
+                          setSelectedDuration("");
+                        }
+                      }}
+                      placeholder="Enter duration"
+                      className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                    <select
+                      value={durationUnit}
+                      onChange={(e) =>
+                        setDurationUnit(e.target.value as "minutes" | "hours")
+                      }
+                      className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="minutes">Minutes</option>
+                      <option value="hours">Hours</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Duration Summary */}
+                <div className="p-3 bg-gray-800 rounded-md">
+                  <p className="text-sm text-gray-300">
+                    <span className="text-white font-medium">Duration: </span>
+                    {customDuration
+                      ? `${customDuration} ${durationUnit}`
+                      : selectedDuration
+                      ? `${selectedDuration} ${durationUnit}`
+                      : "Not set"}
+                  </p>
+                  {(customDuration || selectedDuration) && (
+                    <>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Channel will automatically expire after this duration.
+                      </p>
+                      <p className="text-xs text-green-400 mt-1">
+                        <span className="font-medium">Will expire in: </span>
+                        {customDuration
+                          ? `${customDuration} ${durationUnit}`
+                          : selectedDuration
+                          ? `${selectedDuration} ${durationUnit}`
+                          : "15 minutes"}{" "}
+                        from creation time
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
             {/* Private Channel Toggle */}
             <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
               <div className="flex items-center space-x-3">
