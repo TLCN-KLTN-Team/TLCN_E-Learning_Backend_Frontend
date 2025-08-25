@@ -2,7 +2,6 @@ import { Hash, Edit } from "lucide-react";
 
 import { getRoles } from "@/utils/localStorageVariables";
 import MessageItem from "./MessageItem";
-import SessionDivider from "./SessionDivider";
 import { useEffect, useState } from "react";
 import { getMessagesByChannelId } from "@/services/api/messageApi";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
@@ -23,7 +22,7 @@ const MessageList = ({
   isConnected,
   wsErrors,
 }: MessageListProps) => {
-  const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
+  const [allMessages, setAllMessages] = useState<ChatMessageResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { user } = useAuth();
 
@@ -57,27 +56,67 @@ const MessageList = ({
           me: user?.id === msg.sender.userId,
         }));
 
-        setMessages(messagesWithMe);
+        setAllMessages(messagesWithMe);
         setLoading(false);
       };
       fetchMessages();
     }
   }, [selectedChannel, user?.id]);
 
+  // Effect to sync WebSocket messages with allMessages
+  useEffect(() => {
+    if (!selectedChannel) return;
+
+    // Filter WebSocket messages for current channel
+    const currentChannelWsMessages = wsMessages.filter(
+      (msg) => msg.channelId === selectedChannel.id
+    );
+
+    if (currentChannelWsMessages.length > 0) {
+      setAllMessages((prevMessages) => {
+        // Create a set of existing message IDs for quick lookup
+        const existingIds = new Set(prevMessages.map((msg) => msg.id));
+
+        // Filter out WebSocket messages that are already in the list
+        const newMessages = currentChannelWsMessages.filter(
+          (wsMsg) => !existingIds.has(wsMsg.id)
+        );
+
+        if (newMessages.length === 0) {
+          return prevMessages; // No new messages to add
+        }
+
+        // Add 'me' property to new WebSocket messages
+        const processedNewMessages = newMessages.map((msg) => ({
+          ...msg,
+          me: user?.id === msg.sender.userId,
+        }));
+
+        // Combine and sort all messages by timestamp
+        const combinedMessages = [...prevMessages, ...processedNewMessages];
+        return combinedMessages.sort(
+          (a, b) =>
+            new Date(a.createdDate).getTime() -
+            new Date(b.createdDate).getTime()
+        );
+      });
+    }
+  }, [wsMessages, selectedChannel, user?.id]);
+
   // Function to render messages with grouping logic
-  const renderMessages = (
-    messages: ChatMessageResponse[],
-    isWebSocket = false
-  ) => {
+  const renderMessages = (messages: ChatMessageResponse[]) => {
     return messages.map((message, index) => {
+      if (messages.length === 0) {
+        return <MessageItem key={message.id} message={message} />;
+      }
+
       const previousMessage = index > 0 ? messages[index - 1] : null;
       const shouldGroup = shouldGroupMessages(message, previousMessage);
 
       return (
         <MessageItem
-          key={isWebSocket ? `ws-${message.id}` : message.id}
+          key={message.id}
           message={message}
-          isWebSocketMessage={isWebSocket}
           showAvatar={!shouldGroup}
           showTimestamp={!shouldGroup}
         />
@@ -91,6 +130,7 @@ const MessageList = ({
       </div>
     );
   }
+
   if (loading) {
     return (
       <div className="p-6 pt-16 text-center">
@@ -99,7 +139,8 @@ const MessageList = ({
     );
   }
 
-  if (messages.length === 0) {
+  // Show welcome message only if there are no messages at all
+  if (allMessages.length === 0) {
     return (
       <div className="p-6 pt-16">
         <div className="flex items-center mb-4">
@@ -126,18 +167,8 @@ const MessageList = ({
   return (
     <>
       <div className="p-4 space-y-4">
-        {/* Display existing messages from API */}
-        {renderMessages(messages, false)}
-
-        {/* Show session divider if there are WebSocket messages */}
-        {wsMessages.filter((msg) => msg.channelId === selectedChannel.id)
-          .length > 0 && <SessionDivider timestamp={new Date()} />}
-
-        {/* Display real-time WebSocket messages */}
-        {renderMessages(
-          wsMessages.filter((msg) => msg.channelId === selectedChannel.id),
-          true
-        )}
+        {/* Display all messages (API + WebSocket combined and sorted) */}
+        {renderMessages(allMessages)}
       </div>
 
       {/* WebSocket connection status */}
