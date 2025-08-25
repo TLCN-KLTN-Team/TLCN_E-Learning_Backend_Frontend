@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,6 +34,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PACKAGE, makeFinal = true)
+@Order(-1)
 public class AuthenticationFilter implements GlobalFilter, Ordered {
     IdentityService identityService;
     ObjectMapper objectMapper;
@@ -43,14 +45,17 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             "/identity/users/registration",
             "/notification/email/send",
             "/file/media/download/.*",
-            "/profile/users/.*",
-            "/server/ws/.*",
-            "/server/ws/info/.*",
+            "/profile/users/.*"
     };
 
     @Value("${app.api-prefix}")
     @NonFinal
     private String apiPrefix;
+
+    @Override
+    public int getOrder() {
+        return -1;
+    }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -60,18 +65,29 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         log.info("Request URI: " + request.getURI());
 
         // Bỏ qua preflight request
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod().toString())) {
-            return chain.filter(exchange);
+        String path = request.getURI().getPath();
+        // Bỏ qua preflight request và SockJS info
+        if (path.contains("/ws/info")) {
+            log.info("Bypassing authentication for SockJS info endpoint");
+            return chain.filter(exchange).doOnSuccess(v -> {
+                log.info("SockJS info response status: {}", exchange.getResponse().getStatusCode());
+            }).doOnError(throwable -> {
+                log.error("Error in SockJS info processing: ", throwable);
+            });
         }
 
         // Kiểm tra nếu là WebSocket handshake
-        if (isWebSocketHandshake(request)) {
+        if (isWebSocketRequest(request)) {
+            log.info("Processing WebSocket request");
             return handleWebSocketAuthentication(exchange, chain);
         }
 
-        if (isPublicEndpoint(exchange.getRequest()))
+        if (isPublicEndpoint(exchange.getRequest())){
+            log.info("Processing public endpoint");
             return chain.filter(exchange);
+        }
 
+        log.info("Processing HTTP authentication");
         return handleHttpAuthentication(exchange, chain);
     }
 
@@ -124,14 +140,11 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 });
     }
 
-    @Override
-    public int getOrder() {
-        return -1;
-    }
-
-    private boolean isWebSocketHandshake(ServerHttpRequest request) {
-        return "websocket".equalsIgnoreCase(request.getHeaders().getFirst("Upgrade")) ||
-                request.getURI().getPath().contains("/ws/");
+    private boolean isWebSocketRequest(ServerHttpRequest request) {
+        String upgrade = request.getHeaders().getFirst(HttpHeaders.UPGRADE);
+        String connection = request.getHeaders().getFirst(HttpHeaders.CONNECTION);
+        return "websocket".equalsIgnoreCase(upgrade) &&
+                connection != null && connection.toLowerCase().contains("upgrade");
     }
 
     private boolean isPublicEndpoint(ServerHttpRequest request){

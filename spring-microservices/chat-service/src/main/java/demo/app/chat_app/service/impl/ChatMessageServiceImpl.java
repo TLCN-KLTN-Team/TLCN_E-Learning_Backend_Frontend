@@ -19,6 +19,7 @@ import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.repository.httpclient.ProfileClient;
 import demo.app.chat_app.service.ChatMessageService;
 import demo.app.chat_app.service.util.CloudinaryService;
+import demo.app.chat_app.websocket.WebsocketSessionUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -142,13 +143,12 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     // ======== NEW METHODS FOR SEPARATED ARCHITECTURE ========
     
     @Override
-    public ChatMessageResponse sendTextMessage(TextMessageRequest request, Principal principal) {
+    public ChatMessageResponse sendTextMessage(TextMessageRequest request) {
         // Validate and get channel
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        // Get current user
-        String userId = principal.getName();
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
 
         // Find sender participant info
         Participant sender = channel.getParticipants().stream()
