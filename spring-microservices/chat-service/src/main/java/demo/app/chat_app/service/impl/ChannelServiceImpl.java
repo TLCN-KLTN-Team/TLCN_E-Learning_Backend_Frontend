@@ -11,6 +11,7 @@ import demo.app.chat_app.mapper.ChannelMapper;
 import demo.app.chat_app.model.Channel;
 import demo.app.chat_app.model.Participant;
 import demo.app.chat_app.model.Workspace;
+import demo.app.chat_app.model.enums.ChannelStatus;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
@@ -21,6 +22,7 @@ import demo.app.chat_app.service.ChatMessageService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -74,6 +77,7 @@ public class ChannelServiceImpl implements ChannelService {
                 .workspaceId(request.getWorkspaceId())
                 .participants(participants)
                 .createdAt(Instant.now())
+                .isPrivate(request.isPrivate())
                 .build();
 
         channel = channelRepository.save(channel);
@@ -175,5 +179,27 @@ public class ChannelServiceImpl implements ChannelService {
                     channel.setMessages(messages);
                 });
         return channelResponse;
+    }
+
+    @Override
+    public void submitPractices(String channelId) {
+
+    }
+
+    @Override
+    public void softDeleteChannel(String channelId) {
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new RuntimeException("Channel not found"));
+
+        channel.setStatus(ChannelStatus.ENDED);
+        channel.setEndedAt(System.currentTimeMillis());
+
+        channelRepository.save(channel);
+    }
+
+    public void deleteChannelById(String id){
+        Channel channel = channelRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        channelRepository.delete(channel);
     }
 }

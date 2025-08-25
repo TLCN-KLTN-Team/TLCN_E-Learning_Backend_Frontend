@@ -14,4 +14,6 @@ public interface ChannelService {
     List<BasicChannelResponse> getBasicChannels(String workspaceId);
     ChannelResponse getChannelById(String channelId);
     List<ChannelResponse> getChannels(String workspaceId);
+    void submitPractices(String channelId);
+    void softDeleteChannel(String channelId);
 }
