@@ -1,5 +1,6 @@
 package com.devteria.identity.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@Slf4j
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -52,7 +54,8 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
+        jwtGrantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
