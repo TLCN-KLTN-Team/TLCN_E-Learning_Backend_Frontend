@@ -192,14 +192,13 @@ public class AuthenticationService {
         Instant now = Instant.now();
         Instant accessTokenExpiry = now.plus(VALID_DURATION, ChronoUnit.SECONDS);
         Instant refreshTokenExpiry = now.plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS);
-
-        String accessToken = generateToken(user, accessTokenExpiry, "access");
-        String refreshToken = generateToken(user, refreshTokenExpiry, "refresh");
-
         Set<String> roles = new HashSet<>();
         if (!CollectionUtils.isEmpty(user.getRoles())) {
             user.getRoles().forEach(role -> roles.add(role.getName()));
         }
+
+        String accessToken = generateToken(user, accessTokenExpiry, "access", roles);
+        String refreshToken = generateToken(user, refreshTokenExpiry, "refresh",roles);
 
         System.out.println("Access token: " + accessToken);
         System.out.println("Access token expiry: " + accessTokenExpiry);
@@ -211,7 +210,7 @@ public class AuthenticationService {
     }
 
     // generate token for user
-    private String generateToken(User user, Instant expiry, String tokenType) {
+    private String generateToken(User user, Instant expiry, String tokenType, Set<String> roles) {
 
         System.out.println("=== Bắt đầu generateToken ===");
         System.out.println("User ID: " + user.getId());
@@ -227,7 +226,9 @@ public class AuthenticationService {
                 .issueTime(new Date())
                 .expirationTime(Date.from(expiry))
                 .jwtID(UUID.randomUUID().toString())
-                .claim("token_type", tokenType);
+                .claim("token_type", tokenType)
+                .claim("roles", roles)
+                ;
 
         // Chỉ thêm scope cho access token
 //        if ("access".equals(tokenType)) {

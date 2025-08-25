@@ -15,4 +15,6 @@ public class BasicChannelResponse {
     String id;
     String participantHash;
     String channelName;
+    long endTime;
+    boolean ended;
 }

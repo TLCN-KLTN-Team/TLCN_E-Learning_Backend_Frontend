@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.devteria.identity.dto.request.RoleUpdateRequest;
 import io.micrometer.common.util.StringUtils;
 import org.apache.catalina.util.StringUtil;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -119,16 +118,16 @@ public class UserService {
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    public UserResponse updateUserRoles(RoleUpdateRequest req) {
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-        var roles = roleRepository.findAllById(req.roles());
-        user.setRoles(new HashSet<>(roles));
-
-        return userMapper.toUserResponse(userRepository.save(user));
-    }
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public UserResponse updateUserRoles(RoleUpdateRequest req) {
+//        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+//        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+//
+//        var roles = roleRepository.findAllById(req.roles());
+//        user.setRoles(new HashSet<>(roles));
+//
+//        return userMapper.toUserResponse(userRepository.save(user));
+//    }
 
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(String userId) {

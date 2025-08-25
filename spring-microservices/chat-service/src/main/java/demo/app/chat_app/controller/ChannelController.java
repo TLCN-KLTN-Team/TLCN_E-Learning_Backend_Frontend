@@ -90,4 +90,17 @@ public class ChannelController {
                 .message("Basic channels retrieved successfully")
                 .build();
     }
+
+    @PutMapping("/submit/{channelId}")
+    public ApiResponse<Void> endChannel(@PathVariable String channelId) {
+        try {
+            return ApiResponse.<Void>builder()
+                    .message("Channel ended successfully")
+                    .build();
+        } catch (Exception e) {
+            return ApiResponse.<Void>builder()
+                    .message("Failed to end channel: " + e.getMessage())
+                    .build();
+        }
+    }
 }

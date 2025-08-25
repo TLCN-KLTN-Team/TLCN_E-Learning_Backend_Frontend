@@ -64,24 +64,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         log.info("Request URI: " + request.getURI());
 
-        // Bỏ qua preflight request
-        String path = request.getURI().getPath();
-        // Bỏ qua preflight request và SockJS info
-        if (path.contains("/ws/info")) {
-            log.info("Bypassing authentication for SockJS info endpoint");
-            return chain.filter(exchange).doOnSuccess(v -> {
-                log.info("SockJS info response status: {}", exchange.getResponse().getStatusCode());
-            }).doOnError(throwable -> {
-                log.error("Error in SockJS info processing: ", throwable);
-            });
-        }
-
-        // Kiểm tra nếu là WebSocket handshake
-        if (isWebSocketRequest(request)) {
-            log.info("Processing WebSocket request");
-            return handleWebSocketAuthentication(exchange, chain);
-        }
-
         if (isPublicEndpoint(exchange.getRequest())){
             log.info("Processing public endpoint");
             return chain.filter(exchange);
@@ -112,6 +94,32 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 .onErrorResume(throwable -> unauthenticated(exchange.getResponse()));
     }
 
+    private boolean isPublicEndpoint(ServerHttpRequest request){
+        return Arrays.stream(publicEndpoints)
+                .anyMatch(s -> request.getURI().getPath().matches(apiPrefix + s));
+    }
+
+    Mono<Void> unauthenticated(ServerHttpResponse response){
+        ApiResponse<?> apiResponse = ApiResponse.builder()
+                .code(1401)
+                .message("Unauthenticated")
+                .build();
+
+        String body = null;
+        try {
+            body = objectMapper.writeValueAsString(apiResponse);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+
+        return response.writeWith(
+                Mono.just(response.bufferFactory().wrap(body.getBytes())));
+    }
+
+    // websocket config
     private Mono<Void> handleWebSocketAuthentication(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
 
@@ -145,30 +153,5 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String connection = request.getHeaders().getFirst(HttpHeaders.CONNECTION);
         return "websocket".equalsIgnoreCase(upgrade) &&
                 connection != null && connection.toLowerCase().contains("upgrade");
-    }
-
-    private boolean isPublicEndpoint(ServerHttpRequest request){
-        return Arrays.stream(publicEndpoints)
-                .anyMatch(s -> request.getURI().getPath().matches(apiPrefix + s));
-    }
-
-    Mono<Void> unauthenticated(ServerHttpResponse response){
-        ApiResponse<?> apiResponse = ApiResponse.builder()
-                .code(1401)
-                .message("Unauthenticated")
-                .build();
-
-        String body = null;
-        try {
-            body = objectMapper.writeValueAsString(apiResponse);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        response.setStatusCode(HttpStatus.UNAUTHORIZED);
-        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-
-        return response.writeWith(
-                Mono.just(response.bufferFactory().wrap(body.getBytes())));
     }
 }
