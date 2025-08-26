@@ -102,7 +102,7 @@ public class AuthenticationService {
 
         var userId = signedJWT.getJWTClaimsSet().getSubject();
 
-        var user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        var user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.AUTH_REQUIRED));
 
         return toAuthenticationResponse(getAuthorizationData(user));
     }
@@ -147,11 +147,11 @@ public class AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var user = userRepository
                 .findByUsername(request.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
-        if (!authenticated) throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        if (!authenticated) throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
         var authData = getAuthorizationData(user);
 
@@ -198,7 +198,7 @@ public class AuthenticationService {
         }
 
         String accessToken = generateToken(user, accessTokenExpiry, "access", roles);
-        String refreshToken = generateToken(user, refreshTokenExpiry, "refresh",roles);
+        String refreshToken = generateToken(user, refreshTokenExpiry, "refresh", roles);
 
         System.out.println("Access token: " + accessToken);
         System.out.println("Access token expiry: " + accessTokenExpiry);
@@ -227,13 +227,12 @@ public class AuthenticationService {
                 .expirationTime(Date.from(expiry))
                 .jwtID(UUID.randomUUID().toString())
                 .claim("token_type", tokenType)
-                .claim("roles", roles)
-                ;
+                .claim("roles", roles);
 
         // Chỉ thêm scope cho access token
-//        if ("access".equals(tokenType)) {
-//            claimsBuilder.claim("scope", buildScope(user));
-//        }
+        //        if ("access".equals(tokenType)) {
+        //            claimsBuilder.claim("scope", buildScope(user));
+        //        }
 
         JWTClaimsSet jwtClaimsSet = claimsBuilder.build();
         System.out.println("JWTClaimsSet: " + jwtClaimsSet.toJSONObject());
@@ -262,24 +261,24 @@ public class AuthenticationService {
 
         // Verify signature
         if (!signedJWT.verify(verifier)) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
 
         // Check if token is expired
         Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
         if (expiryTime.before(new Date())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new AppException(ErrorCode.AUTH_TOKEN_EXPIRED);
         }
 
         // Check if token is refresh token
         String tokenType = signedJWT.getJWTClaimsSet().getStringClaim("token_type");
         if (!"refresh".equals(tokenType)) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
 
         // Check if token is invalidated
         if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
 
         return signedJWT;
@@ -302,27 +301,27 @@ public class AuthenticationService {
 
         var verified = signedJWT.verify(verifier);
 
-        if (!(verified && expiryTime.after(new Date()))) throw new AppException(ErrorCode.UNAUTHENTICATED);
+        if (!(verified && expiryTime.after(new Date()))) throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
 
         if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
 
         return signedJWT;
     }
 
     // build scope for user
-//    private String buildScope(User user) {
-//        StringJoiner stringJoiner = new StringJoiner(" ");
-//
-//        if (!CollectionUtils.isEmpty(user.getRoles()))
-//            user.getRoles().forEach(role -> {
-//                stringJoiner.add("ROLE_" + role.getName());
-//                if (!CollectionUtils.isEmpty(role.getPermissions()))
-//                    role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
-//            });
-//
-//        return stringJoiner.toString();
-//    }
+    //    private String buildScope(User user) {
+    //        StringJoiner stringJoiner = new StringJoiner(" ");
+    //
+    //        if (!CollectionUtils.isEmpty(user.getRoles()))
+    //            user.getRoles().forEach(role -> {
+    //                stringJoiner.add("ROLE_" + role.getName());
+    //                if (!CollectionUtils.isEmpty(role.getPermissions()))
+    //                    role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
+    //            });
+    //
+    //        return stringJoiner.toString();
+    //    }
 
     // record to hold authorization data. record in new Java version is immutable and provides a concise way to define
     // data classes.
