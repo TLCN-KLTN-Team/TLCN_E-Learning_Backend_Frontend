@@ -2,6 +2,9 @@ package com.devteria.identity.dto.request;
 
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
+
+import com.devteria.identity.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.*;
@@ -15,10 +18,38 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
     @Builder.Default
-    private int code = 1000; // Success code
+    String code = ErrorCode.SUCCESS.getCode(); // Success code
 
-    private String message;
-    private T result;
+    @Builder.Default
+    int status = ErrorCode.SUCCESS.getStatusCode().value(); // Success status
 
-    private Map<String, String> errors;
+    String message;
+    T result;
+    Map<String, String> errors;
+
+    // 🎯 Static factory methods for common cases
+    public static <T> ApiResponse<T> success(T result, String message) {
+        return ApiResponse.<T>builder()
+                .code(ErrorCode.SUCCESS.getCode())
+                .message(message)
+                .result(result)
+                .status(HttpStatus.OK.value())
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(String code, String message, int status) {
+        return ApiResponse.<T>builder()
+                .code(code)
+                .message(message)
+                .status(status)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> validationError(Map<String, String> errors) {
+        return ApiResponse.<T>builder()
+                .message("Validation failed")
+                .errors(errors)
+                .status(HttpStatus.BAD_REQUEST.value())
+                .build();
+    }
 }

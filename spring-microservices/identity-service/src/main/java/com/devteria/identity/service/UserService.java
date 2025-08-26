@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.micrometer.common.util.StringUtils;
-import org.apache.catalina.util.StringUtil;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +26,7 @@ import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.UserRepository;
 import com.devteria.identity.repository.httpclient.ProfileClient;
 
+import io.micrometer.common.util.StringUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -56,10 +55,9 @@ public class UserService {
         Set<String> requestedRoles = request.getRoles();
         if (requestedRoles != null && !requestedRoles.isEmpty()) {
             requestedRoles.stream().forEach(role -> {
-                    Role existingRole = roleRepository.findById(role).orElseThrow(
-                            () -> new AppException(ErrorCode.ROLE_NOT_EXISTED)
-                    );
-                    roles.add(existingRole);
+                Role existingRole =
+                        roleRepository.findById(role).orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                roles.add(existingRole);
             });
         }
 
@@ -69,7 +67,7 @@ public class UserService {
         try {
             user = userRepository.save(user);
         } catch (DataIntegrityViolationException exception) {
-            throw new AppException(ErrorCode.USER_EXISTED);
+            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
         //        NotificationEvent notificationEvent = NotificationEvent.builder()
@@ -91,21 +89,17 @@ public class UserService {
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
 
-        User user = userRepository.findById(name).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        User user = userRepository.findById(name).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         UserResponse response = userMapper.toUserResponse(user);
-        response.setRoles(
-                user.getRoles().stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toSet())
-        );
+        response.setRoles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
 
         return response;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponse updateUser(String userId, UserUpdateRequest request) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         userMapper.updateUser(user, request);
         if (request.getPassword() != null || StringUtils.isEmpty(request.getPassword())) {
@@ -118,16 +112,17 @@ public class UserService {
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public UserResponse updateUserRoles(RoleUpdateRequest req) {
-//        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-//        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-//
-//        var roles = roleRepository.findAllById(req.roles());
-//        user.setRoles(new HashSet<>(roles));
-//
-//        return userMapper.toUserResponse(userRepository.save(user));
-//    }
+    //    @PreAuthorize("hasRole('ADMIN')")
+    //    public UserResponse updateUserRoles(RoleUpdateRequest req) {
+    //        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+    //        User user = userRepository.findById(userId).orElseThrow(() -> new
+    // AppException(ErrorCode.USER_NOT_EXISTED));
+    //
+    //        var roles = roleRepository.findAllById(req.roles());
+    //        user.setRoles(new HashSet<>(roles));
+    //
+    //        return userMapper.toUserResponse(userRepository.save(user));
+    //    }
 
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(String userId) {
@@ -143,14 +138,14 @@ public class UserService {
     @PreAuthorize("hasRole('USER')")
     public UserResponse getUser(String id) {
         return userMapper.toUserResponse(
-                userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+                userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }
 
     @PreAuthorize("hasRole('USER')")
     public List<UserResponse> getUsersByMSSV(String mssv) {
         List<User> users = userRepository.findByMssvContainingIgnoreCase(mssv);
         if (users.isEmpty()) {
-            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
         return users.stream().map(userMapper::toUserResponse).toList();
     }

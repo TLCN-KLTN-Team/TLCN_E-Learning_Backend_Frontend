@@ -1,7 +1,6 @@
 package com.devteria.identity.mapper;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import com.devteria.identity.dto.request.RoleRequest;
 import com.devteria.identity.dto.response.RoleResponse;
