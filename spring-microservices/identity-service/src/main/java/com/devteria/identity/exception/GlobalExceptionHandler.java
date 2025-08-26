@@ -6,7 +6,6 @@ import java.util.Objects;
 
 import jakarta.validation.ConstraintViolation;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -21,18 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    private static final String MIN_ATTRIBUTE = "1";
-
-    @ExceptionHandler(value = Exception.class)
-    ResponseEntity<ApiResponse> handlingRuntimeException(RuntimeException exception) {
-        log.error("Runtime exception: ", exception);
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.builder()
-                        .code(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode())
-                        .message(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage())
-                        .build());
-    }
+    private static final String MIN_ATTRIBUTE = "min";
 
     @ExceptionHandler(value = AppException.class)
     ResponseEntity<ApiResponse> handlingAppException(AppException exception) {
@@ -41,18 +29,33 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatusCode())
                 .body(ApiResponse.builder()
                         .code(errorCode.getCode())
+                        .status(errorCode.getStatusCode().value())
                         .message(errorCode.getMessage())
                         .build());
     }
 
-    @ExceptionHandler(value = AccessDeniedException.class)
-    ResponseEntity<ApiResponse> handlingAccessDeniedException(AccessDeniedException exception) {
-        ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
+    @ExceptionHandler(value = Exception.class)
+    ResponseEntity<ApiResponse> handlingRuntimeException(RuntimeException exception) {
+        log.error("Runtime exception: ", exception);
+        ErrorCode errorCode = ErrorCode.SYSTEM_ERROR;
 
         return ResponseEntity.status(errorCode.getStatusCode())
                 .body(ApiResponse.builder()
                         .code(errorCode.getCode())
                         .message(errorCode.getMessage())
+                        .status(errorCode.getStatusCode().value())
+                        .build());
+    }
+
+    @ExceptionHandler(value = AccessDeniedException.class)
+    ResponseEntity<ApiResponse> handlingAccessDeniedException(AccessDeniedException exception) {
+        ErrorCode errorCode = ErrorCode.AUTH_PERMISSION_DENIED;
+
+        return ResponseEntity.status(errorCode.getStatusCode())
+                .body(ApiResponse.builder()
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
+                        .status(errorCode.getStatusCode().value())
                         .build());
     }
 
@@ -62,7 +65,7 @@ public class GlobalExceptionHandler {
         // Lấy field error đầu tiên để xác định error code chính
         String enumKey = exception.getFieldError().getDefaultMessage();
 
-        ErrorCode errorCode = ErrorCode.INVALID_KEY;
+        ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
         Map<String, Object> attributes = null;
 
         try {
@@ -98,7 +101,8 @@ public class GlobalExceptionHandler {
         });
 
         ApiResponse apiResponse = ApiResponse.builder()
-                .code(errorCode.getCode())
+                .code(ErrorCode.VALID_EXCEPTION.getCode())
+                .status(ErrorCode.VALID_EXCEPTION.getStatusCode().value())
                 .message(
                         Objects.nonNull(attributes)
                                 ? mapAttribute(errorCode.getMessage(), attributes)

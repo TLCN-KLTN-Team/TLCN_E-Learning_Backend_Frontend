@@ -73,10 +73,10 @@ public class UserController {
                 .build();
     }
 
-//    @PutMapping("/roles")
-//    ApiResponse<UserResponse> updateRoles(@RequestBody RoleUpdateRequest request){
-//        return ApiResponse.<UserResponse>builder()
-//                .result(userService.updateUserRoles(request))
-//                .build();
-//    }
+    //    @PutMapping("/roles")
+    //    ApiResponse<UserResponse> updateRoles(@RequestBody RoleUpdateRequest request){
+    //        return ApiResponse.<UserResponse>builder()
+    //                .result(userService.updateUserRoles(request))
+    //                .build();
+    //    }
 }
