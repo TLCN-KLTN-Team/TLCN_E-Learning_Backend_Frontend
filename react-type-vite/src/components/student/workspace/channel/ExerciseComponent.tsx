@@ -5,13 +5,11 @@ import { toast } from "react-toastify";
 interface ExerciseComponentProps {
   channelName: string;
   onSubmit?: () => void;
-  isTimeExpired?: boolean;
 }
 
 const ExerciseComponent = ({
   channelName,
   onSubmit,
-  isTimeExpired = false,
 }: ExerciseComponentProps) => {
   const [answer, setAnswer] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -112,37 +110,23 @@ const ExerciseComponent = ({
 
       {/* Submit Button */}
       <div className="mt-6 flex justify-end">
-        {isTimeExpired && !isSubmitted ? (
-          <div className="text-center space-y-2">
-            <button
-              disabled
-              className="flex items-center space-x-2 px-6 py-2 bg-red-500 text-white font-medium rounded-md cursor-not-allowed opacity-60"
-            >
-              <span>Hết thời gian</span>
-            </button>
-            <p className="text-sm text-red-600">
-              Thời gian làm bài đã kết thúc. Bài tập sẽ được tự động nộp.
-            </p>
-          </div>
-        ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting || answer.length < 150}
-            className="flex items-center space-x-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Đang nộp bài...</span>
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                <span>Nộp bài</span>
-              </>
-            )}
-          </button>
-        )}
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting || answer.length < 150}
+          className="flex items-center space-x-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span>Đang nộp bài...</span>
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              <span>Nộp bài</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Instructions */}

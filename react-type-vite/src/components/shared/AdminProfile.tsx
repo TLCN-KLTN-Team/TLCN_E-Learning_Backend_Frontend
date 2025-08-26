@@ -1,4 +1,13 @@
-import { Info, LogOut, Monitor, Moon, Settings, Sun, User } from "lucide-react";
+import {
+  ArrowLeftFromLine,
+  Info,
+  LogOut,
+  Monitor,
+  Moon,
+  Settings,
+  Sun,
+  User,
+} from "lucide-react";
 import { useState } from "react";
 
 const AdminProfile = () => {
@@ -37,6 +46,13 @@ const AdminProfile = () => {
         <button className={buttonStyles}>
           <Info className="w-4 h-4 mr-2" />
           Help
+        </button>
+        <button
+          className={buttonStyles}
+          onClick={() => (window.location.href = "/")}
+        >
+          <ArrowLeftFromLine className="w-4 h-4 mr-2" />
+          Back to Home
         </button>
         <button className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center">
           <LogOut className="w-4 h-4 mr-2" />

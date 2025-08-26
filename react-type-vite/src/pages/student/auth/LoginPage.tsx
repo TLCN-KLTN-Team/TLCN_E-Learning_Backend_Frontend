@@ -35,7 +35,6 @@ const LoginPage = () => {
     login(formData.username, formData.password)
       .then(() => {
         const roles = getRoles();
-        console.log(roles);
         const url = getRoleBasedRedirectPath(roles);
         navigate(url, { replace: true });
 
