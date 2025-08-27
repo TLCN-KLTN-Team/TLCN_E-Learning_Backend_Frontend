@@ -165,10 +165,10 @@ const RegisterPage = () => {
     setErrors(newErrors);
 
     // Check if there are any errors
-    if (Object.keys(newErrors).length > 0) {
-      toast.error("Please fix the errors before submitting");
-      return;
-    }
+    // if (Object.keys(newErrors).length > 0) {
+    //   toast.error("Please fix the errors before submitting");
+    //   return;
+    // }
 
     // call register
     if (user) {
@@ -400,11 +400,7 @@ const RegisterPage = () => {
         {/* Register Button */}
         <Button
           type="submit"
-          disabled={
-            Object.keys(errors).some(
-              (key) => errors[key as keyof FormErrors]
-            ) || !formData.agreeToTerms
-          }
+          disabled={!formData.agreeToTerms}
           className="w-full h-12 bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg"
         >
           Create Account
