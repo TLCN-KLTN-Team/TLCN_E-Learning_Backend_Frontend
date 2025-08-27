@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Map;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,8 +18,12 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
     @Builder.Default
-    private int code = 1000;
+    String code = "SUCCESS"; // Success code
 
-    private String message;
-    private T result;
+    @Builder.Default
+    int status = 200; // Success status
+
+    String message;
+    T result;
+    Map<String, String> errors;
 }
