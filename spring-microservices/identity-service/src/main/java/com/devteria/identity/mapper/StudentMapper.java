@@ -1,21 +1,20 @@
 package com.devteria.identity.mapper;
 
+import com.devteria.identity.dto.request.StudentRequest;
+import com.devteria.identity.dto.response.StudentResponse;
+import com.devteria.identity.entity.Student;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-import com.devteria.identity.dto.request.TeacherRequest;
-import com.devteria.identity.dto.response.TeacherResponse;
-import com.devteria.identity.entity.Teacher;
-
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface TeacherMapper {
+public interface StudentMapper {
 
     @Mapping(source = "idDepartment", target = "departmentId")
     @Mapping(source = "idEducational", target = "educationalUnitId")
-    TeacherResponse toTeacherResponse(Teacher teacher);
+    StudentResponse toStudentResponse(Student student);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "password", ignore = true)
@@ -23,7 +22,7 @@ public interface TeacherMapper {
     @Mapping(target = "emailVerified", ignore = true)
     @Mapping(source = "departmentId", target = "idDepartment")
     @Mapping(source = "educationalUnitId", target = "idEducational")
-    void updateTeacher(@MappingTarget Teacher teacher, TeacherRequest request);
+    void updateStudent(@MappingTarget Student student, StudentRequest request);
 
-    List<TeacherResponse> toTeacherResponseList(List<Teacher> teachers);
+    List<StudentResponse> toStudentResponseList(List<Student> students);
 }

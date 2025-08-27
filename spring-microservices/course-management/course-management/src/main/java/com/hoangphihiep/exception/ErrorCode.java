@@ -15,6 +15,21 @@ public enum ErrorCode {
     UNAUTHORIZED(1006, "Không có quyền truy cập", HttpStatus.UNAUTHORIZED),
     FORBIDDEN(1007, "Bị cấm truy cập", HttpStatus.FORBIDDEN),
     UNAUTHENTICATED(1006, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    ACCESS_DENIED(1008, "Truy cập bị từ chối", HttpStatus.FORBIDDEN),
+
+    // Educational Unit related errors
+    EDUCATIONAL_UNIT_NOT_FOUND(1101, "Không tìm thấy đơn vị đào tạo", HttpStatus.NOT_FOUND),
+
+    // Teacher related errors
+    TEACHER_NOT_FOUND(1201, "Không tìm thấy giảng viên", HttpStatus.NOT_FOUND),
+    TEACHER_NOT_BELONGS_TO_INSTITUTION(1202, "Giảng viên không thuộc đơn vị đào tạo này", HttpStatus.BAD_REQUEST),
+    TEACHER_VALIDATION_FAILED(1203, "Xác thực giảng viên thất bại", HttpStatus.BAD_REQUEST),
+
+    // Student related errors
+    STUDENT_NOT_FOUND(1301, "Không tìm thấy sinh viên", HttpStatus.NOT_FOUND),
+    STUDENT_NOT_BELONGS_TO_INSTITUTION(1302, "Sinh viên không thuộc đơn vị đào tạo này", HttpStatus.BAD_REQUEST),
+    STUDENT_VALIDATION_FAILED(1303, "Xác thực sinh viên thất bại", HttpStatus.BAD_REQUEST),
+    STUDENT_ALREADY_ENROLLED(1304, "Sinh viên đã được ghi danh vào khóa học này", HttpStatus.CONFLICT),
 
     // Section related errors
     SECTION_NOT_FOUND(2001, "Không tìm thấy phần học", HttpStatus.NOT_FOUND),
@@ -48,6 +63,10 @@ public enum ErrorCode {
     COURSE_INVALID_SEARCH_CRITERIA(2123, "Tiêu chí tìm kiếm không hợp lệ", HttpStatus.BAD_REQUEST),
     COURSE_PAGE_SIZE_INVALID(2124, "Kích thước trang phải từ 1 đến 100", HttpStatus.BAD_REQUEST),
     COURSE_PAGE_NUMBER_INVALID(2125, "Số trang phải lớn hơn hoặc bằng 0", HttpStatus.BAD_REQUEST),
+    COURSE_CAPACITY_EXCEEDED(2126, "Vượt quá sức chứa tối đa của khóa học", HttpStatus.BAD_REQUEST),
+
+    // Course Enrollment related errors
+    ENROLLMENT_NOT_FOUND(2801, "Không tìm thấy thông tin ghi danh", HttpStatus.NOT_FOUND),
 
     // Lesson related errors
     LESSON_NOT_FOUND(2201, "Không tìm thấy bài học", HttpStatus.NOT_FOUND),

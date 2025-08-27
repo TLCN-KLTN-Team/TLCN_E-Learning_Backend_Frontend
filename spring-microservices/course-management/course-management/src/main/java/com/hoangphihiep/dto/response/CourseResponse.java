@@ -13,18 +13,29 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CourseResponse {
-
     private Integer id;
+
     private String courseName;
+
+    private String description;
+
+    private Integer credits;
+
+    private Integer maxStudents;
+
+    private Integer currentStudents;
+
     private CourseTypeResponse courseType;
-    private Double coursePrice;
-    private Boolean visibility;
-    private Date publishedAt;
+
     private Date createdAt;
+
     private Date updatedAt;
-    private Boolean isApproved;
+
     private String idTeacher;
-    private Integer status;
+
+    private TeacherResponse teacher;
+
+    private EducationalUnitResponse institution;
+
     private Set<SectionResponse> sections;
-    private Integer reviewsCount;
 }

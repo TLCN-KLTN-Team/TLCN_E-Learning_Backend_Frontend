@@ -13,7 +13,6 @@ public interface CourseMapper {
 
     @Mapping(source = "courseType", target = "courseType")
     @Mapping(source = "sections", target = "sections")
-    @Mapping(target = "reviewsCount", expression = "java(course.getReview() != null ? course.getReview().size() : 0)")
     CourseResponse toCourseResponse(Course course);
 
     // map CourseType → CourseTypeResponse

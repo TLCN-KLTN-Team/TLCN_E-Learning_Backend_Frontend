@@ -45,51 +45,44 @@ public class Course implements Serializable {
     @Column(name = "course_name")
     private String courseName;
 
+    @Column(name = "course_code", unique = true, length = 50)
+    private String courseCode;
+
+    @Column(name = "description", length = 1000)
+    private String description;
+
+    @Column(name = "credits")
+    private Integer credits;
+
+    @Column(name = "max_students")
+    private Integer maxStudents;
+
+    @Column(name = "current_students")
+    private Integer currentStudents = 0;
+
     @ManyToOne
     @JoinColumn(name = "course_type_id", nullable = false)
     private CourseType courseType;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "course_detail_id", referencedColumnName = "id")
-    private CourseDetail courseDetail;
-
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private Set<Section> sections = new HashSet<>();
 
-    @Column(name = "course_price")
-    private double coursePrice;
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<CourseEnrollment> enrollments = new HashSet<>();
 
-    private Boolean visibility;
-
-    private Date publishedAt;
+    @OneToMany(mappedBy = "targetCourse", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<CreditTransfer> targetCreditTransfers = new HashSet<>();
 
     private Date createdAt;
 
     private Date updatedAt;
 
-    private Boolean isApproved;
-
     @Column(name = "teacher_id")
     private String idTeacher;
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
-    private Set<Review> review = new HashSet<>();
-
-    @ManyToMany(mappedBy = "courses", fetch = FetchType.EAGER)
-    private Set<FavoriteCourse> favoriteCourse = new HashSet<>();
-
-    @ManyToMany(mappedBy = "courses", cascade = CascadeType.ALL)
-    private Set<Cart> cart = new HashSet<>();
-
-
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
-    private Set<OrderItem> orderItems = new HashSet<>();
-
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
-    private Set<Discussion> discussions = new HashSet<>();
-
-    @Column(name = "status")
-    private int status;
+    @ManyToOne
+    @JoinColumn(name = "institution_id")
+    private EducationalUnit institution;
 
     public void addSection(Section section) {
         if (section != null && !sections.contains(section)) {
@@ -97,9 +90,6 @@ public class Course implements Serializable {
         }
     }
 
-    public void addDiscussion(Discussion discussion) {
-        if (discussion != null && !discussions.contains(discussion)) {
-            discussions.add(discussion);
-        }
-    }
+    @OneToOne(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PublishedCourse publishedCourse;
 }

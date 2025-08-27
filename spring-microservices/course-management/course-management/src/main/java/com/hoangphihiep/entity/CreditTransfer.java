@@ -30,19 +30,11 @@ public class CreditTransfer implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_course_id", nullable = false)
-    private Course sourceCourse;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_institution_id", nullable = false)
-    private EducationalUnit sourceInstitution;
+    private PublishedCourse sourceCourse;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "target_course_id", nullable = false)
     private Course targetCourse;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "target_institution_id", nullable = false)
-    private EducationalUnit targetInstitution;
 
     @Column(name = "status", length = 50)
     private String status;

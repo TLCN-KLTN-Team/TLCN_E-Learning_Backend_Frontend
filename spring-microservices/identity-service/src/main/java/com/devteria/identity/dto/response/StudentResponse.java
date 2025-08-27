@@ -1,17 +1,16 @@
-package com.hoangphihiep.dto.response;
+package com.devteria.identity.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class TeacherResponse {
+public class StudentResponse {
+
     private String id;
 
     private String username;
@@ -24,7 +23,7 @@ public class TeacherResponse {
 
     private String dob;
 
-    private String teacherId;
+    private String studentId;
 
     private String departmentId;
 
@@ -34,9 +33,5 @@ public class TeacherResponse {
 
     private String socialUrl;
 
-    private String bankAccountNumber;
-
-    private DepartmentResponse department;
-
-    private EducationalUnitResponse educationalUnit;
+    private String className;
 }

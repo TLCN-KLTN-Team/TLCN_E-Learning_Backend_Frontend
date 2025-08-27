@@ -45,7 +45,7 @@ public class Cart implements Serializable {
             joinColumns = @JoinColumn(name = "cart_id"),
             inverseJoinColumns = @JoinColumn(name = "course_id")
     )
-    private Set<Course> courses = new HashSet<>();
+    private Set<PublishedCourse> courses = new HashSet<>();
 
     @Column(name = "user_id")
     private String idUser;
