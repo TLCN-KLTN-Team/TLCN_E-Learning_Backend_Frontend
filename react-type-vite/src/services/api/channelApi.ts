@@ -1,5 +1,5 @@
-import axiosInstance from "../shared/axiosInstance";
-import type { ApiResponse } from "../shared/apiResponse";
+import axiosInstance from "./httpClient/axiosInstance";
+import type { ApiResponse } from "../../types/response/apiResponse";
 import type {
   BasicChannelResponse,
   ChannelResponse,

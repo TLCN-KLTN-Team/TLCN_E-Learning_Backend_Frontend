@@ -4,9 +4,10 @@ import type {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
-import type { ApiResponse, ErrorResponse } from "./apiResponse";
-import { AppError } from "./AppError";
-import { ErrorCodes } from "./apiResponse";
+import type { ApiResponse } from "../../../types/response/apiResponse";
+import { ErrorCodes, type ErrorResponse } from "@/types/error/ErrorResponse";
+import { getRefreshToken } from "@/utils/localStorageVariables";
+import { AppError } from "@/errors/appError";
 
 const axiosInstance = axios.create({
   baseURL: "http://localhost:8888/api/v1",
@@ -41,14 +42,14 @@ axiosInstance.interceptors.response.use(
       _retry?: boolean;
     };
 
+    let appError: AppError;
+
     if (error.response?.data) {
       const errorData = error.response.data as ErrorResponse;
+      appError = new AppError(errorData);
 
       // Nếu token hết hạn và chưa retry
-      if (
-        errorData.code === ErrorCodes.TOKEN_EXPIRED &&
-        !originalRequest._retry
-      ) {
+      if (appError.isTokenExpired() && !originalRequest._retry) {
         originalRequest._retry = true;
 
         try {
@@ -57,11 +58,9 @@ axiosInstance.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return axiosInstance(originalRequest);
           }
-        } catch {
+        } catch (refreshError) {
           // Refresh token thất bại - logout user
-          localStorage.clear();
-          window.location.href = "/login";
-          return Promise.reject(new AppError(errorData));
+          return Promise.reject(refreshError);
         }
       }
 
@@ -71,7 +70,7 @@ axiosInstance.interceptors.response.use(
 
     // Fallback error
     throw new AppError({
-      code: 9999,
+      code: ErrorCodes.NETWORK_ERROR,
       message: error.message || "Network error occurred",
     });
   }
@@ -87,7 +86,7 @@ const refreshToken = async (): Promise<string | null> => {
 
   refreshTokenPromise = (async () => {
     try {
-      const refreshTokenValue = localStorage.getItem("refreshToken");
+      const refreshTokenValue = getRefreshToken();
       if (!refreshTokenValue) {
         throw new Error("No refresh token available");
       }

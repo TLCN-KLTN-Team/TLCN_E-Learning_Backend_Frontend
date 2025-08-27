@@ -1,6 +1,6 @@
 import type { ChatMessageResponse } from "@/types/chat.types";
-import type { ApiResponse } from "../shared/apiResponse";
-import axiosInstance from "../shared/axiosInstance";
+import type { ApiResponse } from "../../types/response/apiResponse";
+import axiosInstance from "./httpClient/axiosInstance";
 
 export const getMessagesByChannelId = async (
   channelId: string
