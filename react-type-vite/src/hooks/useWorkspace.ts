@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { PaginatedResponse } from "@/services/shared/apiResponse";
+import type { PaginatedResponse } from "@/types/response/apiResponse";
 import { getWorkspaces } from "@/services/api/workspaceApi";
 import {
   getChannel,

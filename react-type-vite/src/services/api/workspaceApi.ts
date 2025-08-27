@@ -1,5 +1,8 @@
-import axiosInstance from "../shared/axiosInstance";
-import type { ApiResponse, PaginatedResponse } from "../shared/apiResponse";
+import axiosInstance from "./httpClient/axiosInstance";
+import type {
+  ApiResponse,
+  PaginatedResponse,
+} from "../../types/response/apiResponse";
 import type { UserResponse, WorkspaceResponse } from "@/types/chat.types";
 
 export const getWorkspaces = async (

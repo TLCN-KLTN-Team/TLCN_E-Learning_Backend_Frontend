@@ -1,6 +1,6 @@
 import type { RegisterData, User } from "@/context/auth-context/types";
-import axiosInstance from "../shared/axiosInstance";
-import type { ApiResponse } from "../shared/apiResponse";
+import axiosInstance from "./httpClient/axiosInstance";
+import type { ApiResponse } from "../../types/response/apiResponse";
 
 interface LoginRequest {
   username: string;

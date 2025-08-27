@@ -73,8 +73,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      const registeredData = await doRegister(userData);
-      setUser(registeredData);
+      await doRegister(userData);
     } catch (error) {
       console.error("Registration failed:", error);
       throw error; // Re-throw để component có thể handle
