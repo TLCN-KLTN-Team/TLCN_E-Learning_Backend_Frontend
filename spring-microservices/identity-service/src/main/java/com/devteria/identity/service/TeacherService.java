@@ -93,14 +93,14 @@ public class TeacherService {
     public TeacherResponse getTeacherById(String id) {
         log.info("Getting teacher by ID: {}", id);
         Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherMapper.toTeacherResponse(teacher);
     }
 
     public TeacherResponse getTeacherByTeacherId(String teacherId) {
         log.info("Getting teacher by teacherId: {}", teacherId);
         Teacher teacher = teacherRepository.findByTeacherId(teacherId)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherMapper.toTeacherResponse(teacher);
     }
 
@@ -109,7 +109,7 @@ public class TeacherService {
         log.info("Updating teacher with ID: {}", id);
 
         Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
 
         if (request.getTeacherId() != null
                 && !request.getTeacherId().equals(teacher.getTeacherId())
