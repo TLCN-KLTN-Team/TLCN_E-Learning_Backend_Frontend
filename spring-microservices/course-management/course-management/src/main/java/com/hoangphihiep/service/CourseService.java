@@ -1,16 +1,18 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.CourseRequest;
-import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.CourseResponse;
-import com.hoangphihiep.dto.response.CourseTypeResponse;
+import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseType;
+import com.hoangphihiep.entity.EducationalUnit;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.CourseMapper;
 import com.hoangphihiep.repository.CourseRepository;
 import com.hoangphihiep.repository.CourseTypeRepository;
+import com.hoangphihiep.repository.EducationalUnitRepository;
+import com.hoangphihiep.repository.httpclient.StudentRepository;
+import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +37,9 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseTypeRepository courseTypeRepository;
+    private final EducationalUnitRepository educationalUnitRepository;
+    private final TeacherRepository teacherRepository;
+    private final StudentRepository studentRepository;
     private final CourseMapper courseMapper;
 
     // Constants for validation
@@ -43,6 +49,181 @@ public class CourseService {
     private static final BigDecimal MAX_COURSE_PRICE = new BigDecimal("10000000"); // 10 triệu VNĐ
     private static final int MIN_PAGE_SIZE = 1;
     private static final int MAX_PAGE_SIZE = 100;
+
+    // Lấy danh sách khóa học của đơn vị đào tạo
+    public Page<CourseResponse> getCoursesByInstitution(int institutionId, int page, int size, String search) {
+        validatePaginationParameters(page, size);
+        validateInstitutionAccess(institutionId);
+
+        if (search != null && search.trim().isEmpty()) {
+            search = null;
+        }
+
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<Course> coursePage = courseRepository.findByInstitutionWithSearch(institutionId, search, pageable);
+
+            return coursePage.map(courseMapper::toCourseResponse);
+        } catch (Exception e) {
+            log.error("Error occurred while fetching courses for institution: {}", institutionId, e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    // Tạo khóa học cho đơn vị đào tạo
+    @Transactional
+    public CourseResponse createCourseForInstitution(int institutionId, CourseRequest request) {
+        validateInstitutionAccess(institutionId);
+        validateCourseRequest(request, true);
+
+        EducationalUnit institution = educationalUnitRepository.findById(institutionId)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        // Kiểm tra tên khóa học không trùng trong cùng đơn vị
+        if (courseRepository.existsByCourseNameAndInstitution(request.getCourseName(), institutionId)) {
+            throw new AppException(ErrorCode.COURSE_DUPLICATE_NAME);
+        }
+
+        CourseType courseType = courseTypeRepository.findById(request.getCourseTypeId())
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
+
+        // Validate teacher belongs to the same institution
+        if (request.getIdTeacher() != null) {
+            validateTeacherBelongsToInstitution(request.getIdTeacher(), institutionId);
+        }
+
+        try {
+            Course course = new Course();
+            course.setCourseName(request.getCourseName());
+            course.setCourseType(courseType);
+            course.setIdTeacher(request.getIdTeacher());
+            course.setInstitution(institution);
+            course.setCreatedAt(new Date());
+            course.setUpdatedAt(new Date());
+
+            // Set additional fields if provided
+            if (request.getDescription() != null) {
+                course.setDescription(request.getDescription());
+            }
+            if (request.getCredits() != null) {
+                course.setCredits(request.getCredits());
+            }
+            if (request.getMaxStudents() != null) {
+                course.setMaxStudents(request.getMaxStudents());
+            }
+
+            Course savedCourse = courseRepository.save(course);
+            log.info("Admin created new course with ID: {} for institution: {}", savedCourse.getId(), institutionId);
+
+            return courseMapper.toCourseResponse(savedCourse);
+        } catch (Exception e) {
+            log.error("Unexpected error while creating course for institution: {}", institutionId, e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    // Lấy danh sách giáo viên của đơn vị đào tạo
+    public Page<TeacherResponse> getTeachersByInstitution(int institutionId, int page, int size, String search) {
+        validateInstitutionAccess(institutionId);
+
+        try {
+            ApiResponse<Page<TeacherResponse>> response = teacherRepository.getTeachersByInstitution(
+                    institutionId, page, size, search);
+
+            if (response.getResult() == null) {
+                throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
+            }
+
+            return response.getResult();
+        } catch (Exception e) {
+            log.error("Error occurred while fetching teachers for institution: {}", institutionId, e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    // Lấy danh sách sinh viên của đơn vị đào tạo
+    public Page<StudentResponse> getStudentsByInstitution(int institutionId, int page, int size, String search) {
+        validateInstitutionAccess(institutionId);
+
+        try {
+            ApiResponse<Page<StudentResponse>> response = studentRepository.getStudentsByInstitution(
+                    institutionId, page, size, search);
+
+            if (response.getResult() == null) {
+                throw new AppException(ErrorCode.STUDENT_NOT_FOUND);
+            }
+
+            return response.getResult();
+        } catch (Exception e) {
+            log.error("Error occurred while fetching students for institution: {}", institutionId, e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    @Transactional
+    public CourseResponse assignTeacherToCourse(int courseId, String teacherId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        validateInstitutionAccess(course.getInstitution().getId());
+        validateTeacherBelongsToInstitution(teacherId, course.getInstitution().getId());
+
+        course.setIdTeacher(teacherId);
+        course.setUpdatedAt(new Date());
+
+        Course updatedCourse = courseRepository.save(course);
+        log.info("Assigned teacher {} to course {}", teacherId, courseId);
+
+        return courseMapper.toCourseResponse(updatedCourse);
+    }
+
+    // Xóa giáo viên khỏi khóa học
+    @Transactional
+    public CourseResponse removeTeacherFromCourse(int courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        validateInstitutionAccess(course.getInstitution().getId());
+
+        course.setIdTeacher(null);
+        course.setUpdatedAt(new Date());
+
+        Course updatedCourse = courseRepository.save(course);
+        log.info("Removed teacher from course {}", courseId);
+
+        return courseMapper.toCourseResponse(updatedCourse);
+    }
+
+    private void validateInstitutionAccess(int institutionId) {
+        // Get current admin user from security context
+        String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        EducationalUnit institution = educationalUnitRepository.findById(institutionId)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        if (!currentAdminId.equals(institution.getIdAdmin())) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    private void validateTeacherBelongsToInstitution(String teacherId, int institutionId) {
+        try {
+            ApiResponse<TeacherResponse> response = teacherRepository.getTeacherByTeacherId(teacherId);
+
+            if (response.getResult() == null) {
+                throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
+            }
+
+            TeacherResponse teacher = response.getResult();
+            if (!teacher.getEducationalUnitId().equals(String.valueOf(institutionId))) {
+                throw new AppException(ErrorCode.TEACHER_NOT_BELONGS_TO_INSTITUTION);
+            }
+        } catch (Exception e) {
+            log.error("Error validating teacher {} for institution {}", teacherId, institutionId, e);
+            throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
+        }
+    }
+
 
     public List<CourseResponse> getAllCourses(int page, int size, String search) {
         validatePaginationParameters(page, size);
@@ -90,8 +271,6 @@ public class CourseService {
             Course course = new Course();
             course.setCourseName(request.getCourseName());
             course.setCourseType(courseType);
-            course.setCoursePrice(request.getCoursePrice());
-            course.setVisibility(request.getVisibility());
             course.setIdTeacher(request.getIdTeacher());
             course.setCreatedAt(new Date());
             course.setUpdatedAt(new Date());
@@ -117,10 +296,6 @@ public class CourseService {
 
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
-
-        if (course.getPublishedAt() != null && isSignificantUpdate(request)) {
-            throw new AppException(ErrorCode.COURSE_CANNOT_EDIT_PUBLISHED);
-        }
 
         validateCourseRequestForUpdate(request);
 
@@ -177,20 +352,11 @@ public class CourseService {
             throw new AppException(ErrorCode.COURSE_TEACHER_MISMATCH);
         }
 
-        if (course.getPublishedAt() != null) {
-            throw new AppException(ErrorCode.COURSE_ALREADY_PUBLISHED);
-        }
-
-        if (course.getIsApproved() == null || !course.getIsApproved()) {
-            throw new AppException(ErrorCode.COURSE_NOT_APPROVED);
-        }
-
         if (course.getSections() == null || course.getSections().isEmpty()) {
             throw new AppException(ErrorCode.COURSE_EMPTY_SECTIONS);
         }
 
         try {
-            course.setPublishedAt(new Date());
             course.setUpdatedAt(new Date());
 
             Course publishedCourse = courseRepository.save(course);
@@ -221,10 +387,6 @@ public class CourseService {
         if (isCreate || request.getIdTeacher() != null) {
             validateTeacherId(request.getIdTeacher(), isCreate);
         }
-
-        if (request.getCoursePrice() != null) {
-            validateCoursePrice(BigDecimal.valueOf(request.getCoursePrice()));
-        }
     }
 
     private void validateCourseRequestForUpdate(CourseRequest request) {
@@ -238,10 +400,6 @@ public class CourseService {
 
         if (request.getIdTeacher() != null) {
             validateTeacherId(request.getIdTeacher(), false);
-        }
-
-        if (request.getCoursePrice() != null) {
-            validateCoursePrice(BigDecimal.valueOf(request.getCoursePrice()));
         }
     }
 
@@ -297,8 +455,7 @@ public class CourseService {
 
     private boolean isSignificantUpdate(CourseRequest request) {
         return request.getCourseName() != null ||
-                request.getCourseTypeId() != null ||
-                request.getCoursePrice() != null;
+                request.getCourseTypeId() != null;
     }
 
     private void updateCourseFields(Course course, CourseRequest request) {
@@ -310,22 +467,6 @@ public class CourseService {
             CourseType courseType = courseTypeRepository.findById(request.getCourseTypeId())
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
             course.setCourseType(courseType);
-        }
-
-        if (request.getCoursePrice() != null) {
-            course.setCoursePrice(request.getCoursePrice());
-        }
-
-        if (request.getVisibility() != null) {
-            course.setVisibility(request.getVisibility());
-        }
-
-        if (request.getIsApproved() != null) {
-            course.setIsApproved(request.getIsApproved());
-        }
-
-        if (request.getStatus() != null) {
-            course.setStatus(request.getStatus());
         }
     }
 }

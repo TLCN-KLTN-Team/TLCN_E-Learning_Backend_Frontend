@@ -39,25 +39,20 @@ public class TeacherService {
     @Transactional
     public TeacherResponse createTeacher(TeacherRequest request) {
         HashSet<Role> roles = new HashSet<>();
-
         roleRepository.findById(PredefinedRole.TEACHER_ROLE).ifPresent(roles::add);
 
-        // Tạo trực tiếp Teacher (không cần tạo User riêng)
         Teacher teacher = Teacher.builder()
-                // User fields
                 .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword())) // Nhớ encode password
+                .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .dob(request.getDob())
-                .emailVerified(false) // hoặc giá trị default
+                .emailVerified(false)
                 .roles(roles)
-
-                // Teacher specific fields
                 .teacherId(request.getTeacherId())
-                .idDepartment(Integer.parseInt(request.getDepartmentId()))
-                .idEducational(Integer.parseInt(request.getEducationalUnitId()))
+                .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)
+                .idEducational(request.getEducationalUnitId() != null ? Integer.parseInt(request.getEducationalUnitId()) : null)
                 .description(request.getDescription())
                 .socialUrl(request.getSocialUrl())
                 .bankAccountNumber(request.getBankAccountNumber())
@@ -74,34 +69,38 @@ public class TeacherService {
 
     public Page<TeacherResponse> getAllTeachers(
             String teacherId, String departmentId, String educationalUnitId, Pageable pageable) {
-        log.info(
-                "Getting teachers with filters - teacherId: {}, departmentId: {}, educationalUnitId: {}",
-                teacherId,
-                departmentId,
-                educationalUnitId);
+        log.info("Getting teachers with filters - teacherId: {}, departmentId: {}, educationalUnitId: {}",
+                teacherId, departmentId, educationalUnitId);
 
-        Page<Teacher> teachers =
-                teacherRepository.findTeachersWithFilters(teacherId, departmentId, educationalUnitId, pageable);
+        Page<Teacher> teachers = teacherRepository.findTeachersWithFilters(teacherId, departmentId, educationalUnitId, pageable);
+        return teachers.map(teacherMapper::toTeacherResponse);
+    }
+
+    // Thêm method mới cho admin
+    public Page<TeacherResponse> getTeachersByInstitution(int institutionId, String search, Pageable pageable) {
+        log.info("Getting teachers for institution: {} with search: {}", institutionId, search);
+
+        Page<Teacher> teachers;
+        if (search != null && !search.trim().isEmpty()) {
+            teachers = teacherRepository.findByInstitutionWithSearch(institutionId, search, pageable);
+        } else {
+            teachers = teacherRepository.findByIdEducational(institutionId, pageable);
+        }
 
         return teachers.map(teacherMapper::toTeacherResponse);
     }
 
     public TeacherResponse getTeacherById(String id) {
         log.info("Getting teacher by ID: {}", id);
-
-        Teacher teacher =
-                teacherRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
-
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
         return teacherMapper.toTeacherResponse(teacher);
     }
 
     public TeacherResponse getTeacherByTeacherId(String teacherId) {
         log.info("Getting teacher by teacherId: {}", teacherId);
-
-        Teacher teacher = teacherRepository
-                .findByTeacherId(teacherId)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
-
+        Teacher teacher = teacherRepository.findByTeacherId(teacherId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
         return teacherMapper.toTeacherResponse(teacher);
     }
 
@@ -109,10 +108,9 @@ public class TeacherService {
     public TeacherResponse updateTeacher(String id, TeacherRequest request) {
         log.info("Updating teacher with ID: {}", id);
 
-        Teacher teacher =
-                teacherRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_EXISTED));
 
-        // Check if new teacherId already exists (if provided and different)
         if (request.getTeacherId() != null
                 && !request.getTeacherId().equals(teacher.getTeacherId())
                 && teacherRepository.existsByTeacherId(request.getTeacherId())) {
@@ -123,7 +121,6 @@ public class TeacherService {
         teacher = teacherRepository.save(teacher);
 
         TeacherResponse response = teacherMapper.toTeacherResponse(teacher);
-
         log.info("Teacher updated successfully with ID: {}", teacher.getId());
         return response;
     }

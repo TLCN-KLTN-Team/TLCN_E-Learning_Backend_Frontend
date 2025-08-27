@@ -31,6 +31,9 @@ public class EducationalUnit {
     private Integer establishedYear;
     private boolean isActive;
 
+    @Column(name = "admin_id")
+    private String idAdmin;
+
     @ManyToOne
     @JoinColumn(name = "subscription_plan_id")
     private SubscriptionPlan subscriptionPlan;
@@ -47,4 +50,6 @@ public class EducationalUnit {
     @OneToMany(mappedBy = "institution", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Department> departments = new HashSet<>();
 
+    @OneToMany(mappedBy = "institution", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Course> courses = new HashSet<>();
 }

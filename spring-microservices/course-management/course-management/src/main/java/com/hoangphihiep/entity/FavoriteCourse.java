@@ -48,5 +48,5 @@ public class FavoriteCourse implements Serializable {
             joinColumns = @JoinColumn(name = "favorite_course_id"),
             inverseJoinColumns = @JoinColumn(name = "course_id")
     )
-    private Set<Course> courses = new HashSet<>();
+    private Set<PublishedCourse> courses = new HashSet<>();
 }

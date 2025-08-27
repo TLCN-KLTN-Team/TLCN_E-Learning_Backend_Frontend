@@ -44,7 +44,7 @@ public class Review implements Serializable{
 
     @ManyToOne
     @JoinColumn(name = "course_id", nullable = false)
-    private Course course;
+    private PublishedCourse course;
 
     @Column(name = "user_id")
     private String createdById;

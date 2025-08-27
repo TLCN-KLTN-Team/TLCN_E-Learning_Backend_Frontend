@@ -1,2 +1,69 @@
-package com.hoangphihiep.entity;public class PublishedCourse {
+package com.hoangphihiep.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@Table(name="PublishedCourse")
+@NamedQuery(name="PublishedCourse.findAll", query="SELECT p from PublishedCourse p")
+public class PublishedCourse {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "course_detail_id", referencedColumnName = "id")
+    private CourseDetail courseDetail;
+
+    @Column(name = "course_price")
+    private double coursePrice;
+
+    private Date createdAt;
+
+    private Date updatedAt;
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
+    private Set<Review> review = new HashSet<>();
+
+    @ManyToMany(mappedBy = "courses", fetch = FetchType.EAGER)
+    private Set<FavoriteCourse> favoriteCourse = new HashSet<>();
+
+    @ManyToMany(mappedBy = "courses", cascade = CascadeType.ALL)
+    private Set<Cart> cart = new HashSet<>();
+
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
+    private Set<OrderItem> orderItems = new HashSet<>();
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
+    private Set<Discussion> discussions = new HashSet<>();
+
+    @OneToMany(mappedBy = "sourceCourse", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<CreditTransfer> sourceCreditTransfers = new HashSet<>();
+
+    @Column(name = "status")
+    private int status;
+
+    @OneToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id", nullable = false, unique = true)
+    private Course course;
+
+    public void addDiscussion(Discussion discussion) {
+        if (discussion != null && !discussions.contains(discussion)) {
+            discussions.add(discussion);
+        }
+    }
 }

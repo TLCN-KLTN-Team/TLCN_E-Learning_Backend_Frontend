@@ -21,7 +21,6 @@ public class TeacherService {
 
     public TeacherResponse createTeacher(TeacherRequest request) {
         log.info("Creating new teacher with username: {}", request.getUsername());
-
         validateTeacherRequest(request);
 
         log.debug("Calling identity service to create teacher: {}", request);
@@ -35,6 +34,17 @@ public class TeacherService {
         return response.getResult();
     }
 
+    public TeacherResponse getTeacherByTeacherId(String teacherId) {
+        log.info("Getting teacher by teacherId: {}", teacherId);
+
+        ApiResponse<TeacherResponse> response = teacherRepository.getTeacherByTeacherId(teacherId);
+
+        if (response.getResult() == null) {
+            throw new RuntimeException("Teacher not found: " + teacherId);
+        }
+
+        return response.getResult();
+    }
 
     private void validateTeacherRequest(TeacherRequest request) {
         if (request == null) {
@@ -57,7 +67,10 @@ public class TeacherService {
             throw new IllegalArgumentException("Last name is required");
         }
 
-        // Add more validation as needed
+        if (!StringUtils.hasText(request.getTeacherId())) {
+            throw new IllegalArgumentException("Teacher ID is required");
+        }
+
         log.debug("Teacher request validation passed for username: {}", request.getUsername());
     }
 }

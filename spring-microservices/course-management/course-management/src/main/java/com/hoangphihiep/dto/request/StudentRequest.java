@@ -1,16 +1,17 @@
-package com.devteria.identity.dto.request;
+package com.hoangphihiep.dto.request;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
-public class TeacherRequest {
+public class StudentRequest {
     @NotBlank(message = "Username is required")
     private String username;
 
@@ -29,8 +30,8 @@ public class TeacherRequest {
 
     private String dob;
 
-    @NotBlank(message = "Teacher ID is required")
-    private String teacherId;
+    @NotBlank(message = "Student ID is required")
+    private String studentId;
 
     private String departmentId;
 
@@ -40,5 +41,5 @@ public class TeacherRequest {
 
     private String socialUrl;
 
-    private String bankAccountNumber;
+    private String className;
 }

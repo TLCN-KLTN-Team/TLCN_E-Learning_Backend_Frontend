@@ -13,21 +13,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TeacherRequest {
-
-    String userId;
-
+    @NotBlank(message = "Username is required")
     private String username;
 
+    @NotBlank(message = "Password is required")
     private String password;
 
+    @Email(message = "Email should be valid")
+    @NotBlank(message = "Email is required")
     private String email;
 
+    @NotBlank(message = "First name is required")
     private String firstName;
 
+    @NotBlank(message = "Last name is required")
     private String lastName;
 
     private String dob;
 
+    @NotBlank(message = "Teacher ID is required")
     private String teacherId;
 
     private String departmentId;
