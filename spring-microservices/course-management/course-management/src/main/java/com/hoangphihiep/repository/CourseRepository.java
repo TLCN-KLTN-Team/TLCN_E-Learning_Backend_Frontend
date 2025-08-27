@@ -18,14 +18,20 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
             "LOWER(c.courseName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Course> findBySearch(@Param("search") String search, Pageable pageable);
 
+    @Query("SELECT c FROM Course c WHERE c.institution.id = :institutionId AND " +
+            "(:search IS NULL OR :search = '' OR " +
+            "LOWER(c.courseName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Course> findByInstitutionWithSearch(@Param("institutionId") int institutionId, @Param("search") String search, Pageable pageable);
+
     List<Course> findByIdTeacher(String teacherId);
 
-    List<Course> findByVisibilityTrue();
-
-    List<Course> findByIsApprovedTrue();
+    List<Course> findByInstitutionId(int institutionId);
 
     @Query("SELECT c FROM Course c WHERE c.courseType.id = :courseTypeId")
     List<Course> findByCourseTypeId(@Param("courseTypeId") int courseTypeId);
 
     boolean existsByCourseName(String courseName);
+
+    @Query("SELECT COUNT(c) > 0 FROM Course c WHERE c.courseName = :courseName AND c.institution.id = :institutionId")
+    boolean existsByCourseNameAndInstitution(@Param("courseName") String courseName, @Param("institutionId") int institutionId);
 }

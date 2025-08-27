@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
         log.error("Exception: ", exception);
         ApiResponse apiResponse = new ApiResponse();
 
-        apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
+        apiResponse.setCode(String.valueOf(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode()));
         apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
 
         return ResponseEntity.badRequest().body(apiResponse);
@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = exception.getErrorCode();
         ApiResponse apiResponse = new ApiResponse();
 
-        apiResponse.setCode(errorCode.getCode());
+        apiResponse.setCode(String.valueOf(errorCode.getCode()));
         apiResponse.setMessage(errorCode.getMessage());
 
         return ResponseEntity.status(errorCode.getStatusCode()).body(apiResponse);
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
 
         ApiResponse apiResponse = new ApiResponse();
 
-        apiResponse.setCode(errorCode.getCode());
+        apiResponse.setCode(String.valueOf(errorCode.getCode()));
         apiResponse.setMessage(Objects.nonNull(attributes) ? mapAttribute(errorCode.getMessage(), attributes)
                 : enumKey);
 
@@ -69,13 +69,13 @@ public class GlobalExceptionHandler {
         if (constraintViolation != null) {
             String message = constraintViolation.getMessage();
             ApiResponse apiResponse = new ApiResponse();
-            apiResponse.setCode(errorCode.getCode());
+            apiResponse.setCode(String.valueOf(errorCode.getCode()));
             apiResponse.setMessage(message);
             return ResponseEntity.badRequest().body(apiResponse);
         }
 
         ApiResponse apiResponse = new ApiResponse();
-        apiResponse.setCode(errorCode.getCode());
+        apiResponse.setCode(String.valueOf(errorCode.getCode()));
         apiResponse.setMessage(errorCode.getMessage());
 
         return ResponseEntity.badRequest().body(apiResponse);

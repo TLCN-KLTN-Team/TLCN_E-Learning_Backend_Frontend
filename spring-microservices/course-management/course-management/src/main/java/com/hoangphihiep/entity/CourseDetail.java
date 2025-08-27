@@ -44,7 +44,7 @@ public class CourseDetail implements Serializable {
     private String courseLearner;
 
     @OneToOne(mappedBy = "courseDetail")
-    private Course course;
+    private PublishedCourse publicCourse;
 
     @ElementCollection
     private List<String> courseTarget;

@@ -49,7 +49,7 @@ public class Discussion implements Serializable{
 
     @ManyToOne
     @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false)
-    private Course course;
+    private PublishedCourse course;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Discussion> replies = new HashSet<>();

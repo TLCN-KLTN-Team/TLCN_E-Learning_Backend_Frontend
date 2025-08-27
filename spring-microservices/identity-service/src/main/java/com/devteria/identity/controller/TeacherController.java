@@ -73,6 +73,23 @@ public class TeacherController {
                 .build();
     }
 
+    // Thêm endpoint mới cho admin
+    @GetMapping("/by-institution/{institutionId}")
+    public ApiResponse<Page<TeacherResponse>> getTeachersByInstitution(
+            @PathVariable int institutionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+
+        log.info("Getting teachers for institution: {} with search: {}", institutionId, search);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("teacherId").ascending());
+
+        return ApiResponse.<Page<TeacherResponse>>builder()
+                .result(teacherService.getTeachersByInstitution(institutionId, search, pageable))
+                .build();
+    }
+
     @PutMapping("/{id}")
     public ApiResponse<TeacherResponse> updateTeacher(
             @PathVariable String id, @Valid @RequestBody TeacherRequest request) {

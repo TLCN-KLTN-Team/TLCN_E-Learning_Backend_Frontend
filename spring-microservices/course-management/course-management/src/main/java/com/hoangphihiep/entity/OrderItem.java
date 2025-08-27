@@ -34,7 +34,7 @@ public class OrderItem implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "course_id")
-    private Course course;
+    private PublishedCourse course;
 
     @Column(name = "finished_fee")
     private double finishedFee;

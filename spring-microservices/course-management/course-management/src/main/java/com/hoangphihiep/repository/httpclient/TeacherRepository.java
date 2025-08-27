@@ -4,9 +4,9 @@ import com.hoangphihiep.config.FeignClientConfig;
 import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.TeacherResponse;
+import org.springframework.data.domain.Page;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 @FeignClient(
         name = "identity-service",
@@ -16,4 +16,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface TeacherRepository {
     @PostMapping("/teachers")
     ApiResponse<TeacherResponse> createTeacher(@RequestBody TeacherRequest teacherRequest);
+
+    @GetMapping("/teachers/by-teacher-id/{teacherId}")
+    ApiResponse<TeacherResponse> getTeacherByTeacherId(@PathVariable String teacherId);
+
+    @GetMapping("/teachers/by-institution/{institutionId}")
+    ApiResponse<Page<TeacherResponse>> getTeachersByInstitution(
+            @PathVariable int institutionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search);
+
+    @PutMapping("/teachers/{id}")
+    ApiResponse<TeacherResponse> updateTeacher(@PathVariable String id, @RequestBody TeacherRequest request);
+
+    @DeleteMapping("/teachers/{id}")
+    ApiResponse<Void> deleteTeacher(@PathVariable String id);
 }
