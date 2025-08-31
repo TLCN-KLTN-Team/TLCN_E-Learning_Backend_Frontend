@@ -1,9 +1,13 @@
 package com.hoangphihiep.controller.EducationalUnit;
 
 import com.hoangphihiep.dto.request.CourseRequest;
+import com.hoangphihiep.dto.request.DepartmentRequest;
 import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.request.StudentRequest;
 import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.exception.AppException;
+import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.repository.httpclient.StudentRepository;
 import com.hoangphihiep.service.CourseEnrollmentService;
 import com.hoangphihiep.service.CourseService;
 import com.hoangphihiep.service.TeacherService;
@@ -11,20 +15,19 @@ import com.hoangphihiep.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/institutions/{institutionId}")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminController {
+    private final StudentRepository studentRepository;
 
     private final CourseService adminCourseService;
     private final TeacherService teacherService;
@@ -193,29 +196,90 @@ public class AdminController {
 
         log.info("Admin enrolling students {} to course {} for institution: {}", studentIds, courseId, institutionId);
 
-        // This would be implemented in a CourseEnrollmentService
-        // For now, just return success message
+        try {
+            enrollmentService.enrollStudentsToCourse(courseId, studentIds);
 
-        return ApiResponse.<String>builder()
-                .result("Successfully enrolled " + studentIds.size() + " students to course")
-                .build();
+            String message = String.format("Successfully enrolled %d students to course", studentIds.size());
+
+            return ApiResponse.<String>builder()
+                    .result(message)
+                    .build();
+
+        } catch (AppException e) {
+            log.error("Failed to enroll students to course {}: {}", courseId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error enrolling students to course {}: {}", courseId, e.getMessage(), e);
+            throw new AppException(ErrorCode.COURSE_ENROLLMENT_FAILED);
+        }
     }
 
-    @GetMapping("/courses/{courseId}/enrollments")
-    public ApiResponse<Page<CourseEnrollmentResponse>> getCourseEnrollments(
+    @GetMapping("/courses/{courseId}/available-students")
+    public ApiResponse<Page<StudentResponse>> getAvailableStudentsForCourse(
             @PathVariable int institutionId,
             @PathVariable int courseId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
 
-        log.info("Admin getting enrollments for course {} in institution: {}", courseId, institutionId);
+        log.info("Admin getting available students for course {} in institution: {}", courseId, institutionId);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("enrolledAt").descending());
-        Page<CourseEnrollmentResponse> enrollments = enrollmentService.getEnrollmentsByCourse(courseId, pageable);
+        try {
+            // Get all students from the institution
+            ApiResponse<Page<StudentResponse>> allStudentsResponse = studentRepository.getStudentsByInstitution(
+                    institutionId, page, size, search);
 
-        return ApiResponse.<Page<CourseEnrollmentResponse>>builder()
-                .result(enrollments)
-                .build();
+            if (allStudentsResponse.getResult() == null) {
+                throw new AppException(ErrorCode.STUDENT_NOT_FOUND);
+            }
+
+            Page<StudentResponse> allStudents = allStudentsResponse.getResult();
+
+            // Get already enrolled student IDs for this course
+            List<String> enrolledStudentIds = enrollmentService.getEnrolledStudentIds(courseId);
+
+            // Filter out already enrolled students
+            List<StudentResponse> availableStudents = allStudents.getContent().stream()
+                    .filter(student -> !enrolledStudentIds.contains(student.getId()))
+                    .collect(Collectors.toList());
+
+            // Create new page with filtered results
+            Page<StudentResponse> availableStudentsPage = new PageImpl<>(
+                    availableStudents,
+                    allStudents.getPageable(),
+                    Math.max(0, allStudents.getTotalElements() - enrolledStudentIds.size())
+            );
+
+            return ApiResponse.<Page<StudentResponse>>builder()
+                    .result(availableStudentsPage)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error getting available students for course {}: {}", courseId, e.getMessage(), e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    @DeleteMapping("/courses/{courseId}/enrollments/{enrollmentId}")
+    public ApiResponse<Void> removeEnrollment(
+            @PathVariable int institutionId,
+            @PathVariable int courseId,
+            @PathVariable Long enrollmentId) {
+
+        log.info("Admin removing enrollment {} from course {} for institution: {}",
+                enrollmentId, courseId, institutionId);
+
+        try {
+            enrollmentService.removeEnrollment(enrollmentId, courseId);
+
+            return ApiResponse.<Void>builder()
+                    .message("Student successfully unenrolled from course")
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error removing enrollment {}: {}", enrollmentId, e.getMessage(), e);
+            throw new AppException(ErrorCode.COURSE_UNENROLLMENT_FAILED);
+        }
     }
 
     @GetMapping("/courses/{courseId}/students")
@@ -245,6 +309,68 @@ public class AdminController {
 
         return ApiResponse.<Void>builder()
                 .message("Student successfully unenrolled from course")
+                .build();
+    }
+
+    // Lấy danh sách departments của đơn vị đào tạo
+    @GetMapping("/departments")
+    public ApiResponse<Page<DepartmentResponse>> getDepartmentsByInstitution(
+            @PathVariable int institutionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+
+        log.info("Admin getting departments for institution: {}", institutionId);
+
+        Page<DepartmentResponse> departments = adminCourseService.getDepartmentsByInstitution(institutionId, page, size, search);
+
+        return ApiResponse.<Page<DepartmentResponse>>builder()
+                .result(departments)
+                .build();
+    }
+
+    // Tạo department cho đơn vị đào tạo
+    @PostMapping("/departments")
+    public ApiResponse<DepartmentResponse> createDepartment(
+            @PathVariable int institutionId,
+            @Valid @RequestBody DepartmentRequest request) {
+
+        log.info("Admin creating department for institution: {}", institutionId);
+
+        DepartmentResponse response = adminCourseService.createDepartmentForInstitution(institutionId, request);
+
+        return ApiResponse.<DepartmentResponse>builder()
+                .result(response)
+                .build();
+    }
+
+    // Cập nhật department
+    @PutMapping("/departments/{departmentId}")
+    public ApiResponse<DepartmentResponse> updateDepartment(
+            @PathVariable int institutionId,
+            @PathVariable int departmentId,
+            @Valid @RequestBody DepartmentRequest request) {
+
+        log.info("Admin updating department {} for institution: {}", departmentId, institutionId);
+
+        DepartmentResponse response = adminCourseService.updateDepartmentForInstitution(institutionId, departmentId, request);
+
+        return ApiResponse.<DepartmentResponse>builder()
+                .result(response)
+                .build();
+    }
+    // Lấy department theo ID
+    @GetMapping("/departments/{departmentId}")
+    public ApiResponse<DepartmentResponse> getDepartmentById(
+            @PathVariable int institutionId,
+            @PathVariable int departmentId) {
+
+        log.info("Admin getting department {} for institution: {}", departmentId, institutionId);
+
+        DepartmentResponse response = adminCourseService.getDepartmentByIdForInstitution(institutionId, departmentId);
+
+        return ApiResponse.<DepartmentResponse>builder()
+                .result(response)
                 .build();
     }
 }

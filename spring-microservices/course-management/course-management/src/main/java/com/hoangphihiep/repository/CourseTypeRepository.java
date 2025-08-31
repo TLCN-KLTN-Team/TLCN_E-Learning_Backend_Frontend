@@ -8,14 +8,22 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CourseTypeRepository extends JpaRepository<CourseType, Integer> {
 
     @Query("SELECT ct FROM CourseType ct WHERE " +
-            "(:search IS NULL OR :search = '' OR " +
-            "LOWER(ct.courseTypeName) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "(:search IS NULL OR LOWER(ct.courseTypeName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<CourseType> findBySearch(@Param("search") String search, Pageable pageable);
 
-    boolean existsByCourseTypeName(String courseTypeName);
+    List<CourseType> findAllByOrderByCourseTypeNameAsc();
+
+    @Query("SELECT COUNT(ct) > 0 FROM CourseType ct WHERE LOWER(ct.courseTypeName) = LOWER(:courseTypeName)")
+    boolean existsByCourseTypeName(@Param("courseTypeName") String courseTypeName);
+
+    // CourseRepository - Thêm method này
+    @Query("SELECT COUNT(c) > 0 FROM Course c WHERE c.courseType.id = :courseTypeId")
+    boolean existsByCourseTypeId(@Param("courseTypeId") int courseTypeId);
 }
 
