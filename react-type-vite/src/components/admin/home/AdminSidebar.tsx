@@ -20,6 +20,7 @@ import type React from "react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../../../styles/admin.css";
+import { Button } from '@/components/ui/button';
 
 interface AdminSidebarProps {
   isSidebarOpen: boolean;
@@ -47,61 +48,32 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   // Debug logging
-  console.log("AdminSidebar render:", { isSidebarOpen, expandedMenus });
+  console.log("AdminSidebar render:", { isSidebarOpen, currentPath: location.pathname });
 
   const menuItems: MenuItem[] = [
     {
       id: "dashboard",
       label: "Dashboard",
       icon: Home,
-      path: "/admin",
+      path: "/admin", // Full path for dashboard
     },
     {
       id: "courses",
       label: "Courses",
       icon: Tv,
-      children: [
-        { id: "all-courses", label: "All Courses", path: "/admin/courses" },
-        {
-          id: "course-category",
-          label: "Course Category",
-          path: "/admin/course-category",
-        },
-        {
-          id: "course-detail",
-          label: "Course Detail",
-          path: "/admin/course-detail",
-        },
-      ],
+      path: "/admin/courses", // Full path
     },
     {
       id: "students",
       label: "Students",
       icon: GraduationCap,
-      path: "/admin/students",
+      path: "/admin/students", // Full path
     },
     {
       id: "instructors",
       label: "Instructors",
       icon: Users,
-      children: [
-        {
-          id: "all-instructors",
-          label: "Instructors",
-          path: "/admin/instructors",
-        },
-        {
-          id: "instructor-detail",
-          label: "Instructor Detail",
-          path: "/admin/instructor-detail",
-        },
-        {
-          id: "instructor-requests",
-          label: "Instructor requests",
-          path: "/admin/instructor-requests",
-          badge: "2",
-        },
-      ],
+      path: "/admin/instructors", // Full path
     },
     {
       id: "reviews",
@@ -150,7 +122,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    // Handle both exact matches and dashboard case
+    if (path === "/admin") {
+      return location.pathname === "/admin" || location.pathname === "/admin/dashboard";
+    }
+    return location.pathname === path;
+  };
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) =>
@@ -179,15 +157,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     return (
       <div key={item.id} className="mb-1">
         {hasChildren ? (
-          <button
+          <Button
             onClick={() => handleMenuClick(item)}
             className="w-full flex items-center justify-between px-3 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors no-transition"
             style={{
               backgroundColor: "transparent",
               border: "none",
               cursor: "pointer",
-            }}
-          >
+            }}>
             <div className="flex items-center">
               <Icon className="w-5 h-5 mr-3" />
               <span>{item.label}</span>
@@ -197,7 +174,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 isExpanded ? "rotate-180" : ""
               }`}
             />
-          </button>
+          </Button>
         ) : (
           <Link
             to={item.path!}
@@ -295,13 +272,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   </div>
                 </Link>
                 {/* Mobile Close Button */}
-                <button
+                <Button
                   onClick={() => setIsSidebarOpen(false)}
                   className="lg:hidden p-1 text-gray-400 hover:text-white transition-colors"
                   style={{ zIndex: 52 }}
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
             </div>
 
