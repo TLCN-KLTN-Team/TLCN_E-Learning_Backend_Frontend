@@ -46,7 +46,6 @@ public class StudentService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .dob(request.getDob())
-                .emailVerified(false)
                 .roles(roles)
                 .studentId(request.getStudentId())
                 .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)

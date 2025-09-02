@@ -22,10 +22,9 @@ const SystemAdminDashboard: React.FC = () => {
         return (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                System Dashboard
+              <h1 className="text-xl text-gray-900 font-semibold">
+                Tổng quan hệ thống đào tạo
               </h1>
-              <p className="">Tổng quan hệ thống đào tạo</p>
             </div>
             <SystemStatsCards />
             <SystemStatistics />

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.Optional;
 
+import com.devteria.identity.dto.request.RegisterRequest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 
-import com.devteria.identity.dto.request.UserCreationRequest;
 import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
@@ -32,7 +32,7 @@ public class UserServiceTest {
     @MockBean
     private UserRepository userRepository;
 
-    private UserCreationRequest request;
+    private RegisterRequest request;
     private UserResponse userResponse;
     private User user;
     private LocalDate dob;
@@ -41,7 +41,7 @@ public class UserServiceTest {
     void initData() {
         dob = LocalDate.of(1990, 1, 1);
 
-        request = UserCreationRequest.builder()
+        request = RegisterRequest.builder()
                 .username("john")
                 .firstName("John")
                 .lastName("Doe")

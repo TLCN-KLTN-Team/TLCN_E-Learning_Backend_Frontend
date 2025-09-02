@@ -5,7 +5,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.devteria.identity.dto.request.RegisterRequest;
+import com.devteria.identity.dto.response.PaginatedResponse;
+import com.devteria.identity.entity.AccountStatus;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,7 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.devteria.identity.constant.PredefinedRole;
-import com.devteria.identity.dto.request.UserCreationRequest;
 import com.devteria.identity.dto.request.UserUpdateRequest;
 import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.Role;
@@ -45,7 +51,7 @@ public class UserService {
     ProfileClient profileClient;
     KafkaTemplate<String, Object> kafkaTemplate;
 
-    public UserResponse createUser(UserCreationRequest request) {
+    public UserResponse createUser(RegisterRequest request) {
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         HashSet<Role> roles = new HashSet<>();
@@ -62,7 +68,6 @@ public class UserService {
         }
 
         user.setRoles(roles);
-        user.setEmailVerified(false);
 
         try {
             user = userRepository.save(user);
@@ -97,7 +102,7 @@ public class UserService {
         return response;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public UserResponse updateUser(String userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
@@ -124,29 +129,55 @@ public class UserService {
     //        return userMapper.toUserResponse(userRepository.save(user));
     //    }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void deleteUser(String userId) {
         userRepository.deleteById(userId);
     }
 
-    @PreAuthorize("hasRole('USER')")
-    public List<UserResponse> getUsers() {
-        log.info("In method get Users");
-        return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
+    public void softDeleteUser(String userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setAccountStatus(AccountStatus.INACTIVE);
+        userRepository.save(user);
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public PaginatedResponse<UserResponse> getUsers(int page, int size, String sortBy, String sortDirection) {
+        Sort sort = Sort.by(
+                "ASC".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC
+                , sortBy);
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<User> users = userRepository.findAll(pageable);
+        List<UserResponse> userList = users.getContent().stream()
+                .map(user -> {
+                    UserResponse res = userMapper.toUserResponse(user);
+                    Set<String> userRoles = user.getRoles().stream()
+                            .map(Role::getName)
+                            .collect(Collectors.toSet());
+                    res.setRoles(userRoles);
+                    return res;
+                })
+                .toList();
+
+        PaginatedResponse<UserResponse> response = PaginatedResponse.<UserResponse>builder()
+                .content(userList)
+                .page(users.getNumber())
+                .size(users.getSize())
+                .totalElements(users.getTotalElements())
+                .totalPages(users.getTotalPages())
+                .first(users.isFirst())
+                .last(users.isLast())
+                .hasNext(users.hasNext())
+                .hasPrevious(users.hasPrevious())
+                .build();
+
+        return response;
+    }
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public UserResponse getUser(String id) {
         return userMapper.toUserResponse(
                 userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
-    }
-
-    @PreAuthorize("hasRole('USER')")
-    public List<UserResponse> getUsersByMSSV(String mssv) {
-        List<User> users = userRepository.findByMssvContainingIgnoreCase(mssv);
-        if (users.isEmpty()) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
-        }
-        return users.stream().map(userMapper::toUserResponse).toList();
     }
 }

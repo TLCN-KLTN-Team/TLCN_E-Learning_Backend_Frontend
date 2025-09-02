@@ -39,13 +39,10 @@ public class User {
 
     String avatarUrl;
 
-    String mssv; // Mã số sinh viên, if applicable
-
     //    @OneToOne(cascade = CascadeType.ALL)
     //    Address address;
 
-    @Column(name = "email_verified", nullable = false, columnDefinition = "boolean default false")
-    boolean emailVerified;
+    AccountStatus accountStatus;
 
     @ManyToMany
     Set<Role> roles;

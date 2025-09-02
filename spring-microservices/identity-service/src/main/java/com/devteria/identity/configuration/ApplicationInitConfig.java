@@ -34,6 +34,8 @@ public class ApplicationInitConfig {
     @NonFinal
     static final String ADMIN_PASSWORD = "admin";
 
+    static final String SUPER_ADMIN_ROLE= "superadmin";
+
     @Bean
     @ConditionalOnProperty(
             prefix = "spring",
@@ -42,6 +44,23 @@ public class ApplicationInitConfig {
     ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
         log.info("Initializing application.....");
         return args -> {
+            if (userRepository.findByUsername(SUPER_ADMIN_ROLE).isEmpty()){
+                var roles = new HashSet<Role>();
+                roles.add(Role.builder()
+                        .name(PredefinedRole.SUPER_ADMIN_ROLE)
+                        .description("Super Admin role")
+                        .build());
+
+                User user = User.builder()
+                        .username(SUPER_ADMIN_ROLE)
+                        .password(passwordEncoder.encode(SUPER_ADMIN_ROLE))
+                        .roles(roles)
+                        .build();
+
+                userRepository.save(user);
+                log.warn("superadmin user has been created with default password: superadmin, please change it");
+            }
+
             if (userRepository.findByUsername(ADMIN_USER_NAME).isEmpty()) {
                 roleRepository.save(Role.builder()
                         .name(PredefinedRole.USER_ROLE)
@@ -58,7 +77,6 @@ public class ApplicationInitConfig {
 
                 User user = User.builder()
                         .username(ADMIN_USER_NAME)
-                        .emailVerified(true)
                         .password(passwordEncoder.encode(ADMIN_PASSWORD))
                         .roles(roles)
                         .build();

@@ -1,58 +1,50 @@
 "use client";
 
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Building2,
-  Users,
-  BookOpen,
-  DollarSign,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+import { unitData } from "./data/UnitStatus";
+import TraningUnitItem from "./item/TraningUnitItem";
+import SubmissionModal from "./modals/SubmissionModal";
 
 const TrainingUnitsManagement: React.FC = () => {
-  const [units, setUnits] = useState([
-    {
-      id: 1,
-      name: "Trung tâm Công nghệ Thông tin",
-      code: "CNTT001",
-      status: "active",
-      students: 1250,
-      courses: 45,
-      revenue: 2500000,
-    },
-    {
-      id: 2,
-      name: "Học viện Kinh doanh",
-      code: "KD002",
-      status: "active",
-      students: 890,
-      courses: 32,
-      revenue: 1800000,
-    },
-    {
-      id: 3,
-      name: "Trường Ngoại ngữ",
-      code: "NN003",
-      status: "inactive",
-      students: 650,
-      courses: 28,
-      revenue: 1200000,
-    },
-    {
-      id: 4,
-      name: "Viện Thiết kế Đồ họa",
-      code: "DH004",
-      status: "active",
-      students: 420,
-      courses: 18,
-      revenue: 950000,
-    },
-  ]);
+  const [units, setUnits] = useState(unitData);
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<number | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [modalRef, setModalRef] = useState<HTMLDivElement | null>(null);
+
+  const handleStatusChange = (unitId: number, newStatus: string) => {
+    setUnits(
+      units.map((unit) =>
+        unit.id === unitId ? { ...unit, status: newStatus } : unit
+      )
+    );
+    setOpenDropdown(null);
+  };
+
+  const handleShowDetails = (unitId: number) => {
+    setSelectedUnit(unitId);
+    setShowDetailModal(true);
+  };
+
+  const handleDropdownToggle = (unitId: number | null) => {
+    setOpenDropdown(unitId);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef && !modalRef.contains(event.target as Node)) {
+        setShowDetailModal(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [modalRef]);
 
   const headerStyles =
     "px-6 py-3 text-left text-sm font-bold text-gray-900 uppercase tracking-wider";
@@ -84,7 +76,6 @@ const TrainingUnitsManagement: React.FC = () => {
                 <th className={`${headerStyles} hidden md:table-cell`}>
                   Mã đơn vị
                 </th>
-                <th className={headerStyles}>Trạng thái</th>
                 <th className={`${headerStyles} hidden lg:table-cell`}>
                   Học viên
                 </th>
@@ -94,76 +85,37 @@ const TrainingUnitsManagement: React.FC = () => {
                 <th className={`${headerStyles} hidden xl:table-cell`}>
                   Doanh thu
                 </th>
+                <th className={headerStyles}>Trạng thái</th>
                 <th className={headerStyles}>Thao tác</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {units.map((unit) => (
-                <tr key={unit.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {unit.name}
-                        </div>
-                        {/* Show mobile info */}
-                        <div className="md:hidden text-xs text-gray-500 mt-1">
-                          {unit.code} • {unit.students.toLocaleString()} học
-                          viên
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                    <div className="text-sm text-gray-900">{unit.code}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        unit.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {unit.status === "active" ? "Hoạt động" : "Tạm dừng"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4 text-gray-400" />
-                      {unit.students.toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
-                    <div className="flex items-center gap-1">
-                      <BookOpen className="w-4 h-4 text-gray-400" />
-                      {unit.courses}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden xl:table-cell">
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="w-4 h-4 text-gray-400" />
-                      {unit.revenue.toLocaleString()} VNĐ
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-1 md:space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 flex items-center gap-1 p-1">
-                        <Edit className="w-4 h-4" />
-                        <span className="hidden md:inline">Sửa</span>
-                      </button>
-                      <button className="text-red-600 hover:text-red-900 flex items-center gap-1 p-1">
-                        <Trash2 className="w-4 h-4" />
-                        <span className="hidden md:inline">Xóa</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <TraningUnitItem
+                  key={unit.id}
+                  unit={unit}
+                  onRowClick={handleShowDetails}
+                  onStatusChange={handleStatusChange}
+                  openDropdown={openDropdown}
+                  onDropdownToggle={handleDropdownToggle}
+                />
               ))}
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Unit Detail Modal */}
+      <div ref={setModalRef}>
+        <SubmissionModal
+          unit={
+            selectedUnit
+              ? units.find((u) => u.id === selectedUnit) || null
+              : null
+          }
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+        />
       </div>
     </div>
   );

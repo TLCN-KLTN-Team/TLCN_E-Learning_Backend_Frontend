@@ -15,12 +15,10 @@ public class UserResponse {
     String id;
     String username;
     String email;
-    boolean emailVerified;
     String firstName;
     String lastName;
     String avatarUrl;
-
+    String accountStatus;
     LocalDate dob;
-    String mssv;
     Set<String> roles;
 }
