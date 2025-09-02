@@ -257,16 +257,18 @@ const Home = () => {
 
                   <div className="lg:col-span-6 text-center">
                     <h6 className="text-sm font-light text-muted-foreground mb-2">
-                      Get a Free Tutorial of
+                      Đơn vị giáo dục của bạn cần nền tảng học tập số để cung
+                      cấp cho sinh viên?
                     </h6>
                     <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                      Nhận khóa học miễn phí từ chúng tôi
+                      Chúng tôi cung cấp giải pháp toàn diện cho các trường đại
+                      học và cao đẳng.
                     </h3>
                   </div>
 
-                  <div className="lg:col-span-3 text-center lg:text-right">
-                    <Button className="bg-bs-warning hover:bg-bs-warning text-white px-6 py-2 text-sm">
-                      Get a free trial
+                  <div className="lg:col-span-3 text-center">
+                    <Button className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm">
+                      Đăng ký đơn vị của bạn tại đây
                     </Button>
                   </div>
                 </div>

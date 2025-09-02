@@ -27,7 +27,7 @@ public class ApiResponse<T> {
     T result;
     Map<String, String> errors;
 
-    // 🎯 Static factory methods for common cases
+    // Static factory methods for common cases
     public static <T> ApiResponse<T> success(T result, String message) {
         return ApiResponse.<T>builder()
                 .code(ErrorCode.SUCCESS.getCode())

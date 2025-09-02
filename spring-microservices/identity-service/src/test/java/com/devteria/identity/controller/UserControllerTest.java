@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import com.devteria.identity.dto.request.UserCreationRequest;
+import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +36,7 @@ public class UserControllerTest {
     @MockBean
     private UserService userService;
 
-    private UserCreationRequest request;
+    private RegisterRequest request;
     private UserResponse userResponse;
     private LocalDate dob;
 
@@ -44,7 +44,7 @@ public class UserControllerTest {
     void initData() {
         dob = LocalDate.of(1990, 1, 1);
 
-        request = UserCreationRequest.builder()
+        request = RegisterRequest.builder()
                 .username("john")
                 .firstName("John")
                 .lastName("Doe")

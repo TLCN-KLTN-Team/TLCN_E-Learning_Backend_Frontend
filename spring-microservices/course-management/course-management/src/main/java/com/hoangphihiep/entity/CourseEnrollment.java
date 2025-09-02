@@ -1,6 +1,6 @@
-
 package com.hoangphihiep.entity;
 
+import com.hoangphihiep.entity.Course;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -36,7 +36,6 @@ public class CourseEnrollment implements Serializable {
 
     @Column(name = "enrolled_by")
     private String enrolledBy;
-
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "enrolled_at")
     private Date enrolledAt;

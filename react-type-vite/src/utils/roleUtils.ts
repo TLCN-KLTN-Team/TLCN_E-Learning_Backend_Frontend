@@ -1,7 +1,7 @@
 // Utility functions for role-based routing
 export const getRoleBasedRedirectPath = (roles: string[]): string => {
   // Ưu tiên role theo thứ tự từ cao xuống thấp
-  if (roles.includes("SUPERADMIN")) {
+  if (roles.includes("SUPER_ADMIN")) {
     return "/system-admin";
   }
 
@@ -34,20 +34,20 @@ export const hasAnyRole = (
 };
 
 export const canAccessSystemAdmin = (userRoles: string[]): boolean => {
-  return userRoles.includes("SUPERADMIN");
+  return userRoles.includes("SUPER_ADMIN");
 };
 
 export const canAccessAdmin = (userRoles: string[]): boolean => {
-  return userRoles.includes("SUPERADMIN") || userRoles.includes("ADMIN");
+  return userRoles.includes("SUPER_ADMIN") || userRoles.includes("ADMIN");
 };
 
 export const canAccessTeacher = (userRoles: string[]): boolean => {
-  return userRoles.includes("SUPERADMIN") || userRoles.includes("TEACHER");
+  return userRoles.includes("SUPER_ADMIN") || userRoles.includes("TEACHER");
 };
 
 export const canAccessStudent = (userRoles: string[]): boolean => {
   return (
-    userRoles.includes("SUPERADMIN") ||
+    userRoles.includes("SUPER_ADMIN") ||
     userRoles.includes("ADMIN") ||
     userRoles.includes("STUDENT") ||
     userRoles.includes("USER")
@@ -56,7 +56,7 @@ export const canAccessStudent = (userRoles: string[]): boolean => {
 
 export const canAccessUser = (userRoles: string[]): boolean => {
   return (
-    userRoles.includes("SUPERADMIN") ||
+    userRoles.includes("SUPER_ADMIN") ||
     userRoles.includes("ADMIN") ||
     userRoles.includes("TEACHER") ||
     userRoles.includes("STUDENT") ||

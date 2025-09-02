@@ -48,7 +48,6 @@ public class TeacherService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .dob(request.getDob())
-                .emailVerified(false)
                 .roles(roles)
                 .teacherId(request.getTeacherId())
                 .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)

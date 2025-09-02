@@ -2,12 +2,13 @@ package com.devteria.identity.controller;
 
 import java.util.List;
 
+import com.devteria.identity.dto.response.PaginatedResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.*;
 
 import com.devteria.identity.dto.request.ApiResponse;
-import com.devteria.identity.dto.request.UserCreationRequest;
+import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.request.UserUpdateRequest;
 import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.service.UserService;
@@ -26,23 +27,23 @@ public class UserController {
     UserService userService;
 
     @PostMapping("/registration")
-    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request) {
+    ApiResponse<UserResponse> registerUser(@RequestBody @Valid RegisterRequest request) {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.createUser(request))
                 .build();
     }
 
-    @GetMapping
-    ApiResponse<List<UserResponse>> getUsers() {
-        return ApiResponse.<List<UserResponse>>builder()
-                .result(userService.getUsers())
-                .build();
-    }
+//    ApiResponse<UserResponse> createUser()
 
-    @GetMapping("/students")
-    ApiResponse<List<UserResponse>> getUsersByMSSV(@RequestParam String mssv) {
-        return ApiResponse.<List<UserResponse>>builder()
-                .result(userService.getUsersByMSSV(mssv))
+    @GetMapping
+    ApiResponse<PaginatedResponse<UserResponse>> getUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection
+    ) {
+        return ApiResponse.<PaginatedResponse<UserResponse>>builder()
+                .result(userService.getUsers(page, size, sortBy, sortDirection))
                 .build();
     }
 
@@ -64,6 +65,12 @@ public class UserController {
     ApiResponse<String> deleteUser(@PathVariable String userId) {
         userService.deleteUser(userId);
         return ApiResponse.<String>builder().result("User has been deleted").build();
+    }
+
+    @PutMapping("/{userId}/inactivate")
+    ApiResponse<Void> inactivateUser(@PathVariable String userId) {
+        userService.softDeleteUser(userId);
+        return ApiResponse.<Void>builder().build();
     }
 
     @PutMapping("/{userId}")

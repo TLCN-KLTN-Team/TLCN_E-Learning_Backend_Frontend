@@ -1,10 +1,10 @@
+import { useAuth } from "@/context/auth-context/useAuth";
 import {
   ArrowLeftFromLine,
   Info,
   LogOut,
   Monitor,
   Moon,
-  Settings,
   Sun,
   User,
 } from "lucide-react";
@@ -12,6 +12,7 @@ import { useState } from "react";
 
 const AdminProfile = () => {
   const [theme, setTheme] = useState("auto");
+  const { user, logout } = useAuth();
 
   const buttonStyles =
     "w-full px-4 py-2 text-left text-gray-900 hover:bg-gray-50 flex items-center";
@@ -28,8 +29,10 @@ const AdminProfile = () => {
             />
           </div>
           <div>
-            <h6 className="font-semibold text-gray-900 mt-2">Lori Ferguson</h6>
-            <p className="text-sm text-gray-600 m-0">example@gmail.com</p>
+            <h6 className="font-semibold text-gray-900 mt-2">
+              {user ? `${user.firstName} ${user.lastName}` : "System Admin"}
+            </h6>
+            <p className="text-sm text-gray-600 m-0">{user?.email}</p>
           </div>
         </div>
       </div>
@@ -38,10 +41,6 @@ const AdminProfile = () => {
         <button className={buttonStyles}>
           <User className="w-4 h-4 mr-2" />
           Edit Profile
-        </button>
-        <button className={buttonStyles}>
-          <Settings className="w-4 h-4 mr-2" />
-          Account Settings
         </button>
         <button className={buttonStyles}>
           <Info className="w-4 h-4 mr-2" />
@@ -54,7 +53,13 @@ const AdminProfile = () => {
           <ArrowLeftFromLine className="w-4 h-4 mr-2" />
           Back to Home
         </button>
-        <button className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center">
+        <button
+          className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center"
+          onClick={() => {
+            logout();
+            window.location.href = "/login";
+          }}
+        >
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out
         </button>
