@@ -130,7 +130,6 @@ public class AuthenticationService {
                     .firstName(userInfo.getGivenName())
                     .lastName(userInfo.getFamilyName())
                     .avatarUrl(userInfo.getPicture())
-                    .emailVerified(userInfo.isVerifiedEmail())
                     .roles(Collections.singleton(
                             Role.builder().name(PredefinedRole.USER_ROLE).build()))
                     .build();
