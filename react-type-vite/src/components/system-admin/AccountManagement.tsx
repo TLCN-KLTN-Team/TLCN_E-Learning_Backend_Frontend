@@ -1,86 +1,105 @@
 "use client";
 
+import { getUsers } from "@/services/api/userApi";
 import {
   Plus,
   Edit,
   Trash2,
-  Shield,
-  User,
-  GraduationCap,
-  Users,
+  View,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import AccountDetailModal from "./modals/AccountDetailModal";
+import {
+  ROLE_FILTER_OPTIONS,
+  TABLE_HEADERS,
+  CSS_CLASSES,
+  getUserFullName,
+  getInitials,
+  getRoleName,
+  getRoleIcon,
+  getRoleColor,
+  formatDate,
+  filterAccountsByRole,
+} from "./data/AccountData";
+import type { UserResponse } from "@/services/api/response/userResponse";
+import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 
 const AccountManagement: React.FC = () => {
-  const [accounts, setAccounts] = useState([
-    {
-      id: 1,
-      name: "Nguyễn Văn Admin",
-      email: "admin@system.com",
-      role: "system_admin",
-      status: "active",
-      lastLogin: "2024-01-15 10:30",
-    },
-    {
-      id: 2,
-      name: "Trần Thị Quản lý",
-      email: "manager@cntt001.com",
-      role: "unit_admin",
-      status: "active",
-      lastLogin: "2024-01-15 09:15",
-    },
-    {
-      id: 3,
-      name: "Lê Văn Giảng viên",
-      email: "teacher@cntt001.com",
-      role: "teacher",
-      status: "active",
-      lastLogin: "2024-01-14 16:45",
-    },
-    {
-      id: 4,
-      name: "Phạm Thị Học viên",
-      email: "student@cntt001.com",
-      role: "student",
-      status: "inactive",
-      lastLogin: "2024-01-10 14:20",
-    },
-  ]);
-
-  const headerStyles =
-    "px-6 py-3 text-left text-sm font-bold text-gray-900 uppercase tracking-wider";
-
+  const [accounts, setAccounts] = useState<UserResponse[]>([]);
+  const [secletedAccount, setSelectedAccount] = useState<UserResponse | null>(
+    null
+  );
   const [selectedRole, setSelectedRole] = useState("all");
+  const [showViewModal, setShowViewModal] = useState(false);
 
-  const filteredAccounts =
-    selectedRole === "all"
-      ? accounts
-      : accounts.filter((account) => account.role === selectedRole);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrevious, setHasPrevious] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const getRoleName = (role: string) => {
-    const roleNames = {
-      system_admin: "Quản trị hệ thống",
-      unit_admin: "Quản lý đơn vị",
-      teacher: "Giảng viên",
-      student: "Học viên",
+  const filteredAccounts = filterAccountsByRole(accounts, selectedRole);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        setLoading(true);
+        const result: PaginatedResponse<UserResponse> = await getUsers(
+          currentPage,
+          pageSize
+        );
+        setAccounts(result.content);
+        setCurrentPage(result.page);
+        setTotalElements(result.totalElements);
+        setTotalPages(result.totalPages);
+        setHasNext(result.hasNext);
+        setHasPrevious(result.hasPrevious);
+      } catch (error) {
+        toast.error(error ? `${error}` : "Lỗi khi tải tài khoản");
+      } finally {
+        setLoading(false);
+      }
     };
-    return roleNames[role as keyof typeof roleNames] || role;
+    fetchAccounts();
+  }, [currentPage, pageSize]);
+
+  const handlePageChange = async (newPage: number) => {
+    if (newPage < 0 || newPage >= totalPages) return;
+    setCurrentPage(newPage);
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case "system_admin":
-        return <Shield className="w-4 h-4" />;
-      case "unit_admin":
-        return <Users className="w-4 h-4" />;
-      case "teacher":
-        return <GraduationCap className="w-4 h-4" />;
-      case "student":
-        return <User className="w-4 h-4" />;
-      default:
-        return <User className="w-4 h-4" />;
+  const handlePageSizeChange = async (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(0); // Reset to first page when changing page size
+  };
+
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages - 1, start + maxVisible);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(0, end - maxVisible + 1);
     }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  const handleOpenViewModal = (account: UserResponse) => {
+    setSelectedAccount(account);
+    setShowViewModal(!showViewModal);
   };
 
   return (
@@ -102,11 +121,11 @@ const AccountManagement: React.FC = () => {
           onChange={(e) => setSelectedRole(e.target.value)}
           className="border border-gray-300 text-gray-900 rounded-lg px-3 py-2 w-full sm:w-auto"
         >
-          <option value="all">Tất cả vai trò</option>
-          <option value="system_admin">Quản trị hệ thống</option>
-          <option value="unit_admin">Quản lý đơn vị</option>
-          <option value="teacher">Giảng viên</option>
-          <option value="student">Học viên</option>
+          {ROLE_FILTER_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -115,66 +134,90 @@ const AccountManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className={headerStyles}>Tài khoản</th>
-                <th className={headerStyles}>Vai trò</th>
-                <th className={headerStyles}>Trạng thái</th>
-                <th className={headerStyles}>Đăng nhập cuối</th>
-                <th className={headerStyles}>Thao tác</th>
+                {TABLE_HEADERS.map((header, index) => (
+                  <th key={index} className={CSS_CLASSES.headerStyles}>
+                    {header}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredAccounts.map((account) => (
-                <tr key={account.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr key={account.id} className={CSS_CLASSES.tableRow}>
+                  <td className={CSS_CLASSES.cell}>
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-700">
-                            {account.name.charAt(0)}
-                          </span>
-                        </div>
+                        {account.avatarUrl ? (
+                          <img
+                            className={CSS_CLASSES.avatar}
+                            src={account.avatarUrl}
+                            alt={getUserFullName(account)}
+                          />
+                        ) : (
+                          <div className={CSS_CLASSES.avatarFallback}>
+                            <span className="text-sm font-medium text-white">
+                              {getInitials(account)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {account.name}
+                          Name: {getUserFullName(account)}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {account.email}
+                          username: {account.username}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          email: {account.email}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {getRoleIcon(account.role)}
-                      {getRoleName(account.role)}
+                  <td className={CSS_CLASSES.cell}>
+                    <div className="flex flex-wrap gap-1">
+                      {account.roles.map((role, index) => {
+                        const IconComponent = getRoleIcon([role]);
+                        return (
+                          <span
+                            key={index}
+                            className={`${CSS_CLASSES.roleBadge} ${getRoleColor(
+                              [role]
+                            )}`}
+                          >
+                            <IconComponent className="w-4 h-4" />
+                            {getRoleName([role])}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </td>
+                  <td className={`${CSS_CLASSES.cell} text-sm text-gray-900`}>
+                    {formatDate(account.dob)}
+                  </td>
+                  <td className={CSS_CLASSES.cell}>
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      Hoạt động
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        account.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {account.status === "active" ? "Hoạt động" : "Tạm khóa"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {account.lastLogin}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className={`${CSS_CLASSES.cell} text-sm font-medium`}>
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 flex items-center gap-1">
+                      <button
+                        className={`text-green-600 hover:text-green-800 ${CSS_CLASSES.button}`}
+                        onClick={() => handleOpenViewModal(account)}
+                      >
+                        <View className="w-4 h-4" />
+                        Xem
+                      </button>
+                      <button
+                        className={`text-blue-600 hover:text-blue-900 ${CSS_CLASSES.button}`}
+                      >
                         <Edit className="w-4 h-4" />
                         Sửa
                       </button>
-                      <button className="text-yellow-600 hover:text-yellow-900 flex items-center gap-1">
-                        <Shield className="w-4 h-4" />
-                        {account.status === "active" ? "Khóa" : "Mở khóa"}
-                      </button>
-                      <button className="text-red-600 hover:text-red-900 flex items-center gap-1">
+                      <button
+                        className={`text-red-600 hover:text-red-900 ${CSS_CLASSES.button}`}
+                      >
                         <Trash2 className="w-4 h-4" />
                         Xóa
                       </button>
@@ -185,7 +228,68 @@ const AccountManagement: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-700">
+              Hiển thị {currentPage * pageSize + 1} -{" "}
+              {Math.min((currentPage + 1) * pageSize, totalElements)} trong tổng
+              số {totalElements} tài khoản
+            </div>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5 / trang</option>
+              <option value={10}>10 / trang</option>
+              <option value={20}>20 / trang</option>
+              <option value={50}>50 / trang</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={!hasPrevious || loading}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-1">
+              {generatePageNumbers().map((page) => (
+                <button
+                  className={`px-2 py-1 rounded-sm border border-gray-300
+                    ${
+                      page === currentPage
+                        ? "z-10 bg-blue-600 text-white"
+                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                    }`}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={!hasNext || loading}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
+      {showViewModal && secletedAccount && (
+        <AccountDetailModal
+          account={secletedAccount}
+          onClose={() => setShowViewModal(false)}
+        />
+      )}
     </div>
   );
 };

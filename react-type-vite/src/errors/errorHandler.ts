@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-import { AppError } from "./appError";
+import { AppError } from "./AppError";
 
 export interface ErrorHandlerOptions {
   showToast?: boolean;

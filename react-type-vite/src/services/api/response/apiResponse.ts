@@ -7,9 +7,12 @@ export interface ApiResponse<T> {
 
 export interface PaginatedResponse<T> {
   content: T[];
-  pageNumber: number;
-  pageSize: number;
+  page: number;
+  size: number;
   totalElements: number;
   totalPages: number;
+  first: boolean;
   last: boolean;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
