@@ -1,39 +1,95 @@
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import element05 from "@/assets/images/element/05.svg";
+import {
+  heroTitleVariant,
+  heroSubtitleVariant,
+  heroButtonVariant,
+  heroImageVariant,
+  staggerContainerVariant,
+} from "@/motion/variants";
 
 const HeroSection = () => {
   return (
-    <section className="relative overflow-hidden bg-background py-12 lg:px-10 lg:py-16">
+    <motion.section
+      className="relative overflow-hidden bg-background py-12 lg:px-10 lg:py-16"
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainerVariant}
+    >
       {/* Background decorative elements with enhanced blinking */}
       <div className="absolute inset-0 pointer-events-none z-0">
         {/* Large floating particles */}
-        <div className="absolute top-20 left-10 w-3 h-3 bg-bs-warning rounded-full animate-blink delay-75 animate-float"></div>
-        <div className="absolute top-32 right-20 w-2 h-2 bg-bs-success rounded-full animate-twinkle delay-150"></div>
-        <div className="absolute bottom-40 left-20 w-4 h-4 bg-bs-primary rounded-full animate-glow delay-300"></div>
-        <div className="absolute top-40 right-40 w-2 h-2 bg-bs-danger rounded-full animate-sparkle delay-500"></div>
-
-        {/* Medium floating particles */}
-        <div className="absolute top-60 left-1/3 w-3 h-3 bg-bs-purple rounded-full animate-blink animate-float delay-75"></div>
-        <div className="absolute bottom-60 right-1/3 w-2 h-2 bg-bs-info rounded-full animate-twinkle delay-150"></div>
-        <div className="absolute top-80 left-2/3 w-2 h-2 bg-bs-warning rounded-full animate-glow delay-300"></div>
+        <motion.div
+          className="absolute top-20 left-10 w-3 h-3 bg-bs-warning rounded-full animate-blink delay-75"
+          animate={{
+            y: [-5, 5, -5],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute top-32 right-20 w-2 h-2 bg-bs-success rounded-full animate-twinkle delay-150"
+          animate={{
+            y: [-3, 3, -3],
+          }}
+          transition={{
+            duration: 2.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
+          }}
+        />
+        <motion.div
+          className="absolute bottom-40 left-20 w-4 h-4 bg-bs-primary rounded-full animate-glow delay-300"
+          animate={{
+            y: [-6, 6, -6],
+          }}
+          transition={{
+            duration: 3.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+        />
 
         {/* Small twinkling stars */}
         <div className="absolute top-24 left-1/4 w-1 h-1 bg-bs-primary rounded-full animate-twinkle opacity-70"></div>
         <div className="absolute top-36 right-1/4 w-1 h-1 bg-bs-success rounded-full animate-blink delay-75 opacity-70"></div>
         <div className="absolute bottom-32 left-3/4 w-1 h-1 bg-bs-danger rounded-full animate-sparkle delay-150 opacity-70"></div>
-        <div className="absolute top-72 right-1/2 w-1 h-1 bg-bs-purple rounded-full animate-twinkle delay-300 opacity-70"></div>
 
         {/* Floating geometric shapes */}
-        <div className="absolute top-16 right-16 w-6 h-6 border-2 border-bs-warning rotate-45 animate-sparkle delay-75 opacity-60"></div>
-        <div className="absolute bottom-20 left-16 w-4 h-4 border-2 border-bs-success animate-glow delay-150 opacity-70"></div>
-        <div className="absolute top-56 left-1/2 w-5 h-5 border-2 border-bs-primary rounded-full animate-blink delay-300 opacity-50"></div>
+        <motion.div
+          className="absolute top-16 right-16 w-6 h-6 border-2 border-bs-warning rotate-45 opacity-60"
+          animate={{
+            y: [-4, 4, -4],
+            rotate: [45, 90, 45],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
 
         {/* Larger glowing orbs */}
-        <div className="absolute top-12 left-1/2 w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-glow animate-float opacity-40 blur-sm"></div>
-        <div className="absolute bottom-12 right-1/4 w-6 h-6 bg-gradient-to-r from-yellow-400 to-red-500 rounded-full animate-blink animate-float delay-150 opacity-50 blur-sm"></div>
+        <motion.div
+          className="absolute top-12 left-1/2 w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full opacity-40 blur-sm"
+          animate={{
+            y: [-8, 8, -8],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 4.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
 
         {/* Pulsing rings */}
-
         <div className="absolute top-28 right-28 w-12 h-12 border-2 border-bs-info rounded-full animate-ping opacity-30"></div>
         <div className="absolute bottom-28 left-28 w-10 h-10 border-2 border-bs-purple rounded-full animate-ping delay-150 opacity-40"></div>
       </div>
@@ -53,59 +109,125 @@ const HeroSection = () => {
       <div className="container mx-auto px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="order-2 lg:order-1">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">
+            <motion.h1
+              className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight"
+              variants={heroTitleVariant}
+            >
               We will help you{" "}
-              <span className="text-bs-primary relative">
+              <motion.span
+                className="text-bs-primary relative"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+              >
                 Grow
-                <div className="absolute -top-2 -right-2 w-3 h-3 bg-bs-warning rounded-full animate-blink"></div>
-              </span>{" "}
+                <motion.div
+                  className="absolute -top-2 -right-2 w-3 h-3 bg-bs-warning rounded-full"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.8, 1, 0.8],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                  }}
+                />
+              </motion.span>{" "}
               your Knowledge and Skills
-            </h1>
-            <h6 className="text-lg lg:text-xl text-muted-foreground mb-6 font-medium">
+            </motion.h1>
+
+            <motion.h6
+              className="text-lg lg:text-xl text-muted-foreground mb-6 font-medium"
+              variants={heroSubtitleVariant}
+            >
               1000+ professional Courses for Your Career
-            </h6>
-            <Button className="bg-bs-primary hover:bg-bs-primary text-white px-6 py-3 text-base font-medium rounded-lg shadow-bs hover:shadow-bs-lg transition-all duration-300 transform hover:scale-105 relative group">
+            </motion.h6>
+
+            <Button className="bg-bs-primary text-white px-6 py-3 text-base font-medium rounded-lg shadow-bs transition-all duration-300 relative group">
               <span className="relative z-10">Explore now</span>
-              <div className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full animate-twinkle opacity-60"></div>
             </Button>
           </div>
 
-          <div className="order-1 lg:order-2 relative">
+          <motion.div
+            className="order-1 lg:order-2 relative"
+            variants={heroImageVariant}
+          >
             <div className="relative z-10">
-              <img
+              <motion.img
                 src={element05}
                 alt="Education illustration"
                 className="w-full h-auto max-w-lg mx-auto"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.3 }}
               />
             </div>
 
             {/* Enhanced floating decorative elements around illustration */}
-
-            <div className="absolute -top-4 -left-4 w-8 h-8 bg-bs-warning rounded-full animate-float animate-glow opacity-60"></div>
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-bs-success rounded-full animate-blink animate-float delay-75 opacity-70"></div>
-            <div className="absolute -bottom-4 -left-2 w-5 h-5 bg-bs-primary rounded-full animate-twinkle animate-float delay-150 opacity-60"></div>
-            <div className="absolute -bottom-2 -right-4 w-7 h-7 bg-bs-purple rounded-full animate-sparkle animate-float delay-300 opacity-50"></div>
+            <motion.div
+              className="absolute -top-4 -left-4 w-8 h-8 bg-bs-warning rounded-full animate-glow opacity-60"
+              animate={{
+                y: [-4, 4, -4],
+              }}
+              transition={{
+                duration: 2.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            <motion.div
+              className="absolute -top-2 -right-2 w-6 h-6 bg-bs-success rounded-full animate-blink delay-75 opacity-70"
+              animate={{
+                y: [-3, 3, -3],
+              }}
+              transition={{
+                duration: 3.2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.5,
+              }}
+            />
 
             {/* Additional blinking elements */}
-            <div className="absolute top-10 right-10 w-4 h-4 bg-bs-warning rounded-full animate-blink delay-75 opacity-80"></div>
-            <div className="absolute bottom-20 left-10 w-3 h-3 bg-bs-success rounded-full animate-twinkle delay-150 opacity-90"></div>
-            <div className="absolute top-1/2 left-5 w-2 h-2 bg-bs-primary rounded-full animate-glow delay-300 opacity-75"></div>
-            <div className="absolute top-16 left-16 w-2 h-2 bg-bs-danger rounded-full animate-sparkle delay-500 opacity-60"></div>
-            <div className="absolute bottom-32 right-16 w-3 h-3 bg-bs-purple rounded-full animate-blink delay-75 opacity-70"></div>
-            <div className="absolute top-32 right-32 w-1 h-1 bg-bs-warning rounded-full animate-twinkle delay-150 opacity-80"></div>
-            <div className="absolute bottom-16 left-32 w-2 h-2 bg-bs-info rounded-full animate-glow delay-300 opacity-65"></div>
+            <motion.div
+              className="absolute top-10 right-10 w-4 h-4 bg-bs-warning rounded-full opacity-80"
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.6, 1, 0.6],
+              }}
+              transition={{
+                duration: 1.8,
+                repeat: Infinity,
+                delay: 0.2,
+              }}
+            />
 
             {/* Orbiting elements */}
-            <div className="absolute top-1/4 -left-8 w-4 h-4 border-2 border-bs-info rounded-full animate-spin duration-slow"></div>
-            <div className="absolute top-3/4 -right-8 w-3 h-3 border-2 border-bs-danger rotate-45 animate-spin duration-slow delay-150"></div>
-
-            {/* Floating animation elements */}
-            <div className="absolute top-8 left-8 w-6 h-6 border-2 border-bs-primary rounded-full animate-spin opacity-30 duration-slow"></div>
-            <div className="absolute bottom-8 right-8 w-4 h-4 border border-bs-success rounded-full animate-pulse opacity-40"></div>
-          </div>
+            <motion.div
+              className="absolute top-1/4 -left-8 w-4 h-4 border-2 border-bs-info rounded-full"
+              animate={{
+                rotate: 360,
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            />
+            <motion.div
+              className="absolute top-3/4 -right-8 w-3 h-3 border-2 border-bs-danger rotate-45"
+              animate={{
+                rotate: [45, 405],
+              }}
+              transition={{
+                duration: 10,
+                repeat: Infinity,
+                ease: "linear",
+                delay: 1,
+              }}
+            />
+          </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 };
 

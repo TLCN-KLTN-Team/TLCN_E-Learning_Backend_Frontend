@@ -8,6 +8,16 @@ import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
 import EducationalUnitLinked from "@/components/student/home/EducationalUnitLinked";
 
+// Import animated components
+import {
+  AnimatedSection,
+  FadeInUp,
+  FadeInLeft,
+  FadeInRight,
+  StaggerContainer,
+} from "@/motion";
+import { HoverScale, AnimatedButton } from "@/motion";
+
 // Import link hover effects for homepage
 import "../../../styles/link-hover-effects.css";
 
@@ -85,8 +95,6 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground homepage-links">
-      {/* Google Auth Loader Overlay */}
-
       {/* Header */}
       <Header />
 
@@ -96,10 +104,10 @@ const Home = () => {
         <HeroSection />
 
         {/* About Section */}
-        <section className="py-12 lg:py-16 px-6 lg:px-8">
+        <AnimatedSection className="py-12 lg:py-16 px-6 lg:px-8">
           <div className="container mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-              <div className="relative">
+              <FadeInLeft className="relative">
                 {/* Background decoration */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -ml-8 hidden sm:block z-0">
                   <svg
@@ -116,92 +124,119 @@ const Home = () => {
                   alt="About illustration"
                   className="relative z-10 max-w-full h-auto"
                 />
-              </div>
+              </FadeInLeft>
 
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                  <p>Bạn là học viên tự do. Muốn tìm khóa học chất lượng?</p>
-                  <p>Để chúng tôi giúp bạn!</p>
-                </h2>
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Làm thế nào sự khuyến khích và tính tò mò tuyệt vời lại có thể
-                  mang đến hạnh phúc. Những ấn tượng tươi sáng và thịnh vượng đi
-                  cùng niềm tin mạnh mẽ. Mỗi sự trì hoãn là một cái chết – hãy
-                  thể hiện phong cách của bạn với những kiến thức từ chúng tôi.
-                  Tôi – với khả năng và ý chí – sẽ vượt qua cùng những khó khăn
-                  trong gian khó.
-                </p>
-                <ul className="space-y-3 mb-6">
-                  {[
-                    "Việc cài đặt và thiết lập mất ít thời gian",
-                    "Phần mềm chuyên nghiệp và dễ sử dụng",
-                    "Cung cấp nền tảng học số đa dụng và linh hoạt",
-                    "Có sẵn các khóa học từ cơ bản đến nâng cao",
-                  ].map((item, index) => (
-                    <li key={index} className="flex items-center space-x-2">
-                      <ArrowRight
-                        className="text-bs-primary flex-shrink-0"
-                        size={16}
-                      />
-                      <span className="text-muted-foreground text-sm">
-                        {item}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  variant="outline"
-                  className="border-bs-primary text-bs-primary hover:bg-bs-primary-subtle text-sm px-6 py-2"
-                >
-                  More about us
-                </Button>
-              </div>
+              <FadeInRight>
+                <StaggerContainer>
+                  <FadeInUp delay={0.1}>
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                      <p>
+                        Bạn là học viên tự do. Muốn tìm khóa học chất lượng?
+                      </p>
+                      <p>Để chúng tôi giúp bạn!</p>
+                    </h2>
+                  </FadeInUp>
+
+                  <FadeInUp delay={0.2}>
+                    <p className="text-muted-foreground mb-4 text-sm">
+                      Làm thế nào sự khuyến khích và tính tò mò tuyệt vời lại có
+                      thể mang đến hạnh phúc. Những ấn tượng tươi sáng và thịnh
+                      vượng đi cùng niềm tin mạnh mẽ. Mỗi sự trì hoãn là một cái
+                      chết – hãy thể hiện phong cách của bạn với những kiến thức
+                      từ chúng tôi. Tôi – với khả năng và ý chí – sẽ vượt qua
+                      cùng những khó khăn trong gian khó.
+                    </p>
+                  </FadeInUp>
+
+                  <ul className="space-y-3 mb-6">
+                    {[
+                      "Việc cài đặt và thiết lập mất ít thời gian",
+                      "Phần mềm chuyên nghiệp và dễ sử dụng",
+                      "Cung cấp nền tảng học số đa dụng và linh hoạt",
+                      "Có sẵn các khóa học từ cơ bản đến nâng cao",
+                    ].map((item, index) => (
+                      <FadeInUp key={index} delay={0.3 + index * 0.1}>
+                        <li className="flex items-center space-x-2">
+                          <ArrowRight
+                            className="text-bs-primary flex-shrink-0"
+                            size={16}
+                          />
+                          <span className="text-muted-foreground text-sm">
+                            {item}
+                          </span>
+                        </li>
+                      </FadeInUp>
+                    ))}
+                  </ul>
+
+                  <FadeInUp delay={0.7}>
+                    <AnimatedButton>
+                      <Button
+                        variant="outline"
+                        className="border-bs-primary text-bs-primary hover:bg-bs-primary-subtle text-sm px-6 py-2"
+                      >
+                        More about us
+                      </Button>
+                    </AnimatedButton>
+                  </FadeInUp>
+                </StaggerContainer>
+              </FadeInRight>
             </div>
           </div>
-        </section>
+        </AnimatedSection>
 
         {/* Subjects Section */}
-        <SubjectsSection subjects={subjects} />
+        <AnimatedSection>
+          <SubjectsSection subjects={subjects} />
+        </AnimatedSection>
 
         {/* Mobile App Section */}
-        <section className="py-12 lg:py-16 px-6 lg:px-8 overflow-hidden">
+        <AnimatedSection className="py-12 lg:py-16 px-6 lg:px-8 overflow-hidden">
           <div className="container mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-              <div className="relative z-10">
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                  Bạn đang là sinh viên của trường đại học hoặc cao đẳng?
-                </h2>
-                <p className="text-muted-foreground mb-6 text-sm">
-                  Tại thanh điều hướng, chọn Mục lục "Khóa học" và chọn "Trang
-                  học tập số", chọn Trường của bạn (đã được liên kết với chúng
-                  tôi) để truy cập vào các khóa học và tài liệu học tập được
-                  cung cấp.
-                </p>
-                <div className="flex space-x-3">
-                  <a
-                    href="#"
-                    className="block hover:scale-105 transition-transform"
-                  >
-                    <img
-                      src={googlePlayIcon}
-                      alt="Google Play"
-                      className="h-10 w-auto"
-                    />
-                  </a>
-                  <a
-                    href="#"
-                    className="block hover:scale-105 transition-transform"
-                  >
-                    <img
-                      src={appStoreIcon}
-                      alt="App Store"
-                      className="h-10 w-auto"
-                    />
-                  </a>
-                </div>
-              </div>
+              <FadeInLeft className="relative z-10">
+                <StaggerContainer>
+                  <FadeInUp delay={0.1}>
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                      Bạn đang là sinh viên của trường đại học hoặc cao đẳng?
+                    </h2>
+                  </FadeInUp>
 
-              <div className="relative">
+                  <FadeInUp delay={0.2}>
+                    <p className="text-muted-foreground mb-6 text-sm">
+                      Tại thanh điều hướng, chọn Mục lục "Khóa học" và chọn
+                      "Trang học tập số", chọn Trường của bạn (đã được liên kết
+                      với chúng tôi) để truy cập vào các khóa học và tài liệu
+                      học tập được cung cấp.
+                    </p>
+                  </FadeInUp>
+
+                  <FadeInUp delay={0.3}>
+                    <div className="flex space-x-3">
+                      <HoverScale>
+                        <a href="#" className="block transition-transform">
+                          <img
+                            src={googlePlayIcon}
+                            alt="Google Play"
+                            className="h-10 w-auto"
+                          />
+                        </a>
+                      </HoverScale>
+                      <HoverScale>
+                        <a href="#" className="block transition-transform">
+                          <img
+                            src={appStoreIcon}
+                            alt="App Store"
+                            className="h-10 w-auto"
+                          />
+                        </a>
+                      </HoverScale>
+                    </div>
+                  </FadeInUp>
+                </StaggerContainer>
+              </FadeInLeft>
+
+              <FadeInRight className="relative">
                 {/* Background decoration */}
                 <div className="absolute top-1/2 right-0 transform translate-y-[-50%] translate-x-8 z-0">
                   <svg
@@ -218,70 +253,79 @@ const Home = () => {
                   alt="Mobile app illustration"
                   className="relative z-10 max-w-full h-auto"
                 />
-              </div>
+              </FadeInRight>
             </div>
           </div>
-        </section>
+        </AnimatedSection>
 
         {/* CTA Section */}
-        <section className="py-12 lg:py-16 px-6 lg:px-8">
+        <AnimatedSection className="py-12 lg:py-16 px-6 lg:px-8">
           <div className="container mx-auto">
-            <div className="bg-card border rounded-lg p-6 md:p-8 relative overflow-hidden">
-              {/* Background decorations */}
-              <div className="absolute top-0 left-0 -ml-7 hidden lg:block z-0">
-                <svg
-                  width="294.5px"
-                  height="261.6px"
-                  viewBox="0 0 294.5 261.6"
-                  className="fill-bs-warning opacity-30"
-                >
-                  <path d="M280.7,84.9c-4.6-9.5-10.1-18.6-16.4-27.2c-18.4-25.2-44.9-45.3-76-54.2c-31.7-9.1-67.7-0.2-93.1,21.6 C82,36.4,71.9,50.6,65.4,66.3c-4.6,11.1-9.5,22.3-17.2,31.8c-6.8,8.3-15.6,15-22.8,23C10.4,137.6-0.1,157.2,0,179 c0.1,28,11.4,64.6,40.4,76.7c23.9,10,50.7-3.1,75.4-4.7c23.1-1.5,43.1,10.4,65.5,10.6c53.4,0.6,97.8-42,109.7-90.4 C298.5,140.9,293.4,111.5,280.7,84.9z" />
-                </svg>
-              </div>
+            <FadeInUp>
+              <div className="bg-card border rounded-lg p-6 md:p-8 relative overflow-hidden">
+                {/* Background decorations */}
+                <div className="absolute top-0 left-0 -ml-7 hidden lg:block z-0">
+                  <svg
+                    width="294.5px"
+                    height="261.6px"
+                    viewBox="0 0 294.5 261.6"
+                    className="fill-bs-warning opacity-30"
+                  >
+                    <path d="M280.7,84.9c-4.6-9.5-10.1-18.6-16.4-27.2c-18.4-25.2-44.9-45.3-76-54.2c-31.7-9.1-67.7-0.2-93.1,21.6 C82,36.4,71.9,50.6,65.4,66.3c-4.6,11.1-9.5,22.3-17.2,31.8c-6.8,8.3-15.6,15-22.8,23C10.4,137.6-0.1,157.2,0,179 c0.1,28,11.4,64.6,40.4,76.7c23.9,10,50.7-3.1,75.4-4.7c23.1-1.5,43.1,10.4,65.5,10.6c53.4,0.6,97.8-42,109.7-90.4 C298.5,140.9,293.4,111.5,280.7,84.9z" />
+                  </svg>
+                </div>
 
-              <img
-                src={element09}
-                alt="CTA decoration"
-                className="absolute bottom-0 right-0 -mr-3 hidden lg:block z-10"
-              />
+                <img
+                  src={element09}
+                  alt="CTA decoration"
+                  className="absolute bottom-0 right-0 -mr-3 hidden lg:block z-10"
+                />
 
-              <div className="relative z-20">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                  <div className="lg:col-span-3 text-center lg:text-left">
-                    <img
-                      src={element08}
-                      alt="Course illustration"
-                      className="mx-auto lg:mx-0 max-w-full h-auto"
-                    />
-                  </div>
+                <div className="relative z-20">
+                  <StaggerContainer className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <FadeInUp
+                      delay={0.1}
+                      className="lg:col-span-3 text-center lg:text-left"
+                    >
+                      <img
+                        src={element08}
+                        alt="Course illustration"
+                        className="mx-auto lg:mx-0 max-w-full h-auto"
+                      />
+                    </FadeInUp>
 
-                  <div className="lg:col-span-6 text-center">
-                    <h6 className="text-sm font-light text-muted-foreground mb-2">
-                      Đơn vị giáo dục của bạn cần nền tảng học tập số để cung
-                      cấp cho sinh viên?
-                    </h6>
-                    <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                      Chúng tôi cung cấp giải pháp toàn diện cho các trường đại
-                      học và cao đẳng.
-                    </h3>
-                  </div>
+                    <FadeInUp delay={0.2} className="lg:col-span-6 text-center">
+                      <h6 className="text-sm font-light text-muted-foreground mb-2">
+                        Đơn vị giáo dục của bạn cần nền tảng học tập số để cung
+                        cấp cho sinh viên?
+                      </h6>
+                      <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                        Chúng tôi cung cấp giải pháp toàn diện cho các trường
+                        đại học và cao đẳng.
+                      </h3>
+                    </FadeInUp>
 
-                  <div className="lg:col-span-3 text-center">
-                    <Button className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm">
-                      Đăng ký đơn vị của bạn tại đây
-                    </Button>
-                  </div>
+                    <FadeInUp delay={0.3} className="lg:col-span-3 text-center">
+                      <AnimatedButton>
+                        <Button className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm">
+                          Đăng ký đơn vị của bạn tại đây
+                        </Button>
+                      </AnimatedButton>
+                    </FadeInUp>
+                  </StaggerContainer>
                 </div>
               </div>
-            </div>
+            </FadeInUp>
           </div>
-        </section>
+        </AnimatedSection>
 
         {/* Educational Unit Linked Section */}
-        <EducationalUnitLinked />
+        <AnimatedSection>
+          <EducationalUnitLinked />
+        </AnimatedSection>
 
         {/* Testimonials Section */}
-        <section className="py-12 lg:py-16 px-6 lg:px-8 bg-muted relative">
+        <AnimatedSection className="py-12 lg:py-16 px-6 lg:px-8 bg-muted relative">
           {/* Background decoration */}
           <div className="absolute left-0 bottom-0">
             <img
@@ -292,21 +336,28 @@ const Home = () => {
           </div>
 
           <div className="container mx-auto relative z-10">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                Phản hồi từ học viên
-              </h2>
-              <p className="text-muted-foreground">
-                Những phản hồi từ học viên của chúng tôi là nguồn động lực lớn
-                nhất để chúng tôi không ngừng cải thiện và phát triển. Hãy cùng
-                lắng nghe những chia sẻ chân thành từ những người đã trải nghiệm
-                khóa học của chúng tôi.
-              </p>
-            </div>
+            <StaggerContainer className="text-center mb-12">
+              <FadeInUp delay={0.1}>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                  Phản hồi từ học viên
+                </h2>
+              </FadeInUp>
 
-            <TestimonialsSlider testimonials={testimonials} />
+              <FadeInUp delay={0.2}>
+                <p className="text-muted-foreground">
+                  Những phản hồi từ học viên của chúng tôi là nguồn động lực lớn
+                  nhất để chúng tôi không ngừng cải thiện và phát triển. Hãy
+                  cùng lắng nghe những chia sẻ chân thành từ những người đã trải
+                  nghiệm khóa học của chúng tôi.
+                </p>
+              </FadeInUp>
+            </StaggerContainer>
+
+            <FadeInUp delay={0.3}>
+              <TestimonialsSlider testimonials={testimonials} />
+            </FadeInUp>
           </div>
-        </section>
+        </AnimatedSection>
       </main>
 
       {/* Footer */}
