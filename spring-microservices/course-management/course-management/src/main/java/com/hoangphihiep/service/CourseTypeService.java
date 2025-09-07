@@ -2,19 +2,19 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.CourseTypeRequest;
 import com.hoangphihiep.dto.response.CourseTypeResponse;
+import com.hoangphihiep.dto.response.PaginatedResponse;
 import com.hoangphihiep.entity.CourseType;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.mapper.CourseTypeMapper;
 import com.hoangphihiep.repository.CourseRepository;
 import com.hoangphihiep.repository.CourseTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -24,43 +24,80 @@ public class CourseTypeService {
 
     private final CourseTypeRepository courseTypeRepository;
     private final CourseRepository courseRepository;
+    private final CourseTypeMapper courseTypeMapper;
 
     // Constants for validation
     private static final int MIN_COURSE_TYPE_NAME_LENGTH = 2;
     private static final int MAX_COURSE_TYPE_NAME_LENGTH = 100;
-    private static final int MIN_PAGE_SIZE = 1;
-    private static final int MAX_PAGE_SIZE = 100;
+
 
     // Lấy tất cả course types với phân trang
-    public Page<CourseTypeResponse> getAllCourseTypes(int page, int size, String search) {
-        validatePaginationParameters(page, size);
+    public PaginatedResponse<CourseTypeResponse> getAllCourseTypes(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<CourseType> courseTypes = courseTypeRepository.findAll(pageable);
+        List<CourseTypeResponse> courseTypeResponses = courseTypes.stream()
+                .map(ct -> {
+                    CourseTypeResponse response = courseTypeMapper.toCourseTypeResponse(ct);
+                    response.setNumberOfType(ct.getCourses().size());
+                    return response;
+                })
+                .toList();
 
-        if (search != null && search.trim().isEmpty()) {
-            search = null;
-        }
+        return PaginatedResponse.<CourseTypeResponse>builder()
+                .content(courseTypeResponses)
+                .page(page)
+                .size(size)
+                .totalElements(courseTypes.getTotalElements())
+                .totalPages(courseTypes.getTotalPages())
+                .first(courseTypes.isFirst())
+                .last(courseTypes.isLast())
+                .hasNext(courseTypes.hasNext())
+                .hasPrevious(courseTypes.hasPrevious())
+                .build();
+    }
 
+    // Create new course type
+    @Transactional
+    public CourseTypeResponse createCourseType(CourseTypeRequest req){
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("courseTypeName").ascending());
-            Page<CourseType> courseTypePage = courseTypeRepository.findBySearch(search, pageable);
+            CourseType courseType = courseTypeMapper.toCourseType(req);
 
-            return courseTypePage.map(this::toCourseTypeResponse);
+            CourseType savedCourseType = courseTypeRepository.save(courseType);
+            return courseTypeMapper.toCourseTypeResponse(savedCourseType);
         } catch (Exception e) {
-            log.error("Error occurred while fetching course types", e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+            throw e;
         }
     }
 
-    // Lấy tất cả course types không phân trang (cho dropdown)
-    public List<CourseTypeResponse> getAllCourseTypesForDropdown() {
-        try {
-            List<CourseType> courseTypes = courseTypeRepository.findAllByOrderByCourseTypeNameAsc();
+    @Transactional
+    public CourseTypeResponse updateCourseType(Integer id, CourseTypeRequest req){
+        try{
+            CourseType existingCourseType = courseTypeRepository.findById(id)
+                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
 
-            return courseTypes.stream()
-                    .map(this::toCourseTypeResponse)
-                    .toList();
+            if (req.getCourseTypeName() != null) {
+                existingCourseType.setCourseTypeName(req.getCourseTypeName());
+            }
+            if (req.getDescription() != null) {
+                existingCourseType.setDescription(req.getDescription());
+            }
+            CourseType updatedCourseType = courseTypeRepository.save(existingCourseType);
+
+            return courseTypeMapper.toCourseTypeResponse(updatedCourseType);
         } catch (Exception e) {
-            log.error("Error occurred while fetching course types for dropdown", e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+            throw e;
+        }
+    }
+
+    @Transactional
+    public void deleteCourseType(Integer id){
+        try{
+            CourseType existingCourseType = courseTypeRepository.findById(id)
+                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
+
+            courseTypeRepository.delete(existingCourseType);
+        } catch (Exception e) {
+            throw e;
         }
     }
 
@@ -73,24 +110,20 @@ public class CourseTypeService {
         CourseType courseType = courseTypeRepository.findById(courseTypeId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
 
-        return toCourseTypeResponse(courseType);
+        return courseTypeMapper.toCourseTypeResponse(courseType);
     }
 
-    private void validatePaginationParameters(int page, int size) {
-        if (page < 0) {
-            throw new AppException(ErrorCode.COURSE_PAGE_NUMBER_INVALID);
-        }
+    // Lấy tất cả course types không phân trang (cho dropdown)
+    public List<CourseTypeResponse> getAllCourseTypesForDropdown() {
+        try {
+            List<CourseType> courseTypes = courseTypeRepository.findAllByOrderByCourseTypeNameAsc();
 
-        if (size < MIN_PAGE_SIZE || size > MAX_PAGE_SIZE) {
-            throw new AppException(ErrorCode.COURSE_PAGE_SIZE_INVALID);
+            return courseTypes.stream()
+                    .map(courseTypeMapper::toCourseTypeResponse)
+                    .toList();
+        } catch (Exception e) {
+            log.error("Error occurred while fetching course types for dropdown", e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
-    }
-
-    // Mapper method
-    private CourseTypeResponse toCourseTypeResponse(CourseType courseType) {
-        return CourseTypeResponse.builder()
-                .id(courseType.getId())
-                .courseTypeName(courseType.getCourseTypeName())
-                .build();
     }
 }

@@ -13,4 +13,6 @@ public class CourseTypeResponse {
 
     private Integer id;
     private String courseTypeName;
+    private String description;
+    private int numberOfType;
 }

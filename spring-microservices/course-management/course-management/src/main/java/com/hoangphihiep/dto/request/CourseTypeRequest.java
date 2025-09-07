@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CourseTypeRequest {
 
-    private Integer id;
-
     @NotBlank(message = "Course type name is required")
     private String courseTypeName;
+
+    private String description;
 }
