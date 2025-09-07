@@ -140,6 +140,8 @@ public enum ErrorCode {
     COURSE_ENROLLMENT_MISMATCH(2809, "Thông tin ghi danh không thuộc về khóa học được chỉ định", HttpStatus.BAD_REQUEST),
     COURSE_UNENROLLMENT_FAILED(2810, "Không thể hủy ghi danh sinh viên khỏi khóa học", HttpStatus.BAD_REQUEST);
 
+    //
+
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;
         this.message = message;

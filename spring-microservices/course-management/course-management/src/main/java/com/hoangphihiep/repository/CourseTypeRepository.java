@@ -22,8 +22,6 @@ public interface CourseTypeRepository extends JpaRepository<CourseType, Integer>
     @Query("SELECT COUNT(ct) > 0 FROM CourseType ct WHERE LOWER(ct.courseTypeName) = LOWER(:courseTypeName)")
     boolean existsByCourseTypeName(@Param("courseTypeName") String courseTypeName);
 
-    // CourseRepository - Thêm method này
-    @Query("SELECT COUNT(c) > 0 FROM Course c WHERE c.courseType.id = :courseTypeId")
-    boolean existsByCourseTypeId(@Param("courseTypeId") int courseTypeId);
+    boolean existsById(Integer id);
 }
 
