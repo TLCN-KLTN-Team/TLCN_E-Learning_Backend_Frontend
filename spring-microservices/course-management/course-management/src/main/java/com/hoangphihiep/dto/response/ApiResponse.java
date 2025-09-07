@@ -25,8 +25,8 @@ public class ApiResponse<T> {
     T result;
     Map<String, String> errors;
 
-    public static <T> com.devteria.identity.dto.request.ApiResponse<T> success(T result, String message) {
-        return com.devteria.identity.dto.request.ApiResponse.<T>builder()
+    public static <T> ApiResponse<T> success(T result, String message) {
+        return ApiResponse.<T>builder()
                 .code(ErrorCode.SUCCESS.getCode())
                 .message(message)
                 .result(result)
@@ -34,16 +34,16 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static <T> com.devteria.identity.dto.request.ApiResponse<T> error(String code, String message, int status) {
-        return com.devteria.identity.dto.request.ApiResponse.<T>builder()
+    public static <T> ApiResponse<T> error(String code, String message, int status) {
+        return ApiResponse.<T>builder()
                 .code(code)
                 .message(message)
                 .status(status)
                 .build();
     }
 
-    public static <T> com.devteria.identity.dto.request.ApiResponse<T> validationError(Map<String, String> errors) {
-        return com.devteria.identity.dto.request.ApiResponse.<T>builder()
+    public static <T> ApiResponse<T> validationError(Map<String, String> errors) {
+        return ApiResponse.<T>builder()
                 .message("Validation failed")
                 .errors(errors)
                 .status(HttpStatus.BAD_REQUEST.value())

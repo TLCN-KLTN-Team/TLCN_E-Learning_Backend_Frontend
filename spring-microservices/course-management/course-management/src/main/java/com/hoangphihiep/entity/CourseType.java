@@ -35,6 +35,8 @@ public class CourseType implements Serializable {
     @Column(name = "course_type_name", nullable = false, length = 255)
     private String courseTypeName;
 
+    private String description;
+
     @OneToMany(mappedBy = "courseType", cascade = CascadeType.ALL)
-    private Set<Course> course = new HashSet<>();
+    private Set<Course> courses = new HashSet<>();
 }

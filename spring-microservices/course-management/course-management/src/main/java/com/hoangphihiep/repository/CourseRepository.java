@@ -34,4 +34,5 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
 
     @Query("SELECT COUNT(c) > 0 FROM Course c WHERE c.courseName = :courseName AND c.institution.id = :institutionId")
     boolean existsByCourseNameAndInstitution(@Param("courseName") String courseName, @Param("institutionId") int institutionId);
+
 }

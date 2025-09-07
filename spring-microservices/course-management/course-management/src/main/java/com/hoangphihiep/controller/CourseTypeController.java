@@ -28,11 +28,9 @@ public class CourseTypeController {
 
         log.info("Admin getting all course types");
 
-        Page<CourseTypeResponse> courseTypes = courseTypeService.getAllCourseTypes(page, size, search);
+//        Page<CourseTypeResponse> courseTypes = courseTypeService.getAllCourseTypes(page, size, search);
 
-        return ApiResponse.<Page<CourseTypeResponse>>builder()
-                .result(courseTypes)
-                .build();
+        return null;
     }
 
     @GetMapping("/all")
