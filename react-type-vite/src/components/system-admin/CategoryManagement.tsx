@@ -1,64 +1,157 @@
 "use client";
 
-import { Plus, Edit, Trash2, FolderOpen, Tag } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { CSS_CLASSES } from "./data/CategoriesData";
+import {
+  createCourseType,
+  getCourseTypes,
+  updateCourseType,
+} from "@/services/api/superadmin/courseTypeApi";
+import type { CourseCategoryResponse } from "@/services/api/response/courseTypeResponse";
+import type { PaginatedResponse } from "@/services/api/response/apiResponse";
+import { toast } from "react-toastify";
+import AddCourseTypeModal from "./modals/AddCoureTypeModal";
+import DeleteConfirmModal from "../system/DeleteConfirmModal";
 
 const CategoryManagement: React.FC = () => {
-  const [categories, setCategories] = useState([
-    {
-      id: 1,
-      name: "Công nghệ Thông tin",
-      slug: "cong-nghe-thong-tin",
-      courses: 125,
-      status: "active",
-      parent: null,
-    },
-    {
-      id: 2,
-      name: "Lập trình Web",
-      slug: "lap-trinh-web",
-      courses: 45,
-      status: "active",
-      parent: "Công nghệ Thông tin",
-    },
-    {
-      id: 3,
-      name: "Mobile Development",
-      slug: "mobile-development",
-      courses: 32,
-      status: "active",
-      parent: "Công nghệ Thông tin",
-    },
-    {
-      id: 4,
-      name: "Kinh doanh",
-      slug: "kinh-doanh",
-      courses: 89,
-      status: "active",
-      parent: null,
-    },
-    {
-      id: 5,
-      name: "Marketing Digital",
-      slug: "marketing-digital",
-      courses: 28,
-      status: "active",
-      parent: "Kinh doanh",
-    },
-    {
-      id: 6,
-      name: "Ngoại ngữ",
-      slug: "ngoai-ngu",
-      courses: 67,
-      status: "inactive",
-      parent: null,
-    },
-  ]);
-
+  const [categories, setCategories] = useState<CourseCategoryResponse[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const headerStyles =
-    "px-6 py-3 text-left text-sm font-bold text-gray-900 uppercase tracking-wider";
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] =
+    useState<CourseCategoryResponse | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [hasPrevious, setHasPrevious] = useState(false);
+  const [hasNext, setHasNext] = useState(false);
+
+  const handlePageChange = async (newPage: number) => {
+    if (newPage < 0 || newPage >= totalPages) return;
+    setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = async (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(0); // Reset to first page when changing page size
+  };
+
+  const handleAddCourseType = async (data: {
+    name: string;
+    description: string;
+  }) => {
+    try {
+      // TODO: Call API to create new course type
+      if (selectedCategory) {
+        // handle update case
+        const result = await updateCourseType(selectedCategory.id, {
+          name: data.name,
+          description: data.description,
+        });
+        setCategories((prev) => {
+          const index = prev.findIndex((cat) => cat.id === selectedCategory.id);
+          if (index !== -1) {
+            const updated = [...prev];
+            updated[index] = result;
+            return updated;
+          }
+          return prev;
+        });
+        setSelectedCategory(null);
+        toast.success("Cập nhật danh mục thành công!");
+      } else {
+        const result = await createCourseType(data.name, data.description);
+        setCategories((prev) => [...prev, result]);
+        // Temporarily show success message
+        toast.success("Thêm danh mục thành công!");
+      }
+      // Auto close modal
+      setShowAddModal(false);
+    } catch (error) {
+      console.error("Error adding course type:", error);
+      toast.error("Có lỗi xảy ra khi thêm danh mục");
+    }
+  };
+
+  const handleShowUpdate = (category: CourseCategoryResponse) => () => {
+    setSelectedCategory(category);
+    setShowAddModal(true);
+  };
+
+  const handleDeleteCourseType = async (id: number) => {
+    try {
+      // TODO: Call API to delete course type
+      console.log("Deleting course type with id:", id);
+
+      // Remove from state
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
+
+      toast.success("Xóa danh mục thành công!");
+    } catch (error) {
+      console.error("Error deleting course type:", error);
+      toast.error("Có lỗi xảy ra khi xóa danh mục");
+    }
+  };
+
+  const handleDeleteClick = (category: CourseCategoryResponse) => {
+    setSelectedCategory(category);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedCategory) return;
+
+    setIsDeleting(true);
+    try {
+      await handleDeleteCourseType(selectedCategory.id);
+      setShowDeleteModal(false);
+      setSelectedCategory(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+    const end = Math.min(totalPages - 1, start + maxVisible);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(0, end - maxVisible + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  useEffect(() => {
+    // Fetch categories from service
+    const fetchCourseCategories = async () => {
+      try {
+        const result: PaginatedResponse<CourseCategoryResponse> =
+          await getCourseTypes(currentPage, pageSize);
+        console.log("Fetched categories:", result);
+        setCategories(result.content);
+        setTotalPages(result.totalPages);
+        setTotalElements(result.totalElements);
+        setHasPrevious(result.hasPrevious);
+        setHasNext(result.hasNext);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast.error("Lỗi phân trang");
+      }
+    };
+
+    fetchCourseCategories();
+  }, [currentPage, pageSize]);
 
   return (
     <div className="space-y-6">
@@ -67,7 +160,10 @@ const CategoryManagement: React.FC = () => {
           Quản lý Danh mục
         </h2>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setShowAddModal(true);
+            setSelectedCategory(null);
+          }}
           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 self-start md:self-auto"
         >
           <Plus className="w-5 h-5" />
@@ -96,37 +192,7 @@ const CategoryManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng danh mục</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {categories.length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100">
-              <svg
-                className="w-6 h-6 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Đang hoạt động
-              </p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {categories.filter((c) => c.status === "active").length}
-              </p>
+              <p className="text-2xl font-semibold text-gray-900"></p>
             </div>
           </div>
         </div>
@@ -150,9 +216,7 @@ const CategoryManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng khóa học</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {categories.reduce((sum, c) => sum + c.courses, 0)}
-              </p>
+              <p className="text-2xl font-semibold text-gray-900"></p>
             </div>
           </div>
         </div>
@@ -163,60 +227,43 @@ const CategoryManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className={headerStyles}>Tên danh mục</th>
-                <th className={headerStyles}>Slug</th>
-                <th className={headerStyles}>Danh mục cha</th>
-                <th className={headerStyles}>Số khóa học</th>
-                <th className={headerStyles}>Trạng thái</th>
-                <th className={headerStyles}>Thao tác</th>
+                <th className={CSS_CLASSES.headerStyles}>Tên danh mục</th>
+                <th className={CSS_CLASSES.headerStyles}>Mô tả</th>
+                <th className={CSS_CLASSES.headerStyles}>Số khóa học</th>
+                <th className={CSS_CLASSES.headerStyles}>Thao tác</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {categories.map((category) => (
                 <tr key={category.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {category.parent ? (
-                        <Tag className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <FolderOpen className="w-4 h-4 text-gray-400" />
-                      )}
-                      <div className="text-sm font-medium text-gray-900">
-                        {category.name}
-                      </div>
+                    <div className="text-sm text-gray-900">
+                      {category.courseTypeName}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{category.slug}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {category.parent || "-"}
+                    <div className="text-sm text-gray-500">
+                      {category.description || "Chưa có mô tả"}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {category.courses}
+                      {category.numberOfType}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        category.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {category.status === "active" ? "Hoạt động" : "Tạm dừng"}
-                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 flex items-center gap-1">
+                      <button
+                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                        onClick={handleShowUpdate(category)}
+                      >
                         <Edit className="w-4 h-4" />
                         Sửa
                       </button>
-                      <button className="text-red-600 hover:text-red-900 flex items-center gap-1">
+                      <button
+                        onClick={() => handleDeleteClick(category)}
+                        className="text-red-600 hover:text-red-900 flex items-center gap-1"
+                      >
                         <Trash2 className="w-4 h-4" />
                         Xóa
                       </button>
@@ -227,7 +274,85 @@ const CategoryManagement: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-700">
+              Hiển thị {currentPage * pageSize + 1} -{" "}
+              {Math.min((currentPage + 1) * pageSize, totalElements)} trong tổng
+              số {totalElements} tài khoản
+            </div>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5 / trang</option>
+              <option value={10}>10 / trang</option>
+              <option value={20}>20 / trang</option>
+              <option value={50}>50 / trang</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={!hasPrevious}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-1">
+              {generatePageNumbers().map((page) => (
+                <button
+                  className={`px-2 py-1 rounded-sm border border-gray-300
+                            ${
+                              page === currentPage
+                                ? "z-10 bg-blue-600 text-white"
+                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={!hasNext}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Add Course Type Modal */}
+      <AddCourseTypeModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddCourseType}
+        onUpdate={selectedCategory ? selectedCategory : undefined}
+      />
+
+      {/* Confirm Delete Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedCategory(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận xóa"
+        message={`Bạn có chắc chắn muốn xóa danh mục "${
+          selectedCategory?.courseTypeName || ""
+        }"? Hành động này không thể hoàn tác.`}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };
