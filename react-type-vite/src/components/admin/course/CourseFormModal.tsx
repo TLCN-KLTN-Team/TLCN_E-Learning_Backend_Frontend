@@ -119,7 +119,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         onClick={handleBackdropClick}
       ></div>
       
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
           <div className="flex justify-between items-center">
@@ -141,172 +141,201 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
           <p className="text-blue-100 text-sm mt-2">Add a new course to your institution</p>
         </div>
         
-        {/* Form Content */}
-        <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Course Name */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <BookOpen size={16} className="mr-2 text-blue-600" />
-                Course Name
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <Input 
-                name="courseName" 
-                placeholder="e.g., Introduction to Computer Science" 
-                value={form.courseName} 
-                onChange={handleChange}
-                className={`transition-colors ${errors.courseName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
-              />
-              {errors.courseName && (
-                <p className="text-red-500 text-xs flex items-center mt-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
-                  {errors.courseName}
-                </p>
-              )}
-            </div>
-            
-            {/* Course Type Dropdown */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Hash size={16} className="mr-2 text-blue-600" />
-                Course Type
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <div className="relative">
-                <label htmlFor="courseTypeId" className="sr-only">Course type</label>
-                <select
-                  id="courseTypeId"
-                  name="courseTypeId"
-                  value={form.courseTypeId || ""}
-                  onChange={handleChange}
-                  disabled={loadingCourseTypes}
-                  className={`w-full p-3 border rounded-lg appearance-none bg-white transition-colors ${
-                    errors.courseTypeId ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
-                  } ${loadingCourseTypes ? 'opacity-50' : ''}`}
-                >
-                  <option value="">
-                    {loadingCourseTypes ? "Loading course types..." : "Select course type"}
-                  </option>
-                  {courseTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.courseTypeName}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                  size={16}
-                />
-              </div>
-              {errors.courseTypeId && (
-                <p className="text-red-500 text-xs flex items-center mt-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
-                  {errors.courseTypeId}
-                </p>
-              )}
-            </div>
-            
-            {/* Credits and Max Students Row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Clock size={16} className="mr-2 text-blue-600" />
-                  Credits
-                  <span className="text-red-500 ml-1">*</span>
-                </label>
-                <Input 
-                  name="credits" 
-                  type="number" 
-                  placeholder="3" 
-                  value={form.credits || ""} 
-                  onChange={handleChange} 
-                  min="1" 
-                  max="10"
-                  className={`transition-colors ${errors.credits ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
-                />
-                {errors.credits && (
-                  <p className="text-red-500 text-xs flex items-center mt-1">
-                    <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
-                    {errors.credits}
-                  </p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Users size={16} className="mr-2 text-blue-600" />
-                  Max Students
-                  <span className="text-red-500 ml-1">*</span>
-                </label>
-                <Input 
-                  name="maxStudents" 
-                  type="number" 
-                  placeholder="30" 
-                  value={form.maxStudents || ""} 
-                  onChange={handleChange} 
-                  min="1" 
-                  max="500"
-                  className={`transition-colors ${errors.maxStudents ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
-                />
-                {errors.maxStudents && (
-                  <p className="text-red-500 text-xs flex items-center mt-1">
-                    <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
-                    {errors.maxStudents}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {/* Description */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <FileText size={16} className="mr-2 text-blue-600" />
-                Description
-                <span className="text-gray-400 ml-2 text-xs">(Optional)</span>
-              </label>
-              <textarea
-                name="description"
-                placeholder="Provide a brief description of the course content and objectives..."
-                value={form.description || ""}
-                onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:border-blue-500 focus:outline-none transition-colors"
-                rows={4}
-              />
-            </div>
-          </form>
-        </div>
-        
-        {/* Footer */}
-        <div className="border-t bg-gray-50 px-6 py-4">
-          <div className="flex justify-end space-x-3">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onClose}
-              className="px-6"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="px-6 bg-blue-600 hover:bg-blue-700"
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Creating...
-                </div>
-              ) : (
-                <div className="flex items-center">
+        {/* Form Content với Footer bên trong */}
+        <form onSubmit={handleSubmit} className="flex flex-col h-[calc(90vh-120px)]">
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="space-y-6">
+              {/* Course Information */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                   <BookOpen size={16} className="mr-2" />
-                  Create Course
+                  Course Information
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* Course Name */}
+                  <div className="space-y-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700">
+                      <BookOpen size={14} className="mr-2 text-blue-600" />
+                      Course Name
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <Input 
+                      name="courseName" 
+                      placeholder="e.g., Introduction to Computer Science" 
+                      value={form.courseName} 
+                      onChange={handleChange}
+                      className={`transition-colors ${errors.courseName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                    />
+                    {errors.courseName && (
+                      <p className="text-red-500 text-xs flex items-center mt-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
+                        {errors.courseName}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Course Type Dropdown */}
+                  <div className="space-y-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700">
+                      <Hash size={14} className="mr-2 text-blue-600" />
+                      Course Type
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <div className="relative">
+                      <label htmlFor="courseTypeId" className="sr-only">Course type</label>
+                      <select
+                        id="courseTypeId"
+                        name="courseTypeId"
+                        value={form.courseTypeId || ""}
+                        onChange={handleChange}
+                        disabled={loadingCourseTypes}
+                        className={`w-full p-3 border rounded-lg appearance-none bg-white transition-colors ${
+                          errors.courseTypeId ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
+                        } ${loadingCourseTypes ? 'opacity-50' : ''}`}
+                      >
+                        <option value="">
+                          {loadingCourseTypes ? "Loading course types..." : "Select course type"}
+                        </option>
+                        {courseTypes.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.courseTypeName}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                        size={16}
+                      />
+                    </div>
+                    {errors.courseTypeId && (
+                      <p className="text-red-500 text-xs flex items-center mt-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
+                        {errors.courseTypeId}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
-            </Button>
+              </div>
+
+              {/* Course Details */}
+              <div className="bg-green-50 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                  <Users size={16} className="mr-2" />
+                  Course Details
+                </h3>
+                
+                {/* Credits and Max Students Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700">
+                      <Clock size={14} className="mr-2 text-green-600" />
+                      Credits
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <Input 
+                      name="credits" 
+                      type="number" 
+                      placeholder="3" 
+                      value={form.credits || ""} 
+                      onChange={handleChange} 
+                      min="1" 
+                      max="10"
+                      className={`transition-colors ${errors.credits ? 'border-red-500 focus:border-red-500' : 'focus:border-green-500'}`}
+                    />
+                    {errors.credits && (
+                      <p className="text-red-500 text-xs flex items-center mt-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
+                        {errors.credits}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700">
+                      <Users size={14} className="mr-2 text-green-600" />
+                      Max Students
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <Input 
+                      name="maxStudents" 
+                      type="number" 
+                      placeholder="30" 
+                      value={form.maxStudents || ""} 
+                      onChange={handleChange} 
+                      min="1" 
+                      max="500"
+                      className={`transition-colors ${errors.maxStudents ? 'border-red-500 focus:border-red-500' : 'focus:border-green-500'}`}
+                    />
+                    {errors.maxStudents && (
+                      <p className="text-red-500 text-xs flex items-center mt-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
+                        {errors.maxStudents}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div className="bg-orange-50 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                  <FileText size={16} className="mr-2" />
+                  Additional Information
+                  <span className="text-gray-400 ml-2 text-xs">(Optional)</span>
+                </h3>
+                
+                {/* Description */}
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    <FileText size={14} className="mr-2 text-orange-600" />
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    placeholder="Provide a brief description of the course content and objectives..."
+                    value={form.description || ""}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:border-orange-500 focus:outline-none transition-colors"
+                    rows={4}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+          
+          {/* Footer - Moved inside form */}
+          <div className="border-t bg-gray-50 px-6 py-4 mt-auto">
+            <div className="flex justify-end space-x-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Creating...
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <BookOpen size={16} className="mr-2" />
+                    Create Course
+                  </div>
+                )}
+              </Button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -1,11 +1,5 @@
 package com.hoangphihiep.entity;
 
-import com.hoangphihiep.entity.Course;
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.LocalDateTime;
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,11 +25,16 @@ public class CourseEnrollment implements Serializable {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
+    @ManyToOne
+    @JoinColumn(name = "class_id", nullable = false)
+    private CourseClass courseClass;
+
     @Column(name = "student_id", nullable = false)
     private String studentId;
 
     @Column(name = "enrolled_by")
     private String enrolledBy;
+
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "enrolled_at")
     private Date enrolledAt;
@@ -52,5 +51,4 @@ public class CourseEnrollment implements Serializable {
 
     @Column(name = "points")
     private Double points;
-
 }

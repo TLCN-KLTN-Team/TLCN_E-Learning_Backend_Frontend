@@ -44,4 +44,9 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     List<Student> findByClassName(String className);
 
     List<Student> findByIdEducationalAndClassName(int educationalUnitId, String className);
+    List<Student> findByIdEducational(int educationalUnitId);
+
+    // Alternative with sorting - you can choose one based on your needs
+    @Query("SELECT s FROM Student s WHERE s.idEducational = :institutionId ORDER BY s.studentId ASC")
+    List<Student> findAllByInstitutionSorted(@Param("institutionId") int institutionId);
 }

@@ -4,6 +4,8 @@ import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.SectionResponse;
 import com.hoangphihiep.dto.response.TeacherResponse;
+import com.hoangphihiep.exception.AppException;
+import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -18,20 +21,58 @@ import java.util.List;
 public class TeacherService {
 
     private final TeacherRepository teacherRepository;
+    private final EmailService emailService;
 
     public TeacherResponse createTeacher(TeacherRequest request) {
         log.info("Creating new teacher with username: {}", request.getUsername());
         validateTeacherRequest(request);
 
-        log.debug("Calling identity service to create teacher: {}", request);
-        ApiResponse<TeacherResponse> response = teacherRepository.createTeacher(request);
+        // Store original password before it gets hashed
+        String originalPassword = request.getPassword();
 
-        if (response.getResult() == null) {
-            throw new RuntimeException("Failed to create teacher: " + request.getUsername());
+        try {
+            log.debug("Calling identity service to create teacher: {}", request);
+            ApiResponse<TeacherResponse> response = teacherRepository.createTeacher(request);
+
+            if (response.getResult() == null) {
+                log.error("Identity service returned null result for teacher creation: {}", request.getUsername());
+                throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
+            }
+
+            TeacherResponse teacherResponse = response.getResult();
+            log.info("Successfully created teacher with ID: {}", teacherResponse.getId());
+
+            // Send email with credentials asynchronously
+            CompletableFuture<Boolean> emailFuture = emailService.sendAccountCredentialsAsync(
+                    teacherResponse.getEmail(),
+                    teacherResponse.getFirstName(),
+                    teacherResponse.getLastName(),
+                    teacherResponse.getUsername(),
+                    originalPassword,
+                    "Teacher"
+            );
+
+            // Handle email result asynchronously
+            emailFuture.whenComplete((emailSent, emailError) -> {
+                if (emailError != null) {
+                    log.error("Failed to send account credentials email to teacher {}: {}",
+                            teacherResponse.getEmail(), emailError.getMessage(), emailError);
+                } else if (emailSent) {
+                    log.info("Account credentials email sent successfully to teacher: {}", teacherResponse.getEmail());
+                } else {
+                    log.warn("Account credentials email sending failed for teacher: {}", teacherResponse.getEmail());
+                }
+            });
+
+            return teacherResponse;
+
+        } catch (AppException e) {
+            log.error("App exception while creating teacher {}: {}", request.getUsername(), e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error creating teacher {}: {}", request.getUsername(), e.getMessage(), e);
+            throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
         }
-
-        log.info("Successfully created teacher with ID: {}", response.getResult().getId());
-        return response.getResult();
     }
 
     public TeacherResponse getTeacherByTeacherId(String teacherId) {
