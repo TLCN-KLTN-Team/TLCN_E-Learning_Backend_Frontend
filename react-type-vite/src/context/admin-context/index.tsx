@@ -132,6 +132,32 @@ export interface EducationalUnitResponse {
   courses?: Set<CourseResponse>;
 }
 
+export interface CourseClassRequest {
+  className: string;
+  classCode: string;
+  courseId: number;
+  maxStudents: number;
+  startDate?: Date;
+  endDate?: Date;
+  description?: string;
+}
+
+export interface CourseClassResponse {
+  id: number;
+  className: string;
+  classCode: string;
+  courseId: number;
+  courseName: string;
+  maxStudents: number;
+  currentStudents: number;
+  startDate?: Date;
+  endDate?: Date;
+  status: string;
+  description?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface PaginatedResponse<T> {
   content: T[];
   totalElements: number;
@@ -163,7 +189,6 @@ export interface AdminContextType {
   getCourses: (page?: number, size?: number) => Promise<PaginatedResponse<CourseResponse>>;
   assignTeacherToCourse: (courseId: number, teacherId: string) => Promise<CourseResponse>;
   removeTeacherFromCourse: (courseId: number) => Promise<CourseResponse>;
-  enrollStudentsToCourse: (courseId: number, studentIds: string[]) => Promise<void>;
   updateCourse: (courseId: number, courseData: Partial<CourseRequest>) => Promise<CourseResponse>;
   deleteCourse: (courseId: number) => Promise<void>;
   
@@ -172,6 +197,19 @@ export interface AdminContextType {
   
   // Department functions
   getDepartmentsByInstitution: (page?: number, size?: number, search?: string) => Promise<PaginatedResponse<DepartmentResponse>>;
+  
+  // Class functions
+  createClass: (classData: CourseClassRequest) => Promise<CourseClassResponse>;
+  getClassesByCourse: (courseId: number, page?: number, size?: number) => Promise<PaginatedResponse<CourseClassResponse>>;
+  getClassesByInstitution: (page?: number, size?: number, search?: string) => Promise<PaginatedResponse<CourseClassResponse>>;
+  updateClass: (classId: number, classData: Partial<CourseClassRequest>) => Promise<CourseClassResponse>;
+  deleteClass: (classId: number) => Promise<void>;
+  
+  // Class enrollment functions
+  enrollStudentsToClass: (classId: number, studentIds: string[]) => Promise<void>;
+  getStudentsInClass: (classId: number) => Promise<StudentResponse[]>;
+  getAvailableStudentsForClass: (classId: number) => Promise<StudentResponse[]>;
+  unenrollStudentFromClass: (classId: number, studentId: string) => Promise<void>;
   // Loading state
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
@@ -352,16 +390,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       'Failed to remove teacher'
     );
   };
-
-  const enrollStudentsToCourse = async (courseId: number, studentIds: string[]): Promise<void> => {
-    if (!institutionId) throw new Error('Institution ID not available');
-    return handleApiCall(
-      () => adminApi.enrollStudentsToCourse(institutionId, courseId, studentIds),
-      'Students enrolled successfully!',
-      'Failed to enroll students'
-    );
-  };
-
   const updateCourse = async (courseId: number, courseData: Partial<CourseRequest>): Promise<CourseResponse> => {
     if (!institutionId) throw new Error('Institution ID not available');
     return handleApiCall(
@@ -397,6 +425,88 @@ const getDepartmentsByInstitution = async (page?: number, size?: number, search?
   );
 };
 
+const createClass = async (classData: CourseClassRequest): Promise<CourseClassResponse> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.createClass(institutionId, classData),
+    'Class created successfully!',
+    'Failed to create class'
+  );
+};
+
+const getClassesByInstitution = async (page?: number, size?: number, search?: string): Promise<PaginatedResponse<CourseClassResponse>> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.getClassesByInstitution(institutionId, page, size, search),
+    undefined,
+    'Failed to fetch classes'
+  );
+};
+
+const getClassesByCourse = async (courseId: number, page?: number, size?: number): Promise<PaginatedResponse<CourseClassResponse>> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.getClassesByCourse(institutionId, courseId, page, size),
+    undefined,
+    'Failed to fetch classes for course'
+  );
+};
+
+const updateClass = async (classId: number, classData: Partial<CourseClassRequest>): Promise<CourseClassResponse> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.updateClass(institutionId, classId, classData),
+    'Class updated successfully!',
+    'Failed to update class'
+  );
+};
+
+const deleteClass = async (classId: number): Promise<void> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.deleteClass(institutionId, classId),
+    'Class deleted successfully!',
+    'Failed to delete class'
+  );
+};
+
+// Class enrollment functions
+const enrollStudentsToClass = async (classId: number, studentIds: string[]): Promise<void> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.enrollStudentsToClass(institutionId, classId, studentIds),
+    'Students enrolled to class successfully!',
+    'Failed to enroll students to class'
+  );
+};
+
+const getStudentsInClass = async (classId: number): Promise<StudentResponse[]> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.getStudentsInClass(institutionId, classId),
+    undefined,
+    'Failed to fetch students in class'
+  );
+};
+
+const getAvailableStudentsForClass = async (classId: number): Promise<StudentResponse[]> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.getAvailableStudentsForClass(institutionId, classId),
+    undefined,
+    'Failed to fetch available students for class'
+  );
+};
+
+const unenrollStudentFromClass = async (classId: number, studentId: string): Promise<void> => {
+  if (!institutionId) throw new Error('Institution ID not available');
+  return handleApiCall(
+    () => adminApi.unenrollStudentFromClass(institutionId, classId, studentId),
+    'Student removed from class successfully!',
+    'Failed to remove student from class'
+  );
+};
+
   const value: AdminContextType = {
     // Institution
     getMyInstitution,
@@ -420,7 +530,6 @@ const getDepartmentsByInstitution = async (page?: number, size?: number, search?
     getCourses,
     assignTeacherToCourse,
     removeTeacherFromCourse,
-    enrollStudentsToCourse,
     updateCourse,
     deleteCourse,
 
@@ -429,6 +538,19 @@ const getDepartmentsByInstitution = async (page?: number, size?: number, search?
   
     // Department functions  
     getDepartmentsByInstitution,
+    
+    // Class functions
+    createClass,
+    getClassesByInstitution,
+    getClassesByCourse,
+    updateClass,
+    deleteClass,
+    
+    // Class enrollment functions
+    enrollStudentsToClass,
+    getStudentsInClass,
+    getAvailableStudentsForClass,
+    unenrollStudentFromClass,
     
     // Loading state
     isLoading,
