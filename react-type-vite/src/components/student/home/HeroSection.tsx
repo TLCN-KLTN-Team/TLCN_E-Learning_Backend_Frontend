@@ -4,7 +4,6 @@ import element05 from "@/assets/images/element/05.svg";
 import {
   heroTitleVariant,
   heroSubtitleVariant,
-  heroButtonVariant,
   heroImageVariant,
   staggerContainerVariant,
 } from "@/motion/variants";
