@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/students")
 @RequiredArgsConstructor
@@ -53,6 +55,15 @@ public class StudentController {
 
         return ApiResponse.<Page<StudentResponse>>builder()
                 .result(studentService.getStudentsByInstitution(institutionId, search, pageable))
+                .build();
+    }
+
+    @GetMapping("/all-by-institution/{institutionId}")
+    public ApiResponse<List<StudentResponse>> getAllStudentsByInstitution(@PathVariable int institutionId) {
+        log.info("Getting all students for institution: {}", institutionId);
+
+        return ApiResponse.<List<StudentResponse>>builder()
+                .result(studentService.getAllStudentsByInstitution(institutionId))
                 .build();
     }
 }

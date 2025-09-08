@@ -22,6 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -82,5 +84,15 @@ public class StudentService {
         }
 
         return students.map(studentMapper::toStudentResponse);
+    }
+
+    public List<StudentResponse> getAllStudentsByInstitution(int institutionId) {
+        log.info("Getting all students for institution: {}", institutionId);
+
+        List<Student> students = studentRepository.findByIdEducational(institutionId);
+
+        return students.stream()
+                .map(studentMapper::toStudentResponse)
+                .collect(Collectors.toList());
     }
 }

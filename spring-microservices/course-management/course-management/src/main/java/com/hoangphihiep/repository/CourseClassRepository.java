@@ -1,0 +1,27 @@
+package com.hoangphihiep.repository;
+
+import com.hoangphihiep.entity.CourseClass;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface CourseClassRepository extends JpaRepository<CourseClass, Long> {
+
+    Page<CourseClass> findByCourseId(Integer courseId, Pageable pageable);
+
+    List<CourseClass> findByCourseId(Integer courseId);
+
+    boolean existsByClassCode(String classCode);
+
+    @Query("SELECT cc FROM CourseClass cc WHERE cc.course.institution.id = :institutionId " +
+            "AND (:search IS NULL OR cc.className LIKE %:search% OR cc.classCode LIKE %:search%)")
+    Page<CourseClass> findByInstitutionIdWithSearch(@Param("institutionId") Integer institutionId,
+                                                    @Param("search") String search,
+                                                    Pageable pageable);
+}
