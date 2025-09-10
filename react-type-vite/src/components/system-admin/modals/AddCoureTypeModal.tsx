@@ -109,7 +109,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
               <BookOpen className="w-5 h-5 text-purple-600" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900">
-              {onUpdate ? "Cập nhật danh mục" : "Thêm danh mục mới"}
+              Thêm danh mục mới
             </h2>
           </div>
           <button
@@ -134,14 +134,14 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
               type="text"
               id="name"
               name="name"
-              value={formData.name}
+              value={onUpdate?.courseTypeName || formData.name}
               onChange={handleInputChange}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
                 errors.name
                   ? "border-red-500 focus:ring-red-500"
                   : "border-gray-300"
               }`}
-              placeholder={onUpdate?.courseTypeName || "Nhập tên danh mục..."}
+              placeholder="Nhập tên danh mục..."
             />
             {errors.name && (
               <p className="mt-1 text-sm text-red-600">{errors.name}</p>
@@ -159,7 +159,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
             <textarea
               id="description"
               name="description"
-              value={formData.description}
+              value={onUpdate?.description || formData.description}
               onChange={handleInputChange}
               rows={4}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors resize-none ${
@@ -167,9 +167,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
                   ? "border-red-500 focus:ring-red-500"
                   : "border-gray-300"
               }`}
-              placeholder={
-                onUpdate?.description || "Nhập mô tả cho danh mục..."
-              }
+              placeholder="Nhập mô tả cho danh mục..."
             />
             {errors.description && (
               <p className="mt-1 text-sm text-red-600">{errors.description}</p>
@@ -191,7 +189,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
             onClick={handleSubmit}
             className="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded-lg transition-colors"
           >
-            {onUpdate ? "Cập nhật danh mục" : "Thêm danh mục"}
+            Thêm danh mục
           </button>
         </div>
       </div>
