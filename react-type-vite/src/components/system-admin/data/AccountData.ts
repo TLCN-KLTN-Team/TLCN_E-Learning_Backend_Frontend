@@ -27,11 +27,11 @@ export const ROLE_CONFIG = {
 
 // Filter Options
 export const ROLE_FILTER_OPTIONS = [
-  { value: "USER", label: "Tất cả vai trò" },
+  { value: "all", label: "Tất cả vai trò" },
   { value: "SYSTEM_ADMIN", label: "Quản trị hệ thống" },
-  { value: "ADMIN", label: "Quản lý đơn vị" },
+  { value: "UNIT_ADMIN", label: "Quản lý đơn vị" },
   { value: "TEACHER", label: "Giảng viên" },
-  { value: "STUDENT", label: "Sinh viên" },
+  { value: "STUDENT", label: "Học viên" },
 ];
 
 // Status Configuration
@@ -121,7 +121,7 @@ export const filterAccountsByRole = (
   accounts: UserResponse[],
   selectedRole: string
 ): UserResponse[] => {
-  return selectedRole === "USER"
+  return selectedRole === "all"
     ? accounts
     : accounts.filter((account) => account.roles.includes(selectedRole));
 };
