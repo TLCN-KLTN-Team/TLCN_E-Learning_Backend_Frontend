@@ -33,4 +33,8 @@ build/
 .vscode/
 
 ### environments ###
+
 .env
+.env.local
+.env.production
+.env.staging
