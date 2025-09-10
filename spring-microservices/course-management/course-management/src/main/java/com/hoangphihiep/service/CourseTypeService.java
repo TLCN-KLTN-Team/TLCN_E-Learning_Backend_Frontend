@@ -36,6 +36,7 @@ public class CourseTypeService {
         Pageable pageable = PageRequest.of(page, size);
         Page<CourseType> courseTypes = courseTypeRepository.findAll(pageable);
         List<CourseTypeResponse> courseTypeResponses = courseTypes.stream()
+                .filter(ct -> !ct.isDeleted())
                 .map(ct -> {
                     CourseTypeResponse response = courseTypeMapper.toCourseTypeResponse(ct);
                     response.setNumberOfType(ct.getCourses().size());
@@ -90,12 +91,13 @@ public class CourseTypeService {
     }
 
     @Transactional
-    public void deleteCourseType(Integer id){
+    public void disableCourseType(Integer id){
         try{
             CourseType existingCourseType = courseTypeRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
+            existingCourseType.setDeleted(true);
 
-            courseTypeRepository.delete(existingCourseType);
+            courseTypeRepository.save(existingCourseType);
         } catch (Exception e) {
             throw e;
         }

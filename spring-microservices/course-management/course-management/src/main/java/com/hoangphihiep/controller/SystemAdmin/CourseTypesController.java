@@ -52,14 +52,14 @@ public class CourseTypesController {
         );
     }
 
-    @DeleteMapping("/{id}/delete")
+    @PutMapping("/{id}/disable")
     public ApiResponse<String> deleteCourseType(
             @PathVariable Integer id
     ) {
-        courseTypeService.deleteCourseType(id);
+        courseTypeService.disableCourseType(id);
         return ApiResponse.success(
                 null,
-                "Deleted course type successfully"
+                "Disable course type successfully"
         );
     }
 }

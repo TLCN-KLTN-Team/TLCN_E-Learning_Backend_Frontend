@@ -10,6 +10,7 @@
         <option value="$PROJECT_DIR$/profile-service/pom.xml" />
         <option value="$PROJECT_DIR$/course-management/course-management/pom.xml" />
         <option value="$PROJECT_DIR$/chat-service/pom.xml" />
+        <option value="$PROJECT_DIR$/file-handler/pom.xml" />
       </list>
     </option>
   </component>
