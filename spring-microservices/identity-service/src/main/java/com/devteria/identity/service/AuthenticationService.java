@@ -46,7 +46,7 @@ public class AuthenticationService {
     InvalidatedTokenRepository invalidatedTokenRepository;
     OutboundAuthenticationClient outboundAuthenticationClient;
     OutboundUserInfoClient outboundUserInfoClient;
-    PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @NonFinal
     @Value("${jwt.signerKey}")

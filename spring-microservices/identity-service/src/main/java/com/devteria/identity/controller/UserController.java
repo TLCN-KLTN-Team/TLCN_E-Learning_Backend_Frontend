@@ -2,6 +2,7 @@ package com.devteria.identity.controller;
 
 import java.util.List;
 
+import com.devteria.identity.dto.request.ChangePasswordRequest;
 import com.devteria.identity.dto.response.PaginatedResponse;
 import jakarta.validation.Valid;
 
@@ -78,6 +79,24 @@ public class UserController {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.updateUser(userId, request))
                 .build();
+    }
+
+    @PutMapping("/update-profile")
+    ApiResponse<Void> updateProfileSuperAdmin(@RequestBody UserUpdateRequest request) {
+        userService.updateProfileSuperAdmin(request);
+        return ApiResponse.<Void>success(
+                null,
+                "Profile updated successfully"
+        );
+    }
+
+    @PutMapping("/change-password")
+    ApiResponse<Void> changePassword(@RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request);
+        return ApiResponse.<Void>success(
+                null,
+                "Password changed successfully"
+        );
     }
 
     //    @PutMapping("/roles")

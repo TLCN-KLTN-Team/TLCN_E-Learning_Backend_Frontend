@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.devteria.identity.dto.request.ChangePasswordRequest;
 import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.response.PaginatedResponse;
 import com.devteria.identity.entity.AccountStatus;
@@ -92,9 +93,9 @@ public class UserService {
 
     public UserResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
-        String name = context.getAuthentication().getName();
+        String id = context.getAuthentication().getName();
 
-        User user = userRepository.findById(name).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         UserResponse response = userMapper.toUserResponse(user);
         response.setRoles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
@@ -115,6 +116,32 @@ public class UserService {
         user.setRoles(new HashSet<>(roles));
 
         return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void updateProfileSuperAdmin(UserUpdateRequest request){
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User updatedUser = userMapper.updateUser(user, request);
+
+        // handle file to avatarUrl
+        userRepository.save(updatedUser);
+    }
+
+    public void changePassword(ChangePasswordRequest request) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
+        }
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_OLD_INCORRECT);
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     //    @PreAuthorize("hasRole('ADMIN')")
