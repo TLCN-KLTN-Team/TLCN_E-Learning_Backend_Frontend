@@ -82,7 +82,14 @@ public enum ErrorCode {
 
     // Role Management Errors (ROLE_xxxx)
     ROLE_NOT_FOUND("ROLE_7001", "Không tìm thấy vai trò", HttpStatus.NOT_FOUND),
-    ROLE_ALREADY_EXISTS("ROLE_7002", "Vai trò đã tồn tại", HttpStatus.BAD_REQUEST);
+    ROLE_ALREADY_EXISTS("ROLE_7002", "Vai trò đã tồn tại", HttpStatus.BAD_REQUEST),
+
+    // CREDENTIALS
+    PASSWORD_OLD_INCORRECT("CREDENTIAL_2001", "Mật khẩu cũ không chính xác", HttpStatus.BAD_REQUEST),
+    PASSWORD_CONFIRM_MISMATCH("CREDENTIAL_2002", "Mật khẩu và xác nhận mật khẩu không khớp", HttpStatus.BAD_REQUEST),
+
+
+    ;
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {
         this.code = code;

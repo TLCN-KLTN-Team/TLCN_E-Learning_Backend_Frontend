@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Trash2, BookOpen } from "lucide-react";
+import { Users, UserPlus, Trash2, BookOpen, School, Calendar, TrendingUp } from "lucide-react";
 import CourseFormModal from "@/components/admin/course/CourseFormModal";
 import AssignTeacherModal from "@/components/admin/course/AssignTeacherModal";
-import EnrollStudentsModal from "@/components/admin/course/EnrollStudentsModal";
+import ClassManagementModal from "@/components/admin/course/ClassManagementModal";
 import { useAdmin } from "@/context/admin-context";
 import type { CourseResponse } from "@/context/admin-context";
 
@@ -13,15 +13,22 @@ const CourseListPage: React.FC = () => {
     deleteCourse, 
     institutionId, 
     isInstitutionLoading,
-    currentInstitution 
+    currentInstitution,
+    getClassesByCourse
   } = useAdmin();
   
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [showAssignTeacher, setShowAssignTeacher] = useState(false);
-  const [showEnrollStudents, setShowEnrollStudents] = useState(false);
+  const [showClassManagement, setShowClassManagement] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [classStats, setClassStats] = useState<Record<number, { 
+    totalClasses: number, 
+    totalStudents: number,
+    activeClasses: number,
+    capacity: number 
+  }>>({});
 
   const loadCourses = async () => {
     if (!institutionId) return;
@@ -29,12 +36,39 @@ const CourseListPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await getCourses();
-      setCourses(response.content || []);
+      const coursesData = response.content || [];
+      setCourses(coursesData);
+      
+      // Load detailed class statistics for each course
+      await loadClassStats(coursesData);
     } catch (error) {
       console.error('Error loading courses:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadClassStats = async (coursesData: CourseResponse[]) => {
+    const stats: Record<number, { totalClasses: number, totalStudents: number, activeClasses: number, capacity: number }> = {};
+    
+    for (const course of coursesData) {
+      try {
+        const classResponse = await getClassesByCourse(course.id);
+        const classes = classResponse.content || [];
+        
+        stats[course.id] = {
+          totalClasses: classes.length,
+          totalStudents: classes.reduce((sum, cls) => sum + (cls.currentStudents || 0), 0),
+          activeClasses: classes.filter(cls => cls.status === 'ACTIVE').length,
+          capacity: classes.reduce((sum, cls) => sum + cls.maxStudents, 0)
+        };
+      } catch (error) {
+        console.error(`Error loading class stats for course ${course.id}:`, error);
+        stats[course.id] = { totalClasses: 0, totalStudents: 0, activeClasses: 0, capacity: 0 };
+      }
+    }
+    
+    setClassStats(stats);
   };
 
   useEffect(() => {
@@ -44,7 +78,7 @@ const CourseListPage: React.FC = () => {
   }, [institutionId]);
 
   const handleSuccess = () => {
-    loadCourses(); // Reload courses after successful operations
+    loadCourses(); // Reload courses and stats after successful operations
     setSelectedCourse(null);
   };
 
@@ -53,13 +87,13 @@ const CourseListPage: React.FC = () => {
     setShowAssignTeacher(true);
   };
 
-  const handleEnrollStudents = (course: CourseResponse) => {
+  const handleManageClasses = (course: CourseResponse) => {
     setSelectedCourse(course);
-    setShowEnrollStudents(true);
+    setShowClassManagement(true);
   };
 
   const handleDeleteCourse = async (courseId: number, courseName: string) => {
-    if (window.confirm(`Are you sure you want to delete the course "${courseName}"? This action cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to delete the course "${courseName}"? This will also delete all classes and enrollments. This action cannot be undone.`)) {
       try {
         await deleteCourse(courseId);
         handleSuccess();
@@ -69,11 +103,21 @@ const CourseListPage: React.FC = () => {
     }
   };
 
-  const getStudentStatusColor = (current: number, max: number) => {
+  const getCapacityColor = (current: number, max: number) => {
+    if (max === 0) return "text-gray-500";
     const ratio = current / max;
     if (ratio >= 0.9) return "text-red-600 font-semibold";
     if (ratio >= 0.7) return "text-orange-600 font-medium";
     return "text-green-600";
+  };
+
+  const getCapacityBadge = (current: number, max: number) => {
+    if (max === 0) return { color: "gray", text: "No capacity" };
+    const ratio = current / max;
+    if (ratio >= 1) return { color: "red", text: "Full" };
+    if (ratio >= 0.9) return { color: "orange", text: "Almost full" };
+    if (ratio >= 0.7) return { color: "yellow", text: "High occupancy" };
+    return { color: "green", text: "Available" };
   };
 
   // Show loading state while institution is loading
@@ -119,6 +163,12 @@ const CourseListPage: React.FC = () => {
     );
   }
 
+  // Calculate overall statistics
+  const totalClasses = Object.values(classStats).reduce((sum, stat) => sum + stat.totalClasses, 0);
+  const totalStudents = Object.values(classStats).reduce((sum, stat) => sum + stat.totalStudents, 0);
+  const totalCapacity = Object.values(classStats).reduce((sum, stat) => sum + stat.capacity, 0);
+  const activeClasses = Object.values(classStats).reduce((sum, stat) => sum + stat.activeClasses, 0);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -129,7 +179,7 @@ const CourseListPage: React.FC = () => {
             Course Management
           </h1>
           <p className="text-gray-600 mt-1">
-            Manage courses for {currentInstitution?.name || 'your institution'}
+            Manage courses and classes for {currentInstitution?.name || 'your institution'}
           </p>
         </div>
         <Button 
@@ -141,8 +191,8 @@ const CourseListPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      {/* Enhanced Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -172,13 +222,12 @@ const CourseListPage: React.FC = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <UserPlus className="text-purple-600" size={24} />
+              <School className="text-purple-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Students</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {courses.reduce((sum, course) => sum + (course.currentStudents || 0), 0)}
-              </p>
+              <p className="text-sm font-medium text-gray-600">Active Classes</p>
+              <p className="text-2xl font-bold text-gray-900">{activeClasses}</p>
+              <p className="text-xs text-gray-500">of {totalClasses} total</p>
             </div>
           </div>
         </div>
@@ -186,16 +235,27 @@ const CourseListPage: React.FC = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-orange-100 rounded-lg">
-              <BookOpen className="text-orange-600" size={24} />
+              <UserPlus className="text-orange-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Avg. Capacity</p>
+              <p className="text-sm font-medium text-gray-600">Enrolled Students</p>
+              <p className="text-2xl font-bold text-gray-900">{totalStudents}</p>
+              <p className="text-xs text-gray-500">of {totalCapacity} capacity</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <div className="p-2 bg-cyan-100 rounded-lg">
+              <TrendingUp className="text-cyan-600" size={24} />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Utilization</p>
               <p className="text-2xl font-bold text-gray-900">
-                {courses.length > 0 
-                  ? Math.round((courses.reduce((sum, course) => sum + (course.currentStudents || 0), 0) / 
-                     courses.reduce((sum, course) => sum + (course.maxStudents || 0), 0)) * 100)
-                  : 0}%
+                {totalCapacity > 0 ? Math.round((totalStudents / totalCapacity) * 100) : 0}%
               </p>
+              <p className="text-xs text-gray-500">overall capacity</p>
             </div>
           </div>
         </div>
@@ -225,6 +285,9 @@ const CourseListPage: React.FC = () => {
                     Teacher
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Classes & Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Enrollment
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -236,101 +299,153 @@ const CourseListPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {courses.map((course) => (
-                  <tr key={course.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {course.courseName}
+                {courses.map((course) => {
+                  const stats = classStats[course.id] || { 
+                    totalClasses: 0, 
+                    totalStudents: 0, 
+                    activeClasses: 0,
+                    capacity: 0 
+                  };
+                  const capacityBadge = getCapacityBadge(stats.totalStudents, stats.capacity);
+                  
+                  return (
+                    <tr key={course.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 flex items-center">
+                            {course.courseName}
+                            {stats.totalClasses === 0 && (
+                              <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                                No classes
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {course.courseType?.courseTypeName || 'No type specified'}
+                          </div>
+                          {course.description && (
+                            <div className="text-xs text-gray-400 mt-1 max-w-xs truncate">
+                              {course.description}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {course.courseType?.courseTypeName || 'No type specified'}
-                        </div>
-                        {course.description && (
-                          <div className="text-xs text-gray-400 mt-1 max-w-xs truncate">
-                            {course.description}
+                      </td>
+                      <td className="px-6 py-4">
+                        {course.teacher ? (
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-blue-600 font-medium text-sm">
+                                {course.teacher.firstName[0]}{course.teacher.lastName[0]}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {course.teacher.firstName} {course.teacher.lastName}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                ID: {course.teacher.teacherId}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                              <Users className="w-4 h-4 text-gray-400" />
+                            </div>
+                            <span className="text-sm text-gray-500 italic">No teacher assigned</span>
                           </div>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {course.teacher ? (
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-blue-600 font-medium text-sm">
-                              {course.teacher.firstName[0]}{course.teacher.lastName[0]}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-900">
+                            {stats.totalClasses} classes
+                          </span>
+                          {stats.activeClasses < stats.totalClasses && (
+                            <span className="text-xs text-gray-500">
+                              ({stats.activeClasses} active)
                             </span>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {course.teacher.firstName} {course.teacher.lastName}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {course.teacher.teacherId}
-                            </div>
-                          </div>
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-sm text-gray-500 italic">No teacher assigned</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <span className={`text-sm font-medium ${
-                          getStudentStatusColor(course.currentStudents || 0, course.maxStudents || 1)
-                        }`}>
-                          {course.currentStudents || 0}/{course.maxStudents || 0}
+                        <div className="flex items-center mt-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            capacityBadge.color === 'red' ? 'bg-red-100 text-red-800' :
+                            capacityBadge.color === 'orange' ? 'bg-orange-100 text-orange-800' :
+                            capacityBadge.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                            capacityBadge.color === 'green' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {capacityBadge.text}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <span className={`text-sm font-medium ${getCapacityColor(stats.totalStudents, stats.capacity)}`}>
+                            {stats.totalStudents}
+                          </span>
+                          <span className="text-sm text-gray-500 ml-1">
+                            /{stats.capacity}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {stats.capacity === 0 ? 'No capacity set' : 
+                           `${stats.capacity - stats.totalStudents} slots available`}
+                        </div>
+                        {stats.capacity > 0 && (
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                            <div 
+                              className={`h-1.5 rounded-full ${
+                                stats.totalStudents >= stats.capacity ? 'bg-red-600' :
+                                stats.totalStudents / stats.capacity >= 0.9 ? 'bg-orange-500' :
+                                stats.totalStudents / stats.capacity >= 0.7 ? 'bg-yellow-500' :
+                                'bg-green-500'
+                              }`}
+                              style={{ 
+                                width: `${Math.min((stats.totalStudents / stats.capacity) * 100, 100)}%` 
+                              }}
+                            ></div>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          {course.credits || 0} credits
                         </span>
-                        <div className="ml-2 w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 transition-all duration-300"
-                            style={{ 
-                              width: `${Math.min(100, ((course.currentStudents || 0) / (course.maxStudents || 1)) * 100)}%` 
-                            }}
-                          />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAssignTeacher(course)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Users size={14} className="mr-1" />
+                            Teacher
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleManageClasses(course)}
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                          >
+                            <School size={14} className="mr-1" />
+                            Classes
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteCourse(course.id, course.courseName)}
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
                         </div>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {Math.round(((course.currentStudents || 0) / (course.maxStudents || 1)) * 100)}% full
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {course.credits || 0} credits
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAssignTeacher(course)}
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                        >
-                          <Users size={14} className="mr-1" />
-                          Teacher
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEnrollStudents(course)}
-                          className="text-green-600 border-green-200 hover:bg-green-50"
-                        >
-                          <UserPlus size={14} className="mr-1" />
-                          Students
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteCourse(course.id, course.courseName)}
-                          className="text-red-600 border-red-200 hover:bg-red-50"
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -353,9 +468,9 @@ const CourseListPage: React.FC = () => {
         onSuccess={handleSuccess}
       />
 
-      <EnrollStudentsModal
-        isOpen={showEnrollStudents}
-        onClose={() => setShowEnrollStudents(false)}
+      <ClassManagementModal
+        isOpen={showClassManagement}
+        onClose={() => setShowClassManagement(false)}
         course={selectedCourse}
         institutionId={institutionId}
         onSuccess={handleSuccess}

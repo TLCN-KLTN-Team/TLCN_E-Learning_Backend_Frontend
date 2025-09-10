@@ -128,6 +128,17 @@ public enum ErrorCode {
     FIELD_VALUE_TOO_LONG(2704, "Giá trị trường quá dài", HttpStatus.BAD_REQUEST),
     FIELD_VALUE_TOO_SHORT(2705, "Giá trị trường quá ngắn", HttpStatus.BAD_REQUEST),
 
+    // Class related errors (29xx)
+    CLASS_NOT_FOUND(2901, "Không tìm thấy lớp học", HttpStatus.NOT_FOUND),
+    CLASS_CODE_ALREADY_EXISTS(2902, "Mã lớp học đã tồn tại", HttpStatus.CONFLICT),
+    CLASS_NAME_REQUIRED(2903, "Tên lớp học không được để trống", HttpStatus.BAD_REQUEST),
+    CLASS_CODE_REQUIRED(2904, "Mã lớp học không được để trống", HttpStatus.BAD_REQUEST),
+    CLASS_MAX_STUDENTS_INVALID(2905, "Số lượng sinh viên tối đa phải lớn hơn 0", HttpStatus.BAD_REQUEST),
+    CLASS_HAS_ENROLLED_STUDENTS(2906, "Không thể xóa lớp học vì có sinh viên đang học", HttpStatus.CONFLICT),
+    CLASS_CAPACITY_EXCEEDED(2907, "Vượt quá sức chứa tối đa của lớp học", HttpStatus.BAD_REQUEST),
+    CLASS_ENROLLMENT_FAILED(2908, "Không thể ghi danh sinh viên vào lớp học", HttpStatus.BAD_REQUEST),
+    CLASS_STUDENT_NOT_ENROLLED(2909, "Sinh viên chưa được ghi danh vào lớp học này", HttpStatus.BAD_REQUEST),
+
     // Course Enrollment related errors (28xx)
     ENROLLMENT_NOT_FOUND(2801, "Không tìm thấy thông tin ghi danh", HttpStatus.NOT_FOUND),
     COURSE_ENROLLMENT_NOT_FOUND(2802, "Không tìm thấy thông tin ghi danh khóa học", HttpStatus.NOT_FOUND),
@@ -139,8 +150,6 @@ public enum ErrorCode {
     COURSE_ENROLLMENT_BATCH_SIZE_EXCEEDED(2808, "Vượt quá giới hạn số lượng ghi danh theo lô", HttpStatus.BAD_REQUEST),
     COURSE_ENROLLMENT_MISMATCH(2809, "Thông tin ghi danh không thuộc về khóa học được chỉ định", HttpStatus.BAD_REQUEST),
     COURSE_UNENROLLMENT_FAILED(2810, "Không thể hủy ghi danh sinh viên khỏi khóa học", HttpStatus.BAD_REQUEST);
-
-    //
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;

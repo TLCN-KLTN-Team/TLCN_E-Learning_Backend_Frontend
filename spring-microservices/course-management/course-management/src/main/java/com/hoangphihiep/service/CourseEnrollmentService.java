@@ -1,14 +1,12 @@
 package com.hoangphihiep.service;
 
-import com.hoangphihiep.dto.request.CourseEnrollmentRequest;
 import com.hoangphihiep.dto.response.*;
-import com.hoangphihiep.entity.Course;
+import com.hoangphihiep.entity.CourseClass;
 import com.hoangphihiep.entity.CourseEnrollment;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
-import com.hoangphihiep.mapper.CourseEnrollmentMapper;
+import com.hoangphihiep.repository.CourseClassRepository;
 import com.hoangphihiep.repository.CourseEnrollmentRepository;
-import com.hoangphihiep.repository.CourseRepository;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,29 +24,27 @@ import java.util.stream.Collectors;
 public class CourseEnrollmentService {
 
     private final CourseEnrollmentRepository enrollmentRepository;
-    private final CourseRepository courseRepository;
+    private final CourseClassRepository classRepository;
     private final StudentRepository studentRepository;
-    private final CourseEnrollmentMapper enrollmentMapper;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
-    private static final String ENROLLMENT_STATUS_DROPPED = "DROPPED";
 
     /**
-     * Enroll multiple students to a course
+     * Enroll multiple students to a class
      */
     @Transactional
-    public void enrollStudentsToCourse(int courseId, List<String> studentIds) {
-        validateEnrollmentRequest(courseId, studentIds);
+    public void enrollStudentsToClass(Long classId, List<String> studentIds) {
+        validateEnrollmentRequest(classId, studentIds);
 
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+        CourseClass courseClass = classRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
         // Validate students exist and belong to the same institution
-        List<StudentResponse> validStudents = validateStudentsForEnrollment(studentIds, course.getInstitution().getId());
+        List<StudentResponse> validStudents = validateStudentsForEnrollment(studentIds, courseClass.getCourse().getInstitution().getId());
 
         // Check current enrollment count
-        int currentEnrollmentCount = enrollmentRepository.countByCourseId(courseId);
-        int availableSlots = course.getMaxStudents() - currentEnrollmentCount;
+        int currentEnrollmentCount = courseClass.getCurrentStudents();
+        int availableSlots = courseClass.getMaxStudents() - currentEnrollmentCount;
 
         if (studentIds.size() > availableSlots) {
             throw new AppException(ErrorCode.COURSE_ENROLLMENT_CAPACITY_EXCEEDED);
@@ -56,7 +52,7 @@ public class CourseEnrollmentService {
 
         // Filter out already enrolled students
         List<String> studentsToEnroll = studentIds.stream()
-                .filter(studentId -> !enrollmentRepository.existsByCourseIdAndStudentId(courseId, studentId))
+                .filter(studentId -> !enrollmentRepository.existsByClassIdAndStudentId(classId, studentId))
                 .collect(Collectors.toList());
 
         if (studentsToEnroll.isEmpty()) {
@@ -68,7 +64,8 @@ public class CourseEnrollmentService {
             List<CourseEnrollment> enrollments = studentsToEnroll.stream()
                     .map(studentId -> {
                         CourseEnrollment enrollment = new CourseEnrollment();
-                        enrollment.setCourse(course);
+                        enrollment.setCourse(courseClass.getCourse());
+                        enrollment.setCourseClass(courseClass);
                         enrollment.setStudentId(studentId);
                         enrollment.setEnrolledAt(new Date());
                         enrollment.setStatus(ENROLLMENT_STATUS_ACTIVE);
@@ -78,62 +75,27 @@ public class CourseEnrollmentService {
 
             enrollmentRepository.saveAll(enrollments);
 
-            // Update course current students count
-            course.setCurrentStudents(currentEnrollmentCount + studentsToEnroll.size());
-            courseRepository.save(course);
+            // Update class current students count
+            courseClass.setCurrentStudents(currentEnrollmentCount + studentsToEnroll.size());
+            classRepository.save(courseClass);
 
-            log.info("Successfully enrolled {} students to course {}", studentsToEnroll.size(), courseId);
+            log.info("Successfully enrolled {} students to class {}", studentsToEnroll.size(), classId);
 
         } catch (Exception e) {
-            log.error("Error enrolling students to course {}: {}", courseId, e.getMessage(), e);
+            log.error("Error enrolling students to class {}: {}", classId, e.getMessage(), e);
             throw new AppException(ErrorCode.COURSE_ENROLLMENT_FAILED);
         }
     }
 
     /**
-     * Get enrollments for a specific course with pagination
+     * Get students enrolled in a class
      */
-    public Page<CourseEnrollmentResponse> getEnrollmentsByCourse(int courseId, Pageable pageable) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+    public List<StudentResponse> getStudentsInClass(Long classId) {
+        CourseClass courseClass = classRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
         try {
-            Page<CourseEnrollment> enrollmentPage = enrollmentRepository.findByCourseId(courseId, pageable);
-
-            return enrollmentPage.map(enrollment -> {
-                CourseEnrollmentResponse response = enrollmentMapper.toEnrollmentResponse(enrollment);
-
-                // Fetch student details
-                try {
-                    ApiResponse<StudentResponse> studentApiResponse = studentRepository.getStudentByStudentId(enrollment.getStudentId());
-                    if (studentApiResponse != null && studentApiResponse.getResult() != null) {
-                        StudentResponse student = studentApiResponse.getResult();
-                        response.setStudentName(student.getFirstName() + " " + student.getLastName());
-                    }
-                } catch (Exception e) {
-                    log.warn("Could not fetch student details for studentId: {} in course: {}",
-                            enrollment.getStudentId(), courseId, e);
-                    response.setStudentName("Unknown Student");
-                }
-
-                return response;
-            });
-
-        } catch (Exception e) {
-            log.error("Error fetching enrollments for course {}: {}", courseId, e.getMessage(), e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
-    /**
-     * Get students enrolled in a course
-     */
-    public List<StudentResponse> getStudentsInCourse(int courseId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
-
-        try {
-            List<String> studentIds = enrollmentRepository.findStudentIdsByCourseId(courseId);
+            List<String> studentIds = enrollmentRepository.findStudentIdsByClassId(classId);
 
             if (studentIds.isEmpty()) {
                 return new ArrayList<>();
@@ -155,117 +117,122 @@ public class CourseEnrollmentService {
             return students;
 
         } catch (Exception e) {
-            log.error("Error fetching students for course {}: {}", courseId, e.getMessage(), e);
+            log.error("Error fetching students for class {}: {}", classId, e.getMessage(), e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 
     /**
-     * Unenroll a student from a course
+     * Get available students for a class (not yet enrolled)
+     */
+    public List<StudentResponse> getAvailableStudentsForClass(Long classId, Integer institutionId) {
+        CourseClass courseClass = classRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        try {
+            // Get all students from the institution
+            ApiResponse<List<StudentResponse>> allStudentsResponse = studentRepository.getAllStudentsByInstitution(institutionId);
+
+            if (allStudentsResponse.getResult() == null) {
+                return new ArrayList<>();
+            }
+
+            List<StudentResponse> allStudents = allStudentsResponse.getResult();
+
+            // Get already enrolled student IDs for this class
+            List<String> enrolledStudentIds = enrollmentRepository.findStudentIdsByClassId(classId);
+
+            // Filter out already enrolled students
+            return allStudents.stream()
+                    .filter(student -> !enrolledStudentIds.contains(student.getId()))
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("Error getting available students for class {}: {}", classId, e.getMessage(), e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * Unenroll a student from a class
      */
     @Transactional
-    public void unenrollStudent(int courseId, String studentId) {
-        if (!enrollmentRepository.existsByCourseIdAndStudentId(courseId, studentId)) {
+    public void unenrollStudentFromClass(Long classId, String studentId) {
+        if (!enrollmentRepository.existsByClassIdAndStudentId(classId, studentId)) {
             throw new AppException(ErrorCode.COURSE_ENROLLMENT_NOT_FOUND);
         }
 
         try {
-            enrollmentRepository.deleteByCourseIdAndStudentId(courseId, studentId);
+            enrollmentRepository.deleteByClassIdAndStudentId(classId, studentId);
 
-            // Update course current students count
-            Course course = courseRepository.findById(courseId)
-                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+            // Update class current students count
+            CourseClass courseClass = classRepository.findById(classId)
+                    .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
-            int currentCount = enrollmentRepository.countByCourseId(courseId);
-            course.setCurrentStudents(currentCount);
-            courseRepository.save(course);
+            int currentCount = enrollmentRepository.countByClassId(classId);
+            courseClass.setCurrentStudents(currentCount);
+            classRepository.save(courseClass);
 
-            log.info("Successfully unenrolled student {} from course {}", studentId, courseId);
+            log.info("Successfully unenrolled student {} from class {}", studentId, classId);
 
         } catch (Exception e) {
-            log.error("Error unenrolling student {} from course {}: {}", studentId, courseId, e.getMessage(), e);
+            log.error("Error unenrolling student {} from class {}: {}", studentId, classId, e.getMessage(), e);
             throw new AppException(ErrorCode.COURSE_UNENROLLMENT_FAILED);
         }
-    }
-
-    /**
-     * Get enrollments for a specific student
-     */
-    public Page<CourseEnrollmentResponse> getEnrollmentsByStudent(String studentId, Pageable pageable) {
-        try {
-            // Verify student exists
-            ApiResponse<StudentResponse> studentApiResponse = studentRepository.getStudentByStudentId(studentId);
-            if (studentApiResponse == null || studentApiResponse.getResult() == null) {
-                throw new AppException(ErrorCode.STUDENT_NOT_FOUND);
-            }
-
-            Page<CourseEnrollment> enrollmentPage = enrollmentRepository.findByStudentId(studentId, pageable);
-
-            return enrollmentPage.map(enrollment -> {
-                CourseEnrollmentResponse response = enrollmentMapper.toEnrollmentResponse(enrollment);
-                response.setStudentName(studentApiResponse.getResult().getFirstName() + " " +
-                        studentApiResponse.getResult().getLastName());
-                return response;
-            });
-
-        } catch (Exception e) {
-            log.error("Error fetching enrollments for student {}: {}", studentId, e.getMessage(), e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
-    /**
-     * Check if a student is enrolled in a course
-     */
-    public boolean isStudentEnrolledInCourse(int courseId, String studentId) {
-        return enrollmentRepository.existsByCourseIdAndStudentId(courseId, studentId);
-    }
-
-    /**
-     * Get enrollment count for a course
-     */
-    public int getEnrollmentCountByCourse(int courseId) {
-        return enrollmentRepository.countByCourseId(courseId);
-    }
-
-    /**
-     * Get list of enrolled student IDs for a course
-     */
-    public List<String> getEnrolledStudentIds(int courseId) {
-        return enrollmentRepository.findStudentIdsByCourseId(courseId);
     }
 
     /**
      * Remove a specific enrollment by ID
      */
     @Transactional
-    public void removeEnrollment(Long enrollmentId, int courseId) {
+    public void removeEnrollment(Long enrollmentId, Long classId) {
         CourseEnrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_ENROLLMENT_NOT_FOUND));
 
         try {
             enrollmentRepository.delete(enrollment);
 
-            // Update course current students count
-            Course course = courseRepository.findById(courseId)
-                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+            // Update class current students count
+            CourseClass courseClass = classRepository.findById(classId)
+                    .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
-            int currentCount = enrollmentRepository.countByCourseId(courseId);
-            course.setCurrentStudents(currentCount);
-            courseRepository.save(course);
+            int currentCount = enrollmentRepository.countByClassId(classId);
+            courseClass.setCurrentStudents(currentCount);
+            classRepository.save(courseClass);
 
-            log.info("Successfully removed enrollment {} from course {}", enrollmentId, courseId);
+            log.info("Successfully removed enrollment {} from class {}", enrollmentId, classId);
 
         } catch (Exception e) {
-            log.error("Error removing enrollment {} from course {}: {}", enrollmentId, courseId, e.getMessage(), e);
+            log.error("Error removing enrollment {} from class {}: {}", enrollmentId, classId, e.getMessage(), e);
             throw new AppException(ErrorCode.COURSE_UNENROLLMENT_FAILED);
         }
     }
 
+    /**
+     * Check if a student is enrolled in a class
+     */
+    public boolean isStudentEnrolledInClass(Long classId, String studentId) {
+        return enrollmentRepository.existsByClassIdAndStudentId(classId, studentId);
+    }
+
+    /**
+     * Get enrollment count for a class
+     */
+    public int getEnrollmentCountByClass(Long classId) {
+        return enrollmentRepository.countByClassId(classId);
+    }
+
+    /**
+     * Get list of enrolled student IDs for a class
+     */
+    public List<String> getEnrolledStudentIds(Long classId) {
+        return enrollmentRepository.findStudentIdsByClassId(classId);
+    }
+
     // Private helper methods
 
-    private void validateEnrollmentRequest(int courseId, List<String> studentIds) {
-        if (courseId <= 0) {
+    private void validateEnrollmentRequest(Long classId, List<String> studentIds) {
+        if (classId == null || classId <= 0) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
