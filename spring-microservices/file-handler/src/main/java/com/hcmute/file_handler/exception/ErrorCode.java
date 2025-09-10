@@ -1,9 +1,8 @@
-package com.devteria.identity.exception;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
+package com.hcmute.file_handler.exception;
 
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 
 /**
  * Hệ thống mã lỗi có cấu trúc rõ ràng để frontend dễ phân loại và xử lý:
@@ -65,30 +64,12 @@ public enum ErrorCode {
     VALID_PASSWORD_MISMATCH("VALID_3010", "Mật khẩu và xác nhận mật khẩu không khớp", HttpStatus.BAD_REQUEST),
     VALID_PHONE_REQUIRED("VALID_3011", "Số điện thoại không được để trống", HttpStatus.BAD_REQUEST),
     VALID_PHONE_INVALID("VALID_3012", "Định dạng số điện thoại không hợp lệ", HttpStatus.BAD_REQUEST),
-
-    // Business Logic Errors (BIZ_xxxx)
-    BIZ_INSUFFICIENT_BALANCE("BIZ_4001", "Số dư tài khoản không đủ", HttpStatus.BAD_REQUEST),
-    BIZ_RESOURCE_NOT_FOUND("BIZ_4002", "Không tìm thấy tài nguyên yêu cầu", HttpStatus.NOT_FOUND),
-    BIZ_DUPLICATE_ENTRY("BIZ_4003", "Dữ liệu đã tồn tại", HttpStatus.CONFLICT),
-
     // File Upload Errors (FILE_xxxx)
     FILE_SIZE_TOO_LARGE("FILE_5001", "Kích thước file vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
     FILE_FORMAT_INVALID("FILE_5002", "Định dạng file không được hỗ trợ", HttpStatus.BAD_REQUEST),
     FILE_UPLOAD_FAILED("FILE_5003", "Tải file lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
-    // Teacher Management Errors (TEACHER_xxxx)
-    TEACHER_ALREADY_EXISTS("TEACHER_6001", "Giảng viên đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
-    TEACHER_NOT_FOUND("TEACHER_6002", "Không tìm thấy thông tin giảng viên", HttpStatus.NOT_FOUND),
-
-    // Role Management Errors (ROLE_xxxx)
-    ROLE_NOT_FOUND("ROLE_7001", "Không tìm thấy vai trò", HttpStatus.NOT_FOUND),
-    ROLE_ALREADY_EXISTS("ROLE_7002", "Vai trò đã tồn tại", HttpStatus.BAD_REQUEST),
-
-    // CREDENTIALS
-    PASSWORD_OLD_INCORRECT("CREDENTIAL_2001", "Mật khẩu cũ không chính xác", HttpStatus.BAD_REQUEST),
-    PASSWORD_CONFIRM_MISMATCH("CREDENTIAL_2002", "Mật khẩu và xác nhận mật khẩu không khớp", HttpStatus.BAD_REQUEST),
-
-
+    CLOUDINARY_UPLOAD_FAILED("FILE_5004", "Tải file lên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {
