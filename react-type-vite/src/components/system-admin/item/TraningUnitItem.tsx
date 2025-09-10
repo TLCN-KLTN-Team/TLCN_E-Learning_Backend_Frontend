@@ -101,7 +101,7 @@ const TraningUnitItem = ({
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="relative">
+        <div className="absolute">
           <button
             onClick={handleDropdownToggle}
             className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 hover:opacity-80 transition-opacity ${getStatusStyle(
