@@ -21,5 +21,5 @@ public interface UserMapper {
 
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "accountStatus", ignore = true)
-    void updateUser(@MappingTarget User user, UserUpdateRequest request);
+    User updateUser(@MappingTarget User user, UserUpdateRequest request);
 }
