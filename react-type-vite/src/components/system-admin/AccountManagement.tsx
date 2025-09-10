@@ -1,14 +1,7 @@
 "use client";
 
 import { getUsers } from "@/services/api/userApi";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  View,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Edit, Trash2, View, ChevronLeft, ChevronRight } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -33,7 +26,7 @@ const AccountManagement: React.FC = () => {
   const [secletedAccount, setSelectedAccount] = useState<UserResponse | null>(
     null
   );
-  const [selectedRole, setSelectedRole] = useState("all");
+  const [selectedRole, setSelectedRole] = useState("USER");
   const [showViewModal, setShowViewModal] = useState(false);
 
   // Pagination states
@@ -46,27 +39,27 @@ const AccountManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const filteredAccounts = filterAccountsByRole(accounts, selectedRole);
+  const fetchAccounts = async () => {
+    try {
+      setLoading(true);
+      const result: PaginatedResponse<UserResponse> = await getUsers(
+        currentPage,
+        pageSize
+      );
+      setAccounts(result.content);
+      setCurrentPage(result.page);
+      setTotalElements(result.totalElements);
+      setTotalPages(result.totalPages);
+      setHasNext(result.hasNext);
+      setHasPrevious(result.hasPrevious);
+    } catch (error) {
+      toast.error(error ? `${error}` : "Lỗi khi tải tài khoản");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        setLoading(true);
-        const result: PaginatedResponse<UserResponse> = await getUsers(
-          currentPage,
-          pageSize
-        );
-        setAccounts(result.content);
-        setCurrentPage(result.page);
-        setTotalElements(result.totalElements);
-        setTotalPages(result.totalPages);
-        setHasNext(result.hasNext);
-        setHasPrevious(result.hasPrevious);
-      } catch (error) {
-        toast.error(error ? `${error}` : "Lỗi khi tải tài khoản");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchAccounts();
   }, [currentPage, pageSize]);
 
@@ -102,23 +95,24 @@ const AccountManagement: React.FC = () => {
     setShowViewModal(!showViewModal);
   };
 
+  const handleShowAccountsByRole = (role: string) => {
+    fetchAccounts();
+    setAccounts(filterAccountsByRole(accounts, role));
+    setSelectedRole(role);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h2 className="text-xl md:text-2xl font-bold text-gray-900">
           Quản lý Tài khoản
         </h2>
-        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 self-start md:self-auto">
-          <Plus className="w-5 h-5" />
-          <span className="hidden sm:inline">Tạo tài khoản</span>
-          <span className="sm:hidden">Tạo</span>
-        </button>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-6">
         <select
           value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
+          onChange={(e) => handleShowAccountsByRole(e.target.value)}
           className="border border-gray-300 text-gray-900 rounded-lg px-3 py-2 w-full sm:w-auto"
         >
           {ROLE_FILTER_OPTIONS.map((option) => (
