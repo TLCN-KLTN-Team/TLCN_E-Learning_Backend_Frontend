@@ -42,6 +42,6 @@ export const updateCourseType = async (
   return response.data.result;
 };
 
-export const deleteCourseType = async (id: number): Promise<void> => {
-  await axiosInstance.delete<void>(`${PREFIX}/course-categories/${id}/delete`);
+export const disableCourseType = async (id: number): Promise<void> => {
+  await axiosInstance.put(`${PREFIX}/course-categories/${id}/disable`);
 };

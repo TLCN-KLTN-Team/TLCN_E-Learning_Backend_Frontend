@@ -10,6 +10,7 @@ import AccountManagement from "../../components/system-admin/AccountManagement";
 import CategoryManagement from "../../components/system-admin/CategoryManagement";
 import RevenueManagement from "../../components/system-admin/RevenueManagement";
 import SystemStatistics from "../../components/system-admin/SystemStatistics";
+import AdminProfilePage from "../../components/system-admin/AdminProfilePage";
 import "../../styles/system-admin.css";
 
 const SystemAdminDashboard: React.FC = () => {
@@ -40,6 +41,8 @@ const SystemAdminDashboard: React.FC = () => {
         return <RevenueManagement />;
       case "statistics":
         return <SystemStatistics />;
+      case "profile":
+        return <AdminProfilePage />;
       default:
         return (
           <div className="space-y-6">

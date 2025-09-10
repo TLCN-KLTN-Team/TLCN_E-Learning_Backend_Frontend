@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { CSS_CLASSES } from "./data/CategoriesData";
 import {
   createCourseType,
+  disableCourseType,
   getCourseTypes,
   updateCourseType,
 } from "@/services/api/superadmin/courseTypeApi";
@@ -85,12 +86,11 @@ const CategoryManagement: React.FC = () => {
   const handleDeleteCourseType = async (id: number) => {
     try {
       // TODO: Call API to delete course type
-      console.log("Deleting course type with id:", id);
-
-      // Remove from state
-      setCategories((prev) => prev.filter((cat) => cat.id !== id));
-
+      await disableCourseType(id);
       toast.success("Xóa danh mục thành công!");
+
+      // Remove item from list from state
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
     } catch (error) {
       console.error("Error deleting course type:", error);
       toast.error("Có lỗi xảy ra khi xóa danh mục");
