@@ -3,6 +3,7 @@ import type React from "react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import AdminProfile from "../shared/AdminProfile";
 import SystemAdminNotification from "../shared/SystemAdminNotification";
+import { useTheme } from "@/context/theme-context";
 
 interface SystemAdminHeaderProps {
   isSidebarOpen: boolean;
@@ -18,6 +19,8 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
   const [isNoficationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const theme = useTheme();
+  theme.setTheme("light");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

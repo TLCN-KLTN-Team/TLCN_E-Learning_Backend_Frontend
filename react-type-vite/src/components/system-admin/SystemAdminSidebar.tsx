@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   X,
+  User,
 } from "lucide-react";
 import type React from "react";
 
@@ -33,6 +34,7 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
     { id: "categories", label: "Quản lý danh mục", icon: FolderOpen },
     { id: "revenue", label: "Quản lý doanh thu", icon: DollarSign },
     { id: "statistics", label: "Thống kê hệ thống", icon: TrendingUp },
+    { id: "profile", label: "Hồ sơ cá nhân", icon: User },
   ];
 
   return (
