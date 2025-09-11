@@ -18,6 +18,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/users")
@@ -82,11 +83,20 @@ public class UserController {
     }
 
     @PutMapping("/update-profile")
-    ApiResponse<Void> updateProfileSuperAdmin(@RequestBody UserUpdateRequest request) {
+    ApiResponse<UserResponse> updateProfile(@RequestBody UserUpdateRequest request) {
         userService.updateProfileSuperAdmin(request);
-        return ApiResponse.<Void>success(
-                null,
-                "Profile updated successfully"
+        return ApiResponse.success(
+                userService.getMyInfo(),
+                "Update profile successfully"
+        );
+    }
+
+    @PutMapping(value = "/update-avatar", consumes = "multipart/form-data")
+    ApiResponse<String> updateProfileSuperAdmin(@RequestPart("file") MultipartFile file) {
+        String url = userService.uploadAvatar(file);
+        return ApiResponse.success(
+                url,
+                "Update profile successfully"
         );
     }
 

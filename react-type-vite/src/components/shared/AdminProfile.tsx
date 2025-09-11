@@ -9,10 +9,12 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AdminProfile = () => {
-  const [theme, setTheme] = useState("auto");
+  const [theme, setTheme] = useState("light");
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const buttonStyles =
     "w-full px-4 py-2 text-left text-gray-900 hover:bg-gray-50 flex items-center";
@@ -38,7 +40,10 @@ const AdminProfile = () => {
       </div>
       <hr className="my-0" />
       <div className="py-0">
-        <button className={buttonStyles}>
+        <button
+          className={buttonStyles}
+          onClick={() => navigate("/system-admin/edit-profile")}
+        >
           <User className="w-4 h-4 mr-2" />
           Edit Profile
         </button>
@@ -46,10 +51,7 @@ const AdminProfile = () => {
           <Info className="w-4 h-4 mr-2" />
           Help
         </button>
-        <button
-          className={buttonStyles}
-          onClick={() => (window.location.href = "/")}
-        >
+        <button className={buttonStyles} onClick={() => navigate("/")}>
           <ArrowLeftFromLine className="w-4 h-4 mr-2" />
           Back to Home
         </button>
@@ -57,7 +59,6 @@ const AdminProfile = () => {
           className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center"
           onClick={() => {
             logout();
-            window.location.href = "/login";
           }}
         >
           <LogOut className="w-4 h-4 mr-2" />

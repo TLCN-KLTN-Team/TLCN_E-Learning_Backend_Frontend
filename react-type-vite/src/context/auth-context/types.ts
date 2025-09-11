@@ -5,8 +5,10 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string;
   dob?: Date;
-  avatar?: string;
+  avatar?: File;
+  avatarUrl?: string;
   isVerified?: boolean;
   roles: string[]; // e.g., "student", "educator", "admin"
 }

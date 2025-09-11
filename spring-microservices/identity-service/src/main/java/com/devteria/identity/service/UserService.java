@@ -5,10 +5,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.devteria.identity.dto.request.ApiResponse;
 import com.devteria.identity.dto.request.ChangePasswordRequest;
 import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.response.PaginatedResponse;
 import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.repository.httpclient.RemoveFileApi;
+import com.devteria.identity.repository.httpclient.UploadFileApi;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +41,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +55,8 @@ public class UserService {
     PasswordEncoder passwordEncoder;
     ProfileClient profileClient;
     KafkaTemplate<String, Object> kafkaTemplate;
+    UploadFileApi uploadFileApi;
+    RemoveFileApi removeFileApi;
 
     public UserResponse createUser(RegisterRequest request) {
         User user = userMapper.toUser(request);
@@ -126,6 +132,37 @@ public class UserService {
 
         // handle file to avatarUrl
         userRepository.save(updatedUser);
+    }
+
+    public String uploadAvatar(MultipartFile file) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (file.isEmpty()) {
+            throw new AppException(ErrorCode.FILE_EMPTY);
+        }
+
+        if (user.getAvatarUrl() == null) {
+            // upload new avatar
+            ApiResponse<List<String>> response = uploadFileApi.uploadFile(file);
+            List<String> uploadedData = response.getResult();
+            user.setCloudinaryPublicId(uploadedData.get(1));
+            user.setAvatarUrl(uploadedData.get(0));
+            userRepository.save(user);
+            return uploadedData.get(0);
+        }
+
+        // remove old avatar if exists
+        String existingPublicId = user.getCloudinaryPublicId();
+        if (existingPublicId != null) {
+            removeFileApi.removeFile(existingPublicId);
+            ApiResponse<List<String>> response = uploadFileApi.uploadFile(file);
+            List<String> uploadedData = response.getResult();
+            user.setCloudinaryPublicId(uploadedData.get(1));
+            user.setAvatarUrl(uploadedData.get(0));
+            userRepository.save(user);
+            return uploadedData.get(0);
+        }
+        return null;
     }
 
     public void changePassword(ChangePasswordRequest request) {
