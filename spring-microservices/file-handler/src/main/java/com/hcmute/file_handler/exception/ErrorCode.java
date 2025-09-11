@@ -70,6 +70,9 @@ public enum ErrorCode {
     FILE_UPLOAD_FAILED("FILE_5003", "Tải file lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
     CLOUDINARY_UPLOAD_FAILED("FILE_5004", "Tải file lên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    CLOUDINARY_DELETE_FAILED("FILE_5005", "Xoá file trên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+
+
     ;
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {

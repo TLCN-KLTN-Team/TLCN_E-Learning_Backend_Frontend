@@ -10,30 +10,77 @@ import {
   Settings,
   LogOut,
   X,
+  UserCog,
 } from "lucide-react";
 import type React from "react";
+import { Link, useLocation } from "react-router-dom";
 
 interface SystemAdminSidebarProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
-  activeSection: string;
-  setActiveSection: (section: string) => void;
 }
 
 const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
-  activeSection,
-  setActiveSection,
 }) => {
+  const location = useLocation();
+
   const menuItems = [
-    { id: "dashboard", label: "Tổng quan", icon: BarChart3 },
-    { id: "training-units", label: "Đơn vị đào tạo", icon: Building2 },
-    { id: "accounts", label: "Quản lý tài khoản", icon: Users },
-    { id: "categories", label: "Quản lý danh mục", icon: FolderOpen },
-    { id: "revenue", label: "Quản lý doanh thu", icon: DollarSign },
-    { id: "statistics", label: "Thống kê hệ thống", icon: TrendingUp },
+    {
+      id: "dashboard",
+      label: "Tổng quan",
+      icon: BarChart3,
+      path: "/system-admin",
+    },
+    {
+      id: "training-units",
+      label: "Đơn vị đào tạo",
+      icon: Building2,
+      path: "/system-admin/training-units",
+    },
+    {
+      id: "accounts",
+      label: "Quản lý tài khoản",
+      icon: Users,
+      path: "/system-admin/accounts",
+    },
+    {
+      id: "categories",
+      label: "Quản lý danh mục",
+      icon: FolderOpen,
+      path: "/system-admin/categories",
+    },
+    {
+      id: "revenue",
+      label: "Quản lý doanh thu",
+      icon: DollarSign,
+      path: "/system-admin/revenue",
+    },
+    {
+      id: "statistics",
+      label: "Thống kê hệ thống",
+      icon: TrendingUp,
+      path: "/system-admin/statistics",
+    },
+    {
+      id: "edit-profile",
+      label: "Chỉnh sửa hồ sơ",
+      icon: UserCog,
+      path: "/system-admin/edit-profile",
+    },
   ];
+
+  // Helper function to check if current path matches menu item
+  const isActiveItem = (itemPath: string) => {
+    if (itemPath === "/system-admin") {
+      return (
+        location.pathname === "/system-admin" ||
+        location.pathname === "/system-admin/dashboard"
+      );
+    }
+    return location.pathname === itemPath;
+  };
 
   return (
     <>
@@ -73,24 +120,24 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
             {menuItems.map((item) => {
               const IconComponent = item.icon;
               return (
-                <button
+                <Link
                   key={item.id}
+                  to={item.path}
                   onClick={() => {
-                    setActiveSection(item.id);
                     // Close sidebar on mobile after selection
                     if (window.innerWidth < 1024) {
                       setIsSidebarOpen(false);
                     }
                   }}
                   className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
-                    activeSection === item.id
+                    isActiveItem(item.path)
                       ? "bg-blue-600 text-white"
                       : "text-gray-300 hover:bg-gray-800 hover:text-white"
                   }`}
                 >
                   <IconComponent className="mr-3 w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
-                </button>
+                </Link>
               );
             })}
           </nav>

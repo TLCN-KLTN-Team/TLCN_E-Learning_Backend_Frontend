@@ -13,11 +13,13 @@ import {
   Settings,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
 import {
   changePassword,
+  updateAvatar,
   updateProfile,
   type UserUpdateRequest,
 } from "@/services/api/superadmin/userApi";
@@ -41,6 +43,10 @@ const AdminProfilePage: React.FC = () => {
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(
+    null
+  );
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (
@@ -73,34 +79,52 @@ const AdminProfilePage: React.FC = () => {
     }));
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        toast.error("Vui lòng chọn file ảnh hợp lệ");
-        return;
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Kích thước file không được vượt quá 5MB");
-        return;
-      }
-
-      // Create preview URL
+      // Create preview URL and store file
       const previewUrl = URL.createObjectURL(file);
       setAvatarPreview(previewUrl);
+      setSelectedAvatarFile(file);
+    }
+  };
 
-      // Update form data
-      setFormData((prev) => ({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phoneNumber: "",
-        ...prev,
-        avatar: file,
-      }));
+  const handleAvatarSave = async () => {
+    if (!selectedAvatarFile) {
+      toast.error("Vui lòng chọn ảnh trước khi lưu!");
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+      toast.info("Đang tải lên avatar...");
+      const url = await updateAvatar(selectedAvatarFile);
+      user!.avatarUrl = url; // Update avatarUrl in user context
+      toast.success("Cập nhật ảnh đại diện thành công!");
+
+      // Clear preview and selected file
+      setAvatarPreview(null);
+      setSelectedAvatarFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      toast.error("Cập nhật ảnh đại diện thất bại!");
+      console.error("Avatar update error:", error);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarCancel = () => {
+    // Clear preview and selected file
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    setAvatarPreview(null);
+    setSelectedAvatarFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -184,40 +208,70 @@ const AdminProfilePage: React.FC = () => {
         <div className="p-6">
           <div className="flex items-start gap-6">
             {/* Avatar */}
-            <div className="relative">
-              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-                {avatarPreview || user?.avatar ? (
-                  <img
-                    src={avatarPreview || user?.avatar || ""}
-                    alt="Profile"
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-2xl">
-                    {user?.firstName?.charAt(0) ||
-                      user?.username?.charAt(0) ||
-                      "A"}
-                  </div>
-                )}
+            <div className="flex flex-col items-center space-y-3">
+              <div className="relative">
+                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
+                  {avatarPreview || user?.avatarUrl ? (
+                    <img
+                      src={avatarPreview || user?.avatarUrl || ""}
+                      alt="Profile"
+                      className="w-24 h-24 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-2xl">
+                      {user?.firstName?.charAt(0) ||
+                        user?.username?.charAt(0) ||
+                        "A"}
+                    </div>
+                  )}
+                </div>
+
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+
+                {/* Camera button */}
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  className="absolute bottom-0 right-0 p-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-
-              {/* Camera button */}
-              <button
-                type="button"
-                onClick={handleAvatarClick}
-                className="absolute bottom-0 right-0 p-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
+              {/* Avatar action buttons - show when there's a preview */}
+              {avatarPreview && selectedAvatarFile && (
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAvatarSave}
+                      disabled={isUploadingAvatar}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isUploadingAvatar ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Save className="w-3 h-3" />
+                      )}
+                      {isUploadingAvatar ? "Đang lưu..." : "Lưu"}
+                    </button>
+                    <button
+                      onClick={handleAvatarCancel}
+                      disabled={isUploadingAvatar}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Basic Info */}
