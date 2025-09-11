@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -16,12 +18,23 @@ import java.util.Map;
 public class FileService {
     private final Cloudinary cloudinary;
 
-    public String upload(MultipartFile file) {
+    public List<String> upload(MultipartFile file) {
         try {
-            Map result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-            return result.get("secure_url").toString();
+            Map uploader = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+            List<String> result = new ArrayList<>();
+            result.add(uploader.get("secure_url").toString()); // URL để hiển thị
+            result.add(uploader.get("public_id").toString()); // Public ID để xóa file
+            return result;
         } catch (IOException e) {
             throw new AppException(ErrorCode.CLOUDINARY_UPLOAD_FAILED);
+        }
+    }
+
+    public void delete(String publicId) {
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (IOException e) {
+            throw new AppException(ErrorCode.CLOUDINARY_DELETE_FAILED);
         }
     }
 
