@@ -34,3 +34,4 @@ outbound:
 app:
   services:
     profile: "${PROFILE_SERVICE_URL:http://localhost:8081/profile}"
+    file: "${FILE_SERVICE_URL:http://localhost:8084/file-handler}"

@@ -89,6 +89,7 @@ public enum ErrorCode {
     PASSWORD_CONFIRM_MISMATCH("CREDENTIAL_2002", "Mật khẩu và xác nhận mật khẩu không khớp", HttpStatus.BAD_REQUEST),
 
 
+    FILE_EMPTY("FILE_5004", "File không được để trống", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {

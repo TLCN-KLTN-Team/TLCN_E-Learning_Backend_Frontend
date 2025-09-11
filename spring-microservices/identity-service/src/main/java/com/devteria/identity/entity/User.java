@@ -41,6 +41,7 @@ public class User {
     String dob;
 
     String avatarUrl;
+    String cloudinaryPublicId;
 
     //    @OneToOne(cascade = CascadeType.ALL)
     //    Address address;
