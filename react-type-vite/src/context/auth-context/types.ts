@@ -11,6 +11,7 @@ export interface User {
   avatarUrl?: string;
   isVerified?: boolean;
   roles: string[]; // e.g., "student", "educator", "admin"
+  bio?: string;
 }
 
 export interface Role {

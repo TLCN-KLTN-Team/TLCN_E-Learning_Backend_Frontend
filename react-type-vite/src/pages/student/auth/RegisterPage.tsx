@@ -403,7 +403,7 @@ const RegisterPage = () => {
           disabled={!formData.agreeToTerms}
           className="w-full h-12 bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg"
         >
-          Create Account
+          Tạo tài khoản
         </Button>
 
         {/* Divider */}
@@ -427,12 +427,12 @@ const RegisterPage = () => {
         {/* Sign In Link */}
         <div className="text-center pt-4">
           <p className="text-sm text-gray-600">
-            Already have an account?{" "}
+            Bạn đã có tài khoản?{" "}
             <a
               href="/login"
               className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
-              Sign in here
+              Đăng nhập ngay
             </a>
           </p>
         </div>

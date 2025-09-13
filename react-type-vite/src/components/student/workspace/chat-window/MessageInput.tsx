@@ -25,10 +25,7 @@ interface MessageInputProps {
 const MessageInput = ({
   selectedChannel,
   isConnected,
-  wsMessages,
-  wsErrors,
   onSendMessage,
-  onClearErrors,
 }: MessageInputProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
@@ -75,23 +72,14 @@ const MessageInput = ({
     try {
       if (hasMessage && hasFiles) {
         // Send both message and files
-        console.log("📤 Sending message with files");
-        // Send message first
         onSendMessage(newMessage.trim());
-
-        // Upload files
+        // Upload files after sending message
         await uploadFilesForMessage();
       } else if (hasMessage && !hasFiles) {
         // Send only message
-        console.log("💬 Sending text message only");
-
-        // Send message
         onSendMessage(newMessage.trim());
       } else if (!hasMessage && hasFiles) {
         // Upload only files
-        console.log("📎 Uploading files only");
-
-        // Upload files without message
         await uploadFilesForMessage();
       }
 
@@ -279,43 +267,6 @@ const MessageInput = ({
             )}
           </button>
         </div>
-      </div>
-
-      {/* Connection and status info */}
-      <div className="flex items-center justify-between mt-2 text-xs">
-        <div className="flex items-center space-x-4 text-gray-400">
-          <span
-            className={`flex items-center space-x-1 ${
-              isConnected ? "text-green-400" : "text-red-400"
-            }`}
-          >
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isConnected ? "bg-green-400" : "bg-red-400"
-              }`}
-            ></div>
-            <span>
-              {isConnected ? "Real-time chat active" : "Connecting..."}
-            </span>
-          </span>
-          {wsMessages.length > 0 && (
-            <span className="text-blue-400">
-              {
-                wsMessages.filter((m) => m.channelId === selectedChannel.id)
-                  .length
-              }{" "}
-              live messages
-            </span>
-          )}
-        </div>
-        {wsErrors.length > 0 && (
-          <button
-            onClick={onClearErrors}
-            className="text-red-400 hover:text-red-300 underline"
-          >
-            Clear errors ({wsErrors.length})
-          </button>
-        )}
       </div>
 
       {/* Upload status */}

@@ -1,5 +1,6 @@
 package com.devteria.identity.entity;
 
+import java.util.List;
 import java.util.Set;
 
 import jakarta.persistence.*;
@@ -42,6 +43,10 @@ public class User {
 
     String avatarUrl;
     String cloudinaryPublicId;
+    String bio;
+
+//    @ElementCollection
+    ////    Set<String> favoriteCategories;
 
     //    @OneToOne(cascade = CascadeType.ALL)
     //    Address address;
