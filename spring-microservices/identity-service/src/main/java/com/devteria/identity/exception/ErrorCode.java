@@ -36,6 +36,7 @@ public enum ErrorCode {
     // System Errors (SYS_xxxx)
     SYSTEM_ERROR("SYS_9999", "Lỗi hệ thống không xác định", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_REQUEST("SYS_1001", "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
+    NON_EXECUTE("SYS_1002", "Không thể thực hiện yêu cầu", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Authentication Errors (AUTH_xxxx)
     AUTH_INVALID_CREDENTIALS("AUTH_1001", "Tên đăng nhập hoặc mật khẩu không chính xác", HttpStatus.UNAUTHORIZED),
@@ -47,8 +48,6 @@ public enum ErrorCode {
     // User Management Errors (USER_xxxx)
     USER_ALREADY_EXISTS("USER_2001", "Người dùng đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND("USER_2002", "Không tìm thấy người dùng", HttpStatus.NOT_FOUND),
-    USER_EMAIL_EXISTED("USER_2003", "Email đã được sử dụng bởi tài khoản khác", HttpStatus.BAD_REQUEST),
-    USER_USERNAME_EXISTED("USER_2004", "Tên đăng nhập đã được sử dụng", HttpStatus.BAD_REQUEST),
 
     // Validation Errors (VALID_xxxx)
     VALID_EXCEPTION("VALID_3000", "Dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),
@@ -87,6 +86,7 @@ public enum ErrorCode {
     // CREDENTIALS
     PASSWORD_OLD_INCORRECT("CREDENTIAL_2001", "Mật khẩu cũ không chính xác", HttpStatus.BAD_REQUEST),
     PASSWORD_CONFIRM_MISMATCH("CREDENTIAL_2002", "Mật khẩu và xác nhận mật khẩu không khớp", HttpStatus.BAD_REQUEST),
+    PASSWORD_WEAK("CREDENTIAL_2003", "Mật khẩu không đủ mạnh", HttpStatus.BAD_REQUEST),
 
 
     FILE_EMPTY("FILE_5004", "File không được để trống", HttpStatus.BAD_REQUEST),

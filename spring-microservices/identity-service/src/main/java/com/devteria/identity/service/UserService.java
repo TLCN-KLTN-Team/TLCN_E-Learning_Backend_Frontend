@@ -59,6 +59,13 @@ public class UserService {
     RemoveFileApi removeFileApi;
 
     public UserResponse createUser(RegisterRequest request) {
+        if (!isValidPassword(request.getPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_WEAK);
+        }
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
+        }
+
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         HashSet<Role> roles = new HashSet<>();
@@ -97,6 +104,12 @@ public class UserService {
         return userCreationResponse;
     }
 
+    boolean isValidPassword(String password) {
+        // At least one digit, one lowercase letter, one uppercase letter, one special character, no whitespace, at least 6 characters
+        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{6,}$";
+        return password.matches(regex);
+    }
+
     public UserResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
         String id = context.getAuthentication().getName();
@@ -124,8 +137,7 @@ public class UserService {
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void updateProfileSuperAdmin(UserUpdateRequest request){
+    public void updateProfile(UserUpdateRequest request){
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         User updatedUser = userMapper.updateUser(user, request);
@@ -143,24 +155,32 @@ public class UserService {
 
         if (user.getAvatarUrl() == null) {
             // upload new avatar
-            ApiResponse<List<String>> response = uploadFileApi.uploadFile(file);
-            List<String> uploadedData = response.getResult();
-            user.setCloudinaryPublicId(uploadedData.get(1));
-            user.setAvatarUrl(uploadedData.get(0));
-            userRepository.save(user);
-            return uploadedData.get(0);
+            try {
+                ApiResponse<List<String>> response = uploadFileApi.uploadFile(file);
+                List<String> uploadedData = response.getResult();
+                user.setCloudinaryPublicId(uploadedData.get(1));
+                user.setAvatarUrl(uploadedData.get(0));
+                userRepository.save(user);
+                return uploadedData.get(0);
+            } catch (Exception e) {
+                throw new AppException(ErrorCode.NON_EXECUTE);
+            }
         }
 
         // remove old avatar if exists
         String existingPublicId = user.getCloudinaryPublicId();
         if (existingPublicId != null) {
             removeFileApi.removeFile(existingPublicId);
-            ApiResponse<List<String>> response = uploadFileApi.uploadFile(file);
-            List<String> uploadedData = response.getResult();
-            user.setCloudinaryPublicId(uploadedData.get(1));
-            user.setAvatarUrl(uploadedData.get(0));
-            userRepository.save(user);
-            return uploadedData.get(0);
+            try {
+                ApiResponse<List<String>> response = uploadFileApi.uploadFile(file);
+                List<String> uploadedData = response.getResult();
+                user.setCloudinaryPublicId(uploadedData.get(1));
+                user.setAvatarUrl(uploadedData.get(0));
+                userRepository.save(user);
+                return uploadedData.get(0);
+            }  catch (Exception e) {
+                throw new AppException(ErrorCode.NON_EXECUTE);
+            }
         }
         return null;
     }

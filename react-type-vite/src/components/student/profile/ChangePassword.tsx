@@ -104,13 +104,7 @@ const ChangePassword = ({
     >
       <div className="flex items-center space-x-2 mb-6">
         <Shield className="w-6 h-6 text-red-600" />
-        <h2
-          className={`text-2xl font-bold ${
-            resolvedTheme === "dark" ? "text-white" : "text-slate-900"
-          }`}
-        >
-          Đổi mật khẩu
-        </h2>
+        <h2>Đổi mật khẩu</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -130,12 +124,8 @@ const ChangePassword = ({
               onChange={(e) =>
                 handleInputChange("currentPassword", e.target.value)
               }
-              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                errors.currentPassword
-                  ? "border-red-500"
-                  : resolvedTheme === "dark"
-                  ? "border-slate-600 bg-slate-700 text-white placeholder-slate-400"
-                  : "border-slate-300 bg-white text-slate-900"
+              className={`w-full px-4 py-3 pr-12 border rounded-lg ${
+                errors.currentPassword ? "border-red-500" : resolvedTheme
               }`}
               placeholder="Nhập mật khẩu hiện tại"
             />
@@ -168,10 +158,8 @@ const ChangePassword = ({
               type={showPasswords.new ? "text" : "password"}
               value={formData.newPassword}
               onChange={(e) => handleInputChange("newPassword", e.target.value)}
-              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.newPassword
-                  ? "border-red-500 dark:border-red-500"
-                  : "border-gray-300 dark:border-gray-600"
+              className={`w-full px-4 py-3 pr-12 border rounded-lg ${
+                errors.newPassword && "border-red-500 dark:border-red-500"
               }`}
               placeholder="Nhập mật khẩu mới"
             />
@@ -232,10 +220,8 @@ const ChangePassword = ({
               onChange={(e) =>
                 handleInputChange("confirmPassword", e.target.value)
               }
-              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.confirmPassword
-                  ? "border-red-500 dark:border-red-500"
-                  : "border-gray-300 dark:border-gray-600"
+              className={`w-full px-4 py-3 pr-12 border focus:border-transparent rounded-lg ${
+                errors.confirmPassword && "border-red-500 dark:border-red-500"
               }`}
               placeholder="Xác nhận mật khẩu mới"
             />
@@ -263,7 +249,7 @@ const ChangePassword = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center space-x-2 w-full md:w-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center space-x-2 w-full md:w-auto px-6 py-3 bg-gray-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Lock className="w-5 h-5" />
             <span>{isLoading ? "Đang cập nhật..." : "Đổi mật khẩu"}</span>
