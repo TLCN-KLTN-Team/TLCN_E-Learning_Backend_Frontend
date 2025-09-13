@@ -2,7 +2,7 @@ import { Hash, Edit } from "lucide-react";
 
 import { getRoles } from "@/utils/localStorageVariables";
 import MessageItem from "./MessageItem";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getMessagesByChannelId } from "@/services/api/messageApi";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -25,6 +25,25 @@ const MessageList = ({
   const [allMessages, setAllMessages] = useState<ChatMessageResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { user } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [allMessages]);
 
   // Function to determine if messages should be grouped
   const shouldGroupMessages = (
@@ -61,9 +80,7 @@ const MessageList = ({
       };
       fetchMessages();
     }
-  }, [selectedChannel, user?.id]);
-
-  // Effect to sync WebSocket messages with allMessages
+  }, [selectedChannel, user?.id]); // Effect to sync WebSocket messages with allMessages
   useEffect(() => {
     if (!selectedChannel) return;
 
@@ -169,6 +186,8 @@ const MessageList = ({
       <div className="p-4 space-y-4">
         {/* Display all messages (API + WebSocket combined and sorted) */}
         {renderMessages(allMessages)}
+        {/* Invisible element to scroll to */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* WebSocket connection status */}

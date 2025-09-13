@@ -8,6 +8,8 @@ export interface UserUpdateRequest {
   lastName?: string;
   email?: string;
   phoneNumber?: string;
+  dob?: Date;
+  bio?: string;
   avatar?: File;
 }
 

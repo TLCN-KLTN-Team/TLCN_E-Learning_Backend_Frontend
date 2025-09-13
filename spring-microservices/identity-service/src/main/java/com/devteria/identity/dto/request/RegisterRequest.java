@@ -30,5 +30,9 @@ public class RegisterRequest {
     @NotBlank(message = "EMAIL_IS_REQUIRED")
     String email;
 
+    @NotBlank(message = "FIRST_NAME_IS_REQUIRED")
+    String firstName;
+    String lastName;
+
     Set<String> roles;
 }

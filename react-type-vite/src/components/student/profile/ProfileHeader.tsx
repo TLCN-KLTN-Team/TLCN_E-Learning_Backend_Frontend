@@ -1,7 +1,16 @@
-import { MapPin, Briefcase, Building, Camera } from "lucide-react";
+import {
+  MapPin,
+  Briefcase,
+  Building,
+  Camera,
+  Edit2,
+  Save,
+  X,
+} from "lucide-react";
 import { getAvartarFromName } from "@/utils/callApiUtils";
 import { useTheme } from "@/context/theme-context/useTheme";
 import type { ProfileHeaderData } from "@/types/profile.types";
+import { useState } from "react";
 
 const ProfileHeader = ({
   name,
@@ -11,6 +20,7 @@ const ProfileHeader = ({
   avatar,
 }: ProfileHeaderData) => {
   const { resolvedTheme } = useTheme();
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleAvatarClick = () => {
     const input = document.createElement("input");
@@ -26,6 +36,10 @@ const ProfileHeader = ({
     input.click();
   };
 
+  const handleEditProfile = () => {
+    setIsEditing(true);
+  };
+
   return (
     <div
       className={`p-6 rounded-lg mb-6 ${
@@ -35,16 +49,7 @@ const ProfileHeader = ({
       }`}
     >
       {/* Page Title */}
-      <div className="mb-8">
-        <h1
-          className={`text-3xl font-bold ${
-            resolvedTheme === "dark" ? "text-white" : "text-slate-900"
-          }`}
-        >
-          Edit Profile
-        </h1>
-      </div>
-      <div className="flex items-start gap-6">
+      <div className="flex items-center gap-6">
         {/* Avatar */}
         <div
           className="relative group cursor-pointer"
@@ -100,6 +105,32 @@ const ProfileHeader = ({
               )}
             </div>
           </div>
+        </div>
+        {/* When editting */}
+        <div>
+          {!isEditing ? (
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded-md focus:scale-95 transition-transform"
+              onClick={handleEditProfile}
+            >
+              <Edit2 className="w-4 h-4 inline-block mr-2" />
+              Chỉnh sửa
+            </button>
+          ) : (
+            <div className="space-x-2">
+              <button className="px-4 py-2 bg-green-600 text-white rounded-md">
+                <Save className="w-4 h-4 inline-block mr-2" />
+                Lưu
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
+                onClick={() => setIsEditing(false)}
+              >
+                <X className="w-4 h-4 inline-block mr-2" />
+                Hủy
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

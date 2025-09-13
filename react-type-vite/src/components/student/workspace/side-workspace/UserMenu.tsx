@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { FileUser } from "lucide-react";
+import { CornerDownLeft, FileUser } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { getRoles } from "@/utils/localStorageVariables";
 import { getAvartarFromName } from "@/utils/callApiUtils";
@@ -11,7 +11,7 @@ interface UserMenuProps {
 const UserMenu = ({ className = "" }: UserMenuProps) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -68,18 +68,13 @@ const UserMenu = ({ className = "" }: UserMenuProps) => {
             </svg>
             Về trang chủ
           </button>
-          <button className="w-full text-left px-4 py-2 text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors text-sm">
-            <svg
-              className="w-4 h-4 inline mr-2"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
-                clipRule="evenodd"
-              />
-            </svg>
+          <button
+            className="w-full text-left px-4 py-2 text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors text-sm"
+            onClick={() => {
+              logout();
+            }}
+          >
+            <CornerDownLeft className="w-4 h-4 inline mr-2" />
             Đăng xuất
           </button>
         </div>
