@@ -281,7 +281,7 @@ const Header = () => {
                     <div className="w-10 h-10 rounded-full bg-bs-primary text-white flex items-center justify-center font-medium text-sm">
                       {user.avatar ? (
                         <img
-                          src={user.avatar}
+                          src={user.avatarUrl}
                           alt={getFullName(user.firstName, user.lastName)}
                           className="w-full h-full rounded-full object-cover"
                         />
@@ -313,7 +313,7 @@ const Header = () => {
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center font-medium">
                           {user.avatar ? (
                             <img
-                              src={user.avatar}
+                              src={user.avatarUrl}
                               alt={getFullName(user.firstName, user.lastName)}
                               className="w-full h-full rounded-full object-cover"
                             />
@@ -338,7 +338,7 @@ const Header = () => {
                       </div>
                     </div>
 
-                    {/* Menu Items */}
+                    {/* Profile Menu Items */}
                     <div className="max-h-96 overflow-y-auto">
                       {profileMenuItems.map((section, sectionIndex) => (
                         <div key={sectionIndex}>
@@ -346,7 +346,7 @@ const Header = () => {
                             <a
                               key={item.name}
                               href={item.href}
-                              className="flex items-center justify-between px-4 py-2 hover:bg-opacity-10 transition-colors text-sm group no-hover-effect"
+                              className="flex items-center justify-between px-4 py-2 hover:bg-opacity-10 transition-colors text-sm group no-hover-effect text-gray-600"
                               style={
                                 {
                                   color: "var(--bs-body-color)",
@@ -366,7 +366,6 @@ const Header = () => {
                               <div className="flex items-center space-x-3">
                                 <item.icon
                                   size={16}
-                                  style={{ color: "var(--bs-secondary-color)" }}
                                   className="group-hover:opacity-80"
                                 />
                                 <span>{item.name}</span>
@@ -499,9 +498,9 @@ const Header = () => {
                   <>
                     <div className="flex items-center space-x-3 py-2">
                       <div className="w-10 h-10 rounded-full bg-bs-primary text-white flex items-center justify-center font-medium text-sm">
-                        {user.avatar ? (
+                        {user.avatarUrl ? (
                           <img
-                            src={user.avatar}
+                            src={user.avatarUrl}
                             alt={getFullName(user.firstName, user.lastName)}
                             className="w-full h-full rounded-full object-cover"
                           />

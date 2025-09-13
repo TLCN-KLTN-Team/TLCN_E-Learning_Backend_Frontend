@@ -1,39 +1,26 @@
 import { useState } from "react";
 import { useTheme } from "@/context/theme-context/useTheme";
 import {
-  ProfileHeader,
-  ProfileForm,
   PaymentHistory,
   ChangePassword,
+  ProfileForm,
 } from "@/components/student/profile";
 import type {
-  ProfileFormData,
   ChangePasswordData,
   PaymentHistoryItem,
 } from "@/types/profile.types";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
+import SmartBreadcrumb from "@/components/shared/navigation/SmartBreadcrumb";
+import { useAuth } from "@/context/auth-context/useAuth";
+import type { User } from "@/context/auth-context/types";
+import {
+  updateProfile,
+  type UserUpdateRequest,
+} from "@/services/api/superadmin/userApi";
+import { toast } from "react-toastify";
 
-// Mock data - thay thế bằng dữ liệu thực từ API
-const mockUserData = {
-  name: "Alex Johnson",
-  jobTitle: "Senior Developer",
-  location: "San Francisco, CA",
-  company: "Tech Corp",
-  avatar: undefined, // sẽ sử dụng getAvartarFromName
-};
-
-const mockProfileData = {
-  fullName: "Alex Johnson",
-  bio: "Tôi là một lập trình viên full-stack với hơn 5 năm kinh nghiệm trong việc phát triển ứng dụng web và mobile. Đam mê học hỏi các công nghệ mới và chia sẻ kiến thức với cộng đồng.",
-  interests: [
-    "React",
-    "Node.js",
-    "TypeScript",
-    "Machine Learning",
-    "UI/UX Design",
-  ],
-};
+// Type for form data
 
 const mockPayments: PaymentHistoryItem[] = [
   {
@@ -65,20 +52,24 @@ const mockPayments: PaymentHistoryItem[] = [
 const EditProfile = () => {
   const { resolvedTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
-  const handleSaveProfile = async (profileData: ProfileFormData) => {
+  const handleSaveProfile = async (profileData: UserUpdateRequest) => {
     setIsLoading(true);
     try {
       // TODO: Gọi API để lưu thông tin profile
       console.log("Saving profile data:", profileData);
 
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await updateProfile(profileData);
 
-      alert("Cập nhật thông tin thành công!");
+      toast.success("Cập nhật thông tin thành công!");
     } catch (error) {
-      console.error("Error saving profile:", error);
-      alert("Có lỗi xảy ra khi cập nhật thông tin!");
+      toast.error(
+        error
+          ? (error as Error).message
+          : "Có lỗi xảy ra khi cập nhật thông tin!"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -109,19 +100,18 @@ const EditProfile = () => {
       }`}
     >
       <Header />
+
       <div className="max-w-6xl mx-auto space-y-8 mt-12 lg:mt-16">
-        {/* Header Section */}
-        <ProfileHeader
-          name={mockUserData.name}
-          jobTitle={mockUserData.jobTitle}
-          location={mockUserData.location}
-          company={mockUserData.company}
-          avatar={mockUserData.avatar}
+        {/* Modern Breadcrumb Navigation */}
+        <SmartBreadcrumb
+          currentPath="/edit profile"
+          homePath="/"
+          className="mb-6"
         />
 
-        {/* Profile Form Section */}
+        {/* Combined Profile Section - Display and Edit in one */}
         <ProfileForm
-          initialData={mockProfileData}
+          initialData={user as User}
           onSave={handleSaveProfile}
           isLoading={isLoading}
         />

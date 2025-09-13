@@ -84,7 +84,7 @@ public class UserController {
 
     @PutMapping("/update-profile")
     ApiResponse<UserResponse> updateProfile(@RequestBody UserUpdateRequest request) {
-        userService.updateProfileSuperAdmin(request);
+        userService.updateProfile(request);
         return ApiResponse.success(
                 userService.getMyInfo(),
                 "Update profile successfully"
@@ -92,7 +92,7 @@ public class UserController {
     }
 
     @PutMapping(value = "/update-avatar", consumes = "multipart/form-data")
-    ApiResponse<String> updateProfileSuperAdmin(@RequestPart("file") MultipartFile file) {
+    ApiResponse<String> updateProfile(@RequestPart("file") MultipartFile file) {
         String url = userService.uploadAvatar(file);
         return ApiResponse.success(
                 url,
