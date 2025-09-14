@@ -33,7 +33,7 @@ public class EducationalUnitResponse {
 
     private Integer establishedYear;
 
-    private boolean isActive;
+    private String status;
 
     private String idAdmin;
 

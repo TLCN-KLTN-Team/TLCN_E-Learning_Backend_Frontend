@@ -20,7 +20,8 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             "/server/ws/info", // WebSocket info endpoint
             "/server/ws/**", // WebSocket endpoint
             "/ws/**", // WebSocket endpoint
-            "/ws/info", // WebSocket info endpoint
+            "/ws/info",
+            "/educational-unit/register"// WebSocket info endpoint
     };
 
     @Override

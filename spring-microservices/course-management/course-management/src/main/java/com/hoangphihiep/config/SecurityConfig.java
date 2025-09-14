@@ -24,7 +24,8 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/actuator/**",
-            "/actuator/health/**"
+            "/actuator/health/**",
+            "/educational-unit/register"
     };
 
     private final CustomJwtDecoder customJwtDecoder;
