@@ -1,3 +1,4 @@
+"use client"
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import HeroSection from "../../../components/student/home/HeroSection";
@@ -33,9 +34,11 @@ import avatar01 from "@/assets/images/avatar/01.jpg";
 import avatar05 from "@/assets/images/avatar/05.jpg";
 import avatar07 from "@/assets/images/avatar/07.jpg";
 import avatar09 from "@/assets/images/avatar/09.jpg";
+import { useNavigate } from "react-router-dom"
 
 const Home = () => {
   // Sample data for subjects section
+  const navigate = useNavigate()
   const subjects = [
     {
       id: "it",
@@ -307,7 +310,10 @@ const Home = () => {
 
                     <FadeInUp delay={0.3} className="lg:col-span-3 text-center">
                       <AnimatedButton>
-                        <Button className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm">
+                        <Button
+                          className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm"
+                          onClick={() => navigate("/register-training-unit")}
+                        >
                           Đăng ký đơn vị của bạn tại đây
                         </Button>
                       </AnimatedButton>
