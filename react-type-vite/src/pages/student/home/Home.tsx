@@ -1,4 +1,3 @@
-"use client"
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import HeroSection from "../../../components/student/home/HeroSection";
@@ -34,11 +33,9 @@ import avatar01 from "@/assets/images/avatar/01.jpg";
 import avatar05 from "@/assets/images/avatar/05.jpg";
 import avatar07 from "@/assets/images/avatar/07.jpg";
 import avatar09 from "@/assets/images/avatar/09.jpg";
-import { useNavigate } from "react-router-dom"
 
 const Home = () => {
   // Sample data for subjects section
-  const navigate = useNavigate()
   const subjects = [
     {
       id: "it",
@@ -107,7 +104,7 @@ const Home = () => {
         <HeroSection />
 
         {/* About Section */}
-        <AnimatedSection className="py-12 lg:py-16 px-6 lg:px-8">
+        <AnimatedSection className="py-8 lg:pt-12 lg:pb-24 px-6 lg:px-8">
           <div className="container mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
               <FadeInLeft className="relative">
@@ -132,7 +129,7 @@ const Home = () => {
               <FadeInRight>
                 <StaggerContainer>
                   <FadeInUp delay={0.1}>
-                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                    <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4 space-y-1">
                       <p>
                         Bạn là học viên tự do. Muốn tìm khóa học chất lượng?
                       </p>
@@ -142,12 +139,10 @@ const Home = () => {
 
                   <FadeInUp delay={0.2}>
                     <p className="text-muted-foreground mb-4 text-sm">
-                      Làm thế nào sự khuyến khích và tính tò mò tuyệt vời lại có
-                      thể mang đến hạnh phúc. Những ấn tượng tươi sáng và thịnh
-                      vượng đi cùng niềm tin mạnh mẽ. Mỗi sự trì hoãn là một cái
-                      chết – hãy thể hiện phong cách của bạn với những kiến thức
-                      từ chúng tôi. Tôi – với khả năng và ý chí – sẽ vượt qua
-                      cùng những khó khăn trong gian khó.
+                      Làm thế nào sự hứng thú và tính tò mò tuyệt vời lại có thể
+                      mang đến hạnh phúc. Nếu bạn thích một lĩnh vực, hãy học nó
+                      ngay. Mỗi sự trì hoãn là một cái chết – hãy thể hiện phong
+                      cách của bạn với những kiến thức từ chúng tôi cung cấp.
                     </p>
                   </FadeInUp>
 
@@ -190,7 +185,19 @@ const Home = () => {
 
         {/* Subjects Section */}
         <AnimatedSection>
-          <SubjectsSection subjects={subjects} />
+          {/* Sestion suggest */}
+          <div className="space-y-12 mb-12">
+            <SubjectsSection
+              title="Lĩnh vực bạn sẽ học tiếp theo"
+              subtitle="Được đề xuất cho bạn"
+            />
+
+            {/* Base on favories course types */}
+            <SubjectsSection
+              title="Phổ biến theo lĩnh vực bạn yêu thích"
+              subtitle="Được truyền cảm hứng từ những gì bạn đã học"
+            />
+          </div>
         </AnimatedSection>
 
         {/* Mobile App Section */}
@@ -310,10 +317,7 @@ const Home = () => {
 
                     <FadeInUp delay={0.3} className="lg:col-span-3 text-center">
                       <AnimatedButton>
-                        <Button
-                          className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm"
-                          onClick={() => navigate("/register-training-unit")}
-                        >
+                        <Button className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm">
                           Đăng ký đơn vị của bạn tại đây
                         </Button>
                       </AnimatedButton>
