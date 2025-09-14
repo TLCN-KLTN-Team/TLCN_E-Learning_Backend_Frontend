@@ -1,150 +1,141 @@
-import { useState } from "react";
-
-interface Subject {
-  id: string;
-  name: string;
-  image: string;
-  icon: string;
-  description: string;
-  courseCount: number;
-}
+import { useCallback } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import CourseCard from "./CourseCard";
+import type { Course } from "./types";
 
 interface SubjectsSectionProps {
-  subjects: Subject[];
+  title?: string;
+  subtitle?: string;
 }
 
-const SubjectsSection = ({ subjects }: SubjectsSectionProps) => {
-  const [activeTab, setActiveTab] = useState<string>(subjects[0]?.id || "");
+// Mock data cho courses
+const mockCourses: Course[] = [
+  {
+    id: "1",
+    title: "Làm Chủ Git và GitHub Từ A đến Z",
+    instructor: "AI Coding",
+    rating: 4.9,
+    reviewCount: 200,
+    price: 279000,
+    originalPrice: 1099000,
+    image:
+      "https://www.udemy.com/staticx/udemy/js/webpack/coding-exercises-demo-preview-desktop.2957bed27c3ae43a02824b61ad9cda03.png",
+    badge: "Thịnh hành & mới",
+    isPopular: true,
+  },
+  {
+    id: "2",
+    title: "Vỡ lòng về Amazon Web Services",
+    instructor: "Thang Nguyen",
+    rating: 4.8,
+    reviewCount: 466,
+    price: 269000,
+    originalPrice: 1019000,
+    image: "https://img-c.udemycdn.com/course/240x135/3524426_55a1_2.jpg",
+  },
+  {
+    id: "3",
+    title: "Vỡ lòng về Automation với nền",
+    instructor: "Thang Nguyen",
+    rating: 4.7,
+    reviewCount: 570,
+    price: 279000,
+    originalPrice: 809000,
+    image: "https://img-c.udemycdn.com/course/240x135/4506576_3b24_2.jpg",
+  },
+  {
+    id: "4",
+    title: "Lập Trình Python Từ Cơ Bản Đến Nâng Cao Trong 30 Ngày",
+    instructor: "AI Coding",
+    rating: 4.8,
+    reviewCount: 818,
+    price: 279000,
+    originalPrice: 1129000,
+    image: "https://img-c.udemycdn.com/course/240x135/4506402_6c9d_2.jpg",
+    badge: "Bán chạy nhất",
+    isBestSeller: true,
+  },
+  {
+    id: "5",
+    title: "Tự động hoá công việc bằng AI agent và nền",
+    instructor: "Thanh Nguyen",
+    rating: 4.7,
+    reviewCount: 128,
+    price: 279000,
+    originalPrice: 399000,
+    image: "https://img-c.udemycdn.com/course/240x135/5659130_25b0_2.jpg",
+  },
+];
+const SubjectsSection = ({ title, subtitle }: SubjectsSectionProps) => {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: false,
+    align: "start",
+    slidesToScroll: 1,
+    breakpoints: {
+      "(min-width: 768px)": { slidesToScroll: 2 },
+      "(min-width: 1024px)": { slidesToScroll: 3 },
+    },
+  });
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
 
   return (
-    <section className="py-16 lg:py-24">
+    <section className="px-12 lg:px-24">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Khám phá chương trình học
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Chọn chuyên ngành phù hợp với đam mê và sở thích của bạn
-          </p>
-        </div>
+        <h2 className="text-xl lg:text-3xl font-bold text-black mb-6">
+          {title || "Lĩnh vực bạn sẽ học tiếp theo"}
+        </h2>
 
         {/* Subject Tabs */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
-          {subjects.map((subject) => (
-            <button
-              key={subject.id}
-              onClick={() => setActiveTab(subject.id)}
-              className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 no-hover-effect ${
-                activeTab === subject.id
-                  ? "bg-bs-primary text-white shadow-lg"
-                  : "bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <img src={subject.icon} alt="" className="w-5 h-5" />
-                {subject.name}
-              </span>
-            </button>
-          ))}
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between">
+            <p className="text-lg lg:text-2xl font-bold text-black">
+              {subtitle || "Được đề xuất cho bạn"}
+            </p>
+
+            {/* Navigation buttons - hide on mobile */}
+            <div className="hidden sm:flex gap-2">
+              <button
+                onClick={scrollPrev}
+                className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                aria-label="Previous courses"
+              >
+                <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+              </button>
+              <button
+                onClick={scrollNext}
+                className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                aria-label="Next courses"
+              >
+                <ChevronRightIcon className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+          </div>
+
+          {/* Embla Carousel */}
+          <div className="overflow-hidden py-4 px-2" ref={emblaRef}>
+            <div className="flex gap-3 sm:gap-4 ml-0">
+              {mockCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile scroll indicator */}
+          <div className="flex justify-center mt-4 sm:hidden">
+            <p className="text-sm text-gray-500">← Vuốt để xem thêm →</p>
+          </div>
         </div>
 
         {/* Active Subject Content */}
-        {subjects
-          .filter((subject) => subject.id === activeTab)
-          .map((subject) => (
-            <div
-              key={subject.id}
-              className="bg-card rounded-2xl overflow-hidden shadow-lg"
-            >
-              <div className="grid lg:grid-cols-2 gap-0">
-                {/* Content */}
-                <div className="p-8 lg:p-12 flex flex-col justify-center">
-                  <div className="flex items-center gap-3 mb-6">
-                    <img src={subject.icon} alt="" className="w-8 h-8" />
-                    <h3 className="text-2xl font-bold text-foreground">
-                      {subject.name}
-                    </h3>
-                  </div>
-
-                  <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-                    {subject.description}
-                  </p>
-
-                  <div className="flex items-center gap-6 mb-8">
-                    <div className="flex items-center gap-2">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="text-bs-warning"
-                      >
-                        <path
-                          d="M12 2L3.09 8.26L12 14.5L20.91 8.26L12 2Z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M3.09 15.74L12 22L20.91 15.74"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M3.09 8.26L12 14.5L20.91 8.26"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <span className="text-foreground font-medium">
-                        {subject.courseCount} khóa học
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="text-bs-success"
-                      >
-                        <path
-                          d="M20 6L9 17L4 12"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <span className="text-foreground font-medium">
-                        Chứng chí được công nhận
-                      </span>
-                    </div>
-                  </div>
-
-                  <button className="bg-bs-primary text-white px-8 py-3 rounded-lg font-medium hover:bg-bs-primary-dark transition-colors self-start no-hover-effect">
-                    Khám phá ngay
-                  </button>
-                </div>
-
-                {/* Image */}
-                <div className="relative overflow-hidden">
-                  <img
-                    src={subject.image}
-                    alt={subject.name}
-                    className="w-full h-full object-cover min-h-[400px]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
-              </div>
-            </div>
-          ))}
       </div>
     </section>
   );
