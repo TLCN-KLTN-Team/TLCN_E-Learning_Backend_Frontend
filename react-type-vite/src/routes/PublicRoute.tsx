@@ -4,6 +4,7 @@ import AuthPage from "../pages/student/auth/AuthPage";
 import Authenticate from "../pages/student/auth/Authenticate";
 import ForgotPasswordPage from "../pages/student/auth/ForgotPasswordPage";
 import Contact from "../pages/student/home/Contact";
+import TrainingUnitRegistration from "../pages/student/home/EducationUnitRegistration"
 
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
@@ -25,6 +26,7 @@ const PublicRoutes = [
     element={<ForgotPasswordPage />}
   />,
   <Route key="contact" path="/contact" element={<Contact />} />,
+  <Route key="training-unit-registration" path="/register-training-unit" element={<TrainingUnitRegistration />} />,
 ];
 
 export default PublicRoutes;
