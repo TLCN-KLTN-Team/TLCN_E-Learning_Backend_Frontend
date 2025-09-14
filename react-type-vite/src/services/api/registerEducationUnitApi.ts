@@ -13,7 +13,7 @@ export interface EducationUnitRegistrationRequest {
   establishedYear: number
 
   // Admin account information
-  adminName: string
+  adminEmail: string
   adminPassword: string
   adminConfirmPassword: string // Add this field to match backend
 

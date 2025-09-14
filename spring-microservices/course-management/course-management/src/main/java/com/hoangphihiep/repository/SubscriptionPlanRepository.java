@@ -12,7 +12,8 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, Integer> {
 
-    Optional<SubscriptionPlan> findByPlanName(String planName);
+    @Query("SELECT sp FROM SubscriptionPlan sp WHERE sp.id = :id")
+    SubscriptionPlan findSubscriptionPlanById(@Param("id") Long id);
 
     @Query("SELECT sp FROM SubscriptionPlan sp WHERE sp.price BETWEEN :minPrice AND :maxPrice")
     List<SubscriptionPlan> findByPriceBetween(@Param("minPrice") double minPrice, @Param("maxPrice") double maxPrice);

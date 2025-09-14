@@ -14,14 +14,8 @@ public interface EducationalUnitRepository extends JpaRepository<EducationalUnit
 
     Optional<EducationalUnit> findByIdAdmin(String adminId);
 
-    @Query("SELECT eu FROM EducationalUnit eu WHERE eu.isActive = true")
-    List<EducationalUnit> findAllActive();
-
     boolean existsByName(String name);
 
     @Query("SELECT COUNT(eu) > 0 FROM EducationalUnit eu WHERE eu.name = :name AND eu.id != :id")
     boolean existsByNameAndIdNot(@Param("name") String name, @Param("id") Integer id);
-
-    @Query("SELECT eu FROM EducationalUnit eu WHERE eu.idAdmin = :adminId AND eu.isActive = true")
-    Optional<EducationalUnit> findActiveByIdAdmin(@Param("adminId") String adminId);
 }
