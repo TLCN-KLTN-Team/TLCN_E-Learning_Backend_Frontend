@@ -1,0 +1,276 @@
+/* StudentDashboard Specific Styles */
+
+/* Container classes */
+.student-dashboard {
+  min-height: 100vh;
+}
+
+.student-dashboard-bg {
+  background-color: rgb(249 250 251); /* light mode bg-gray-50 */
+}
+
+/* Dark mode support */
+:root.dark .student-dashboard-bg {
+  background-color: rgb(17 24 39); /* dark mode bg-gray-900 */
+}
+
+/* Header styles */
+.student-dashboard-header {
+  background-color: white;
+  border-bottom: 1px solid rgb(229 231 235);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+:root.dark .student-dashboard-header {
+  background-color: rgb(31 41 55); /* dark mode bg-gray-800 */
+  border-bottom-color: rgb(75 85 99); /* dark mode border-gray-600 */
+}
+
+/* Navigation links */
+.student-dashboard-nav-link {
+  color: rgb(55 65 81); /* text-gray-700 */
+  transition: color 0.15s ease-in-out;
+}
+
+.student-dashboard-nav-link:hover {
+  color: rgb(37 99 235); /* text-blue-600 */
+}
+
+.student-dashboard-nav-active {
+  color: rgb(17 24 39); /* text-gray-900 */
+  font-weight: 500;
+}
+
+:root.dark .student-dashboard-nav-link {
+  color: rgb(209 213 219); /* dark mode text-gray-300 */
+}
+
+:root.dark .student-dashboard-nav-link:hover {
+  color: rgb(96 165 250); /* dark mode text-blue-400 */
+}
+
+:root.dark .student-dashboard-nav-active {
+  color: rgb(243 244 246); /* dark mode text-gray-100 */
+}
+
+/* Main content */
+.student-dashboard-main {
+  background-color: transparent;
+}
+
+/* Welcome section */
+.student-dashboard-welcome h1 {
+  color: rgb(17 24 39); /* text-gray-900 */
+}
+
+:root.dark .student-dashboard-welcome h1 {
+  color: rgb(243 244 246); /* dark mode text-gray-100 */
+}
+
+/* Section headings */
+.student-dashboard-section-title {
+  color: rgb(17 24 39); /* text-gray-900 */
+}
+
+:root.dark .student-dashboard-section-title {
+  color: rgb(243 244 246); /* dark mode text-gray-100 */
+}
+
+/* Course card styles */
+.student-dashboard-course-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.student-dashboard-course-card:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+:root.dark .student-dashboard-course-card {
+  background-color: rgb(31 41 55); /* dark mode bg-gray-800 */
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+}
+
+:root.dark .student-dashboard-course-card:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
+/* Course card content */
+.student-dashboard-course-title {
+  color: rgb(17 24 39); /* text-gray-900 */
+}
+
+.student-dashboard-course-subtitle {
+  color: rgb(75 85 99); /* text-gray-600 */
+}
+
+:root.dark .student-dashboard-course-title {
+  color: rgb(243 244 246); /* dark mode text-gray-100 */
+}
+
+:root.dark .student-dashboard-course-subtitle {
+  color: rgb(156 163 175); /* dark mode text-gray-400 */
+}
+
+/* Progress bar */
+.student-dashboard-progress-text {
+  color: rgb(37 99 235); /* text-blue-600 */
+}
+
+.student-dashboard-progress-bg {
+  background-color: rgb(229 231 235); /* bg-gray-200 */
+}
+
+.student-dashboard-progress-fill {
+  background-color: rgb(37 99 235); /* bg-blue-600 */
+}
+
+:root.dark .student-dashboard-progress-text {
+  color: rgb(96 165 250); /* dark mode text-blue-400 */
+}
+
+:root.dark .student-dashboard-progress-bg {
+  background-color: rgb(75 85 99); /* dark mode bg-gray-600 */
+}
+
+:root.dark .student-dashboard-progress-fill {
+  background-color: rgb(96 165 250); /* dark mode bg-blue-400 */
+}
+
+/* Form controls */
+.student-dashboard-select,
+.student-dashboard-input {
+  border: 1px solid rgb(209 213 219); /* border-gray-300 */
+  background-color: white;
+  color: rgb(17 24 39); /* text-gray-900 */
+}
+
+.student-dashboard-select:focus,
+.student-dashboard-input:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px rgb(59 130 246); /* ring-blue-500 */
+}
+
+:root.dark .student-dashboard-select,
+:root.dark .student-dashboard-input {
+  border-color: rgb(75 85 99); /* dark mode border-gray-600 */
+  background-color: rgb(31 41 55); /* dark mode bg-gray-800 */
+  color: rgb(243 244 246); /* dark mode text-gray-100 */
+}
+
+:root.dark .student-dashboard-select:focus,
+:root.dark .student-dashboard-input:focus {
+  box-shadow: 0 0 0 2px rgb(96 165 250); /* dark mode ring-blue-400 */
+}
+
+/* Buttons */
+.student-dashboard-button {
+  border: 1px solid rgb(209 213 219); /* border-gray-300 */
+  background-color: white;
+  color: rgb(55 65 81); /* text-gray-700 */
+  transition: background-color 0.15s ease-in-out;
+}
+
+.student-dashboard-button:hover {
+  background-color: rgb(249 250 251); /* hover:bg-gray-50 */
+}
+
+:root.dark .student-dashboard-button {
+  border-color: rgb(75 85 99); /* dark mode border-gray-600 */
+  background-color: rgb(31 41 55); /* dark mode bg-gray-800 */
+  color: rgb(209 213 219); /* dark mode text-gray-300 */
+}
+
+:root.dark .student-dashboard-button:hover {
+  background-color: rgb(55 65 81); /* dark mode hover:bg-gray-700 */
+}
+
+/* View mode buttons */
+.student-dashboard-view-btn {
+  padding: 0.5rem;
+  color: rgb(156 163 175); /* text-gray-400 */
+  transition: color 0.15s ease-in-out;
+}
+
+.student-dashboard-view-btn:hover {
+  color: rgb(75 85 99); /* hover:text-gray-600 */
+}
+
+.student-dashboard-view-btn-active {
+  background-color: rgb(239 246 255); /* bg-blue-50 */
+  color: rgb(37 99 235); /* text-blue-600 */
+}
+
+:root.dark .student-dashboard-view-btn {
+  color: rgb(107 114 128); /* dark mode text-gray-500 */
+}
+
+:root.dark .student-dashboard-view-btn:hover {
+  color: rgb(156 163 175); /* dark mode hover:text-gray-400 */
+}
+
+:root.dark .student-dashboard-view-btn-active {
+  background-color: rgb(30 58 138); /* dark mode bg-blue-900 */
+  color: rgb(96 165 250); /* dark mode text-blue-400 */
+}
+
+/* Icon buttons in header */
+.student-dashboard-icon-btn {
+  padding: 0.5rem;
+  color: rgb(156 163 175); /* text-gray-400 */
+  transition: color 0.15s ease-in-out;
+}
+
+.student-dashboard-icon-btn:hover {
+  color: rgb(75 85 99); /* hover:text-gray-600 */
+}
+
+:root.dark .student-dashboard-icon-btn {
+  color: rgb(107 114 128); /* dark mode text-gray-500 */
+}
+
+:root.dark .student-dashboard-icon-btn:hover {
+  color: rgb(156 163 175); /* dark mode hover:text-gray-400 */
+}
+
+/* User display */
+.student-dashboard-user-text {
+  color: rgb(55 65 81); /* text-gray-700 */
+}
+
+:root.dark .student-dashboard-user-text {
+  color: rgb(209 213 219); /* dark mode text-gray-300 */
+}
+
+/* Card action button */
+.student-dashboard-card-action-btn {
+  padding: 0.25rem;
+  background-color: white;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  transition: background-color 0.15s ease-in-out;
+}
+
+.student-dashboard-card-action-btn:hover {
+  background-color: rgb(249 250 251); /* hover:bg-gray-50 */
+}
+
+:root.dark .student-dashboard-card-action-btn {
+  background-color: rgb(31 41 55); /* dark mode bg-gray-800 */
+}
+
+:root.dark .student-dashboard-card-action-btn:hover {
+  background-color: rgb(55 65 81); /* dark mode hover:bg-gray-700 */
+}
+
+.student-dashboard-card-action-icon {
+  color: rgb(75 85 99); /* text-gray-600 */
+}
+
+:root.dark .student-dashboard-card-action-icon {
+  color: rgb(156 163 175); /* dark mode text-gray-400 */
+}
