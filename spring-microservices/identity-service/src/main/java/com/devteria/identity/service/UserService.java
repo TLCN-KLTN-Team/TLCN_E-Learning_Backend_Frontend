@@ -137,12 +137,7 @@ public class UserService {
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
-<<<<<<< HEAD
     public void updateProfile(UserUpdateRequest request){
-=======
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public void updateProfileSuperAdmin(UserUpdateRequest request){
->>>>>>> 6073dda (Add file handler service and profile super admin)
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         User updatedUser = userMapper.updateUser(user, request);
@@ -151,7 +146,6 @@ public class UserService {
         userRepository.save(updatedUser);
     }
 
-<<<<<<< HEAD
     public String uploadAvatar(MultipartFile file) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -191,8 +185,6 @@ public class UserService {
         return null;
     }
 
-=======
->>>>>>> 6073dda (Add file handler service and profile super admin)
     public void changePassword(ChangePasswordRequest request) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));

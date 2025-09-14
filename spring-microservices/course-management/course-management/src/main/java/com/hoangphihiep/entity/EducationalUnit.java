@@ -27,9 +27,10 @@ public class EducationalUnit {
     private String email;
     private String website;
     private String logo;
+    private String businessLicense;
     private String description;
     private Integer establishedYear;
-    private boolean isActive;
+    private String status;
 
     @Column(name = "admin_id")
     private String idAdmin;
