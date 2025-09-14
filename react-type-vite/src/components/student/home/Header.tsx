@@ -19,6 +19,8 @@ import { toast } from "react-toastify";
 import lightLogo from "@/assets/open-edu-light.png";
 import darkLogo from "@/assets/open-edu-dark.png";
 
+import { navigation } from "./data/pageNavigations";
+
 interface MenuItem {
   name: string;
   icon: any;
@@ -164,26 +166,6 @@ const Header = () => {
     },
   ];
 
-  const navigation = [
-    { name: "Trang chủ", href: "/" },
-    {
-      name: "Khóa học",
-      href: "#courses",
-      features: [
-        { name: "Trang học tập số", href: "/e-learning" },
-        { name: "Không gian học tập", href: "/workspace" },
-      ],
-    },
-    { name: "Về chúng tôi", href: "#about" },
-    { name: "Liên hệ", href: "/contact" },
-  ];
-
-  // const homeNavigation = [
-  //   {name: "Trang dạy học số"},
-  //   {name: "Trang giáo viên"},
-  //   {name: "Trang Admin"},
-  // ];
-
   return (
     <header
       className={`px-12 fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -279,20 +261,20 @@ const Header = () => {
                   <div className="flex items-center space-x-3">
                     {/* Avatar */}
                     <div className="w-10 h-10 rounded-full bg-bs-primary text-white flex items-center justify-center font-medium text-sm">
-                      {user.avatar ? (
+                      {user.avatarUrl ? (
                         <img
                           src={user.avatarUrl}
-                          alt={getFullName(user.firstName, user.lastName)}
+                          alt={getFullName(user.lastName, user.firstName)}
                           className="w-full h-full rounded-full object-cover"
                         />
                       ) : (
-                        getAvatarInitials(user.firstName, user.lastName)
+                        getAvatarInitials(user.lastName, user.firstName)
                       )}
                     </div>
                     {/* User Info */}
                     <div className="text-left">
                       <div className="text-sm font-medium text-foreground">
-                        {getFullName(user.firstName, user.lastName)}
+                        {getFullName(user.lastName, user.firstName)}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {user.email}

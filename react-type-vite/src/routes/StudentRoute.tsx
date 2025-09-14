@@ -3,6 +3,7 @@ import ProtectedRoute from "./protected/ProtectedRoute";
 import WorkspacePage from "../pages/workspace/WorkspacePage";
 import EditProfile from "../pages/student/home/EditProfile";
 import RoleProtectedRoute from "./protected/RoleProtectedRoute";
+import StudentDashboard from "@/pages/student/dashboard/StudentDashboard";
 
 // Student routes - protected routes for student role
 const StudentRoutes = [
@@ -14,6 +15,14 @@ const StudentRoutes = [
         path="/edit-profile"
         element={<EditProfile />}
       />
+
+      {/* Route to e-learning dashboard */}
+      <Route
+        key="dashboard"
+        path="/student/e-learning"
+        element={<StudentDashboard />}
+      />
+
       {/* Thêm các student routes khác ở đây */}
     </Route>
   </Route>,
