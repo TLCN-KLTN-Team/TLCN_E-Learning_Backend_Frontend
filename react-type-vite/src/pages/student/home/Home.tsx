@@ -33,40 +33,41 @@ import avatar01 from "@/assets/images/avatar/01.jpg";
 import avatar05 from "@/assets/images/avatar/05.jpg";
 import avatar07 from "@/assets/images/avatar/07.jpg";
 import avatar09 from "@/assets/images/avatar/09.jpg";
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+
   // Sample data for subjects section
-  const subjects = [
-    {
-      id: "it",
-      name: "Công nghệ thông tin",
-      image: "/src/assets/images/courses/01.jpg",
-      icon: "/src/assets/images/client/angular.svg",
-      description:
-        "Khám phá thế giới công nghệ với các khóa học lập trình, phát triển web, mobile app và nhiều hơn nữa.",
-      courseCount: 25,
-    },
-    {
-      id: "business",
-      name: "Kinh doanh",
-      image: "/src/assets/images/courses/02.jpg",
-      icon: "/src/assets/images/client/graduated.svg",
-      description:
-        "Phát triển kỹ năng kinh doanh, quản lý và khởi nghiệp với các chuyên gia hàng đầu.",
-      courseCount: 18,
-    },
-    {
-      id: "design",
-      name: "Thiết kế",
-      image: "/src/assets/images/courses/03.jpg",
-      icon: "/src/assets/images/client/figma.svg",
-      description:
-        "Học thiết kế đồ họa, UI/UX và các công cụ thiết kế chuyên nghiệp.",
-      courseCount: 12,
-    },
-  ];
+  // const subjects = [
+  //   {
+  //     id: "it",
+  //     name: "Công nghệ thông tin",
+  //     image: "/src/assets/images/courses/01.jpg",
+  //     icon: "/src/assets/images/client/angular.svg",
+  //     description:
+  //       "Khám phá thế giới công nghệ với các khóa học lập trình, phát triển web, mobile app và nhiều hơn nữa.",
+  //     courseCount: 25,
+  //   },
+  //   {
+  //     id: "business",
+  //     name: "Kinh doanh",
+  //     image: "/src/assets/images/courses/02.jpg",
+  //     icon: "/src/assets/images/client/graduated.svg",
+  //     description:
+  //       "Phát triển kỹ năng kinh doanh, quản lý và khởi nghiệp với các chuyên gia hàng đầu.",
+  //     courseCount: 18,
+  //   },
+  //   {
+  //     id: "design",
+  //     name: "Thiết kế",
+  //     image: "/src/assets/images/courses/03.jpg",
+  //     icon: "/src/assets/images/client/figma.svg",
+  //     description:
+  //       "Học thiết kế đồ họa, UI/UX và các công cụ thiết kế chuyên nghiệp.",
+  //     courseCount: 12,
+  //   },
+  // ];
 
   const testimonials = [
     {
@@ -321,7 +322,7 @@ const Home = () => {
                       <AnimatedButton>
                         <Button
                           className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm"
-                          onClick={() => navigate("/register-education-unit")}
+                          onClick={() => navigate("/register-training-unit")}
                         >
                           Đăng ký đơn vị của bạn tại đây
                         </Button>
