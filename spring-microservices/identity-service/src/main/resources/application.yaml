@@ -20,6 +20,10 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  servlet:
+    multipart:
+      max-file-size: 10MB # 10MB = 10 * 1024 * 1024 bytes
+      max-request-size: 100MB
 jwt:
   signerKey: "${JWT_SIGNER_KEY}"
   valid-duration: 3600 # in second
