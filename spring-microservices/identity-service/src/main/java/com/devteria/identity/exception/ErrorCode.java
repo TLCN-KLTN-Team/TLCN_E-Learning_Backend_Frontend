@@ -74,6 +74,7 @@ public enum ErrorCode {
     FILE_SIZE_TOO_LARGE("FILE_5001", "Kích thước file vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
     FILE_FORMAT_INVALID("FILE_5002", "Định dạng file không được hỗ trợ", HttpStatus.BAD_REQUEST),
     FILE_UPLOAD_FAILED("FILE_5003", "Tải file lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYLOAD_TO_LARGE("FILE_5004", "Kích thước file vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
 
     // Teacher Management Errors (TEACHER_xxxx)
     TEACHER_ALREADY_EXISTS("TEACHER_6001", "Giảng viên đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
