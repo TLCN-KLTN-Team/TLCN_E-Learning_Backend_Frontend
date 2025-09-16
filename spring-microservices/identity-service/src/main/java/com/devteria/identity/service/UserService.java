@@ -2,16 +2,16 @@ package com.devteria.identity.service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.devteria.identity.dto.request.ApiResponse;
 import com.devteria.identity.dto.request.ChangePasswordRequest;
 import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.response.PaginatedResponse;
 import com.devteria.identity.entity.AccountStatus;
-import com.devteria.identity.repository.httpclient.RemoveFileApi;
-import com.devteria.identity.repository.httpclient.UploadFileApi;
+import com.devteria.identity.repository.httpclient.RemoveImageApi;
+import com.devteria.identity.repository.httpclient.UploadImageApi;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -55,8 +55,8 @@ public class UserService {
     PasswordEncoder passwordEncoder;
     ProfileClient profileClient;
     KafkaTemplate<String, Object> kafkaTemplate;
-    UploadFileApi uploadFileApi;
-    RemoveFileApi removeFileApi;
+    UploadImageApi uploadFileApi;
+    RemoveImageApi removeFileApi;
 
     public UserResponse createUser(RegisterRequest request) {
         if (!isValidPassword(request.getPassword())) {
@@ -156,12 +156,11 @@ public class UserService {
         if (user.getAvatarUrl() == null) {
             // upload new avatar
             try {
-                ApiResponse<List<String>> response = uploadFileApi.uploadFile(file);
-                List<String> uploadedData = response.getResult();
-                user.setCloudinaryPublicId(uploadedData.get(1));
-                user.setAvatarUrl(uploadedData.get(0));
+                Map<String, String> response = uploadFileApi.uploadFile(file);
+                user.setCloudinaryPublicId(response.get("publicId"));
+                user.setAvatarUrl(response.get("url"));
                 userRepository.save(user);
-                return uploadedData.get(0);
+                return response.get("url");
             } catch (Exception e) {
                 throw new AppException(ErrorCode.NON_EXECUTE);
             }
@@ -172,12 +171,11 @@ public class UserService {
         if (existingPublicId != null) {
             removeFileApi.removeFile(existingPublicId);
             try {
-                ApiResponse<List<String>> response = uploadFileApi.uploadFile(file);
-                List<String> uploadedData = response.getResult();
-                user.setCloudinaryPublicId(uploadedData.get(1));
-                user.setAvatarUrl(uploadedData.get(0));
+                Map<String, String> response = uploadFileApi.uploadFile(file);
+                user.setCloudinaryPublicId(response.get("publicId"));
+                user.setAvatarUrl(response.get("url"));
                 userRepository.save(user);
-                return uploadedData.get(0);
+                return response.get("url");
             }  catch (Exception e) {
                 throw new AppException(ErrorCode.NON_EXECUTE);
             }

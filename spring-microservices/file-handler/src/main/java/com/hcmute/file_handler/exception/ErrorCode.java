@@ -65,9 +65,19 @@ public enum ErrorCode {
     VALID_PHONE_REQUIRED("VALID_3011", "Số điện thoại không được để trống", HttpStatus.BAD_REQUEST),
     VALID_PHONE_INVALID("VALID_3012", "Định dạng số điện thoại không hợp lệ", HttpStatus.BAD_REQUEST),
     // File Upload Errors (FILE_xxxx)
-    FILE_SIZE_TOO_LARGE("FILE_5001", "Kích thước file vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
+    FILE_EMPTY("FILE_5000", "File không được để trống", HttpStatus.BAD_REQUEST),
+    PAYLOAD_TO_LARGE("FILE_5001", "Kích thước file vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
     FILE_FORMAT_INVALID("FILE_5002", "Định dạng file không được hỗ trợ", HttpStatus.BAD_REQUEST),
     FILE_UPLOAD_FAILED("FILE_5003", "Tải file lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    FILE_EXCEED_MAX_SIZE("FILE_5004", "Kích thước file vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
+    FILE_TYPE_NOT_ALLOWED("FILE_5005", "Định dạng file không được hỗ trợ", HttpStatus.BAD_REQUEST),
+    IMAGE_UPLOAD_FAILED("FILE_5006", "Tải ảnh lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    IMAGE_DELETE_FAILED("FILE_5007", "Xoá ảnh thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    DOCUMENT_UPLOAD_FAILED("FILE_5008", "Tải tài liệu lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    DOCUMENT_DELETE_FAILED("FILE_5009", "Xoá tài liệu thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    UNSUPPORTED_FILE_TYPE("FILE_5010", "Loại file không được hỗ trợ", HttpStatus.BAD_REQUEST),
+    UNKNOWN_FILE_TYPE("FILE_5011", "Không xác định được loại file", HttpStatus.BAD_REQUEST),
+
 
     CLOUDINARY_UPLOAD_FAILED("FILE_5004", "Tải file lên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
     CLOUDINARY_DELETE_FAILED("FILE_5005", "Xoá file trên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),

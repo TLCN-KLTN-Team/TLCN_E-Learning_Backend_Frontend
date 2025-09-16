@@ -1,59 +1,62 @@
 package com.hcmute.file_handler.service;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.hcmute.file_handler.exception.AppException;
 import com.hcmute.file_handler.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class FileService {
-    private final Cloudinary cloudinary;
+    private final ImageUploadService imageUploadService;
+    private final DocumentUploadService documentUploadService;
+    private final VideoUploadService videoUploadService;
 
-    public List<String> upload(MultipartFile file) {
-        try {
-            Map uploader = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-            List<String> result = new ArrayList<>();
-            result.add(uploader.get("secure_url").toString()); // URL để hiển thị
-            result.add(uploader.get("public_id").toString()); // Public ID để xóa file
-            return result;
-        } catch (IOException e) {
-            throw new AppException(ErrorCode.CLOUDINARY_UPLOAD_FAILED);
+    public Map uploadFile(MultipartFile file, String fileType) {
+        switch (fileType.toLowerCase()) {
+            case "image":
+                return imageUploadService.uploadImage(file);
+            case "video":
+                //return videoUploadService.uploadVideo(file);
+            case "document":
+                return documentUploadService.uploadDocument(file);
+            default:
+                throw new AppException(ErrorCode.UNSUPPORTED_FILE_TYPE);
         }
     }
 
-    public void delete(String publicId) {
-        try {
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-        } catch (IOException e) {
-            throw new AppException(ErrorCode.CLOUDINARY_DELETE_FAILED);
+    public Map uploadFileAuto(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType == null) {
+            throw new AppException(ErrorCode.UNKNOWN_FILE_TYPE);
+        }
+
+        if (contentType.startsWith("image/")) {
+            return imageUploadService.uploadImage(file);
+        } else if (contentType.startsWith("video/")) {
+            //return videoUploadService.uploadVideo(file);
+            return null;
+        } else {
+            return documentUploadService.uploadDocument(file);
         }
     }
 
-    public String uploadAvatar(MultipartFile file) throws IOException {
-        Map options = ObjectUtils.asMap(
-                "folder", "avatars",
-                "resource_type", "image",
-                "overwrite", true
-        );
-        return doUpload(file, options);
-    }
-
-    private String doUpload(MultipartFile file, Map options) {
-        try {
-            Map result = cloudinary.uploader().upload(file.getBytes(), options);
-            return result.get("secure_url").toString();
-        } catch (IOException e) {
-            throw new AppException(ErrorCode.CLOUDINARY_UPLOAD_FAILED);
+    public void deleteFile(String publicId, String fileType) {
+        switch (fileType.toLowerCase()) {
+            case "image":
+                imageUploadService.deleteImage(publicId);
+                break;
+            case "video":
+                //videoUploadService.deleteVideo(publicId);
+                break;
+            case "document":
+                documentUploadService.deleteDocument(publicId);
+                break;
+            default:
+                throw new AppException(ErrorCode.UNSUPPORTED_FILE_TYPE);
         }
     }
-
 }
