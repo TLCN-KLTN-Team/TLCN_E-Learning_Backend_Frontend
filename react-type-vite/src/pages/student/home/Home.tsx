@@ -322,7 +322,7 @@ const Home = () => {
                       <AnimatedButton>
                         <Button
                           className="bg-amber-600 hover:bg-bs-warning text-white px-6 py-2 text-sm"
-                          onClick={() => navigate("/register-training-unit")}
+                          onClick={() => navigate("/register-education-unit")}
                         >
                           Đăng ký đơn vị của bạn tại đây
                         </Button>

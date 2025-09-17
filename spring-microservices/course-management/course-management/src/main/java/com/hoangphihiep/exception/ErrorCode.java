@@ -19,10 +19,12 @@ public enum ErrorCode {
     // Common validation errors (10xx)
     INVALID_REQUEST(1005, "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTED(1004, "Email đã tồn tại", HttpStatus.BAD_REQUEST),
+    USERNAME_EXISTED(1005, "Username đã tồn tại", HttpStatus.BAD_REQUEST),
 
     // Instructor related errors (10xx)
     INSTRUCTOR_NOT_EXISTED(1002, "Giảng viên không tồn tại", HttpStatus.NOT_FOUND),
-    INSTRUCTOR_CODE_EXISTED(1003, "Mã giảng viên đã tồn tại", HttpStatus.BAD_REQUEST),
+    INSTRUCTOR_CODE_EXISTED(1003, "ID teacher đã tồn tại", HttpStatus.BAD_REQUEST),
+    STUDENT_CODE_EXISTED(1010, "ID student đã tồn tại", HttpStatus.BAD_REQUEST),
 
     // Educational Unit related errors (11xx)
     EDUCATIONAL_UNIT_NOT_FOUND(1101, "Không tìm thấy đơn vị đào tạo", HttpStatus.NOT_FOUND),

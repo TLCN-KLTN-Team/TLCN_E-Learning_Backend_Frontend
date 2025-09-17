@@ -1,45 +1,8 @@
 import axiosInstance from "./httpClient/axiosInstance"
+import type { EducationUnitRegistrationRequest } from "./request/educationUnitRegistrationRequest"
 import type { ApiResponse } from "./response/apiResponse"
+import type { EducationUnitRegistrationResponse } from "./response/educationUnitRegistrationResponse"
 
-export interface EducationUnitRegistrationRequest {
-  // Education unit information
-  name: string
-  type: string
-  address: string
-  phone: string
-  email: string
-  website?: string
-  description: string
-  establishedYear: number
-
-  // Admin account information
-  adminEmail: string
-  adminPassword: string
-  adminConfirmPassword: string // Add this field to match backend
-
-  // Representative information
-  representativeName: string
-  representativePosition: string
-  representativePhone: string
-  representativeEmail: string
-}
-
-export interface EducationUnitRegistrationResponse {
-  id: string
-  name: string
-  type: string
-  address: string
-  phone: string
-  email: string
-  website?: string
-  logo?: string
-  businessLicense?: string
-  description: string
-  establishedYear: number
-  status: string
-  createdAt: Date
-  adminAccountId?: string
-}
 
 // Updated to match backend multipart form data approach
 export const registerEducationUnit = async (

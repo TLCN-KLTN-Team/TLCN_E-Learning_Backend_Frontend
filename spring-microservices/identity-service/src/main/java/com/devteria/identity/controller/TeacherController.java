@@ -35,6 +35,16 @@ public class TeacherController {
                 .build();
     }
 
+    @PutMapping("/{id}")
+    public ApiResponse<TeacherResponse> updateTeacher(
+            @PathVariable String id,
+            @Valid @RequestBody TeacherRequest request) {
+        log.info("Updating teacher with ID: {}", id);
+        return ApiResponse.<TeacherResponse>builder()
+                .result(teacherService.updateTeacher(id, request))
+                .build();
+    }
+
     @GetMapping
     public ApiResponse<Page<TeacherResponse>> getAllTeachers(
             @RequestParam(defaultValue = "0") int page,
@@ -87,15 +97,6 @@ public class TeacherController {
 
         return ApiResponse.<Page<TeacherResponse>>builder()
                 .result(teacherService.getTeachersByInstitution(institutionId, search, pageable))
-                .build();
-    }
-
-    @PutMapping("/{id}")
-    public ApiResponse<TeacherResponse> updateTeacher(
-            @PathVariable String id, @Valid @RequestBody TeacherRequest request) {
-        log.info("Updating teacher with ID: {}", id);
-        return ApiResponse.<TeacherResponse>builder()
-                .result(teacherService.updateTeacher(id, request))
                 .build();
     }
 

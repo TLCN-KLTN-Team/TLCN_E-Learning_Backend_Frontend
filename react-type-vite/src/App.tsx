@@ -2,7 +2,6 @@ import { Route, Routes } from "react-router-dom"
 import { useTokenExpiry } from "./hooks/useTokenExpiry"
 import { ThemeProvider } from "./context/theme-context"
 import AuthProvider from "./context/auth-context"
-import { EducationUnitProvider } from "./context/register-education-unit-context"
 import ScrollProgressBar from "./components/ui/ScrollProgressBar"
 import NotFound from "./pages/NotFound"
 import PublicRoutes from "./routes/PublicRoute"
@@ -18,8 +17,7 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system">
       <AuthProvider>
-        <EducationUnitProvider>
-          <ScrollProgressBar />
+        <ScrollProgressBar />
           <Routes>
             <Route path="/teacher/create-course" element={<CreateCoursePage />} />
             <Route path="/teacher/course/:courseId/build" element={<CreateCoursePage />} />{" "}
@@ -37,7 +35,6 @@ function App() {
             {/* Add other routes as needed */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </EducationUnitProvider>
       </AuthProvider>
     </ThemeProvider>
   )

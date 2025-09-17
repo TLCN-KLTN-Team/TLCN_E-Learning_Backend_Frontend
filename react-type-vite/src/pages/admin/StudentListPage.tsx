@@ -2,35 +2,57 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GraduationCap, Search, UserPlus, Trash2, Edit, Mail} from "lucide-react";
+import { toast } from 'react-toastify';
 import StudentFormModal from "@/components/admin/student/StudentFormModal";
-import { useAdmin } from "@/context/admin-context";
-import type { StudentResponse } from "@/context/admin-context";
+import * as studentApi from "@/services/api/admin/studentApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
+import type { StudentResponse } from "@/services/api/response/studentResponse";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
+import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 
 const StudentListPage: React.FC = () => {
-  const { 
-    getStudents, 
-    deleteStudent, 
-    institutionId, 
-    isInstitutionLoading,
-    currentInstitution 
-  } = useAdmin();
-  
   const [students, setStudents] = useState<StudentResponse[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<StudentResponse[]>([]);
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [institutionLoading, setInstitutionLoading] = useState(true);
+  const [currentInstitution, setCurrentInstitution] = useState<EducationalUnitResponse | null>(null);
+  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  
+  // State cho chức năng chỉnh sửa
+  const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
+
+  // Initialize institution
+  useEffect(() => {
+    const initializeInstitution = async () => {
+      try {
+        setInstitutionLoading(true);
+        const institution = await educationUnitApi.getMyInstitution();
+        setCurrentInstitution(institution);
+        setInstitutionId(institution.id);
+      } catch (error: any) {
+        console.error('Failed to load institution:', error);
+        toast.error('Không thể tải dữ liệu cơ sở giáo dục');
+      } finally {
+        setInstitutionLoading(false);
+      }
+    };
+
+    initializeInstitution();
+  }, []);
 
   const loadStudents = async () => {
     if (!institutionId) return;
     
     try {
       setLoading(true);
-      const response = await getStudents();
+      const response: PaginatedResponse<StudentResponse> = await studentApi.getStudents(institutionId);
       setStudents(response.content || []);
       setFilteredStudents(response.content || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading students:', error);
+      toast.error('Không thể tải danh sách học sinh');
     } finally {
       setLoading(false);
     }
@@ -55,22 +77,36 @@ const StudentListPage: React.FC = () => {
   }, [searchTerm, students]);
 
   const handleSuccess = () => {
-    loadStudents(); // Reload students after successful creation
+    loadStudents(); // Reload students after successful creation/update
   };
 
   const handleDeleteStudent = async (studentId: string, studentName: string) => {
-    if (window.confirm(`Are you sure you want to delete student "${studentName}"? This action cannot be undone.`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa học sinh "${studentName}"? Hành động này không thể hoàn tác.`)) {
       try {
-        await deleteStudent(studentId);
+        await studentApi.deleteStudent(institutionId!, studentId);
+        toast.success('Xóa học sinh thành công!');
         handleSuccess();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error deleting student:', error);
+        toast.error(error?.response?.data?.message || 'Không thể xóa học sinh');
       }
     }
   };
 
+  // Handler cho chức năng chỉnh sửa
+  const handleEditStudent = (student: StudentResponse) => {
+    setEditingStudent(student);
+    setShowStudentModal(true);
+  };
+
+  // Handler để đóng modal và reset state
+  const handleCloseModal = () => {
+    setShowStudentModal(false);
+    setEditingStudent(null);
+  };
+
   // Show loading state while institution is loading
-  if (isInstitutionLoading) {
+  if (institutionLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse">
@@ -90,8 +126,8 @@ const StudentListPage: React.FC = () => {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-medium text-red-900 mb-2">Institution not found</h3>
-          <p className="text-red-700">Unable to load institution data. Please try refreshing the page.</p>
+          <h3 className="text-lg font-medium text-red-900 mb-2">Không tìm thấy cơ sở giáo dục</h3>
+          <p className="text-red-700">Không thể tải dữ liệu cơ sở giáo dục. Vui lòng thử làm mới trang.</p>
         </div>
       </div>
     );
@@ -119,10 +155,10 @@ const StudentListPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <GraduationCap className="mr-3 text-blue-600" size={32} />
-            Student Management
+            Quản lý Học sinh
           </h1>
           <p className="text-gray-600 mt-1">
-            Manage student accounts for {currentInstitution?.name || 'your institution'}
+            Quản lý tài khoản học sinh cho {currentInstitution?.name || 'cơ sở giáo dục của bạn'}
           </p>
         </div>
         <Button 
@@ -130,7 +166,7 @@ const StudentListPage: React.FC = () => {
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
         >
           <UserPlus className="mr-2" size={18} />
-          Create Student
+          Tạo Học sinh Mới
         </Button>
       </div>
 
@@ -143,7 +179,7 @@ const StudentListPage: React.FC = () => {
                 <GraduationCap className="text-blue-600" size={24} />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Students</p>
+                <p className="text-sm font-medium text-gray-600">Tổng Học sinh</p>
                 <p className="text-2xl font-bold text-gray-900">{students.length}</p>
               </div>
             </div>
@@ -154,7 +190,7 @@ const StudentListPage: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <Input
-              placeholder="Search students by name, username, email, student ID, or class..."
+              placeholder="Tìm kiếm học sinh theo tên, tên đăng nhập, email, mã học sinh hoặc lớp..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg"
@@ -170,18 +206,18 @@ const StudentListPage: React.FC = () => {
             {students.length === 0 ? (
               <>
                 <GraduationCap className="mx-auto text-gray-400 mb-4" size={48} />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-                <p className="text-gray-500 mb-4">Get started by creating your first student account</p>
-                <Button onClick={() => setShowStudentModal(true)} className="bg-blue-600 hover:bg-blue-700">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy học sinh nào</h3>
+                <p className="text-gray-500 mb-4">Bắt đầu bằng cách tạo tài khoản học sinh đầu tiên</p>
+                <Button onClick={() => setShowStudentModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg">
                   <UserPlus className="mr-2" size={16} />
-                  Create Student
+                  Tạo Học sinh
                 </Button>
               </>
             ) : (
               <>
                 <Search className="mx-auto text-gray-400 mb-4" size={48} />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No students match your search</h3>
-                <p className="text-gray-500">Try adjusting your search terms</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Không có học sinh nào phù hợp với tìm kiếm</h3>
+                <p className="text-gray-500">Thử điều chỉnh từ khóa tìm kiếm của bạn</p>
               </>
             )}
           </div>
@@ -191,19 +227,19 @@ const StudentListPage: React.FC = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    STUDENT
+                    HỌC SINH
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CONTACT
+                    LIÊN HỆ
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Class & ID
+                    LỚP & MÃ SỐ
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
+                    KHOA
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    HÀNH ĐỘNG
                   </th>
                 </tr>
               </thead>
@@ -238,17 +274,17 @@ const StudentListPage: React.FC = () => {
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          ID: {student.studentId}
+                          Mã SH: {student.studentId}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {student.className || 'No class assigned'}
+                          {student.className || 'Chưa phân lớp'}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
                         {student.department?.name || (
-                          <span className="text-gray-500 italic">No department</span>
+                          <span className="text-gray-500 italic">Chưa có khoa</span>
                         )}
                       </div>
                     </td>
@@ -257,10 +293,11 @@ const StudentListPage: React.FC = () => {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => handleEditStudent(student)}
                           className="text-blue-600 border-blue-200 hover:bg-blue-50"
                         >
                           <Edit size={14} className="mr-1" />
-                          Edit
+                          Sửa
                         </Button>
                         <Button
                           size="sm"
@@ -282,9 +319,10 @@ const StudentListPage: React.FC = () => {
 
       <StudentFormModal
         isOpen={showStudentModal}
-        onClose={() => setShowStudentModal(false)}
+        onClose={handleCloseModal}
         institutionId={institutionId}
         onSuccess={handleSuccess}
+        editingStudent={editingStudent}
       />
     </div>
   );

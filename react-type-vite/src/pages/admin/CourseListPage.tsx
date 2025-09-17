@@ -1,28 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Trash2, BookOpen, School, Calendar, TrendingUp } from "lucide-react";
+import { Users, UserPlus, Trash2, BookOpen, School, TrendingUp } from "lucide-react";
+import { toast } from 'react-toastify';
 import CourseFormModal from "@/components/admin/course/CourseFormModal";
 import AssignTeacherModal from "@/components/admin/course/AssignTeacherModal";
 import ClassManagementModal from "@/components/admin/course/ClassManagementModal";
-import { useAdmin } from "@/context/admin-context";
-import type { CourseResponse } from "@/context/admin-context";
+import * as courseApi from "@/services/api/admin/courseApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as classApi from "@/services/api/admin/classApi";
+import type { CourseResponse } from "@/services/api/response/courseResponse";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
+import type { PaginatedResponse } from "@/services/api/response/apiResponse";
+
 
 const CourseListPage: React.FC = () => {
-  const { 
-    getCourses, 
-    deleteCourse, 
-    institutionId, 
-    isInstitutionLoading,
-    currentInstitution,
-    getClassesByCourse
-  } = useAdmin();
-  
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [showAssignTeacher, setShowAssignTeacher] = useState(false);
   const [showClassManagement, setShowClassManagement] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [institutionLoading, setInstitutionLoading] = useState(true);
+  const [currentInstitution, setCurrentInstitution] = useState<EducationalUnitResponse | null>(null);
+  const [institutionId, setInstitutionId] = useState<string | null>(null);
   const [classStats, setClassStats] = useState<Record<number, { 
     totalClasses: number, 
     totalStudents: number,
@@ -30,19 +30,39 @@ const CourseListPage: React.FC = () => {
     capacity: number 
   }>>({});
 
+  // Initialize institution
+  useEffect(() => {
+    const initializeInstitution = async () => {
+      try {
+        setInstitutionLoading(true);
+        const institution = await educationUnitApi.getMyInstitution();
+        setCurrentInstitution(institution);
+        setInstitutionId(institution.id);
+      } catch (error: any) {
+        console.error('Failed to load institution:', error);
+        toast.error('Không thể tải dữ liệu cơ sở giáo dục');
+      } finally {
+        setInstitutionLoading(false);
+      }
+    };
+
+    initializeInstitution();
+  }, []);
+
   const loadCourses = async () => {
     if (!institutionId) return;
     
     try {
       setLoading(true);
-      const response = await getCourses();
+      const response: PaginatedResponse<CourseResponse> = await courseApi.getCourses(institutionId);
       const coursesData = response.content || [];
       setCourses(coursesData);
       
       // Load detailed class statistics for each course
       await loadClassStats(coursesData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading courses:', error);
+      toast.error('Không thể tải danh sách khóa học');
     } finally {
       setLoading(false);
     }
@@ -53,7 +73,7 @@ const CourseListPage: React.FC = () => {
     
     for (const course of coursesData) {
       try {
-        const classResponse = await getClassesByCourse(course.id);
+        const classResponse = await classApi.getClassesByCourse(institutionId!, course.id);
         const classes = classResponse.content || [];
         
         stats[course.id] = {
@@ -93,12 +113,14 @@ const CourseListPage: React.FC = () => {
   };
 
   const handleDeleteCourse = async (courseId: number, courseName: string) => {
-    if (window.confirm(`Are you sure you want to delete the course "${courseName}"? This will also delete all classes and enrollments. This action cannot be undone.`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa khóa học "${courseName}"? Điều này sẽ xóa tất cả lớp học và đăng ký liên quan. Hành động này không thể hoàn tác.`)) {
       try {
-        await deleteCourse(courseId);
+        await courseApi.deleteCourse(institutionId!, courseId);
+        toast.success('Xóa khóa học thành công!');
         handleSuccess();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error deleting course:', error);
+        toast.error(error?.response?.data?.message || 'Không thể xóa khóa học');
       }
     }
   };
@@ -112,16 +134,16 @@ const CourseListPage: React.FC = () => {
   };
 
   const getCapacityBadge = (current: number, max: number) => {
-    if (max === 0) return { color: "gray", text: "No capacity" };
+    if (max === 0) return { color: "gray", text: "Không có sức chứa" };
     const ratio = current / max;
-    if (ratio >= 1) return { color: "red", text: "Full" };
-    if (ratio >= 0.9) return { color: "orange", text: "Almost full" };
-    if (ratio >= 0.7) return { color: "yellow", text: "High occupancy" };
-    return { color: "green", text: "Available" };
+    if (ratio >= 1) return { color: "red", text: "Đầy" };
+    if (ratio >= 0.9) return { color: "orange", text: "Gần đầy" };
+    if (ratio >= 0.7) return { color: "yellow", text: "Đông" };
+    return { color: "green", text: "Còn chỗ" };
   };
 
   // Show loading state while institution is loading
-  if (isInstitutionLoading) {
+  if (institutionLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse">
@@ -141,8 +163,8 @@ const CourseListPage: React.FC = () => {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-medium text-red-900 mb-2">Institution not found</h3>
-          <p className="text-red-700">Unable to load institution data. Please try refreshing the page.</p>
+          <h3 className="text-lg font-medium text-red-900 mb-2">Không tìm thấy cơ sở giáo dục</h3>
+          <p className="text-red-700">Không thể tải dữ liệu cơ sở giáo dục. Vui lòng thử làm mới trang.</p>
         </div>
       </div>
     );
@@ -176,10 +198,10 @@ const CourseListPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <BookOpen className="mr-3 text-blue-600" size={32} />
-            Course Management
+            Quản lý Khóa học
           </h1>
           <p className="text-gray-600 mt-1">
-            Manage courses and classes for {currentInstitution?.name || 'your institution'}
+            Quản lý khóa học và lớp học cho {currentInstitution?.name || 'cơ sở giáo dục của bạn'}
           </p>
         </div>
         <Button 
@@ -187,7 +209,7 @@ const CourseListPage: React.FC = () => {
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
         >
           <BookOpen className="mr-2" size={18} />
-          Create New Course
+          Tạo Khóa học Mới
         </Button>
       </div>
 
@@ -199,7 +221,7 @@ const CourseListPage: React.FC = () => {
               <BookOpen className="text-blue-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Courses</p>
+              <p className="text-sm font-medium text-gray-600">Tổng Khóa học</p>
               <p className="text-2xl font-bold text-gray-900">{courses.length}</p>
             </div>
           </div>
@@ -211,7 +233,7 @@ const CourseListPage: React.FC = () => {
               <Users className="text-green-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">With Teachers</p>
+              <p className="text-sm font-medium text-gray-600">Có Giáo viên</p>
               <p className="text-2xl font-bold text-gray-900">
                 {courses.filter(c => c.teacher).length}
               </p>
@@ -225,9 +247,9 @@ const CourseListPage: React.FC = () => {
               <School className="text-purple-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Classes</p>
+              <p className="text-sm font-medium text-gray-600">Lớp Đang hoạt động</p>
               <p className="text-2xl font-bold text-gray-900">{activeClasses}</p>
-              <p className="text-xs text-gray-500">of {totalClasses} total</p>
+              <p className="text-xs text-gray-500">trên {totalClasses} tổng</p>
             </div>
           </div>
         </div>
@@ -238,9 +260,9 @@ const CourseListPage: React.FC = () => {
               <UserPlus className="text-orange-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Enrolled Students</p>
+              <p className="text-sm font-medium text-gray-600">Học sinh Đã đăng ký</p>
               <p className="text-2xl font-bold text-gray-900">{totalStudents}</p>
-              <p className="text-xs text-gray-500">of {totalCapacity} capacity</p>
+              <p className="text-xs text-gray-500">trên {totalCapacity} sức chứa</p>
             </div>
           </div>
         </div>
@@ -251,11 +273,11 @@ const CourseListPage: React.FC = () => {
               <TrendingUp className="text-cyan-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Utilization</p>
+              <p className="text-sm font-medium text-gray-600">Tỷ lệ Sử dụng</p>
               <p className="text-2xl font-bold text-gray-900">
                 {totalCapacity > 0 ? Math.round((totalStudents / totalCapacity) * 100) : 0}%
               </p>
-              <p className="text-xs text-gray-500">overall capacity</p>
+              <p className="text-xs text-gray-500">sức chứa tổng thể</p>
             </div>
           </div>
         </div>
@@ -266,11 +288,11 @@ const CourseListPage: React.FC = () => {
         {courses.length === 0 ? (
           <div className="p-12 text-center">
             <BookOpen className="mx-auto text-gray-400 mb-4" size={48} />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
-            <p className="text-gray-500 mb-4">Get started by creating your first course</p>
-            <Button onClick={() => setShowCourseModal(true)} className="bg-blue-600 hover:bg-blue-700">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy khóa học nào</h3>
+            <p className="text-gray-500 mb-4">Bắt đầu bằng cách tạo khóa học đầu tiên của bạn</p>
+            <Button onClick={() => setShowCourseModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg">
               <BookOpen className="mr-2" size={16} />
-              Create Course
+              Tạo Khóa học
             </Button>
           </div>
         ) : (
@@ -279,22 +301,22 @@ const CourseListPage: React.FC = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Course Details
+                    Chi tiết Khóa học
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Teacher
+                    Giáo viên
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Classes & Status
+                    Lớp học & Trạng thái
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Enrollment
+                    Đăng ký
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Credits
+                    Tín chỉ
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Hành động
                   </th>
                 </tr>
               </thead>
@@ -316,12 +338,12 @@ const CourseListPage: React.FC = () => {
                             {course.courseName}
                             {stats.totalClasses === 0 && (
                               <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                                No classes
+                                Không có lớp
                               </span>
                             )}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {course.courseType?.courseTypeName || 'No type specified'}
+                            {course.courseType?.courseTypeName || 'Chưa xác định loại'}
                           </div>
                           {course.description && (
                             <div className="text-xs text-gray-400 mt-1 max-w-xs truncate">
@@ -352,18 +374,18 @@ const CourseListPage: React.FC = () => {
                             <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
                               <Users className="w-4 h-4 text-gray-400" />
                             </div>
-                            <span className="text-sm text-gray-500 italic">No teacher assigned</span>
+                            <span className="text-sm text-gray-500 italic">Chưa phân công giáo viên</span>
                           </div>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <span className="text-sm font-medium text-gray-900">
-                            {stats.totalClasses} classes
+                            {stats.totalClasses} lớp
                           </span>
                           {stats.activeClasses < stats.totalClasses && (
                             <span className="text-xs text-gray-500">
-                              ({stats.activeClasses} active)
+                              ({stats.activeClasses} đang hoạt động)
                             </span>
                           )}
                         </div>
@@ -389,8 +411,8 @@ const CourseListPage: React.FC = () => {
                           </span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          {stats.capacity === 0 ? 'No capacity set' : 
-                           `${stats.capacity - stats.totalStudents} slots available`}
+                          {stats.capacity === 0 ? 'Chưa thiết lập sức chứa' : 
+                           `${stats.capacity - stats.totalStudents} chỗ còn trống`}
                         </div>
                         {stats.capacity > 0 && (
                           <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
@@ -410,7 +432,7 @@ const CourseListPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {course.credits || 0} credits
+                          {course.credits || 0} tín chỉ
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -422,7 +444,7 @@ const CourseListPage: React.FC = () => {
                             className="text-blue-600 border-blue-200 hover:bg-blue-50"
                           >
                             <Users size={14} className="mr-1" />
-                            Teacher
+                            Giáo viên
                           </Button>
                           <Button
                             size="sm"
@@ -431,7 +453,7 @@ const CourseListPage: React.FC = () => {
                             className="text-green-600 border-green-200 hover:bg-green-50"
                           >
                             <School size={14} className="mr-1" />
-                            Classes
+                            Lớp học
                           </Button>
                           <Button
                             size="sm"

@@ -48,6 +48,7 @@ public enum ErrorCode {
     // User Management Errors (USER_xxxx)
     USER_ALREADY_EXISTS("USER_2001", "Người dùng đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND("USER_2002", "Không tìm thấy người dùng", HttpStatus.NOT_FOUND),
+    USER_EMAIL_EXISTED("USER_2003", "Email đã tồn tại", HttpStatus.BAD_REQUEST),
 
     // Validation Errors (VALID_xxxx)
     VALID_EXCEPTION("VALID_3000", "Dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),
@@ -78,7 +79,10 @@ public enum ErrorCode {
 
     // Teacher Management Errors (TEACHER_xxxx)
     TEACHER_ALREADY_EXISTS("TEACHER_6001", "Giảng viên đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
+    TEACHERID_ALREADY_EXISTS("TEACHER_6003", "ID giảng viên đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
     TEACHER_NOT_FOUND("TEACHER_6002", "Không tìm thấy thông tin giảng viên", HttpStatus.NOT_FOUND),
+
+    STUDENT_ALREADY_EXISTS("STUDENT_6001", "ID sinh viên đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
 
     // Role Management Errors (ROLE_xxxx)
     ROLE_NOT_FOUND("ROLE_7001", "Không tìm thấy vai trò", HttpStatus.NOT_FOUND),

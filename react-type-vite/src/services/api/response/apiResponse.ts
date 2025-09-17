@@ -15,4 +15,5 @@ export interface PaginatedResponse<T> {
   last: boolean;
   hasNext: boolean;
   hasPrevious: boolean;
+  number: number;
 }

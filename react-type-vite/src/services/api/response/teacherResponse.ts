@@ -1,0 +1,19 @@
+import type { DepartmentResponse } from "./DepartmentResponse";
+import type { EducationalUnitResponse } from "./educationalUnitResponse";
+
+export interface TeacherResponse {
+  id: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  dob?: string;
+  teacherId: string;
+  departmentId?: string;
+  educationalUnitId?: string;
+  description?: string;
+  socialUrl?: string;
+  bankAccountNumber?: string;
+  department?: DepartmentResponse;
+  educationalUnit?: EducationalUnitResponse;
+}

@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { X, User, UserCheck, UserX, ChevronDown, Search, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAdmin } from "@/context/admin-context/index";
 import { Input } from "@/components/ui/input";
-import type { CourseResponse, TeacherResponse } from "@/context/admin-context/index";
+import * as teacherApi from "@/services/api/admin/teacherApi";
+import * as courseApi from "@/services/api/admin/courseApi";
+import { toast } from "react-toastify";
+import type { CourseResponse } from "@/services/api/response/courseResponse";
+import type { TeacherResponse } from "@/services/api/response/teacherResponse";
 
 interface AssignTeacherModalProps {
   isOpen: boolean;
@@ -20,18 +23,12 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
   institutionId,
   onSuccess,
 }) => {
-  const {
-    getTeachers,
-    assignTeacherToCourse,
-    removeTeacherFromCourse,
-    isLoading,
-  } = useAdmin();
-  
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && institutionId) {
@@ -44,10 +41,11 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
   const loadTeachers = async () => {
     try {
       setLoadingTeachers(true);
-      const response = await getTeachers();
+      const response = await teacherApi.getTeachers(institutionId);
       setTeachers(response.content || []);
     } catch (error) {
       console.error('Error loading teachers:', error);
+      toast.error('Không thể tải danh sách giảng viên');
     } finally {
       setLoadingTeachers(false);
     }
@@ -74,28 +72,38 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
   const handleAssign = async () => {
     if (!selectedTeacher || !course) return;
     try {
+      setIsLoading(true);
       console.log('Assigning teacher:', selectedTeacher, 'to course:', course.id);
       console.log('Selected teacher details:', selectedTeacherData);
-      await assignTeacherToCourse(course.id, selectedTeacher);
+      await courseApi.assignTeacherToCourse(institutionId, course.id, selectedTeacher);
+      toast.success('Phân công giảng viên thành công!');
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error('Error assigning teacher:', error);
       console.error('Selected teacher ID:', selectedTeacher);
       console.error('Available teachers:', teachers);
+      toast.error('Không thể phân công giảng viên');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleRemoveTeacher = async () => {
     if (!course) return;
     
-    if (window.confirm('Are you sure you want to remove this teacher from the course?')) {
+    if (window.confirm('Bạn có chắc chắn muốn loại bỏ giảng viên này khỏi môn học?')) {
       try {
-        await removeTeacherFromCourse(course.id);
+        setIsLoading(true);
+        await courseApi.removeTeacherFromCourse(institutionId, course.id);
+        toast.success('Đã loại bỏ giảng viên thành công!');
         onSuccess?.();
         onClose();
       } catch (error) {
         console.error('Error removing teacher:', error);
+        toast.error('Không thể loại bỏ giảng viên');
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -131,8 +139,8 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                 <GraduationCap className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Teacher Management</h2>
-                <p className="text-blue-100 text-sm mt-1">Assign or manage course instructor</p>
+                <h2 className="text-xl font-bold text-white">Quản Lý Giảng Viên</h2>
+                <p className="text-blue-100 text-sm mt-1">Phân công hoặc quản lý giảng viên môn học</p>
               </div>
             </div>
             <Button 
@@ -148,7 +156,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
           <div className="bg-white/10 rounded-lg p-3 mt-3">
             <p className="font-semibold text-lg text-white">{course.courseName}</p>
             <p className="text-blue-100 text-sm">
-              Credits: {course.credits}
+              Số tín chỉ: {course.credits}
             </p>
           </div>
         </div>
@@ -162,7 +170,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                 <div className="bg-green-50 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                     <UserCheck size={16} className="mr-2 text-green-600" />
-                    Current Teacher
+                    Giảng Viên Hiện Tại
                   </h3>
                   
                   <div className="flex items-center justify-between">
@@ -176,7 +184,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                         </h4>
                         <div className="flex items-center space-x-3 mt-1">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 font-medium">
-                            ID: {course.teacher.teacherId}
+                            Mã: {course.teacher.teacherId}
                           </span>
                           {course.teacher.department && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 font-medium">
@@ -194,7 +202,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                       className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                     >
                       <UserX size={14} className="mr-2" />
-                      Remove
+                      Loại bỏ
                     </Button>
                   </div>
                 </div>
@@ -204,13 +212,13 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
               <div className="bg-blue-50 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                   <User size={16} className="mr-2 text-blue-600" />
-                  {course.teacher ? 'Change Teacher' : 'Assign Teacher'}
+                  {course.teacher ? 'Thay Đổi Giảng Viên' : 'Phân Công Giảng Viên'}
                 </h3>
 
                 {loadingTeachers ? (
                   <div className="flex items-center justify-center py-12 bg-white rounded-lg">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600 font-medium">Loading teachers...</span>
+                    <span className="ml-3 text-gray-600 font-medium">Đang tải danh sách giảng viên...</span>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -218,13 +226,13 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                     <div className="space-y-2">
                       <label className="flex items-center text-sm font-medium text-gray-700">
                         <Search size={14} className="mr-2 text-blue-600" />
-                        Search Teachers
+                        Tìm Kiếm Giảng Viên
                       </label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                         <Input
                           type="text"
-                          placeholder="Search by name, ID, or department..."
+                          placeholder="Tìm theo tên, mã giảng viên hoặc khoa..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="pl-10 focus:border-blue-500"
@@ -236,7 +244,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                     <div className="space-y-2">
                       <label className="flex items-center text-sm font-medium text-gray-700">
                         <User size={14} className="mr-2 text-blue-600" />
-                        Select Teacher
+                        Chọn Giảng Viên
                         <span className="text-red-500 ml-1">*</span>
                       </label>
                       <div className="relative">
@@ -261,7 +269,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-gray-500">Select a teacher</span>
+                              <span className="text-gray-500">Chọn giảng viên</span>
                             )}
                             <ChevronDown 
                               className={`text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 
@@ -277,15 +285,15 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                                 <User className="mx-auto mb-2 text-gray-400" size={24} />
                                 <p className="text-sm">
                                   {searchTerm 
-                                    ? 'No teachers found matching your search' 
+                                    ? 'Không tìm thấy giảng viên phù hợp' 
                                     : course.teacher 
-                                      ? 'No other teachers available' 
-                                      : 'No teachers available'
+                                      ? 'Không có giảng viên khác khả dụng' 
+                                      : 'Không có giảng viên khả dụng'
                                   }
                                 </p>
                                 {course.teacher && !searchTerm && (
                                   <p className="text-xs text-gray-400 mt-1">
-                                    Current teacher is excluded from the list
+                                    Giảng viên hiện tại đã bị loại khỏi danh sách
                                   </p>
                                 )}
                               </div>
@@ -312,7 +320,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                                       </div>
                                       <div className="flex items-center space-x-2 mt-1">
                                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800 font-medium">
-                                          ID: {teacher.teacherId}
+                                          Mã: {teacher.teacherId}
                                         </span>
                                         {teacher.department && (
                                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 font-medium">
@@ -341,7 +349,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                 <div className="bg-orange-50 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                     <UserCheck size={16} className="mr-2 text-orange-600" />
-                    Selected Teacher Preview
+                    Xem Trước Giảng Viên Đã Chọn
                   </h3>
                   
                   <div className="flex items-center space-x-3">
@@ -354,7 +362,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                       </h4>
                       <div className="flex items-center space-x-2 mt-1">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800 font-medium">
-                          ID: {selectedTeacherData.teacherId}
+                          Mã: {selectedTeacherData.teacherId}
                         </span>
                         {selectedTeacherData.department && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 font-medium">
@@ -379,22 +387,22 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                 className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
                 disabled={isLoading || loadingTeachers}
               >
-                Cancel
+                Hủy
               </Button>
               <Button
                 onClick={handleAssign}
                 disabled={!selectedTeacher || isLoading || loadingTeachers}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[180px]"
               >
                 {isLoading ? (
                   <div className="flex items-center">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Assigning...
+                    Đang phân công...
                   </div>
                 ) : (
                   <div className="flex items-center">
                     <UserCheck size={16} className="mr-2" />
-                    Assign Teacher
+                    Phân Công Giảng Viên
                   </div>
                 )}
               </Button>

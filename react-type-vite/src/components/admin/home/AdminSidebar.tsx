@@ -53,70 +53,70 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const menuItems: MenuItem[] = [
     {
       id: "dashboard",
-      label: "Dashboard",
+      label: "Bảng điều khiển",
       icon: Home,
       path: "/admin", // Full path for dashboard
     },
     {
       id: "courses",
-      label: "Courses",
+      label: "Khóa học",
       icon: Tv,
       path: "/admin/courses", // Full path
     },
     {
       id: "students",
-      label: "Students",
+      label: "Học viên",
       icon: GraduationCap,
       path: "/admin/students", // Full path
     },
     {
       id: "instructors",
-      label: "Instructors",
+      label: "Giảng viên",
       icon: Users,
       path: "/admin/instructors", // Full path
     },
     {
       id: "reviews",
-      label: "Reviews",
+      label: "Đánh giá",
       icon: MessageSquare,
       path: "/admin/reviews",
     },
     {
       id: "earnings",
-      label: "Earnings",
+      label: "Doanh thu",
       icon: DollarSign,
       path: "/admin/earnings",
     },
     {
       id: "settings",
-      label: "Admin Settings",
+      label: "Cài đặt Admin",
       icon: Settings,
       path: "/admin/settings",
     },
     {
       id: "authentication",
-      label: "Authentication",
+      label: "Xác thực",
       icon: Lock,
       children: [
-        { id: "sign-up", label: "Sign Up", path: "/register" },
-        { id: "sign-in", label: "Sign In", path: "/login" },
+        { id: "sign-up", label: "Đăng ký", path: "/register" },
+        { id: "sign-in", label: "Đăng nhập", path: "/login" },
         {
           id: "forgot-password",
-          label: "Forgot Password",
+          label: "Quên mật khẩu",
           path: "/forgot-password",
         },
-        { id: "error-404", label: "Error 404", path: "/404" },
+        { id: "error-404", label: "Lỗi 404", path: "/404" },
       ],
     },
     {
       id: "documentation",
-      label: "Documentation",
+      label: "Tài liệu",
       icon: FileText,
       path: "/admin/docs",
     },
     {
       id: "changelog",
-      label: "Changelog",
+      label: "Nhật ký thay đổi",
       icon: GitBranch,
       path: "/admin/changelog",
     },
@@ -291,7 +291,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <Link
                   to="/admin/settings"
                   className="no-transition text-gray-400 hover:text-white transition-colors"
-                  title="Settings"
+                  title="Cài đặt"
                   onClick={() => {
                     if (window.innerWidth < 1024) {
                       setIsSidebarOpen(false);
@@ -303,7 +303,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <Link
                   to="/"
                   className="no-transition text-gray-400 hover:text-white transition-colors"
-                  title="Home"
+                  title="Trang chủ"
                   onClick={() => {
                     if (window.innerWidth < 1024) {
                       setIsSidebarOpen(false);
@@ -315,7 +315,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <Link
                   to="/login"
                   className="no-transition text-gray-400 hover:text-white transition-colors"
-                  title="Sign out"
+                  title="Đăng xuất"
                   onClick={() => {
                     if (window.innerWidth < 1024) {
                       setIsSidebarOpen(false);

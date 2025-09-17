@@ -13,7 +13,6 @@ import com.devteria.identity.entity.Teacher;
 
 @Repository
 public interface TeacherRepository extends JpaRepository<Teacher, String> {
-
     Optional<Teacher> findByTeacherId(String teacherId);
 
     boolean existsByTeacherId(String teacherId);
