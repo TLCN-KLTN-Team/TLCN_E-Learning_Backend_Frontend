@@ -34,6 +34,17 @@ public class AdminService {
 
     @Transactional
     public UserResponse createAdmin(UserRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
+        }
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+
+            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+
         HashSet<Role> roles = new HashSet<>();
         roleRepository.findById(PredefinedRole.ADMIN_ROLE).ifPresent(roles::add);
 

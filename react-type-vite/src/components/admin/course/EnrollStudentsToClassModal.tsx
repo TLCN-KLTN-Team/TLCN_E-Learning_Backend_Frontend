@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { X, Users, UserCheck, UserMinus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAdmin } from "@/context/admin-context/index";
 import { Input } from "@/components/ui/input";
-import type { CourseClassResponse, StudentResponse } from "@/context/admin-context/index";
+import { toast } from 'react-toastify';
+import * as classApi from "@/services/api/admin/classApi";
+import type { CourseClassResponse } from "@/services/api/response/courseClassResponse";
+import type { StudentResponse } from "@/services/api/response/studentResponse";
 
 interface EnrollStudentsToClassModalProps {
   isOpen: boolean;
@@ -17,21 +19,15 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
   isOpen,
   onClose,
   courseClass,
+  institutionId,
   onSuccess,
 }) => {
-  const {
-    getAvailableStudentsForClass,
-    getStudentsInClass,
-    enrollStudentsToClass,
-    unenrollStudentFromClass,
-    isLoading,
-  } = useAdmin();
-  
   const [allAvailableStudents, setAllAvailableStudents] = useState<StudentResponse[]>([]);
   const [enrolledStudents, setEnrolledStudents] = useState<StudentResponse[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'available' | 'enrolled'>('available');
   const [loadingData, setLoadingData] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -48,14 +44,15 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
     try {
       setLoadingData(true);
       const [availableResponse, enrolledResponse] = await Promise.all([
-        getAvailableStudentsForClass(courseClass.id),
-        getStudentsInClass(courseClass.id)
+        classApi.getAvailableStudentsForClass(institutionId, courseClass.id),
+        classApi.getStudentsInClass(institutionId, courseClass.id)
       ]);
       
       setAllAvailableStudents(availableResponse || []);
       setEnrolledStudents(enrolledResponse || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading student data:', error);
+      toast.error('Không thể tải dữ liệu sinh viên');
     } finally {
       setLoadingData(false);
     }
@@ -93,7 +90,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
     const availableSlots = courseClass!.maxStudents - courseClass!.currentStudents;
     const studentsToSelect = filteredAvailableStudents
       .slice(0, availableSlots)
-      .map(student => student.id);
+      .map(student => student.studentId);
     setSelectedStudents(studentsToSelect);
   };
 
@@ -105,25 +102,35 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
     if (!selectedStudents.length || !courseClass) return;
     
     try {
-      await enrollStudentsToClass(courseClass.id, selectedStudents);
+      setIsLoading(true);
+      await classApi.enrollStudentsToClass(institutionId, courseClass.id, selectedStudents);
+      toast.success('Đăng ký sinh viên vào lớp thành công!');
       await loadData(); // Reload data
       setSelectedStudents([]);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error enrolling students:', error);
+      toast.error(error?.response?.data?.message || 'Không thể đăng ký sinh viên vào lớp');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleUnenrollStudent = async (studentId: string) => {
     if (!courseClass) return;
     
-    if (window.confirm('Are you sure you want to remove this student from the class?')) {
+    if (window.confirm('Bạn có chắc chắn muốn loại bỏ sinh viên này khỏi lớp?')) {
       try {
-        await unenrollStudentFromClass(courseClass.id, studentId);
+        setIsLoading(true);
+        await classApi.unenrollStudentFromClass(institutionId, courseClass.id, studentId);
+        toast.success('Đã loại bỏ sinh viên khỏi lớp thành công!');
         await loadData(); // Reload data
         onSuccess?.();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error unenrolling student:', error);
+        toast.error(error?.response?.data?.message || 'Không thể loại bỏ sinh viên khỏi lớp');
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -163,7 +170,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                 <Users className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Student Management</h2>
+                <h2 className="text-xl font-bold text-white">Quản Lý Sinh Viên</h2>
                 <p className="text-purple-100 text-sm">
                   {courseClass.className} 
                   <span className="text-purple-200 font-normal ml-2">({courseClass.classCode})</span>
@@ -185,18 +192,18 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-white/70 rounded-full"></div>
               <span className="text-sm text-purple-100">
-                Current: <span className="font-semibold text-white">{courseClass.currentStudents}/{courseClass.maxStudents}</span> students
+                Hiện tại: <span className="font-semibold text-white">{courseClass.currentStudents}/{courseClass.maxStudents}</span> sinh viên
               </span>
             </div>
             {!canEnrollMore && (
               <span className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium w-fit">
-                Class Full
+                Lớp đã đầy
               </span>
             )}
           </div>
         </div>
 
-        {/* Content with Footer structure - Similar to StudentFormModal */}
+        {/* Content with Footer structure */}
         <div className="flex flex-col h-[calc(90vh-140px)]">
           <div className="flex-1 overflow-hidden">
             {/* Tabs */}
@@ -211,8 +218,8 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                   }`}
                 >
                   <Users className="inline mr-2" size={16} />
-                  <span className="hidden sm:inline">Available Students</span>
-                  <span className="sm:hidden">Available</span>
+                  <span className="hidden sm:inline">Sinh Viên Có Sẵn</span>
+                  <span className="sm:hidden">Có Sẵn</span>
                   <span className="ml-1">({availableStudents.length})</span>
                 </button>
                 <button
@@ -224,8 +231,8 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                   }`}
                 >
                   <UserCheck className="inline mr-2" size={16} />
-                  <span className="hidden sm:inline">Enrolled Students</span>
-                  <span className="sm:hidden">Enrolled</span>
+                  <span className="hidden sm:inline">Sinh Viên Đã Đăng Ký</span>
+                  <span className="sm:hidden">Đã Đăng Ký</span>
                   <span className="ml-1">({enrolledStudents.length})</span>
                 </button>
               </div>
@@ -237,7 +244,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                 <Input
                   type="text"
-                  placeholder="Search students by name, ID, department, or class..."
+                  placeholder="Tìm kiếm sinh viên theo tên, mã, khoa hoặc lớp..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 py-2.5 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-lg"
@@ -250,7 +257,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
               {loadingData ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                  <span className="ml-3 text-gray-600 font-medium">Loading students...</span>
+                  <span className="ml-3 text-gray-600 font-medium">Đang tải danh sách sinh viên...</span>
                 </div>
               ) : activeTab === 'available' ? (
                 <div className="space-y-4">
@@ -261,7 +268,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                           <Users className="text-yellow-600" size={16} />
                         </div>
                         <p className="text-yellow-800 font-medium text-sm">
-                          This class is at maximum capacity. No more students can be enrolled.
+                          Lớp này đã đạt sức chứa tối đa. Không thể đăng ký thêm sinh viên nào.
                         </p>
                       </div>
                     </div>
@@ -273,12 +280,12 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                         <Users className="text-gray-400" size={32} />
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {searchTerm ? 'No students found' : 'No available students'}
+                        {searchTerm ? 'Không tìm thấy sinh viên' : 'Không có sinh viên khả dụng'}
                       </h3>
                       <p className="text-gray-500 text-sm">
                         {searchTerm 
-                          ? 'Try adjusting your search criteria' 
-                          : 'All eligible students are already enrolled or no students available to enroll'
+                          ? 'Thử điều chỉnh tiêu chí tìm kiếm' 
+                          : 'Tất cả sinh viên đủ điều kiện đã được đăng ký hoặc không có sinh viên nào khả dụng để đăng ký'
                         }
                       </p>
                     </div>
@@ -288,11 +295,11 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gray-50 rounded-lg mb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                           <span className="text-sm text-gray-600">
-                            <span className="font-semibold">{filteredAvailableStudents.length}</span> students available
+                            <span className="font-semibold">{filteredAvailableStudents.length}</span> sinh viên khả dụng
                           </span>
                           <div className="hidden sm:block h-4 w-px bg-gray-300"></div>
                           <span className="text-sm text-gray-600">
-                            <span className="font-semibold text-purple-600">{availableSlots}</span> slots remaining
+                            <span className="font-semibold text-purple-600">{availableSlots}</span> chỗ còn trống
                           </span>
                         </div>
                         {canEnrollMore && (
@@ -304,7 +311,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                               disabled={filteredAvailableStudents.length === 0}
                               className="text-purple-600 border-purple-200 hover:bg-purple-50 flex-1 sm:flex-none"
                             >
-                              Select All
+                              Chọn tất cả
                             </Button>
                             <Button
                               variant="outline"
@@ -313,7 +320,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                               disabled={selectedStudents.length === 0}
                               className="text-gray-600 border-gray-200 hover:bg-gray-50 flex-1 sm:flex-none"
                             >
-                              Deselect All
+                              Bỏ chọn tất cả
                             </Button>
                           </div>
                         )}
@@ -340,7 +347,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                                     <input
                                       type="checkbox"
                                       checked={isSelected}
-                                      onChange={() => handleToggleStudent(student.id)}
+                                      onChange={() => handleToggleStudent(student.studentId)}
                                       disabled={isDisabled}
                                       className="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
                                     />
@@ -361,11 +368,11 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                                       </h4>
                                       <div className="flex flex-wrap items-center gap-2 mt-1">
                                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800 font-medium">
-                                          ID: {student.studentId}
+                                          Mã: {student.studentId}
                                         </span>
                                         {student.className && (
                                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 font-medium">
-                                            Class: {student.className}
+                                            Lớp: {student.className}
                                           </span>
                                         )}
                                         {student.department && (
@@ -393,12 +400,12 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                         <UserCheck className="text-gray-400" size={32} />
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {searchTerm ? 'No students found' : 'No students enrolled'}
+                        {searchTerm ? 'Không tìm thấy sinh viên' : 'Chưa có sinh viên đăng ký'}
                       </h3>
                       <p className="text-gray-500 text-sm">
                         {searchTerm 
-                          ? 'Try adjusting your search criteria' 
-                          : 'No students are currently enrolled in this class'
+                          ? 'Thử điều chỉnh tiêu chí tìm kiếm' 
+                          : 'Hiện tại chưa có sinh viên nào đăng ký lớp học này'
                         }
                       </p>
                     </div>
@@ -418,11 +425,11 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                             </div>
                             <div className="flex flex-wrap items-center gap-2 mt-1">
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800 font-medium">
-                                ID: {student.studentId}
+                                Mã: {student.studentId}
                               </span>
                               {student.className && (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 font-medium">
-                                  Class: {student.className}
+                                  Lớp: {student.className}
                                 </span>
                               )}
                               {student.department && (
@@ -436,11 +443,11 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleUnenrollStudent(student.id)}
+                          onClick={() => handleUnenrollStudent(student.studentId)}
                           className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 flex-shrink-0 ml-3"
                         >
                           <UserMinus size={14} className="mr-1" />
-                          <span className="hidden sm:inline">Remove</span>
+                          <span className="hidden sm:inline">Loại bỏ</span>
                         </Button>
                       </div>
                     ))
@@ -450,16 +457,16 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
             </div>
           </div>
 
-          {/* Footer - Similar structure to StudentFormModal */}
+          {/* Footer */}
           <div className="border-t bg-gray-50 px-6 py-4 mt-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               {showEnrollFooter ? (
                 <>
                   <div className="text-sm text-gray-600">
-                    <span className="font-semibold text-purple-600">{selectedStudents.length}</span> student(s) selected
+                    <span className="font-semibold text-purple-600">{selectedStudents.length}</span> sinh viên đã chọn
                     {selectedStudents.length > availableSlots && (
                       <span className="text-red-600 ml-2 font-medium block sm:inline">
-                        (Exceeds available slots: {availableSlots})
+                        (Vượt quá số chỗ trống: {availableSlots})
                       </span>
                     )}
                   </div>
@@ -470,7 +477,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                       className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors flex-1 sm:flex-none"
                       disabled={isLoading}
                     >
-                      Cancel
+                      Hủy
                     </Button>
                     <Button
                       onClick={handleEnrollStudents}
@@ -479,15 +486,15 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                         selectedStudents.length > availableSlots || 
                         isLoading
                       }
-                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 min-w-[140px] flex-1 sm:flex-none"
+                      className="bg-purple-600 hover:bg-purple-700  text-white disabled:opacity-50 min-w-[140px] flex-1 sm:flex-none"
                     >
                       {isLoading ? (
                         <div className="flex items-center justify-center">
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Enrolling...
+                          Đang đăng ký...
                         </div>
                       ) : (
-                        `Enroll ${selectedStudents.length} Student${selectedStudents.length !== 1 ? 's' : ''}`
+                        `Đăng ký ${selectedStudents.length} sinh viên`
                       )}
                     </Button>
                   </div>
@@ -499,7 +506,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                     onClick={handleClose}
                     className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    Close
+                    Đóng
                   </Button>
                 </div>
               )}

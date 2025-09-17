@@ -66,6 +66,11 @@ public class UserService {
             throw new AppException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
         }
 
+        if (userRepository.existsByEmail(request.getEmail())) {
+            System.out.println ("Có vào đây 132");
+            throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
+        }
+
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         HashSet<Role> roles = new HashSet<>();

@@ -24,25 +24,19 @@ public class TeacherService {
     private final EmailService emailService;
 
     public TeacherResponse createTeacher(TeacherRequest request) {
-        log.info("Creating new teacher with username: {}", request.getUsername());
         validateTeacherRequest(request);
 
-        // Store original password before it gets hashed
         String originalPassword = request.getPassword();
 
         try {
-            log.debug("Calling identity service to create teacher: {}", request);
             ApiResponse<TeacherResponse> response = teacherRepository.createTeacher(request);
 
             if (response.getResult() == null) {
-                log.error("Identity service returned null result for teacher creation: {}", request.getUsername());
                 throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
             }
 
             TeacherResponse teacherResponse = response.getResult();
-            log.info("Successfully created teacher with ID: {}", teacherResponse.getId());
 
-            // Send email with credentials asynchronously
             CompletableFuture<Boolean> emailFuture = emailService.sendAccountCredentialsAsync(
                     teacherResponse.getEmail(),
                     teacherResponse.getFirstName(),
@@ -52,25 +46,22 @@ public class TeacherService {
                     "Teacher"
             );
 
-            // Handle email result asynchronously
             emailFuture.whenComplete((emailSent, emailError) -> {
                 if (emailError != null) {
-                    log.error("Failed to send account credentials email to teacher {}: {}",
+                    log.error("Gửi email thông tin tài khoản cho giáo viên {} thất bại: {}",
                             teacherResponse.getEmail(), emailError.getMessage(), emailError);
                 } else if (emailSent) {
-                    log.info("Account credentials email sent successfully to teacher: {}", teacherResponse.getEmail());
+                    log.info("Đã gửi email thông tin tài khoản thành công cho giáo viên: {}", teacherResponse.getEmail());
                 } else {
-                    log.warn("Account credentials email sending failed for teacher: {}", teacherResponse.getEmail());
+                    log.warn("Gửi email thông tin tài khoản cho giáo viên {} không thành công", teacherResponse.getEmail());
                 }
             });
 
             return teacherResponse;
 
         } catch (AppException e) {
-            log.error("App exception while creating teacher {}: {}", request.getUsername(), e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error creating teacher {}: {}", request.getUsername(), e.getMessage(), e);
             throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
         }
     }
@@ -89,29 +80,53 @@ public class TeacherService {
 
     private void validateTeacherRequest(TeacherRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException("Teacher request cannot be null");
+            throw new IllegalArgumentException("Yêu cầu tạo giáo viên không được để trống");
         }
 
         if (!StringUtils.hasText(request.getUsername())) {
-            throw new IllegalArgumentException("Username is required");
+            throw new IllegalArgumentException("Tên đăng nhập là bắt buộc");
         }
 
         if (!StringUtils.hasText(request.getEmail())) {
-            throw new IllegalArgumentException("Email is required");
+            throw new IllegalArgumentException("Email là bắt buộc");
         }
 
         if (!StringUtils.hasText(request.getFirstName())) {
-            throw new IllegalArgumentException("First name is required");
+            throw new IllegalArgumentException("Họ của giáo viên là bắt buộc");
         }
 
         if (!StringUtils.hasText(request.getLastName())) {
-            throw new IllegalArgumentException("Last name is required");
+            throw new IllegalArgumentException("Tên của giáo viên là bắt buộc");
         }
 
         if (!StringUtils.hasText(request.getTeacherId())) {
-            throw new IllegalArgumentException("Teacher ID is required");
+            throw new IllegalArgumentException("Mã giáo viên là bắt buộc");
         }
+    }
+    public TeacherResponse updateTeacher(String teacherId, TeacherRequest request) {
+        log.info("Updating teacher with ID: {}", teacherId);
+        validateTeacherRequest(request);
 
-        log.debug("Teacher request validation passed for username: {}", request.getUsername());
+        try {
+            log.debug("Calling identity service to update teacher: {}", teacherId);
+            ApiResponse<TeacherResponse> response = teacherRepository.updateTeacher(teacherId, request);
+
+            if (response.getResult() == null) {
+                log.error("Identity service returned null result for teacher update: {}", teacherId);
+                throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
+            }
+
+            TeacherResponse teacherResponse = response.getResult();
+            log.info("Successfully updated teacher with ID: {}", teacherResponse.getId());
+
+            return teacherResponse;
+
+        } catch (AppException e) {
+            log.error("App exception while updating teacher {}: {}", teacherId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error updating teacher {}: {}", teacherId, e.getMessage(), e);
+            throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
+        }
     }
 }

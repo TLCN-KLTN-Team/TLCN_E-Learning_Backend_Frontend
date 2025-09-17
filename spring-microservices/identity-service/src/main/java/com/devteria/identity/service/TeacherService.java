@@ -2,6 +2,7 @@ package com.devteria.identity.service;
 
 import java.util.HashSet;
 
+import com.devteria.identity.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,12 +33,28 @@ import lombok.extern.slf4j.Slf4j;
 public class TeacherService {
 
     TeacherRepository teacherRepository;
+    UserRepository userRepository;
     TeacherMapper teacherMapper;
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
 
     @Transactional
     public TeacherResponse createTeacher(TeacherRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
+        }
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+
+            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        if (teacherRepository.existsByTeacherId(request.getTeacherId())) {
+            System.out.println ("Có vào đây999");
+            throw new AppException(ErrorCode.TEACHERID_ALREADY_EXISTS);
+        }
+
         HashSet<Role> roles = new HashSet<>();
         roleRepository.findById(PredefinedRole.TEACHER_ROLE).ifPresent(roles::add);
 
@@ -62,6 +79,64 @@ public class TeacherService {
             return teacherMapper.toTeacherResponse(teacher);
         } catch (DataIntegrityViolationException exception) {
             log.error("Error creating teacher: {}", exception.getMessage());
+            throw new AppException(ErrorCode.TEACHER_ALREADY_EXISTS);
+        }
+    }
+
+    @Transactional
+    public TeacherResponse updateTeacher(String id, TeacherRequest request) {
+        log.info("Updating teacher with ID: {}", id);
+
+        Teacher existingTeacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Check if email is being changed and if new email already exists
+        if (!existingTeacher.getEmail().equals(request.getEmail()) &&
+                userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
+        }
+
+        // Check if username is being changed and if new username already exists
+        if (!existingTeacher.getUsername().equals(request.getUsername()) &&
+                userRepository.existsByUsername(request.getUsername())) {
+            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        // Check if teacherId is being changed and if new teacherId already exists
+        if (!existingTeacher.getTeacherId().equals(request.getTeacherId()) &&
+                teacherRepository.existsByTeacherId(request.getTeacherId())) {
+            throw new AppException(ErrorCode.TEACHER_ALREADY_EXISTS);
+        }
+
+        try {
+            // Update fields
+            existingTeacher.setUsername(request.getUsername());
+            existingTeacher.setEmail(request.getEmail());
+            existingTeacher.setFirstName(request.getFirstName());
+            existingTeacher.setLastName(request.getLastName());
+            existingTeacher.setDob(request.getDob());
+            existingTeacher.setTeacherId(request.getTeacherId());
+            existingTeacher.setIdDepartment(request.getDepartmentId() != null ?
+                    Integer.parseInt(request.getDepartmentId()) : null);
+            existingTeacher.setIdEducational(request.getEducationalUnitId() != null ?
+                    Integer.parseInt(request.getEducationalUnitId()) : null);
+            existingTeacher.setDescription(request.getDescription());
+            existingTeacher.setSocialUrl(request.getSocialUrl());
+            existingTeacher.setBankAccountNumber(request.getBankAccountNumber());
+
+            // Only update password if provided
+            if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+                existingTeacher.setPassword(passwordEncoder.encode(request.getPassword()));
+                log.info("Password updated for teacher: {}", id);
+            }
+
+            Teacher updatedTeacher = teacherRepository.save(existingTeacher);
+            log.info("Successfully updated teacher with ID: {}", id);
+
+            return teacherMapper.toTeacherResponse(updatedTeacher);
+
+        } catch (DataIntegrityViolationException exception) {
+            log.error("Error updating teacher: {}", exception.getMessage());
             throw new AppException(ErrorCode.TEACHER_ALREADY_EXISTS);
         }
     }
@@ -101,27 +176,6 @@ public class TeacherService {
         Teacher teacher = teacherRepository.findByTeacherId(teacherId)
                 .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherMapper.toTeacherResponse(teacher);
-    }
-
-    @Transactional
-    public TeacherResponse updateTeacher(String id, TeacherRequest request) {
-        log.info("Updating teacher with ID: {}", id);
-
-        Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
-
-        if (request.getTeacherId() != null
-                && !request.getTeacherId().equals(teacher.getTeacherId())
-                && teacherRepository.existsByTeacherId(request.getTeacherId())) {
-            throw new AppException(ErrorCode.TEACHER_ALREADY_EXISTS);
-        }
-
-        teacherMapper.updateTeacher(teacher, request);
-        teacher = teacherRepository.save(teacher);
-
-        TeacherResponse response = teacherMapper.toTeacherResponse(teacher);
-        log.info("Teacher updated successfully with ID: {}", teacher.getId());
-        return response;
     }
 
     @Transactional

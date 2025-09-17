@@ -112,4 +112,31 @@ public class StudentService {
 
         log.debug("Student request validation passed for username: {}", request.getUsername());
     }
+
+    public StudentResponse updateStudent(String studentId, StudentRequest request) {
+        log.info("Updating student with ID: {}", studentId);
+        validateStudentRequest(request);
+
+        try {
+            log.debug("Calling identity service to update student: {}", studentId);
+            ApiResponse<StudentResponse> response = studentRepository.updateStudent(studentId, request);
+
+            if (response.getResult() == null) {
+                log.error("Identity service returned null result for student update: {}", studentId);
+                throw new AppException(ErrorCode.STUDENT_VALIDATION_FAILED);
+            }
+
+            StudentResponse studentResponse = response.getResult();
+            log.info("Successfully updated student with ID: {}", studentResponse.getId());
+
+            return studentResponse;
+
+        } catch (AppException e) {
+            log.error("App exception while updating student {}: {}", studentId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error updating student {}: {}", studentId, e.getMessage(), e);
+            throw new AppException(ErrorCode.STUDENT_VALIDATION_FAILED);
+        }
+    }
 }

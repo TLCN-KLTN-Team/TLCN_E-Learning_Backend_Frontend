@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @FeignClient(
         name = "file-handler",
@@ -17,5 +18,5 @@ import java.util.List;
 public interface FileHandlerRepository {
 
     @PostMapping(value = "/media/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    ApiResponse<List<String>> uploadFile(@RequestPart("file") MultipartFile file);
+    Map<String, String> uploadFile(@RequestPart("file") MultipartFile file);
 }

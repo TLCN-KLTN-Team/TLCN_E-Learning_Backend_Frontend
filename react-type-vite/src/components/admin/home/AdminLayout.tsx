@@ -1,7 +1,6 @@
 import type React from "react";
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { AdminProvider } from "@/context/admin-context";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 
@@ -11,8 +10,7 @@ const AdminLayout: React.FC = () => {
   console.log("AdminLayout rendering..."); // Debug log
 
   return (
-    <AdminProvider>
-      <div className="admin-container flex min-h-screen bg-gray-50">
+    <div className="admin-container flex min-h-screen bg-gray-50">
         {/* Sidebar */}
         <AdminSidebar
           isSidebarOpen={isSidebarOpen}
@@ -33,7 +31,6 @@ const AdminLayout: React.FC = () => {
           </div>
         </div>
       </div>
-    </AdminProvider>
   );
 };
 

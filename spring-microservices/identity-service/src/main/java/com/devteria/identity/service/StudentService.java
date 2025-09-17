@@ -10,6 +10,7 @@ import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.StudentMapper;
 import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.StudentRepository;
+import com.devteria.identity.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,12 +33,27 @@ import java.util.stream.Collectors;
 public class StudentService {
 
     StudentRepository studentRepository;
+    UserRepository userRepository;
     StudentMapper studentMapper;
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
 
     @Transactional
     public StudentResponse createStudent(StudentRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
+        }
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+
+            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        if (studentRepository.existsByStudentId(request.getStudentId())) {
+            System.out.println ("Có vào đây999");
+            throw new AppException(ErrorCode.STUDENT_ALREADY_EXISTS);
+        }
+
         HashSet<Role> roles = new HashSet<>();
         roleRepository.findById(PredefinedRole.STUDENT_ROLE).ifPresent(roles::add);
 
@@ -94,5 +110,63 @@ public class StudentService {
         return students.stream()
                 .map(studentMapper::toStudentResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public StudentResponse updateStudent(String id, StudentRequest request) {
+        log.info("Updating student with ID: {}", id);
+
+        Student existingStudent = studentRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Check if email is being changed and if new email already exists
+        if (!existingStudent.getEmail().equals(request.getEmail()) &&
+                userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
+        }
+
+        // Check if username is being changed and if new username already exists
+        if (!existingStudent.getUsername().equals(request.getUsername()) &&
+                userRepository.existsByUsername(request.getUsername())) {
+            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        // Check if studentId is being changed and if new studentId already exists
+        if (!existingStudent.getStudentId().equals(request.getStudentId()) &&
+                studentRepository.existsByStudentId(request.getStudentId())) {
+            throw new AppException(ErrorCode.STUDENT_ALREADY_EXISTS);
+        }
+
+        try {
+            // Update fields
+            existingStudent.setUsername(request.getUsername());
+            existingStudent.setEmail(request.getEmail());
+            existingStudent.setFirstName(request.getFirstName());
+            existingStudent.setLastName(request.getLastName());
+            existingStudent.setDob(request.getDob());
+            existingStudent.setStudentId(request.getStudentId());
+            existingStudent.setIdDepartment(request.getDepartmentId() != null ?
+                    Integer.parseInt(request.getDepartmentId()) : null);
+            existingStudent.setIdEducational(request.getEducationalUnitId() != null ?
+                    Integer.parseInt(request.getEducationalUnitId()) : null);
+            existingStudent.setDescription(request.getDescription());
+            existingStudent.setSocialUrl(request.getSocialUrl());
+            existingStudent.setClassName(request.getClassName());
+
+            // Only update password if provided
+            if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+                existingStudent.setPassword(passwordEncoder.encode(request.getPassword()));
+                log.info("Password updated for student: {}", id);
+            }
+
+            Student updatedStudent = studentRepository.save(existingStudent);
+            log.info("Successfully updated student with ID: {}", id);
+
+            return studentMapper.toStudentResponse(updatedStudent);
+
+        } catch (DataIntegrityViolationException exception) {
+            log.error("Error updating student: {}", exception.getMessage());
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
     }
 }

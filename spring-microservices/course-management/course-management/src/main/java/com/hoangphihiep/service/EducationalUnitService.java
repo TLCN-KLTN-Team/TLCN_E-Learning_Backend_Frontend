@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -102,14 +103,8 @@ public class EducationalUnitService {
             if (request.getLogo() != null && !request.getLogo().isEmpty()) {
                 log.info("Uploading logo file");
                 try {
-                    ApiResponse<List<String>> logoUploadResponse = fileHandlerRepository.uploadFile(request.getLogo());
-                    if (logoUploadResponse != null && logoUploadResponse.getResult() != null
-                            && !logoUploadResponse.getResult().isEmpty()) {
-                        logoUrl = logoUploadResponse.getResult().get(0); // Lấy URL đầu tiên
-                        log.info("Logo uploaded successfully. URL: {}", logoUrl);
-                    } else {
-                        log.warn("Failed to upload logo file");
-                    }
+                    Map<String, String> logoUploadResponse = fileHandlerRepository.uploadFile(request.getLogo());
+                    logoUrl = logoUploadResponse.get("url");
                 } catch (Exception e) {
                     log.error("Error uploading logo: {}", e.getMessage(), e);
                 }
@@ -120,14 +115,8 @@ public class EducationalUnitService {
             if (request.getBusinessLicense() != null && !request.getBusinessLicense().isEmpty()) {
                 log.info("Uploading business license file");
                 try {
-                    ApiResponse<List<String>> licenseUploadResponse = fileHandlerRepository.uploadFile(request.getBusinessLicense());
-                    if (licenseUploadResponse != null && licenseUploadResponse.getResult() != null
-                            && !licenseUploadResponse.getResult().isEmpty()) {
-                        businessLicenseUrl = licenseUploadResponse.getResult().get(0); // Lấy URL đầu tiên
-                        log.info("Business license uploaded successfully. URL: {}", businessLicenseUrl);
-                    } else {
-                        log.warn("Failed to upload business license file");
-                    }
+                    Map<String, String> licenseUploadResponse = fileHandlerRepository.uploadFile(request.getBusinessLicense());
+                    businessLicenseUrl = licenseUploadResponse.get("url");
                 } catch (Exception e) {
                     log.error("Error uploading business license: {}", e.getMessage(), e);
                 }
@@ -175,9 +164,14 @@ public class EducationalUnitService {
                     .adminAccountId(adminUserId)
                     .build();
 
+        } catch (AppException e) {
+            // Re-throw AppException as-is to preserve the original error
+            log.error("AppException during training unit registration: {}", e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
-            log.error("Error during training unit registration: {}", e.getMessage(), e);
-            throw new RuntimeException("Training unit registration failed: " + e.getMessage());
+            log.error("Unexpected error during training unit registration: {}", e.getMessage(), e);
+            // Only throw a generic error for truly unexpected exceptions
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 }
