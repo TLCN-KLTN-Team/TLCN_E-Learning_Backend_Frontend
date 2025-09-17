@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { X, Plus, Edit, Trash2, Users, School, Calendar, Hash } from "lucide-react";
+import { toast } from 'react-toastify';
 import { Button } from "@/components/ui/button";
-import { useAdmin } from "@/context/admin-context/index";
 import { Input } from "@/components/ui/input";
-import type { CourseResponse, CourseClassResponse } from "@/context/admin-context/index";
+import * as classApi from "@/services/api/admin/classApi";
 import EnrollStudentsToClassModal from "./EnrollStudentsToClassModal";
+import type { CourseResponse } from "@/services/api/response/courseResponse";
+import type { CourseClassResponse } from "@/services/api/response/courseClassResponse";
+import type { CourseClassRequest } from "@/services/api/request/courseClassRequest";
 
 interface ClassManagementModalProps {
   isOpen: boolean;
@@ -21,20 +24,13 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
   institutionId,
   onSuccess,
 }) => {
-  const { 
-    getClassesByCourse, 
-    createClass, 
-    updateClass, 
-    deleteClass,
-    isLoading 
-  } = useAdmin();
-
   const [classes, setClasses] = useState<CourseClassResponse[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingClass, setEditingClass] = useState<CourseClassResponse | null>(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<CourseClassResponse | null>(null);
   const [loadingClasses, setLoadingClasses] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     className: "",
@@ -56,10 +52,11 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
     if (!course) return;
     try {
       setLoadingClasses(true);
-      const response = await getClassesByCourse(course.id);
+      const response = await classApi.getClassesByCourse(institutionId, course.id);
       setClasses(response.content || []);
     } catch (error) {
       console.error("Error loading classes:", error);
+      toast.error('Không thể tải danh sách lớp học');
       setClasses([]);
     } finally {
       setLoadingClasses(false);
@@ -70,18 +67,18 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
     const errors: Record<string, string> = {};
     
     if (!formData.className.trim()) {
-      errors.className = "Class name is required";
+      errors.className = "Tên lớp học là bắt buộc";
     }
     if (!formData.classCode.trim()) {
-      errors.classCode = "Class code is required";
+      errors.classCode = "Mã lớp học là bắt buộc";
     }
     if (formData.maxStudents < 1) {
-      errors.maxStudents = "Max students must be at least 1";
+      errors.maxStudents = "Sĩ số tối đa phải ít nhất là 1";
     }
     
     // Check for duplicate class code (only when creating new class)
     if (!editingClass && classes.some(cls => cls.classCode === formData.classCode.trim())) {
-      errors.classCode = "Class code already exists";
+      errors.classCode = "Mã lớp học đã tồn tại";
     }
     
     setFormErrors(errors);
@@ -92,7 +89,8 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
     if (!course || !validateForm()) return;
     
     try {
-      const classData = {
+      setIsLoading(true);
+      const classData: CourseClassRequest = {
         className: formData.className.trim(),
         classCode: formData.classCode.trim(),
         courseId: course.id,
@@ -102,13 +100,18 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
         description: formData.description.trim() || undefined,
       };
 
-      await createClass(classData);
+      await classApi.createClass(institutionId, classData);
+      toast.success('Tạo lớp học thành công!');
       await loadClasses(); // Reload classes
       resetForm();
       setShowCreateForm(false);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating class:", error);
+      const message = error?.response?.data?.message || 'Không thể tạo lớp học';
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -116,6 +119,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
     if (!editingClass || !validateForm()) return;
     
     try {
+      setIsLoading(true);
       const updateData = {
         className: formData.className.trim(),
         classCode: formData.classCode.trim(),
@@ -125,28 +129,39 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
         description: formData.description.trim() || undefined,
       };
 
-      await updateClass(editingClass.id, updateData);
+      await classApi.updateClass(institutionId, editingClass.id, updateData);
+      toast.success('Cập nhật lớp học thành công!');
       await loadClasses(); // Reload classes
       resetForm();
       setEditingClass(null);
       setShowCreateForm(false);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating class:", error);
+      const message = error?.response?.data?.message || 'Không thể cập nhật lớp học';
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeleteClass = async (classToDelete: CourseClassResponse) => {
-    if (!confirm(`Are you sure you want to delete "${classToDelete.className}"? This will also remove all student enrollments. This action cannot be undone.`)) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa lớp "${classToDelete.className}"? Việc này cũng sẽ xóa tất cả danh sách sinh viên đã đăng ký. Hành động này không thể hoàn tác.`)) {
       return;
     }
     
     try {
-      await deleteClass(classToDelete.id);
+      setIsLoading(true);
+      await classApi.deleteClass(institutionId, classToDelete.id);
+      toast.success('Xóa lớp học thành công!');
       await loadClasses(); // Reload classes
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting class:", error);
+      const message = error?.response?.data?.message || 'Không thể xóa lớp học';
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -219,7 +234,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                   <School className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">Class Management</h2>
+                  <h2 className="text-xl font-bold text-white">Quản Lý Lớp Học</h2>
                   <p className="text-blue-100 text-sm">{course.courseName}</p>
                 </div>
               </div>
@@ -240,29 +255,29 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                       <div className="grid grid-cols-3 gap-4 lg:gap-6 w-full lg:w-auto">
                         <div className="text-center">
                           <div className="text-xl lg:text-2xl font-bold text-blue-600">{classes.length}</div>
-                          <div className="text-xs lg:text-sm text-gray-500">Total Classes</div>
+                          <div className="text-xs lg:text-sm text-gray-500">Tổng Số Lớp</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xl lg:text-2xl font-bold text-green-600">
                             {classes.reduce((sum, cls) => sum + (cls.currentStudents || 0), 0)}
                           </div>
-                          <div className="text-xs lg:text-sm text-gray-500">Total Students</div>
+                          <div className="text-xs lg:text-sm text-gray-500">Tổng Sinh Viên</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xl lg:text-2xl font-bold text-orange-600">
                             {classes.reduce((sum, cls) => sum + cls.maxStudents, 0)}
                           </div>
-                          <div className="text-xs lg:text-sm text-gray-500">Max Capacity</div>
+                          <div className="text-xs lg:text-sm text-gray-500">Sức Chứa Tối Đa</div>
                         </div>
                       </div>
                       
                       <Button 
                         onClick={() => setShowCreateForm(true)} 
-                        className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 w-full lg:w-auto px-4 lg:px-6"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
                       >
                         <Plus size={16} />
-                        <span className="hidden sm:inline">Create New Class</span>
-                        <span className="sm:hidden">Create Class</span>
+                        <span className="hidden sm:inline">Tạo Lớp Học Mới</span>
+                        <span className="sm:hidden">Tạo Lớp</span>
                       </Button>
                     </div>
 
@@ -271,13 +286,13 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                       {loadingClasses ? (
                         <div className="text-center py-12">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
-                          <p className="text-gray-500">Loading classes...</p>
+                          <p className="text-gray-500">Đang tải danh sách lớp học...</p>
                         </div>
                       ) : classes.length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
                           <School className="mx-auto mb-3 text-gray-400" size={48} />
-                          <p className="text-lg font-medium mb-2">No classes yet</p>
-                          <p className="text-sm">Create your first class to start organizing students</p>
+                          <p className="text-lg font-medium mb-2">Chưa có lớp học nào</p>
+                          <p className="text-sm">Tạo lớp học đầu tiên để bắt đầu tổ chức sinh viên</p>
                         </div>
                       ) : (
                         classes.map((courseClass) => (
@@ -295,7 +310,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                                         ? "bg-green-100 text-green-800" 
                                         : "bg-gray-100 text-gray-800"
                                     }`}>
-                                      {courseClass.status}
+                                      {courseClass.status === "ACTIVE" ? "Hoạt động" : "Không hoạt động"}
                                     </span>
                                   </div>
                                 </div>
@@ -305,20 +320,20 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                                     <Users size={16} className="mr-2 text-blue-500 flex-shrink-0" />
                                     <span>
                                       <span className="font-medium">{courseClass.currentStudents}</span>
-                                      /{courseClass.maxStudents} students
+                                      /{courseClass.maxStudents} sinh viên
                                     </span>
                                   </div>
                                   
                                   {courseClass.startDate && (
                                     <div className="flex items-center text-gray-600">
                                       <Calendar size={16} className="mr-2 text-green-500 flex-shrink-0" />
-                                      <span className="truncate">Starts {new Date(courseClass.startDate).toLocaleDateString()}</span>
+                                      <span className="truncate">Bắt đầu {new Date(courseClass.startDate).toLocaleDateString('vi-VN')}</span>
                                     </div>
                                   )}
                                   
                                   <div className="flex items-center text-gray-600">
                                     <Hash size={16} className="mr-2 text-purple-500 flex-shrink-0" />
-                                    <span className="truncate">ID: {courseClass.id}</span>
+                                    <span className="truncate">Mã: {courseClass.id}</span>
                                   </div>
 
                                   <div className={`flex items-center text-sm ${
@@ -327,15 +342,15 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                                       : "text-gray-600"
                                   }`}>
                                     {courseClass.currentStudents >= courseClass.maxStudents 
-                                      ? "🔴 Full" 
-                                      : `${courseClass.maxStudents - courseClass.currentStudents} slots available`
+                                      ? "🔴 Đã đầy" 
+                                      : `Còn ${courseClass.maxStudents - courseClass.currentStudents} chỗ trống`
                                     }
                                   </div>
                                 </div>
 
                                 {courseClass.description && (
                                   <div className="mt-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                                    <strong>Description:</strong> {courseClass.description}
+                                    <strong>Mô tả:</strong> {courseClass.description}
                                   </div>
                                 )}
                               </div>
@@ -348,7 +363,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                                   className="flex items-center gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 flex-1 lg:flex-none justify-center"
                                 >
                                   <Users size={14} />
-                                  <span className="hidden sm:inline">Students</span>
+                                  <span className="hidden sm:inline">Sinh viên</span>
                                 </Button>
                                 <Button
                                   variant="outline"
@@ -357,16 +372,17 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                                   className="flex items-center gap-1 text-green-600 border-green-200 hover:bg-green-50 flex-1 lg:flex-none justify-center"
                                 >
                                   <Edit size={14} />
-                                  <span className="hidden sm:inline">Edit</span>
+                                  <span className="hidden sm:inline">Sửa</span>
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDeleteClass(courseClass)}
-                                  className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50 flex-1 lg:flex-none justify-center"
+                                  disabled={isLoading}
+                                  className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50 flex-1 lg:flex-none justify-center disabled:opacity-50"
                                 >
                                   <Trash2 size={14} />
-                                  <span className="hidden sm:inline">Delete</span>
+                                  <span className="hidden sm:inline">Xóa</span>
                                 </Button>
                               </div>
                             </div>
@@ -381,7 +397,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                       <h3 className="text-xl font-bold flex items-center">
                         <School className="mr-2 text-blue-600" size={24} />
-                        {editingClass ? "Edit Class" : "Create New Class"}
+                        {editingClass ? "Chỉnh Sửa Lớp Học" : "Tạo Lớp Học Mới"}
                       </h3>
                       <Button
                         variant="ghost"
@@ -392,14 +408,14 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                         }}
                         className="text-gray-600 hover:text-gray-900"
                       >
-                        Back to List
+                        Quay lại danh sách
                       </Button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">
-                          Class Name <span className="text-red-500">*</span>
+                          Tên Lớp Học <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -411,7 +427,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                           className={`w-full px-3 py-2 border rounded-lg transition-colors ${
                             formErrors.className ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
                           }`}
-                          placeholder="e.g., Morning Class A"
+                          placeholder="vd: Lớp Sáng A"
                         />
                         {formErrors.className && (
                           <p className="text-red-500 text-sm">{formErrors.className}</p>
@@ -420,7 +436,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
 
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">
-                          Class Code <span className="text-red-500">*</span>
+                          Mã Lớp Học <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -432,7 +448,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                           className={`w-full px-3 py-2 border rounded-lg transition-colors ${
                             formErrors.classCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
                           }`}
-                          placeholder="e.g., CS101-A1"
+                          placeholder="vd: CNTT101-A1"
                         />
                         {formErrors.classCode && (
                           <p className="text-red-500 text-sm">{formErrors.classCode}</p>
@@ -441,7 +457,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
 
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">
-                          Max Students <span className="text-red-500">*</span>
+                          Sĩ Số Tối Đa <span className="text-red-500">*</span>
                         </label>
                         <Input
                           type="number"
@@ -463,7 +479,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
 
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">
-                          Start Date
+                          Ngày Bắt Đầu
                         </label>
                         <Input
                           type="date"
@@ -475,7 +491,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
 
                       <div className="space-y-2 md:col-span-1">
                         <label className="block text-sm font-medium text-gray-700">
-                          End Date
+                          Ngày Kết Thúc
                         </label>
                         <Input
                           type="date"
@@ -489,14 +505,14 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-700">
-                        Description
+                        Mô Tả
                       </label>
                       <textarea
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 transition-colors"
                         rows={3}
-                        placeholder="Optional description for this class..."
+                        placeholder="Mô tả tùy chọn cho lớp học này..."
                       />
                     </div>
                   </div>
@@ -509,7 +525,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
               <div className="border-t bg-gray-50 px-6 py-4 mt-auto">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div className="text-sm text-gray-600">
-                    {editingClass ? "Updating class information" : "Creating new class"}
+                    {editingClass ? "Đang cập nhật thông tin lớp học" : "Đang tạo lớp học mới"}
                   </div>
                   <div className="flex gap-3 w-full sm:w-auto">
                     <Button
@@ -522,26 +538,26 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                       className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors flex-1 sm:flex-none"
                       disabled={isLoading}
                     >
-                      Cancel
+                      Hủy
                     </Button>
                     <Button
                       onClick={editingClass ? handleUpdateClass : handleCreateClass}
                       disabled={isLoading}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 min-w-[140px] flex-1 sm:flex-none"
+                      className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 min-w-[140px] flex-1 sm:flex-none"
                     >
                       {isLoading ? (
                         <div className="flex items-center justify-center">
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          {editingClass ? "Updating..." : "Creating..."}
+                          {editingClass ? "Đang cập nhật..." : "Đang tạo..."}
                         </div>
                       ) : (
                         <div className="flex items-center justify-center">
                           <School size={16} className="mr-2" />
                           <span className="hidden sm:inline">
-                            {editingClass ? "Update Class" : "Create Class"}
+                            {editingClass ? "Cập Nhật Lớp" : "Tạo Lớp Học"}
                           </span>
                           <span className="sm:hidden">
-                            {editingClass ? "Update" : "Create"}
+                            {editingClass ? "Cập nhật" : "Tạo"}
                           </span>
                         </div>
                       )}

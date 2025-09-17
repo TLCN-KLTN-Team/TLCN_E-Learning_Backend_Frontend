@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import { X, BookOpen, Users, Clock, FileText, Hash, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAdmin } from "@/context/admin-context/index";
-import type { CourseRequest, CourseTypeResponse } from "@/context/admin-context/index";
+import * as courseApi from "@/services/api/admin/courseApi";
+import * as courseTypeApi from "@/services/api/superadmin/courseTypeApi";
+import { toast } from "react-toastify";
+import type { CourseRequest } from "@/services/api/request/courseRequest";
+import type { CourseCategoryResponse } from "@/services/api/response/courseTypeResponse";
 
 interface CourseFormModalProps {
   isOpen: boolean;
@@ -15,9 +18,10 @@ interface CourseFormModalProps {
 const CourseFormModal: React.FC<CourseFormModalProps> = ({
   isOpen,
   onClose,
+  institutionId,
   onSuccess,
 }) => {
-  const { createCourse, getCourseTypes, isLoading } = useAdmin();
+  const [isLoading, setIsLoading] = useState(false);
   
   const [form, setForm] = useState<CourseRequest>({
     courseName: "",
@@ -27,7 +31,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     description: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [courseTypes, setCourseTypes] = useState<CourseTypeResponse[]>([]);
+  const [courseTypes, setCourseTypes] = useState<CourseCategoryResponse[]>([]);
   const [loadingCourseTypes, setLoadingCourseTypes] = useState(false);
 
   // Load course types when modal opens
@@ -40,10 +44,11 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
   const loadCourseTypes = async () => {
     try {
       setLoadingCourseTypes(true);
-      const response = await getCourseTypes();
+      const response = await courseTypeApi.getCourseTypes();
       setCourseTypes(response.content || []);
     } catch (error) {
       console.error('Error loading course types:', error);
+      toast.error('Không thể tải danh sách loại khóa học');
     } finally {
       setLoadingCourseTypes(false);
     }
@@ -54,16 +59,16 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!form.courseName.trim()) {
-      newErrors.courseName = "Course name is required";
+      newErrors.courseName = "Tên khóa học là bắt buộc";
     }
     if (!form.courseTypeId || form.courseTypeId < 1) {
-      newErrors.courseTypeId = "Please select a course type";
+      newErrors.courseTypeId = "Vui lòng chọn loại khóa học";
     }
     if (!form.credits || form.credits < 1) {
-      newErrors.credits = "Credits must be at least 1";
+      newErrors.credits = "Số tín chỉ phải ít nhất là 1";
     }
     if (!form.maxStudents || form.maxStudents < 1) {
-      newErrors.maxStudents = "Max students must be at least 1";
+      newErrors.maxStudents = "Số học sinh tối đa phải ít nhất là 1";
     }
     return newErrors;
   };
@@ -88,7 +93,9 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     if (Object.keys(newErrors).length > 0) return;
 
     try {
-      await createCourse(form);
+      setIsLoading(true);
+      await courseApi.createCourse(institutionId, form);
+      toast.success('Tạo khóa học thành công!');
       onSuccess?.();
       onClose();
       
@@ -103,6 +110,9 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       setErrors({});
     } catch (error) {
       console.error('Error creating course:', error);
+      toast.error('Không thể tạo khóa học');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -127,7 +137,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
-              <h2 className="text-xl font-bold text-white">Create New Course</h2>
+              <h2 className="text-xl font-bold text-white">Tạo Khóa học Mới</h2>
             </div>
             <Button 
               variant="ghost" 
@@ -138,7 +148,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               <X size={18} />
             </Button>
           </div>
-          <p className="text-blue-100 text-sm mt-2">Add a new course to your institution</p>
+          <p className="text-blue-100 text-sm mt-2">Thêm khóa học mới vào cơ sở giáo dục của bạn</p>
         </div>
         
         {/* Form Content với Footer bên trong */}
@@ -149,7 +159,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               <div className="bg-blue-50 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                   <BookOpen size={16} className="mr-2" />
-                  Course Information
+                  Thông tin Khóa học
                 </h3>
                 
                 <div className="space-y-4">
@@ -157,12 +167,12 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                   <div className="space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">
                       <BookOpen size={14} className="mr-2 text-blue-600" />
-                      Course Name
+                      Tên Khóa học
                       <span className="text-red-500 ml-1">*</span>
                     </label>
                     <Input 
                       name="courseName" 
-                      placeholder="e.g., Introduction to Computer Science" 
+                      placeholder="VD: Nhập môn Khoa học Máy tính" 
                       value={form.courseName} 
                       onChange={handleChange}
                       className={`transition-colors ${errors.courseName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
@@ -179,11 +189,11 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                   <div className="space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">
                       <Hash size={14} className="mr-2 text-blue-600" />
-                      Course Type
+                      Loại Khóa học
                       <span className="text-red-500 ml-1">*</span>
                     </label>
                     <div className="relative">
-                      <label htmlFor="courseTypeId" className="sr-only">Course type</label>
+                      <label htmlFor="courseTypeId" className="sr-only">Loại khóa học</label>
                       <select
                         id="courseTypeId"
                         name="courseTypeId"
@@ -195,7 +205,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                         } ${loadingCourseTypes ? 'opacity-50' : ''}`}
                       >
                         <option value="">
-                          {loadingCourseTypes ? "Loading course types..." : "Select course type"}
+                          {loadingCourseTypes ? "Đang tải loại khóa học..." : "Chọn loại khóa học"}
                         </option>
                         {courseTypes.map((type) => (
                           <option key={type.id} value={type.id}>
@@ -222,7 +232,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               <div className="bg-green-50 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                   <Users size={16} className="mr-2" />
-                  Course Details
+                  Chi tiết Khóa học
                 </h3>
                 
                 {/* Credits and Max Students Row */}
@@ -230,7 +240,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                   <div className="space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">
                       <Clock size={14} className="mr-2 text-green-600" />
-                      Credits
+                      Số Tín chỉ
                       <span className="text-red-500 ml-1">*</span>
                     </label>
                     <Input 
@@ -254,7 +264,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                   <div className="space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">
                       <Users size={14} className="mr-2 text-green-600" />
-                      Max Students
+                      Số Học sinh Tối đa
                       <span className="text-red-500 ml-1">*</span>
                     </label>
                     <Input 
@@ -281,19 +291,19 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               <div className="bg-orange-50 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                   <FileText size={16} className="mr-2" />
-                  Additional Information
-                  <span className="text-gray-400 ml-2 text-xs">(Optional)</span>
+                  Thông tin Bổ sung
+                  <span className="text-gray-400 ml-2 text-xs">(Không bắt buộc)</span>
                 </h3>
                 
                 {/* Description */}
                 <div className="space-y-2">
                   <label className="flex items-center text-sm font-medium text-gray-700">
                     <FileText size={14} className="mr-2 text-orange-600" />
-                    Description
+                    Mô tả
                   </label>
                   <textarea
                     name="description"
-                    placeholder="Provide a brief description of the course content and objectives..."
+                    placeholder="Cung cấp mô tả ngắn gọn về nội dung và mục tiêu của khóa học..."
                     value={form.description || ""}
                     onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:border-orange-500 focus:outline-none transition-colors"
@@ -314,7 +324,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
                 disabled={isLoading}
               >
-                Cancel
+                Hủy
               </Button>
               <Button 
                 type="submit"
@@ -324,12 +334,12 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 {isLoading ? (
                   <div className="flex items-center">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Creating...
+                    Đang tạo...
                   </div>
                 ) : (
                   <div className="flex items-center">
                     <BookOpen size={16} className="mr-2" />
-                    Create Course
+                    Tạo Khóa học
                   </div>
                 )}
               </Button>

@@ -34,6 +34,16 @@ public class StudentController {
                 .build();
     }
 
+    @PutMapping("/{id}")
+    public ApiResponse<StudentResponse> updateStudent(
+            @PathVariable String id,
+            @Valid @RequestBody StudentRequest request) {
+        log.info("Updating student with ID: {}", id);
+        return ApiResponse.<StudentResponse>builder()
+                .result(studentService.updateStudent(id, request))
+                .build();
+    }
+
     @GetMapping("/by-student-id/{studentId}")
     public ApiResponse<StudentResponse> getStudentByStudentId(@PathVariable String studentId) {
         log.info("Getting student by studentId: {}", studentId);

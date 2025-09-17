@@ -1,23 +1,41 @@
 "use client"
 
-import React, { useEffect, useState } from "react";
+import type React from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, ArrowLeft, Building2, User, FileText, Shield } from "lucide-react"
+import { Upload, ArrowLeft, Building2, User, FileText, Shield, AlertCircle, Eye, EyeOff, X } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
 import Header from "../../../components/student/home/Header"
 import Footer from "../../../components/student/home/Footer"
-import { useEducationUnit } from "@/context/register-education-unit-context"
-import type { EducationUnitRegistrationRequest } from "@/services/api/registerEducationUnitApi"
+import * as educationUnitApi from "@/services/api/registerEducationUnitApi"
+import type { EducationUnitRegistrationRequest } from "@/services/api/request/educationUnitRegistrationRequest"
+
+// Enhanced error handling types
+interface ValidationErrors {
+  adminName?: string
+  representativeEmail?: string
+  general?: string
+}
 
 const EducationUnitRegistration = () => {
   const navigate = useNavigate()
-  const { registerEducationUnit, isLoading } = useEducationUnit()
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; src: string; alt: string }>({
+    isOpen: false,
+    src: "",
+    alt: "",
+  })
+
   const [formData, setFormData] = useState({
     // Education unit information
     name: "",
@@ -45,33 +63,98 @@ const EducationUnitRegistration = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+
+    // Clear specific field errors when user starts typing
+    if (validationErrors[field as keyof ValidationErrors]) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        [field]: undefined,
+      }))
+    }
+
+    // Clear general error when user makes changes
+    if (error) {
+      setError(null)
+    }
   }
 
   const handleFileChange = (field: string, file: File | null) => {
     setFormData((prev) => ({ ...prev, [field]: file }))
   }
 
+  // Enhanced error parsing function
+  const parseErrorMessage = (errorMessage: string): ValidationErrors => {
+    const errors: ValidationErrors = {}
+
+    // Check for email already exists error
+    if (errorMessage.includes("Email") || errorMessage.includes("USER_2003")) {
+      errors.representativeEmail = "Email này đã được sử dụng. Vui lòng sử dụng email khác."
+    }
+
+    // Check for username already exists error (assuming similar error code/message structure)
+    if (errorMessage.includes("Username") || errorMessage.includes("USERNAME_EXISTS")) {
+      errors.adminName = "Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên đăng nhập khác."
+    }
+
+    // If no specific field errors, set as general error
+    if (Object.keys(errors).length === 0) {
+      errors.general = errorMessage
+    }
+
+    return errors
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setValidationErrors({})
 
     // Validate passwords match
     if (formData.adminPassword !== formData.adminConfirmPassword) {
-      setError("Mật khẩu xác nhận không khớp!")
+      setValidationErrors({ general: "Mật khẩu xác nhận không khớp!" })
       return
     }
 
     // Validate required fields
-    if (!formData.name || !formData.type || !formData.address || !formData.phone || 
-        !formData.email || !formData.description || !formData.establishedYear ||
-        !formData.adminName || !formData.adminPassword || !formData.representativeName ||
-        !formData.representativePosition || !formData.representativePhone || 
-        !formData.representativeEmail) {
-      setError("Vui lòng điền đầy đủ thông tin bắt buộc!")
+    if (
+      !formData.name ||
+      !formData.type ||
+      !formData.address ||
+      !formData.phone ||
+      !formData.email ||
+      !formData.description ||
+      !formData.establishedYear ||
+      !formData.adminName ||
+      !formData.adminPassword ||
+      !formData.representativeName ||
+      !formData.representativePosition ||
+      !formData.representativePhone ||
+      !formData.representativeEmail
+    ) {
+      setValidationErrors({ general: "Vui lòng điền đầy đủ thông tin bắt buộc!" })
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.representativeEmail)) {
+      setValidationErrors({ representativeEmail: "Định dạng email không hợp lệ." })
+      return
+    }
+    if (!emailRegex.test(formData.email)) {
+      setValidationErrors({ general: "Định dạng email đơn vị không hợp lệ." })
+      return
+    }
+
+    // Validate password strength
+    if (formData.adminPassword.length < 6) {
+      setValidationErrors({ general: "Mật khẩu phải có ít nhất 6 ký tự." })
       return
     }
 
     try {
+      setIsLoading(true)
+
       const registrationData: EducationUnitRegistrationRequest = {
         name: formData.name,
         type: formData.type,
@@ -90,42 +173,83 @@ const EducationUnitRegistration = () => {
         representativeEmail: formData.representativeEmail,
       }
 
-      const registrationResponse = await registerEducationUnit(
-        registrationData, 
-        formData.logo || undefined, 
-        formData.businessLicense || undefined
+      const registrationResponse = await educationUnitApi.registerEducationUnit(
+        registrationData,
+        formData.logo || undefined,
+        formData.businessLicense || undefined,
       )
 
       console.log("Registration successful:", registrationResponse)
+      toast.success("Đăng ký đơn vị đào tạo thành công!")
       navigate("/")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error)
-      setError("Đã xảy ra lỗi trong quá trình đăng ký. Vui lòng thử lại.")
+
+      let errorMessage = "Đã xảy ra lỗi trong quá trình đăng ký. Vui lòng thử lại."
+
+      // Extract error message from different possible response structures
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+
+      // Parse and set validation errors
+      const parsedErrors = parseErrorMessage(errorMessage)
+      setValidationErrors(parsedErrors)
+
+      // Set general error if no specific field errors
+      if (parsedErrors.general) {
+        setError(parsedErrors.general)
+      }
+
+      // Show toast notification
+      if (parsedErrors.representativeEmail) {
+        toast.error(parsedErrors.representativeEmail)
+      } else if (parsedErrors.adminName) {
+        toast.error(parsedErrors.adminName)
+      } else {
+        toast.error(errorMessage)
+      }
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  // Component for file upload with preview
-  const FileUploadArea = ({ 
-    id, 
-    file, 
-    onFileChange, 
-    accept, 
-    icon: Icon, 
-    label, 
-    description 
+  // Component for displaying field-specific errors
+  const FieldError = ({ error }: { error?: string }) => {
+    if (!error) return null
+    return (
+      <div className="flex items-center gap-1 mt-1">
+        <AlertCircle className="h-4 w-4 text-red-500" />
+        <p className="text-sm text-red-600">{error}</p>
+      </div>
+    )
+  }
+
+  const FileUploadArea = ({
+    id,
+    file,
+    onFileChange,
+    accept,
+    icon: Icon,
+    label,
+    description,
   }: {
-    id: string;
-    file: File | null;
-    onFileChange: (file: File | null) => void;
-    accept: string;
-    icon: React.ComponentType<any>;
-    label: string;
-    description?: string;
+    id: string
+    file: File | null
+    onFileChange: (file: File | null) => void
+    accept: string
+    icon: React.ComponentType<any>
+    label: string
+    description?: string
   }) => {
     const [preview, setPreview] = useState<string | null>(null)
 
     useEffect(() => {
-      if (file && file.type.startsWith('image/')) {
+      if (file && file.type.startsWith("image/")) {
         const objectUrl = URL.createObjectURL(file)
         setPreview(objectUrl)
         return () => URL.revokeObjectURL(objectUrl)
@@ -149,60 +273,83 @@ const EducationUnitRegistration = () => {
       setPreview(null)
     }
 
+    const handleImageClick = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (preview) {
+        setImageModal({
+          isOpen: true,
+          src: preview,
+          alt: file?.name || "Preview",
+        })
+      }
+    }
+
     return (
       <div className="space-y-2">
         <Label>{label}</Label>
-        <div 
+        <div
           onClick={handleClick}
-          className="relative border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 rounded-lg p-6 text-center cursor-pointer transition-colors duration-200 hover:bg-muted/30"
+          className="relative border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 rounded-lg text-center cursor-pointer transition-colors duration-200 hover:bg-muted/30 h-48 w-full flex items-center justify-center"
         >
-          <Input
-            id={id}
-            type="file"
-            accept={accept}
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          
+          <Input id={id} type="file" accept={accept} onChange={handleFileSelect} className="hidden" />
+
           {preview ? (
-            <div className="relative">
-              <img 
-                src={preview} 
-                alt="Preview" 
-                className="mx-auto h-128 w-128 object-cover rounded-lg"
+            <div className="relative w-full h-full p-2">
+              <img
+                src={preview || "/placeholder.svg"}
+                alt="Preview"
+                className="w-full h-full max-w-full max-h-full object-contain rounded-lg cursor-pointer"
+                onClick={handleImageClick}
               />
               <button
                 onClick={handleRemoveFile}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                className="absolute top-1 right-1 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors z-10"
               >
-                ×
+                <X className="h-3 w-3" />
               </button>
             </div>
           ) : file ? (
             <div className="relative">
               <Icon className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
               <p className="text-sm font-medium text-foreground">{file.name}</p>
-              <button
-                onClick={handleRemoveFile}
-                className="mt-2 text-xs text-red-500 hover:text-red-600"
-              >
+              <button onClick={handleRemoveFile} className="mt-2 text-xs text-red-500 hover:text-red-600">
                 Xóa file
               </button>
-              {description && (
-                <p className="text-xs text-muted-foreground mt-1">{description}</p>
-              )}
+              {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
             </div>
           ) : (
             <div>
               <Icon className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-              <p className="text-sm font-medium text-foreground mb-1">
-                Click để chọn file
-              </p>
-              {description && (
-                <p className="text-xs text-muted-foreground">{description}</p>
-              )}
+              <p className="text-sm font-medium text-foreground mb-1">Click để chọn file</p>
+              {description && <p className="text-xs text-muted-foreground">{description}</p>}
             </div>
           )}
+        </div>
+      </div>
+    )
+  }
+
+  const ImageModal = () => {
+    if (!imageModal.isOpen) return null
+
+    return (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+        onClick={() => setImageModal({ isOpen: false, src: "", alt: "" })}
+      >
+        <div className="relative max-w-4xl max-h-[90vh] p-4">
+          <button
+            onClick={() => setImageModal({ isOpen: false, src: "", alt: "" })}
+            className="absolute top-2 right-2 bg-white text-black rounded-full h-10 w-10 flex items-center justify-center text-lg hover:bg-gray-200 transition-colors z-10"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={imageModal.src || "/placeholder.svg"}
+            alt={imageModal.alt}
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       </div>
     )
@@ -233,9 +380,13 @@ const EducationUnitRegistration = () => {
             </div>
           </div>
 
-          {error && (
+          {/* General Error Display */}
+          {(error || validationErrors.general) && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <p className="text-red-600 text-sm font-medium">{error || validationErrors.general}</p>
+              </div>
             </div>
           )}
 
@@ -395,32 +546,55 @@ const EducationUnitRegistration = () => {
                     onChange={(e) => handleInputChange("adminName", e.target.value)}
                     placeholder="admin"
                     required
+                    className={validationErrors.adminName ? "border-red-500 focus:border-red-500" : ""}
                   />
+                  <FieldError error={validationErrors.adminName} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="adminPassword">Mật khẩu *</Label>
-                    <Input
-                      id="adminPassword"
-                      type="password"
-                      value={formData.adminPassword}
-                      onChange={(e) => handleInputChange("adminPassword", e.target.value)}
-                      placeholder="Nhập mật khẩu"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="adminPassword"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.adminPassword}
+                        onChange={(e) => handleInputChange("adminPassword", e.target.value)}
+                        placeholder="Nhập mật khẩu"
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Mật khẩu phải có ít nhất 6 ký tự</p>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="adminConfirmPassword">Xác nhận mật khẩu *</Label>
-                    <Input
-                      id="adminConfirmPassword"
-                      type="password"
-                      value={formData.adminConfirmPassword}
-                      onChange={(e) => handleInputChange("adminConfirmPassword", e.target.value)}
-                      placeholder="Nhập lại mật khẩu"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="adminConfirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.adminConfirmPassword}
+                        onChange={(e) => handleInputChange("adminConfirmPassword", e.target.value)}
+                        placeholder="Nhập lại mật khẩu"
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -481,7 +655,10 @@ const EducationUnitRegistration = () => {
                       onChange={(e) => handleInputChange("representativeEmail", e.target.value)}
                       placeholder="Nhập email"
                       required
+                      className={validationErrors.representativeEmail ? "border-red-500 focus:border-red-500" : ""}
                     />
+                    <FieldError error={validationErrors.representativeEmail} />
+                    <p className="text-xs text-muted-foreground">Email này sẽ được dùng cho tài khoản quản trị viên</p>
                   </div>
                 </div>
               </CardContent>
@@ -492,7 +669,7 @@ const EducationUnitRegistration = () => {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 text-base min-w-[200px]"
+                className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 text-base min-w-[200px] disabled:bg-amber-400"
               >
                 {isLoading ? "Đang xử lý..." : "Đăng ký đơn vị"}
               </Button>
@@ -502,6 +679,8 @@ const EducationUnitRegistration = () => {
       </main>
 
       <Footer />
+
+      <ImageModal />
     </div>
   )
 }
