@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.devteria.identity.dto.request.ChangePasswordRequest;
 import com.devteria.identity.dto.response.PaginatedResponse;
+import com.devteria.identity.service.EmailVerificationService;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,40 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class UserController {
     UserService userService;
+    EmailVerificationService emailVerificationService;
+
+    @PostMapping("/registration/send-verification")
+    ApiResponse<String> sendEmailVerification(@RequestBody @Valid RegisterRequest request) {
+        try {
+            userService.sendEmailVerification(request);
+            return ApiResponse.<String>builder()
+                    .result("Mã OTP đã được gửi thành công. Vui lòng kiểm tra email và nhập mã OTP.")
+                    .build();
+        } catch (Exception e) {
+            log.error("Error sending email verification: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    @PostMapping("/registration/verify-email")
+    ApiResponse<UserResponse> verifyEmailAndRegister(
+            @RequestParam String email,
+            @RequestParam String otpCode) {
+        try {
+            Object result = emailVerificationService.verifyOtp(email, otpCode);
+
+            if (result instanceof UserResponse) {
+                return ApiResponse.<UserResponse>builder()
+                        .result((UserResponse) result)
+                        .build();
+            } else {
+                throw new RuntimeException("Unexpected verification result type");
+            }
+        } catch (Exception e) {
+            log.error("Error verifying email and registering user: {}", e.getMessage());
+            throw e;
+        }
+    }
 
     @PostMapping("/registration")
     ApiResponse<UserResponse> registerUser(@RequestBody @Valid RegisterRequest request) {
