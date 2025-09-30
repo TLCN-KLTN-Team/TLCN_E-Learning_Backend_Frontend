@@ -57,17 +57,41 @@ public class UserService {
     KafkaTemplate<String, Object> kafkaTemplate;
     UploadImageApi uploadFileApi;
     RemoveImageApi removeFileApi;
+    OTPService otpService;
 
-    public UserResponse createUser(RegisterRequest request) {
+    public void sendEmailVerification(RegisterRequest request) {
         if (!isValidPassword(request.getPassword())) {
+            log.error("Weak password provided for email: {}", request.getEmail());
             throw new AppException(ErrorCode.PASSWORD_WEAK);
         }
+
         if (!request.getPassword().equals(request.getConfirmPassword())) {
+            log.error("Password confirmation mismatch for email: {}", request.getEmail());
             throw new AppException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            System.out.println ("Có vào đây 132");
+            log.error("Email already exists: {}", request.getEmail());
+            throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
+        }
+
+        if (request.getUsername() != null && userRepository.existsByUsername(request.getUsername())) {
+            log.error("Username already exists: {}", request.getUsername());
+            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        try {
+            // Send OTP with registration data as context
+            otpService.sendEmailVerificationOtp(request.getEmail(), request);
+            log.info("Email verification OTP sent successfully to: {}", request.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to send email verification OTP to: {}", request.getEmail(), e);
+            throw new AppException(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    public UserResponse createUser(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
         }
 
@@ -87,6 +111,7 @@ public class UserService {
         }
 
         user.setRoles(roles);
+        user.setAccountStatus(AccountStatus.ACTIVE);
 
         try {
             user = userRepository.save(user);
