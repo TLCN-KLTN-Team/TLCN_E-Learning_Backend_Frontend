@@ -1,39 +1,87 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import type React from "react";
 import { useState, useEffect } from "react";
 
-import { unitData } from "./data/UnitStatus";
 import TraningUnitItem from "./item/TraningUnitItem";
 import SubmissionModal from "./modals/SubmissionModal";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
+import { toast } from "react-toastify";
+import { getAllEducationalUnits } from "@/services/api/admin/educationUnitApi";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { paginationUtils } from "@/utils/paginationUtils";
+import type { PaginationState } from "@/utils/paginationUtils";
 
 const TrainingUnitsManagement: React.FC = () => {
-  const [units, setUnits] = useState(unitData);
+  const [units, setUnits] = useState<EducationalUnitResponse[]>([]);
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<number | null>(null);
+  // Pagination state using paginationUtils
+  const [paginationState, setPaginationState] = useState<PaginationState>(
+    paginationUtils.createPaginationStateManager(10)
+  );
+
+  // Pagination handlers using paginationUtils
+  const paginationHandlers = paginationUtils.createPaginationHandlers(
+    (page: number) =>
+      setPaginationState((prev) => ({ ...prev, currentPage: page })),
+    (size: number) =>
+      setPaginationState((prev) => ({ ...prev, pageSize: size })),
+    undefined, // onPageChange callback - will be handled by useEffect
+    undefined // onPageSizeChange callback - will be handled by useEffect
+  );
+
+  // Generate page numbers using paginationUtils
+  const pageNumbers = paginationUtils.generatePageNumbers(
+    paginationState.currentPage,
+    paginationState.totalPages
+  );
+
+  // Get pagination display text
+  const paginationText = paginationUtils.getPaginationText(paginationState);
+
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [selectedUnitData, setSelectedUnitData] =
+    useState<EducationalUnitResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [modalRef, setModalRef] = useState<HTMLDivElement | null>(null);
 
-  const handleStatusChange = (unitId: number, newStatus: string) => {
-    setUnits(
-      units.map((unit) =>
-        unit.id === unitId ? { ...unit, status: newStatus } : unit
-      )
-    );
-    setOpenDropdown(null);
-  };
-
-  const handleShowDetails = (unitId: number) => {
-    setSelectedUnit(unitId);
+  const handleShowDetails = (unitId: string) => {
+    const unitData = units.find((unit) => unit.id === unitId) || null;
+    setSelectedUnitData(unitData);
     setShowDetailModal(true);
   };
 
-  const handleDropdownToggle = (unitId: number | null) => {
+  const handleDropdownToggle = (unitId: string | null) => {
     setOpenDropdown(unitId);
   };
+
+  // Fetch units data
+  useEffect(() => {
+    const fetchEducationalUnits = async () => {
+      try {
+        const data = await getAllEducationalUnits();
+        setUnits(data.content);
+
+        // Update pagination state using paginationUtils
+        const newPaginationState = paginationUtils.calculatePaginationState(
+          data.page,
+          data.size,
+          data.totalElements
+        );
+        setPaginationState(newPaginationState);
+
+        toast.success("Tải các đơn vị đào tạo thành công");
+      } catch (error) {
+        toast.error(
+          error
+            ? `Lỗi khi tải các đơn vị đào tạo: ${error}`
+            : "Lỗi khi tải các đơn vị đào tạo"
+        );
+      }
+    };
+
+    fetchEducationalUnits();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,8 +94,7 @@ const TrainingUnitsManagement: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [modalRef]);
 
-  const headerStyles =
-    "px-6 py-3 text-left text-sm font-bold text-gray-900 uppercase tracking-wider";
+  const headerStyles = "px-6 py-3 text-left font-bold text-gray-900 uppercase";
 
   return (
     <div className="space-y-6">
@@ -55,14 +102,6 @@ const TrainingUnitsManagement: React.FC = () => {
         <h2 className="text-xl md:text-2xl font-bold text-gray-900">
           Quản lý Đơn vị Đào tạo
         </h2>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 self-start md:self-auto"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="hidden sm:inline">Thêm đơn vị</span>
-          <span className="sm:hidden">Thêm</span>
-        </button>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -74,16 +113,16 @@ const TrainingUnitsManagement: React.FC = () => {
                   Đơn vị đào tạo
                 </th>
                 <th className={`${headerStyles} hidden md:table-cell`}>
-                  Mã đơn vị
+                  Người đại diện
                 </th>
                 <th className={`${headerStyles} hidden lg:table-cell`}>
-                  Học viên
+                  Email người đại diện
                 </th>
                 <th className={`${headerStyles} hidden lg:table-cell`}>
-                  Khóa học
+                  Loại hình
                 </th>
                 <th className={`${headerStyles} hidden xl:table-cell`}>
-                  Doanh thu
+                  Số lượng sinh viên
                 </th>
                 <th className={headerStyles}>Trạng thái</th>
                 <th className={headerStyles}>Thao tác</th>
@@ -95,7 +134,6 @@ const TrainingUnitsManagement: React.FC = () => {
                   key={unit.id}
                   unit={unit}
                   onRowClick={handleShowDetails}
-                  onStatusChange={handleStatusChange}
                   openDropdown={openDropdown}
                   onDropdownToggle={handleDropdownToggle}
                 />
@@ -103,17 +141,83 @@ const TrainingUnitsManagement: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-700">{paginationText}</div>
+            <select
+              value={paginationState.pageSize}
+              onChange={(e) =>
+                paginationHandlers.handlePageSizeChange(Number(e.target.value))
+              }
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {paginationUtils.DEFAULT_CONFIG.pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size} / trang
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() =>
+                paginationHandlers.handlePreviousPage(
+                  paginationState.currentPage,
+                  paginationState.totalPages
+                )
+              }
+              disabled={!paginationState.hasPrevious}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-1">
+              {pageNumbers.pages.map((page) => (
+                <button
+                  key={page}
+                  className={`px-2 py-1 rounded-sm border border-gray-300
+                            ${
+                              page === paginationState.currentPage
+                                ? "z-10 bg-blue-600 text-white"
+                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
+                  onClick={() =>
+                    paginationHandlers.handlePageChange(
+                      page,
+                      paginationState.totalPages
+                    )
+                  }
+                >
+                  {page + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() =>
+                paginationHandlers.handleNextPage(
+                  paginationState.currentPage,
+                  paginationState.totalPages
+                )
+              }
+              disabled={!paginationState.hasNext}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Unit Detail Modal */}
       <div ref={setModalRef}>
         <SubmissionModal
-          unit={
-            selectedUnit
-              ? units.find((u) => u.id === selectedUnit) || null
-              : null
-          }
-          isOpen={showDetailModal}
+          unit={selectedUnitData!}
+          isOpen={showDetailModal && selectedUnitData !== null}
           onClose={() => setShowDetailModal(false)}
         />
       </div>

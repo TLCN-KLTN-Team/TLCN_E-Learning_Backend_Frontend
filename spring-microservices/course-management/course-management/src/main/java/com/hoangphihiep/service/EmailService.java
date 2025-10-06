@@ -297,6 +297,8 @@ public class EmailService {
             """.formatted(accountTypeVi, firstName, lastName, accountTypeVi, username, password, frontendUrl + "/login");
     }
 
+
+
     @Async
     public CompletableFuture<Boolean> sendPasswordResetEmailAsync(String toEmail, String firstName, String resetToken) {
         try {
@@ -628,5 +630,42 @@ public class EmailService {
             </body>
             </html>
             """.formatted(otpCode, otpCode);
+    }
+
+    @Async
+    public CompletableFuture<Boolean> sendFeedbackForRegisteredEducationalUnit(String toEmail, String unitName, String feedback){
+        try {
+            Email from = new Email(fromEmail, fromName);
+            Email to = new Email(toEmail);
+            String subject = "Phản hồi về đăng ký đơn vị đào tạo";
+
+            String contentStr = """
+                Xin chào,
+                
+                Chúng tôi đã xem xét yêu cầu đăng ký đơn vị đào tạo %s của bạn.
+                
+                Phản hồi của chúng tôi như sau:
+                
+                %s
+                
+                Vui lòng liên hệ với chúng tôi nếu bạn có bất kỳ câu hỏi nào.
+                
+                Trân trọng,
+                Đội ngũ Hệ thống Quản lý Giáo dục
+                """.formatted(unitName, feedback);
+            Content content = new Content("text/plain", contentStr);
+            Mail mail = new Mail(from, subject, to, content);
+            SendGrid sg = new SendGrid(sendGridApiKey);
+            Request request = new Request();
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            Response response = sg.api(request);
+
+            return response.getStatusCode()==200 ?
+                    CompletableFuture.completedFuture(true) : CompletableFuture.completedFuture(false);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

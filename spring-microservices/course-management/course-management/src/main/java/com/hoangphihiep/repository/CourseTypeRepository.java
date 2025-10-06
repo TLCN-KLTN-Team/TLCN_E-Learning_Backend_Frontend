@@ -23,5 +23,7 @@ public interface CourseTypeRepository extends JpaRepository<CourseType, Integer>
     boolean existsByCourseTypeName(@Param("courseTypeName") String courseTypeName);
 
     boolean existsById(Integer id);
+
+    boolean existsByCourseTypeNameIgnoreCaseAndIsDeletedFalse(String courseTypeName);
 }
 

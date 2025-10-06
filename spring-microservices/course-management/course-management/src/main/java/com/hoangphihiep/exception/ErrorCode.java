@@ -82,6 +82,7 @@ public enum ErrorCode {
     COURSE_PAGE_SIZE_INVALID(2124, "Kích thước trang phải từ 1 đến 100", HttpStatus.BAD_REQUEST),
     COURSE_PAGE_NUMBER_INVALID(2125, "Số trang phải lớn hơn hoặc bằng 0", HttpStatus.BAD_REQUEST),
     COURSE_CAPACITY_EXCEEDED(2126, "Vượt quá sức chứa tối đa của khóa học", HttpStatus.BAD_REQUEST),
+    COURSE_TYPE_NAME_ALREADY_EXISTS(2127, "Tên loại khóa học đã tồn tại", HttpStatus.CONFLICT),
 
     // Course Type related errors (21xx - continued)
     COURSE_TYPE_DUPLICATE_NAME(2131, "Tên loại khóa học đã tồn tại", HttpStatus.CONFLICT),
@@ -151,7 +152,12 @@ public enum ErrorCode {
     COURSE_ENROLLMENT_DUPLICATE_STUDENTS(2807, "Tìm thấy sinh viên trùng lặp trong danh sách ghi danh", HttpStatus.BAD_REQUEST),
     COURSE_ENROLLMENT_BATCH_SIZE_EXCEEDED(2808, "Vượt quá giới hạn số lượng ghi danh theo lô", HttpStatus.BAD_REQUEST),
     COURSE_ENROLLMENT_MISMATCH(2809, "Thông tin ghi danh không thuộc về khóa học được chỉ định", HttpStatus.BAD_REQUEST),
-    COURSE_UNENROLLMENT_FAILED(2810, "Không thể hủy ghi danh sinh viên khỏi khóa học", HttpStatus.BAD_REQUEST);
+    COURSE_UNENROLLMENT_FAILED(2810, "Không thể hủy ghi danh sinh viên khỏi khóa học", HttpStatus.BAD_REQUEST),
+
+    // Email related errors (30xx)
+    EMAIL_SENDING_FAILED(3001, "Gửi email thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;

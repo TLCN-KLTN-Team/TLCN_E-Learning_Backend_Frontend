@@ -10,10 +10,10 @@ export interface EducationalUnitResponse {
   email?: string;
   website?: string;
   logo?: string;
+  businessLicense?: string;
   description?: string;
   establishedYear?: number;
-  isActive?: boolean;
-  idAdmin?: string;
+  status: string;
   subscriptionStartDate?: Date;
   subscriptionEndDate?: Date;
   createdAt?: Date;
@@ -23,4 +23,9 @@ export interface EducationalUnitResponse {
   totalStudents?: number;
   departments?: Set<DepartmentResponse>;
   courses?: Set<CourseResponse>;
+
+  // Representative information
+  representativeName?: string;
+  representativeEmail?: string;
+  representativePhone?: string;
 }

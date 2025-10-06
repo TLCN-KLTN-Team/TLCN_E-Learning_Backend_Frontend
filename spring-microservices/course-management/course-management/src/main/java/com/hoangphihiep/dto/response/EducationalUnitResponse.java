@@ -27,15 +27,15 @@ public class EducationalUnitResponse {
 
     private String website;
 
+    // URL on cloud
     private String logo;
+    public String businessLicense;
 
     private String description;
 
     private Integer establishedYear;
 
     private String status;
-
-    private String idAdmin;
 
     private Date subscriptionStartDate;
 
@@ -46,4 +46,9 @@ public class EducationalUnitResponse {
     private Integer totalDepartments;
 
     private Set<DepartmentResponse> departments;
+
+    // representative info
+    private String representativeName;
+    private String representativeEmail;
+    private String representativePhone;
 }
