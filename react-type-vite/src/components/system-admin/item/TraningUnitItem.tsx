@@ -7,41 +7,19 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { getStatusStyle, UnitStatus } from "../data/UnitStatus";
-
-interface Unit {
-  id: number;
-  name: string;
-  code: string;
-  status: string;
-  students: number;
-  courses: number;
-  revenue: number;
-  representative: string;
-  email: string;
-  type: string;
-  phone: string;
-  address: string;
-  establishedDate: string;
-  documents: Array<{
-    name: string;
-    status: string;
-    url: string;
-  }>;
-}
+import { getStatusStyle, unitStatus } from "../data/UnitStatus";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 
 interface TraningUnitItemProps {
-  unit: Unit;
-  onRowClick: (unitId: number) => void;
-  onStatusChange: (unitId: number, newStatus: string) => void;
-  openDropdown: number | null;
-  onDropdownToggle: (unitId: number | null) => void;
+  unit: EducationalUnitResponse;
+  onRowClick: (unitId: string) => void;
+  openDropdown: string | null;
+  onDropdownToggle: (unitId: string | null) => void;
 }
 
 const TraningUnitItem = ({
   unit,
   onRowClick,
-  onStatusChange,
   openDropdown,
   onDropdownToggle,
 }: TraningUnitItemProps) => {
@@ -52,11 +30,6 @@ const TraningUnitItem = ({
   const handleDropdownToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDropdownToggle(openDropdown === unit.id ? null : unit.id);
-  };
-
-  const handleStatusChange = (e: React.MouseEvent, newStatus: string) => {
-    e.stopPropagation();
-    onStatusChange(unit.id, newStatus);
   };
 
   return (
@@ -71,68 +44,35 @@ const TraningUnitItem = ({
           <div>
             <div className="text-sm font-medium text-gray-900">{unit.name}</div>
             {/* Show mobile info */}
-            <div className="md:hidden text-xs text-gray-500 mt-1">
-              {unit.code} • {unit.students.toLocaleString()} học viên
-            </div>
+            <div className="md:hidden text-xs text-gray-500 mt-1">học viên</div>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-        <div className="text-sm text-gray-900">{unit.code}</div>
+        <div className="text-sm text-gray-900">{unit.representativeName}</div>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
         <div className="flex items-center gap-1">
-          <Users className="w-4 h-4 text-gray-400" />
-          {unit.students.toLocaleString()}
+          {unit.representativeEmail}
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
-        <div className="flex items-center gap-1">
-          <BookOpen className="w-4 h-4 text-gray-400" />
-          {unit.courses}
-        </div>
+        <div className="flex items-center gap-1">{unit.type}</div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden xl:table-cell">
-        <div className="flex items-center gap-1">
-          <DollarSign className="w-4 h-4 text-gray-400" />
-          {unit.revenue.toLocaleString()} VNĐ
-        </div>
+        <div className="flex items-center gap-1">Thiếu</div>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="relative">
           <button
             onClick={handleDropdownToggle}
-            className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 hover:opacity-80 transition-opacity ${getStatusStyle(
-              unit.status
-            )}`}
+            className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 hover:opacity-80 transition-opacity
+              ${getStatusStyle(unit.status.toLocaleLowerCase())}`}
           >
-            {UnitStatus[unit.status as keyof typeof UnitStatus]}
-            <ChevronDown className="ml-1 w-3 h-3" />
+            {unitStatus(unit.status.toLocaleLowerCase())}
           </button>
-
-          {openDropdown === unit.id && (
-            <div className="relative top-full left-0 z-10 bg-white border border-gray-200 rounded-md shadow-lg min-w-[150px]">
-              {Object.entries(UnitStatus).map(([key, value]) => (
-                <button
-                  key={key}
-                  onClick={(e) => handleStatusChange(e, key)}
-                  className={`block w-full text-left px-3 py-2 text-xs hover:bg-gray-50 transition-colors ${
-                    unit.status === key ? "bg-blue-50" : ""
-                  }`}
-                >
-                  <span
-                    className={`inline-flex items-center px-2 py-1 rounded-full ${getStatusStyle(
-                      key
-                    )}`}
-                  >
-                    {value}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </td>
 

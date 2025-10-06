@@ -60,14 +60,12 @@ public class CourseTypeService {
     // Create new course type
     @Transactional
     public CourseTypeResponse createCourseType(CourseTypeRequest req){
-        try {
-            CourseType courseType = courseTypeMapper.toCourseType(req);
-
-            CourseType savedCourseType = courseTypeRepository.save(courseType);
-            return courseTypeMapper.toCourseTypeResponse(savedCourseType);
-        } catch (Exception e) {
-            throw e;
+        if (isCourseTypeNameExists(req.getCourseTypeName())) {
+            throw new AppException(ErrorCode.COURSE_TYPE_NAME_ALREADY_EXISTS);
         }
+        CourseType courseType = courseTypeMapper.toCourseType(req);
+        CourseType savedCourseType = courseTypeRepository.save(courseType);
+        return courseTypeMapper.toCourseTypeResponse(savedCourseType);
     }
 
     @Transactional
@@ -75,6 +73,10 @@ public class CourseTypeService {
         try{
             CourseType existingCourseType = courseTypeRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
+
+            if (isCourseTypeNameExists(req.getCourseTypeName())) {
+                throw new AppException(ErrorCode.COURSE_TYPE_NAME_ALREADY_EXISTS);
+            }
 
             if (req.getCourseTypeName() != null) {
                 existingCourseType.setCourseTypeName(req.getCourseTypeName());
@@ -101,6 +103,10 @@ public class CourseTypeService {
         } catch (Exception e) {
             throw e;
         }
+    }
+
+    public boolean isCourseTypeNameExists(String courseTypeName) {
+        return courseTypeRepository.existsByCourseTypeNameIgnoreCaseAndIsDeletedFalse(courseTypeName);
     }
 
     // Lấy course type theo ID
