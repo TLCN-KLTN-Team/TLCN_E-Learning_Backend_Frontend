@@ -1,80 +1,66 @@
 import {
   Building2,
   Users,
-  BookOpen,
-  DollarSign,
   X,
   Mail,
   Phone,
   MapPin,
   Calendar,
   FileText,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
+  Copyright,
+  Eye,
+  ExternalLink,
+  MessageSquareReply,
 } from "lucide-react";
-import { UnitStatus, getStatusStyle } from "../data/UnitStatus";
-
-interface Unit {
-  id: number;
-  name: string;
-  code: string;
-  status: string;
-  students: number;
-  courses: number;
-  revenue: number;
-  representative: string;
-  email: string;
-  type: string;
-  phone: string;
-  address: string;
-  establishedDate: string;
-  documents: Array<{
-    name: string;
-    status: string;
-    url: string;
-  }>;
-}
+import { getStatusStyle, unitStatus } from "../data/UnitStatus";
+import React, { useEffect, useState } from "react";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
+import { toast } from "react-toastify";
+import {
+  approveEducationalUnit,
+  sendFeedbackToEducationalUnit,
+} from "@/services/api/superadmin/educationalUnit";
 
 interface SubmissionModalProps {
-  unit: Unit | null;
+  unit: EducationalUnitResponse;
   isOpen: boolean;
   onClose: () => void;
 }
 
 const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
+  const [showPreview, setShowPreview] = useState(false);
+
+  const approveUnit = async () => {
+    try {
+      const response = await approveEducationalUnit(unit.id);
+      toast.success("Duyệt đơn vị đào tạo thành công");
+      window.location.reload();
+      onClose();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Lỗi duyệt đơn vị đào tạo";
+      toast.error(errorMessage);
+    }
+  };
+
+  const sendFeedback = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    sendFeedbackToEducationalUnit(
+      unit.id,
+      (e.target as HTMLButtonElement).form?.feedback.value || ""
+    )
+      .then(() => {
+        toast.success("Gửi phản hồi thành công");
+        onClose();
+      })
+      .catch((error) => {
+        const errorMessage =
+          error instanceof Error ? error.message : "Lỗi gửi phản hồi";
+        toast.error(errorMessage);
+      });
+  };
+
   if (!isOpen || !unit) return null;
-
-  const getDocumentIcon = (status: string) => {
-    switch (status) {
-      case "approved":
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case "rejected":
-        return <XCircle className="w-4 h-4 text-red-600" />;
-      case "pending":
-        return <Clock className="w-4 h-4 text-yellow-600" />;
-      case "expired":
-        return <AlertTriangle className="w-4 h-4 text-orange-600" />;
-      default:
-        return <FileText className="w-4 h-4 text-gray-600" />;
-    }
-  };
-
-  const getDocumentStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "expired":
-        return "bg-orange-100 text-orange-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -89,7 +75,6 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
             <Building2 className="w-6 h-6 text-blue-600" />
             <div>
               <h3 className="text-xl font-bold text-gray-900">{unit.name}</h3>
-              <p className="text-sm text-gray-600">Mã đơn vị: {unit.code}</p>
             </div>
           </div>
           <button
@@ -116,7 +101,7 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                     Đại diện:
                   </span>
                   <span className="text-sm text-gray-900">
-                    {unit.representative}
+                    {unit.representativeName}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -125,7 +110,7 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                     Email:
                   </span>
                   <a
-                    href={`mailto:${unit.email}`}
+                    href={`mailto:${unit.representativeEmail}`}
                     className="text-sm text-blue-600 hover:underline"
                   >
                     {unit.email}
@@ -136,7 +121,9 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                   <span className="text-sm font-medium text-gray-700">
                     Điện thoại:
                   </span>
-                  <span className="text-sm text-gray-900">{unit.phone}</span>
+                  <span className="text-sm text-gray-900">
+                    {unit.representativePhone}
+                  </span>
                 </div>
               </div>
               <div className="space-y-3">
@@ -153,7 +140,7 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                     Ngày thành lập:
                   </span>
                   <span className="text-sm text-gray-900">
-                    {new Date(unit.establishedDate).toLocaleDateString("vi-VN")}
+                    {unit.establishedYear}
                   </span>
                 </div>
                 <div className="flex items-start gap-2">
@@ -168,7 +155,7 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
           </div>
 
           {/* Statistics */}
-          <div>
+          {/* <div>
             <h4 className="text-lg font-semibold text-gray-900 mb-4">
               Thống kê hoạt động
             </h4>
@@ -207,7 +194,7 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Documents */}
           <div>
@@ -215,35 +202,109 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
               <FileText className="w-5 h-5 text-blue-600" />
               Giấy tờ kèm theo
             </h4>
-            <div className="space-y-3">
-              {unit.documents.map((doc, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    {getDocumentIcon(doc.status)}
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {doc.name}
-                      </p>
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getDocumentStatusColor(
-                          doc.status
-                        )}`}
-                      >
-                        {doc.status === "approved" && "Đã duyệt"}
-                        {doc.status === "rejected" && "Bị từ chối"}
-                        {doc.status === "pending" && "Chờ duyệt"}
-                        {doc.status === "expired" && "Hết hạn"}
-                      </span>
-                    </div>
+            <div className="bg-gray-50 p-4 rounded-lg border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Copyright className="w-5 h-5 text-gray-600" />
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      Giấy phép hoạt động
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Tài liệu chứng nhận hoạt động kinh doanh
+                    </p>
                   </div>
-                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                    Xem file
-                  </button>
                 </div>
-              ))}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="flex items-center gap-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                    {showPreview ? "Ẩn preview" : "Xem preview"}
+                  </button>
+                  <a
+                    href={unit.businessLicense}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Mở trong tab mới
+                  </a>
+                </div>
+              </div>
+
+              {/* Preview Section */}
+              {showPreview && (
+                <div className="mt-4 border-t pt-4">
+                  <div className="bg-white rounded-lg p-4 border">
+                    <h5 className="font-medium text-gray-900 mb-3">
+                      Preview tài liệu:
+                    </h5>
+                    {unit.businessLicense ? (
+                      <div className="space-y-3">
+                        {/* Check if it's an image */}
+                        {/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                          unit.businessLicense
+                        ) ? (
+                          <div className="max-w-full">
+                            <img
+                              src={unit.businessLicense}
+                              alt="Giấy phép hoạt động"
+                              className="max-w-full h-auto max-h-96 rounded border shadow-sm"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = "none";
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.innerHTML = `
+                                    <div class="flex items-center justify-center h-32 bg-gray-100 rounded border border-dashed border-gray-300">
+                                      <div class="text-center">
+                                        <FileText class="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                        <p class="text-sm text-gray-600">Không thể hiển thị preview</p>
+                                        <p class="text-xs text-gray-500 mt-1">Vui lòng mở file để xem</p>
+                                      </div>
+                                    </div>
+                                  `;
+                                }
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          /* For PDF and other document types */
+                          <div className="flex items-center justify-center h-32 bg-gray-100 rounded border border-dashed border-gray-300">
+                            <div className="text-center">
+                              <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">
+                                Preview không khả dụng cho loại file này
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Nhấn "Mở trong tab mới" để xem tài liệu
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="pt-2">
+                          <p className="text-xs text-gray-500">
+                            URL:{" "}
+                            <span className="font-mono break-all">
+                              {unit.businessLicense}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-24 bg-gray-50 rounded border border-dashed border-gray-300">
+                        <p className="text-sm text-gray-500">
+                          Chưa có tài liệu được tải lên
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -258,12 +319,33 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                   unit.status
                 )}`}
               >
-                {UnitStatus[unit.status as keyof typeof UnitStatus]}
+                {unitStatus(unit.status.toLocaleLowerCase())}
               </span>
               <span className="text-sm text-gray-600">
                 Cập nhật lần cuối: {new Date().toLocaleDateString("vi-VN")}
               </span>
             </div>
+          </div>
+
+          {/* Feedback */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
+              <MessageSquareReply className="w-5 h-5 text-blue-600" />
+              Phản hồi yêu cầu đăng ký
+            </h4>
+            <form action="post" className="flex flex-col">
+              <textarea
+                name="feedback"
+                id=""
+                className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:outline-none"
+              ></textarea>
+              <button
+                className="px-4 py-2 rounded-lg text-end bg-blue-600 text-white mt-3 hover:bg-blue-700 transition-colors self-end"
+                onClick={sendFeedback}
+              >
+                Phản hồi
+              </button>
+            </form>
           </div>
         </div>
 
@@ -275,9 +357,14 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
           >
             Đóng
           </button>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Chỉnh sửa thông tin
-          </button>
+          {unit.status.toLowerCase() === "pending" && (
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={approveUnit}
+            >
+              Duyệt
+            </button>
+          )}
         </div>
       </div>
     </div>

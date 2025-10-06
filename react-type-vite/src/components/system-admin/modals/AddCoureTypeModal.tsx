@@ -1,19 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, BookOpen } from "lucide-react";
 import type { CourseCategoryResponse } from "@/services/api/response/courseTypeResponse";
 
 interface AddCourseTypeModalProps {
+  title: string;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: { name: string; description: string }) => void;
-  onUpdate?: CourseCategoryResponse;
+  editData?: CourseCategoryResponse;
+  isEditing?: boolean;
 }
 
 const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
+  title,
   isOpen,
   onClose,
   onSubmit,
-  onUpdate,
+  editData,
+  isEditing = false,
 }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -24,6 +28,27 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
     name: "",
     description: "",
   });
+
+  // Effect để load dữ liệu khi ở chế độ edit
+  useEffect(() => {
+    if (isEditing && editData) {
+      setFormData({
+        name: editData.courseTypeName,
+        description: editData.description,
+      });
+    } else {
+      // Reset form khi không phải edit mode
+      setFormData({
+        name: "",
+        description: "",
+      });
+    }
+    // Clear errors khi thay đổi mode
+    setErrors({
+      name: "",
+      description: "",
+    });
+  }, [isEditing, editData, isOpen]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -67,25 +92,12 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
         name: formData.name.trim(),
         description: formData.description.trim(),
       });
-
-      // Reset form after successful submission
-      setFormData({
-        name: "",
-        description: "",
-      });
-      setErrors({
-        name: "",
-        description: "",
-      });
+      // Form sẽ được reset bởi useEffect khi modal đóng
     }
   };
 
   const handleClose = () => {
-    // Reset form when closing
-    setFormData({
-      name: "",
-      description: "",
-    });
+    // Clear errors khi đóng modal
     setErrors({
       name: "",
       description: "",
@@ -108,9 +120,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
             <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-purple-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Thêm danh mục mới
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
           </div>
           <button
             onClick={handleClose}
@@ -134,7 +144,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
               type="text"
               id="name"
               name="name"
-              value={onUpdate?.courseTypeName || formData.name}
+              value={formData.name}
               onChange={handleInputChange}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
                 errors.name
@@ -159,7 +169,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
             <textarea
               id="description"
               name="description"
-              value={onUpdate?.description || formData.description}
+              value={formData.description}
               onChange={handleInputChange}
               rows={4}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors resize-none ${
@@ -189,7 +199,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
             onClick={handleSubmit}
             className="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded-lg transition-colors"
           >
-            Thêm danh mục
+            {isEditing ? "Cập nhật" : "Thêm mới"}
           </button>
         </div>
       </div>

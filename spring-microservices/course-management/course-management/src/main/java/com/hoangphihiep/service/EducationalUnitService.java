@@ -2,20 +2,22 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.TrainingUnitRegistrationRequest;
 import com.hoangphihiep.dto.request.UserRequest;
-import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.EducationalUnitResponse;
-import com.hoangphihiep.dto.response.TrainingUnitRegistrationResponse;
-import com.hoangphihiep.dto.response.UserResponse;
+import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.EducationalUnit;
 import com.hoangphihiep.entity.SubscriptionPlan;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.mapper.EducationalUnitMapper;
 import com.hoangphihiep.repository.EducationalUnitRepository;
 import com.hoangphihiep.repository.SubscriptionPlanRepository;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
+import com.hoangphihiep.repository.httpclient.UserInfoApi;
 import com.hoangphihiep.repository.httpclient.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,41 @@ public class EducationalUnitService {
     private final UserRepository userRepository;
     private final FileHandlerRepository fileHandlerRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
+    private final EducationalUnitMapper educationalUnitMapper;
+    private final UserInfoApi userInfoApi;
+    private final EmailService emailService;
+
+    public PaginatedResponse<EducationalUnitResponse> getAllEducationalUnits(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<EducationalUnit> educationalUnits = educationalUnitRepository.findAll(pageable);
+        List<EducationalUnitResponse> educationalUnitResponses =
+                educationalUnits.getContent().stream()
+                        .map(eu -> {
+                            EducationalUnitResponse response = educationalUnitMapper.toEducationalUnitResponse(eu);
+                            // Fetch and set representative info
+                            UserResponse userInfo = userInfoApi.getUserInfo(eu.getIdAdmin()).getResult();
+                            log.info("Fetched user info for admin ID {}: {}", eu.getIdAdmin(), userInfo);
+                            response.setRepresentativeName(userInfo.getFirstName() + " " + userInfo.getLastName());
+                            response.setRepresentativeEmail(userInfo.getEmail());
+                            response.setRepresentativePhone(userInfo.getPhoneNumber());
+
+                            return response;
+                        })
+                        .toList();
+
+        return PaginatedResponse.<EducationalUnitResponse>builder()
+                .content(educationalUnitResponses)
+                .page(page)
+                .size(size)
+                .totalElements(educationalUnits.getTotalElements())
+                .totalPages(educationalUnits.getTotalPages())
+                .first(educationalUnits.isFirst())
+                .last(educationalUnits.isLast())
+                .hasNext(educationalUnits.hasNext())
+                .hasPrevious(educationalUnits.hasPrevious())
+                .build();
+    }
+
     public EducationalUnitResponse getInstitutionByAdminId(String adminId) {
         if (adminId == null || adminId.trim().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
@@ -173,5 +211,29 @@ public class EducationalUnitService {
             // Only throw a generic error for truly unexpected exceptions
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
+    }
+
+    public void approveEducationalUnit(Integer id){
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        educationalUnit.setStatus("ACTIVE");
+        educationalUnitRepository.save(educationalUnit);
+
+        this.sendFeedback(id, "Đơn vị đào tạo của bạn đã được phê duyệt. Bạn có thể đăng nhập và bắt đầu sử dụng hệ thống.");
+    }
+
+    public void sendFeedback(Integer unitId, String feedback) {
+        EducationalUnit entity = educationalUnitRepository.findById(unitId)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        CompletableFuture<Boolean> future = emailService.sendFeedbackForRegisteredEducationalUnit(entity.getEmail(), entity.getName(), feedback);
+        future.whenComplete((emailSent, error) -> {
+            if (error != null) {
+                throw new AppException(ErrorCode.EMAIL_SENDING_FAILED);
+            } else if (!emailSent) {
+                throw new AppException(ErrorCode.EMAIL_SENDING_FAILED);
+            }
+        });
     }
 }

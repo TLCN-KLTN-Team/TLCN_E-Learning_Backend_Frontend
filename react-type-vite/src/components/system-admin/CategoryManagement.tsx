@@ -15,6 +15,8 @@ import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 import { toast } from "react-toastify";
 import AddCourseTypeModal from "./modals/AddCoureTypeModal";
 import DeleteConfirmModal from "../system/DeleteConfirmModal";
+import { paginationUtils } from "@/utils/paginationUtils";
+import type { PaginationState } from "@/utils/paginationUtils";
 
 const CategoryManagement: React.FC = () => {
   const [categories, setCategories] = useState<CourseCategoryResponse[]>([]);
@@ -23,22 +25,30 @@ const CategoryManagement: React.FC = () => {
   const [selectedCategory, setSelectedCategory] =
     useState<CourseCategoryResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [hasPrevious, setHasPrevious] = useState(false);
-  const [hasNext, setHasNext] = useState(false);
 
-  const handlePageChange = async (newPage: number) => {
-    if (newPage < 0 || newPage >= totalPages) return;
-    setCurrentPage(newPage);
-  };
+  // Pagination state using paginationUtils
+  const [paginationState, setPaginationState] = useState<PaginationState>(
+    paginationUtils.createPaginationStateManager(10)
+  );
 
-  const handlePageSizeChange = async (newSize: number) => {
-    setPageSize(newSize);
-    setCurrentPage(0); // Reset to first page when changing page size
-  };
+  // Pagination handlers using paginationUtils
+  const paginationHandlers = paginationUtils.createPaginationHandlers(
+    (page: number) =>
+      setPaginationState((prev) => ({ ...prev, currentPage: page })),
+    (size: number) =>
+      setPaginationState((prev) => ({ ...prev, pageSize: size })),
+    undefined, // onPageChange callback - will be handled by useEffect
+    undefined // onPageSizeChange callback - will be handled by useEffect
+  );
+
+  // Generate page numbers using paginationUtils
+  const pageNumbers = paginationUtils.generatePageNumbers(
+    paginationState.currentPage,
+    paginationState.totalPages
+  );
+
+  // Get pagination display text
+  const paginationText = paginationUtils.getPaginationText(paginationState);
 
   const handleAddCourseType = async (data: {
     name: string;
@@ -73,7 +83,9 @@ const CategoryManagement: React.FC = () => {
       setShowAddModal(false);
     } catch (error) {
       console.error("Error adding course type:", error);
-      toast.error("Có lỗi xảy ra khi thêm danh mục");
+      const errMsg = error instanceof Error ? error.message : "";
+      console.log("Error message:", errMsg);
+      toast.error(error ? errMsg : "Có lỗi xảy ra khi thêm hoặc sửa danh mục");
     }
   };
 
@@ -93,7 +105,9 @@ const CategoryManagement: React.FC = () => {
       toast.success("Xóa danh mục thành công!");
     } catch (error) {
       console.error("Error deleting course type:", error);
-      toast.error("Có lỗi xảy ra khi xóa danh mục");
+      const errMsg = error instanceof Error ? error.message : "";
+      console.log("Error message:", errMsg);
+      toast.error(error ? errMsg : "Có lỗi xảy ra khi xóa danh mục");
     }
   };
 
@@ -115,35 +129,25 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
-  const generatePageNumbers = () => {
-    const pages = [];
-    const maxVisible = 5;
-
-    let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-    const end = Math.min(totalPages - 1, start + maxVisible);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(0, end - maxVisible + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  };
-
   useEffect(() => {
     // Fetch categories from service
     const fetchCourseCategories = async () => {
       try {
         const result: PaginatedResponse<CourseCategoryResponse> =
-          await getCourseTypes(currentPage, pageSize);
+          await getCourseTypes(
+            paginationState.currentPage,
+            paginationState.pageSize
+          );
         console.log("Fetched categories:", result);
         setCategories(result.content);
-        setTotalPages(result.totalPages);
-        setTotalElements(result.totalElements);
-        setHasPrevious(result.hasPrevious);
-        setHasNext(result.hasNext);
+
+        // Update pagination state using paginationUtils
+        const newPaginationState = paginationUtils.calculatePaginationState(
+          paginationState.currentPage,
+          paginationState.pageSize,
+          result.totalElements
+        );
+        setPaginationState(newPaginationState);
       } catch (error) {
         console.error("Error fetching categories:", error);
         toast.error("Lỗi phân trang");
@@ -151,7 +155,7 @@ const CategoryManagement: React.FC = () => {
     };
 
     fetchCourseCategories();
-  }, [currentPage, pageSize]);
+  }, [paginationState.currentPage, paginationState.pageSize]);
 
   return (
     <div className="space-y-6">
@@ -278,42 +282,52 @@ const CategoryManagement: React.FC = () => {
         {/* Pagination Controls */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
           <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-700">
-              Hiển thị {currentPage * pageSize + 1} -{" "}
-              {Math.min((currentPage + 1) * pageSize, totalElements)} trong tổng
-              số {totalElements} tài khoản
-            </div>
+            <div className="text-sm text-gray-700">{paginationText}</div>
             <select
-              value={pageSize}
-              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              value={paginationState.pageSize}
+              onChange={(e) =>
+                paginationHandlers.handlePageSizeChange(Number(e.target.value))
+              }
               className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value={5}>5 / trang</option>
-              <option value={10}>10 / trang</option>
-              <option value={20}>20 / trang</option>
-              <option value={50}>50 / trang</option>
+              {paginationUtils.DEFAULT_CONFIG.pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size} / trang
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={!hasPrevious}
+              onClick={() =>
+                paginationHandlers.handlePreviousPage(
+                  paginationState.currentPage,
+                  paginationState.totalPages
+                )
+              }
+              disabled={!paginationState.hasPrevious}
               className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
             <div className="flex items-center gap-1">
-              {generatePageNumbers().map((page) => (
+              {pageNumbers.pages.map((page) => (
                 <button
+                  key={page}
                   className={`px-2 py-1 rounded-sm border border-gray-300
                             ${
-                              page === currentPage
+                              page === paginationState.currentPage
                                 ? "z-10 bg-blue-600 text-white"
                                 : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
                             }`}
-                  onClick={() => handlePageChange(page)}
+                  onClick={() =>
+                    paginationHandlers.handlePageChange(
+                      page,
+                      paginationState.totalPages
+                    )
+                  }
                 >
                   {page + 1}
                 </button>
@@ -321,8 +335,13 @@ const CategoryManagement: React.FC = () => {
             </div>
 
             <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={!hasNext}
+              onClick={() =>
+                paginationHandlers.handleNextPage(
+                  paginationState.currentPage,
+                  paginationState.totalPages
+                )
+              }
+              disabled={!paginationState.hasNext}
               className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronRight className="w-4 h-4" />
@@ -333,10 +352,15 @@ const CategoryManagement: React.FC = () => {
 
       {/* Add Course Type Modal */}
       <AddCourseTypeModal
+        title={selectedCategory ? "Cập nhật danh mục" : "Thêm danh mục"}
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => {
+          setShowAddModal(false);
+          setSelectedCategory(null);
+        }}
         onSubmit={handleAddCourseType}
-        onUpdate={selectedCategory ? selectedCategory : undefined}
+        editData={selectedCategory || undefined}
+        isEditing={!!selectedCategory}
       />
 
       {/* Confirm Delete Modal */}
