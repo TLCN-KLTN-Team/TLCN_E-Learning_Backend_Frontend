@@ -6,6 +6,7 @@ import com.hoangphihiep.dto.response.EducationalUnitResponse;
 import com.hoangphihiep.dto.response.TrainingUnitRegistrationResponse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.service.EducationalUnitService;
+import com.hoangphihiep.service.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,20 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class EducationalUnitController {
     private final EducationalUnitService educationalUnitService;
+    private final EmailService emailService;
+
+    @GetMapping("/get-all")
+    public ApiResponse<?> getAllEducationalUnits(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size
+    ) {
+
+        var response = educationalUnitService.getAllEducationalUnits(page,size);
+        return ApiResponse.success(
+                response,
+                "Lấy danh sách đơn vị đào tạo thành công"
+        );
+    }
 
     @GetMapping("/my-institution")
     public ApiResponse<EducationalUnitResponse> getMyInstitution() {

@@ -1,8 +1,14 @@
-export const UnitStatus = {
-  pending: "Chờ phê duyệt",
-  active: "Đang hoạt động",
-  reject: "Bị từ chối",
-  suspended: "Bị tạm ngừng",
+export const unitStatus = (status: string) => {
+  switch (status) {
+    case "active":
+      return "Đang hoạt động";
+    case "pending":
+      return "Chờ duyệt";
+    case "reject":
+      return "Bị từ chối";
+    case "suspended":
+      return "Tạm ngưng";
+  }
 };
 
 export const getStatusStyle = (status: string) => {
