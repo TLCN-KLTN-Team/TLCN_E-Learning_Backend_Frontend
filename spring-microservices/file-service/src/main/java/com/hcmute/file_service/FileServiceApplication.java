@@ -1,6 +1,6 @@
-package com.hcmute.file_handler;
+package com.hcmute.file_service;
 
-import com.hcmute.file_handler.config.DotenvInitializer;
+import com.hcmute.file_service.config.DotenvInitializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

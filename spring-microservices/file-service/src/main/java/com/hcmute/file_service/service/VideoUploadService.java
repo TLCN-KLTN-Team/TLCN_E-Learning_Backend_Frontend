@@ -1,4 +1,4 @@
-package com.hcmute.file_handler.service;
+package com.hcmute.file_service.service;
 
 import com.cloudinary.Cloudinary;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.hcmute.file_handler.config;
+package com.hcmute.file_service.config;
 
 import com.cloudinary.Cloudinary;
 import org.springframework.beans.factory.annotation.Value;

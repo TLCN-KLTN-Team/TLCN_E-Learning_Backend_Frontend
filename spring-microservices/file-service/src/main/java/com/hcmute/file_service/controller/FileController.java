@@ -1,12 +1,10 @@
-package com.hcmute.file_handler.controller;
+package com.hcmute.file_service.controller;
 
-import com.hcmute.file_handler.dto.response.ApiResponse;
-import com.hcmute.file_handler.service.FileService;
+import com.hcmute.file_service.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
