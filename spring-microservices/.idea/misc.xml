@@ -11,7 +11,15 @@
         <option value="$PROJECT_DIR$/course-management/course-management/pom.xml" />
         <option value="$PROJECT_DIR$/chat-service/pom.xml" />
         <option value="$PROJECT_DIR$/file-handler/pom.xml" />
+        <option value="$PROJECT_DIR$/notification-service/pom.xml" />
+        <option value="$PROJECT_DIR$/course-service/pom.xml" />
+        <option value="$PROJECT_DIR$/file-service/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/profile-service/pom.xml" />
+      </set>
     </option>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_21" default="true" project-jdk-name="21" project-jdk-type="JavaSDK">

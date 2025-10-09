@@ -1,8 +1,8 @@
-package com.hcmute.file_handler.config;
+package com.hcmute.file_service.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hcmute.file_handler.dto.response.ApiResponse;
-import com.hcmute.file_handler.exception.ErrorCode;
+import com.hcmute.file_service.dto.response.ApiResponse;
+import com.hcmute.file_service.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
