@@ -17,14 +17,12 @@ public class DotenvInitializer {
             Path envPath;
 
             // Check if we're running from the identity-service directory
-            if (currentPath.getFileName().toString().equals("course-management/course-management")) {
+            if (currentPath.getFileName().toString().equals("course-service")) {
                 envPath = currentPath.resolve(".env");
             } else {
-                // We're probably running from the parent directory, look in identity-service
-                envPath = currentPath.resolve("course-management/course-management").resolve(".env");
+                // We're probably running from the parent directory, look in course-service
+                envPath = currentPath.resolve("course-service").resolve(".env");
             }
-
-            log.info("Looking for .env file at: {}", envPath.toString());
 
             Dotenv dotenv;
             if (new File(envPath.toString()).exists()) {

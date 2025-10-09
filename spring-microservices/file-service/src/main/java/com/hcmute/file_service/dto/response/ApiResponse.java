@@ -1,7 +1,7 @@
-package com.hcmute.file_handler.dto.response;
+package com.hcmute.file_service.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hcmute.file_handler.exception.ErrorCode;
+import com.hcmute.file_service.exception.ErrorCode;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;

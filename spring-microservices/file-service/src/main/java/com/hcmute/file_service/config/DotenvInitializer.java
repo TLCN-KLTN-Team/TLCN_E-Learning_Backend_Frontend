@@ -1,4 +1,4 @@
-package com.hcmute.file_handler.config;
+package com.hcmute.file_service.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.cdimascio.dotenv.DotenvException;
@@ -16,12 +16,12 @@ public class DotenvInitializer {
             Path currentPath = Paths.get("").toAbsolutePath();
             Path envPath;
 
-            // Check if we're running from the file-handler directory
-            if (currentPath.getFileName().toString().equals("file-handler")) {
+            // Check if we're running from the file-service directory
+            if (currentPath.getFileName().toString().equals("file-service")) {
                 envPath = currentPath.resolve(".env");
             } else {
-                // We're probably running from the parent directory, look in file-handler
-                envPath = currentPath.resolve("file-handler").resolve(".env");
+                // We're probably running from the parent directory, look in file-service
+                envPath = currentPath.resolve("file-service").resolve(".env");
             }
 
             log.info("Looking for .env file at: {}", envPath.toString());
