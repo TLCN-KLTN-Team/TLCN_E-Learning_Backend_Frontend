@@ -1,8 +1,8 @@
-package com.hcmute.file_handler.service;
+package com.hcmute.file_service.service;
 
 import com.cloudinary.Cloudinary;
-import com.hcmute.file_handler.exception.AppException;
-import com.hcmute.file_handler.exception.ErrorCode;
+import com.hcmute.file_service.exception.AppException;
+import com.hcmute.file_service.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

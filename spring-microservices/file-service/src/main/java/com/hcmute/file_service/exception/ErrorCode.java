@@ -1,4 +1,4 @@
-package com.hcmute.file_handler.exception;
+package com.hcmute.file_service.exception;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

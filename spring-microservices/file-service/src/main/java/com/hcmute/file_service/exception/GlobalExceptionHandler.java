@@ -1,6 +1,6 @@
-package com.hcmute.file_handler.exception;
+package com.hcmute.file_service.exception;
 
-import com.hcmute.file_handler.dto.response.ApiResponse;
+import com.hcmute.file_service.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

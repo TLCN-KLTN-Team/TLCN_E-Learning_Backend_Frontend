@@ -1,4 +1,4 @@
-package com.hcmute.file_handler.config;
+package com.hcmute.file_service.config;
 
 import com.nimbusds.jwt.SignedJWT;
 import lombok.extern.slf4j.Slf4j;
