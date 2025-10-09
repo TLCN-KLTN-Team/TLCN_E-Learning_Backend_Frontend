@@ -5,11 +5,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class FileHandlerApplication {
+public class FileServiceApplication {
 
 	public static void main(String[] args) {
 		DotenvInitializer.init();
-		SpringApplication.run(FileHandlerApplication.class, args);
+		SpringApplication.run(FileServiceApplication.class, args);
 	}
 
 }
