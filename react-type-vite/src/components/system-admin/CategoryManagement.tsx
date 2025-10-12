@@ -129,6 +129,13 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
+  const handleTotalCourses = () => {
+    return categories.reduce(
+      (total, category) => total + category.numberOfType,
+      0
+    );
+  };
+
   useEffect(() => {
     // Fetch categories from service
     const fetchCourseCategories = async () => {
@@ -138,7 +145,6 @@ const CategoryManagement: React.FC = () => {
             paginationState.currentPage,
             paginationState.pageSize
           );
-        console.log("Fetched categories:", result);
         setCategories(result.content);
 
         // Update pagination state using paginationUtils
@@ -196,7 +202,9 @@ const CategoryManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng danh mục</p>
-              <p className="text-2xl font-semibold text-gray-900"></p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {categories.length}
+              </p>
             </div>
           </div>
         </div>
@@ -220,7 +228,9 @@ const CategoryManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng khóa học</p>
-              <p className="text-2xl font-semibold text-gray-900"></p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {handleTotalCourses()}
+              </p>
             </div>
           </div>
         </div>

@@ -3,6 +3,17 @@ server:
   servlet:
     context-path: /identity
 
+# self-defined configs
+openapi:
+  services:
+    api-docs: api-docs
+    server: http://localhost:8888/api/v1${server.servlet.context-path}
+    title: Identity Service APIs
+    version: 1.0.0
+    license:
+      name: Apache 2.0
+      url: https://springdoc.org
+
 spring:
   application:
     name: identity-service

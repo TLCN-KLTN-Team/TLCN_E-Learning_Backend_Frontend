@@ -1,4 +1,5 @@
 import { MoreVertical } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Types
 interface Course {
@@ -15,24 +16,32 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course }: CourseCardProps) => (
-  <div className="student-dashboard-course-card">
-    <div className="relative cursor-pointer">
+  <div className="student-dashboard-course-card hover:translate-y-[-4px] hover:shadow-lg transition-all duration-300">
+    <Link
+      to={`/student/course/${course.id}`}
+      className="relative cursor-pointer block"
+    >
       <img
         src={course.image}
         alt={course.title}
         className="w-full h-48 object-cover"
       />
       <div className="absolute top-3 right-3">
-        <button className="student-dashboard-card-action-btn">
+        <button
+          className="student-dashboard-card-action-btn"
+          onClick={(e) => e.preventDefault()}
+        >
           <MoreVertical className="w-4 h-4 student-dashboard-card-action-icon" />
         </button>
       </div>
-    </div>
+    </Link>
 
     <div className="p-4">
-      <h3 className="font-semibold text-lg student-dashboard-course-title mb-2 line-clamp-2 cursor-pointer">
-        {course.title}
-      </h3>
+      <Link to={`/student/course/${course.id}`}>
+        <h3 className="font-semibold text-lg student-dashboard-course-title mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors">
+          {course.title}
+        </h3>
+      </Link>
       <p className="text-sm student-dashboard-course-subtitle mb-3 line-clamp-1">
         {course.subtitle}
       </p>

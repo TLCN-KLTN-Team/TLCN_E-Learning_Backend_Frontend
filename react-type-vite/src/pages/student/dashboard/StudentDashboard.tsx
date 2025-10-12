@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Grid, List } from "lucide-react";
+import { Search } from "lucide-react";
 import "../../../styles/student-dashboard.css";
 
 import CourseCard from "./CourseCard";
@@ -68,7 +68,6 @@ const mockCourses: Course[] = [
 ];
 
 export const StudentDashboard = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("course_name");
   const [filterBy, setFilterBy] = useState("all");
@@ -105,8 +104,8 @@ export const StudentDashboard = () => {
           </h2>
 
           {/* Filters and Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div className="flex flex-wrap items-center gap-3">
               {/* All Filter */}
               <select
                 value={filterBy}
@@ -124,18 +123,6 @@ export const StudentDashboard = () => {
                 <option value="internship">Internship</option>
               </select>
 
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="student-dashboard-input pl-10 pr-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
-                />
-              </div>
-
               {/* Sort */}
               <select
                 value={sortBy}
@@ -148,45 +135,22 @@ export const StudentDashboard = () => {
               </select>
             </div>
 
-            {/* View Mode and Card Toggle */}
-            <div className="flex items-center gap-4">
-              <select className="student-dashboard-select px-4 py-2 rounded-lg text-sm">
-                <option>Card</option>
-                <option>List</option>
-              </select>
-
-              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`student-dashboard-view-btn ${
-                    viewMode === "grid"
-                      ? "student-dashboard-view-btn-active"
-                      : ""
-                  }`}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`student-dashboard-view-btn ${
-                    viewMode === "list"
-                      ? "student-dashboard-view-btn-active"
-                      : ""
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
+            {/* Search - Moved to the right */}
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="student-dashboard-input pl-10 pr-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+              />
             </div>
           </div>
 
           {/* Course Grid */}
           <div
-            className={`grid gap-6 ${
-              viewMode === "grid"
-                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                : "grid-cols-1"
-            }`}
+            className={"grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}
           >
             {filteredCourses.map((course) => (
               <CourseCard key={course.id} course={course} />
