@@ -61,6 +61,7 @@ const AccountManagement: React.FC = () => {
         setTotalPages(result.totalPages);
         setHasNext(result.hasNext);
         setHasPrevious(result.hasPrevious);
+        toast.success("Tải tài khoản thành công");
       } catch (error) {
         toast.error(error ? `${error}` : "Lỗi khi tải tài khoản");
       } finally {

@@ -1,21 +1,48 @@
+import { useState } from "react";
 import type { Course } from "./types";
+import DefaultThumbnail from "@/components/shared/DefaultThumbnail";
+import { useTheme } from "@/context/theme-context";
 
 const CourseCard = ({ course }: { course: Course }) => {
+  const [imageError, setImageError] = useState(false);
+  const { theme } = useTheme();
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
-    <div className="flex-none w-48 lg:w-60 bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-      <div className="relative">
-        <img
-          src={course.image}
-          alt={course.title}
-          className="w-full h-44 sm:h-48 object-cover"
-        />
+    <div
+      className={`flex-none w-64 lg:w-72 ${
+        theme === "dark" ? "bg-gray-800" : "bg-white"
+      } rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border ${
+        theme === "dark"
+          ? "border-gray-700 hover:border-gray-600"
+          : "border-gray-100 hover:border-gray-200"
+      }`}
+    >
+      {/* Thumbnail Section */}
+      <div className="relative aspect-video">
+        {!imageError && course.image ? (
+          <img
+            src={course.image}
+            alt={course.title}
+            className="w-full h-full object-cover"
+            onError={handleImageError}
+            loading="lazy"
+          />
+        ) : (
+          <DefaultThumbnail title={course.title} className="w-full h-full" />
+        )}
+
+        {/* Badge */}
         {course.badge && (
           <div
-            className={`absolute top-2 left-2 px-2 py-1 text-xs font-semibold rounded ${
+            className={`absolute top-3 left-3 px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${
               course.isBestSeller
                 ? "bg-orange-500 text-white"
                 : course.isPopular
-                ? "bg-green-500 text-white"
+                ? "bg-emerald-500 text-white"
                 : "bg-blue-500 text-white"
             }`}
           >
@@ -24,36 +51,71 @@ const CourseCard = ({ course }: { course: Course }) => {
         )}
       </div>
 
-      <div className="px-4 py-2 space-y-1">
-        <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem] leading-tight">
+      {/* Content Section */}
+      <div className="p-4 space-y-3">
+        {/* Title */}
+        <h3
+          className={`text-base font-semibold leading-snug line-clamp-2 min-h-[3rem] ${
+            theme === "dark" ? "text-white" : "text-gray-900"
+          }`}
+        >
           {course.title}
         </h3>
 
-        <p className="text-sm text-gray-600 truncate">{course.instructor}</p>
+        {/* Instructor */}
+        <p
+          className={`text-sm font-medium ${
+            theme === "dark" ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
+          {course.instructor}
+        </p>
 
-        <div className="flex items-center gap-1">
-          <span className="text-sm font-bold text-orange-500">
-            {course.rating}
+        {/* Rating Section */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-amber-500">
+            {course.rating.toFixed(1)}
           </span>
-          <div className="flex text-orange-400">
+          <div className="flex text-amber-400">
             {[...Array(5)].map((_, i) => (
-              <svg key={i} className="w-3 h-3 fill-current" viewBox="0 0 20 20">
+              <svg
+                key={i}
+                className={`w-3.5 h-3.5 ${
+                  i < Math.floor(course.rating)
+                    ? "fill-current"
+                    : "fill-gray-300"
+                }`}
+                viewBox="0 0 20 20"
+              >
                 <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
               </svg>
             ))}
           </div>
-          <span className="text-xs text-gray-500 ml-1">
-            ({course.reviewCount})
+          <span
+            className={`text-xs ${
+              theme === "dark" ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            ({course.reviewCount.toLocaleString()})
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-base sm:text-lg font-bold text-gray-900">
-            {course.price.toLocaleString("vi-VN")} ₫
+        {/* Price Section */}
+        <div className="flex items-center gap-2 pt-1">
+          <span
+            className={`text-lg font-bold ${
+              theme === "dark" ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {course.price.toLocaleString("vi-VN")}₫
           </span>
           {course.originalPrice && (
-            <span className="text-sm text-gray-500 line-through">
-              {course.originalPrice.toLocaleString("vi-VN")} ₫
+            <span
+              className={`text-sm line-through ${
+                theme === "dark" ? "text-gray-400" : "text-gray-500"
+              }`}
+            >
+              {course.originalPrice.toLocaleString("vi-VN")}₫
             </span>
           )}
         </div>
