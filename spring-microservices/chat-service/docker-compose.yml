@@ -1,22 +1,51 @@
+version: "3.8"
 services:
-  mongodb:
-    image: bitnami/mongodb:8.0.12-debian-12-r0
-    container_name: mongodb_container
+  rabbitmq:
+    image: "rabbitmq:4.1.4-management"
+    container_name: rabbitmq
     ports:
-      - "27017:27017" # Expose MongoDB on port 27017
-    volumes:
-      - mongo_data:/bitnami/mongodb   # volume lưu trữ data vĩnh viễn
+      - "5672:5672" # RabbitMQ system port
+      - "15672:15672" # RabbitMQ management UI port
     environment:
-      MONGODB_ROOT_USER: root
-      MONGODB_ROOT_PASSWORD: root
-      MONGODB_DATABASE: workspace_db
-    restart: unless-stopped
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+
+  mongodb:
+    image: "mongo:7.0-jammy"
+    container_name: mongo_notification
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_INITDB_DATABASE: notification_db
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  app:
+    build: .
+    container_name: realtime-service
+    ports:
+      - "8090:8090"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATA_MONGODB_URI=mongodb://root:root@mongodb:27017/notification_db?authSource=admin
+    restart: unless-stopped
 
 volumes:
   mongo_data:

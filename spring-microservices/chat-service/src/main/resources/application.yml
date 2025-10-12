@@ -3,9 +3,13 @@ spring:
     name: chat-service
   data:
     mongodb:
-      uri: mongodb://root:root@localhost:27017/workspace_db?authSource=admin
-      database: workspace_db
+      uri: mongodb://root:root@mongodb:27017/mongo_notification?authSource=admin
       auto-index-creation: true
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
 springdoc:
   api-docs:
@@ -16,8 +20,8 @@ springdoc:
 # self-defined configs
 openapi:
   services:
-    api-docs: workspace-api-docs
-    server: http://localhost:${server.port}
+    api-docs: api-docs
+    server: http://localhost:8888/api/v1${server.servlet.context-path}
     title: Chat App APIs
     version: 1.0.0
     license:
@@ -44,3 +48,11 @@ server:
 services:
   identity:
     url: http://localhost:8080/identity
+
+rabbitmq:
+  exchange:
+    name: notification.exchange
+  routing:
+    key: notification.routingkey
+  queue:
+    edu-unit-queue: edu-unit-queue

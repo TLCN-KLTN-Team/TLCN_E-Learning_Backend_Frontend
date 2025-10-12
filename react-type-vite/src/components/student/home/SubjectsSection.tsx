@@ -3,6 +3,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import CourseCard from "./CourseCard";
 import type { Course } from "./types";
+import { useTheme } from "@/context/theme-context";
 
 interface SubjectsSectionProps {
   title?: string;
@@ -66,6 +67,18 @@ const mockCourses: Course[] = [
     originalPrice: 399000,
     image: "https://img-c.udemycdn.com/course/240x135/5659130_25b0_2.jpg",
   },
+  {
+    id: "6",
+    title: "Machine Learning Cơ Bản Cho Người Mới Bắt Đầu",
+    instructor: "Minh Hoang",
+    rating: 4.6,
+    reviewCount: 342,
+    price: 299000,
+    originalPrice: 699000,
+    image: "", // Empty image để test default thumbnail
+    badge: "Mới",
+    isPopular: false,
+  },
 ];
 const SubjectsSection = ({ title, subtitle }: SubjectsSectionProps) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -78,6 +91,8 @@ const SubjectsSection = ({ title, subtitle }: SubjectsSectionProps) => {
     },
   });
 
+  const { theme } = useTheme();
+
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
   }, [emblaApi]);
@@ -87,55 +102,85 @@ const SubjectsSection = ({ title, subtitle }: SubjectsSectionProps) => {
   }, [emblaApi]);
 
   return (
-    <section className="px-12 lg:px-24">
-      <div className="container mx-auto px-4">
+    <section className="px-4 sm:px-8 lg:px-12 xl:px-24 py-8">
+      <div className="container mx-auto">
         {/* Section Header */}
-        <h2 className="text-xl lg:text-3xl font-bold text-black mb-6">
-          {title || "Lĩnh vực bạn sẽ học tiếp theo"}
-        </h2>
+        <div className="mb-8">
+          <h2
+            className={`text-2xl lg:text-4xl font-bold mb-2 ${
+              theme === "dark" ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {title || "Lĩnh vực bạn sẽ học tiếp theo"}
+          </h2>
 
-        {/* Subject Tabs */}
-        <div className="flex flex-col">
-          <div className="flex items-center justify-between">
-            <p className="text-lg lg:text-2xl font-bold text-black">
-              {subtitle || "Được đề xuất cho bạn"}
-            </p>
+          <div className="flex items-center justify-between mt-6">
+            <div>
+              <p
+                className={`text-lg lg:text-xl font-semibold ${
+                  theme === "dark" ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
+                {subtitle || "Được đề xuất cho bạn"}
+              </p>
+              <p
+                className={`text-sm mt-1 ${
+                  theme === "dark" ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Khám phá các khóa học phù hợp với bạn
+              </p>
+            </div>
 
             {/* Navigation buttons - hide on mobile */}
-            <div className="hidden sm:flex gap-2">
+            <div className="hidden sm:flex gap-3">
               <button
                 onClick={scrollPrev}
-                className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className={`p-3 rounded-full border transition-all duration-200 hover:scale-105 ${
+                  theme === "dark"
+                    ? "border-gray-600 bg-gray-800 hover:bg-gray-700 text-white"
+                    : "border-gray-200 bg-white hover:bg-gray-50 text-gray-600 shadow-sm hover:shadow-md"
+                }`}
                 aria-label="Previous courses"
               >
-                <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+                <ChevronLeftIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={scrollNext}
-                className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className={`p-3 rounded-full border transition-all duration-200 hover:scale-105 ${
+                  theme === "dark"
+                    ? "border-gray-600 bg-gray-800 hover:bg-gray-700 text-white"
+                    : "border-gray-200 bg-white hover:bg-gray-50 text-gray-600 shadow-sm hover:shadow-md"
+                }`}
                 aria-label="Next courses"
               >
-                <ChevronRightIcon className="w-5 h-5 text-gray-600" />
+                <ChevronRightIcon className="w-5 h-5" />
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Embla Carousel */}
-          <div className="overflow-hidden py-4 px-2" ref={emblaRef}>
-            <div className="flex gap-3 sm:gap-4 ml-0">
-              {mockCourses.map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
-            </div>
-          </div>
-
-          {/* Mobile scroll indicator */}
-          <div className="flex justify-center mt-4 sm:hidden">
-            <p className="text-sm text-gray-500">← Vuốt để xem thêm →</p>
+        {/* Embla Carousel */}
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex gap-4 lg:gap-6 ml-0">
+            {mockCourses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
           </div>
         </div>
 
-        {/* Active Subject Content */}
+        {/* Mobile scroll indicator */}
+        <div className="flex justify-center mt-6 sm:hidden">
+          <p
+            className={`text-sm ${
+              theme === "dark" ? "text-gray-400" : "text-gray-500"
+            } flex items-center gap-2`}
+          >
+            <span>←</span>
+            <span>Vuốt để xem thêm</span>
+            <span>→</span>
+          </p>
+        </div>
       </div>
     </section>
   );
