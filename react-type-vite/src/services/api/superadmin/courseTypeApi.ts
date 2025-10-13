@@ -37,11 +37,14 @@ export const updateCourseType = async (
 ): Promise<CourseCategoryResponse> => {
   const response = await axiosInstance.put<ApiResponse<CourseCategoryResponse>>(
     `${PREFIX}/course-categories/${id}/update`,
-    data
+    {
+      courseTypeName: data.name,
+      description: data.description,
+    }
   );
   return response.data.result;
 };
 
 export const deleteCourseType = async (id: number): Promise<void> => {
-  await axiosInstance.delete<void>(`${PREFIX}/course-categories/${id}/delete`);
+  await axiosInstance.put<void>(`${PREFIX}/course-categories/${id}/disable`);
 };

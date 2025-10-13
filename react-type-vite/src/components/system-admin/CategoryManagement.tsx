@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { CSS_CLASSES } from "./data/CategoriesData";
 import {
   createCourseType,
+  deleteCourseType,
   getCourseTypes,
   updateCourseType,
 } from "@/services/api/superadmin/courseTypeApi";
@@ -58,6 +59,7 @@ const CategoryManagement: React.FC = () => {
       // TODO: Call API to create new course type
       if (selectedCategory) {
         // handle update case
+        console.log("Updating category:", selectedCategory.id, data);
         const result = await updateCourseType(selectedCategory.id, {
           name: data.name,
           description: data.description,
@@ -97,7 +99,7 @@ const CategoryManagement: React.FC = () => {
   const handleDeleteCourseType = async (id: number) => {
     try {
       // TODO: Call API to delete course type
-      console.log("Deleting course type with id:", id);
+      await deleteCourseType(id);
 
       // Remove from state
       setCategories((prev) => prev.filter((cat) => cat.id !== id));
