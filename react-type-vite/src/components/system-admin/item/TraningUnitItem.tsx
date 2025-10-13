@@ -1,12 +1,4 @@
-import {
-  BookOpen,
-  Building2,
-  ChevronDown,
-  DollarSign,
-  Edit,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { Building2, Edit, Trash2 } from "lucide-react";
 import { getStatusStyle, unitStatus } from "../data/UnitStatus";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 
@@ -59,9 +51,6 @@ const TraningUnitItem = ({
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
         <div className="flex items-center gap-1">{unit.type}</div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden xl:table-cell">
-        <div className="flex items-center gap-1">Thiếu</div>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">

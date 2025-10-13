@@ -11,9 +11,11 @@ import {
   Eye,
   ExternalLink,
   MessageSquareReply,
+  Building,
+  Sigma,
 } from "lucide-react";
 import { getStatusStyle, unitStatus } from "../data/UnitStatus";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import { toast } from "react-toastify";
 import {
@@ -29,16 +31,36 @@ interface SubmissionModalProps {
 
 const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("approve");
 
-  const approveUnit = async () => {
+  const handleStatusAction = async () => {
     try {
-      const response = await approveEducationalUnit(unit.id);
-      toast.success("Duyệt đơn vị đào tạo thành công");
+      switch (selectedStatus) {
+        case "approve":
+          await approveEducationalUnit(unit.id);
+          toast.success("Duyệt đơn vị đào tạo thành công");
+          break;
+        case "reject":
+          // TODO: Implement reject API call
+          toast.success("Từ chối đơn vị đào tạo thành công");
+          break;
+        case "suspend":
+          // TODO: Implement suspend API call
+          toast.success("Tạm ngừng đơn vị đào tạo thành công");
+          break;
+        case "reactivate":
+          // TODO: Implement reactivate API call
+          toast.success("Kích hoạt lại đơn vị đào tạo thành công");
+          break;
+        default:
+          toast.error("Hành động không hợp lệ");
+          return;
+      }
       window.location.reload();
       onClose();
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Lỗi duyệt đơn vị đào tạo";
+        error instanceof Error ? error.message : "Lỗi thực hiện hành động";
       toast.error(errorMessage);
     }
   };
@@ -96,6 +118,13 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
+                  <Building className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Tên đơn vị:
+                  </span>
+                  <span className="text-sm text-gray-900">{unit.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-gray-400" />
                   <span className="text-sm font-medium text-gray-700">
                     Đại diện:
@@ -149,6 +178,13 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                     Địa chỉ:
                   </span>
                   <span className="text-sm text-gray-900">{unit.address}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Sigma className="w-4 h-4 text-gray-400 mt-0.5" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Số lượng sinh viên dự kiến:
+                  </span>
+                  <span className="text-sm text-gray-900">{1}</span>
                 </div>
               </div>
             </div>
@@ -327,6 +363,30 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
             </div>
           </div>
 
+          {/* Status management */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-4">
+              Quản lý trạng thái đơn vị
+            </h4>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Chọn hành động:
+              </label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                {unit.status != "ACTIVE" && (
+                  <option value="approve">Phê duyệt</option>
+                )}
+                <option value="reject">Từ chối</option>
+                <option value="suspend">Tạm ngừng</option>
+                <option value="reactivate">Kích hoạt lại</option>
+              </select>
+            </div>
+          </div>
+
           {/* Feedback */}
           <div>
             <h4 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
@@ -357,10 +417,10 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
           >
             Đóng
           </button>
-          {unit.status.toLowerCase() === "pending" && (
+          {unit?.status == "PENDING" && (
             <button
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              onClick={approveUnit}
+              onClick={handleStatusAction}
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-600 transition-all"
             >
               Duyệt
             </button>

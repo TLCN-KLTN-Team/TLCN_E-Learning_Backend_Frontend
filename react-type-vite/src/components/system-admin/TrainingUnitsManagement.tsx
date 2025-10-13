@@ -61,6 +61,7 @@ const TrainingUnitsManagement: React.FC = () => {
       try {
         const data = await getAllEducationalUnits();
         setUnits(data.content);
+        console.log(data);
 
         // Update pagination state using paginationUtils
         const newPaginationState = paginationUtils.calculatePaginationState(
@@ -120,9 +121,6 @@ const TrainingUnitsManagement: React.FC = () => {
                 </th>
                 <th className={`${headerStyles} hidden lg:table-cell`}>
                   Loại hình
-                </th>
-                <th className={`${headerStyles} hidden xl:table-cell`}>
-                  Số lượng sinh viên
                 </th>
                 <th className={headerStyles}>Trạng thái</th>
                 <th className={headerStyles}>Thao tác</th>
