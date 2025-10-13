@@ -7,7 +7,7 @@ import * as studentApi from "@/services/api/admin/studentApi";
 import * as departmentApi from "@/services/api/admin/departmentApi";
 import type { StudentRequest } from "@/services/api/request/studentRequest";
 import type { StudentResponse } from "@/services/api/response/studentResponse";
-import type { DepartmentResponse } from "@/services/api/response/DepartmentResponse";
+import type { DepartmentResponse } from "@/services/api/response/departmentResponse";
 
 interface StudentFormModalProps {
   isOpen: boolean;

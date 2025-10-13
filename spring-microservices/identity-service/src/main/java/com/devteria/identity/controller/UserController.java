@@ -1,25 +1,23 @@
 package com.devteria.identity.controller;
 
-import java.util.List;
-
-import com.devteria.identity.dto.request.ChangePasswordRequest;
-import com.devteria.identity.dto.response.PaginatedResponse;
-import com.devteria.identity.service.EmailVerificationService;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.devteria.identity.dto.request.ApiResponse;
+import com.devteria.identity.dto.request.ChangePasswordRequest;
 import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.request.UserUpdateRequest;
+import com.devteria.identity.dto.response.PaginatedResponse;
 import com.devteria.identity.dto.response.UserResponse;
+import com.devteria.identity.service.EmailVerificationService;
 import com.devteria.identity.service.UserService;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/users")
@@ -44,9 +42,7 @@ public class UserController {
     }
 
     @PostMapping("/registration/verify-email")
-    ApiResponse<UserResponse> verifyEmailAndRegister(
-            @RequestParam String email,
-            @RequestParam String otpCode) {
+    ApiResponse<UserResponse> verifyEmailAndRegister(@RequestParam String email, @RequestParam String otpCode) {
         try {
             Object result = emailVerificationService.verifyOtp(email, otpCode);
 
@@ -70,15 +66,14 @@ public class UserController {
                 .build();
     }
 
-//    ApiResponse<UserResponse> createUser()
+    //    ApiResponse<UserResponse> createUser()
 
     @GetMapping
     ApiResponse<PaginatedResponse<UserResponse>> getUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection
-    ) {
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
         return ApiResponse.<PaginatedResponse<UserResponse>>builder()
                 .result(userService.getUsers(page, size, sortBy, sortDirection))
                 .build();
@@ -120,28 +115,19 @@ public class UserController {
     @PutMapping("/update-profile")
     ApiResponse<UserResponse> updateProfile(@RequestBody UserUpdateRequest request) {
         userService.updateProfile(request);
-        return ApiResponse.success(
-                userService.getMyInfo(),
-                "Update profile successfully"
-        );
+        return ApiResponse.success(userService.getMyInfo(), "Update profile successfully");
     }
 
     @PutMapping(value = "/update-avatar", consumes = "multipart/form-data")
     ApiResponse<String> updateProfile(@RequestPart("file") MultipartFile file) {
         String url = userService.uploadAvatar(file);
-        return ApiResponse.success(
-                url,
-                "Update profile successfully"
-        );
+        return ApiResponse.success(url, "Update profile successfully");
     }
 
     @PutMapping("/change-password")
     ApiResponse<Void> changePassword(@RequestBody ChangePasswordRequest request) {
         userService.changePassword(request);
-        return ApiResponse.<Void>success(
-                null,
-                "Password changed successfully"
-        );
+        return ApiResponse.<Void>success(null, "Password changed successfully");
     }
 
     //    @PutMapping("/roles")

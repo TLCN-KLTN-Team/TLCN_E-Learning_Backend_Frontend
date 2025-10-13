@@ -1,5 +1,7 @@
 package com.devteria.identity.mapper;
 
+import java.util.List;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -7,8 +9,6 @@ import org.mapstruct.MappingTarget;
 import com.devteria.identity.dto.request.TeacherRequest;
 import com.devteria.identity.dto.response.TeacherResponse;
 import com.devteria.identity.entity.Teacher;
-
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface TeacherMapper {

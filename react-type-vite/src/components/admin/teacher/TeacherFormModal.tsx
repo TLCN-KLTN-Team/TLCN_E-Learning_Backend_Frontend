@@ -7,7 +7,7 @@ import * as teacherApi from "@/services/api/admin/teacherApi";
 import * as departmentApi from "@/services/api/admin/departmentApi";
 import type { TeacherRequest } from "@/services/api/request/teacherRequest";
 import type { TeacherResponse } from "@/services/api/response/teacherResponse";
-import type { DepartmentResponse } from "@/services/api/response/DepartmentResponse";
+import type { DepartmentResponse } from "@/services/api/response/departmentResponse";
 
 interface TeacherFormModalProps {
   isOpen: boolean;

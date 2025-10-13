@@ -34,7 +34,7 @@ public class ApplicationInitConfig {
     @NonFinal
     static final String ADMIN_PASSWORD = "admin";
 
-    static final String SUPER_ADMIN_ROLE= "superadmin";
+    static final String SUPER_ADMIN_ROLE = "superadmin";
 
     @Bean
     @ConditionalOnProperty(
@@ -44,7 +44,7 @@ public class ApplicationInitConfig {
     ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
         log.info("Initializing application.....");
         return args -> {
-            if (userRepository.findByUsername(SUPER_ADMIN_ROLE).isEmpty()){
+            if (userRepository.findByUsername(SUPER_ADMIN_ROLE).isEmpty()) {
                 var roles = new HashSet<Role>();
                 roles.add(Role.builder()
                         .name(PredefinedRole.SUPER_ADMIN_ROLE)

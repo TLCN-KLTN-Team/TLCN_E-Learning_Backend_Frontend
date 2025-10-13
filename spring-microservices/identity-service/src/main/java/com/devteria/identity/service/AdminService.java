@@ -1,8 +1,14 @@
 package com.devteria.identity.service;
 
+import java.util.HashSet;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.UserRequest;
-import com.devteria.identity.dto.request.UserUpdateRequest;
 import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
@@ -11,16 +17,11 @@ import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.UserMapper;
 import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.UserRepository;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +44,6 @@ public class AdminService {
 
             throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
         }
-
 
         HashSet<Role> roles = new HashSet<>();
         roleRepository.findById(PredefinedRole.ADMIN_ROLE).ifPresent(roles::add);

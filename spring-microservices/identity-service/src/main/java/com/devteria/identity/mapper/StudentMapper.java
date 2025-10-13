@@ -1,13 +1,14 @@
 package com.devteria.identity.mapper;
 
-import com.devteria.identity.dto.request.StudentRequest;
-import com.devteria.identity.dto.response.StudentResponse;
-import com.devteria.identity.entity.Student;
+import java.util.List;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-import java.util.List;
+import com.devteria.identity.dto.request.StudentRequest;
+import com.devteria.identity.dto.response.StudentResponse;
+import com.devteria.identity.entity.Student;
 
 @Mapper(componentModel = "spring")
 public interface StudentMapper {

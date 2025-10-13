@@ -6,12 +6,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.devteria.identity.dto.request.ChangePasswordRequest;
-import com.devteria.identity.dto.request.RegisterRequest;
-import com.devteria.identity.dto.response.PaginatedResponse;
-import com.devteria.identity.entity.AccountStatus;
-import com.devteria.identity.repository.httpclient.RemoveImageApi;
-import com.devteria.identity.repository.httpclient.UploadImageApi;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,10 +16,15 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.devteria.identity.constant.PredefinedRole;
+import com.devteria.identity.dto.request.ChangePasswordRequest;
+import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.request.UserUpdateRequest;
+import com.devteria.identity.dto.response.PaginatedResponse;
 import com.devteria.identity.dto.response.UserResponse;
+import com.devteria.identity.entity.AccountStatus;
 import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
@@ -35,13 +34,14 @@ import com.devteria.identity.mapper.UserMapper;
 import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.UserRepository;
 import com.devteria.identity.repository.httpclient.ProfileClient;
+import com.devteria.identity.repository.httpclient.RemoveImageApi;
+import com.devteria.identity.repository.httpclient.UploadImageApi;
 
 import io.micrometer.common.util.StringUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -135,7 +135,8 @@ public class UserService {
     }
 
     boolean isValidPassword(String password) {
-        // At least one digit, one lowercase letter, one uppercase letter, one special character, no whitespace, at least 6 characters
+        // At least one digit, one lowercase letter, one uppercase letter, one special character, no whitespace, at
+        // least 6 characters
         String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{6,}$";
         return password.matches(regex);
     }
@@ -167,7 +168,7 @@ public class UserService {
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
-    public void updateProfile(UserUpdateRequest request){
+    public void updateProfile(UserUpdateRequest request) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         User updatedUser = userMapper.updateUser(user, request);
@@ -206,7 +207,7 @@ public class UserService {
                 user.setAvatarUrl(response.get("url"));
                 userRepository.save(user);
                 return response.get("url");
-            }  catch (Exception e) {
+            } catch (Exception e) {
                 throw new AppException(ErrorCode.NON_EXECUTE);
             }
         }
@@ -254,9 +255,7 @@ public class UserService {
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public PaginatedResponse<UserResponse> getUsers(int page, int size, String sortBy, String sortDirection) {
-        Sort sort = Sort.by(
-                "ASC".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC
-                , sortBy);
+        Sort sort = Sort.by("ASC".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -264,9 +263,8 @@ public class UserService {
         List<UserResponse> userList = users.getContent().stream()
                 .map(user -> {
                     UserResponse res = userMapper.toUserResponse(user);
-                    Set<String> userRoles = user.getRoles().stream()
-                            .map(Role::getName)
-                            .collect(Collectors.toSet());
+                    Set<String> userRoles =
+                            user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
                     res.setRoles(userRoles);
                     return res;
                 })

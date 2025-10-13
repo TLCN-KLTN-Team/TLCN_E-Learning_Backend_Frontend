@@ -22,6 +22,6 @@ public class UserResponse {
     String accountStatus;
     LocalDate dob;
     String bio;
-//    Set<String> favoriteCategories;
+    //    Set<String> favoriteCategories;
     Set<String> roles;
 }

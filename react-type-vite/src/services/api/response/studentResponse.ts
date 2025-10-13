@@ -1,4 +1,4 @@
-import type { DepartmentResponse } from "./DepartmentResponse";
+import type { DepartmentResponse } from "./departmentResponse";
 import type { EducationalUnitResponse } from "./educationalUnitResponse";
 
 export interface StudentResponse {

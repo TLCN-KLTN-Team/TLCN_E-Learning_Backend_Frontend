@@ -402,7 +402,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                     <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-medium text-sm">
                       {user.avatar ? (
                         <img
-                          src={user.avatar}
+                          src={user.avatar instanceof File ? URL.createObjectURL(user.avatar) : user.avatar}
                           alt={getFullName(user.firstName, user.lastName)}
                           className="w-full h-full rounded-full object-cover"
                         />
@@ -431,7 +431,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center font-medium">
                           {user.avatar ? (
                             <img
-                              src={user.avatar}
+                              src={user.avatar instanceof File ? URL.createObjectURL(user.avatar) : user.avatar}
                               alt={getFullName(user.firstName, user.lastName)}
                               className="w-full h-full rounded-full object-cover"
                             />

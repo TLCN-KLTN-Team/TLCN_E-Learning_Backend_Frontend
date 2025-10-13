@@ -1,12 +1,14 @@
 package com.devteria.identity.service;
 
-import com.devteria.identity.entity.OtpData;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.concurrent.ConcurrentHashMap;
+import com.devteria.identity.entity.OtpData;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -32,8 +34,11 @@ public class InMemoryOtpStorageService {
         }
 
         otpStorage.put(normalizedEmail, otpData);
-        log.info("Stored OTP for email: {} (Type: {}, Total: {})",
-                normalizedEmail, otpData.getType(), otpStorage.size());
+        log.info(
+                "Stored OTP for email: {} (Type: {}, Total: {})",
+                normalizedEmail,
+                otpData.getType(),
+                otpStorage.size());
     }
 
     public OtpData getOtp(String email) {
@@ -66,8 +71,11 @@ public class InMemoryOtpStorageService {
         OtpData removed = otpStorage.remove(normalizedEmail);
 
         if (removed != null) {
-            log.info("Removed OTP for email: {} (Type: {}, Remaining: {})",
-                    normalizedEmail, removed.getType(), otpStorage.size());
+            log.info(
+                    "Removed OTP for email: {} (Type: {}, Remaining: {})",
+                    normalizedEmail,
+                    removed.getType(),
+                    otpStorage.size());
         } else {
             log.debug("No OTP found to remove for email: {}", normalizedEmail);
         }
@@ -102,8 +110,12 @@ public class InMemoryOtpStorageService {
         int totalRemoved = expiredCount + maxAttemptsCount;
 
         if (totalRemoved > 0) {
-            log.info("Cleanup completed: {} expired, {} max attempts exceeded. Total removed: {}. Remaining: {}",
-                    expiredCount, maxAttemptsCount, totalRemoved, otpStorage.size());
+            log.info(
+                    "Cleanup completed: {} expired, {} max attempts exceeded. Total removed: {}. Remaining: {}",
+                    expiredCount,
+                    maxAttemptsCount,
+                    totalRemoved,
+                    otpStorage.size());
         }
     }
 
