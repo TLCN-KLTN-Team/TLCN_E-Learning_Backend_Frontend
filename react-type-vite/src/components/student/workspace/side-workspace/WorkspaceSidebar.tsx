@@ -1,6 +1,6 @@
-import type { WorkspaceResponse } from "@/services/api/workspaceApi";
 import WorkspaceList from "./WorkspaceList";
 import UserMenu from "./UserMenu";
+import type { WorkspaceResponse } from "@/types/chat.types";
 
 interface WorkspaceSidebarProps {
   workspaces: WorkspaceResponse[];

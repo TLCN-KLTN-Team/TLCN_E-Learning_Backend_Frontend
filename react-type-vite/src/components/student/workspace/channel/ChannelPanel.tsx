@@ -6,11 +6,7 @@ import { PackagePlus } from "lucide-react";
 import AddChannelModal from "./AddChannelModal";
 
 import { toast } from "react-toastify";
-import type {
-  BasicChannelResponse,
-  ChannelResponse,
-  WorkspaceResponse,
-} from "@/types/chat.types";
+import type { ChannelResponse, WorkspaceResponse } from "@/types/chat.types";
 import { getBasicChannelsByWorkspaceId } from "@/services/api/channelApi";
 
 interface ChannelPanelProps {
@@ -26,15 +22,17 @@ const ChannelPanel = ({
 }: ChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddChannel, setShowAddChannel] = useState(false);
-  const [channels, setChannels] = useState<BasicChannelResponse[]>([]);
+  const [channels, setChannels] = useState<ChannelResponse[]>([]);
 
   // Function to handle new channel creation
   const handleChannelCreated = (newChannel: ChannelResponse) => {
     // Convert ChannelResponse to BasicChannelResponse format
-    const basicChannel: BasicChannelResponse = {
+    const basicChannel: ChannelResponse = {
       id: newChannel.id,
       channelName: newChannel.channelName,
       participantHash: newChannel.participantHash || null,
+      isPrivate: newChannel.isPrivate,
+      endTime: newChannel.endTime,
     };
 
     // Add new channel to the list
@@ -49,7 +47,7 @@ const ChannelPanel = ({
       // Fetch channels from workspaceId
       const fetchChannels = async () => {
         try {
-          const chennelsData: BasicChannelResponse[] =
+          const chennelsData: ChannelResponse[] =
             await getBasicChannelsByWorkspaceId(selectedWorkspace.id);
           if (chennelsData) {
             console.log("Fetched channels:", chennelsData);
