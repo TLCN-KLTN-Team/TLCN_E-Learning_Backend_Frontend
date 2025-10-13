@@ -18,6 +18,7 @@ const CreateCoursePage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [courseData, setCourseData] = useState<CourseRequest>(initialCourseState);
   const [courseId, setCourseId] = useState<string | null>(null); // To be received from backend
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // A centralized, immutable way to update the nested course state using Immer
   const handleCourseChange = useCallback((updater: (draft: CourseRequest) => void) => {
@@ -47,7 +48,7 @@ const CreateCoursePage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
-      <Header />
+      <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Create a New Course</h1>

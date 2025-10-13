@@ -37,8 +37,7 @@ public class TeacherController {
 
     @PutMapping("/{id}")
     public ApiResponse<TeacherResponse> updateTeacher(
-            @PathVariable String id,
-            @Valid @RequestBody TeacherRequest request) {
+            @PathVariable String id, @Valid @RequestBody TeacherRequest request) {
         log.info("Updating teacher with ID: {}", id);
         return ApiResponse.<TeacherResponse>builder()
                 .result(teacherService.updateTeacher(id, request))

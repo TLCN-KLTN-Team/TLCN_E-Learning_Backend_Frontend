@@ -99,12 +99,17 @@ public enum ErrorCode {
     OTP_NOT_FOUND("OTP_1018", "OTP không tồn tại hoặc đã hết hạn", HttpStatus.NOT_FOUND),
     OTP_EXPIRED("OTP_1019", "OTP đã hết hạn. Vui lòng nhấn 'Gửi lại mã xác nhận'", HttpStatus.BAD_REQUEST),
     OTP_INVALID("OTP_1020", "Mã OTP không đúng. Vui lòng thử lại", HttpStatus.BAD_REQUEST),
-    OTP_MAX_ATTEMPTS_EXCEEDED("OTP_1021", "Bạn đã nhập sai mã OTP quá 5 lần. Vui lòng gửi lại email", HttpStatus.BAD_REQUEST),
+    OTP_MAX_ATTEMPTS_EXCEEDED(
+            "OTP_1021", "Bạn đã nhập sai mã OTP quá 5 lần. Vui lòng gửi lại email", HttpStatus.BAD_REQUEST),
     RESET_TOKEN_INVALID("OTP_1022", "Token reset không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST),
     INVALID_EMAIL_FORMAT("OTP_1023", "Định dạng email không hợp lệ", HttpStatus.BAD_REQUEST),
-    OTP_ALREADY_SENT("OTP_1024", "Mã OTP đã được gửi. Vui lòng chờ trước khi yêu cầu mã mới", HttpStatus.TOO_MANY_REQUESTS),
+    OTP_ALREADY_SENT(
+            "OTP_1024", "Mã OTP đã được gửi. Vui lòng chờ trước khi yêu cầu mã mới", HttpStatus.TOO_MANY_REQUESTS),
     EMAIL_SEND_FAILED("OTP_1025", "Không thể gửi email. Vui lòng thử lại sau", HttpStatus.SERVICE_UNAVAILABLE),
-    OTP_RESEND_LIMIT_EXCEEDED("OTP_1026", "Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút", HttpStatus.TOO_MANY_REQUESTS),
+    OTP_RESEND_LIMIT_EXCEEDED(
+            "OTP_1026",
+            "Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút",
+            HttpStatus.TOO_MANY_REQUESTS),
     EMAIL_NOT_FOUND("OTP_1027", "Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại", HttpStatus.NOT_FOUND),
 
     FILE_EMPTY("FILE_5004", "File không được để trống", HttpStatus.BAD_REQUEST),

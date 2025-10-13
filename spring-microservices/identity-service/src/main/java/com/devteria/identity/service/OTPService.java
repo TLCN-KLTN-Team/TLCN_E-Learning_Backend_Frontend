@@ -1,17 +1,19 @@
 package com.devteria.identity.service;
 
+import java.security.SecureRandom;
+import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Service;
+
 import com.devteria.identity.dto.request.OtpRequest;
 import com.devteria.identity.entity.OtpData;
 import com.devteria.identity.entity.OtpType;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.repository.httpclient.SendEmailApi;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.security.SecureRandom;
-import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -23,9 +25,7 @@ public class OTPService {
 
     private final SecureRandom secureRandom = new SecureRandom();
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(
-            "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-    );
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
 
     private String generateOtp() {
         return String.format("%06d", secureRandom.nextInt(1000000));
@@ -67,9 +67,12 @@ public class OTPService {
         }
 
         if (existingOtp != null && existingOtp.isValid() && !existingOtp.isExpired()) {
-            log.warn("Valid OTP already exists for email: {} (Type: {}). Remaining time: {} seconds",
-                    normalizedEmail, existingOtp.getType(),
-                    java.time.Duration.between(java.time.LocalDateTime.now(), existingOtp.getExpirationTime()).getSeconds());
+            log.warn(
+                    "Valid OTP already exists for email: {} (Type: {}). Remaining time: {} seconds",
+                    normalizedEmail,
+                    existingOtp.getType(),
+                    java.time.Duration.between(java.time.LocalDateTime.now(), existingOtp.getExpirationTime())
+                            .getSeconds());
             throw new AppException(ErrorCode.OTP_ALREADY_SENT);
         }
 
@@ -106,8 +109,11 @@ public class OTPService {
                     throw new AppException(ErrorCode.OTP_RESEND_LIMIT_EXCEEDED);
                 }
 
-                log.info("Resending OTP to email: {} (Resend count: {}/{})",
-                        normalizedEmail, otpData.getResendCount(), otpData.getMaxResends());
+                log.info(
+                        "Resending OTP to email: {} (Resend count: {}/{})",
+                        normalizedEmail,
+                        otpData.getResendCount(),
+                        otpData.getMaxResends());
             }
 
             // Store OTP
@@ -142,9 +148,7 @@ public class OTPService {
         String normalizedEmail = email.toLowerCase().trim();
         OtpData otpData = inMemoryOtpStorageService.getOtp(normalizedEmail);
 
-        return otpData != null &&
-                otpData.getType() == type &&
-                otpData.isValid();
+        return otpData != null && otpData.getType() == type && otpData.isValid();
     }
 
     public long getOtpRemainingMinutes(String email) {
@@ -159,9 +163,7 @@ public class OTPService {
             return 0;
         }
 
-        return java.time.Duration.between(
-                java.time.LocalDateTime.now(),
-                otpData.getExpirationTime()
-        ).toMinutes();
+        return java.time.Duration.between(java.time.LocalDateTime.now(), otpData.getExpirationTime())
+                .toMinutes();
     }
 }

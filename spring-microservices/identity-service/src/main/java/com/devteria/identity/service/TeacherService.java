@@ -2,7 +2,6 @@ package com.devteria.identity.service;
 
 import java.util.HashSet;
 
-import com.devteria.identity.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +19,7 @@ import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.TeacherMapper;
 import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.TeacherRepository;
+import com.devteria.identity.repository.UserRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +51,7 @@ public class TeacherService {
         }
 
         if (teacherRepository.existsByTeacherId(request.getTeacherId())) {
-            System.out.println ("Có vào đây999");
+            System.out.println("Có vào đây999");
             throw new AppException(ErrorCode.TEACHERID_ALREADY_EXISTS);
         }
 
@@ -68,7 +68,10 @@ public class TeacherService {
                 .roles(roles)
                 .teacherId(request.getTeacherId())
                 .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)
-                .idEducational(request.getEducationalUnitId() != null ? Integer.parseInt(request.getEducationalUnitId()) : null)
+                .idEducational(
+                        request.getEducationalUnitId() != null
+                                ? Integer.parseInt(request.getEducationalUnitId())
+                                : null)
                 .description(request.getDescription())
                 .socialUrl(request.getSocialUrl())
                 .bankAccountNumber(request.getBankAccountNumber())
@@ -87,24 +90,24 @@ public class TeacherService {
     public TeacherResponse updateTeacher(String id, TeacherRequest request) {
         log.info("Updating teacher with ID: {}", id);
 
-        Teacher existingTeacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        Teacher existingTeacher =
+                teacherRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         // Check if email is being changed and if new email already exists
-        if (!existingTeacher.getEmail().equals(request.getEmail()) &&
-                userRepository.existsByEmail(request.getEmail())) {
+        if (!existingTeacher.getEmail().equals(request.getEmail())
+                && userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
         }
 
         // Check if username is being changed and if new username already exists
-        if (!existingTeacher.getUsername().equals(request.getUsername()) &&
-                userRepository.existsByUsername(request.getUsername())) {
+        if (!existingTeacher.getUsername().equals(request.getUsername())
+                && userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
         // Check if teacherId is being changed and if new teacherId already exists
-        if (!existingTeacher.getTeacherId().equals(request.getTeacherId()) &&
-                teacherRepository.existsByTeacherId(request.getTeacherId())) {
+        if (!existingTeacher.getTeacherId().equals(request.getTeacherId())
+                && teacherRepository.existsByTeacherId(request.getTeacherId())) {
             throw new AppException(ErrorCode.TEACHER_ALREADY_EXISTS);
         }
 
@@ -116,10 +119,10 @@ public class TeacherService {
             existingTeacher.setLastName(request.getLastName());
             existingTeacher.setDob(request.getDob());
             existingTeacher.setTeacherId(request.getTeacherId());
-            existingTeacher.setIdDepartment(request.getDepartmentId() != null ?
-                    Integer.parseInt(request.getDepartmentId()) : null);
-            existingTeacher.setIdEducational(request.getEducationalUnitId() != null ?
-                    Integer.parseInt(request.getEducationalUnitId()) : null);
+            existingTeacher.setIdDepartment(
+                    request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null);
+            existingTeacher.setIdEducational(
+                    request.getEducationalUnitId() != null ? Integer.parseInt(request.getEducationalUnitId()) : null);
             existingTeacher.setDescription(request.getDescription());
             existingTeacher.setSocialUrl(request.getSocialUrl());
             existingTeacher.setBankAccountNumber(request.getBankAccountNumber());
@@ -143,10 +146,14 @@ public class TeacherService {
 
     public Page<TeacherResponse> getAllTeachers(
             String teacherId, String departmentId, String educationalUnitId, Pageable pageable) {
-        log.info("Getting teachers with filters - teacherId: {}, departmentId: {}, educationalUnitId: {}",
-                teacherId, departmentId, educationalUnitId);
+        log.info(
+                "Getting teachers with filters - teacherId: {}, departmentId: {}, educationalUnitId: {}",
+                teacherId,
+                departmentId,
+                educationalUnitId);
 
-        Page<Teacher> teachers = teacherRepository.findTeachersWithFilters(teacherId, departmentId, educationalUnitId, pageable);
+        Page<Teacher> teachers =
+                teacherRepository.findTeachersWithFilters(teacherId, departmentId, educationalUnitId, pageable);
         return teachers.map(teacherMapper::toTeacherResponse);
     }
 
@@ -166,14 +173,15 @@ public class TeacherService {
 
     public TeacherResponse getTeacherById(String id) {
         log.info("Getting teacher by ID: {}", id);
-        Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
+        Teacher teacher =
+                teacherRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherMapper.toTeacherResponse(teacher);
     }
 
     public TeacherResponse getTeacherByTeacherId(String teacherId) {
         log.info("Getting teacher by teacherId: {}", teacherId);
-        Teacher teacher = teacherRepository.findByTeacherId(teacherId)
+        Teacher teacher = teacherRepository
+                .findByTeacherId(teacherId)
                 .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherMapper.toTeacherResponse(teacher);
     }

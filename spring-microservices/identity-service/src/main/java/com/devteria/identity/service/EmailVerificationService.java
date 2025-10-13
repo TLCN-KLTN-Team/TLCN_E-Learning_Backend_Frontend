@@ -1,13 +1,15 @@
 package com.devteria.identity.service;
 
+import org.springframework.stereotype.Service;
+
 import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.OtpData;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -58,8 +60,10 @@ public class EmailVerificationService {
             log.info("OTP attempt {}/{} for email: {}", otpData.getAttemptCount(), otpData.getMaxAttempts(), email);
 
             if (!otpData.getOtpCode().equalsIgnoreCase(otpCode)) {
-                log.error("Invalid OTP for email: {}. Attempts remaining: {}",
-                        email, otpData.getMaxAttempts() - otpData.getAttemptCount());
+                log.error(
+                        "Invalid OTP for email: {}. Attempts remaining: {}",
+                        email,
+                        otpData.getMaxAttempts() - otpData.getAttemptCount());
 
                 if (!otpData.canAttempt()) {
                     otpStorageService.removeOtp(email);
@@ -117,8 +121,12 @@ public class EmailVerificationService {
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error processing verification by type {} for email {}: {}",
-                    otpData.getType(), otpData.getEmail(), e.getMessage(), e);
+            log.error(
+                    "Error processing verification by type {} for email {}: {}",
+                    otpData.getType(),
+                    otpData.getEmail(),
+                    e.getMessage(),
+                    e);
             throw new AppException(ErrorCode.SYSTEM_ERROR);
         }
     }

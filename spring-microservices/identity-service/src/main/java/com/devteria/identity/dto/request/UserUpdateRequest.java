@@ -2,13 +2,13 @@ package com.devteria.identity.dto.request;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.devteria.identity.validator.DobConstraint;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @Builder
@@ -23,7 +23,7 @@ public class UserUpdateRequest {
     String phoneNumber;
     MultipartFile file;
     String bio;
-//    Set<String> favoriteCategories;
+    //    Set<String> favoriteCategories;
 
     @DobConstraint(min = 18, message = "INVALID_DOB")
     LocalDate dob;

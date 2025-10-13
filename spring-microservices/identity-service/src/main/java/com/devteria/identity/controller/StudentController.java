@@ -1,21 +1,24 @@
 package com.devteria.identity.controller;
 
-import com.devteria.identity.dto.request.ApiResponse;
-import com.devteria.identity.dto.request.StudentRequest;
-import com.devteria.identity.dto.response.StudentResponse;
-import com.devteria.identity.service.StudentService;
+import java.util.List;
+
 import jakarta.validation.Valid;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import com.devteria.identity.dto.request.ApiResponse;
+import com.devteria.identity.dto.request.StudentRequest;
+import com.devteria.identity.dto.response.StudentResponse;
+import com.devteria.identity.service.StudentService;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/students")
@@ -36,8 +39,7 @@ public class StudentController {
 
     @PutMapping("/{id}")
     public ApiResponse<StudentResponse> updateStudent(
-            @PathVariable String id,
-            @Valid @RequestBody StudentRequest request) {
+            @PathVariable String id, @Valid @RequestBody StudentRequest request) {
         log.info("Updating student with ID: {}", id);
         return ApiResponse.<StudentResponse>builder()
                 .result(studentService.updateStudent(id, request))
