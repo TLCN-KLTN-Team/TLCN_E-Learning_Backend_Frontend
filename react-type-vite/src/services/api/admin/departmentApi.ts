@@ -1,6 +1,6 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
-import type { DepartmentResponse } from "../response/DepartmentResponse";
+import type { DepartmentResponse } from "../response/departmentResponse";
 
 export const getDepartmentsByInstitution = async (
   institutionId: string,

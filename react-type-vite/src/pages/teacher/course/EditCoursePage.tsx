@@ -33,6 +33,8 @@ const EditCoursePage: React.FC = () => {
   const [courseData, setCourseData] = useState<CourseData | null>(null)
   const [activeTab, setActiveTab] = useState("info")
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   // Mock course types
   const courseTypes = [
     { id: 1, name: "Programming" },
@@ -127,7 +129,7 @@ const EditCoursePage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-muted/40">
-        <Header />
+        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
         <main className="flex-grow container mx-auto px-4 py-8">
           <div className="animate-pulse max-w-4xl mx-auto">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
@@ -145,7 +147,7 @@ const EditCoursePage: React.FC = () => {
   if (!courseData) {
     return (
       <div className="flex flex-col min-h-screen bg-muted/40">
-        <Header />
+        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
         <main className="flex-grow container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy khóa học</h3>
@@ -159,7 +161,7 @@ const EditCoursePage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
-      <Header />
+      <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}

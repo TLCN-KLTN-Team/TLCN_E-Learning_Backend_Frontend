@@ -1,5 +1,17 @@
 package com.devteria.identity.service;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jakarta.transaction.Transactional;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.StudentRequest;
 import com.devteria.identity.dto.response.StudentResponse;
@@ -11,20 +23,11 @@ import com.devteria.identity.mapper.StudentMapper;
 import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.StudentRepository;
 import com.devteria.identity.repository.UserRepository;
-import jakarta.transaction.Transactional;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +53,7 @@ public class StudentService {
         }
 
         if (studentRepository.existsByStudentId(request.getStudentId())) {
-            System.out.println ("Có vào đây999");
+            System.out.println("Có vào đây999");
             throw new AppException(ErrorCode.STUDENT_ALREADY_EXISTS);
         }
 
@@ -67,7 +70,10 @@ public class StudentService {
                 .roles(roles)
                 .studentId(request.getStudentId())
                 .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)
-                .idEducational(request.getEducationalUnitId() != null ? Integer.parseInt(request.getEducationalUnitId()) : null)
+                .idEducational(
+                        request.getEducationalUnitId() != null
+                                ? Integer.parseInt(request.getEducationalUnitId())
+                                : null)
                 .description(request.getDescription())
                 .socialUrl(request.getSocialUrl())
                 .className(request.getClassName())
@@ -84,7 +90,8 @@ public class StudentService {
 
     public StudentResponse getStudentByStudentId(String studentId) {
         log.info("Getting student by studentId: {}", studentId);
-        Student student = studentRepository.findByStudentId(studentId)
+        Student student = studentRepository
+                .findByStudentId(studentId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return studentMapper.toStudentResponse(student);
     }
@@ -107,33 +114,31 @@ public class StudentService {
 
         List<Student> students = studentRepository.findByIdEducational(institutionId);
 
-        return students.stream()
-                .map(studentMapper::toStudentResponse)
-                .collect(Collectors.toList());
+        return students.stream().map(studentMapper::toStudentResponse).collect(Collectors.toList());
     }
 
     @Transactional
     public StudentResponse updateStudent(String id, StudentRequest request) {
         log.info("Updating student with ID: {}", id);
 
-        Student existingStudent = studentRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        Student existingStudent =
+                studentRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         // Check if email is being changed and if new email already exists
-        if (!existingStudent.getEmail().equals(request.getEmail()) &&
-                userRepository.existsByEmail(request.getEmail())) {
+        if (!existingStudent.getEmail().equals(request.getEmail())
+                && userRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
         }
 
         // Check if username is being changed and if new username already exists
-        if (!existingStudent.getUsername().equals(request.getUsername()) &&
-                userRepository.existsByUsername(request.getUsername())) {
+        if (!existingStudent.getUsername().equals(request.getUsername())
+                && userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
         // Check if studentId is being changed and if new studentId already exists
-        if (!existingStudent.getStudentId().equals(request.getStudentId()) &&
-                studentRepository.existsByStudentId(request.getStudentId())) {
+        if (!existingStudent.getStudentId().equals(request.getStudentId())
+                && studentRepository.existsByStudentId(request.getStudentId())) {
             throw new AppException(ErrorCode.STUDENT_ALREADY_EXISTS);
         }
 
@@ -145,10 +150,10 @@ public class StudentService {
             existingStudent.setLastName(request.getLastName());
             existingStudent.setDob(request.getDob());
             existingStudent.setStudentId(request.getStudentId());
-            existingStudent.setIdDepartment(request.getDepartmentId() != null ?
-                    Integer.parseInt(request.getDepartmentId()) : null);
-            existingStudent.setIdEducational(request.getEducationalUnitId() != null ?
-                    Integer.parseInt(request.getEducationalUnitId()) : null);
+            existingStudent.setIdDepartment(
+                    request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null);
+            existingStudent.setIdEducational(
+                    request.getEducationalUnitId() != null ? Integer.parseInt(request.getEducationalUnitId()) : null);
             existingStudent.setDescription(request.getDescription());
             existingStudent.setSocialUrl(request.getSocialUrl());
             existingStudent.setClassName(request.getClassName());

@@ -52,12 +52,12 @@
         </processorPath>
         <module name="identity-service" />
         <module name="file-service" />
-        <module name="notification-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="course-management" target="21" />
       <module name="file-handler (1)" target="21" />
+      <module name="notification-service" target="21" />
       <module name="profile-service" target="21" />
       <module name="realtime-service" target="21" />
     </bytecodeTargetLevel>

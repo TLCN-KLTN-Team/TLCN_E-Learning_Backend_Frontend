@@ -1,7 +1,5 @@
 package com.devteria.identity.controller;
 
-import java.time.LocalDate;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -9,7 +7,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,23 +30,20 @@ public class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
     private UserService userService;
 
     private RegisterRequest request;
     private UserResponse userResponse;
-    private LocalDate dob;
+    private String dob;
 
     @BeforeEach
     void initData() {
-        dob = LocalDate.of(1990, 1, 1);
 
         request = RegisterRequest.builder()
                 .username("john")
                 .firstName("John")
                 .lastName("Doe")
                 .password("12345678")
-                .dob(dob)
                 .build();
 
         userResponse = UserResponse.builder()
@@ -57,7 +51,6 @@ public class UserControllerTest {
                 .username("john")
                 .firstName("John")
                 .lastName("Doe")
-                .dob(dob)
                 .build();
     }
 

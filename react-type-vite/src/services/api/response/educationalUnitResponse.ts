@@ -1,5 +1,6 @@
 import type { CourseResponse } from "./courseResponse";
-import type { DepartmentResponse } from "./DepartmentResponse";
+import type { DepartmentResponse } from "./departmentResponse";
+
 
 export interface EducationalUnitResponse {
   id: string;

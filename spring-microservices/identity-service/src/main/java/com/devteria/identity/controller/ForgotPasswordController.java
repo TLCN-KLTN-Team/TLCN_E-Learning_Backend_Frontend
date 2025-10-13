@@ -1,5 +1,9 @@
 package com.devteria.identity.controller;
 
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.*;
+
 import com.devteria.identity.dto.request.ApiResponse;
 import com.devteria.identity.dto.request.ForgotPasswordRequest;
 import com.devteria.identity.dto.request.ResetPasswordRequest;
@@ -10,12 +14,11 @@ import com.devteria.identity.service.EmailVerificationService;
 import com.devteria.identity.service.ForgotPasswordService;
 import com.devteria.identity.service.OTPService;
 import com.devteria.identity.service.ResetTokenService;
-import jakarta.validation.Valid;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/forgot-password")
@@ -28,6 +31,7 @@ public class ForgotPasswordController {
     EmailVerificationService emailVerificationService;
     ResetTokenService resetTokenService;
     OTPService otpService;
+
     @PostMapping("/send-email")
     public ApiResponse<ForgotPasswordResponse> sendResetPasswordEmail(
             @Valid @RequestBody ForgotPasswordRequest request) {
@@ -36,15 +40,11 @@ public class ForgotPasswordController {
 
         ForgotPasswordResponse response = forgotPasswordService.sendResetPasswordEmail(request);
 
-        return ApiResponse.<ForgotPasswordResponse>builder()
-                .result(response)
-                .build();
+        return ApiResponse.<ForgotPasswordResponse>builder().result(response).build();
     }
 
     @PostMapping("/verify-otp")
-    public ApiResponse<OtpVerificationResponse> verifyOtp(
-            @RequestParam String email,
-            @RequestParam String otpCode) {
+    public ApiResponse<OtpVerificationResponse> verifyOtp(@RequestParam String email, @RequestParam String otpCode) {
 
         log.info("Received OTP verification request for email: {}", email);
 
@@ -76,17 +76,15 @@ public class ForgotPasswordController {
     }
 
     @PostMapping("/reset-password")
-    public ApiResponse<ResetPasswordResponse> resetPassword(
-            @Valid @RequestBody ResetPasswordRequest request) {
+    public ApiResponse<ResetPasswordResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
 
         log.info("Received reset password request with token");
 
         ResetPasswordResponse response = forgotPasswordService.resetPassword(request);
 
-        return ApiResponse.<ResetPasswordResponse>builder()
-                .result(response)
-                .build();
+        return ApiResponse.<ResetPasswordResponse>builder().result(response).build();
     }
+
     @PostMapping("/resend-otp")
     public ApiResponse<ForgotPasswordResponse> resendOtp(@RequestParam String email) {
         log.info("Received resend OTP request for email: {}", email);

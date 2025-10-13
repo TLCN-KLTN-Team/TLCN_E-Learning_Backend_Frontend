@@ -1,5 +1,8 @@
 package com.devteria.identity.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.devteria.identity.dto.request.ForgotPasswordRequest;
 import com.devteria.identity.dto.request.ResetPasswordRequest;
 import com.devteria.identity.dto.response.ForgotPasswordResponse;
@@ -8,10 +11,9 @@ import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -64,8 +66,7 @@ public class ForgotPasswordService {
             String email = resetTokenService.validateAndGetEmail(request.getToken());
 
             // Find user by email
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
             String encodedPassword = passwordEncoder.encode(request.getNewPassword());
             user.setPassword(encodedPassword);
@@ -93,7 +94,8 @@ public class ForgotPasswordService {
             return false;
         }
 
-        // At least one digit, one lowercase letter, one uppercase letter, one special character, no whitespace, at least 6 characters
+        // At least one digit, one lowercase letter, one uppercase letter, one special character, no whitespace, at
+        // least 6 characters
         String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{6,}$";
         return password.matches(regex);
     }
