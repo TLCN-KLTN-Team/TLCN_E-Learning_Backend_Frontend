@@ -1,5 +1,5 @@
+import { AppError } from "@/errors/appError";
 import { useState, useCallback } from "react";
-import { AppError } from "../errors/appError";
 
 interface UseErrorHandlerReturn {
   error: string | null;

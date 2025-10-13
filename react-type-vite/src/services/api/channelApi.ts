@@ -1,7 +1,6 @@
 import axiosInstance from "./httpClient/axiosInstance";
 import type { ApiResponse } from "./response/apiResponse";
 import type {
-  BasicChannelResponse,
   ChannelResponse,
   ChatMessageRequest,
   ChatMessageResponse,
@@ -10,8 +9,8 @@ import type {
 
 export const getBasicChannelsByWorkspaceId = async (
   workspaceId: string
-): Promise<BasicChannelResponse[]> => {
-  const response = await axiosInstance.get<ApiResponse<BasicChannelResponse[]>>(
+): Promise<ChannelResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<ChannelResponse[]>>(
     `/server/channels/basic/${workspaceId}`
   );
   return response.data.result;
