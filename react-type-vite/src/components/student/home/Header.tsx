@@ -37,24 +37,10 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState({
-    top: 0,
-    right: 0,
-  });
+
   const { theme } = useTheme();
   const profileRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
-
-  // Calculate dropdown position
-  const updateDropdownPosition = () => {
-    if (profileRef.current) {
-      const rect = profileRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 8,
-        right: window.innerWidth - rect.right,
-      });
-    }
-  };
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -75,16 +61,11 @@ const Header = () => {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
-      if (isProfileOpen) {
-        updateDropdownPosition();
-      }
     };
 
     window.addEventListener("scroll", handleScroll);
-    window.addEventListener("resize", updateDropdownPosition);
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", updateDropdownPosition);
     };
   }, [isProfileOpen]);
 
@@ -252,9 +233,6 @@ const Header = () => {
                 <button
                   onClick={() => {
                     setIsProfileOpen(!isProfileOpen);
-                    if (!isProfileOpen) {
-                      updateDropdownPosition();
-                    }
                   }}
                   className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
                 >
