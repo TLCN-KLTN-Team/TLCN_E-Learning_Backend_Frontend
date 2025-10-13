@@ -58,6 +58,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
       ...prev,
       [name]: value,
     }));
+    console.log(formData);
 
     // Clear error when user starts typing
     if (errors[name as keyof typeof errors]) {

@@ -74,11 +74,10 @@ public class CourseTypeService {
             CourseType existingCourseType = courseTypeRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
 
-            if (isCourseTypeNameExists(req.getCourseTypeName())) {
-                throw new AppException(ErrorCode.COURSE_TYPE_NAME_ALREADY_EXISTS);
-            }
-
             if (req.getCourseTypeName() != null) {
+                if (isCourseTypeNameExists(req.getCourseTypeName())) {
+                    throw new AppException(ErrorCode.COURSE_TYPE_NAME_ALREADY_EXISTS);
+                }
                 existingCourseType.setCourseTypeName(req.getCourseTypeName());
             }
             if (req.getDescription() != null) {
