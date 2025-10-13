@@ -17,6 +17,9 @@ import {
   Circle,
   FileDown,
   Link as LinkIcon,
+  Rocket,
+  Atom,
+  MessagesSquare,
 } from "lucide-react";
 import "../../../styles/student-dashboard.css";
 import Header from "../dashboard/Header";
@@ -320,7 +323,7 @@ const mockCourseDetail: CourseInfo = {
 const CourseDetail = () => {
   const [course, setCourse] = useState<CourseInfo>(mockCourseDetail);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "content" | "instructor" | "reviews"
+    "content" | "person_assignments" | "quiz" | "score_feedback"
   >("content");
 
   const toggleModule = (moduleId: number) => {
@@ -480,19 +483,27 @@ const CourseDetail = () => {
             <nav className="-mb-px flex space-x-8">
               {[
                 { id: "content", label: "Nội dung khóa học", icon: BookOpen },
-                { id: "overview", label: "Tổng quan", icon: FileText },
-                { id: "instructor", label: "Giảng viên", icon: Users },
-                { id: "reviews", label: "Đánh giá", icon: Star },
+                {
+                  id: "person_assignments",
+                  label: "Bài tập cá nhân",
+                  icon: Rocket,
+                },
+                { id: "quiz", label: "Bài kiểm tra quiz", icon: Atom },
+                {
+                  id: "score_feedback",
+                  label: "Điểm số và phản hồi",
+                  icon: MessagesSquare,
+                },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() =>
                     setActiveTab(
                       tab.id as
-                        | "overview"
                         | "content"
-                        | "instructor"
-                        | "reviews"
+                        | "person_assignments"
+                        | "quiz"
+                        | "score_feedback"
                     )
                   }
                   className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
@@ -598,7 +609,7 @@ const CourseDetail = () => {
             </div>
           )}
 
-          {activeTab === "overview" && (
+          {activeTab === "person_assignments" && (
             <div className="student-dashboard-course-card p-6">
               <h3 className="text-xl font-semibold mb-4">Mô tả khóa học</h3>
               <div className="prose max-w-none">
@@ -638,7 +649,7 @@ const CourseDetail = () => {
             </div>
           )}
 
-          {activeTab === "instructor" && (
+          {activeTab === "quiz" && (
             <div className="student-dashboard-course-card p-6">
               <div className="flex items-start gap-4">
                 <img
@@ -688,7 +699,7 @@ const CourseDetail = () => {
             </div>
           )}
 
-          {activeTab === "reviews" && (
+          {activeTab === "score_feedback" && (
             <div className="space-y-6">
               {/* Rating Summary */}
               <div className="student-dashboard-course-card p-6">
