@@ -95,16 +95,6 @@ const AddChannelModal = ({
   };
 
   // Simple function to get duration in minutes
-  const getDurationInMinutes = (): number => {
-    if (customDuration) {
-      const duration = parseInt(customDuration);
-      return durationUnit === "hours" ? duration * 60 : duration;
-    } else if (selectedDuration) {
-      const duration = parseInt(selectedDuration);
-      return durationUnit === "hours" ? duration * 60 : duration;
-    }
-    return 15; // Default 15 minutes
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

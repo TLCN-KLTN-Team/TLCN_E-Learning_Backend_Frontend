@@ -1,5 +1,3 @@
-import { Plus } from "lucide-react";
-import { useAuth } from "@/context/auth-context/useAuth";
 import type { ChannelResponse } from "@/types/chat.types";
 
 interface ChannelListProps {
@@ -13,19 +11,12 @@ const ChannelList = ({
   selectedChannel,
   onChannelSelect,
 }: ChannelListProps) => {
-  const { user } = useAuth();
-
   return (
     <div className="mb-4">
       <div className="flex items-center justify-between px-2 py-1">
         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
           Kênh văn bản
         </h3>
-        {user?.role === "teacher" && (
-          <button className="text-gray-400 hover:text-white">
-            <Plus className="w-4 h-4" />
-          </button>
-        )}
       </div>
       {channels.map((channel: ChannelResponse) => (
         <div
