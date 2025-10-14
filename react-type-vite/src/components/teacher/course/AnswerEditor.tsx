@@ -11,7 +11,7 @@ const AnswerEditor: React.FC<{
   onUpdate: (index: number, answer: AnswerRequest) => void;
   onDelete: (index: number) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
-}> = ({ answer, index, answers, questionType, onUpdate, onDelete, onReorder }) => {
+}> = ({ answer, index, questionType, onUpdate, onDelete, onReorder }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleCorrectChange = (checked: boolean) => {

@@ -13,7 +13,6 @@ const profileMenu = [
 
 const Header = () => {
   const [isShowProfile, setIsShowProfile] = useState(false);
-  const [isShowNotifications, setIsShowNotifications] = useState(false);
 
   return (
     <header className="student-dashboard-header">
