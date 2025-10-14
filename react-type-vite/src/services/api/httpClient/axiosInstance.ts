@@ -7,7 +7,8 @@ import type {
 import type { ApiResponse } from "../response/apiResponse";
 import { ErrorCodes, type ErrorResponse } from "@/types/error/ErrorResponse";
 import { getRefreshToken } from "@/utils/localStorageVariables";
-import { AppError } from "@/errors/appError";
+import { AppError } from "@/errors";
+
 
 const axiosInstance = axios.create({
   baseURL: "http://localhost:8888/api/v1",
