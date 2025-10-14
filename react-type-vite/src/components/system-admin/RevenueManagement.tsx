@@ -11,7 +11,7 @@ import type React from "react";
 import { useState } from "react";
 
 const RevenueManagement: React.FC = () => {
-  const [revenueData, setRevenueData] = useState([
+  const [revenueData] = useState([
     {
       id: 1,
       unit: "Trung tâm CNTT",

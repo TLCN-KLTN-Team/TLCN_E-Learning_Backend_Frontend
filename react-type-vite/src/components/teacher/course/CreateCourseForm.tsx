@@ -14,7 +14,7 @@ const CreateCourseForm: React.FC<CreateCourseFormProps> = ({
   onSubmit 
 }) => {
   // Mock course types - in real app, fetch from API
-  const [courseTypes, setCourseTypes] = useState<CourseTypeRequest[]>([
+  const [courseTypes] = useState<CourseTypeRequest[]>([
     { id: 1, courseTypeName: 'Programming' },
     { id: 2, courseTypeName: 'Design' },
     { id: 3, courseTypeName: 'Marketing' },
