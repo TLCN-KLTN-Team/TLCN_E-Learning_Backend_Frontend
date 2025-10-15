@@ -144,9 +144,16 @@ public class AuthenticationService {
 
     // logic authen & login with username, not social login
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        var user = userRepository
+        var userByUsername = userRepository
                 .findByUsername(request.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElse(null);
+        var userByEmail = userRepository.findByEmail(request.getUsername())
+                .orElse(null);
+
+        if (userByUsername == null && userByEmail == null)
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+
+        var user = (userByUsername != null) ? userByUsername : userByEmail;
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 

@@ -25,6 +25,8 @@ import "../../../styles/student-dashboard.css";
 import Header from "../dashboard/Header";
 import Footer from "../dashboard/Footer";
 
+import { course_tabs } from "../data/CourseDetailData";
+
 // Types
 interface Lesson {
   id: number;
@@ -322,9 +324,7 @@ const mockCourseDetail: CourseInfo = {
 
 const CourseDetail = () => {
   const [course, setCourse] = useState<CourseInfo>(mockCourseDetail);
-  const [activeTab, setActiveTab] = useState<
-    "content" | "person_assignments" | "quiz" | "score_feedback"
-  >("content");
+  const [activeTab, setActiveTab] = useState<string>("content");
 
   const toggleModule = (moduleId: number) => {
     setCourse((prev) => ({
@@ -481,27 +481,15 @@ const CourseDetail = () => {
         <div className="mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
-              {[
-                { id: "content", label: "Nội dung khóa học", icon: BookOpen },
-                {
-                  id: "person_assignments",
-                  label: "Bài tập cá nhân",
-                  icon: Rocket,
-                },
-                { id: "quiz", label: "Bài kiểm tra quiz", icon: Atom },
-                {
-                  id: "score_feedback",
-                  label: "Điểm số và phản hồi",
-                  icon: MessagesSquare,
-                },
-              ].map((tab) => (
+              {course_tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() =>
                     setActiveTab(
                       tab.id as
                         | "content"
-                        | "person_assignments"
+                        | "personal_assignments"
+                        | "group_assignments"
                         | "quiz"
                         | "score_feedback"
                     )
@@ -609,7 +597,7 @@ const CourseDetail = () => {
             </div>
           )}
 
-          {activeTab === "person_assignments" && (
+          {activeTab === "personal_assignments" && (
             <div className="student-dashboard-course-card p-6">
               <h3 className="text-xl font-semibold mb-4">Mô tả khóa học</h3>
               <div className="prose max-w-none">
@@ -646,6 +634,16 @@ const CourseDetail = () => {
                   <li>Có kinh nghiệm sử dụng máy tính và internet</li>
                 </ul>
               </div>
+            </div>
+          )}
+
+          {/* person assignment */}
+          {activeTab === "group_assignments" && (
+            <div className="student-dashboard-course-card p-6">
+              <h3 className="text-xl font-semibold mb-4">Bài tập nhóm</h3>
+              <p className="student-dashboard-text-muted">
+                Chưa có bài tập nhóm nào được giao cho khóa học này.
+              </p>
             </div>
           )}
 
