@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -141,6 +143,7 @@ public class UserService {
         return password.matches(regex);
     }
 
+    @CachePut(value = "myInfo")
     public UserResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
         String id = context.getAuthentication().getName();
@@ -158,7 +161,7 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         userMapper.updateUser(user, request);
-        if (request.getPassword() != null || StringUtils.isEmpty(request.getPassword())) {
+        if (request.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
@@ -214,7 +217,9 @@ public class UserService {
         return null;
     }
 
+    @Cacheable(value = "changePassword", key = "#root.authentication.name")
     public void changePassword(ChangePasswordRequest request) {
+        log.info("Call to db, not cached");
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
@@ -254,7 +259,9 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Cacheable(value = "allUsers")
     public PaginatedResponse<UserResponse> getUsers(int page, int size, String sortBy, String sortDirection) {
+        log.info("Vo day va chua cache");
         Sort sort = Sort.by("ASC".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
 
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -286,7 +293,9 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Cacheable(value = "user", key = "#id")
     public UserResponse getUser(String id) {
+        log.info("Call to db");
         return userMapper.toUserResponse(
                 userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }

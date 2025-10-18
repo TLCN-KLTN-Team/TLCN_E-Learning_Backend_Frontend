@@ -1,5 +1,6 @@
 package com.devteria.identity.entity;
 
+import java.io.Serializable;
 import java.util.Set;
 
 import jakarta.persistence.*;
@@ -16,7 +17,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-public class User {
+public class User implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
