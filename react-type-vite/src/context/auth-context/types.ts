@@ -26,6 +26,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  socialLogin: (code: string, provider: string) => Promise<void>;
   logout: () => void;
   register: (userData: RegisterData) => Promise<void>;
   refreshUser: () => Promise<void>;

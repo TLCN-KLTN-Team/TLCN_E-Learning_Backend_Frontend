@@ -49,6 +49,31 @@ export const doLogin = async (
   return authorizationData;
 };
 
+export const doSocialLogin = async (
+  code: string,
+  provider: string
+): Promise<string> => {
+  const response = await axiosInstance.post<ApiResponse<string>>(
+    `/identity/auth/outbound/authenticate?code=${code}&provider=${provider}`
+  );
+
+  const authorizationData = response.data.result;
+
+  localStorage.setItem("authorizationData", JSON.stringify(authorizationData));
+
+  return authorizationData;
+};
+
+export const getProviderOAuthUrl = async (
+  provider: string
+): Promise<string> => {
+  const response = await axiosInstance.get<ApiResponse<string>>(
+    `/identity/auth/outbound/social-login`,
+    { params: { provider } }
+  );
+  return response.data.result;
+};
+
 export const doRegister = async (userData: RegisterData): Promise<User> => {
   const response = await axiosInstance.post<ApiResponse<User>>(
     "/identity/users/registration",
