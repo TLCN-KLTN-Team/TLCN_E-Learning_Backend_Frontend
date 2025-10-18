@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { AuthContext } from "./context";
 import type { AuthContextType, User, RegisterData } from "./types";
 
-import { getMe } from "../../services/api/authApi";
+import { doSocialLogin, getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
 import { getAccessToken, getExpiryTime } from "@/utils/localStorageVariables";
 
@@ -64,6 +64,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const socialLogin = async (code: string, provider: string): Promise<void> => {
+    await doSocialLogin(code, provider);
+    const userData = await getMe();
+    setUser(userData);
+  };
+
   const logout = (): void => {
     localStorage.clear();
     sessionStorage.clear(); // Xóa cả sessionStorage để reset first login flag
@@ -113,6 +119,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated,
     isLoading,
     login,
+    socialLogin,
     logout,
     register,
     refreshUser,

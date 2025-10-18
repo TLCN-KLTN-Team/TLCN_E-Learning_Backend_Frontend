@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import axiosInstance from "../../../services/api/httpClient/axiosInstance";
+import { useAuth } from "@/context/auth-context/useAuth";
+import { getRoles } from "@/utils/localStorageVariables";
+import { getRoleBasedRedirectPath } from "@/utils/roleUtils";
 
 const Authenticate = () => {
+  const { socialLogin } = useAuth();
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -36,25 +39,19 @@ const Authenticate = () => {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         // Retry logic để đợi authorization code từ URL
         const code = new URLSearchParams(window.location.search).get("code");
-
-        const response = await axiosInstance.post(
-          `/identity/auth/outbound/authenticate?code=${code}`
-        );
-
-        if (response.data.result) {
-          console.log("Saving authorization data to localStorage...");
-          // Lưu authorizationData vào localStorage
-          localStorage.setItem(
-            "authorizationData",
-            JSON.stringify(response.data.result)
-          );
-
-          // Set progress bar to 100% khi hoàn thành
-          setProgress(100);
-          await new Promise((resolve) => setTimeout(resolve, 800));
-          window.location.href = "/";
+        if (!code) {
+          toast.error("Không tìm thấy mã xác thực từ Google.");
         } else {
-          throw new Error("Không nhận được access token từ server");
+          socialLogin(code, "google")
+            .then(() => {
+              const roles = getRoles();
+              const url = getRoleBasedRedirectPath(roles);
+              navigate(url, { replace: true });
+              toast.success("Đăng nhập bằng Google thành công!");
+            })
+            .catch((error) => {
+              toast.error(error.message || "Đăng nhập bằng Google thất bại");
+            });
         }
       } catch (err: unknown) {
         let errorMessage = "Đăng nhập Google thất bại. Vui lòng thử lại.";
