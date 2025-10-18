@@ -34,6 +34,7 @@ public class SecurityConfig {
         "/auth/logout",
         "/auth/refresh",
         "/auth/outbound/authenticate",
+        "/auth/outbound/social-login",
         "/forgot-password/send-email",
         "/forgot-password/verify-otp",
         "/forgot-password/reset-password",
@@ -62,6 +63,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request ->
                     request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                            .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
                             .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                 .anyRequest()
                 .authenticated());
