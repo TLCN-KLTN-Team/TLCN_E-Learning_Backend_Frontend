@@ -44,6 +44,7 @@ public enum ErrorCode {
     AUTH_TOKEN_INVALID("AUTH_1003", "Token không hợp lệ hoặc đã hết hạn", HttpStatus.UNAUTHORIZED),
     AUTH_TOKEN_EXPIRED("AUTH_1004", "Phiên đăng nhập đã hết hạn", HttpStatus.UNAUTHORIZED),
     AUTH_PERMISSION_DENIED("AUTH_1005", "Bạn không có quyền truy cập chức năng này", HttpStatus.FORBIDDEN),
+    AUTH_PROVIDER_NOT_SUPPORTED("AUTH_1006", "Nhà cung cấp xác thực không được hỗ trợ", HttpStatus.BAD_REQUEST),
 
     // User Management Errors (USER_xxxx)
     USER_ALREADY_EXISTS("USER_2001", "Người dùng đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),

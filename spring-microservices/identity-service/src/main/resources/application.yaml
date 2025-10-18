@@ -26,6 +26,17 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          facebook:
+            client-id: "${FACEBOOK_CLIENT_ID}"
+            client-secret: "${FACEBOOK_CLIENT_SECRET}"
+            redirect-uri: "${OAUTH_REDIRECT_URL:http://localhost:3000/oauth2/callback/facebook}"
+            scope:
+              - email
+              - public_profile
   kafka:
     bootstrap-servers: localhost:9094
     producer:
@@ -35,16 +46,33 @@ spring:
     multipart:
       max-file-size: 10MB # 10MB = 10 * 1024 * 1024 bytes
       max-request-size: 100MB
+
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: "${REDIS_PASSWORD}"
+      timeout: 6000 # in milliseconds
+
+
 jwt:
   signerKey: "${JWT_SIGNER_KEY}"
   valid-duration: 3600 # in second
   refreshable-duration: 36000 # in seconds
 
 outbound:
-  identity:
+  google:
+    auth-uri: "${GOOGLE_AUTH_URI:https://accounts.google.com/o/oauth2/v2/auth}"
     client-id: "${GOOGLE_CLIENT_ID}"
     client-secret: "${GOOGLE_CLIENT_SECRET}"
-    redirect-url: "${OAUTH_REDIRECT_URL}"
+    callback-url: "${GOOGLE_OAUTH_REDIRECT_URL:http://localhost:3000/auth/google/callback}"
+  facebook:
+    auth-uri: "${FACEBOOK_AUTH_URI:https://www.facebook.com/v24.0/dialog/oauth}"
+    client-id: "${FACEBOOK_CLIENT_ID}"
+    client-secret: "${FACEBOOK_CLIENT_SECRET}"
+    callback-url: "${FACEBOOK_OAUTH_REDIRECT_URL:http://localhost:3000/auth/facebook/callback}"
 
 app:
   services:

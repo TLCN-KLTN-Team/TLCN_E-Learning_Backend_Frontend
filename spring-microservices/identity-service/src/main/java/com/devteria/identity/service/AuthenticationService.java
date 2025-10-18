@@ -5,17 +5,20 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import com.devteria.identity.dto.response.*;
+import com.devteria.identity.repository.httpclient.FacebookGraphApi;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.util.StringBuilders;
+import org.hibernate.annotations.Check;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.*;
-import com.devteria.identity.dto.response.AuthenticationResponse;
-import com.devteria.identity.dto.response.ExchangeTokenResponse;
-import com.devteria.identity.dto.response.GoogleUserInfoResponse;
-import com.devteria.identity.dto.response.IntrospectResponse;
 import com.devteria.identity.entity.InvalidatedToken;
 import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
@@ -36,6 +39,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +52,8 @@ public class AuthenticationService {
     OutboundAuthenticationClient outboundAuthenticationClient;
     OutboundUserInfoClient outboundUserInfoClient;
     private final PasswordEncoder passwordEncoder;
+    FacebookGraphApi facebookGraphApi;
+    RestTemplate restTemplate = new RestTemplate();
 
     @NonFinal
     @Value("${jwt.signerKey}")
@@ -61,19 +68,34 @@ public class AuthenticationService {
     protected long REFRESHABLE_DURATION;
 
     @NonFinal
-    @Value("${outbound.identity.client-id}")
-    private String CLIENT_ID;
+    @Value("${outbound.google.client-id}")
+    private String GOOGLE_CLIENT_ID;
 
     @NonFinal
-    @Value("${outbound.identity.client-secret}")
-    private String CLIENT_SECRET;
+    @Value("${outbound.google.client-secret}")
+    private String GOOGLE_CLIENT_SECRET;
 
     @NonFinal
     private String GRANT_TYPE = "authorization_code";
 
     @NonFinal
-    @Value("${outbound.identity.redirect-url}")
-    private String REDIRECT_URI;
+    @Value("${outbound.google.callback-url}")
+    private String GOOGLE_CALLBACK_URL;
+
+    @NonFinal
+    @Value("${outbound.facebook.client-id}")
+    private String FACEBOOK_CLIENT_ID;
+
+    @NonFinal
+    @Value("${outbound.facebook.client-secret}")
+    private String FACEBOOK_CLIENT_SECRET;
+
+    @NonFinal
+    @Value("${outbound.facebook.callback-url}")
+    private String FACEBOOK_CALLBACK_URL;
+
+    @NonFinal
+    private String FACEBOOK_GRANT_TYPE = "authorization_code";
 
     // logic refresh token
     public IntrospectResponse introspect(IntrospectRequest request) {
@@ -104,45 +126,76 @@ public class AuthenticationService {
 
         var user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.AUTH_REQUIRED));
 
-        return toAuthenticationResponse(getAuthorizationData(user));
+        return toAuthenticationResponse(getAuthorizationData(user, null));
     }
     // end refresh token
 
     // logic login and onboard user
-    public AuthenticationResponse outboundAuthenticate(String code) {
-        ExchangeTokenResponse accessToken =
-                outboundAuthenticationClient.exchangeAccessToken(ExchangeTokenRequest.builder()
-                        .code(code)
-                        .clientId(CLIENT_ID)
-                        .clientSecret(CLIENT_SECRET)
-                        .grantType(GRANT_TYPE)
-                        .redirectUri(REDIRECT_URI)
-                        .build());
-        log.info("EXCHANGE TOKEN RESPONSE: {}", accessToken);
+    @CachePut(value = "socialAuthenticate", key = "#code.concat('-').concat(#provider)")
+    public AuthenticationResponse outboundAuthenticate(String code, String provider) {
+        provider = provider.trim().toLowerCase();
+        User user = null;
+        switch (provider){
+            case "google":
+                ExchangeTokenResponse accessToken =
+                        outboundAuthenticationClient.exchangeGoogleAccessToken(ExchangeTokenRequest.builder()
+                                .code(code)
+                                .clientId(GOOGLE_CLIENT_ID)
+                                .clientSecret(GOOGLE_CLIENT_SECRET)
+                                .grantType(GRANT_TYPE)
+                                .redirectUri(GOOGLE_CALLBACK_URL)
+                                .build());
+                GoogleUserInfoResponse userInfo = outboundUserInfoClient.getUserInfo("json", accessToken.getAccessToken());
+                                user = userRepository.findByUsername(userInfo.getEmail()).orElseGet(() -> {
+                    User newUser = User.builder()
+                            .username(userInfo.getEmail())
+                            .email(userInfo.getEmail())
+                            .firstName(userInfo.getGivenName())
+                            .lastName(userInfo.getFamilyName())
+                            .avatarUrl(userInfo.getPicture())
+                            .roles(Collections.singleton(
+                                    Role.builder().name(PredefinedRole.USER_ROLE).build()))
+                            .build();
+                    log.info("NEW USER: {}", newUser);
+                    return userRepository.save(newUser);
+                });
+                break;
+            case "facebook":
+                var fbAccessToken =
+                        facebookGraphApi.exchangeToken(ExchangeTokenRequest.builder()
+                                .code(code)
+                                .clientId(FACEBOOK_CLIENT_ID)
+                                .clientSecret(FACEBOOK_CLIENT_SECRET)
+                                .grantType(FACEBOOK_GRANT_TYPE)
+                                .redirectUri(FACEBOOK_CALLBACK_URL)
+                                .build());
+                String userInfoUrl = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + fbAccessToken.getAccessToken();
+                FacebookUserInfoResponse fbUserInfo = restTemplate.getForObject(userInfoUrl, FacebookUserInfoResponse.class);
 
-        GoogleUserInfoResponse userInfo = outboundUserInfoClient.getUserInfo("json", accessToken.getAccessToken());
-        log.info("EXCHANGE USER INFO RESPONSE: {}", userInfo);
 
-        User user = userRepository.findByUsername(userInfo.getEmail()).orElseGet(() -> {
-            User newUser = User.builder()
-                    .username(userInfo.getEmail())
-                    .email(userInfo.getEmail())
-                    .firstName(userInfo.getGivenName())
-                    .lastName(userInfo.getFamilyName())
-                    .avatarUrl(userInfo.getPicture())
-                    .roles(Collections.singleton(
-                            Role.builder().name(PredefinedRole.USER_ROLE).build()))
-                    .build();
-            log.info("NEW USER: {}", newUser);
-            return userRepository.save(newUser);
-        });
 
-        log.info("USER INFO RESPONSE: {}", user);
+                String username = fbUserInfo.getName();
 
-        return toAuthenticationResponse(getAuthorizationData(user));
+                user = userRepository.findByUsername(username).orElseGet(() -> {
+                    User newUser = User.builder()
+                            .username(username)
+                            .firstName(fbUserInfo.getName())
+                            .avatarUrl(fbUserInfo.getPicture().getData().getUrl())
+                            .roles(Collections.singleton(
+                                    Role.builder().name(PredefinedRole.USER_ROLE).build()))
+                            .build();
+                    return userRepository.save(newUser);
+                });
+                break;
+            default:
+                throw new AppException(ErrorCode.AUTH_PROVIDER_NOT_SUPPORTED);
+        }
+
+        return toAuthenticationResponse(getAuthorizationData(user, provider));
     }
 
     // logic authen & login with username, not social login
+    @CachePut(value = "authenticate", key = "#request.username")
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var userByUsername = userRepository
                 .findByUsername(request.getUsername())
@@ -159,11 +212,7 @@ public class AuthenticationService {
 
         if (!authenticated) throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
-        var authData = getAuthorizationData(user);
-
-        AuthenticationResponse response = toAuthenticationResponse(authData);
-
-        return toAuthenticationResponse(getAuthorizationData(user));
+        return toAuthenticationResponse(getAuthorizationData(user, null));
     }
 
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
@@ -194,7 +243,7 @@ public class AuthenticationService {
     }
 
     // get authorization data for user. it's used to save to App
-    private AuthorizationData getAuthorizationData(User user) {
+    private AuthorizationData getAuthorizationData(User user, String provider) {
         Instant now = Instant.now();
         Instant accessTokenExpiry = now.plus(VALID_DURATION, ChronoUnit.SECONDS);
         Instant refreshTokenExpiry = now.plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS);
@@ -206,13 +255,7 @@ public class AuthenticationService {
         String accessToken = generateToken(user, accessTokenExpiry, "access", roles);
         String refreshToken = generateToken(user, refreshTokenExpiry, "refresh", roles);
 
-        System.out.println("Access token: " + accessToken);
-        System.out.println("Access token expiry: " + accessTokenExpiry);
-        System.out.println("Refresh token: " + refreshToken);
-        System.out.println("Refresh token expiry: " + refreshTokenExpiry);
-        System.out.println("Roles: " + roles);
-
-        return new AuthorizationData(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry, roles);
+        return new AuthorizationData(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry, roles, provider);
     }
 
     // generate token for user
@@ -336,5 +379,6 @@ public class AuthenticationService {
             String refreshToken,
             Instant accessTokenExpiry,
             Instant refreshTokenExpiry,
-            Set<String> roles) {}
+            Set<String> roles,
+            String provider) {}
 }

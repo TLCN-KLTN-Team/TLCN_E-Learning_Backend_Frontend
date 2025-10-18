@@ -21,9 +21,17 @@ import lombok.experimental.FieldDefaults;
 public class AuthenticationController {
     AuthenticationService authenticationService;
 
+//    @GetMapping("/outbound/social-login")
+//    ApiResponse<String> socialLogin(@RequestParam("provider") String provider) {
+//        return ApiResponse.success(
+//                "Redirect to social login URL",
+//                authenticationService.getProviderOAuthUrl(provider));
+//    }
+
     @PostMapping("/outbound/authenticate")
-    ApiResponse<AuthenticationResponse> outboundAuthenticate(@RequestParam("code") String code) {
-        var result = authenticationService.outboundAuthenticate(code);
+    ApiResponse<AuthenticationResponse> outboundAuthenticate(@RequestParam("code") String code,
+                                                             @RequestParam("provider") String provider) {
+        var result = authenticationService.outboundAuthenticate(code, provider);
         return ApiResponse.<AuthenticationResponse>builder()
                 .message("Authentication successful")
                 .result(result)
@@ -32,12 +40,7 @@ public class AuthenticationController {
 
     @PostMapping("/token")
     ApiResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
-        System.out.println("📥 Received authentication request:");
-        System.out.println("Email: " + request.getUsername());
-        System.out.println("Password: " + request.getPassword());
         var result = authenticationService.authenticate(request);
-        System.out.println("Ket qua: " + result.getAccessToken() + " " + result.getRoles() + " "
-                + result.getRefreshToken() + " " + result.getExpiryTime() + " " + result.getRefreshExpiryTime());
         return ApiResponse.<AuthenticationResponse>builder().result(result).build();
     }
 
