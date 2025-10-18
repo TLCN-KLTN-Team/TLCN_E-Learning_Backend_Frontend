@@ -23,7 +23,6 @@ import "../../../styles/link-hover-effects.css";
 
 // Import images
 import element06 from "@/assets/images/element/06.svg";
-import element07 from "@/assets/images/element/07.svg";
 import element08 from "@/assets/images/element/08.svg";
 import element09 from "@/assets/images/element/09.svg";
 import element10 from "@/assets/images/element/10.svg";
@@ -37,8 +36,6 @@ import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const navigate = useNavigate();
-
-  // Sample data for subjects section
   // const subjects = [
   //   {
   //     id: "it",
@@ -170,6 +167,49 @@ const Home = () => {
                     ))}
                   </ul>
 
+                  <FadeInLeft className="relative z-10">
+                    <StaggerContainer>
+                      <FadeInUp delay={0.1}>
+                        <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                          Bạn đang là sinh viên của trường đại học hoặc cao
+                          đẳng?
+                        </h2>
+                      </FadeInUp>
+
+                      <FadeInUp delay={0.2}>
+                        <p className="text-muted-foreground mb-6 text-sm">
+                          Tại thanh điều hướng, chọn Mục lục "Khóa học" và chọn
+                          "Trang học tập số", chọn Trường của bạn (đã được liên
+                          kết với chúng tôi) để truy cập vào các khóa học và tài
+                          liệu học tập được cung cấp.
+                        </p>
+                      </FadeInUp>
+
+                      <FadeInUp delay={0.3}>
+                        <div className="flex space-x-3">
+                          <HoverScale>
+                            <a href="#" className="block transition-transform">
+                              <img
+                                src={googlePlayIcon}
+                                alt="Google Play"
+                                className="h-10 w-auto"
+                              />
+                            </a>
+                          </HoverScale>
+                          <HoverScale>
+                            <a href="#" className="block transition-transform">
+                              <img
+                                src={appStoreIcon}
+                                alt="App Store"
+                                className="h-10 w-auto"
+                              />
+                            </a>
+                          </HoverScale>
+                        </div>
+                      </FadeInUp>
+                    </StaggerContainer>
+                  </FadeInLeft>
+
                   <FadeInUp delay={0.7}>
                     <AnimatedButton>
                       <Button
@@ -200,74 +240,6 @@ const Home = () => {
               title="Phổ biến theo lĩnh vực bạn yêu thích"
               subtitle="Được truyền cảm hứng từ những gì bạn đã học"
             />
-          </div>
-        </AnimatedSection>
-
-        {/* Mobile App Section */}
-        <AnimatedSection className="py-12 lg:py-16 px-6 lg:px-8 overflow-hidden">
-          <div className="container mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-              <FadeInLeft className="relative z-10">
-                <StaggerContainer>
-                  <FadeInUp delay={0.1}>
-                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                      Bạn đang là sinh viên của trường đại học hoặc cao đẳng?
-                    </h2>
-                  </FadeInUp>
-
-                  <FadeInUp delay={0.2}>
-                    <p className="text-muted-foreground mb-6 text-sm">
-                      Tại thanh điều hướng, chọn Mục lục "Khóa học" và chọn
-                      "Trang học tập số", chọn Trường của bạn (đã được liên kết
-                      với chúng tôi) để truy cập vào các khóa học và tài liệu
-                      học tập được cung cấp.
-                    </p>
-                  </FadeInUp>
-
-                  <FadeInUp delay={0.3}>
-                    <div className="flex space-x-3">
-                      <HoverScale>
-                        <a href="#" className="block transition-transform">
-                          <img
-                            src={googlePlayIcon}
-                            alt="Google Play"
-                            className="h-10 w-auto"
-                          />
-                        </a>
-                      </HoverScale>
-                      <HoverScale>
-                        <a href="#" className="block transition-transform">
-                          <img
-                            src={appStoreIcon}
-                            alt="App Store"
-                            className="h-10 w-auto"
-                          />
-                        </a>
-                      </HoverScale>
-                    </div>
-                  </FadeInUp>
-                </StaggerContainer>
-              </FadeInLeft>
-
-              <FadeInRight className="relative">
-                {/* Background decoration */}
-                <div className="absolute top-1/2 right-0 transform translate-y-[-50%] translate-x-8 z-0">
-                  <svg
-                    width="632.6px"
-                    height="540.4px"
-                    viewBox="0 0 632.6 540.4"
-                    className="fill-bs-primary opacity-20"
-                  >
-                    <path d="M531.4,46.9c46.3,27.4,81.4,79.8,91.1,136.2c9.7,56.8-6.4,117.7-38.3,166s-79.4,84.2-138.6,119.3 c-59.6,35.1-130.6,69.7-201.5,62.1c-70.5-7.7-141.4-57.6-185.4-126.5C14.4,335.5-2.9,247.2,23.7,179.5 c26.2-68.1,96.7-116.5,161.6-140.2c64.9-24.2,124.5-24.6,183.3-23.4C427,17.1,485.1,19.5,531.4,46.9z" />
-                  </svg>
-                </div>
-                <img
-                  src={element07}
-                  alt="Mobile app illustration"
-                  className="relative z-10 max-w-full h-auto"
-                />
-              </FadeInRight>
-            </div>
           </div>
         </AnimatedSection>
 

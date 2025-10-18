@@ -1,12 +1,24 @@
+import { FacebookOAuth2Utils } from "@/utils/oauth2Utils";
+
 const FacebookButton = () => {
-  const handleRegister = () => {
+  const handleFacebookRegister = async () => {
     // Logic for handling Facebook registration
-    console.log("Register with Facebook");
+    const fbAuthUri = FacebookOAuth2Utils.fbAuthUri;
+    const fbClientId = FacebookOAuth2Utils.fbClientId;
+    const fbRedirectUri = FacebookOAuth2Utils.fbRedirectUri;
+    // KHÔNG encode lại toàn bộ URL, để Facebook xử lý đúng
+    const fbTargetUrl =
+      `${fbAuthUri}?client_id=${fbClientId}` +
+      `&redirect_uri=${encodeURIComponent(fbRedirectUri)}` +
+      `&response_type=code` +
+      `&scope=public_profile,email`;
+    // Redirect to Facebook OAuth
+    window.location.href = fbTargetUrl;
   };
   return (
     <button
       type="button"
-      onClick={handleRegister}
+      onClick={handleFacebookRegister}
       className="flex items-center justify-center px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
     >
       <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
