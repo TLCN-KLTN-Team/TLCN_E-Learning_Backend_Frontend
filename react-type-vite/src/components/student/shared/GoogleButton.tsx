@@ -3,7 +3,6 @@ import { OAuth2Utils } from "@/utils/oauth2Utils";
 const GoogleButton = () => {
   const handleGoogleLogin = () => {
     // Logic for handling Google login
-    console.log("Google login initiated");
     const callbackUrl = OAuth2Utils.callBackUrl;
     const authUri = OAuth2Utils.authUri;
     const googleClientId = OAuth2Utils.googleClientId;
