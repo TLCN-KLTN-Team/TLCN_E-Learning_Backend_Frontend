@@ -12,5 +12,6 @@ import feign.QueryMap;
 @FeignClient(name = "outbound-authentication", url = "https://oauth2.googleapis.com")
 public interface OutboundAuthenticationClient {
     @PostMapping(value = "/token", produces = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    ExchangeTokenResponse exchangeAccessToken(@QueryMap ExchangeTokenRequest request);
+    ExchangeTokenResponse exchangeGoogleAccessToken(@QueryMap ExchangeTokenRequest request);
 }
+

@@ -1,5 +1,6 @@
 package com.devteria.identity.dto.response;
 
+import java.io.Serializable;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -13,7 +14,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class PaginatedResponse<T> {
+public class PaginatedResponse<T> implements Serializable {
     private List<T> content;
     private int page;
     private int size;
