@@ -158,14 +158,13 @@ public class TeacherService {
     }
 
     // Thêm method mới cho admin
-    public Page<TeacherResponse> getTeachersByInstitution(int institutionId, String search, Pageable pageable) {
-        log.info("Getting teachers for institution: {} with search: {}", institutionId, search);
+    public Page<TeacherResponse> getTeachersByEducationalUnit(int educationalUnitId, String search, Pageable pageable) {
 
         Page<Teacher> teachers;
         if (search != null && !search.trim().isEmpty()) {
-            teachers = teacherRepository.findByInstitutionWithSearch(institutionId, search, pageable);
+            teachers = teacherRepository.findByInstitutionWithSearch(educationalUnitId, search, pageable);
         } else {
-            teachers = teacherRepository.findByIdEducational(institutionId, pageable);
+            teachers = teacherRepository.findByIdEducational(educationalUnitId, pageable);
         }
 
         return teachers.map(teacherMapper::toTeacherResponse);
@@ -196,5 +195,13 @@ public class TeacherService {
 
         teacherRepository.deleteById(id);
         log.info("Teacher deleted successfully with ID: {}", id);
+    }
+
+    public TeacherResponse getTeacherByUserId(String userId) {
+        log.info("Getting teacher by userId: {}", userId);
+        Teacher teacher = teacherRepository
+                .findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
+        return teacherMapper.toTeacherResponse(teacher);
     }
 }

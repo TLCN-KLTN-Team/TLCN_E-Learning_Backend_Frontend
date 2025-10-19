@@ -96,23 +96,21 @@ public class StudentService {
         return studentMapper.toStudentResponse(student);
     }
 
-    public Page<StudentResponse> getStudentsByInstitution(int institutionId, String search, Pageable pageable) {
-        log.info("Getting students for institution: {} with search: {}", institutionId, search);
+    public Page<StudentResponse> getStudentsByEducationalUnit(int educationalUnitId, String search, Pageable pageable) {
 
         Page<Student> students;
         if (search != null && !search.trim().isEmpty()) {
-            students = studentRepository.findByInstitutionWithSearch(institutionId, search, pageable);
+            students = studentRepository.findByEducationalUnitWithSearch(educationalUnitId, search, pageable);
         } else {
-            students = studentRepository.findByIdEducational(institutionId, pageable);
+            students = studentRepository.findByIdEducational(educationalUnitId, pageable);
         }
 
         return students.map(studentMapper::toStudentResponse);
     }
 
-    public List<StudentResponse> getAllStudentsByInstitution(int institutionId) {
-        log.info("Getting all students for institution: {}", institutionId);
+    public List<StudentResponse> getAllStudentsByEducationalUnit(int educationalUnitId) {
 
-        List<Student> students = studentRepository.findByIdEducational(institutionId);
+        List<Student> students = studentRepository.findByIdEducational(educationalUnitId);
 
         return students.stream().map(studentMapper::toStudentResponse).collect(Collectors.toList());
     }

@@ -20,9 +20,9 @@ public interface TeacherRepository {
     @GetMapping("/teachers/by-teacher-id/{teacherId}")
     ApiResponse<TeacherResponse> getTeacherByTeacherId(@PathVariable String teacherId);
 
-    @GetMapping("/teachers/by-institution/{institutionId}")
-    ApiResponse<Page<TeacherResponse>> getTeachersByInstitution(
-            @PathVariable int institutionId,
+    @GetMapping("/teachers/by-educationalUnit/{educationalUnitId}")
+    ApiResponse<Page<TeacherResponse>> getTeachersByEducationalUnit(
+            @PathVariable int educationalUnitId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search);
@@ -32,4 +32,7 @@ public interface TeacherRepository {
 
     @DeleteMapping("/teachers/{id}")
     ApiResponse<Void> deleteTeacher(@PathVariable String id);
+
+    @GetMapping("/teachers/by-user-id/{userId}")
+    ApiResponse<TeacherResponse> getTeacherByUserId(@PathVariable String userId);
 }

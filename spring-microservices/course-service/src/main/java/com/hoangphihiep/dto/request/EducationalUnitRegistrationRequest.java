@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TrainingUnitRegistrationRequest {
+public class EducationalUnitRegistrationRequest {
     // Training unit information
     private String name;
     private String type;

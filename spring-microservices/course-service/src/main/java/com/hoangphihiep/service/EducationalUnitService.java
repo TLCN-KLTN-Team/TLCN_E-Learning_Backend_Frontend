@@ -1,6 +1,6 @@
 package com.hoangphihiep.service;
 
-import com.hoangphihiep.dto.request.TrainingUnitRegistrationRequest;
+import com.hoangphihiep.dto.request.EducationalUnitRegistrationRequest;
 import com.hoangphihiep.dto.request.UserRequest;
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.EducationalUnit;
@@ -71,21 +71,19 @@ public class EducationalUnitService {
                 .build();
     }
 
-    public EducationalUnitResponse getInstitutionByAdminId(String adminId) {
+    public EducationalUnitResponse getEducationalUnitByAdminId(String adminId) {
         if (adminId == null || adminId.trim().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
         try {
-            Optional<EducationalUnit> institution = educationalUnitRepository.findByIdAdmin(adminId);
+            Optional<EducationalUnit> educationalUnit = educationalUnitRepository.findByIdAdmin(adminId);
 
-            if (institution.isEmpty()) {
-                log.warn("No institution found for admin ID: {}", adminId);
+            if (educationalUnit.isEmpty()) {
                 return null;
             }
 
-            EducationalUnit edu = institution.get();
-            log.info("Found institution {} for admin ID: {}", edu.getName(), adminId);
+            EducationalUnit edu = educationalUnit.get();
 
             return EducationalUnitResponse.builder()
                     .id(String.valueOf(edu.getId()))
@@ -111,7 +109,7 @@ public class EducationalUnitService {
     }
 
     @Transactional
-    public TrainingUnitRegistrationResponse registerTrainingUnit(TrainingUnitRegistrationRequest request) {
+    public TrainingUnitRegistrationResponse registerEducationalUnit(EducationalUnitRegistrationRequest request) {
         log.info("Starting training unit registration for: {}", request.getName());
 
         try {

@@ -11,7 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/admin/institutions/{institutionId}")
+@RequestMapping("/admin/educationalUnit/{educationalUnitId}")
 @RequiredArgsConstructor
 @Slf4j
 public class DepartmentController {
@@ -19,15 +19,13 @@ public class DepartmentController {
     private final CourseService adminCourseService;
 
     @GetMapping("/departments")
-    public ApiResponse<Page<DepartmentResponse>> getDepartmentsByInstitution(
-            @PathVariable int institutionId,
+    public ApiResponse<Page<DepartmentResponse>> getDepartmentsByEducationalUnit(
+            @PathVariable int educationalUnitId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search) {
 
-        log.info("Admin getting departments for institution: {}", institutionId);
-
-        Page<DepartmentResponse> departments = adminCourseService.getDepartmentsByInstitution(institutionId, page, size, search);
+        Page<DepartmentResponse> departments = adminCourseService.getDepartmentsByEducationalUnit(educationalUnitId, page, size, search);
 
         return ApiResponse.<Page<DepartmentResponse>>builder()
                 .result(departments)
@@ -36,12 +34,10 @@ public class DepartmentController {
 
     @PostMapping("/departments")
     public ApiResponse<DepartmentResponse> createDepartment(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @Valid @RequestBody DepartmentRequest request) {
 
-        log.info("Admin creating department for institution: {}", institutionId);
-
-        DepartmentResponse response = adminCourseService.createDepartmentForInstitution(institutionId, request);
+        DepartmentResponse response = adminCourseService.createDepartmentForEducationalUnit(educationalUnitId, request);
 
         return ApiResponse.<DepartmentResponse>builder()
                 .result(response)
@@ -50,13 +46,11 @@ public class DepartmentController {
 
     @PutMapping("/departments/{departmentId}")
     public ApiResponse<DepartmentResponse> updateDepartment(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable int departmentId,
             @Valid @RequestBody DepartmentRequest request) {
 
-        log.info("Admin updating department {} for institution: {}", departmentId, institutionId);
-
-        DepartmentResponse response = adminCourseService.updateDepartmentForInstitution(institutionId, departmentId, request);
+        DepartmentResponse response = adminCourseService.updateDepartmentForEducationalUnit(educationalUnitId, departmentId, request);
 
         return ApiResponse.<DepartmentResponse>builder()
                 .result(response)
@@ -65,12 +59,10 @@ public class DepartmentController {
 
     @GetMapping("/departments/{departmentId}")
     public ApiResponse<DepartmentResponse> getDepartmentById(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable int departmentId) {
 
-        log.info("Admin getting department {} for institution: {}", departmentId, institutionId);
-
-        DepartmentResponse response = adminCourseService.getDepartmentByIdForInstitution(institutionId, departmentId);
+        DepartmentResponse response = adminCourseService.getDepartmentByIdForEducationalUnit(educationalUnitId, departmentId);
 
         return ApiResponse.<DepartmentResponse>builder()
                 .result(response)

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/admin/institutions/{institutionId}")
+@RequestMapping("/admin/educationalUnit/{educationalUnitId}")
 @RequiredArgsConstructor
 @Slf4j
 public class ClassController {
@@ -27,16 +27,14 @@ public class ClassController {
     private final CourseClassService classService;
 
     @GetMapping("/classes")
-    public ApiResponse<Page<CourseClassResponse>> getClassesByInstitution(
-            @PathVariable int institutionId,
+    public ApiResponse<Page<CourseClassResponse>> getClassesByEducationalUnit(
+            @PathVariable int educationalUnitId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search) {
 
-        log.info("Admin getting classes for institution: {}", institutionId);
-
         Pageable pageable = PageRequest.of(page, size);
-        Page<CourseClassResponse> classes = classService.getClassesByInstitution(institutionId, pageable, search);
+        Page<CourseClassResponse> classes = classService.getClassesByEducationalUnit(educationalUnitId, pageable, search);
 
         return ApiResponse.<Page<CourseClassResponse>>builder()
                 .result(classes)
@@ -45,10 +43,8 @@ public class ClassController {
 
     @PostMapping("/classes")
     public ApiResponse<CourseClassResponse> createClass(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @Valid @RequestBody CourseClassRequest request) {
-
-        log.info("Admin creating class for institution: {}", institutionId);
 
         CourseClassResponse response = classService.createClass(request);
 
@@ -59,12 +55,10 @@ public class ClassController {
 
     @GetMapping("/courses/{courseId}/classes")
     public ApiResponse<Page<CourseClassResponse>> getClassesByCourse(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable int courseId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
-        log.info("Admin getting classes for course {} in institution: {}", courseId, institutionId);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<CourseClassResponse> classes = classService.getClassesByCourse(courseId, pageable);
@@ -76,11 +70,9 @@ public class ClassController {
 
     @PutMapping("/classes/{classId}")
     public ApiResponse<CourseClassResponse> updateClass(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable Long classId,
             @Valid @RequestBody CourseClassRequest request) {
-
-        log.info("Admin updating class {} for institution: {}", classId, institutionId);
 
         CourseClassResponse response = classService.updateClass(classId, request);
 
@@ -91,10 +83,8 @@ public class ClassController {
 
     @DeleteMapping("/classes/{classId}")
     public ApiResponse<Void> deleteClass(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable Long classId) {
-
-        log.info("Admin deleting class {} for institution: {}", classId, institutionId);
 
         classService.deleteClass(classId);
 
@@ -107,11 +97,9 @@ public class ClassController {
 
     @PostMapping("/classes/{classId}/enroll-students")
     public ApiResponse<String> enrollStudentsInClass(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable Long classId,
             @RequestBody List<String> studentIds) {
-        log.info("Admin enrolling students {} to class {} for institution: {}", studentIds, classId, institutionId);
-
         try {
             enrollmentService.enrollStudentsToClass(classId, studentIds);
 
@@ -122,20 +110,16 @@ public class ClassController {
                     .build();
 
         } catch (AppException e) {
-            log.error("Failed to enroll students to class {}: {}", classId, e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error enrolling students to class {}: {}", classId, e.getMessage(), e);
             throw new AppException(ErrorCode.COURSE_ENROLLMENT_FAILED);
         }
     }
 
     @GetMapping("/classes/{classId}/students")
     public ApiResponse<List<StudentResponse>> getStudentsInClass(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable Long classId) {
-
-        log.info("Admin getting students in class {} for institution: {}", classId, institutionId);
 
         List<StudentResponse> students = enrollmentService.getStudentsInClass(classId);
 
@@ -146,12 +130,10 @@ public class ClassController {
 
     @GetMapping("/classes/{classId}/available-students")
     public ApiResponse<List<StudentResponse>> getAvailableStudentsForClass(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable Long classId) {
 
-        log.info("Admin getting available students for class {} in institution: {}", classId, institutionId);
-
-        List<StudentResponse> students = enrollmentService.getAvailableStudentsForClass(classId, institutionId);
+        List<StudentResponse> students = enrollmentService.getAvailableStudentsForClass(classId, educationalUnitId);
 
         return ApiResponse.<List<StudentResponse>>builder()
                 .result(students)
@@ -160,12 +142,9 @@ public class ClassController {
 
     @DeleteMapping("/classes/{classId}/students/{studentId}")
     public ApiResponse<Void> unenrollStudentFromClass(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable Long classId,
             @PathVariable String studentId) {
-
-        log.info("Admin unenrolling student {} from class {} for institution: {}",
-                studentId, classId, institutionId);
 
         enrollmentService.unenrollStudentFromClass(classId, studentId);
 
@@ -176,12 +155,9 @@ public class ClassController {
 
     @DeleteMapping("/classes/{classId}/enrollments/{enrollmentId}")
     public ApiResponse<Void> removeEnrollmentFromClass(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable Long classId,
             @PathVariable Long enrollmentId) {
-
-        log.info("Admin removing enrollment {} from class {} for institution: {}",
-                enrollmentId, classId, institutionId);
 
         try {
             enrollmentService.removeEnrollment(enrollmentId, classId);
