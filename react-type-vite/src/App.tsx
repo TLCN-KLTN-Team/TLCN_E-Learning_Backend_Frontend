@@ -9,7 +9,6 @@ import StudentRoutes from "./routes/StudentRoute"
 import TeacherRoutes from "./routes/TeacherRoute"
 import AdminRoutes from "./routes/AdminRoute"
 import SystemAdminRoutes from "./routes/SystemAdminRoute"
-import CreateCoursePage from "./pages/teacher/course/CreateCoursePage"
 
 function App() {
   // Khởi tạo token expiry monitoring
@@ -19,8 +18,7 @@ function App() {
       <AuthProvider>
         <ScrollProgressBar />
           <Routes>
-            <Route path="/teacher/create-course" element={<CreateCoursePage />} />
-            <Route path="/teacher/course/:courseId/build" element={<CreateCoursePage />} />{" "}
+            {" "}
             {/* A more descriptive route */}
             {/* Public routes - which accessible by anonymous users*/}
             {PublicRoutes}

@@ -20,9 +20,9 @@ const CourseListPage: React.FC = () => {
   const [showClassManagement, setShowClassManagement] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [institutionLoading, setInstitutionLoading] = useState(true);
-  const [currentInstitution, setCurrentInstitution] = useState<EducationalUnitResponse | null>(null);
-  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
+  const [currentEducationalUnit, setCurrentEducationalUnit] = useState<EducationalUnitResponse | null>(null);
+  const [educationalUnitId, setEducationalUnitId] = useState<string | null>(null);
   const [classStats, setClassStats] = useState<Record<number, { 
     totalClasses: number, 
     totalStudents: number,
@@ -30,31 +30,30 @@ const CourseListPage: React.FC = () => {
     capacity: number 
   }>>({});
 
-  // Initialize institution
   useEffect(() => {
-    const initializeInstitution = async () => {
+    const initializeEducationalUnit = async () => {
       try {
-        setInstitutionLoading(true);
-        const institution = await educationUnitApi.getMyInstitution();
-        setCurrentInstitution(institution);
-        setInstitutionId(institution.id);
+        setEducationalUnitLoading(true);
+        const educationalUnit = await educationUnitApi.getMyEducationalUnit();
+        setCurrentEducationalUnit(educationalUnit);
+        setEducationalUnitId(educationalUnit.id);
       } catch (error: any) {
-        console.error('Failed to load institution:', error);
+        console.error('Failed to load educationalUnit:', error);
         toast.error('Không thể tải dữ liệu cơ sở giáo dục');
       } finally {
-        setInstitutionLoading(false);
+        setEducationalUnitLoading(false);
       }
     };
 
-    initializeInstitution();
+    initializeEducationalUnit();
   }, []);
 
   const loadCourses = async () => {
-    if (!institutionId) return;
+    if (!educationalUnitId) return;
     
     try {
       setLoading(true);
-      const response: PaginatedResponse<CourseResponse> = await courseApi.getCourses(institutionId);
+      const response: PaginatedResponse<CourseResponse> = await courseApi.getCourses(educationalUnitId);
       const coursesData = response.content || [];
       setCourses(coursesData);
       
@@ -73,7 +72,7 @@ const CourseListPage: React.FC = () => {
     
     for (const course of coursesData) {
       try {
-        const classResponse = await classApi.getClassesByCourse(institutionId!, course.id);
+        const classResponse = await classApi.getClassesByCourse(educationalUnitId!, course.id);
         const classes = classResponse.content || [];
         
         stats[course.id] = {
@@ -92,10 +91,10 @@ const CourseListPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (institutionId) {
+    if (educationalUnitId) {
       loadCourses();
     }
-  }, [institutionId]);
+  }, [educationalUnitId]);
 
   const handleSuccess = () => {
     loadCourses(); // Reload courses and stats after successful operations
@@ -115,7 +114,7 @@ const CourseListPage: React.FC = () => {
   const handleDeleteCourse = async (courseId: number, courseName: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa khóa học "${courseName}"? Điều này sẽ xóa tất cả lớp học và đăng ký liên quan. Hành động này không thể hoàn tác.`)) {
       try {
-        await courseApi.deleteCourse(institutionId!, courseId);
+        await courseApi.deleteCourse(educationalUnitId!, courseId);
         toast.success('Xóa khóa học thành công!');
         handleSuccess();
       } catch (error: any) {
@@ -142,8 +141,8 @@ const CourseListPage: React.FC = () => {
     return { color: "green", text: "Còn chỗ" };
   };
 
-  // Show loading state while institution is loading
-  if (institutionLoading) {
+  // Show loading state while educationalUnit is loading
+  if (educationalUnitLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse">
@@ -158,8 +157,8 @@ const CourseListPage: React.FC = () => {
     );
   }
 
-  // Show error if no institution ID
-  if (!institutionId) {
+  // Show error if no educationalUnit ID
+  if (!educationalUnitId) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -201,7 +200,7 @@ const CourseListPage: React.FC = () => {
             Quản lý Khóa học
           </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý khóa học và lớp học cho {currentInstitution?.name || 'cơ sở giáo dục của bạn'}
+            Quản lý khóa học và lớp học cho {currentEducationalUnit?.name || 'cơ sở giáo dục của bạn'}
           </p>
         </div>
         <Button 
@@ -478,7 +477,7 @@ const CourseListPage: React.FC = () => {
       <CourseFormModal
         isOpen={showCourseModal}
         onClose={() => setShowCourseModal(false)}
-        institutionId={institutionId}
+        educationalUnitId={educationalUnitId}
         onSuccess={handleSuccess}
       />
 
@@ -486,7 +485,7 @@ const CourseListPage: React.FC = () => {
         isOpen={showAssignTeacher}
         onClose={() => setShowAssignTeacher(false)}
         course={selectedCourse}
-        institutionId={institutionId}
+        educationalUnitId={educationalUnitId}
         onSuccess={handleSuccess}
       />
 
@@ -494,7 +493,7 @@ const CourseListPage: React.FC = () => {
         isOpen={showClassManagement}
         onClose={() => setShowClassManagement(false)}
         course={selectedCourse}
-        institutionId={institutionId}
+        educationalUnitId={educationalUnitId}
         onSuccess={handleSuccess}
       />
     </div>

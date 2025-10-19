@@ -13,7 +13,7 @@ interface ClassManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: CourseResponse | null;
-  institutionId: string;
+  educationalUnitId: string;
   onSuccess?: () => void;
 }
 
@@ -21,7 +21,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
   isOpen,
   onClose,
   course,
-  institutionId,
+  educationalUnitId,
   onSuccess,
 }) => {
   const [classes, setClasses] = useState<CourseClassResponse[]>([]);
@@ -52,7 +52,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
     if (!course) return;
     try {
       setLoadingClasses(true);
-      const response = await classApi.getClassesByCourse(institutionId, course.id);
+      const response = await classApi.getClassesByCourse(educationalUnitId, course.id);
       setClasses(response.content || []);
     } catch (error) {
       console.error("Error loading classes:", error);
@@ -100,7 +100,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
         description: formData.description.trim() || undefined,
       };
 
-      await classApi.createClass(institutionId, classData);
+      await classApi.createClass(educationalUnitId, classData);
       toast.success('Tạo lớp học thành công!');
       await loadClasses(); // Reload classes
       resetForm();
@@ -129,7 +129,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
         description: formData.description.trim() || undefined,
       };
 
-      await classApi.updateClass(institutionId, editingClass.id, updateData);
+      await classApi.updateClass(educationalUnitId, editingClass.id, updateData);
       toast.success('Cập nhật lớp học thành công!');
       await loadClasses(); // Reload classes
       resetForm();
@@ -152,7 +152,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
     
     try {
       setIsLoading(true);
-      await classApi.deleteClass(institutionId, classToDelete.id);
+      await classApi.deleteClass(educationalUnitId, classToDelete.id);
       toast.success('Xóa lớp học thành công!');
       await loadClasses(); // Reload classes
       onSuccess?.();
@@ -578,7 +578,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
           setSelectedClass(null);
         }}
         courseClass={selectedClass}
-        institutionId={institutionId}
+        educationalUnitId={educationalUnitId}
         onSuccess={handleEnrollSuccess}
       />
     </>

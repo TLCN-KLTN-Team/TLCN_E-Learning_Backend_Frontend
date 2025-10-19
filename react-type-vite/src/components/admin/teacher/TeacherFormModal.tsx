@@ -12,7 +12,7 @@ import type { DepartmentResponse } from "@/services/api/response/departmentRespo
 interface TeacherFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  institutionId: string;
+  educationalUnitId: string;
   onSuccess?: () => void;
   editingTeacher?: TeacherResponse | null;
 }
@@ -20,7 +20,7 @@ interface TeacherFormModalProps {
 const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
   isOpen,
   onClose,
-  institutionId,
+  educationalUnitId,
   onSuccess,
   editingTeacher = null,
 }) => {
@@ -91,7 +91,7 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
   const loadDepartments = async () => {
     try {
       setLoadingDepartments(true);
-      const response = await departmentApi.getDepartmentsByInstitution(institutionId);
+      const response = await departmentApi.getDepartmentsByEducationalUnit(educationalUnitId);
       setDepartments(response.content || []);
     } catch (error: any) {
       console.error('Error loading departments:', error);
@@ -185,7 +185,7 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
           description: form.description,
           socialUrl: form.socialUrl,
           bankAccountNumber: form.bankAccountNumber,
-          educationalUnitId: institutionId,
+          educationalUnitId: educationalUnitId,
         };
         
         // Chỉ gửi password nếu user đã nhập password mới
@@ -193,16 +193,16 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
           updateData.password = form.password;
         }
         
-        await teacherApi.updateTeacher(institutionId, editingTeacher.id, updateData);
+        await teacherApi.updateTeacher(educationalUnitId, editingTeacher.id, updateData);
         toast.success('Cập nhật giảng viên thành công!');
       } else {
         // Create new teacher
         const teacherData: TeacherRequest = {
           ...form,
-          educationalUnitId: institutionId,
+          educationalUnitId: educationalUnitId,
         };
         
-        await teacherApi.createTeacher(institutionId, teacherData);
+        await teacherApi.createTeacher(educationalUnitId, teacherData);
         toast.success('Tạo giảng viên thành công!');
       }
       

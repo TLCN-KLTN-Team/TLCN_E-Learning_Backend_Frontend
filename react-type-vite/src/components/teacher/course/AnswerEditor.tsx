@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { GripVertical, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { AnswerRequest } from "@/types/course.types";
+import type { AnswerRequest } from "@/services/api/request/answerRequest";
 
 const AnswerEditor: React.FC<{
   answer: AnswerRequest;

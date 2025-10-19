@@ -10,11 +10,13 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import DragDropUtils from "@/utils/DragDropUtils";
-import type { SectionRequest, LessonRequest, QuizRequest } from "@/types/course.types";
 import LessonItem from "./LessonItem";
 import QuizItem from "./QuizItem";
 import AddLessonModal from "./AddLessonModal";
 import QuizModalEditor from "./QuizModalEditor";
+import type { SectionRequest } from '@/services/api/request/sectionRequest';
+import type { LessonRequest } from '@/services/api/request/lessonRequest';
+import type { QuizRequest } from '@/services/api/request/quizRequest';
 
 const SectionItem: React.FC<{
   section: SectionRequest;

@@ -16,38 +16,38 @@ const TeacherListPage: React.FC = () => {
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [institutionLoading, setInstitutionLoading] = useState(true);
-  const [currentInstitution, setCurrentInstitution] = useState<EducationalUnitResponse | null>(null);
-  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
+  const [currentEducationalUnit, setCurrentEducationalUnit] = useState<EducationalUnitResponse | null>(null);
+  const [educationalUnitId, setEducationalUnitId] = useState<string | null>(null);
   
   // State cho chức năng chỉnh sửa
   const [editingTeacher, setEditingTeacher] = useState<TeacherResponse | null>(null);
 
-  // Initialize institution
+  // Initialize EducationalUnit
   useEffect(() => {
-    const initializeInstitution = async () => {
+    const initializeEducationalUnit = async () => {
       try {
-        setInstitutionLoading(true);
-        const institution = await educationUnitApi.getMyInstitution();
-        setCurrentInstitution(institution);
-        setInstitutionId(institution.id);
+        setEducationalUnitLoading(true);
+        const educationalUnit = await educationUnitApi.getMyEducationalUnit();
+        setCurrentEducationalUnit(educationalUnit);
+        setEducationalUnitId(educationalUnit.id);
       } catch (error: any) {
-        console.error('Failed to load institution:', error);
+        console.error('Failed to load educationalUnit:', error);
         toast.error('Không thể tải dữ liệu cơ sở giáo dục');
       } finally {
-        setInstitutionLoading(false);
+        setEducationalUnitLoading(false);
       }
     };
 
-    initializeInstitution();
+    initializeEducationalUnit();
   }, []);
 
   const loadTeachers = async () => {
-    if (!institutionId) return;
+    if (!educationalUnitId) return;
     
     try {
       setLoading(true);
-      const response: PaginatedResponse<TeacherResponse> = await teacherApi.getTeachers(institutionId);
+      const response: PaginatedResponse<TeacherResponse> = await teacherApi.getTeachers(educationalUnitId);
       console.log("📌 Danh sách giảng viên (content):", response.content);
       setTeachers(response.content || []);
       setFilteredTeachers(response.content || []);
@@ -60,10 +60,10 @@ const TeacherListPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (institutionId) {
+    if (educationalUnitId) {
       loadTeachers();
     }
-  }, [institutionId]);
+  }, [educationalUnitId]);
 
   useEffect(() => {
     const filtered = teachers.filter(teacher =>
@@ -84,7 +84,7 @@ const TeacherListPage: React.FC = () => {
   const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa giáo viên "${teacherName}"? Hành động này không thể hoàn tác.`)) {
       try {
-        await teacherApi.deleteTeacher(institutionId!, teacherId);
+        await teacherApi.deleteTeacher(educationalUnitId!, teacherId);
         toast.success('Xóa giáo viên thành công!');
         handleSuccess();
       } catch (error: any) {
@@ -106,8 +106,8 @@ const TeacherListPage: React.FC = () => {
     setEditingTeacher(null);
   };
 
-  // Show loading state while institution is loading
-  if (institutionLoading) {
+  // Show loading state while educationalUnit is loading
+  if (educationalUnitLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse">
@@ -122,8 +122,8 @@ const TeacherListPage: React.FC = () => {
     );
   }
 
-  // Show error if no institution ID
-  if (!institutionId) {
+  // Show error if no educationalUnit ID
+  if (!educationalUnitId) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -159,7 +159,7 @@ const TeacherListPage: React.FC = () => {
             Quản lý Giáo viên
           </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý tài khoản giáo viên cho {currentInstitution?.name || 'cơ sở giáo dục của bạn'}
+            Quản lý tài khoản giáo viên cho {currentEducationalUnit?.name || 'cơ sở giáo dục của bạn'}
           </p>
         </div>
         <Button 
@@ -330,7 +330,7 @@ const TeacherListPage: React.FC = () => {
       <TeacherFormModal
         isOpen={showTeacherModal}
         onClose={handleCloseModal}
-        institutionId={institutionId}
+        educationalUnitId={educationalUnitId}
         onSuccess={handleSuccess}
         editingTeacher={editingTeacher}
       />

@@ -12,7 +12,7 @@ interface AssignTeacherModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: CourseResponse | null;
-  institutionId: string;
+  educationalUnitId: string;
   onSuccess?: () => void;
 }
 
@@ -20,7 +20,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
   isOpen,
   onClose,
   course,
-  institutionId,
+  educationalUnitId,
   onSuccess,
 }) => {
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
@@ -31,17 +31,17 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && institutionId) {
+    if (isOpen && educationalUnitId) {
       loadTeachers();
       setSelectedTeacher("");
       setSearchTerm("");
     }
-  }, [isOpen, institutionId]);
+  }, [isOpen, educationalUnitId]);
 
   const loadTeachers = async () => {
     try {
       setLoadingTeachers(true);
-      const response = await teacherApi.getTeachers(institutionId);
+      const response = await teacherApi.getTeachers(educationalUnitId);
       setTeachers(response.content || []);
     } catch (error) {
       console.error('Error loading teachers:', error);
@@ -75,7 +75,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
       setIsLoading(true);
       console.log('Assigning teacher:', selectedTeacher, 'to course:', course.id);
       console.log('Selected teacher details:', selectedTeacherData);
-      await courseApi.assignTeacherToCourse(institutionId, course.id, selectedTeacher);
+      await courseApi.assignTeacherToCourse(educationalUnitId, course.id, selectedTeacher);
       toast.success('Phân công giảng viên thành công!');
       onSuccess?.();
       onClose();
@@ -95,7 +95,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
     if (window.confirm('Bạn có chắc chắn muốn loại bỏ giảng viên này khỏi môn học?')) {
       try {
         setIsLoading(true);
-        await courseApi.removeTeacherFromCourse(institutionId, course.id);
+        await courseApi.removeTeacherFromCourse(educationalUnitId, course.id);
         toast.success('Đã loại bỏ giảng viên thành công!');
         onSuccess?.();
         onClose();

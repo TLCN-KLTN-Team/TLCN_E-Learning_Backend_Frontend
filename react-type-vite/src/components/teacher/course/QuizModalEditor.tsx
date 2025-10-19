@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import {Save } from "lucide-react";
 import QuizSettings from "./QuizSettings";
 import QuestionList from "./QuestionList";
+import type { QuizRequest } from "@/services/api/request/quizRequest";
+import type { QuestionRequest } from "@/services/api/request/questionRequest";
 
-import type { QuizRequest, QuestionRequest } from "@/types/course.types";
 
 const QuizModalEditor: React.FC<{
   isOpen: boolean;

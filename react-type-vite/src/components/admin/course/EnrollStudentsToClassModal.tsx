@@ -11,7 +11,7 @@ interface EnrollStudentsToClassModalProps {
   isOpen: boolean;
   onClose: () => void;
   courseClass: CourseClassResponse | null;
-  institutionId: string;
+  educationalUnitId: string;
   onSuccess?: () => void;
 }
 
@@ -19,7 +19,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
   isOpen,
   onClose,
   courseClass,
-  institutionId,
+  educationalUnitId,
   onSuccess,
 }) => {
   const [allAvailableStudents, setAllAvailableStudents] = useState<StudentResponse[]>([]);
@@ -44,8 +44,8 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
     try {
       setLoadingData(true);
       const [availableResponse, enrolledResponse] = await Promise.all([
-        classApi.getAvailableStudentsForClass(institutionId, courseClass.id),
-        classApi.getStudentsInClass(institutionId, courseClass.id)
+        classApi.getAvailableStudentsForClass(educationalUnitId, courseClass.id),
+        classApi.getStudentsInClass(educationalUnitId, courseClass.id)
       ]);
       
       setAllAvailableStudents(availableResponse || []);
@@ -103,7 +103,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
     
     try {
       setIsLoading(true);
-      await classApi.enrollStudentsToClass(institutionId, courseClass.id, selectedStudents);
+      await classApi.enrollStudentsToClass(educationalUnitId, courseClass.id, selectedStudents);
       toast.success('Đăng ký sinh viên vào lớp thành công!');
       await loadData(); // Reload data
       setSelectedStudents([]);
@@ -122,7 +122,7 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
     if (window.confirm('Bạn có chắc chắn muốn loại bỏ sinh viên này khỏi lớp?')) {
       try {
         setIsLoading(true);
-        await classApi.unenrollStudentFromClass(institutionId, courseClass.id, studentId);
+        await classApi.unenrollStudentFromClass(educationalUnitId, courseClass.id, studentId);
         toast.success('Đã loại bỏ sinh viên khỏi lớp thành công!');
         await loadData(); // Reload data
         onSuccess?.();
