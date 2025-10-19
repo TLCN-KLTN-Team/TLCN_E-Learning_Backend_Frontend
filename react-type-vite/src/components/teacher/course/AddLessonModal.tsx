@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { LessonRequest } from '@/types/course.types';
 import Modal from "@/components/ui/modal";
 import FileUpload from './FileUpload';
+import type { LessonRequest } from '@/services/api/request/lessonRequest';
 
 const AddLessonModal: React.FC<{
   isOpen: boolean;

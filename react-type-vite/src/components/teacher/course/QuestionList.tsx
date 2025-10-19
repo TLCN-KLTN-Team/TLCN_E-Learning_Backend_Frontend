@@ -2,8 +2,9 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader} from '@/components/ui/card';
 import { PlusCircle } from 'lucide-react';
-import type { QuestionRequest, AnswerRequest } from '@/types/course.types';
 import QuestionEditor from './QuestionEditor'; // The new component for a single question
+import type { QuestionRequest } from '@/services/api/request/questionRequest';
+import type { AnswerRequest } from '@/services/api/request/answerRequest';
 
 const QuestionList: React.FC<{
   questions: QuestionRequest[];

@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash, PlusCircle, GripVertical } from 'lucide-react';
-import type { QuestionRequest, AnswerRequest } from '@/types/course.types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import AnswerEditor from './AnswerEditor';
 import FileUpload from './FileUpload';
 import DragDropUtils from "@/utils/DragDropUtils";
+import type { QuestionRequest } from "@/services/api/request/questionRequest";
+import type { AnswerRequest } from "@/services/api/request/answerRequest";
 
 const QuestionEditor: React.FC<{
   question: QuestionRequest;

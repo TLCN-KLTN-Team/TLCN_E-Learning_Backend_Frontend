@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { GripVertical, FileVideo, Star, Edit, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { LessonRequest } from "@/types/course.types";
+import type { LessonRequest } from "@/services/api/request/lessonRequest";
 
 const LessonItem: React.FC<{
   lesson: LessonRequest;

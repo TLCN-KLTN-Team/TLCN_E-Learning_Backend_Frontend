@@ -12,7 +12,7 @@ import type { DepartmentResponse } from "@/services/api/response/departmentRespo
 interface StudentFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  institutionId: string;
+  educationalUnitId: string;
   onSuccess?: () => void;
   editingStudent?: StudentResponse | null;
 }
@@ -20,7 +20,7 @@ interface StudentFormModalProps {
 const StudentFormModal: React.FC<StudentFormModalProps> = ({
   isOpen,
   onClose,
-  institutionId,
+  educationalUnitId,
   onSuccess,
   editingStudent = null,
 }) => {
@@ -92,7 +92,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
   const loadDepartments = async () => {
     try {
       setLoadingDepartments(true);
-      const response = await departmentApi.getDepartmentsByInstitution(institutionId);
+      const response = await departmentApi.getDepartmentsByEducationalUnit(educationalUnitId);
       setDepartments(response.content || []);
     } catch (error) {
       console.error('Error loading departments:', error);
@@ -186,7 +186,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
           departmentId: form.departmentId,
           description: form.description,
           socialUrl: form.socialUrl,
-          educationalUnitId: institutionId,
+          educationalUnitId: educationalUnitId,
         };
         
         // Chỉ gửi password nếu user đã nhập password mới
@@ -194,16 +194,16 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
           updateData.password = form.password;
         }
         
-        await studentApi.updateStudent(institutionId, editingStudent.id, updateData);
+        await studentApi.updateStudent(educationalUnitId, editingStudent.id, updateData);
         toast.success('Cập nhật sinh viên thành công!');
       } else {
         // Create new student
         const studentData: StudentRequest = {
           ...form,
-          educationalUnitId: institutionId,
+          educationalUnitId: educationalUnitId,
         };
         
-        await studentApi.createStudent(institutionId, studentData);
+        await studentApi.createStudent(educationalUnitId, studentData);
         toast.success('Tạo sinh viên thành công!');
       }
       

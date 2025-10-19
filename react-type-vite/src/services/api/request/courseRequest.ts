@@ -1,3 +1,5 @@
+import type { SectionRequest } from "./sectionRequest";
+
 export interface CourseRequest {
   id?: number;
   courseName: string;
@@ -8,5 +10,5 @@ export interface CourseRequest {
   maxStudents?: number;
   createdAt?: Date;
   updateAt?: Date;
-  sections?: any[];
+  sections?: SectionRequest[];
 }
