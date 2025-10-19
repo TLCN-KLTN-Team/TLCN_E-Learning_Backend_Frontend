@@ -30,22 +30,14 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     Page<Student> findByIdEducational(int educationalUnitId, Pageable pageable);
 
-    @Query("SELECT s FROM Student s WHERE s.idEducational = :institutionId AND "
+    @Query("SELECT s FROM Student s WHERE s.idEducational = :educationalUnitId AND "
             + "(:search IS NULL OR :search = '' OR "
             + "LOWER(s.studentId) LIKE LOWER(CONCAT('%', :search, '%')) OR "
             + "LOWER(s.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR "
             + "LOWER(s.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR "
             + "LOWER(s.className) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Student> findByInstitutionWithSearch(
-            @Param("institutionId") int institutionId, @Param("search") String search, Pageable pageable);
-
-    List<Student> findByClassName(String className);
-
-    List<Student> findByIdEducationalAndClassName(int educationalUnitId, String className);
+    Page<Student> findByEducationalUnitWithSearch(
+            @Param("institutionId") int educationalUnitId, @Param("search") String search, Pageable pageable);
 
     List<Student> findByIdEducational(int educationalUnitId);
-
-    // Alternative with sorting - you can choose one based on your needs
-    @Query("SELECT s FROM Student s WHERE s.idEducational = :institutionId ORDER BY s.studentId ASC")
-    List<Student> findAllByInstitutionSorted(@Param("institutionId") int institutionId);
 }

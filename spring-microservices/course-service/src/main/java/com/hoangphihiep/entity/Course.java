@@ -81,8 +81,8 @@ public class Course implements Serializable {
     private String idTeacher;
 
     @ManyToOne
-    @JoinColumn(name = "institution_id")
-    private EducationalUnit institution;
+    @JoinColumn(name = "educationalUnit_id")
+    private EducationalUnit educationalUnit;
 
     public void addSection(Section section) {
         if (section != null && !sections.contains(section)) {

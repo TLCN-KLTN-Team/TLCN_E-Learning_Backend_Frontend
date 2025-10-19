@@ -35,7 +35,5 @@ public class CourseResponse {
 
     private TeacherResponse teacher;
 
-    private EducationalUnitResponse institution;
-
-    private Set<SectionResponse> sections;
+    private Integer idEducationalUnit;
 }

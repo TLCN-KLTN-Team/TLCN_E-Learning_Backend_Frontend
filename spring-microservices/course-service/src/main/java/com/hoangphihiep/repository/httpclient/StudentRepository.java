@@ -24,15 +24,15 @@ public interface StudentRepository {
     @GetMapping("/students/by-student-id/{studentId}")
     ApiResponse<StudentResponse> getStudentByStudentId(@PathVariable String studentId);
 
-    @GetMapping("/students/by-institution/{institutionId}")
-    ApiResponse<Page<StudentResponse>> getStudentsByInstitution(
-            @PathVariable int institutionId,
+    @GetMapping("/students/by-educationalUnit/{educationalUnitId}")
+    ApiResponse<Page<StudentResponse>> getStudentsByEducationalUnit(
+            @PathVariable int educationalUnitId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search);
 
     @GetMapping("/students/all-by-institution/{institutionId}")
-    ApiResponse<List<StudentResponse>> getAllStudentsByInstitution(@PathVariable int institutionId);
+    ApiResponse<List<StudentResponse>> getAllStudentsByEducationalUnit(@PathVariable int institutionId);
 
     @PutMapping("/students/{id}")
     ApiResponse<StudentResponse> updateStudent(@PathVariable String id, @RequestBody StudentRequest request);

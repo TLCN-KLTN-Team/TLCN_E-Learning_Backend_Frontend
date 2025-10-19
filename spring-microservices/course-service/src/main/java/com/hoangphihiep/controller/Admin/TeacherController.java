@@ -11,7 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/admin/institutions/{institutionId}")
+@RequestMapping("/admin/educationalUnit/{educationalUnitId}")
 @RequiredArgsConstructor
 @Slf4j
 public class TeacherController {
@@ -20,15 +20,14 @@ public class TeacherController {
     private final TeacherService teacherService;
 
     @GetMapping("/teachers")
-    public ApiResponse<Page<TeacherResponse>> getTeachersByInstitution(
-            @PathVariable int institutionId,
+    public ApiResponse<Page<TeacherResponse>> getTeachersByEducationalUnit(
+            @PathVariable int educationalUnitId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search) {
 
-        log.info("Admin getting teachers for institution: {}", institutionId);
 
-        Page<TeacherResponse> teachers = adminCourseService.getTeachersByInstitution(institutionId, page, size, search);
+        Page<TeacherResponse> teachers = adminCourseService.getTeachersByEducationalUnit(educationalUnitId, page, size, search);
 
         return ApiResponse.<Page<TeacherResponse>>builder()
                 .result(teachers)
@@ -37,12 +36,10 @@ public class TeacherController {
 
     @PostMapping("/teachers")
     public ApiResponse<TeacherResponse> createTeacher(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @Valid @RequestBody TeacherRequest request) {
 
-        log.info("Admin creating teacher for institution: {}", institutionId);
-
-        request.setEducationalUnitId(String.valueOf(institutionId));
+        request.setEducationalUnitId(String.valueOf(educationalUnitId));
 
         TeacherResponse response = teacherService.createTeacher(request);
 
@@ -53,10 +50,8 @@ public class TeacherController {
 
     @GetMapping("/teachers/{teacherId}")
     public ApiResponse<TeacherResponse> getTeacherById(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable String teacherId) {
-
-        log.info("Admin getting teacher {} for institution: {}", teacherId, institutionId);
 
         TeacherResponse response = teacherService.getTeacherByTeacherId(teacherId);
 
@@ -66,14 +61,11 @@ public class TeacherController {
     }
     @PutMapping("/teachers/{teacherId}")
     public ApiResponse<TeacherResponse> updateTeacher(
-            @PathVariable int institutionId,
+            @PathVariable int educationalUnitId,
             @PathVariable String teacherId,
             @Valid @RequestBody TeacherRequest request) {
 
-        log.info("Admin updating teacher {} for institution: {}", teacherId, institutionId);
-
-        // Đảm bảo educationalUnitId khớp với institutionId
-        request.setEducationalUnitId(String.valueOf(institutionId));
+        request.setEducationalUnitId(String.valueOf(educationalUnitId));
 
         TeacherResponse response = teacherService.updateTeacher(teacherId, request);
 

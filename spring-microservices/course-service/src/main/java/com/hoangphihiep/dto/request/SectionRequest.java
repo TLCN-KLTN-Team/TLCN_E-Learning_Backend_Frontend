@@ -18,9 +18,6 @@ public class SectionRequest {
 
     private Integer id;
 
-    @NotNull(message = "Course ID is required")
-    private Integer courseId;
-
     @NotBlank(message = "Section title is required")
     private String title; // Đổi từ sectionName thành title
 

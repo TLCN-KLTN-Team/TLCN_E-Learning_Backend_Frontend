@@ -54,28 +54,25 @@ public class StudentController {
                 .build();
     }
 
-    @GetMapping("/by-institution/{institutionId}")
-    public ApiResponse<Page<StudentResponse>> getStudentsByInstitution(
-            @PathVariable int institutionId,
+    @GetMapping("/by-educationalUnit/{educationalUnitId}")
+    public ApiResponse<Page<StudentResponse>> getStudentsByEducationalUnit(
+            @PathVariable int educationalUnitId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search) {
 
-        log.info("Getting students for institution: {} with search: {}", institutionId, search);
-
         Pageable pageable = PageRequest.of(page, size, Sort.by("studentId").ascending());
 
         return ApiResponse.<Page<StudentResponse>>builder()
-                .result(studentService.getStudentsByInstitution(institutionId, search, pageable))
+                .result(studentService.getStudentsByEducationalUnit(educationalUnitId, search, pageable))
                 .build();
     }
 
-    @GetMapping("/all-by-institution/{institutionId}")
-    public ApiResponse<List<StudentResponse>> getAllStudentsByInstitution(@PathVariable int institutionId) {
-        log.info("Getting all students for institution: {}", institutionId);
+    @GetMapping("/all-by-educationalUnit/{educationalUnitId}")
+    public ApiResponse<List<StudentResponse>> getAllStudentsByEducationalUnit(@PathVariable int educationalUnitId) {
 
         return ApiResponse.<List<StudentResponse>>builder()
-                .result(studentService.getAllStudentsByInstitution(institutionId))
+                .result(studentService.getAllStudentsByEducationalUnit(educationalUnitId))
                 .build();
     }
 }

@@ -45,15 +45,14 @@ public class CourseService {
     // Constants for validation
     private static final int MIN_COURSE_NAME_LENGTH = 3;
     private static final int MAX_COURSE_NAME_LENGTH = 255;
-    private static final int MAX_DESCRIPTION_LENGTH = 2000;
     private static final BigDecimal MAX_COURSE_PRICE = new BigDecimal("10000000"); // 10 triệu VNĐ
     private static final int MIN_PAGE_SIZE = 1;
     private static final int MAX_PAGE_SIZE = 100;
 
     // Lấy danh sách khóa học của đơn vị đào tạo
-    public Page<CourseResponse> getCoursesByInstitution(int institutionId, int page, int size, String search) {
+    public Page<CourseResponse> getCoursesByEducationalUnit(int educationalUnitId, int page, int size, String search) {
         validatePaginationParameters(page, size);
-        validateInstitutionAccess(institutionId);
+        validateEducationalUnitAccess(educationalUnitId);
 
         if (search != null && search.trim().isEmpty()) {
             search = null;
@@ -61,7 +60,7 @@ public class CourseService {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-            Page<Course> coursePage = courseRepository.findByInstitutionWithSearch(institutionId, search, pageable);
+            Page<Course> coursePage = courseRepository.findByEducationalUnitWithSearch(educationalUnitId, search, pageable);
 
             return coursePage.map(course -> {
                 CourseResponse courseResponse = courseMapper.toCourseResponse(course);
@@ -83,22 +82,21 @@ public class CourseService {
                 return courseResponse;
             });
         } catch (Exception e) {
-            log.error("Error occurred while fetching courses for institution: {}", institutionId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 
     // Tạo khóa học cho đơn vị đào tạo
     @Transactional
-    public CourseResponse createCourseForInstitution(int institutionId, CourseRequest request) {
-        validateInstitutionAccess(institutionId);
+    public CourseResponse createCourseForEducationalUnit(int educationalUnitId, CourseRequest request) {
+        validateEducationalUnitAccess(educationalUnitId);
         validateCourseRequest(request, true);
 
-        EducationalUnit institution = educationalUnitRepository.findById(institutionId)
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
         // Kiểm tra tên khóa học không trùng trong cùng đơn vị
-        if (courseRepository.existsByCourseNameAndInstitution(request.getCourseName(), institutionId)) {
+        if (courseRepository.existsByCourseNameAndEducationalUnit(request.getCourseName(), educationalUnitId)) {
             throw new AppException(ErrorCode.COURSE_DUPLICATE_NAME);
         }
 
@@ -110,7 +108,7 @@ public class CourseService {
             course.setCourseName(request.getCourseName());
             course.setCourseType(courseType);
             course.setIdTeacher(request.getIdTeacher());
-            course.setInstitution(institution);
+            course.setEducationalUnit(educationalUnit);
             course.setCreatedAt(new Date());
             course.setUpdatedAt(new Date());
 
@@ -126,22 +124,20 @@ public class CourseService {
             }
 
             Course savedCourse = courseRepository.save(course);
-            log.info("Admin created new course with ID: {} for institution: {}", savedCourse.getId(), institutionId);
 
             return courseMapper.toCourseResponse(savedCourse);
         } catch (Exception e) {
-            log.error("Unexpected error while creating course for institution: {}", institutionId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 
     // Lấy danh sách giáo viên của đơn vị đào tạo
-    public Page<TeacherResponse> getTeachersByInstitution(int institutionId, int page, int size, String search) {
-        validateInstitutionAccess(institutionId);
+    public Page<TeacherResponse> getTeachersByEducationalUnit(int educationalUnitId, int page, int size, String search) {
+        validateEducationalUnitAccess(educationalUnitId);
 
         try {
-            ApiResponse<Page<TeacherResponse>> response = teacherRepository.getTeachersByInstitution(
-                    institutionId, page, size, search);
+            ApiResponse<Page<TeacherResponse>> response = teacherRepository.getTeachersByEducationalUnit(
+                    educationalUnitId, page, size, search);
 
             if (response.getResult() == null) {
                 throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
@@ -155,7 +151,6 @@ public class CourseService {
             return new PageImpl<>(populatedTeachers, teacherPage.getPageable(), teacherPage.getTotalElements());
 
         } catch (Exception e) {
-            log.error("Error occurred while fetching teachers for institution: {}", institutionId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
@@ -239,12 +234,12 @@ public class CourseService {
     }
 
     // Lấy danh sách sinh viên của đơn vị đào tạo
-    public Page<StudentResponse> getStudentsByInstitution(int institutionId, int page, int size, String search) {
-        validateInstitutionAccess(institutionId);
+    public Page<StudentResponse> getStudentsByEducationalUnit(int educationalUnitId, int page, int size, String search) {
+        validateEducationalUnitAccess(educationalUnitId);
 
         try {
-            ApiResponse<Page<StudentResponse>> response = studentRepository.getStudentsByInstitution(
-                    institutionId, page, size, search);
+            ApiResponse<Page<StudentResponse>> response = studentRepository.getStudentsByEducationalUnit(
+                    educationalUnitId, page, size, search);
 
             if (response.getResult() == null) {
                 throw new AppException(ErrorCode.STUDENT_NOT_FOUND);
@@ -258,7 +253,6 @@ public class CourseService {
             return new PageImpl<>(populatedStudents, studentPage.getPageable(), studentPage.getTotalElements());
 
         } catch (Exception e) {
-            log.error("Error occurred while fetching students for institution: {}", institutionId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
@@ -346,14 +340,13 @@ public class CourseService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        validateInstitutionAccess(course.getInstitution().getId());
-        validateTeacherBelongsToInstitution(teacherId, course.getInstitution().getId());
+        validateEducationalUnitAccess(course.getEducationalUnit().getId());
+        validateTeacherBelongsToEducationalUnit(teacherId, course.getEducationalUnit().getId());
 
         course.setIdTeacher(teacherId);
         course.setUpdatedAt(new Date());
 
         Course updatedCourse = courseRepository.save(course);
-        log.info("Assigned teacher {} to course {}", teacherId, courseId);
 
         return courseMapper.toCourseResponse(updatedCourse);
     }
@@ -364,7 +357,7 @@ public class CourseService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        validateInstitutionAccess(course.getInstitution().getId());
+        validateEducationalUnitAccess(course.getEducationalUnit().getId());
 
         course.setIdTeacher(null);
         course.setUpdatedAt(new Date());
@@ -375,19 +368,19 @@ public class CourseService {
         return courseMapper.toCourseResponse(updatedCourse);
     }
 
-    private void validateInstitutionAccess(int institutionId) {
+    private void validateEducationalUnitAccess(int educationalUnitId) {
         // Get current admin user from security context
         String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        EducationalUnit institution = educationalUnitRepository.findById(institutionId)
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
-        if (!currentAdminId.equals(institution.getIdAdmin())) {
+        if (!currentAdminId.equals(educationalUnit.getIdAdmin())) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
     }
 
-    private void validateTeacherBelongsToInstitution(String teacherId, int institutionId) {
+    private void validateTeacherBelongsToEducationalUnit(String teacherId, int educationalUnitId) {
         try {
             log.info("Calling TeacherRepository.getTeacherByTeacherId with ID: {}", teacherId);
             ApiResponse<TeacherResponse> response = teacherRepository.getTeacherByTeacherId(teacherId);
@@ -399,11 +392,10 @@ public class CourseService {
             }
 
             TeacherResponse teacher = response.getResult();
-            if (!teacher.getEducationalUnitId().equals(String.valueOf(institutionId))) {
+            if (!teacher.getEducationalUnitId().equals(String.valueOf(educationalUnitId))) {
                 throw new AppException(ErrorCode.TEACHER_NOT_BELONGS_TO_INSTITUTION);
             }
         } catch (Exception e) {
-            log.error("Error validating teacher {} for institution {}", teacherId, institutionId, e);
             throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
         }
     }
@@ -655,9 +647,9 @@ public class CourseService {
     private static final int MAX_DEPARTMENT_DESCRIPTION_LENGTH = 1000;
 
     // Lấy danh sách departments của đơn vị đào tạo
-    public Page<DepartmentResponse> getDepartmentsByInstitution(int institutionId, int page, int size, String search) {
+    public Page<DepartmentResponse> getDepartmentsByEducationalUnit(int educationalUnitId, int page, int size, String search) {
         validatePaginationParameters(page, size);
-        validateInstitutionAccess(institutionId);
+        validateEducationalUnitAccess(educationalUnitId);
 
         if (search != null && search.trim().isEmpty()) {
             search = null;
@@ -665,26 +657,25 @@ public class CourseService {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
-            Page<Department> departmentPage = departmentRepository.findByInstitutionWithSearch(institutionId, search, pageable);
+            Page<Department> departmentPage = departmentRepository.findByEducationalUnitWithSearch(educationalUnitId, search, pageable);
 
             return departmentPage.map(this::toDepartmentResponse);
         } catch (Exception e) {
-            log.error("Error occurred while fetching departments for institution: {}", institutionId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 
     // Tạo department cho đơn vị đào tạo
     @Transactional
-    public DepartmentResponse createDepartmentForInstitution(int institutionId, DepartmentRequest request) {
-        validateInstitutionAccess(institutionId);
+    public DepartmentResponse createDepartmentForEducationalUnit(int educationalUnitId, DepartmentRequest request) {
+        validateEducationalUnitAccess(educationalUnitId);
         validateDepartmentRequest(request, true);
 
-        EducationalUnit institution = educationalUnitRepository.findById(institutionId)
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
         // Kiểm tra tên department không trùng trong cùng đơn vị
-        if (departmentRepository.existsByNameAndInstitution(request.getName(), institutionId)) {
+        if (departmentRepository.existsByNameAndEducationalUnit(request.getName(), educationalUnitId)) {
             throw new AppException(ErrorCode.DEPARTMENT_DUPLICATE_NAME);
         }
 
@@ -692,31 +683,29 @@ public class CourseService {
             Department department = new Department();
             department.setName(request.getName());
             department.setDescription(request.getDescription());
-            department.setInstitution(institution);
+            department.setEducationalUnit(educationalUnit);
 
             Department savedDepartment = departmentRepository.save(department);
-            log.info("Admin created new department with ID: {} for institution: {}", savedDepartment.getId(), institutionId);
 
             return toDepartmentResponse(savedDepartment);
         } catch (Exception e) {
-            log.error("Unexpected error while creating department for institution: {}", institutionId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 
     // Cập nhật department
     @Transactional
-    public DepartmentResponse updateDepartmentForInstitution(int institutionId, int departmentId, DepartmentRequest request) {
-        validateInstitutionAccess(institutionId);
+    public DepartmentResponse updateDepartmentForEducationalUnit(int educationalUnitId, int departmentId, DepartmentRequest request) {
+        validateEducationalUnitAccess(educationalUnitId);
         validateDepartmentRequest(request, false);
 
-        Department department = departmentRepository.findByIdAndInstitutionId(departmentId, institutionId)
+        Department department = departmentRepository.findByIdAndEducationalUnitId(departmentId, educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
         // Kiểm tra tên department không trùng (nếu có thay đổi tên)
         if (request.getName() != null &&
                 !request.getName().equals(department.getName()) &&
-                departmentRepository.existsByNameAndInstitution(request.getName(), institutionId)) {
+                departmentRepository.existsByNameAndEducationalUnit(request.getName(), educationalUnitId)) {
             throw new AppException(ErrorCode.DEPARTMENT_DUPLICATE_NAME);
         }
 
@@ -729,22 +718,90 @@ public class CourseService {
             }
 
             Department updatedDepartment = departmentRepository.save(department);
-            log.info("Admin updated department with ID: {} for institution: {}", departmentId, institutionId);
 
             return toDepartmentResponse(updatedDepartment);
         } catch (Exception e) {
-            log.error("Unexpected error while updating department {} for institution: {}", departmentId, institutionId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
     // Lấy department theo ID
-    public DepartmentResponse getDepartmentByIdForInstitution(int institutionId, int departmentId) {
-        validateInstitutionAccess(institutionId);
+    public DepartmentResponse getDepartmentByIdForEducationalUnit(int educationalUnitId, int departmentId) {
+        validateEducationalUnitAccess(educationalUnitId);
 
-        Department department = departmentRepository.findByIdAndInstitutionId(departmentId, institutionId)
+        Department department = departmentRepository.findByIdAndEducationalUnitId(departmentId, educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
         return toDepartmentResponse(department);
+    }
+
+    public List<CourseResponse> getCoursesByTeacherWithDetails(String teacherId) {
+        if (teacherId == null || teacherId.trim().isEmpty()) {
+            throw new AppException(ErrorCode.COURSE_TEACHER_REQUIRED);
+        }
+
+        try {
+            // Validate teacher exists
+            ApiResponse<TeacherResponse> teacherResponse = teacherRepository.getTeacherByTeacherId(teacherId);
+            if (teacherResponse.getResult() == null) {
+                throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
+            }
+
+            TeacherResponse teacher = teacherResponse.getResult();
+            List<Course> courses = courseRepository.findByIdTeacher(teacherId);
+
+            return courses.stream()
+                    .map(course -> {
+                        CourseResponse courseResponse = courseMapper.toCourseResponse(course);
+                        return courseResponse;
+                    })
+                    .toList();
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error occurred while fetching courses with details for teacher: {}", teacherId, e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    public Page<CourseResponse> getCoursesByTeacherPaginated(String teacherId, int page, int size) {
+        if (teacherId == null || teacherId.trim().isEmpty()) {
+            throw new AppException(ErrorCode.COURSE_TEACHER_REQUIRED);
+        }
+
+        validatePaginationParameters(page, size);
+
+        try {
+            // Validate teacher exists
+            ApiResponse<TeacherResponse> teacherResponse = teacherRepository.getTeacherByTeacherId(teacherId);
+            if (teacherResponse.getResult() == null) {
+                throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
+            }
+
+            TeacherResponse teacher = teacherResponse.getResult();
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+            // Get all courses for teacher and convert to Page
+            List<Course> allCourses = courseRepository.findByIdTeacher(teacherId);
+
+            // Manual pagination
+            int start = page * size;
+            int end = Math.min(start + size, allCourses.size());
+            List<Course> paginatedCourses = allCourses.subList(start, end);
+
+            List<CourseResponse> courseResponses = paginatedCourses.stream()
+                    .map(course -> {
+                        CourseResponse courseResponse = courseMapper.toCourseResponse(course);
+                        return courseResponse;
+                    })
+                    .toList();
+
+            return new PageImpl<>(courseResponses, pageable, allCourses.size());
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error occurred while fetching paginated courses for teacher: {}", teacherId, e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
     // Helper methods cho Department
