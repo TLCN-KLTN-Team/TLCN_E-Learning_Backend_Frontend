@@ -1,12 +1,11 @@
 package com.hoangphihiep.controller.Admin;
 
-import com.hoangphihiep.dto.request.TrainingUnitRegistrationRequest;
+import com.hoangphihiep.dto.request.EducationalUnitRegistrationRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.EducationalUnitResponse;
 import com.hoangphihiep.dto.response.TrainingUnitRegistrationResponse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.service.EducationalUnitService;
-import com.hoangphihiep.service.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class EducationalUnitController {
     private final EducationalUnitService educationalUnitService;
-    private final EmailService emailService;
 
     @GetMapping("/get-all")
     public ApiResponse<?> getAllEducationalUnits(
@@ -37,13 +35,11 @@ public class EducationalUnitController {
         );
     }
 
-    @GetMapping("/my-institution")
-    public ApiResponse<EducationalUnitResponse> getMyInstitution() {
+    @GetMapping("/my-educationalUnit")
+    public ApiResponse<EducationalUnitResponse> getMyEducationalUnit() {
         String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        log.info("Admin {} checking their institution", currentAdminId);
-
-        EducationalUnitResponse institution = educationalUnitService.getInstitutionByAdminId(currentAdminId);
+        EducationalUnitResponse institution = educationalUnitService.getEducationalUnitByAdminId(currentAdminId);
 
         if (institution == null) {
             return ApiResponse.<EducationalUnitResponse>builder()
@@ -58,17 +54,15 @@ public class EducationalUnitController {
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<TrainingUnitRegistrationResponse>> registerEducationUnit(
-            @RequestPart("data") @Valid TrainingUnitRegistrationRequest request,
+            @RequestPart("data") @Valid EducationalUnitRegistrationRequest request,
             @RequestPart(value = "logo", required = false) MultipartFile logo,
             @RequestPart(value = "businessLicense", required = false) MultipartFile businessLicense) {
-
-        log.info("Registering new educational unit: {}", request.getName());
 
         try {
             request.setLogo(logo);
             request.setBusinessLicense(businessLicense);
 
-            TrainingUnitRegistrationResponse response = educationalUnitService.registerTrainingUnit(request);
+            TrainingUnitRegistrationResponse response = educationalUnitService.registerEducationalUnit(request);
 
             return ResponseEntity.ok(ApiResponse.<TrainingUnitRegistrationResponse>builder()
                     .result(response)
@@ -76,12 +70,10 @@ public class EducationalUnitController {
                     .build());
 
         } catch (AppException e) {
-            log.error("Failed to register educational unit: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(ApiResponse.<TrainingUnitRegistrationResponse>builder()
                     .message(e.getMessage())
                     .build());
         } catch (Exception e) {
-            log.error("Failed to register educational unit: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(ApiResponse.<TrainingUnitRegistrationResponse>builder()
                     .message("Đăng ký đơn vị đào tạo thất bại: " + e.getMessage())
                     .build());

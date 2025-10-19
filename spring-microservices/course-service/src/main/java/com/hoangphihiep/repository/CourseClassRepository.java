@@ -19,9 +19,9 @@ public interface CourseClassRepository extends JpaRepository<CourseClass, Long> 
 
     boolean existsByClassCode(String classCode);
 
-    @Query("SELECT cc FROM CourseClass cc WHERE cc.course.institution.id = :institutionId " +
+    @Query("SELECT cc FROM CourseClass cc WHERE cc.course.educationalUnit.id = :educationalUnitId " +
             "AND (:search IS NULL OR cc.className LIKE %:search% OR cc.classCode LIKE %:search%)")
-    Page<CourseClass> findByInstitutionIdWithSearch(@Param("institutionId") Integer institutionId,
+    Page<CourseClass> findByEducationalUnitIdWithSearch(@Param("educationalUnitId") Integer educationalUnitId,
                                                     @Param("search") String search,
                                                     Pageable pageable);
 }

@@ -57,8 +57,8 @@ public class CourseClassService {
         return courseClassMapper.toCourseClassResponse(savedClass);
     }
 
-    public Page<CourseClassResponse> getClassesByInstitution(Integer institutionId, Pageable pageable, String search) {
-        Page<CourseClass> classPage = classRepository.findByInstitutionIdWithSearch(institutionId, search, pageable);
+    public Page<CourseClassResponse> getClassesByEducationalUnit(Integer educationalUnitId, Pageable pageable, String search) {
+        Page<CourseClass> classPage = classRepository.findByEducationalUnitIdWithSearch(educationalUnitId, search, pageable);
 
         return classPage.map(courseClassMapper::toCourseClassResponse);
     }

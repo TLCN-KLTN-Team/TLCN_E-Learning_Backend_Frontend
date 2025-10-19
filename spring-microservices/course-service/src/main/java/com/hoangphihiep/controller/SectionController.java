@@ -21,14 +21,6 @@ public class SectionController {
 
     private final SectionService sectionService;
 
-    @PostMapping
-    public ApiResponse<List<SectionResponse>> createSections(@Valid @RequestBody CourseRequest request) {
-        List<SectionResponse> responses = sectionService.createSections(request);
-
-        return ApiResponse.<List<SectionResponse>>builder()
-                .result(responses)
-                .build();
-    }
     @GetMapping
     public ApiResponse<List<SectionResponse>> getAllSections() {
         return ApiResponse.<List<SectionResponse>>builder()

@@ -17,16 +17,16 @@ public interface DepartmentRepository extends JpaRepository<Department, Integer>
     @Query("SELECT d FROM Department d WHERE LOWER(d.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Department> findByDepartmentNameContaining(@Param("name") String name);
 
-    @Query("SELECT d FROM Department d WHERE d.institution.id = :institutionId " +
+    @Query("SELECT d FROM Department d WHERE d.educationalUnit.id = :institutionId " +
             "AND (:search IS NULL OR LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Department> findByInstitutionWithSearch(@Param("institutionId") int institutionId,
+    Page<Department> findByEducationalUnitWithSearch(@Param("institutionId") int institutionId,
                                                  @Param("search") String search,
                                                  Pageable pageable);
 
-    @Query("SELECT d FROM Department d WHERE d.id = :departmentId AND d.institution.id = :institutionId")
-    Optional<Department> findByIdAndInstitutionId(@Param("departmentId") int departmentId,
+    @Query("SELECT d FROM Department d WHERE d.id = :departmentId AND d.educationalUnit.id = :institutionId")
+    Optional<Department> findByIdAndEducationalUnitId(@Param("departmentId") int departmentId,
                                                   @Param("institutionId") int institutionId);
 
-    @Query("SELECT COUNT(d) > 0 FROM Department d WHERE LOWER(d.name) = LOWER(:name) AND d.institution.id = :institutionId")
-    boolean existsByNameAndInstitution(@Param("name") String name, @Param("institutionId") int institutionId);
+    @Query("SELECT COUNT(d) > 0 FROM Department d WHERE LOWER(d.name) = LOWER(:name) AND d.educationalUnit.id = :institutionId")
+    boolean existsByNameAndEducationalUnit(@Param("name") String name, @Param("institutionId") int institutionId);
 }

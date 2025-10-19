@@ -84,22 +84,32 @@ public class SectionService {
     }
 
     @Transactional
-    public List<SectionResponse> createSections(CourseRequest request) {
-        validateCourseRequest(request);
+    public List<SectionResponse> createSections(BulkSectionRequest request) {
+        if (request == null) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+        if (request.getCourseId() == null || request.getCourseId() <= 0) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+        if (request.getSections() == null || request.getSections().isEmpty()) {
+            throw new AppException(ErrorCode.REQUIRED_FIELD_MISSING);
+        }
 
-        Course course = courseRepository.findById(request.getId())
+        Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
         List<SectionResponse> responses = new ArrayList<>();
 
         try {
             for (SectionRequest sectionRequest : request.getSections()) {
+
                 SectionResponse sectionResponse = upsertSection(sectionRequest, course);
                 responses.add(sectionResponse);
             }
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {
+            log.error("Lỗi khi tạo sections cho course id: {}", request.getCourseId(), e);
             throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION);
         }
 

@@ -19,8 +19,8 @@ public class Department {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "institution_id")
-    private EducationalUnit institution;
+    @JoinColumn(name = "educational_unit_id")
+    private EducationalUnit educationalUnit;
 
     private String name;
     private String code;

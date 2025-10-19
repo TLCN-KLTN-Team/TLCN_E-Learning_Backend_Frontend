@@ -48,9 +48,9 @@ public class EducationalUnit {
     @Temporal(TemporalType.DATE)
     private Date createdAt;
 
-    @OneToMany(mappedBy = "institution", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "educationalUnit", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Department> departments = new HashSet<>();
 
-    @OneToMany(mappedBy = "institution", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "educationalUnit", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Course> courses = new HashSet<>();
 }

@@ -39,8 +39,7 @@ public class CourseEnrollmentService {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
-        // Validate students exist and belong to the same institution
-        List<StudentResponse> validStudents = validateStudentsForEnrollment(studentIds, courseClass.getCourse().getInstitution().getId());
+        List<StudentResponse> validStudents = validateStudentsForEnrollment(studentIds, courseClass.getCourse().getEducationalUnit().getId());
 
         // Check current enrollment count
         int currentEnrollmentCount = courseClass.getCurrentStudents();
@@ -125,13 +124,12 @@ public class CourseEnrollmentService {
     /**
      * Get available students for a class (not yet enrolled)
      */
-    public List<StudentResponse> getAvailableStudentsForClass(Long classId, Integer institutionId) {
+    public List<StudentResponse> getAvailableStudentsForClass(Long classId, Integer educationalUnitId) {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
         try {
-            // Get all students from the institution
-            ApiResponse<List<StudentResponse>> allStudentsResponse = studentRepository.getAllStudentsByInstitution(institutionId);
+            ApiResponse<List<StudentResponse>> allStudentsResponse = studentRepository.getAllStudentsByEducationalUnit(educationalUnitId);
 
             if (allStudentsResponse.getResult() == null) {
                 return new ArrayList<>();
@@ -255,7 +253,7 @@ public class CourseEnrollmentService {
         }
     }
 
-    private List<StudentResponse> validateStudentsForEnrollment(List<String> studentIds, int institutionId) {
+    private List<StudentResponse> validateStudentsForEnrollment(List<String> studentIds, int educationalUnitId) {
         List<StudentResponse> validStudents = new ArrayList<>();
 
         for (String studentId : studentIds) {
@@ -268,8 +266,7 @@ public class CourseEnrollmentService {
 
                 StudentResponse student = response.getResult();
 
-                // Verify student belongs to the same institution
-                if (!String.valueOf(institutionId).equals(student.getEducationalUnitId())) {
+                if (!String.valueOf(educationalUnitId).equals(student.getEducationalUnitId())) {
                     throw new AppException(ErrorCode.STUDENT_NOT_BELONGS_TO_INSTITUTION);
                 }
 

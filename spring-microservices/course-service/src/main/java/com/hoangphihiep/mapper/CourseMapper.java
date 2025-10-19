@@ -13,31 +13,7 @@ import org.mapstruct.Named;
 @Mapper(componentModel = "spring", uses = { SectionMapper.class })
 public interface CourseMapper {
 
-    // Mapping chính - bỏ qua institution để tránh circular reference
     @Mapping(source = "courseType", target = "courseType")
-    @Mapping(source = "sections", target = "sections")
-    @Mapping(target = "institution", ignore = true) // QUAN TRỌNG: Bỏ qua institution
+    @Mapping(source = "educationalUnit.id", target = "idEducationalUnit")
     CourseResponse toCourseResponse(Course course);
-
-    // Mapping riêng cho trường hợp cần institution info (không bao gồm courses)
-    @Named("courseWithBasicInstitution")
-    @Mapping(source = "courseType", target = "courseType")
-    @Mapping(source = "sections", target = "sections")
-    @Mapping(source = "institution", target = "institution", qualifiedByName = "toBasicEducationalUnit")
-    CourseResponse toCourseResponseWithInstitution(Course course);
-
-    // Mapping CourseType
-    default CourseTypeResponse mapCourseType(CourseType courseType) {
-        if (courseType == null) return null;
-        return CourseTypeResponse.builder()
-                .id(courseType.getId())
-                .courseTypeName(courseType.getCourseTypeName())
-                .build();
-    }
-
-    // Mapping EducationalUnit cơ bản (không có courses)
-    @Named("toBasicEducationalUnit")
-    @Mapping(target = "departments", ignore = true)
-    @Mapping(target = "totalDepartments", ignore = true)
-    EducationalUnitResponse toBasicEducationalUnitResponse(EducationalUnit educationalUnit);
 }
