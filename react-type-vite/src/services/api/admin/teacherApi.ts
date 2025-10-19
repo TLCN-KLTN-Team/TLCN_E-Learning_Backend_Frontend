@@ -4,12 +4,12 @@ import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import type { TeacherResponse } from "../response/teacherResponse";
 
 export const createTeacher = async (
-  institutionId: string,
+  educationalUnitId: string,
   teacherData: TeacherRequest
 ): Promise<TeacherResponse> => {
   try {
     const response = await axiosInstance.post<ApiResponse<TeacherResponse>>(
-      `/course-management/admin/institutions/${institutionId}/teachers`,
+      `/course-management/admin/educationalUnit/${educationalUnitId}/teachers`,
       teacherData
     );
     return response.data.result;
@@ -24,12 +24,12 @@ export const createTeacher = async (
 };
 
 export const getTeachers = async (
-  institutionId: string,
+  educationalUnitId: string,
   page: number = 0,
   size: number = 20
 ): Promise<PaginatedResponse<TeacherResponse>> => {
   const response = await axiosInstance.get<ApiResponse<PaginatedResponse<TeacherResponse>>>(
-    `/course-management/admin/institutions/${institutionId}/teachers?page=${page}&size=${size}`
+    `/course-management/admin/educationalUnit/${educationalUnitId}/teachers?page=${page}&size=${size}`
   );
   console.log("📌 Backend trả về:", response.data);
   console.log("📌 result:", response.data.result);
@@ -37,22 +37,22 @@ export const getTeachers = async (
 };
 
 export const updateTeacher = async (
-  institutionId: string,
+  educationalUnitId: string,
   teacherId: string,
   teacherData: Partial<TeacherRequest>
 ): Promise<TeacherResponse> => {
   const response = await axiosInstance.put<ApiResponse<TeacherResponse>>(
-    `/course-management/admin/institutions/${institutionId}/teachers/${teacherId}`,
+    `/course-management/admin/educationalUnit/${educationalUnitId}/teachers/${teacherId}`,
     teacherData
   );
   return response.data.result;
 };
 
 export const deleteTeacher = async (
-  institutionId: string,
+  educationalUnitId: string,
   teacherId: string
 ): Promise<void> => {
   await axiosInstance.delete(
-    `/course-management/admin/institutions/${institutionId}/teachers/${teacherId}`
+    `/course-management/admin/educationalUnit/${educationalUnitId}/teachers/${teacherId}`
   );
 };

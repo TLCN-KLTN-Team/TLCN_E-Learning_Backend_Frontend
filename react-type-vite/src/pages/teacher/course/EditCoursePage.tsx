@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Save, BookOpen, Settings, FileText } from "lucide-react"
 import CourseBuilder from "@/components/teacher/course/CourseBuilder"
-import type { SectionRequest } from "@/types/course.types"
+import type { SectionRequest } from "@/services/api/request/sectionRequest"
 
 interface CourseData {
   id: number

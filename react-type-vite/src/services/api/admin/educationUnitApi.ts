@@ -4,10 +4,10 @@ import type { EducationalUnitResponse } from "../response/educationalUnitRespons
 
 const PREFIX = "/course-management/educational-unit";
 
-export const getMyInstitution = async (): Promise<EducationalUnitResponse> => {
+export const getMyEducationalUnit = async (): Promise<EducationalUnitResponse> => {
   const response = await axiosInstance.get<
     ApiResponse<EducationalUnitResponse>
-  >(`/course-management/educational-unit/my-institution`);
+  >(`/course-management/educational-unit/my-educationalUnit`);
   return response.data.result;
 };
 

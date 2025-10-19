@@ -11,14 +11,14 @@ import type { CourseCategoryResponse } from "@/services/api/response/courseTypeR
 interface CourseFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  institutionId: string;
+  educationalUnitId: string;
   onSuccess?: () => void;
 }
 
 const CourseFormModal: React.FC<CourseFormModalProps> = ({
   isOpen,
   onClose,
-  institutionId,
+  educationalUnitId,
   onSuccess,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +94,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
 
     try {
       setIsLoading(true);
-      await courseApi.createCourse(institutionId, form);
+      await courseApi.createCourse(educationalUnitId, form);
       toast.success('Tạo khóa học thành công!');
       onSuccess?.();
       onClose();

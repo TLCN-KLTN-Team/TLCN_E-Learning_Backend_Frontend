@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { GripVertical, HelpCircle, Edit, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { QuizRequest } from "@/types/course.types";
+import type { QuizRequest } from "@/services/api/request/quizRequest";
 
 const QuizItem: React.FC<{
   quiz: QuizRequest;

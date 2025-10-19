@@ -6,78 +6,65 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, Search, Edit, Users, Clock, Calendar, Grid3X3, List, Filter } from "lucide-react"
-
-// Mock data - trong thực tế sẽ fetch từ API
-interface AssignedCourse {
-  id: number
-  courseName: string
-  courseType: string
-  currentStudents: number
-  maxStudents: number
-  credits: number
-  description?: string
-  createdAt: string
-  updatedAt: string
-}
-
-const mockAssignedCourses: AssignedCourse[] = [
-  {
-    id: 1,
-    courseName: "Introduction to Computer Science",
-    courseType: "Programming",
-    currentStudents: 25,
-    maxStudents: 30,
-    credits: 3,
-    description: "Basic concepts of computer science and programming fundamentals",
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-20",
-  },
-  {
-    id: 2,
-    courseName: "Web Development Fundamentals",
-    courseType: "Programming",
-    currentStudents: 18,
-    maxStudents: 25,
-    credits: 4,
-    description: "Learn HTML, CSS, JavaScript and modern web development",
-    createdAt: "2024-02-01",
-    updatedAt: "2024-02-05",
-  },
-]
+import { getTeacherCourses } from "@/services/api/teacher/teacherCourseApi"
+import { useAuth } from "@/context/auth-context/useAuth"
+import type { CourseResponse } from "@/services/api/response/courseResponse"
+import { getTeacherByUserId } from "@/services/api/teacher/teacherApi"
 
 const AssignedCoursesPage: React.FC = () => {
-  const [courses, setCourses] = useState<AssignedCourse[]>([])
-  const [filteredCourses, setFilteredCourses] = useState<AssignedCourse[]>([])
+  const { user } = useAuth()
+  const [courses, setCourses] = useState<CourseResponse[]>([])
+  const [filteredCourses, setFilteredCourses] = useState<CourseResponse[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [teacherId, setTeacherId] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate API call to fetch assigned courses
-    const fetchAssignedCourses = async () => {
+    const fetchTeacherIdAndCourses = async () => {
       try {
         setLoading(true)
-        // TODO: Replace with actual API call
-        // const response = await teacherApi.getAssignedCourses();
-        setTimeout(() => {
-          setCourses(mockAssignedCourses)
-          setFilteredCourses(mockAssignedCourses)
-          setLoading(false)
-        }, 1000)
-      } catch (error) {
-        console.error("Error fetching assigned courses:", error)
+        setError(null)
+        
+        if (!user?.id) {
+          setError("User not authenticated")
+          return
+        }
+
+        // Bước 1: Lấy teacherId từ userId
+        const teacherResponse = await getTeacherByUserId(user.id)
+        const fetchedTeacherId = teacherResponse.teacherId
+        
+        if (!fetchedTeacherId) {
+          setError("Teacher ID not found")
+          return
+        }
+
+        setTeacherId(fetchedTeacherId)
+
+        // Bước 2: Lấy danh sách khóa học bằng teacherId
+        const response = await getTeacherCourses(fetchedTeacherId, 0, 20)
+        setCourses(response.content)
+        setFilteredCourses(response.content)
+      } catch (err) {
+        console.error("Error fetching data:", err)
+        setError("Failed to load courses. Please try again later.")
+        setCourses([])
+        setFilteredCourses([])
+      } finally {
         setLoading(false)
       }
     }
 
-    fetchAssignedCourses()
-  }, [])
+    fetchTeacherIdAndCourses()
+  }, [user?.id])
 
   useEffect(() => {
     const filtered = courses.filter(
       (course) =>
         course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.courseType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.courseType?.courseTypeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     )
     setFilteredCourses(filtered)
@@ -112,6 +99,13 @@ const AssignedCoursesPage: React.FC = () => {
             </h1>
             <p className="text-muted-foreground text-lg">Quản lý và chỉnh sửa các khóa học mà admin đã gán cho bạn</p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-destructive/10 border border-destructive rounded-lg">
+              <p className="text-destructive">{error}</p>
+            </div>
+          )}
 
           {/* Search */}
           <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -185,7 +179,7 @@ const AssignedCoursesPage: React.FC = () => {
                             {course.courseName}
                           </h3>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                            {course.courseType}
+                            {course.courseType?.courseTypeName || "N/A"}
                           </span>
                         </div>
                       </div>
@@ -198,16 +192,19 @@ const AssignedCoursesPage: React.FC = () => {
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Users className="w-4 h-4 mr-2" />
                           <span>
-                            {course.currentStudents}/{course.maxStudents} học sinh
+                            {course.currentStudents || 0}/{course.maxStudents || 0} học sinh
                           </span>
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Clock className="w-4 h-4 mr-2" />
-                          <span>{course.credits} tín chỉ</span>
+                          <span>{course.credits || 0} tín chỉ</span>
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Calendar className="w-4 h-4 mr-2" />
-                          <span>Cập nhật: {new Date(course.updatedAt).toLocaleDateString("vi-VN")}</span>
+                          <span>
+                            Cập nhật:{" "}
+                            {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString("vi-VN") : "N/A"}
+                          </span>
                         </div>
                       </div>
 
@@ -230,12 +227,12 @@ const AssignedCoursesPage: React.FC = () => {
                         <p className="text-sm text-muted-foreground mb-2">{course.description}</p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-secondary text-secondary-foreground">
-                            {course.courseType}
+                            {course.courseType?.courseTypeName || "N/A"}
                           </span>
                           <span>
-                            {course.currentStudents}/{course.maxStudents} học sinh
+                            {course.currentStudents || 0}/{course.maxStudents || 0} học sinh
                           </span>
-                          <span>{course.credits} tín chỉ</span>
+                          <span>{course.credits || 0} tín chỉ</span>
                         </div>
                       </div>
                       <div className="flex space-x-2 ml-4">

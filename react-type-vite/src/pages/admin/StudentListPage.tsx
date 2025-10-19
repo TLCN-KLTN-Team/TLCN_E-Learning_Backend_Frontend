@@ -16,38 +16,38 @@ const StudentListPage: React.FC = () => {
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [institutionLoading, setInstitutionLoading] = useState(true);
-  const [currentInstitution, setCurrentInstitution] = useState<EducationalUnitResponse | null>(null);
-  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
+  const [currentEducationalUnit, setCurrentEducationalUnit] = useState<EducationalUnitResponse | null>(null);
+  const [educationalUnitId, setEducationalUnitId] = useState<string | null>(null);
   
   // State cho chức năng chỉnh sửa
   const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
 
-  // Initialize institution
+  // Initialize educationalUnit
   useEffect(() => {
-    const initializeInstitution = async () => {
+    const initializeEducationalUnit = async () => {
       try {
-        setInstitutionLoading(true);
-        const institution = await educationUnitApi.getMyInstitution();
-        setCurrentInstitution(institution);
-        setInstitutionId(institution.id);
+        setEducationalUnitLoading(true);
+        const educationalUnit = await educationUnitApi.getMyEducationalUnit();
+        setCurrentEducationalUnit(educationalUnit);
+        setEducationalUnitId(educationalUnit.id);
       } catch (error: any) {
-        console.error('Failed to load institution:', error);
+        console.error('Failed to load educationalUnit:', error);
         toast.error('Không thể tải dữ liệu cơ sở giáo dục');
       } finally {
-        setInstitutionLoading(false);
+        setEducationalUnitLoading(false);
       }
     };
 
-    initializeInstitution();
+    initializeEducationalUnit();
   }, []);
 
   const loadStudents = async () => {
-    if (!institutionId) return;
+    if (!educationalUnitId) return;
     
     try {
       setLoading(true);
-      const response: PaginatedResponse<StudentResponse> = await studentApi.getStudents(institutionId);
+      const response: PaginatedResponse<StudentResponse> = await studentApi.getStudents(educationalUnitId);
       setStudents(response.content || []);
       setFilteredStudents(response.content || []);
     } catch (error: any) {
@@ -59,10 +59,10 @@ const StudentListPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (institutionId) {
+    if (educationalUnitId) {
       loadStudents();
     }
-  }, [institutionId]);
+  }, [educationalUnitId]);
 
   useEffect(() => {
     const filtered = students.filter(student =>
@@ -83,7 +83,7 @@ const StudentListPage: React.FC = () => {
   const handleDeleteStudent = async (studentId: string, studentName: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa học sinh "${studentName}"? Hành động này không thể hoàn tác.`)) {
       try {
-        await studentApi.deleteStudent(institutionId!, studentId);
+        await studentApi.deleteStudent(educationalUnitId!, studentId);
         toast.success('Xóa học sinh thành công!');
         handleSuccess();
       } catch (error: any) {
@@ -105,8 +105,8 @@ const StudentListPage: React.FC = () => {
     setEditingStudent(null);
   };
 
-  // Show loading state while institution is loading
-  if (institutionLoading) {
+  // Show loading state while educationalUnit is loading
+  if (educationalUnitLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse">
@@ -121,8 +121,8 @@ const StudentListPage: React.FC = () => {
     );
   }
 
-  // Show error if no institution ID
-  if (!institutionId) {
+  // Show error if no educationalUnit ID
+  if (!educationalUnitId) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -158,7 +158,7 @@ const StudentListPage: React.FC = () => {
             Quản lý Học sinh
           </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý tài khoản học sinh cho {currentInstitution?.name || 'cơ sở giáo dục của bạn'}
+            Quản lý tài khoản học sinh cho {currentEducationalUnit?.name || 'cơ sở giáo dục của bạn'}
           </p>
         </div>
         <Button 
@@ -320,7 +320,7 @@ const StudentListPage: React.FC = () => {
       <StudentFormModal
         isOpen={showStudentModal}
         onClose={handleCloseModal}
-        institutionId={institutionId}
+        educationalUnitId={educationalUnitId}
         onSuccess={handleSuccess}
         editingStudent={editingStudent}
       />
