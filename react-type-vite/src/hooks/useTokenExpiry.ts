@@ -1,76 +1,76 @@
-import { useEffect, useCallback } from "react";
-import { TokenUtils } from "../utils/tokenUtils";
-import { useAuth } from "@/context/auth-context/useAuth";
+// import { useEffect, useCallback } from "react";
+// import { TokenUtils } from "../utils/tokenUtils";
+// import { useAuth } from "@/context/auth-context/useAuth";
 
-export const useTokenExpiry = () => {
-  const { logout, isAuthenticated } = useAuth();
+// export const useTokenExpiry = () => {
+//   const { logout, isAuthenticated } = useAuth();
 
-  const checkTokenExpiry = useCallback(() => {
-    if (!isAuthenticated) return;
+//   const checkTokenExpiry = useCallback(() => {
+//     if (!isAuthenticated) return;
 
-    const authorizationDataJson = localStorage.getItem("authorizationData");
-    const authorizationData = authorizationDataJson
-      ? JSON.parse(authorizationDataJson)
-      : null;
+//     const authorizationDataJson = localStorage.getItem("authorizationData");
+//     const authorizationData = authorizationDataJson
+//       ? JSON.parse(authorizationDataJson)
+//       : null;
 
-    if (!authorizationData) {
-      return;
-    }
+//     if (!authorizationData) {
+//       return;
+//     }
 
-    const tokenExpiry = authorizationData.expiryTime;
-    const refreshTokenExpiry = authorizationData.refreshExpiryTime;
+//     const tokenExpiry = authorizationData.expiryTime;
+//     const refreshTokenExpiry = authorizationData.refreshExpiryTime;
 
-    // Kiểm tra refresh token có hết hạn không
-    if (TokenUtils.isTokenExpired(refreshTokenExpiry)) {
-      console.log("Refresh token expired, logging out");
-      logout();
-      return;
-    }
+//     // Kiểm tra refresh token có hết hạn không
+//     if (TokenUtils.isTokenExpired(refreshTokenExpiry)) {
+//       console.log("Refresh token expired, logging out");
+//       logout();
+//       return;
+//     }
 
-    // Kiểm tra access token có hết hạn không
-    if (TokenUtils.isTokenExpired(tokenExpiry)) {
-      console.log(
-        "Access token expired, will be refreshed automatically by axios interceptor"
-      );
-      // Axios interceptor sẽ tự động refresh token
-    }
-  }, [isAuthenticated, logout]);
+//     // Kiểm tra access token có hết hạn không
+//     if (TokenUtils.isTokenExpired(tokenExpiry)) {
+//       console.log(
+//         "Access token expired, will be refreshed automatically by axios interceptor"
+//       );
+//       // Axios interceptor sẽ tự động refresh token
+//     }
+//   }, [isAuthenticated, logout]);
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
+//   useEffect(() => {
+//     if (!isAuthenticated) return;
 
-    // Kiểm tra ngay khi component mount
-    checkTokenExpiry();
+//     // Kiểm tra ngay khi component mount
+//     checkTokenExpiry();
 
-    // Thiết lập interval để kiểm tra định kỳ (mỗi phút)
-    const interval = setInterval(checkTokenExpiry, 60000);
+//     // Thiết lập interval để kiểm tra định kỳ (mỗi phút)
+//     const interval = setInterval(checkTokenExpiry, 60000);
 
-    // Cleanup interval khi component unmount
-    return () => clearInterval(interval);
-  }, [isAuthenticated, checkTokenExpiry]);
+//     // Cleanup interval khi component unmount
+//     return () => clearInterval(interval);
+//   }, [isAuthenticated, checkTokenExpiry]);
 
-  // Thiết lập timeout để auto-logout khi refresh token sắp hết hạn
-  useEffect(() => {
-    if (!isAuthenticated) return;
+//   // Thiết lập timeout để auto-logout khi refresh token sắp hết hạn
+//   useEffect(() => {
+//     if (!isAuthenticated) return;
 
-    const authorizationDataJson = localStorage.getItem("authorizationData");
-    const authorizationData = authorizationDataJson
-      ? JSON.parse(authorizationDataJson)
-      : null;
+//     const authorizationDataJson = localStorage.getItem("authorizationData");
+//     const authorizationData = authorizationDataJson
+//       ? JSON.parse(authorizationDataJson)
+//       : null;
 
-    const refreshTokenExpiry = authorizationData.refreshExpiryTime;
-    if (!refreshTokenExpiry) return;
+//     const refreshTokenExpiry = authorizationData.refreshExpiryTime;
+//     if (!refreshTokenExpiry) return;
 
-    const timeUntilRefreshExpiry =
-      TokenUtils.getTimeUntilExpiry(refreshTokenExpiry);
+//     const timeUntilRefreshExpiry =
+//       TokenUtils.getTimeUntilExpiry(refreshTokenExpiry);
 
-    if (timeUntilRefreshExpiry > 0) {
-      const timeout = setTimeout(() => {
-        console.log("Refresh token expired, auto-logout");
-        logout();
-      }, timeUntilRefreshExpiry);
+//     if (timeUntilRefreshExpiry > 0) {
+//       const timeout = setTimeout(() => {
+//         console.log("Refresh token expired, auto-logout");
+//         logout();
+//       }, timeUntilRefreshExpiry);
 
-      return () => clearTimeout(timeout);
-    }
-  }, [isAuthenticated, logout]);
-};
+//       return () => clearTimeout(timeout);
+//     }
+//   }, [isAuthenticated, logout]);
+// };

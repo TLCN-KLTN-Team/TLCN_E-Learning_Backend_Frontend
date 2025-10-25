@@ -4,15 +4,17 @@ import { Link, NavLink } from "react-router-dom";
 
 import uteLogoDark from "../../../assets/images/logo/ute-logo.jpg";
 import { useState } from "react";
+import { useAuth } from "@/context/auth-context/useAuth";
 
 const profileMenu = [
-  { name: "Hồ sơ", href: "#" },
+  { name: "Hồ sơ", href: "/student/edit-profile" },
   { name: "Về trang home", href: "/" },
-  { name: "Đăng xuất", href: "/logout" },
 ];
 
 const Header = () => {
   const [isShowProfile, setIsShowProfile] = useState(false);
+  const [isShowNotifications, setIsShowNotifications] = useState(false);
+  const { logout } = useAuth();
 
   return (
     <header className="student-dashboard-header">
@@ -29,13 +31,18 @@ const Header = () => {
           {/* Navigation */}
           <nav className="hidden md:flex space-x-8">
             <Link
-              to="/student/e-learning"
+              to="/"
               className="student-dashboard-nav-link px-3 py-2 text-md font-bold"
             >
               Trang chủ
             </Link>
             <span className="student-dashboard-nav-active px-3 py-2 text-md font-bold">
-              Các khóa học của tôi
+              <Link
+                to="/student/e-learning"
+                className="student-dashboard-nav-link px-3 py-2 text-md font-bold"
+              >
+                Khóa học của tôi
+              </Link>
             </span>
           </nav>
 
@@ -75,6 +82,12 @@ const Header = () => {
                         {item.name}
                       </Link>
                     ))}
+                    <div
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      onClick={logout}
+                    >
+                      Đăng xuất
+                    </div>
                   </div>
                 </div>
               )}

@@ -6,6 +6,7 @@ import type { AuthContextType, User, RegisterData } from "./types";
 import { doSocialLogin, getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
 import { getAccessToken, getExpiryTime } from "@/utils/localStorageVariables";
+import type { AppError } from "@/errors";
 
 // Define Provider props type
 interface AuthProviderProps {
@@ -52,10 +53,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     try {
       await doLogin(email, password);
-
-      // Fetch user data after successful login
-      const userData = await getMe();
-      setUser(userData);
     } catch (error) {
       console.error("Login failed:", error);
       throw error; // Re-throw để component có thể handle
@@ -76,10 +73,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
   };
 
-  const register = async (userData: RegisterData): Promise<void> => {
+  const register = async (userData: RegisterData): Promise<string> => {
     setIsLoading(true);
     try {
-      await doRegister(userData);
+      const email: string = await doRegister(userData);
+      return email;
     } catch (error) {
       console.error("Registration failed:", error);
       throw error; // Re-throw để component có thể handle
