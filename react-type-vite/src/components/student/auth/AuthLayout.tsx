@@ -6,6 +6,7 @@ import ava4 from "../../../assets/images/avatar/04.jpg";
 import { useTheme } from "@/context/theme-context";
 
 import authLogo from "@/assets/auth-logo.png";
+import { NavLink } from "react-router-dom";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -48,11 +49,16 @@ const AuthLayout = ({
             <div className="text-center space-y-4 mb-6">
               {/* Logo */}
               <div className="flex justify-center mb-4">
-                <img
-                  src={authLogo}
-                  alt="OpenEdu Logo"
-                  className="w-10 h-10 object-contain"
-                />
+                <NavLink
+                  to="/"
+                  className="ml-2 text-2xl font-bold text-gray-900 hover:cursor-pointer"
+                >
+                  <img
+                    src={authLogo}
+                    alt="OpenEdu Logo"
+                    className="w-10 h-10 object-contain"
+                  />
+                </NavLink>
               </div>
 
               {/* Welcome Message */}
@@ -136,12 +142,14 @@ const AuthLayout = ({
             {/* Header với logo và welcome message */}
             <div className="text-center space-y-4 mb-8">
               {/* Logo */}
-              <div className="flex justify-center mb-6">
-                <img
-                  src={authLogo}
-                  alt="OpenEdu Logo"
-                  className="w-12 h-12 object-contain"
-                />
+              <div className="flex justify-center hover:cursor-pointer">
+                <NavLink to="/">
+                  <img
+                    src={authLogo}
+                    alt="OpenEdu Logo"
+                    className="w-12 h-12 object-contain"
+                  />
+                </NavLink>
               </div>
 
               {/* Welcome Message */}

@@ -4,7 +4,7 @@ import {
   PaymentHistory,
   ChangePassword,
   ProfileForm,
-} from "@/components/student/profile";
+} from "@/components/shared/profile";
 import type {
   ChangePasswordData,
   PaymentHistoryItem,

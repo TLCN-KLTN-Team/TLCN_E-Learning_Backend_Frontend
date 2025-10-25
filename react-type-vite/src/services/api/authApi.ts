@@ -39,7 +39,7 @@ export const doLogin = async (
 
   const response = await axiosInstance.post<
     ApiResponse<AuthenticationResponse>
-  >("/identity/auth/token", request);
+  >("/identity/auth/login", request);
 
   // Lưu tokens vào localStorage
   const authorizationData = response.data.result;
@@ -74,8 +74,8 @@ export const getProviderOAuthUrl = async (
   return response.data.result;
 };
 
-export const doRegister = async (userData: RegisterData): Promise<User> => {
-  const response = await axiosInstance.post<ApiResponse<User>>(
+export const doRegister = async (userData: RegisterData): Promise<string> => {
+  const response = await axiosInstance.post<ApiResponse<string>>(
     "/identity/users/registration",
     userData
   );
