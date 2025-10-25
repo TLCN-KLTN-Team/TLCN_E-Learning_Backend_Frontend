@@ -29,7 +29,7 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
         "/users/registration",
-        "/auth/token",
+        "/auth/login",
         "/auth/introspect",
         "/auth/logout",
         "/auth/refresh",
@@ -40,7 +40,7 @@ public class SecurityConfig {
         "/forgot-password/reset-password",
         "/forgot-password/resend-otp",
         "/users/registration/send-verification",
-        "/users/registration/verify-email",
+        "/users/registration/verify-account",
         "/users/registration/send-verification"
     };
 
