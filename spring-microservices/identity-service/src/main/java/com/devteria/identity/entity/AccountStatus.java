@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public enum AccountStatus {
+    PENDING_VERIFICATION("PENDING_VERIFICATION"),
     ACTIVE("ACTIVE"),
     INACTIVE("INACTIVE"),
-    BANNED("BANNED"),
-    PENDING_VERIFICATION("PENDING_VERIFICATION");
+    BANNED("BANNED");
 
     AccountStatus(String status) {
         this.status = status;

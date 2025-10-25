@@ -1,4 +1,15 @@
 package com.devteria.identity.dto.request;
 
-public class CreateRefreshToken {
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class CreateRefreshTokenRequest {
+    String userId;
+    String token;
+    String ipAddress;
 }

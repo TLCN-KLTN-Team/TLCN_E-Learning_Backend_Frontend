@@ -7,12 +7,11 @@ import java.util.*;
 
 import com.devteria.identity.dto.response.*;
 import com.devteria.identity.repository.httpclient.FacebookGraphApi;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.logging.log4j.util.StringBuilders;
-import org.hibernate.annotations.Check;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -40,7 +39,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 @RequiredArgsConstructor
@@ -54,6 +52,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     FacebookGraphApi facebookGraphApi;
     RestTemplate restTemplate = new RestTemplate();
+    RefreshTokenService refreshTokenService;
 
     @NonFinal
     @Value("${jwt.signerKey}")
@@ -126,12 +125,11 @@ public class AuthenticationService {
 
         var user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.AUTH_REQUIRED));
 
-        return toAuthenticationResponse(getAuthorizationData(user, null));
+        return toAuthenticationResponse(getAuthorizationData(user));
     }
     // end refresh token
 
     // logic login and onboard user
-    @CachePut(value = "socialAuthenticate", key = "#code.concat('-').concat(#provider)")
     public AuthenticationResponse outboundAuthenticate(String code, String provider) {
         provider = provider.trim().toLowerCase();
         User user = null;
@@ -172,8 +170,6 @@ public class AuthenticationService {
                 String userInfoUrl = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + fbAccessToken.getAccessToken();
                 FacebookUserInfoResponse fbUserInfo = restTemplate.getForObject(userInfoUrl, FacebookUserInfoResponse.class);
 
-
-
                 String username = fbUserInfo.getName();
 
                 user = userRepository.findByUsername(username).orElseGet(() -> {
@@ -191,12 +187,11 @@ public class AuthenticationService {
                 throw new AppException(ErrorCode.AUTH_PROVIDER_NOT_SUPPORTED);
         }
 
-        return toAuthenticationResponse(getAuthorizationData(user, provider));
+        return toAuthenticationResponse(getAuthorizationData(user));
     }
 
     // logic authen & login with username, not social login
-    @CachePut(value = "authenticate", key = "#request.username")
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+    public AuthorizationData authenticate(AuthenticationRequest request) {
         var userByUsername = userRepository
                 .findByUsername(request.getUsername())
                 .orElse(null);
@@ -207,43 +202,51 @@ public class AuthenticationService {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
 
         var user = (userByUsername != null) ? userByUsername : userByEmail;
-
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
-
         if (!authenticated) throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
-        return toAuthenticationResponse(getAuthorizationData(user, null));
+//        if (!user.isEmailVerified()) {
+//            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+//        }
+
+        return getAuthorizationData(user);
     }
 
-    public void logout(LogoutRequest request) throws ParseException, JOSEException {
-        try {
-            var signToken = verifyToken(request.getToken(), true);
-
-            String jit = signToken.getJWTClaimsSet().getJWTID();
-            Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
-
-            InvalidatedToken invalidatedToken =
-                    InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
-
-            invalidatedTokenRepository.save(invalidatedToken);
-        } catch (AppException exception) {
-            log.info("Token already expired");
+    public void logout(HttpServletRequest request,
+                       HttpServletResponse response) throws ParseException, JOSEException {
+        String refreshToken = getCookieValue(request, "refreshToken");
+        if (refreshToken != null) {
+            //Claims c = jwtService.parseRefreshToken(refreshToken);
+            //refreshTokenService.revokeAllForUser(c.getSubject());
         }
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true).secure(true).path("/auth").maxAge(0).build();
+        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private String getCookieValue(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if (cookieName.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     // convert data to response
     private AuthenticationResponse toAuthenticationResponse(AuthorizationData data) {
         return AuthenticationResponse.builder()
                 .accessToken(data.accessToken())
-                .refreshToken(data.refreshToken())
                 .expiryTime(data.accessTokenExpiry().toEpochMilli())
-                .refreshExpiryTime(data.refreshTokenExpiry().toEpochMilli())
                 .roles(data.roles())
                 .build();
     }
 
     // get authorization data for user. it's used to save to App
-    private AuthorizationData getAuthorizationData(User user, String provider) {
+    private AuthorizationData getAuthorizationData(User user) {
         Instant now = Instant.now();
         Instant accessTokenExpiry = now.plus(VALID_DURATION, ChronoUnit.SECONDS);
         Instant refreshTokenExpiry = now.plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS);
@@ -255,17 +258,12 @@ public class AuthenticationService {
         String accessToken = generateToken(user, accessTokenExpiry, "access", roles);
         String refreshToken = generateToken(user, refreshTokenExpiry, "refresh", roles);
 
-        return new AuthorizationData(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry, roles, provider);
+
+        return new AuthorizationData(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry, roles);
     }
 
     // generate token for user
     private String generateToken(User user, Instant expiry, String tokenType, Set<String> roles) {
-
-        System.out.println("=== Bắt đầu generateToken ===");
-        System.out.println("User ID: " + user.getId());
-        System.out.println("Token Type: " + tokenType);
-        System.out.println("Thời gian hết hạn: " + expiry);
-
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
         System.out.println("JWSHeader: " + header.toJSONObject());
 
@@ -294,11 +292,8 @@ public class AuthenticationService {
         try {
             jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
             String serializedToken = jwsObject.serialize();
-            System.out.println("Serialized Token: " + serializedToken);
-            System.out.println("=== Kết thúc generateToken ===");
             return jwsObject.serialize();
         } catch (JOSEException e) {
-            log.error("Cannot create token", e);
             throw new RuntimeException(e);
         }
     }
@@ -374,11 +369,10 @@ public class AuthenticationService {
 
     // record to hold authorization data. record in new Java version is immutable and provides a concise way to define
     // data classes.
-    private record AuthorizationData(
+    public record AuthorizationData(
             String accessToken,
             String refreshToken,
             Instant accessTokenExpiry,
             Instant refreshTokenExpiry,
-            Set<String> roles,
-            String provider) {}
+            Set<String> roles) {}
 }
