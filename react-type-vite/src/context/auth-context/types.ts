@@ -28,7 +28,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   socialLogin: (code: string, provider: string) => Promise<void>;
   logout: () => void;
-  register: (userData: RegisterData) => Promise<void>;
+  register: (userData: RegisterData) => Promise<string>;
   refreshUser: () => Promise<void>;
   checkAuth: () => boolean;
 }

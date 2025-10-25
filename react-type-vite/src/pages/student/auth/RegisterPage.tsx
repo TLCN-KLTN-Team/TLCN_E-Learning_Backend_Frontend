@@ -10,6 +10,9 @@ import { Eye, EyeClosed, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import GoogleButton from "@/components/student/shared/GoogleButton";
 import FacebookButton from "@/components/student/shared/FacebookButton";
+import OtpVerification from "@/components/student/auth/OtpVerification";
+
+import { emailApi } from "@/services/api/index";
 
 // Interface for form errors
 interface FormErrors {
@@ -39,8 +42,12 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+  const [currentStep, setCurrentStep] = useState<string>("register");
 
   const { user, register } = useAuth();
+  const [emailToVerify, setEmailToVerify] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
 
   const navigate = useNavigate();
 
@@ -164,21 +171,16 @@ const RegisterPage = () => {
 
     setErrors(newErrors);
 
-    // Check if there are any errors
-    // if (Object.keys(newErrors).length > 0) {
-    //   toast.error("Please fix the errors before submitting");
-    //   return;
-    // }
-
-    // call register
     if (user) {
       navigate("/");
     }
 
+    // Step 1: Register user and send verification code
     register(formData)
-      .then(() => {
-        toast.success("Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.");
-        navigate("/login");
+      .then((email: string) => {
+        setEmailToVerify(email);
+        setCurrentStep("verify-account");
+        toast.success("Cần xác minh OTP đã được gửi đến email của bạn");
       })
       .catch((error) => {
         console.error("Đăng ký thất bại:", error);
@@ -186,15 +188,169 @@ const RegisterPage = () => {
       });
   };
 
-  return (
-    <AuthLayout
-      title="Welcome to OpenEdu!"
-      subtitle="Tạo tài khoản của bạn để bắt đầu hành trình học tập."
-      isRegister={true}
-    >
+  //
+
+  const verifyAccountRender = () => {
+    // Step 2: Verify account with OTP
+    const handleVerifyOtp = async (otpCode: string) => {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        await emailApi.verifyAccount(emailToVerify, otpCode);
+        toast.success(
+          "Xác minh tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ."
+        );
+        navigate("/login");
+      } catch (error: any) {
+        const errorCode = error?.response?.data?.code;
+        const message =
+          error?.response?.data?.message ||
+          "Mã OTP không hợp lệ. Vui lòng thử lại.";
+
+        // Set error for display
+        setError(message);
+
+        // OTP expired
+        if (errorCode === "OTP_1019") {
+          setError(
+            "Mã OTP đã hết hạn (sau 1 phút 30 giây). Vui lòng nhấn 'Gửi lại mã xác nhận'"
+          );
+        }
+        // Throw error so OtpVerification can clear inputs
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Resend OTP
+    const handleResendOtp = async () => {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        await emailApi.resendOtp(emailToVerify);
+      } catch (error: any) {
+        const errorCode = error?.response?.data?.code;
+        const message =
+          error?.response?.data?.message ||
+          "Không thể gửi lại mã OTP. Vui lòng thử lại.";
+
+        if (
+          errorCode === "OTP_1026" ||
+          message.includes("3 lần") ||
+          message.includes("5 phút")
+        ) {
+          setError(
+            "Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút"
+          );
+        } else {
+          setError(message);
+        }
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    const handleBack = () => {
+      setError("");
+      switch (currentStep) {
+        case "verify-account":
+          setCurrentStep("register");
+          break;
+        default:
+          navigate("/login");
+      }
+    };
+    return (
+      <OtpVerification
+        email={emailToVerify}
+        onVerify={handleVerifyOtp}
+        onBack={handleBack}
+        onResend={handleResendOtp}
+        isLoading={isLoading}
+        error={error}
+      />
+    );
+  };
+
+  const registerRender = () => {
+    return (
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Username and Email Fields */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* First Name Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="firstName"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              First Name
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <UserRound className="w-4 h-4 text-gray-400" />
+              </div>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                required
+                value={formData.firstName}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("firstName")}
+                className={cn(
+                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  errors.firstName
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="Nhập first name"
+              />
+            </div>
+            {errors.firstName && (
+              <p className="text-sm text-red-400 font-medium">
+                {errors.firstName}
+              </p>
+            )}
+          </div>
+
+          {/* Last Name Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="lastName"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Last Name
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <UserRound className="w-4 h-4 text-gray-400" />
+              </div>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("lastName")}
+                className={cn(
+                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  errors.lastName
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="Nhập last name"
+              />
+            </div>
+            {errors.lastName && (
+              <p className="text-sm text-red-400 font-medium">
+                {errors.lastName}
+              </p>
+            )}
+          </div>
           {/* Username Field */}
           <div className="space-y-2">
             <label
@@ -437,6 +593,27 @@ const RegisterPage = () => {
           </p>
         </div>
       </form>
+    );
+  };
+
+  const contentRender = () => {
+    switch (currentStep) {
+      case "register":
+        return registerRender();
+      case "verify-account":
+        return verifyAccountRender();
+      default:
+        return registerRender();
+    }
+  };
+
+  return (
+    <AuthLayout
+      title="Welcome to OpenEdu!"
+      subtitle="Tạo tài khoản của bạn để bắt đầu hành trình học tập."
+      isRegister={true}
+    >
+      {contentRender()}
     </AuthLayout>
   );
 };
