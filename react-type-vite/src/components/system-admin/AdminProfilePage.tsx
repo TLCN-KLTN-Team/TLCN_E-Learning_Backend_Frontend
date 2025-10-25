@@ -109,8 +109,12 @@ const AdminProfilePage: React.FC = () => {
         fileInputRef.current.value = "";
       }
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Cập nhật ảnh đại diện thất bại!";
       toast.error("Cập nhật ảnh đại diện thất bại!");
-      console.error("Avatar update error:", error);
+      console.error("Avatar update error:", errorMessage);
     } finally {
       setIsUploadingAvatar(false);
     }

@@ -9,6 +9,7 @@ import FacebookButton from "@/components/student/shared/FacebookButton";
 import { Eye, EyeClosed, LockKeyhole, Mail } from "lucide-react";
 import { getRoles } from "@/utils/localStorageVariables";
 import { getRoleBasedRedirectPath } from "@/utils/roleUtils";
+import { getMe } from "@/services/api/authApi";
 
 const LoginPage = () => {
   const { user, login } = useAuth();
@@ -37,6 +38,11 @@ const LoginPage = () => {
         const roles = getRoles();
         const url = getRoleBasedRedirectPath(roles);
         navigate(url, { replace: true });
+
+        // continue calling
+        getMe().then((user) => {
+          console.log("user after login:", user);
+        });
 
         toast.success("Đăng nhập thành công!");
       })
@@ -171,7 +177,7 @@ const LoginPage = () => {
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-4 bg-white text-gray-600 font-medium">
-              Hoặc
+              Hoặc đăng nhập với
             </span>
           </div>
         </div>
@@ -185,7 +191,7 @@ const LoginPage = () => {
         {/* Sign Up Link */}
         <div className="text-center pt-4">
           <p className="text-sm text-gray-600">
-            Chưa có tài khoản?{" "}
+            Bạn chưa có tài khoản?{" "}
             <a
               href="/register"
               className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"

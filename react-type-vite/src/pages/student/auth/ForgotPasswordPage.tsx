@@ -1,147 +1,170 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
+import type React from "react";
+import { useState } from "react";
 
-import AuthLayout from "@/components/student/auth/AuthLayout"
-import { Button } from "@/components/ui/button"
-import * as forgotPasswordApi from "@/services/api/forgotPasswordApi"
-import OtpVerification from "@/components/student/auth/OtpVerification"
-import ResetPassword from "@/components/student/auth/ResetPassword"
-import { useNavigate } from "react-router-dom"
+import AuthLayout from "@/components/student/auth/AuthLayout";
+import { Button } from "@/components/ui/button";
+import * as forgotPasswordApi from "@/services/api/emailApi";
+import OtpVerification from "@/components/student/auth/OtpVerification";
+import ResetPassword from "@/components/student/auth/ResetPassword";
+import { useNavigate } from "react-router-dom";
 
-type Step = "email" | "otp" | "reset" | "success"
+type Step = "email" | "otp" | "reset" | "success";
 
 const ForgotPasswordPage = () => {
-  const navigate = useNavigate()
-  const [currentStep, setCurrentStep] = useState<Step>("email")
-  const [email, setEmail] = useState("")
-  const [resetToken, setResetToken] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState<Step>("email");
+  const [email, setEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // Step 1: Send email
   const handleSendEmail = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!email.trim()) {
-      setError("Vui lòng nhập địa chỉ email")
-      return
+      setError("Vui lòng nhập địa chỉ email");
+      return;
     }
 
-    setIsLoading(true)
-    setError("")
+    setIsLoading(true);
+    setError("");
 
     try {
-      await forgotPasswordApi.sendResetPasswordEmail({ email: email.trim() })
-      setCurrentStep("otp")
+      await forgotPasswordApi.sendResetPasswordEmail({ email: email.trim() });
+      setCurrentStep("otp");
     } catch (error: any) {
-      const errorCode = error?.response?.data?.code
-      const message = error?.response?.data?.message || "Không thể gửi email. Vui lòng thử lại."
+      const errorCode = error?.response?.data?.code;
+      const message =
+        error?.response?.data?.message ||
+        "Không thể gửi email. Vui lòng thử lại.";
 
       if (errorCode === "OTP_1027" || message.includes("không tồn tại")) {
-        setError("Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại email của bạn.")
+        setError(
+          "Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại email của bạn."
+        );
       } else {
-        setError(message)
+        setError(message);
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Step 2: Verify OTP
   const handleVerifyOtp = async (otpCode: string) => {
-    setIsLoading(true)
-    setError("")
+    setIsLoading(true);
+    setError("");
 
     try {
-      const response = await forgotPasswordApi.verifyOtp(email, otpCode)
+      const response = await forgotPasswordApi.verifyOtp(email, otpCode);
       if (response.success && response.resetToken) {
-        setResetToken(response.resetToken)
-        setCurrentStep("reset")
+        setResetToken(response.resetToken);
+        setCurrentStep("reset");
       } else {
-        const error = new Error("Mã OTP không hợp lệ hoặc đã hết hạn")
-        throw error
+        const error = new Error("Mã OTP không hợp lệ hoặc đã hết hạn");
+        throw error;
       }
     } catch (error: any) {
-      const errorCode = error?.response?.data?.code
-      const message = error?.response?.data?.message || "Mã OTP không hợp lệ. Vui lòng thử lại."
+      const errorCode = error?.response?.data?.code;
+      const message =
+        error?.response?.data?.message ||
+        "Mã OTP không hợp lệ. Vui lòng thử lại.";
 
       // Set error for display
-      setError(message)
+      setError(message);
 
       // OTP expired
       if (errorCode === "OTP_1019") {
-        setError("Mã OTP đã hết hạn (sau 1 phút 30 giây). Vui lòng nhấn 'Gửi lại mã xác nhận'")
+        setError(
+          "Mã OTP đã hết hạn (sau 1 phút 30 giây). Vui lòng nhấn 'Gửi lại mã xác nhận'"
+        );
       }
 
       // Throw error so OtpVerification can clear inputs
-      throw error
+      throw error;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Resend OTP
   const handleResendOtp = async () => {
-    setIsLoading(true)
-    setError("")
+    setIsLoading(true);
+    setError("");
 
     try {
-      await forgotPasswordApi.resendOtp(email)
+      await forgotPasswordApi.resendOtp(email);
     } catch (error: any) {
-      const errorCode = error?.response?.data?.code
-      const message = error?.response?.data?.message || "Không thể gửi lại mã OTP. Vui lòng thử lại."
+      const errorCode = error?.response?.data?.code;
+      const message =
+        error?.response?.data?.message ||
+        "Không thể gửi lại mã OTP. Vui lòng thử lại.";
 
-      if (errorCode === "OTP_1026" || message.includes("3 lần") || message.includes("5 phút")) {
-        setError("Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút")
+      if (
+        errorCode === "OTP_1026" ||
+        message.includes("3 lần") ||
+        message.includes("5 phút")
+      ) {
+        setError(
+          "Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút"
+        );
       } else {
-        setError(message)
+        setError(message);
       }
-      throw error
+      throw error;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Step 3: Reset password
-  const handleResetPassword = async (newPassword: string, confirmPassword: string) => {
+  const handleResetPassword = async (
+    newPassword: string,
+    confirmPassword: string
+  ) => {
     if (newPassword !== confirmPassword) {
-      setError("Mật khẩu và nhập lại mật khẩu không trùng nhau. Vui lòng nhập lại")
-      return
+      setError(
+        "Mật khẩu và nhập lại mật khẩu không trùng nhau. Vui lòng nhập lại"
+      );
+      return;
     }
 
-    setIsLoading(true)
-    setError("")
+    setIsLoading(true);
+    setError("");
 
     try {
       await forgotPasswordApi.resetPassword({
         token: resetToken,
         newPassword,
         confirmPassword,
-      })
-      setCurrentStep("success")
+      });
+      setCurrentStep("success");
     } catch (error: any) {
-      const message = error?.response?.data?.message || "Không thể đặt lại mật khẩu. Vui lòng thử lại."
-      setError(message)
+      const message =
+        error?.response?.data?.message ||
+        "Không thể đặt lại mật khẩu. Vui lòng thử lại.";
+      setError(message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Back to previous step
   const handleBack = () => {
-    setError("")
+    setError("");
     switch (currentStep) {
       case "otp":
-        setCurrentStep("email")
-        break
+        setCurrentStep("email");
+        break;
       case "reset":
-        setCurrentStep("otp")
-        break
+        setCurrentStep("otp");
+        break;
       default:
-        navigate("/login")
+        navigate("/login");
     }
-  }
+  };
 
   const renderContent = () => {
     switch (currentStep) {
@@ -149,7 +172,10 @@ const ForgotPasswordPage = () => {
         return (
           <form onSubmit={handleSendEmail} className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-black">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-black"
+              >
                 Email <span>*</span>
               </label>
               <input
@@ -173,7 +199,9 @@ const ForgotPasswordPage = () => {
             </div>
 
             {error && (
-              <div className="text-destructive text-sm text-center bg-destructive/10 p-3 rounded-lg">{error}</div>
+              <div className="text-destructive text-sm text-center bg-destructive/10 p-3 rounded-lg">
+                {error}
+              </div>
             )}
 
             <button
@@ -212,7 +240,7 @@ const ForgotPasswordPage = () => {
               </Button>
             </div>
           </form>
-        )
+        );
 
       case "otp":
         return (
@@ -224,71 +252,91 @@ const ForgotPasswordPage = () => {
             isLoading={isLoading}
             error={error}
           />
-        )
+        );
 
       case "reset":
-        return <ResetPassword onReset={handleResetPassword} onBack={handleBack} isLoading={isLoading} error={error} />
+        return (
+          <ResetPassword
+            onReset={handleResetPassword}
+            onBack={handleBack}
+            isLoading={isLoading}
+            error={error}
+          />
+        );
 
       case "success":
         return (
           <div className="text-center space-y-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-foreground mb-2">Đặt lại mật khẩu thành công!</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-2">
+                Đặt lại mật khẩu thành công!
+              </h2>
               <p className="text-muted-foreground text-sm">
-                Mật khẩu của bạn đã được cập nhật. Bạn có thể đăng nhập với mật khẩu mới.
+                Mật khẩu của bạn đã được cập nhật. Bạn có thể đăng nhập với mật
+                khẩu mới.
               </p>
             </div>
             <Button onClick={() => navigate("/login")} className="w-full">
               Đăng nhập ngay
             </Button>
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const getTitle = () => {
     switch (currentStep) {
       case "email":
-        return "Quên mật khẩu"
+        return "Quên mật khẩu";
       case "otp":
-        return "Xác thực OTP"
+        return "Xác thực OTP";
       case "reset":
-        return "Đặt lại mật khẩu"
+        return "Đặt lại mật khẩu";
       case "success":
-        return "Hoàn thành"
+        return "Hoàn thành";
       default:
-        return "Quên mật khẩu"
+        return "Quên mật khẩu";
     }
-  }
+  };
 
   const getSubtitle = () => {
     switch (currentStep) {
       case "email":
-        return "Nhập email của bạn để nhận mã xác thực"
+        return "Nhập email của bạn để nhận mã xác thực";
       case "otp":
-        return "Nhập mã OTP được gửi đến email của bạn"
+        return "Nhập mã OTP được gửi đến email của bạn";
       case "reset":
-        return "Tạo mật khẩu mới cho tài khoản của bạn"
+        return "Tạo mật khẩu mới cho tài khoản của bạn";
       case "success":
-        return "Mật khẩu đã được đặt lại thành công"
+        return "Mật khẩu đã được đặt lại thành công";
       default:
-        return ""
+        return "";
     }
-  }
+  };
 
   return (
     <AuthLayout title={getTitle()} subtitle={getSubtitle()}>
       {renderContent()}
     </AuthLayout>
-  )
-}
+  );
+};
 
-export default ForgotPasswordPage
+export default ForgotPasswordPage;
