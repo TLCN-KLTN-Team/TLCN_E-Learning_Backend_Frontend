@@ -51,7 +51,9 @@ public class User implements Serializable {
     //    @OneToOne(cascade = CascadeType.ALL)
     //    Address address;
 
+    @Enumerated(EnumType.STRING)
     AccountStatus accountStatus;
+    boolean isEmailVerified;
 
     @ManyToMany
     Set<Role> roles;
