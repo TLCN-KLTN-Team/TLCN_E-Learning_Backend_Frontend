@@ -1,5 +1,8 @@
 package com.devteria.identity.service;
 
+import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.entity.User;
+import com.devteria.identity.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import com.devteria.identity.dto.request.RegisterRequest;
@@ -17,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EmailVerificationService {
 
     private final InMemoryOtpStorageService otpStorageService;
-    private final UserService userService;
+    private final UserRepository userRepository;
 
     public Object verifyOtp(String email, String otpCode) {
         if (email == null || email.trim().isEmpty()) {
@@ -74,11 +77,8 @@ public class EmailVerificationService {
             }
 
             Object result = processVerificationByType(otpData);
-
             // Remove OTP after successful verification
             otpStorageService.removeOtp(email);
-
-            log.info("OTP verified successfully for email: {} with type: {}", email, otpData.getType());
 
             return result;
 
@@ -105,10 +105,6 @@ public class EmailVerificationService {
                         log.error("Email mismatch in registration data for: {}", otpData.getEmail());
                         throw new AppException(ErrorCode.SYSTEM_ERROR);
                     }
-
-                    UserResponse userResponse = userService.createUser(registerRequest);
-                    log.info("User created successfully after email verification: {}", otpData.getEmail());
-                    return userResponse;
 
                 case PASSWORD_RESET:
                     log.info("Email verified for password reset: {}", otpData.getEmail());

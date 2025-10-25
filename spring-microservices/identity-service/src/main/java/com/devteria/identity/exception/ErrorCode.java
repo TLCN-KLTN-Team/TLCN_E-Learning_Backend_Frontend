@@ -112,6 +112,7 @@ public enum ErrorCode {
             "Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút",
             HttpStatus.TOO_MANY_REQUESTS),
     EMAIL_NOT_FOUND("OTP_1027", "Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại", HttpStatus.NOT_FOUND),
+    ACCOUNT_NOT_VERIFIED("OTP_1028", "Tài khoản chưa được xác thực. Vui lòng xác thực tài lại.", HttpStatus.BAD_REQUEST),
 
     FILE_EMPTY("FILE_5004", "File không được để trống", HttpStatus.BAD_REQUEST),
     ;

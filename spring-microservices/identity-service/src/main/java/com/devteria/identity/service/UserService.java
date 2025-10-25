@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.devteria.identity.constant.PredefinedRole;
@@ -53,32 +54,41 @@ public class UserService {
     UserRepository userRepository;
     RoleRepository roleRepository;
     UserMapper userMapper;
-    ProfileMapper profileMapper;
     PasswordEncoder passwordEncoder;
-    ProfileClient profileClient;
-    KafkaTemplate<String, Object> kafkaTemplate;
     UploadImageApi uploadFileApi;
     RemoveImageApi removeFileApi;
     OTPService otpService;
+    EmailVerificationService emailVerificationService;
+
+    public void verifyAccount(String email, String otpCode){
+        try {
+            emailVerificationService.verifyOtp(email, otpCode);
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            user.setAccountStatus(AccountStatus.ACTIVE);
+            user.setEmailVerified(true);
+            userRepository.save(user);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.NON_EXECUTE);
+        }
+    }
 
     public void sendEmailVerification(RegisterRequest request) {
         if (!isValidPassword(request.getPassword())) {
-            log.error("Weak password provided for email: {}", request.getEmail());
             throw new AppException(ErrorCode.PASSWORD_WEAK);
         }
 
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            log.error("Password confirmation mismatch for email: {}", request.getEmail());
             throw new AppException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            log.error("Email already exists: {}", request.getEmail());
             throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
         }
 
         if (request.getUsername() != null && userRepository.existsByUsername(request.getUsername())) {
-            log.error("Username already exists: {}", request.getUsername());
             throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
@@ -87,16 +97,12 @@ public class UserService {
             otpService.sendEmailVerificationOtp(request.getEmail(), request);
             log.info("Email verification OTP sent successfully to: {}", request.getEmail());
         } catch (Exception e) {
-            log.error("Failed to send email verification OTP to: {}", request.getEmail(), e);
-            throw new AppException(ErrorCode.SYSTEM_ERROR);
+            throw new AppException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }
 
-    public UserResponse createUser(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
-        }
-
+    @Transactional
+    public String createUser(RegisterRequest request) {
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         HashSet<Role> roles = new HashSet<>();
@@ -111,29 +117,15 @@ public class UserService {
                 roles.add(existingRole);
             });
         }
-
         user.setRoles(roles);
-        user.setAccountStatus(AccountStatus.ACTIVE);
 
+        this.sendEmailVerification(request);
         try {
-            user = userRepository.save(user);
+            userRepository.save(user);
+            return user.getEmail();
         } catch (DataIntegrityViolationException exception) {
             throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
         }
-
-        //        NotificationEvent notificationEvent = NotificationEvent.builder()
-        //                .channel("EMAIL")
-        //                .recipient(request.getEmail())
-        //                .subject("Welcome to bookteria")
-        //                .body("Hello, " + request.getUsername())
-        //                .build();
-        //
-        //        // Publish message to kafka
-        //        kafkaTemplate.send("notification-delivery", notificationEvent);
-
-        var userCreationResponse = userMapper.toUserResponse(user);
-
-        return userCreationResponse;
     }
 
     boolean isValidPassword(String password) {
@@ -143,7 +135,6 @@ public class UserService {
         return password.matches(regex);
     }
 
-    @CachePut(value = "myInfo")
     public UserResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
         String id = context.getAuthentication().getName();
@@ -217,7 +208,6 @@ public class UserService {
         return null;
     }
 
-    @Cacheable(value = "changePassword", key = "#root.authentication.name")
     public void changePassword(ChangePasswordRequest request) {
         log.info("Call to db, not cached");
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -259,7 +249,6 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @Cacheable(value = "allUsers")
     public PaginatedResponse<UserResponse> getUsers(int page, int size, String sortBy, String sortDirection) {
         log.info("Vo day va chua cache");
         Sort sort = Sort.by("ASC".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
@@ -293,7 +282,6 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @Cacheable(value = "user", key = "#id")
     public UserResponse getUser(String id) {
         log.info("Call to db");
         return userMapper.toUserResponse(

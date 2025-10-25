@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserController {
     UserService userService;
-    EmailVerificationService emailVerificationService;
 
     @PostMapping("/registration/send-verification")
     ApiResponse<String> sendEmailVerification(@RequestBody @Valid RegisterRequest request) {
@@ -41,27 +40,18 @@ public class UserController {
         }
     }
 
-    @PostMapping("/registration/verify-email")
-    ApiResponse<UserResponse> verifyEmailAndRegister(@RequestParam String email, @RequestParam String otpCode) {
-        try {
-            Object result = emailVerificationService.verifyOtp(email, otpCode);
-
-            if (result instanceof UserResponse) {
-                return ApiResponse.<UserResponse>builder()
-                        .result((UserResponse) result)
-                        .build();
-            } else {
-                throw new RuntimeException("Unexpected verification result type");
-            }
-        } catch (Exception e) {
-            log.error("Error verifying email and registering user: {}", e.getMessage());
-            throw e;
-        }
+    @PostMapping("/registration/verify-account")
+    ApiResponse<Void> verifyAccount(@RequestParam String email, @RequestParam String otpCode) {
+            userService.verifyAccount(email, otpCode);
+            return ApiResponse.success(
+                    null,
+                    "Xác thực email thành công. Tài khoản của bạn đã được kích hoạt."
+            );
     }
 
     @PostMapping("/registration")
-    ApiResponse<UserResponse> registerUser(@RequestBody @Valid RegisterRequest request) {
-        return ApiResponse.<UserResponse>builder()
+    ApiResponse<String> registerUser(@RequestBody @Valid RegisterRequest request) {
+        return ApiResponse.<String>builder()
                 .result(userService.createUser(request))
                 .build();
     }
