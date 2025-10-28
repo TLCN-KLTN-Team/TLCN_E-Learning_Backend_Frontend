@@ -20,7 +20,7 @@ public class FileService {
             case "image":
                 return imageUploadService.uploadImage(file);
             case "video":
-                //return videoUploadService.uploadVideo(file);
+                return videoUploadService.uploadVideo(file);
             case "document":
                 return documentUploadService.uploadDocument(file);
             default:
@@ -37,8 +37,7 @@ public class FileService {
         if (contentType.startsWith("image/")) {
             return imageUploadService.uploadImage(file);
         } else if (contentType.startsWith("video/")) {
-            //return videoUploadService.uploadVideo(file);
-            return null;
+            return videoUploadService.uploadVideo(file);
         } else {
             return documentUploadService.uploadDocument(file);
         }
@@ -50,7 +49,7 @@ public class FileService {
                 imageUploadService.deleteImage(publicId);
                 break;
             case "video":
-                //videoUploadService.deleteVideo(publicId);
+                videoUploadService.deleteVideo(publicId);
                 break;
             case "document":
                 documentUploadService.deleteDocument(publicId);

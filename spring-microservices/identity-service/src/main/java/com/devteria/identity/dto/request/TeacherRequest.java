@@ -41,4 +41,6 @@ public class TeacherRequest {
     private String socialUrl;
 
     private String bankAccountNumber;
+
+    private String accountStatus;
 }

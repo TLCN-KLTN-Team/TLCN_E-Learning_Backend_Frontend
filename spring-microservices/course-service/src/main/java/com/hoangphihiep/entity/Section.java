@@ -78,4 +78,15 @@ public class Section implements Serializable {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ToString.Exclude
+    private Set<Assignment> assignments = new HashSet<>();
+
+    public void addAssignment(Assignment assignment) {
+        if (assignment != null && !assignments.contains(assignment)) {
+            assignments.add(assignment);
+            assignment.setSection(this);
+        }
+    }
+
 }

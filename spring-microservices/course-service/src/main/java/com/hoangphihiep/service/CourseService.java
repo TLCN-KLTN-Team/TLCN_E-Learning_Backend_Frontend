@@ -48,6 +48,9 @@ public class CourseService {
     private static final BigDecimal MAX_COURSE_PRICE = new BigDecimal("10000000"); // 10 triệu VNĐ
     private static final int MIN_PAGE_SIZE = 1;
     private static final int MAX_PAGE_SIZE = 100;
+    private static final int MIN_DEPARTMENT_NAME_LENGTH = 2;
+    private static final int MAX_DEPARTMENT_NAME_LENGTH = 255;
+    private static final int MAX_DEPARTMENT_DESCRIPTION_LENGTH = 1000;
 
     // Lấy danh sách khóa học của đơn vị đào tạo
     public Page<CourseResponse> getCoursesByEducationalUnit(int educationalUnitId, int page, int size, String search) {
@@ -86,6 +89,16 @@ public class CourseService {
         }
     }
 
+    public CourseResponse getCourseById (int id){
+        if (id <= 0) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        return courseMapper.toCourseResponse(course);
+    }
     // Tạo khóa học cho đơn vị đào tạo
     @Transactional
     public CourseResponse createCourseForEducationalUnit(int educationalUnitId, CourseRequest request) {
@@ -100,13 +113,10 @@ public class CourseService {
             throw new AppException(ErrorCode.COURSE_DUPLICATE_NAME);
         }
 
-        CourseType courseType = courseTypeRepository.findById(request.getCourseTypeId())
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
 
         try {
             Course course = new Course();
             course.setCourseName(request.getCourseName());
-            course.setCourseType(courseType);
             course.setIdTeacher(request.getIdTeacher());
             course.setEducationalUnit(educationalUnit);
             course.setCreatedAt(new Date());
@@ -126,6 +136,51 @@ public class CourseService {
             Course savedCourse = courseRepository.save(course);
 
             return courseMapper.toCourseResponse(savedCourse);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    @Transactional
+    public CourseResponse updateCourseForEducationalUnit(int educationalUnitId, int courseId, CourseRequest request) {
+
+        // Validate quyền truy cập
+        validateEducationalUnitAccess(educationalUnitId);
+        validateCourseRequest(request, false); // false vì đây là update
+
+        // Kiểm tra Educational Unit tồn tại
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        // Tìm khóa học cần update
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        // Kiểm tra khóa học có thuộc educational unit này không
+        if (course.getEducationalUnit().getId() != educationalUnitId) {
+            throw new AppException(ErrorCode.COURSE_NOT_BELONG_TO_EDUCATIONAL_UNIT);
+        }
+
+        try {
+            // Cập nhật các trường
+            course.setCourseName(request.getCourseName());
+            course.setIdTeacher(request.getIdTeacher());
+            course.setUpdatedAt(new Date());
+
+            // Cập nhật các trường optional
+            if (request.getDescription() != null) {
+                course.setDescription(request.getDescription());
+            }
+            if (request.getCredits() != null) {
+                course.setCredits(request.getCredits());
+            }
+            if (request.getMaxStudents() != null) {
+                course.setMaxStudents(request.getMaxStudents());
+            }
+
+            Course updatedCourse = courseRepository.save(course);
+
+            return courseMapper.toCourseResponse(updatedCourse);
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
@@ -440,13 +495,9 @@ public class CourseService {
             throw new AppException(ErrorCode.COURSE_DUPLICATE_NAME);
         }
 
-        CourseType courseType = courseTypeRepository.findById(request.getCourseTypeId())
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
-
         try {
             Course course = new Course();
             course.setCourseName(request.getCourseName());
-            course.setCourseType(courseType);
             course.setIdTeacher(request.getIdTeacher());
             course.setCreatedAt(new Date());
             course.setUpdatedAt(new Date());
@@ -553,12 +604,6 @@ public class CourseService {
         if (isCreate || request.getCourseName() != null) {
             validateCourseName(request.getCourseName(), isCreate);
         }
-
-        if (isCreate || request.getCourseTypeId() != null) {
-            if (request.getCourseTypeId() == null) {
-                throw new AppException(ErrorCode.COURSE_TYPE_REQUIRED);
-            }
-        }
     }
 
     private void validateCourseRequestForUpdate(CourseRequest request) {
@@ -625,26 +670,13 @@ public class CourseService {
         }
     }
 
-    private boolean isSignificantUpdate(CourseRequest request) {
-        return request.getCourseName() != null ||
-                request.getCourseTypeId() != null;
-    }
-
     private void updateCourseFields(Course course, CourseRequest request) {
         if (request.getCourseName() != null) {
             course.setCourseName(request.getCourseName());
         }
-
-        if (request.getCourseTypeId() != null) {
-            CourseType courseType = courseTypeRepository.findById(request.getCourseTypeId())
-                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
-            course.setCourseType(courseType);
-        }
     }
 
-    private static final int MIN_DEPARTMENT_NAME_LENGTH = 2;
-    private static final int MAX_DEPARTMENT_NAME_LENGTH = 255;
-    private static final int MAX_DEPARTMENT_DESCRIPTION_LENGTH = 1000;
+
 
     // Lấy danh sách departments của đơn vị đào tạo
     public Page<DepartmentResponse> getDepartmentsByEducationalUnit(int educationalUnitId, int page, int size, String search) {

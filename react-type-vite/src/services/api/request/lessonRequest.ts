@@ -8,6 +8,7 @@ export interface LessonRequest {
   videoUrl?: string;
   numberItem?: number;
   isFreeLesson?: boolean;
+  isPublished?: boolean;
   createdAt?: string;
   updateAt?: string;
 }

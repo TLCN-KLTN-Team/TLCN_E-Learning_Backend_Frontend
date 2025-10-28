@@ -78,12 +78,19 @@ public enum ErrorCode {
     UNSUPPORTED_FILE_TYPE("FILE_5010", "Loại file không được hỗ trợ", HttpStatus.BAD_REQUEST),
     UNKNOWN_FILE_TYPE("FILE_5011", "Không xác định được loại file", HttpStatus.BAD_REQUEST),
 
+    VIDEO_UPLOAD_FAILED("VIDEO_001", "Upload video thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    VIDEO_DELETE_FAILED("VIDEO_002", "Xóa video thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    VIDEO_NOT_FOUND("VIDEO_003", "Không tìm thấy video", HttpStatus.NOT_FOUND),
+    VIDEO_SIZE_EXCEEDED("VIDEO_004", "Kích thước video vượt quá giới hạn cho phép (100MB)", HttpStatus.BAD_REQUEST),
+    VIDEO_TYPE_NOT_SUPPORTED("VIDEO_005", "Định dạng video không được hỗ trợ", HttpStatus.BAD_REQUEST),
+
+
 
     CLOUDINARY_UPLOAD_FAILED("FILE_5004", "Tải file lên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
     CLOUDINARY_DELETE_FAILED("FILE_5005", "Xoá file trên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
 
-    ;
+    INVALID_FILE_NAME("FILE_5006", "Tên file không hợp lệ", HttpStatus.INTERNAL_SERVER_ERROR);
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {
         this.code = code;

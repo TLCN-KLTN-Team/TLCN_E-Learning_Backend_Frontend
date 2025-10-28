@@ -10,5 +10,8 @@ public interface SectionMapper {
 
     @Mapping(source = "course.id", target = "courseId")
     @Mapping(source = "course.courseName", target = "courseName")
+    @Mapping(source = "lessons", target = "lessons")
+    @Mapping(source = "quizs", target = "quizs")
+    @Mapping(source = "assignments", target = "assignments")
     SectionResponse toSectionResponse(Section section);
 }

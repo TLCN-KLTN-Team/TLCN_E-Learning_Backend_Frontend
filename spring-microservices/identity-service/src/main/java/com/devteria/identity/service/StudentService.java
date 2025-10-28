@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.devteria.identity.entity.AccountStatus;
 import jakarta.transaction.Transactional;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -77,6 +78,7 @@ public class StudentService {
                 .description(request.getDescription())
                 .socialUrl(request.getSocialUrl())
                 .className(request.getClassName())
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         try {

@@ -32,10 +32,11 @@ public class LessonRequest {
 
     private String videoUrl;
 
-
     private Integer numberItem;
 
     private Boolean isFreeLesson = false;
+
+    private Boolean isPublished;
 
     private Date createdAt;
 

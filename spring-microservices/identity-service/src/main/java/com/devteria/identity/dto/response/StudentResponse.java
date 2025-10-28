@@ -34,4 +34,6 @@ public class StudentResponse {
     private String socialUrl;
 
     private String className;
+
+    private String accountStatus;
 }

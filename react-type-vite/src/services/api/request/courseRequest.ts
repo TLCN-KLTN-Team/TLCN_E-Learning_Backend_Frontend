@@ -3,7 +3,6 @@ import type { SectionRequest } from "./sectionRequest";
 export interface CourseRequest {
   id?: number;
   courseName: string;
-  courseTypeId: number;
   idTeacher?: string;
   description?: string;
   credits?: number;

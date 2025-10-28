@@ -1,12 +1,9 @@
 package com.devteria.identity.mapper;
 
-import java.util.List;
 
+import com.devteria.identity.entity.AccountStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-
-import com.devteria.identity.dto.request.StudentRequest;
 import com.devteria.identity.dto.response.StudentResponse;
 import com.devteria.identity.entity.Student;
 
@@ -15,14 +12,10 @@ public interface StudentMapper {
 
     @Mapping(source = "idDepartment", target = "departmentId")
     @Mapping(source = "idEducational", target = "educationalUnitId")
+    @Mapping(source = "accountStatus", target = "accountStatus")
     StudentResponse toStudentResponse(Student student);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(source = "departmentId", target = "idDepartment")
-    @Mapping(source = "educationalUnitId", target = "idEducational")
-    void updateStudent(@MappingTarget Student student, StudentRequest request);
-
-    List<StudentResponse> toStudentResponseList(List<Student> students);
+    default String mapAccountStatus(AccountStatus accountStatus) {
+        return accountStatus != null ? accountStatus.name() : null;
+    }
 }

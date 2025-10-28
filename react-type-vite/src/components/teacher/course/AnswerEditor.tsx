@@ -16,9 +16,9 @@ const AnswerEditor: React.FC<{
 
   const handleCorrectChange = (checked: boolean) => {
     if (questionType === 'SINGLE_CHOICE' && checked) {
-      // For single choice, uncheck all other answers first
-      // This would be handled by the parent component in a real scenario
-      // but for this demo, we'll just update this answer
+      // Đối với câu hỏi một lựa chọn, bỏ chọn tất cả các câu trả lời khác trước
+      // Điều này sẽ được xử lý bởi component cha trong trường hợp thực tế
+      // nhưng cho demo này, chúng ta sẽ chỉ cập nhật câu trả lời này
     }
     onUpdate(index, { ...answer, isCorrect: checked });
   };
@@ -59,16 +59,16 @@ const AnswerEditor: React.FC<{
       <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
       <span className="text-sm text-gray-500 min-w-[20px] font-medium">{index + 1}.</span>
       
-      {/* Correct Answer Checkbox/Radio */}
+      {/* Checkbox/Radio Đánh Dấu Đáp Án Đúng */}
       <div className="flex items-center">
         {questionType === 'SINGLE_CHOICE' ? (
           <input
             type="radio"
-            name={`correct-answer-${Math.random()}`} // Unique name per question
+            name={`correct-answer-${Math.random()}`} // Tên duy nhất cho mỗi câu hỏi
             checked={answer.isCorrect}
             onChange={(e) => handleCorrectChange(e.target.checked)}
             className="h-4 w-4 text-blue-600"
-            title="Mark as correct answer"
+            title="Đánh dấu là đáp án đúng"
           />
         ) : (
           <input
@@ -76,27 +76,27 @@ const AnswerEditor: React.FC<{
             checked={answer.isCorrect}
             onChange={(e) => handleCorrectChange(e.target.checked)}
             className="h-4 w-4 text-blue-600"
-            title="Mark as correct answer"
+            title="Đánh dấu là đáp án đúng"
           />
         )}
       </div>
       
-      {/* Answer Content Input */}
+      {/* Ô Nhập Nội Dung Đáp Án */}
       <input
         type="text"
-        value={answer.content} // Changed from answerText to content
+        value={answer.content}
         onChange={(e) => onUpdate(index, { ...answer, content: e.target.value })}
         className="flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        placeholder="Enter answer text"
+        placeholder="Nhập nội dung đáp án"
       />
       
-      {/* Delete Button */}
+      {/* Nút Xóa */}
       <Button
         variant="ghost"
         size="icon"
         onClick={() => onDelete(index)}
         className="h-8 w-8 flex-shrink-0"
-        title="Delete answer"
+        title="Xóa đáp án"
       >
         <Trash className="h-4 w-4 text-red-500" />
       </Button>
