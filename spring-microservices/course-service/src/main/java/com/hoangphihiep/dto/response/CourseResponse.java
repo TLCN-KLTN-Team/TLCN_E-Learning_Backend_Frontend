@@ -25,8 +25,6 @@ public class CourseResponse {
 
     private Integer currentStudents;
 
-    private CourseTypeResponse courseType;
-
     private Date createdAt;
 
     private Date updatedAt;

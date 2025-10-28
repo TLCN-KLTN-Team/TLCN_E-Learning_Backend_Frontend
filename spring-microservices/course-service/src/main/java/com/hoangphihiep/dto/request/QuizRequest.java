@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
 
@@ -41,6 +42,10 @@ public class QuizRequest {
     private Boolean showResults;
 
     private Boolean isPublished;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
 
     @Valid
     private Set<QuestionRequest> questions;

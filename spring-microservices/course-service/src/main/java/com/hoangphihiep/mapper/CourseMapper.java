@@ -12,8 +12,6 @@ import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring", uses = { SectionMapper.class })
 public interface CourseMapper {
-
-    @Mapping(source = "courseType", target = "courseType")
     @Mapping(source = "educationalUnit.id", target = "idEducationalUnit")
     CourseResponse toCourseResponse(Course course);
 }

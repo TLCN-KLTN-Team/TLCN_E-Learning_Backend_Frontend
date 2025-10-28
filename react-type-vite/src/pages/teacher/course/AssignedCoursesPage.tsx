@@ -19,29 +19,27 @@ const AssignedCoursesPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [teacherId, setTeacherId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchTeacherIdAndCourses = async () => {
       try {
         setLoading(true)
         setError(null)
-        
+
         if (!user?.id) {
           setError("User not authenticated")
           return
         }
 
-        // Bước 1: Lấy teacherId từ userId
+        // Bước 1: Lấy thông tin teacher từ userId
         const teacherResponse = await getTeacherByUserId(user.id)
         const fetchedTeacherId = teacherResponse.teacherId
-        
+
         if (!fetchedTeacherId) {
           setError("Teacher ID not found")
           return
         }
 
-        setTeacherId(fetchedTeacherId)
 
         // Bước 2: Lấy danh sách khóa học bằng teacherId
         const response = await getTeacherCourses(fetchedTeacherId, 0, 20)
@@ -64,7 +62,6 @@ const AssignedCoursesPage: React.FC = () => {
     const filtered = courses.filter(
       (course) =>
         course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.courseType?.courseTypeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     )
     setFilteredCourses(filtered)
@@ -178,9 +175,6 @@ const AssignedCoursesPage: React.FC = () => {
                           <h3 className="text-lg font-semibold text-card-foreground mb-2 line-clamp-2">
                             {course.courseName}
                           </h3>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                            {course.courseType?.courseTypeName || "N/A"}
-                          </span>
                         </div>
                       </div>
 
@@ -226,9 +220,6 @@ const AssignedCoursesPage: React.FC = () => {
                         <h3 className="text-lg font-semibold text-card-foreground mb-1">{course.courseName}</h3>
                         <p className="text-sm text-muted-foreground mb-2">{course.description}</p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-secondary text-secondary-foreground">
-                            {course.courseType?.courseTypeName || "N/A"}
-                          </span>
                           <span>
                             {course.currentStudents || 0}/{course.maxStudents || 0} học sinh
                           </span>

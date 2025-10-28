@@ -5,21 +5,24 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Modal from "@/components/ui/modal"
-import { createSection } from "@/services/api/teacher/sectionApi"
+import { AlertCircle } from "lucide-react"
 import type { SectionRequest } from "@/services/api/request/sectionRequest"
+import { getNextSectionOrderIndex } from "@/utils/orderIndexUtils"
+import { validateSection, type ValidationError } from "@/utils/validationUtils"
 
 const AddSectionModal: React.FC<{
   isOpen: boolean
   onClose: () => void
   onAddSection: (data: Omit<SectionRequest, "id">) => void
   courseId: string
-}> = ({ isOpen, onClose, onAddSection, courseId }) => {
+  sections?: any[]
+}> = ({ isOpen, onClose, onAddSection, sections = [] }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<ValidationError[]>([])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -27,38 +30,36 @@ const AddSectionModal: React.FC<{
       ...prev,
       [name]: value,
     }))
+    setErrors((prev) => prev.filter((err) => err.field !== name))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title.trim()) {
-      setError("Section title is required")
+
+    const validationErrors = validateSection(formData)
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors)
       return
     }
 
     setIsLoading(true)
-    setError(null)
+    setErrors([])
 
     try {
-      const numericCourseId = Number.parseInt(courseId.replace("mock_id_", ""))
-      const createdSection = await createSection(numericCourseId, {
+      const nextOrderIndex = getNextSectionOrderIndex(sections)
+
+      onAddSection({
         title: formData.title,
         description: formData.description,
+        orderIndex: nextOrderIndex,
         isPublished: false,
-      })
-
-      // Call the parent callback with the created section data
-      onAddSection({
-        ...createdSection,
-        lessons: [],
-        quizzes: [],
       })
 
       setFormData({ title: "", description: "" })
       onClose()
     } catch (err) {
-      console.error("Error creating section:", err)
-      setError("Failed to create section. Please try again.")
+      console.error("Lỗi khi tạo phần:", err)
+      setErrors([{ field: "general", message: "Không thể tạo phần. Vui lòng thử lại." }])
     } finally {
       setIsLoading(false)
     }
@@ -68,19 +69,24 @@ const AddSectionModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-lg">
       <div className="flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold">Create New Section</h2>
+          <h2 className="text-2xl font-bold">Tạo Phần Mới</h2>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         <div className="space-y-4">
-          {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
-              <p className="text-sm text-destructive">{error}</p>
+          {errors.length > 0 && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md space-y-2">
+              {errors.map((error, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700">{error.message}</p>
+                </div>
+              ))}
             </div>
           )}
           <div>
             <label htmlFor="title" className="block text-sm font-medium mb-1">
-              Section Title
+              Tiêu Đề Phần
             </label>
             <Input
               id="title"
@@ -88,22 +94,23 @@ const AddSectionModal: React.FC<{
               type="text"
               value={formData.title}
               onChange={handleChange}
-              placeholder="e.g., Introduction to React Basics"
+              placeholder="VD: Giới thiệu về React Cơ Bản"
               required
               autoFocus
               disabled={isLoading}
+              className={errors.some((e) => e.field === "title") ? "border-red-500" : ""}
             />
           </div>
           <div>
             <label htmlFor="description" className="block text-sm font-medium mb-1">
-              Description (Optional)
+              Mô Tả (Tùy chọn)
             </label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Brief description of what this section covers..."
+              placeholder="Mô tả ngắn gọn về nội dung phần này..."
               className="w-full p-2 border rounded-md bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               rows={3}
               disabled={isLoading}
@@ -111,16 +118,16 @@ const AddSectionModal: React.FC<{
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
             <p className="text-sm text-blue-700">
-              💡 <strong>Tip:</strong> The section will be automatically positioned at the end. You can drag and drop to
-              reorder sections later.
+              💡 <strong>Mẹo:</strong> Phần này sẽ tự động được đặt ở cuối. Bạn có thể kéo và thả để
+              sắp xếp lại các phần sau. Tất cả thay đổi sẽ được lưu khi bạn nhấn "Lưu & Xuất Bản".
             </p>
           </div>
           <div className="flex justify-end space-x-2 pt-2">
             <Button variant="ghost" onClick={onClose} disabled={isLoading}>
-              Cancel
+              Hủy
             </Button>
             <Button onClick={handleSubmit} disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Section"}
+              {isLoading ? "Đang thêm..." : "Thêm Phần"}
             </Button>
           </div>
         </div>

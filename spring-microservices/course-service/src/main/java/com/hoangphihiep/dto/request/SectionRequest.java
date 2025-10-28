@@ -31,6 +31,8 @@ public class SectionRequest {
 
     private Set<QuizRequest> quizzes;
 
+    private Set<AssignmentRequest> assignments;
+
     private Date createdAt;
 
     private Date updateAt;

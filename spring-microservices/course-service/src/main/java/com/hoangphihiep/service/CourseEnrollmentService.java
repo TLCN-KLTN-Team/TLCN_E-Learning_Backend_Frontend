@@ -1,17 +1,17 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseClass;
 import com.hoangphihiep.entity.CourseEnrollment;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.CourseClassRepository;
 import com.hoangphihiep.repository.CourseEnrollmentRepository;
+import com.hoangphihiep.repository.CourseRepository;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +25,7 @@ public class CourseEnrollmentService {
 
     private final CourseEnrollmentRepository enrollmentRepository;
     private final CourseClassRepository classRepository;
+    private final CourseRepository courseRepository;
     private final StudentRepository studentRepository;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
@@ -77,6 +78,9 @@ public class CourseEnrollmentService {
             // Update class current students count
             courseClass.setCurrentStudents(currentEnrollmentCount + studentsToEnroll.size());
             classRepository.save(courseClass);
+
+            // Update course total students count across all classes
+            updateCourseTotalStudents(courseClass.getCourse().getId());
 
             log.info("Successfully enrolled {} students to class {}", studentsToEnroll.size(), classId);
 
@@ -156,6 +160,9 @@ public class CourseEnrollmentService {
      */
     @Transactional
     public void unenrollStudentFromClass(Long classId, String studentId) {
+        CourseClass courseClass = classRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
         if (!enrollmentRepository.existsByClassIdAndStudentId(classId, studentId)) {
             throw new AppException(ErrorCode.COURSE_ENROLLMENT_NOT_FOUND);
         }
@@ -164,12 +171,12 @@ public class CourseEnrollmentService {
             enrollmentRepository.deleteByClassIdAndStudentId(classId, studentId);
 
             // Update class current students count
-            CourseClass courseClass = classRepository.findById(classId)
-                    .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
-
             int currentCount = enrollmentRepository.countByClassId(classId);
             courseClass.setCurrentStudents(currentCount);
             classRepository.save(courseClass);
+
+            // Update course total students count across all classes
+            updateCourseTotalStudents(courseClass.getCourse().getId());
 
             log.info("Successfully unenrolled student {} from class {}", studentId, classId);
 
@@ -187,16 +194,19 @@ public class CourseEnrollmentService {
         CourseEnrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_ENROLLMENT_NOT_FOUND));
 
+        CourseClass courseClass = classRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
         try {
             enrollmentRepository.delete(enrollment);
 
             // Update class current students count
-            CourseClass courseClass = classRepository.findById(classId)
-                    .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
-
             int currentCount = enrollmentRepository.countByClassId(classId);
             courseClass.setCurrentStudents(currentCount);
             classRepository.save(courseClass);
+
+            // Update course total students count across all classes
+            updateCourseTotalStudents(courseClass.getCourse().getId());
 
             log.info("Successfully removed enrollment {} from class {}", enrollmentId, classId);
 
@@ -225,6 +235,29 @@ public class CourseEnrollmentService {
      */
     public List<String> getEnrolledStudentIds(Long classId) {
         return enrollmentRepository.findStudentIdsByClassId(classId);
+    }
+
+    /**
+     * Update total students count for a course based on all its classes
+     */
+    @Transactional
+    public void updateCourseTotalStudents(int courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        // Get all classes for this course
+        List<CourseClass> classes = classRepository.findAllByCourseId(courseId);
+
+        // Calculate total students across all classes
+        int totalStudents = classes.stream()
+                .mapToInt(CourseClass::getCurrentStudents)
+                .sum();
+
+        // Update course total students
+        course.setCurrentStudents(totalStudents);
+        courseRepository.save(course);
+
+        log.info("Updated course {} total students to {}", courseId, totalStudents);
     }
 
     // Private helper methods

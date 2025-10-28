@@ -38,7 +38,7 @@ public class CourseType implements Serializable {
     private String description;
 
     @OneToMany(mappedBy = "courseType", cascade = CascadeType.ALL)
-    private Set<Course> courses = new HashSet<>();
+    private Set<PublishedCourse> courses = new HashSet<>();
 
     @Builder.Default
     private boolean isDeleted = false;

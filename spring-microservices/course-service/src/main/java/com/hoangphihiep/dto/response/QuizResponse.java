@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
 
@@ -39,6 +40,10 @@ public class QuizResponse {
     private Set<QuestionResponse> questions;
 
     private Integer attemptsCount;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
 
     private Date createdAt;
 

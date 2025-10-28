@@ -1,6 +1,7 @@
 package com.hoangphihiep.repository;
 
 import com.hoangphihiep.entity.Course;
+import com.hoangphihiep.entity.EducationalUnit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,13 +26,8 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
 
     List<Course> findByIdTeacher(String teacherId);
 
-
-    @Query("SELECT c FROM Course c WHERE c.courseType.id = :courseTypeId")
-    List<Course> findByCourseTypeId(@Param("courseTypeId") int courseTypeId);
-
     boolean existsByCourseName(String courseName);
 
     @Query("SELECT COUNT(c) > 0 FROM Course c WHERE c.courseName = :courseName AND c.educationalUnit.id = :institutionId")
     boolean existsByCourseNameAndEducationalUnit(@Param("courseName") String courseName, @Param("institutionId") int institutionId);
-
 }

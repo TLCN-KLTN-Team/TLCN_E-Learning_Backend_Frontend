@@ -48,6 +48,8 @@ public class Lesson implements Serializable {
     @Column(name = "is_free_lesson")
     private Boolean isFreeLesson;
 
+    private Boolean isPublished;
+
     private Date createdAt;
 
     private Date updateAt;

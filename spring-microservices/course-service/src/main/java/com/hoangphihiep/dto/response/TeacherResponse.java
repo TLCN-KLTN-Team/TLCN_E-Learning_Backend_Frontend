@@ -39,4 +39,6 @@ public class TeacherResponse {
     private DepartmentResponse department;
 
     private EducationalUnitResponse educationalUnit;
+
+    private String accountStatus;
 }

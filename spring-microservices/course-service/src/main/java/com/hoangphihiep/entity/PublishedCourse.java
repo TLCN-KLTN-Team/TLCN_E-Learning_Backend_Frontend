@@ -35,6 +35,10 @@ public class PublishedCourse {
 
     private Date updatedAt;
 
+    @ManyToOne
+    @JoinColumn(name = "course_type_id", nullable = false)
+    private CourseType courseType;
+
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private Set<Review> review = new HashSet<>();
 

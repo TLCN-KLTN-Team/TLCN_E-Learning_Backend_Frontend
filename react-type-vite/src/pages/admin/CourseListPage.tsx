@@ -341,9 +341,6 @@ const CourseListPage: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {course.courseType?.courseTypeName || 'Chưa xác định loại'}
-                          </div>
                           {course.description && (
                             <div className="text-xs text-gray-400 mt-1 max-w-xs truncate">
                               {course.description}

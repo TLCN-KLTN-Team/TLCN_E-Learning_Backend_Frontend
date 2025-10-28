@@ -31,8 +31,8 @@ public interface StudentRepository {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search);
 
-    @GetMapping("/students/all-by-institution/{institutionId}")
-    ApiResponse<List<StudentResponse>> getAllStudentsByEducationalUnit(@PathVariable int institutionId);
+    @GetMapping("/students/all-by-educationalUnit/{educationalUnitId}")
+    ApiResponse<List<StudentResponse>> getAllStudentsByEducationalUnit(@PathVariable int educationalUnitId);
 
     @PutMapping("/students/{id}")
     ApiResponse<StudentResponse> updateStudent(@PathVariable String id, @RequestBody StudentRequest request);

@@ -1,6 +1,7 @@
 package com.hoangphihiep.entity;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -65,6 +66,11 @@ public class Quiz implements Serializable {
 
     private Date updateAt;
 
+    @Column(name = "start_time")
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
     @ManyToOne
     @JoinColumn(name = "section_id")
     private Section section;

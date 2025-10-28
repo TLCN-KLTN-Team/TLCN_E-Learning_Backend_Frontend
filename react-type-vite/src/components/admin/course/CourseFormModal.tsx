@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { X, BookOpen, Users, Clock, FileText, Hash, ChevronDown } from "lucide-react";
+import { X, BookOpen, Users, Clock, FileText} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as courseApi from "@/services/api/admin/courseApi";
-import * as courseTypeApi from "@/services/api/superadmin/courseTypeApi";
 import { toast } from "react-toastify";
 import type { CourseRequest } from "@/services/api/request/courseRequest";
-import type { CourseCategoryResponse } from "@/services/api/response/courseTypeResponse";
 
 interface CourseFormModalProps {
   isOpen: boolean;
@@ -25,14 +23,12 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
   
   const [form, setForm] = useState<CourseRequest>({
     courseName: "",
-    courseTypeId: 0,
     credits: 3,
     maxStudents: 30,
     description: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [courseTypes, setCourseTypes] = useState<CourseCategoryResponse[]>([]);
-  const [loadingCourseTypes, setLoadingCourseTypes] = useState(false);
+
 
   // Load course types when modal opens
   useEffect(() => {
@@ -43,14 +39,10 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
 
   const loadCourseTypes = async () => {
     try {
-      setLoadingCourseTypes(true);
-      const response = await courseTypeApi.getCourseTypes();
-      setCourseTypes(response.content || []);
     } catch (error) {
       console.error('Error loading course types:', error);
       toast.error('Không thể tải danh sách loại khóa học');
     } finally {
-      setLoadingCourseTypes(false);
     }
   };
 
@@ -60,9 +52,6 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     const newErrors: Record<string, string> = {};
     if (!form.courseName.trim()) {
       newErrors.courseName = "Tên khóa học là bắt buộc";
-    }
-    if (!form.courseTypeId || form.courseTypeId < 1) {
-      newErrors.courseTypeId = "Vui lòng chọn loại khóa học";
     }
     if (!form.credits || form.credits < 1) {
       newErrors.credits = "Số tín chỉ phải ít nhất là 1";
@@ -102,7 +91,6 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       // Reset form
       setForm({
         courseName: "",
-        courseTypeId: 0,
         credits: 3,
         maxStudents: 30,
         description: "",
@@ -181,47 +169,6 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                       <p className="text-red-500 text-xs flex items-center mt-1">
                         <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
                         {errors.courseName}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Course Type Dropdown */}
-                  <div className="space-y-2">
-                    <label className="flex items-center text-sm font-medium text-gray-700">
-                      <Hash size={14} className="mr-2 text-blue-600" />
-                      Loại Khóa học
-                      <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <div className="relative">
-                      <label htmlFor="courseTypeId" className="sr-only">Loại khóa học</label>
-                      <select
-                        id="courseTypeId"
-                        name="courseTypeId"
-                        value={form.courseTypeId || ""}
-                        onChange={handleChange}
-                        disabled={loadingCourseTypes}
-                        className={`w-full p-3 border rounded-lg appearance-none bg-white transition-colors ${
-                          errors.courseTypeId ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
-                        } ${loadingCourseTypes ? 'opacity-50' : ''}`}
-                      >
-                        <option value="">
-                          {loadingCourseTypes ? "Đang tải loại khóa học..." : "Chọn loại khóa học"}
-                        </option>
-                        {courseTypes.map((type) => (
-                          <option key={type.id} value={type.id}>
-                            {type.courseTypeName}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                        size={16}
-                      />
-                    </div>
-                    {errors.courseTypeId && (
-                      <p className="text-red-500 text-xs flex items-center mt-1">
-                        <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
-                        {errors.courseTypeId}
                       </p>
                     )}
                   </div>
