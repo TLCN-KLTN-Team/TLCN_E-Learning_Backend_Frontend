@@ -34,6 +34,8 @@ public class LessonResponse {
 
     private Boolean isFreeLesson;
 
+    private Boolean isPublished;
+
     private Date createdAt;
 
     private Date updateAt;

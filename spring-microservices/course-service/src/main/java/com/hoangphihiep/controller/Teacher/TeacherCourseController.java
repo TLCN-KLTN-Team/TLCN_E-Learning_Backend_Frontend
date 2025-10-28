@@ -1,20 +1,23 @@
 package com.hoangphihiep.controller.Teacher;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hoangphihiep.dto.request.BulkSectionRequest;
 import com.hoangphihiep.dto.request.CourseRequest;
 import com.hoangphihiep.dto.request.TeacherRequest;
-import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.CourseResponse;
-import com.hoangphihiep.dto.response.SectionResponse;
-import com.hoangphihiep.dto.response.TeacherResponse;
-import com.hoangphihiep.service.CourseService;
-import com.hoangphihiep.service.SectionService;
-import com.hoangphihiep.service.TeacherService;
+import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,7 +31,11 @@ public class TeacherCourseController {
 
     private final SectionService sectionService;
 
-    private final TeacherService teacherService;
+    private final CourseClassService classService;
+
+    private final CourseEnrollmentService enrollmentService;
+
+    private final StudentService studentService;
     @GetMapping("/{teacherId}")
     public ApiResponse<List<CourseResponse>> getCoursesByTeacher(
             @PathVariable String teacherId) {
@@ -56,6 +63,17 @@ public class TeacherCourseController {
                 .build();
     }
 
+    @GetMapping("/by-course/{courseId}")
+    public ApiResponse<CourseResponse> getCoursesById(
+            @PathVariable int courseId) {
+
+        CourseResponse courses = courseService.getCourseById(courseId);
+
+        return ApiResponse.<CourseResponse>builder()
+                .result(courses)
+                .build();
+    }
+
     @GetMapping("/section/{courseId}")
     public ApiResponse<List<SectionResponse>> getCourseDetail(
             @PathVariable Integer courseId) {
@@ -67,12 +85,73 @@ public class TeacherCourseController {
                 .build();
     }
 
-    @PostMapping("/section/create")
-    public ApiResponse<List<SectionResponse>> createSections(@Valid @RequestBody BulkSectionRequest request) {
-        List<SectionResponse> responses = sectionService.createSections(request);
+    @PostMapping(value = "/section/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<List<SectionResponse>> createSections(
+            @RequestPart("data") String dataJson,  // ĐỔI THÀNH String
+            @RequestPart(value = "lessonFiles", required = false) List<MultipartFile> lessonFiles,
+            @RequestPart(value = "questionFiles", required = false) List<MultipartFile> questionFiles,
+            @RequestPart(value = "assignmentFiles", required = false) List<MultipartFile> assignmentFiles,
+            @RequestPart(value = "rubricFiles", required = false) List<MultipartFile> rubricFiles
+    ) throws JsonProcessingException {  // Thêm throws
+
+        System.out.println("========== DEBUG REQUEST ==========");
+        System.out.println("Raw JSON string: " + dataJson);
+
+        // Parse JSON string thành object
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule()); // Nếu có Date/Time fields
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        BulkSectionRequest request = mapper.readValue(dataJson, BulkSectionRequest.class);
+
+        System.out.println("Parsed request object: " + request);
+        System.out.println("Course ID: " + request.getCourseId());
+        System.out.println("Total sections: " + request.getSections().size());
+
+        System.out.println("========== DEBUG FILES ==========");
+        printFileList("Lesson files", lessonFiles);
+        printFileList("Question files", questionFiles);
+        printFileList("Assignment files", assignmentFiles);
+        printFileList("Rubric files", rubricFiles);
+
+        List<SectionResponse> responses = sectionService.createSections(
+                request,
+                lessonFiles,
+                questionFiles,
+                assignmentFiles,
+                rubricFiles
+        );
+
+        System.out.println("========== RESPONSE RESULT ==========");
+        System.out.println("Total sections created: " + responses.size());
 
         return ApiResponse.<List<SectionResponse>>builder()
                 .result(responses)
                 .build();
+    }
+
+
+    @GetMapping("/students/{studentId}")
+    public ApiResponse<StudentResponse> getStudentsDetail(
+            @PathVariable String studentId) {
+
+        StudentResponse student = studentService.getStudentByStudentId(studentId);
+
+        return ApiResponse.<StudentResponse>builder()
+                .result(student)
+                .build();
+    }
+
+    private void printFileList(String label, List<MultipartFile> files) {
+        if (files == null) {
+            System.out.println(label + ": NULL");
+            return;
+        }
+        System.out.println(label + ": " + files.size() + " file(s)");
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            System.out.printf("  [%d] name=%s, originalFilename=%s, size=%d bytes%n",
+                    i, file.getName(), file.getOriginalFilename(), file.getSize());
+        }
     }
 }

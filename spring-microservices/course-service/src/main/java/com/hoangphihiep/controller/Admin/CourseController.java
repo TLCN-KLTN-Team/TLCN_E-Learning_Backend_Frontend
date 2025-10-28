@@ -43,6 +43,19 @@ public class CourseController {
                 .build();
     }
 
+    @PutMapping("/courses/{courseId}")
+    public ApiResponse<CourseResponse> updateCourse(
+            @PathVariable int educationalUnitId,
+            @PathVariable int courseId,
+            @Valid @RequestBody CourseRequest request) {
+
+        CourseResponse response = adminCourseService.updateCourseForEducationalUnit(educationalUnitId, courseId, request);
+
+        return ApiResponse.<CourseResponse>builder()
+                .result(response)
+                .build();
+    }
+
     @PutMapping("/courses/{courseId}/assign-teacher")
     public ApiResponse<CourseResponse> assignTeacherToCourse(
             @PathVariable int educationalUnitId,

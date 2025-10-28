@@ -38,6 +38,7 @@ public class CourseClassService {
             throw new AppException(ErrorCode.CLASS_CODE_ALREADY_EXISTS);
         }
 
+
         CourseClass courseClass = CourseClass.builder()
                 .className(request.getClassName())
                 .classCode(request.getClassCode())

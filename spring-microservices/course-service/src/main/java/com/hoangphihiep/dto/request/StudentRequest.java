@@ -41,4 +41,6 @@ public class StudentRequest {
     private String socialUrl;
 
     private String className;
+
+    private String accountStatus;
 }

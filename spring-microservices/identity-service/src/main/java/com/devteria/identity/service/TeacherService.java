@@ -2,6 +2,7 @@ package com.devteria.identity.service;
 
 import java.util.HashSet;
 
+import com.devteria.identity.entity.AccountStatus;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -75,6 +76,7 @@ public class TeacherService {
                 .description(request.getDescription())
                 .socialUrl(request.getSocialUrl())
                 .bankAccountNumber(request.getBankAccountNumber())
+                .accountStatus(AccountStatus.ACTIVE)
                 .build();
 
         try {

@@ -154,6 +154,12 @@ public enum ErrorCode {
     COURSE_ENROLLMENT_MISMATCH(2809, "Thông tin ghi danh không thuộc về khóa học được chỉ định", HttpStatus.BAD_REQUEST),
     COURSE_UNENROLLMENT_FAILED(2810, "Không thể hủy ghi danh sinh viên khỏi khóa học", HttpStatus.BAD_REQUEST),
 
+    ASSIGNMENT_NOT_FOUND(1070, "Assignment not found", HttpStatus.BAD_REQUEST),
+    SUBMISSION_NOT_FOUND(1071, "Submission not found", HttpStatus.BAD_REQUEST),
+
+    COURSE_NOT_BELONG_TO_EDUCATIONAL_UNIT(1005, "Course does not belong to this educational unit", HttpStatus.BAD_REQUEST),
+
+    INVALID_FILE_NAME(400, "Tên file không hợp lệ", HttpStatus.BAD_REQUEST),
     // Email related errors (30xx)
     EMAIL_SENDING_FAILED(3001, "Gửi email thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 

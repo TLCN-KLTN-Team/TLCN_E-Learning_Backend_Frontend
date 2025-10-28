@@ -1,3 +1,4 @@
+import type { AssignmentRequest } from "./assignmentRequest";
 import type { LessonRequest } from "./lessonRequest";
 import type { QuizRequest } from "./quizRequest";
 
@@ -10,4 +11,5 @@ export interface SectionRequest {
   isPublished?: boolean;
   lessons?: LessonRequest[];
   quizzes?: QuizRequest[];
+  assignments?: AssignmentRequest[]
 }

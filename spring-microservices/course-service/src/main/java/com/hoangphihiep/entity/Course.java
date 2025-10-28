@@ -45,9 +45,6 @@ public class Course implements Serializable {
     @Column(name = "course_name")
     private String courseName;
 
-    @Column(name = "course_code", unique = true, length = 50)
-    private String courseCode;
-
     @Column(name = "description", length = 1000)
     private String description;
 
@@ -59,10 +56,6 @@ public class Course implements Serializable {
 
     @Column(name = "current_students")
     private Integer currentStudents = 0;
-
-    @ManyToOne
-    @JoinColumn(name = "course_type_id", nullable = false)
-    private CourseType courseType;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private Set<Section> sections = new HashSet<>();

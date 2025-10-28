@@ -32,4 +32,6 @@ public class TeacherResponse {
     private String socialUrl;
 
     private String bankAccountNumber;
+
+    private String accountStatus;
 }

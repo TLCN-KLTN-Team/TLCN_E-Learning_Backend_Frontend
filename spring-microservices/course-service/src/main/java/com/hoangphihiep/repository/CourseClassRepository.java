@@ -24,4 +24,6 @@ public interface CourseClassRepository extends JpaRepository<CourseClass, Long> 
     Page<CourseClass> findByEducationalUnitIdWithSearch(@Param("educationalUnitId") Integer educationalUnitId,
                                                     @Param("search") String search,
                                                     Pageable pageable);
+
+    List<CourseClass> findAllByCourseId(int courseId);
 }

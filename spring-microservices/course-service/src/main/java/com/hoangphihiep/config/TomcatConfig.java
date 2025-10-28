@@ -1,0 +1,19 @@
+package com.hoangphihiep.config;
+
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class TomcatConfig {
+
+    @Bean
+    public WebServerFactoryCustomizer<TomcatServletWebServerFactory> tomcatCustomizer() {
+        return factory -> factory.addConnectorCustomizers(connector -> {
+            connector.setProperty("maxParameterCount", "1000");
+            connector.setProperty("maxPostSize", "104857600");
+            connector.setProperty("maxSavePostSize", "104857600");
+        });
+    }
+}

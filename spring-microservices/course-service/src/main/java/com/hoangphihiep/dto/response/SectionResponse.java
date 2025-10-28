@@ -35,4 +35,6 @@ public class SectionResponse {
     private Set<LessonResponse> lessons;
 
     private Set<QuizResponse> quizs;
+
+    private Set<AssignmentResponse> assignments;
 }

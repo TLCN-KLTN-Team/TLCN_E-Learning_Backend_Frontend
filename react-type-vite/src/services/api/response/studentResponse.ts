@@ -16,4 +16,13 @@ export interface StudentResponse {
   className?: string;
   department?: DepartmentResponse;
   educationalUnit?: EducationalUnitResponse;
+  submittedAssignments: number
+  totalAssignments: number
+  completedQuizzes: number
+  totalQuizzes: number
+  averageScore: number
+  lastAccessTime?: Date
+  totalLearningHours: number
+  enrollmentDate?: Date
+  accountStatus: string
 }

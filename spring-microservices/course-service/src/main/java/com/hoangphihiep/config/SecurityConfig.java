@@ -32,7 +32,8 @@ public class SecurityConfig {
             "/actuator/**",
             "/actuator/health/**",
             "/educational-unit/register",
-            "/api/otp/send"
+            "/api/otp/send",
+            "/api/course/**"
     };
 
     private static final String[] SWAGGER_ENDPOINTS = {
@@ -47,7 +48,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.addFilterBefore(requestLoggingFilter, BasicAuthenticationFilter.class)
+        // Đổi từ BasicAuthenticationFilter sang một filter chạy muộn hơn
+        httpSecurity.addFilterAfter(requestLoggingFilter, org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()

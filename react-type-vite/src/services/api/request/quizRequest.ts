@@ -7,10 +7,13 @@ export interface QuizRequest {
   description?: string;
   duration: number; // Made required to match backend
   attemptLimit?: number;
+  passingLimit?: number;
   passingScore?: number; // Changed to number from backend Double
   numberItem?: number;
   showResults?: boolean;
   isPublished?: boolean;
+  startTime?: string;
+  endTime?: string;
   questions?: QuestionRequest[]; // Changed from Set to Array for frontend
   createdAt?: string;
   updateAt?: string;

@@ -21,9 +21,6 @@ public class CourseRequest {
     @NotBlank(message = "Course name is required")
     private String courseName;
 
-    @NotNull(message = "Course type is required")
-    private Integer courseTypeId;
-
     private String idTeacher;
 
     private String description;

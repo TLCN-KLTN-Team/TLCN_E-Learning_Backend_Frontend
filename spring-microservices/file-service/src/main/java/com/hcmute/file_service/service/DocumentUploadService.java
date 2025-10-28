@@ -31,13 +31,44 @@ public class DocumentUploadService extends BaseCloudinaryService{
         validateFile(file, MAX_DOCUMENT_SIZE, ALLOWED_DOCUMENT_TYPES);
 
         try {
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null) {
+                throw new AppException(ErrorCode.INVALID_FILE_NAME);
+            }
+
+            // Tách tên file và extension
+            int lastDotIndex = originalFilename.lastIndexOf('.');
+            String fileNameWithoutExt = lastDotIndex > 0 ?
+                    originalFilename.substring(0, lastDotIndex) : originalFilename;
+            String fileExtension = lastDotIndex > 0 ?
+                    originalFilename.substring(lastDotIndex + 1).toLowerCase() : "";
+
+            // Loại bỏ ký tự đặc biệt
+            String cleanFileName = fileNameWithoutExt
+                    .replaceAll("[^a-zA-Z0-9_\\-\\p{L}]", "_");
+
             Map<String, Object> uploadParams = new HashMap<>();
+
+            // ✅ THAY ĐỔI: Dùng "auto" thay vì "raw" để tránh bị block
             uploadParams.put("resource_type", "raw");
-            uploadParams.put("use_filename", true);
-            uploadParams.put("unique_filename", false);
+            uploadParams.put("public_id", cleanFileName);
+            uploadParams.put("use_filename", true);  // Giữ tên file
+            uploadParams.put("unique_filename", true); // Thêm UUID tránh trùng
+            uploadParams.put("access_mode", "public");
+
+            // Không cần set format khi dùng auto
+            // Cloudinary sẽ tự detect
 
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
-            return processUploadResult(uploadResult);
+
+            // Return kết quả
+            Map<String, String> result = new HashMap<>();
+            result.put("url", uploadResult.get("secure_url").toString());
+            result.put("publicId", uploadResult.get("public_id").toString());
+            result.put("originalFilename", originalFilename);
+            result.put("format", fileExtension);
+
+            return result;
 
         } catch (IOException e) {
             throw new AppException(ErrorCode.DOCUMENT_UPLOAD_FAILED);
@@ -48,14 +79,36 @@ public class DocumentUploadService extends BaseCloudinaryService{
         validateFile(file, MAX_DOCUMENT_SIZE, ALLOWED_DOCUMENT_TYPES);
 
         try {
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null) {
+                throw new AppException(ErrorCode.INVALID_FILE_NAME);
+            }
+
+            int lastDotIndex = originalFilename.lastIndexOf('.');
+            String fileNameWithoutExt = lastDotIndex > 0 ?
+                    originalFilename.substring(0, lastDotIndex) : originalFilename;
+            String fileExtension = lastDotIndex > 0 ?
+                    originalFilename.substring(lastDotIndex + 1).toLowerCase() : "";
+
+            String cleanFileName = fileNameWithoutExt
+                    .replaceAll("[^a-zA-Z0-9_\\-\\p{L}]", "_");
+
             Map<String, Object> uploadParams = new HashMap<>();
-            uploadParams.put("resource_type", "raw");
+            uploadParams.put("resource_type", "auto");
             uploadParams.put("folder", folderName);
+            uploadParams.put("public_id", cleanFileName);
             uploadParams.put("use_filename", true);
-            uploadParams.put("unique_filename", false);
+            uploadParams.put("unique_filename", true);
 
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
-            return processUploadResult(uploadResult);
+
+            Map<String, String> result = new HashMap<>();
+            result.put("url", uploadResult.get("secure_url").toString());
+            result.put("publicId", uploadResult.get("public_id").toString());
+            result.put("originalFilename", originalFilename);
+            result.put("format", fileExtension);
+
+            return result;
 
         } catch (IOException e) {
             throw new AppException(ErrorCode.DOCUMENT_UPLOAD_FAILED);
@@ -64,13 +117,22 @@ public class DocumentUploadService extends BaseCloudinaryService{
 
     public void deleteDocument(String publicId) {
         try {
+            // Khi delete cũng cần dùng resource_type phù hợp
+            // Thử auto hoặc image/video tùy file type
             Map<String, Object> deleteParams = new HashMap<>();
-            deleteParams.put("resource_type", "raw");
+            deleteParams.put("invalidate", true);
 
-            cloudinary.uploader().destroy(publicId, deleteParams);
+            // Try to delete as raw first
+            try {
+                deleteParams.put("resource_type", "raw");
+                cloudinary.uploader().destroy(publicId, deleteParams);
+            } catch (Exception e) {
+                // If failed, try as image (for PDFs uploaded with auto)
+                deleteParams.put("resource_type", "image");
+                cloudinary.uploader().destroy(publicId, deleteParams);
+            }
         } catch (IOException e) {
             throw new AppException(ErrorCode.DOCUMENT_DELETE_FAILED);
         }
     }
-
 }
