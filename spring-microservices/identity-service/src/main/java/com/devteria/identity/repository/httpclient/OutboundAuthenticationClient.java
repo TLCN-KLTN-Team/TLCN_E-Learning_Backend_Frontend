@@ -14,4 +14,3 @@ public interface OutboundAuthenticationClient {
     @PostMapping(value = "/token", produces = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     ExchangeTokenResponse exchangeGoogleAccessToken(@QueryMap ExchangeTokenRequest request);
 }
-

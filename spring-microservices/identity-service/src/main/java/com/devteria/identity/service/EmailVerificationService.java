@@ -1,15 +1,12 @@
 package com.devteria.identity.service;
 
-import com.devteria.identity.entity.AccountStatus;
-import com.devteria.identity.entity.User;
-import com.devteria.identity.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import com.devteria.identity.dto.request.RegisterRequest;
-import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.OtpData;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
+import com.devteria.identity.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

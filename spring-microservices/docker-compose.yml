@@ -1,6 +1,250 @@
+# spring-microservices/docker-compose.yml
 version: "3.8"
+
 services:
+  # ==================== DATABASES ====================
+  
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "3306:3306"
+
+  mongodb:
+    image: "mongo:7.0-jammy"
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "27017:27017"
+
   redis:
-    image: "redis:latest"
+    image: "redis:7-alpine"
+    container_name: redis-cache
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     ports:
       - "6379:6379"
+
+  rabbitmq:
+    image: "rabbitmq:4.1.4-management"
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # ==================== SERVICES ====================
+
+  identity-service:
+    image: ${DOCKERHUB_USER}/identity-service:${VERSION:-latest}
+    container_name: identity-service
+    restart: unless-stopped
+    environment:
+      # Database
+      DB_URL: jdbc:mysql://mysql:3306/identity_service?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      # JWT
+      JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
+      
+      # OAuth2
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET}
+      
+      # URLs
+      GOOGLE_AUTH_URI: ${GOOGLE_AUTH_URI}
+      GOOGLE_OAUTH_REDIRECT_URL: ${GOOGLE_OAUTH_REDIRECT_URL}
+      FACEBOOK_AUTH_URI: ${FACEBOOK_AUTH_URI}
+      FACEBOOK_OAUTH_REDIRECT_URL: ${FACEBOOK_OAUTH_REDIRECT_URL}
+      OAUTH_REDIRECT_URL: ${OAUTH_REDIRECT_URL}
+      PROFILE_SERVICE_URL: http://api-gateway:8888/api/v1/profile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/identity/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  course-service:
+    image: ${DOCKERHUB_USER}/course-service:${VERSION:-latest}
+    container_name: course-service
+    restart: unless-stopped
+    environment:
+      # Database
+      DB_URL: jdbc:mysql://mysql:3306/course_management?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      # JWT
+      JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
+      
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      APP_EMAIL_FROM: ${APP_EMAIL_FROM}
+      APP_EMAIL_FROM_NAME: ${APP_EMAIL_FROM_NAME}
+      
+      # Service URLs
+      IDENTITY_SERVICE_URL: http://identity-service:8080/identity
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8088/course-management/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  file-service:
+    image: ${DOCKERHUB_USER}/file-service:${VERSION:-latest}
+    container_name: file-service
+    restart: unless-stopped
+    environment:
+      # MongoDB
+      SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/file-handler-service?authSource=admin
+      
+      # Cloudinary
+      CLOUDINARY_CLOUD_NAME: ${FILE_SERVICE_CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${FILE_SERVICE_CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${FILE_SERVICE_CLOUDINARY_API_SECRET}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8084/file-handler/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  chat-service:
+    image: ${DOCKERHUB_USER}/chat-service:${VERSION:-latest}
+    container_name: chat-service
+    restart: unless-stopped
+    environment:
+      # MongoDB
+      SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/mongo_notification?authSource=admin
+      
+      # RabbitMQ
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      
+      # JWT
+      JWT_SECRET_KEY: ${JWT_SIGNER_KEY}
+      
+      # Cloudinary
+      CLOUDINARY_CLOUD_NAME: ${CHAT_SERVICE_CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CHAT_SERVICE_CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CHAT_SERVICE_CLOUDINARY_API_SECRET}
+      
+      # Service URLs
+      SERVICES_IDENTITY_URL: http://identity-service:8080/identity
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8090/server/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  api-gateway:
+    image: ${DOCKERHUB_USER}/api-gateway:${VERSION:-latest}
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+    depends_on:
+      - identity-service
+      - course-service
+      - file-service
+      - chat-service
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+# ==================== VOLUMES ====================
+
+volumes:
+  mysql_data:
+    driver: local
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ==================== NETWORKS ====================
+
+networks:
+  backend-network:
+    driver: bridge

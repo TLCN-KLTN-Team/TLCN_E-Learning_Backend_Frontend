@@ -2,28 +2,27 @@ package com.devteria.identity.controller;
 
 import java.text.ParseException;
 
-import com.devteria.identity.exception.AppException;
-import com.devteria.identity.exception.ErrorCode;
-import com.devteria.identity.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.experimental.NonFinal;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.devteria.identity.dto.request.*;
 import com.devteria.identity.dto.response.AuthenticationResponse;
 import com.devteria.identity.dto.response.IntrospectResponse;
+import com.devteria.identity.exception.AppException;
+import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.service.AuthenticationService;
+import com.devteria.identity.service.RefreshTokenService;
 import com.nimbusds.jose.JOSEException;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 
 @RestController
 @RequestMapping("/auth")
@@ -37,16 +36,16 @@ public class AuthenticationController {
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
 
-//    @GetMapping("/outbound/social-login")
-//    ApiResponse<String> socialLogin(@RequestParam("provider") String provider) {
-//        return ApiResponse.success(
-//                "Redirect to social login URL",
-//                authenticationService.getProviderOAuthUrl(provider));
-//    }
+    //    @GetMapping("/outbound/social-login")
+    //    ApiResponse<String> socialLogin(@RequestParam("provider") String provider) {
+    //        return ApiResponse.success(
+    //                "Redirect to social login URL",
+    //                authenticationService.getProviderOAuthUrl(provider));
+    //    }
 
     @PostMapping("/outbound/authenticate")
-    ApiResponse<AuthenticationResponse> outboundAuthenticate(@RequestParam("code") String code,
-                                                             @RequestParam("provider") String provider) {
+    ApiResponse<AuthenticationResponse> outboundAuthenticate(
+            @RequestParam("code") String code, @RequestParam("provider") String provider) {
         var result = authenticationService.outboundAuthenticate(code, provider);
         return ApiResponse.<AuthenticationResponse>builder()
                 .message("Authentication successful")
@@ -55,16 +54,14 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    ApiResponse<AuthenticationResponse> login(@RequestBody AuthenticationRequest request,
-                                                     HttpServletResponse response) throws ParseException, JOSEException {
+    ApiResponse<AuthenticationResponse> login(@RequestBody AuthenticationRequest request, HttpServletResponse response)
+            throws ParseException, JOSEException {
         AuthenticationService.AuthorizationData data = authenticationService.authenticate(request);
 
-        refreshTokenService.saveRefreshToken(
-                CreateRefreshTokenRequest.builder()
-                        .token(data.refreshToken())
-                        .ipAddress(null)
-                        .build()
-        );
+        refreshTokenService.saveRefreshToken(CreateRefreshTokenRequest.builder()
+                .token(data.refreshToken())
+                .ipAddress(null)
+                .build());
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", data.refreshToken())
                 .httpOnly(true)
@@ -91,16 +88,15 @@ public class AuthenticationController {
     }
 
     @PostMapping("/refresh")
-    ApiResponse<AuthenticationResponse> refreshToken(HttpServletRequest request,
-                                                     HttpServletResponse response) throws ParseException, JOSEException {
+    ApiResponse<AuthenticationResponse> refreshToken(HttpServletRequest request, HttpServletResponse response)
+            throws ParseException, JOSEException {
         String refreshToken = getCookieValue(request, "refreshToken");
         if (refreshToken == null) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
 
-        RefreshRequest refreshRequest = RefreshRequest.builder()
-                .token(refreshToken)
-                .build();
+        RefreshRequest refreshRequest =
+                RefreshRequest.builder().token(refreshToken).build();
 
         var result = authenticationService.refreshToken(refreshRequest);
 
@@ -122,9 +118,9 @@ public class AuthenticationController {
     }
 
     @PostMapping("/logout")
-    ApiResponse<Void> logout(HttpServletRequest request,
-                             HttpServletResponse response) throws ParseException, JOSEException {
-        authenticationService.logout(request,response);
+    ApiResponse<Void> logout(HttpServletRequest request, HttpServletResponse response)
+            throws ParseException, JOSEException {
+        authenticationService.logout(request, response);
         return ApiResponse.<Void>builder().build();
     }
 }

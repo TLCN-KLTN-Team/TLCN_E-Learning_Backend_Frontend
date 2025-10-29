@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.devteria.identity.entity.AccountStatus;
 import jakarta.transaction.Transactional;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.StudentRequest;
 import com.devteria.identity.dto.response.StudentResponse;
+import com.devteria.identity.entity.AccountStatus;
 import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.Student;
 import com.devteria.identity.exception.AppException;

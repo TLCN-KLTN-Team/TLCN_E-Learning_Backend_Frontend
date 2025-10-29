@@ -1,7 +1,7 @@
 package com.hoangphihiep.dto.response;
 
-import com.devteria.identity.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hoangphihiep.exception.ErrorCode;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
@@ -16,7 +16,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
     @Builder.Default
-    String code = ErrorCode.SUCCESS.getCode(); // Success code
+    String code = String.valueOf(ErrorCode.SUCCESS.getCode()); // Success code
 
     @Builder.Default
     int status = ErrorCode.SUCCESS.getStatusCode().value(); // Success status
@@ -29,7 +29,7 @@ public class ApiResponse<T> {
 
     public static <T> ApiResponse<T> success(T result, String message) {
         return ApiResponse.<T>builder()
-                .code(ErrorCode.SUCCESS.getCode())
+                .code(String.valueOf(ErrorCode.SUCCESS.getCode()))
                 .message(message)
                 .result(result)
                 .status(HttpStatus.OK.value())

@@ -11,7 +11,6 @@ import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.request.UserUpdateRequest;
 import com.devteria.identity.dto.response.PaginatedResponse;
 import com.devteria.identity.dto.response.UserResponse;
-import com.devteria.identity.service.EmailVerificationService;
 import com.devteria.identity.service.UserService;
 
 import lombok.AccessLevel;
@@ -42,11 +41,8 @@ public class UserController {
 
     @PostMapping("/registration/verify-account")
     ApiResponse<Void> verifyAccount(@RequestParam String email, @RequestParam String otpCode) {
-            userService.verifyAccount(email, otpCode);
-            return ApiResponse.success(
-                    null,
-                    "Xác thực email thành công. Tài khoản của bạn đã được kích hoạt."
-            );
+        userService.verifyAccount(email, otpCode);
+        return ApiResponse.success(null, "Xác thực email thành công. Tài khoản của bạn đã được kích hoạt.");
     }
 
     @PostMapping("/registration")

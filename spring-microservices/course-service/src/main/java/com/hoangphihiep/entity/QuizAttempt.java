@@ -1,6 +1,5 @@
 package com.hoangphihiep.entity;
 
-import com.devteria.identity.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.*;

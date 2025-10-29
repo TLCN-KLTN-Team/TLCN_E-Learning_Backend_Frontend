@@ -3,7 +3,6 @@ package com.hoangphihiep.entity;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-import com.devteria.identity.entity.Teacher;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

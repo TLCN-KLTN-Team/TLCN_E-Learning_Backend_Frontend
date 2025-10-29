@@ -5,19 +5,20 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-import com.devteria.identity.dto.response.*;
-import com.devteria.identity.repository.httpclient.FacebookGraphApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.RestTemplate;
 
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.*;
+import com.devteria.identity.dto.response.*;
 import com.devteria.identity.entity.InvalidatedToken;
 import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
@@ -25,6 +26,7 @@ import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.repository.InvalidatedTokenRepository;
 import com.devteria.identity.repository.UserRepository;
+import com.devteria.identity.repository.httpclient.FacebookGraphApi;
 import com.devteria.identity.repository.httpclient.OutboundAuthenticationClient;
 import com.devteria.identity.repository.httpclient.OutboundUserInfoClient;
 import com.nimbusds.jose.*;
@@ -38,7 +40,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -133,7 +134,7 @@ public class AuthenticationService {
     public AuthenticationResponse outboundAuthenticate(String code, String provider) {
         provider = provider.trim().toLowerCase();
         User user = null;
-        switch (provider){
+        switch (provider) {
             case "google":
                 ExchangeTokenResponse accessToken =
                         outboundAuthenticationClient.exchangeGoogleAccessToken(ExchangeTokenRequest.builder()
@@ -143,32 +144,35 @@ public class AuthenticationService {
                                 .grantType(GRANT_TYPE)
                                 .redirectUri(GOOGLE_CALLBACK_URL)
                                 .build());
-                GoogleUserInfoResponse userInfo = outboundUserInfoClient.getUserInfo("json", accessToken.getAccessToken());
-                                user = userRepository.findByUsername(userInfo.getEmail()).orElseGet(() -> {
+                GoogleUserInfoResponse userInfo =
+                        outboundUserInfoClient.getUserInfo("json", accessToken.getAccessToken());
+                user = userRepository.findByUsername(userInfo.getEmail()).orElseGet(() -> {
                     User newUser = User.builder()
                             .username(userInfo.getEmail())
                             .email(userInfo.getEmail())
                             .firstName(userInfo.getGivenName())
                             .lastName(userInfo.getFamilyName())
                             .avatarUrl(userInfo.getPicture())
-                            .roles(Collections.singleton(
-                                    Role.builder().name(PredefinedRole.USER_ROLE).build()))
+                            .roles(Collections.singleton(Role.builder()
+                                    .name(PredefinedRole.USER_ROLE)
+                                    .build()))
                             .build();
                     log.info("NEW USER: {}", newUser);
                     return userRepository.save(newUser);
                 });
                 break;
             case "facebook":
-                var fbAccessToken =
-                        facebookGraphApi.exchangeToken(ExchangeTokenRequest.builder()
-                                .code(code)
-                                .clientId(FACEBOOK_CLIENT_ID)
-                                .clientSecret(FACEBOOK_CLIENT_SECRET)
-                                .grantType(FACEBOOK_GRANT_TYPE)
-                                .redirectUri(FACEBOOK_CALLBACK_URL)
-                                .build());
-                String userInfoUrl = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + fbAccessToken.getAccessToken();
-                FacebookUserInfoResponse fbUserInfo = restTemplate.getForObject(userInfoUrl, FacebookUserInfoResponse.class);
+                var fbAccessToken = facebookGraphApi.exchangeToken(ExchangeTokenRequest.builder()
+                        .code(code)
+                        .clientId(FACEBOOK_CLIENT_ID)
+                        .clientSecret(FACEBOOK_CLIENT_SECRET)
+                        .grantType(FACEBOOK_GRANT_TYPE)
+                        .redirectUri(FACEBOOK_CALLBACK_URL)
+                        .build());
+                String userInfoUrl = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token="
+                        + fbAccessToken.getAccessToken();
+                FacebookUserInfoResponse fbUserInfo =
+                        restTemplate.getForObject(userInfoUrl, FacebookUserInfoResponse.class);
 
                 String username = fbUserInfo.getName();
 
@@ -177,8 +181,9 @@ public class AuthenticationService {
                             .username(username)
                             .firstName(fbUserInfo.getName())
                             .avatarUrl(fbUserInfo.getPicture().getData().getUrl())
-                            .roles(Collections.singleton(
-                                    Role.builder().name(PredefinedRole.USER_ROLE).build()))
+                            .roles(Collections.singleton(Role.builder()
+                                    .name(PredefinedRole.USER_ROLE)
+                                    .build()))
                             .build();
                     return userRepository.save(newUser);
                 });
@@ -192,36 +197,36 @@ public class AuthenticationService {
 
     // logic authen & login with username, not social login
     public AuthorizationData authenticate(AuthenticationRequest request) {
-        var userByUsername = userRepository
-                .findByUsername(request.getUsername())
-                .orElse(null);
-        var userByEmail = userRepository.findByEmail(request.getUsername())
-                .orElse(null);
+        var userByUsername =
+                userRepository.findByUsername(request.getUsername()).orElse(null);
+        var userByEmail = userRepository.findByEmail(request.getUsername()).orElse(null);
 
-        if (userByUsername == null && userByEmail == null)
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        if (userByUsername == null && userByEmail == null) throw new AppException(ErrorCode.USER_NOT_FOUND);
 
         var user = (userByUsername != null) ? userByUsername : userByEmail;
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
-//        if (!user.isEmailVerified()) {
-//            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
-//        }
+        //        if (!user.isEmailVerified()) {
+        //            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+        //        }
 
         return getAuthorizationData(user);
     }
 
-    public void logout(HttpServletRequest request,
-                       HttpServletResponse response) throws ParseException, JOSEException {
+    public void logout(HttpServletRequest request, HttpServletResponse response) throws ParseException, JOSEException {
         String refreshToken = getCookieValue(request, "refreshToken");
         if (refreshToken != null) {
-            //Claims c = jwtService.parseRefreshToken(refreshToken);
-            //refreshTokenService.revokeAllForUser(c.getSubject());
+            // Claims c = jwtService.parseRefreshToken(refreshToken);
+            // refreshTokenService.revokeAllForUser(c.getSubject());
         }
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true).secure(true).path("/auth").maxAge(0).build();
+                .httpOnly(true)
+                .secure(true)
+                .path("/auth")
+                .maxAge(0)
+                .build();
         response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
@@ -257,7 +262,6 @@ public class AuthenticationService {
 
         String accessToken = generateToken(user, accessTokenExpiry, "access", roles);
         String refreshToken = generateToken(user, refreshTokenExpiry, "refresh", roles);
-
 
         return new AuthorizationData(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry, roles);
     }

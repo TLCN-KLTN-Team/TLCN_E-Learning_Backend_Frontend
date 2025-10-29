@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatusCode;
 @Getter
 public enum ErrorCode {
     // General errors (9xxx)
+
+    SUCCESS(1000, "Yêu cầu thành công", HttpStatus.OK),
+
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi không xác định", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Authentication & Authorization errors (10xx)

@@ -5,7 +5,6 @@ import java.sql.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.devteria.identity.entity.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
