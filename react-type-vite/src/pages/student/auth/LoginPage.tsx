@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "../../../components/ui/button";
 import AuthLayout from "../../../components/student/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -9,10 +9,9 @@ import FacebookButton from "@/components/student/shared/FacebookButton";
 import { Eye, EyeClosed, LockKeyhole, Mail } from "lucide-react";
 import { getRoles } from "@/utils/localStorageVariables";
 import { getRoleBasedRedirectPath } from "@/utils/roleUtils";
-import { getMe } from "@/services/api/authApi";
 
 const LoginPage = () => {
-  const { user, login } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -21,7 +20,6 @@ const LoginPage = () => {
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
-  const currentPath = window.location.pathname;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -39,24 +37,12 @@ const LoginPage = () => {
         const url = getRoleBasedRedirectPath(roles);
         navigate(url, { replace: true });
 
-        // continue calling
-        getMe().then((user) => {
-          console.log("user after login:", user);
-        });
-
         toast.success("Đăng nhập thành công!");
       })
       .catch((error) => {
         toast.error(error.message || "Đăng nhập thất bại");
       });
   };
-
-  useEffect(() => {
-    if (user && currentPath === "/login") {
-      toast.success("Phiên đăng nhập còn hiệu lực.");
-      navigate("/", { replace: true });
-    }
-  }, [user, navigate, currentPath]);
 
   return (
     <AuthLayout
