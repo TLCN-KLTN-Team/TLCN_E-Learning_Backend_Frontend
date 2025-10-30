@@ -5,8 +5,11 @@ import type { AuthContextType, User, RegisterData } from "./types";
 
 import { doSocialLogin, getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
-import { getAccessToken, getExpiryTime } from "@/utils/localStorageVariables";
-import type { AppError } from "@/errors";
+import {
+  getAccessToken,
+  getExpiryTime,
+  getRefreshToken,
+} from "@/utils/localStorageVariables";
 
 // Define Provider props type
 interface AuthProviderProps {
@@ -21,31 +24,33 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     const token = getAccessToken();
-    const tokenExpiry = getExpiryTime();
 
-    if (token && tokenExpiry) {
+    if (token) {
       // Kiểm tra token có hết hạn không (expiryTime là timestamp)
-      if (Date.now() < tokenExpiry) {
-        const fetchUser = async () => {
-          setIsLoading(true);
-          try {
-            const fetchedUser = await getMe();
-            setUser(fetchedUser);
-          } catch (error) {
-            // Nếu fetch user thất bại, clear localStorage
-            console.error("Failed to fetch user data:", error);
-            localStorage.clear();
-            setUser(null);
-          } finally {
-            setIsLoading(false);
-          }
-        };
+      const fetchUser = async () => {
+        setIsLoading(true);
+        try {
+          const fetchedUser = await getMe();
+          setUser(fetchedUser);
+        } catch (error) {
+          // Nếu fetch user thất bại, clear localStorage
+          console.error("Failed to fetch user data:", error);
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("roles");
+          setUser(null);
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-        fetchUser();
-      } else {
-        // Token đã hết hạn, clear localStorage
-        localStorage.clear();
-      }
+      fetchUser();
+    } else {
+      // Token đã hết hạn, clear localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("roles");
+      setUser(null);
     }
   }, []);
 
@@ -53,6 +58,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     try {
       await doLogin(email, password);
+      setUser(await getMe());
     } catch (error) {
       console.error("Login failed:", error);
       throw error; // Re-throw để component có thể handle
@@ -68,7 +74,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = (): void => {
-    localStorage.clear();
+    // Clear tất cả dữ liệu authentication
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("roles");
+    localStorage.removeItem("expiryTime");
+    localStorage.removeItem("refreshExpiryTime");
     sessionStorage.clear(); // Xóa cả sessionStorage để reset first login flag
     setUser(null);
   };
@@ -97,7 +108,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         setUser(fetchedUser);
       } catch (error) {
         console.error("Failed to refresh user data:", error);
-        localStorage.clear();
+        // Clear tất cả dữ liệu authentication
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("roles");
+        localStorage.removeItem("expiryTime");
+        localStorage.removeItem("refreshExpiryTime");
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -106,10 +122,10 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const checkAuth = (): boolean => {
-    const authorizationData = localStorage.getItem("authorizationData");
-    if (!authorizationData) return false;
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return false;
 
-    return true; // Nếu có authorizationData, coi như đã xác thực
+    return true; // Nếu có refreshToken, coi như đã xác thực
   };
 
   const value: AuthContextType = {
