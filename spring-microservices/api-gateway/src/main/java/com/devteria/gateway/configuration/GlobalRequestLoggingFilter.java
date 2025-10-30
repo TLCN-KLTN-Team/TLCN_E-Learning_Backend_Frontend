@@ -22,7 +22,6 @@ public class GlobalRequestLoggingFilter implements GlobalFilter, Ordered {
 
         log.info("=== GLOBAL FILTER ===");
         log.info("Request: {} {}", request.getMethod(), request.getURI());
-        log.info("Headers: {}", request.getHeaders().toSingleValueMap());
 
         return chain.filter(exchange)
                 .doOnSuccess(v -> {

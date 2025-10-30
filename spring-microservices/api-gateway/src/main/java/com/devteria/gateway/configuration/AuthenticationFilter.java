@@ -1,5 +1,6 @@
 package com.devteria.gateway.configuration;
 
+import ch.qos.logback.core.spi.ErrorCodes;
 import com.devteria.gateway.dto.ApiResponse;
 import com.devteria.gateway.service.IdentityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.Cookies;
 import reactor.netty.http.server.HttpServerResponse;
 
 import java.time.Duration;
@@ -81,7 +83,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         // Logic authentication cũ cho HTTP requests
         List<String> authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
         if (CollectionUtils.isEmpty(authHeader))
-            return unauthenticated(exchange.getResponse());
+            return unauthenticated(exchange.getResponse(), "Không có token xác thực", "UNAUTHENTICATED");
 
         String token = authHeader.getFirst().replace("Bearer ", "");
 
@@ -89,13 +91,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 .timeout(Duration.ofSeconds(5))
                 .flatMap(introspectResponse -> {
                     if (introspectResponse.getResult().isValid()) {
-                        log.info("HTTP authentication successful. Token: {}", token);
                         return chain.filter(exchange);
                     } else {
-                        return unauthenticated(exchange.getResponse());
+                        return unauthenticated(exchange.getResponse(), "Token hêt hạn hoặc không hợp lệ", "MISS_OR_INVALID_TOKEN");
                     }
                 })
-                .onErrorResume(throwable -> unauthenticated(exchange.getResponse()));
+                .onErrorResume(throwable -> unauthenticated(exchange.getResponse(), "Lỗi xác thực token","MISS_OR_INVALID_TOKEN"));
     }
 
     private boolean isPublicEndpoint(ServerHttpRequest request){
@@ -103,10 +104,11 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 .anyMatch(s -> request.getURI().getPath().matches(apiPrefix + s));
     }
 
-    Mono<Void> unauthenticated(ServerHttpResponse response){
+    Mono<Void> unauthenticated(ServerHttpResponse response, String message, String code){
         ApiResponse<?> apiResponse = ApiResponse.builder()
-                .code("UNAUTHENTICATED")
-                .message("Unauthenticated")
+                .code(code)
+                .message(message)
+                .status(HttpStatus.UNAUTHORIZED.value())
                 .build();
 
         String body = null;
@@ -123,39 +125,4 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 Mono.just(response.bufferFactory().wrap(body.getBytes())));
     }
 
-    // websocket config
-    private Mono<Void> handleWebSocketAuthentication(ServerWebExchange exchange, GatewayFilterChain chain) {
-        ServerHttpRequest request = exchange.getRequest();
-
-        // Lấy token từ query parameter cho WebSocket
-        String token = request.getQueryParams().getFirst("token");
-
-        if (token == null || token.isEmpty()) {
-            log.warn("WebSocket connection attempted without token");
-            return unauthenticated(exchange.getResponse());
-        }
-
-        return identityService.introspect(token)
-                .timeout(Duration.ofSeconds(5))
-                .flatMap(introspectResponse -> {
-                    if (introspectResponse.getResult().isValid()) {
-                        log.info("Request path: {}", request.getURI().getPath());
-                        log.info("WebSocket authentication successful. Token: {}", token);
-                        return chain.filter(exchange);
-                    } else {
-                        return unauthenticated(exchange.getResponse());
-                    }
-                })
-                .onErrorResume(throwable -> {
-                    log.error("WebSocket authentication error", throwable);
-                    return unauthenticated(exchange.getResponse());
-                });
-    }
-
-    private boolean isWebSocketRequest(ServerHttpRequest request) {
-        String upgrade = request.getHeaders().getFirst(HttpHeaders.UPGRADE);
-        String connection = request.getHeaders().getFirst(HttpHeaders.CONNECTION);
-        return "websocket".equalsIgnoreCase(upgrade) &&
-                connection != null && connection.toLowerCase().contains("upgrade");
-    }
 }
