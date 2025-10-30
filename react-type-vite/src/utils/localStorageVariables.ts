@@ -1,67 +1,28 @@
 export const getAccessToken = () => {
-  const authorizationData = localStorage.getItem("authorizationData");
-  if (authorizationData) {
-    try {
-      const parsedData = JSON.parse(authorizationData);
-      return parsedData.accessToken;
-    } catch (error) {
-      console.error("Error parsing authorizationData:", error);
-      return null;
-    }
-  }
-  return null;
+  return localStorage.getItem("accessToken");
 };
 
 export const getExpiryTime = () => {
-  const authorizationData = localStorage.getItem("authorizationData");
-  if (authorizationData) {
-    try {
-      const parsedData = JSON.parse(authorizationData);
-      return parsedData.expiryTime;
-    } catch (error) {
-      console.error("Error parsing authorizationData:", error);
-      return null;
-    }
-  }
-  return null;
+  const expiryTime = localStorage.getItem("expiryTime");
+  return expiryTime ? parseInt(expiryTime) : null;
 };
 
 export const getRefreshToken = () => {
-  const authorizationData = localStorage.getItem("authorizationData");
-  if (authorizationData) {
-    try {
-      const parsedData = JSON.parse(authorizationData);
-      return parsedData.refreshToken;
-    } catch (error) {
-      console.error("Error parsing authorizationData:", error);
-      return null;
-    }
-  }
-  return null;
+  return localStorage.getItem("refreshToken");
 };
 
 export const getRefreshTokenExpiryTime = () => {
-  const authorizationData = localStorage.getItem("authorizationData");
-  if (authorizationData) {
-    try {
-      const parsedData = JSON.parse(authorizationData);
-      return parsedData.refreshTokenExpiryTime;
-    } catch (error) {
-      console.error("Error parsing authorizationData:", error);
-      return null;
-    }
-  }
-  return null;
+  const refreshExpiryTime = localStorage.getItem("refreshExpiryTime");
+  return refreshExpiryTime ? parseInt(refreshExpiryTime) : null;
 };
 
 export const getRoles = () => {
-  const authorizationData = localStorage.getItem("authorizationData");
-  if (authorizationData) {
+  const roles = localStorage.getItem("roles");
+  if (roles) {
     try {
-      const parsedData = JSON.parse(authorizationData);
-      return parsedData.roles;
+      return JSON.parse(roles);
     } catch (error) {
-      console.error("Error parsing authorizationData:", error);
+      console.error("Error parsing roles:", error);
       return null;
     }
   }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/context/theme-context/useTheme";
 import {
   PaymentHistory,
@@ -92,6 +92,11 @@ const EditProfile = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    document.title = "Chỉnh sửa hồ sơ - E-Learning Platform";
+    console.log("user:", user);
+  }, [user]);
 
   return (
     <div
