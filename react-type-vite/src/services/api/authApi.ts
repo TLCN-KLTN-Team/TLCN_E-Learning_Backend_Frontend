@@ -10,22 +10,9 @@ interface LoginRequest {
 interface AuthenticationResponse {
   accessToken: string;
   refreshToken: string;
-  expiryTime: number;
-  refreshExpiryTime: number;
-  roles: string[];
-}
-
-interface IntrospectRequest {
-  token: string;
-}
-
-interface IntrospectResponse {
-  valid: boolean;
-  userId?: string;
-  username?: string;
-  scope?: string;
-  iat?: number;
-  exp?: number;
+  expiryTime?: number;
+  refreshExpiryTime?: number;
+  roles?: string[];
 }
 
 export const doLogin = async (
@@ -41,27 +28,61 @@ export const doLogin = async (
     ApiResponse<AuthenticationResponse>
   >("/identity/auth/login", request);
 
+  // Debug: Log the response to see what backend returns
+  console.log("Login response:", response.data);
+
   // Lưu tokens vào localStorage
-  const authorizationData = response.data.result;
+  const authData = response.data.result;
+  localStorage.setItem("accessToken", authData.accessToken);
+  localStorage.setItem("refreshToken", authData.refreshToken);
+  localStorage.setItem("roles", JSON.stringify(authData.roles || []));
 
-  localStorage.setItem("authorizationData", JSON.stringify(authorizationData));
+  // Handle case where expiryTime might be undefined
+  if (authData.expiryTime) {
+    localStorage.setItem("expiryTime", authData.expiryTime.toString());
+  }
 
-  return authorizationData;
+  if (authData.refreshExpiryTime) {
+    localStorage.setItem(
+      "refreshExpiryTime",
+      authData.refreshExpiryTime.toString()
+    );
+  }
+
+  // Debug: Verify token is saved
+  console.log("Saved accessToken:", localStorage.getItem("accessToken"));
+
+  return authData;
 };
 
 export const doSocialLogin = async (
   code: string,
   provider: string
 ): Promise<string> => {
-  const response = await axiosInstance.post<ApiResponse<string>>(
-    `/identity/auth/outbound/authenticate?code=${code}&provider=${provider}`
-  );
+  const response = await axiosInstance.post<
+    ApiResponse<AuthenticationResponse>
+  >(`/identity/auth/outbound/authenticate?code=${code}&provider=${provider}`);
 
-  const authorizationData = response.data.result;
+  const authData = response.data.result;
 
-  localStorage.setItem("authorizationData", JSON.stringify(authorizationData));
+  // Lưu tokens vào localStorage
+  localStorage.setItem("accessToken", authData.accessToken);
+  localStorage.setItem("refreshToken", authData.refreshToken);
+  localStorage.setItem("roles", JSON.stringify(authData.roles || []));
 
-  return authorizationData;
+  // Handle case where expiryTime might be undefined
+  if (authData.expiryTime) {
+    localStorage.setItem("expiryTime", authData.expiryTime.toString());
+  }
+
+  if (authData.refreshExpiryTime) {
+    localStorage.setItem(
+      "refreshExpiryTime",
+      authData.refreshExpiryTime.toString()
+    );
+  }
+
+  return authData.accessToken;
 };
 
 export const getProviderOAuthUrl = async (
@@ -87,37 +108,20 @@ export const doLogout = async (): Promise<void> => {
     // Có thể gọi API logout nếu backend hỗ trợ
     // await axiosInstance.post("/identity/auth/logout");
   } finally {
-    localStorage.clear();
+    // Clear tất cả dữ liệu authentication
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("roles");
+    localStorage.removeItem("expiryTime");
+    localStorage.removeItem("refreshExpiryTime");
   }
 };
 
 export const getMe = async (): Promise<User> => {
+  console.log("Calling getMe API...");
   const response = await axiosInstance.get<ApiResponse<User>>(
     "/identity/users/me"
   );
-  return response.data.result;
-};
-
-export const introspectToken = async (
-  token: string
-): Promise<IntrospectResponse> => {
-  const request: IntrospectRequest = { token };
-  const response = await axiosInstance.post<ApiResponse<IntrospectResponse>>(
-    "/identity/auth/introspect",
-    request
-  );
-  return response.data.result;
-};
-
-export const refreshAuthToken = async (
-  refreshToken: string
-): Promise<AuthenticationResponse> => {
-  const response = await axiosInstance.post<
-    ApiResponse<AuthenticationResponse>
-  >("/identity/auth/refresh", { token: refreshToken });
-
-  const authorizationData = response.data.result;
-  localStorage.setItem("authorizationData", JSON.stringify(authorizationData));
-
+  console.log("getMe response:", response.data);
   return response.data.result;
 };
