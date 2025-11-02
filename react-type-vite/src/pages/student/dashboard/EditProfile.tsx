@@ -12,7 +12,7 @@ import EnrolledClassCourses from "@/components/shared/profile/EnrolledClassCoure
 
 const EditProfile = () => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const handleSaveProfile = async () => {};
 

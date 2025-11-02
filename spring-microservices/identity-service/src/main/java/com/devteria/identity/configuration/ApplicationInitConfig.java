@@ -45,11 +45,14 @@ public class ApplicationInitConfig {
         log.info("Initializing application.....");
         return args -> {
             if (userRepository.findByUsername(SUPER_ADMIN_ROLE).isEmpty()) {
-                var roles = new HashSet<Role>();
-                roles.add(Role.builder()
+
+                Role superAdminRole = roleRepository.save(Role.builder()
                         .name(PredefinedRole.SUPER_ADMIN_ROLE)
                         .description("Super Admin role")
                         .build());
+
+                var roles = new HashSet<Role>();
+                roles.add(superAdminRole);
 
                 User user = User.builder()
                         .username(SUPER_ADMIN_ROLE)
@@ -65,6 +68,16 @@ public class ApplicationInitConfig {
                 roleRepository.save(Role.builder()
                         .name(PredefinedRole.USER_ROLE)
                         .description("User role")
+                        .build());
+
+                roleRepository.save(Role.builder()
+                        .name(PredefinedRole.STUDENT_ROLE)
+                        .description("Student role")
+                        .build());
+
+                roleRepository.save(Role.builder()
+                        .name(PredefinedRole.TEACHER_ROLE)
+                        .description("Teacher role")
                         .build());
 
                 Role adminRole = roleRepository.save(Role.builder()

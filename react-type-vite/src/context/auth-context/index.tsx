@@ -6,7 +6,6 @@ import type { AuthContextType, User, RegisterData } from "./types";
 import { doSocialLogin, getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
 import { getAccessToken, getExpiryTime } from "@/utils/localStorageVariables";
-import type { AppError } from "@/errors";
 
 // Define Provider props type
 interface AuthProviderProps {

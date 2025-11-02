@@ -17,9 +17,6 @@ import {
   Circle,
   FileDown,
   Link as LinkIcon,
-  Rocket,
-  Atom,
-  MessagesSquare,
 } from "lucide-react";
 import "../../../styles/student-dashboard.css";
 import Header from "../dashboard/Header";

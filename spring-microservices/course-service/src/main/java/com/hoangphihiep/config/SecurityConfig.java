@@ -52,6 +52,7 @@ public class SecurityConfig {
         httpSecurity.addFilterAfter(requestLoggingFilter, org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                         .anyRequest().authenticated());

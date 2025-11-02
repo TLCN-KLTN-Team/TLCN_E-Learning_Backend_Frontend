@@ -711,7 +711,6 @@ public class SectionService {
                     processedAttachments.add(attachment);
                 }
             }
-
             assignment.setAssignmentFiles(processedAttachments);
         }
 

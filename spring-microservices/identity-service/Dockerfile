@@ -1,4 +1,4 @@
-# course-service/Dockerfile
+# identity-service/Dockerfile
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .
@@ -8,6 +8,6 @@ RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar course-service.jar
-EXPOSE 8088
-ENTRYPOINT ["java", "-jar", "course-service.jar"]
+COPY --from=build /app/target/*.jar identity-service.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "identity-service.jar"]

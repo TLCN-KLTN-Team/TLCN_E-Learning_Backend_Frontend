@@ -1,5 +1,4 @@
 # spring-microservices/docker-compose.yml
-version: "3.8"
 
 services:
   # ==================== DATABASES ====================
@@ -65,8 +64,8 @@ services:
     container_name: rabbitmq
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     networks:
       - backend-network
     healthcheck:
@@ -84,6 +83,8 @@ services:
     image: ${DOCKERHUB_USER}/identity-service:${VERSION:-latest}
     container_name: identity-service
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     environment:
       # Database
       DB_URL: jdbc:mysql://mysql:3306/identity_service?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -138,6 +139,7 @@ services:
       
       # Service URLs
       IDENTITY_SERVICE_URL: http://identity-service:8080/identity
+      FILE_SERVICE_URL: http://file-service:8084/file-handler
     depends_on:
       mysql:
         condition: service_healthy
@@ -154,6 +156,8 @@ services:
     image: ${DOCKERHUB_USER}/file-service:${VERSION:-latest}
     container_name: file-service
     restart: unless-stopped
+    ports:
+      - "8084:8084"
     environment:
       # MongoDB
       SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/file-handler-service?authSource=admin
@@ -178,23 +182,26 @@ services:
     image: ${DOCKERHUB_USER}/chat-service:${VERSION:-latest}
     container_name: chat-service
     restart: unless-stopped
+    ports:
+      - "8090:8090"
     environment:
-      # MongoDB
-      SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/mongo_notification?authSource=admin
-      
+      # MongoDB - SỬA LẠI database name
+      SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/notification_db?authSource=admin
+
       # RabbitMQ
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672  # THÊM port
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      
+
       # JWT
       JWT_SECRET_KEY: ${JWT_SIGNER_KEY}
-      
+
       # Cloudinary
       CLOUDINARY_CLOUD_NAME: ${CHAT_SERVICE_CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CHAT_SERVICE_CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CHAT_SERVICE_CLOUDINARY_API_SECRET}
-      
+
       # Service URLs
       SERVICES_IDENTITY_URL: http://identity-service:8080/identity
     depends_on:
@@ -205,7 +212,7 @@ services:
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8090/server/actuator/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8090/server/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 3

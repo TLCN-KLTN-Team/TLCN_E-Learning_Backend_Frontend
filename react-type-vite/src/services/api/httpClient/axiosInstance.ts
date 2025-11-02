@@ -6,10 +6,10 @@ import type {
 } from "axios";
 import type { ApiResponse } from "../response/apiResponse";
 import { ErrorCodes, type ErrorResponse } from "@/types/error/ErrorResponse";
-import { AppError } from "@/errors/appError";
+import { AppError } from "@/errors";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8888/api/v1",
+  baseURL: "https://external-metadata-andrea-soccer.trycloudflare.com/api/v1",
   withCredentials: true, // Tự động gửi cookies (bao gồm refresh token)
   timeout: 30000, // Timeout 30 giây
   headers: {

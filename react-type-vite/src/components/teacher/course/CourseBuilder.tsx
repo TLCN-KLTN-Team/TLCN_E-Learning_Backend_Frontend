@@ -169,9 +169,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, onSec
   // Sort sections by orderIndex
   const sortedSections = [...sections].sort((a, b) => a.orderIndex - b.orderIndex)
 
-  // Calculate statistics
-  const totalLessons = sections.reduce((sum, s) => sum + (s.lessons?.size || 0), 0)
-  const totalQuizzes = sections.reduce((sum, s) => sum + (s.quizs?.size || 0), 0)
   const publishedSections = sections.filter((s) => s.isPublished).length
 
   return (

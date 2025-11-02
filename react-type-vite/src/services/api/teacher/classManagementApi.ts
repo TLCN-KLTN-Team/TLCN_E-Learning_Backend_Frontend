@@ -9,7 +9,7 @@ import type { StudentResponse } from "../response/studentResponse"
  * @param studentId - The student ID
  * @returns Student details with progress information
  */
-export const getStudentDetails = async (courseId: number, studentId: string): Promise<StudentResponse> => {
+export const getStudentDetails = async (studentId: string): Promise<StudentResponse> => {
   const response = await axiosInstance.get<ApiResponse<StudentResponse>>(
     `/course-management/teacher/courses/students/${studentId}`,
   )

@@ -18,7 +18,7 @@ interface StudentDetailModalProps {
   courseId: string
 }
 
-const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose, student, courseId }) => {
+const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose, student}) => {
   const [detailedStudent, setDetailedStudent] = useState<StudentResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -31,7 +31,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
   const fetchStudentDetails = async () => {
     try {
       setLoading(true)
-      const details = await getStudentDetails(Number(courseId), student.studentId)
+      const details = await getStudentDetails(student.studentId)
       setDetailedStudent(details)
     } catch (err) {
       console.error("[v0] Error fetching student details:", err)
