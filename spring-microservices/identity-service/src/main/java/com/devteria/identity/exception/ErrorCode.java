@@ -84,6 +84,7 @@ public enum ErrorCode {
     TEACHER_NOT_FOUND("TEACHER_6002", "Không tìm thấy thông tin giảng viên", HttpStatus.NOT_FOUND),
 
     STUDENT_ALREADY_EXISTS("STUDENT_6001", "ID sinh viên đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
+    STUDENT_NOT_FOUND("STUDENT_6001", "Không tìm thấy sinh viên", HttpStatus.NOT_FOUND),
 
     // Role Management Errors (ROLE_xxxx)
     ROLE_NOT_FOUND("ROLE_7001", "Không tìm thấy vai trò", HttpStatus.NOT_FOUND),

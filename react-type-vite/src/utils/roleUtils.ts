@@ -15,7 +15,7 @@ export const getRoleBasedRedirectPath = (roles: string[]): string => {
 
   // STUDENT hoặc USER vào trang chính
   if (roles.includes("STUDENT")) {
-    return "/student/e-learning";
+    return "/student/dashboard";
   }
 
   // Mặc định về trang chính nếu không có role phù hợp

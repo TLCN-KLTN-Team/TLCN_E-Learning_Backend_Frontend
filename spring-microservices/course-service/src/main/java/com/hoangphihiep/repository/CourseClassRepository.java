@@ -1,5 +1,6 @@
 package com.hoangphihiep.repository;
 
+import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseClass;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,4 +27,7 @@ public interface CourseClassRepository extends JpaRepository<CourseClass, Long> 
                                                     Pageable pageable);
 
     List<CourseClass> findAllByCourseId(int courseId);
+
+    @Query("SELECT cc.course FROM CourseClass cc WHERE cc.id = :classId")
+    Course findCourseIdById(Long classId);
 }
