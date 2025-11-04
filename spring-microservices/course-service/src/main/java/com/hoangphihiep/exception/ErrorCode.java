@@ -163,6 +163,9 @@ public enum ErrorCode {
     // Email related errors (30xx)
     EMAIL_SENDING_FAILED(3001, "Gửi email thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
+    // Course Class related errors (31xx)
+    COURSE_CLASS_NOT_FOUND(3101, "Không tìm thấy lớp học", HttpStatus.NOT_FOUND),
+
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

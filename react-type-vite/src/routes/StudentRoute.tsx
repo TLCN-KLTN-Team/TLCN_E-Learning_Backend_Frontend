@@ -28,14 +28,14 @@ const StudentRoutes = [
       {/* Route to e-learning dashboard */}
       <Route
         key="dashboard"
-        path="/student/e-learning"
+        path="/student/dashboard"
         element={<StudentDashboard />}
       />
 
       {/* Route to course detail */}
       <Route
         key="course-detail"
-        path="/student/course/:id"
+        path="/student/dashboard/course/classes/:id"
         element={<CourseDetail />}
       />
 

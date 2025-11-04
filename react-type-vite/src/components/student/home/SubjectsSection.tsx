@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-import CourseCard from "./CourseCard";
+import CourseCard from "./CourseCardComponent";
 import type { Course } from "./types";
 import { useTheme } from "@/context/theme-context";
 

@@ -4,18 +4,16 @@ import com.hoangphihiep.dto.request.CourseRequest;
 import com.hoangphihiep.dto.request.DepartmentRequest;
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.Course;
-import com.hoangphihiep.entity.CourseType;
+import com.hoangphihiep.entity.CourseEnrollment;
 import com.hoangphihiep.entity.Department;
 import com.hoangphihiep.entity.EducationalUnit;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.CourseMapper;
-import com.hoangphihiep.repository.CourseRepository;
-import com.hoangphihiep.repository.CourseTypeRepository;
-import com.hoangphihiep.repository.DepartmentRepository;
-import com.hoangphihiep.repository.EducationalUnitRepository;
+import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
+import com.hoangphihiep.repository.httpclient.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,6 +39,8 @@ public class CourseService {
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
     private final CourseMapper courseMapper;
+    private final UserRepository userRepository;
+    private final CourseEnrollmentRepository courseEnrollmentRepository;
 
     // Constants for validation
     private static final int MIN_COURSE_NAME_LENGTH = 3;

@@ -1,17 +1,17 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.response.*;
-import com.hoangphihiep.entity.Course;
-import com.hoangphihiep.entity.CourseClass;
-import com.hoangphihiep.entity.CourseEnrollment;
+import com.hoangphihiep.entity.*;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
-import com.hoangphihiep.repository.CourseClassRepository;
-import com.hoangphihiep.repository.CourseEnrollmentRepository;
-import com.hoangphihiep.repository.CourseRepository;
+import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +27,119 @@ public class CourseEnrollmentService {
     private final CourseClassRepository classRepository;
     private final CourseRepository courseRepository;
     private final StudentRepository studentRepository;
+    private final CourseClassRepository courseClassRepository;
+    private final SectionRepository sectionRepository;
+    private final QuizRepository quizRepository;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
+
+    // Get basic course info to show for students who see course catalog
+    public PaginatedResponse<EnrolledCoursesResponse> getEnrolledCatalogCourses(int page, int size){
+        try {
+            String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+            StudentResponse studentResponse = studentRepository.getStudentById(userId).getResult();
+
+            Pageable pageable = PageRequest.of(page, size);
+            Page<CourseEnrollment> enrollments = enrollmentRepository
+                    .findByStudentId(studentResponse.getStudentId(), pageable);
+            List<EnrolledCoursesResponse> enrolledCourses = enrollments.stream()
+                    .map(enrollment -> {
+                        EnrolledCoursesResponse response = new EnrolledCoursesResponse();
+                        Course course = courseRepository.findById(enrollment.getCourse().getId())
+                                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+                        response.setCourseId(course.getId());
+                        response.setClassId(enrollment.getCourseClass().getId());
+                        response.setCourseName(course.getCourseName());
+                        response.setEnrollmentDate(enrollment.getEnrolledAt().toString());
+                        return response;
+                    })
+                    .toList();
+
+            return PaginatedResponse.<EnrolledCoursesResponse>builder()
+                    .content(enrolledCourses)
+                    .page(page)
+                    .size(size)
+                    .totalElements(enrollments.getSize())
+                    .totalPages(enrollments.getTotalPages())
+                    .build();
+        } catch (AppException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            log.error("Error occurred while fetching enrolled catalog courses", e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    public EnrolledCourseContentResponse getEnrolledCourseContentByClassId(Long classId) {
+        try {
+            CourseClass courseClass = courseClassRepository.findById(classId)
+                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_CLASS_NOT_FOUND));
+            Course course = courseRepository.findById(courseClass.getCourse().getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+            List<Section> sections = sectionRepository.findByCourseId(course.getId());
+            Set<SectionContentResponse> sectionContents = sections.stream()
+                    .map(sc -> {
+                        SectionContentResponse response = SectionContentResponse.builder()
+                                .title(sc.getTitle())
+                                .description(sc.getDescription())
+                                .id(sc.getId())
+                                .lessons(
+                                        new HashSet<>(sc.getLessons().stream()
+                                                .map(lesson -> LessonContentResponse.builder()
+                                                        .id(lesson.getId())
+                                                        .title(lesson.getTitle())
+                                                        .content(lesson.getContent())
+                                                        .description(lesson.getDescription())
+                                                        .videoUrl(lesson.getVideoUrl())
+                                                        .build()).collect(Collectors.toSet()
+                                                ))).build();
+                        return response;
+                    }).collect(Collectors.toSet());
+
+            return EnrolledCourseContentResponse.builder()
+                    .courseName(course.getCourseName())
+                    .description(course.getDescription())
+                    .schoolYear(courseClass.getCreatedAt().getYear() + 1900)
+                    .progressPercentage(0) // Placeholder for progress calculation
+                    .sections(sectionContents)
+                    .build();
+        } catch (AppException ae) {
+            throw ae;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+//    public EnrolledCourseQuizResponse getEnrolledCourseQuizByClassId(Long classId) {
+//        Course course = courseClassRepository.findCourseIdById(classId);
+//        List<Section> sections = sectionRepository.findByCourseId(course.getId());
+//        List<List<Quiz>> quizzes = sections.stream()
+//                .map(section -> {
+//                    List<Quiz> quizListOfSection = quizRepository.findBySectionId(section.getId());
+//                    return quizListOfSection;
+//                }).toList();
+//
+//        List<List<Question>> questions = quizzes.stream()
+//                .map(quizList -> {
+//                    List<Question> questionListOfQuiz = quizList.stream()
+//                            .map(quiz -> quiz.getQuestions())
+//                            .flatMap(Collection::stream)
+//                            .toList();
+//                    return questionListOfQuiz;
+//                }).toList();
+//
+//        List<List<Answer>> answers = questions.stream()
+//                .map(questionList -> {
+//                    List<Answer> answerListOfQuestion = questionList.stream()
+//                            .map(question -> question.getAnswers())
+//                            .flatMap(Collection::stream)
+//                            .toList();
+//                    return answerListOfQuestion;
+//                }).toList();
+//
+//    }
 
     /**
      * Enroll multiple students to a class

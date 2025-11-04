@@ -21,6 +21,9 @@ public interface StudentRepository {
     @PostMapping("/students")
     ApiResponse<StudentResponse> createStudent(@RequestBody StudentRequest studentRequest);
 
+    @GetMapping("/students/by-user-id/{id}")
+    ApiResponse<StudentResponse> getStudentById(@PathVariable String id);
+
     @GetMapping("/students/by-student-id/{studentId}")
     ApiResponse<StudentResponse> getStudentByStudentId(@PathVariable String studentId);
 

@@ -4,8 +4,8 @@ export const navigation = [
     name: "Khóa học",
     href: "#courses",
     features: [
-      { name: "Trang học tập số", href: "/student/e-learning" },
-      { name: "Không gian học tập", href: "/workspace" },
+      { name: "Trang học tập số", href: "/student/dashboard" },
+      { name: "Không gian học tập", href: "/student/workspace" },
     ],
   },
   { name: "Về chúng tôi", href: "#about" },
