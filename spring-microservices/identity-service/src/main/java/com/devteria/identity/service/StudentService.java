@@ -94,7 +94,15 @@ public class StudentService {
         log.info("Getting student by studentId: {}", studentId);
         Student student = studentRepository
                 .findByStudentId(studentId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.STUDENT_NOT_FOUND));
+        return studentMapper.toStudentResponse(student);
+    }
+
+    public StudentResponse getStudentById(String userId) {
+        log.info("Getting student by userId: {}", userId);
+        Student student = studentRepository
+                .findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.STUDENT_NOT_FOUND));
         return studentMapper.toStudentResponse(student);
     }
 
@@ -122,7 +130,7 @@ public class StudentService {
         log.info("Updating student with ID: {}", id);
 
         Student existingStudent =
-                studentRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                studentRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.STUDENT_NOT_FOUND));
 
         // Check if email is being changed and if new email already exists
         if (!existingStudent.getEmail().equals(request.getEmail())

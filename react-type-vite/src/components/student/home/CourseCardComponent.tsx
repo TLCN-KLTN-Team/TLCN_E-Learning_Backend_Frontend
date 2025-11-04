@@ -3,7 +3,7 @@ import type { Course } from "./types";
 import DefaultThumbnail from "@/components/shared/DefaultThumbnail";
 import { useTheme } from "@/context/theme-context";
 
-const CourseCard = ({ course }: { course: Course }) => {
+const CourseDetail = ({ course }: { course: Course }) => {
   const [imageError, setImageError] = useState(false);
   const { theme } = useTheme();
 
@@ -124,4 +124,4 @@ const CourseCard = ({ course }: { course: Course }) => {
   );
 };
 
-export default CourseCard;
+export default CourseDetail;

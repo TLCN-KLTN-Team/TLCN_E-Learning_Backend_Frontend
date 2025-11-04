@@ -17,4 +17,7 @@ public interface UserRepository {
     @PostMapping("/admin")
     ApiResponse<UserResponse> createUser(@RequestBody UserRequest request);
 
+    @GetMapping("/me")
+    ApiResponse<UserResponse> getCurrentUser();
+
 }

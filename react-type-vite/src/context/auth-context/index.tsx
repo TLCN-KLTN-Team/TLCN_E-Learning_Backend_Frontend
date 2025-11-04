@@ -5,11 +5,7 @@ import type { AuthContextType, User, RegisterData } from "./types";
 
 import { doSocialLogin, getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
-import {
-  getAccessToken,
-  getExpiryTime,
-  getRefreshToken,
-} from "@/utils/localStorageVariables";
+import { getAccessToken, getRefreshToken } from "@/utils/localStorageVariables";
 
 // Define Provider props type
 interface AuthProviderProps {
@@ -99,9 +95,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
   const refreshUser = async (): Promise<void> => {
     const token = getAccessToken();
-    const tokenExpiry = getExpiryTime();
 
-    if (token && tokenExpiry && Date.now() < tokenExpiry) {
+    if (token) {
       setIsLoading(true);
       try {
         const fetchedUser = await getMe();

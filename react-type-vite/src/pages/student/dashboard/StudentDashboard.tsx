@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import "../../../styles/student-dashboard.css";
 
-import CourseCard from "./CourseCard";
+import CourseCard from "../../../components/student/dashboard/CourseCard";
 import Header from "./Header";
 import Footer from "./Footer";
+import courseEnrollmentApi, {
+  type EnrolledCoursesResponse,
+} from "@/services/api/student/courseEnrollmentApi";
+import { toast } from "react-toastify";
 
 interface Course {
   id: number;
@@ -68,20 +72,41 @@ const mockCourses: Course[] = [
 ];
 
 export const StudentDashboard = () => {
+  const [courses, setCourses] = useState<EnrolledCoursesResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("course_name");
   const [filterBy, setFilterBy] = useState("all");
+  const [pageNumber, setPageNumber] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
 
   // Filter courses based on search and filter
-  const filteredCourses = mockCourses.filter((course: Course) => {
-    const matchesSearch = course.title
+  const filteredCourses = courses.filter((course: EnrolledCoursesResponse) => {
+    const matchesSearch = course.courseName
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchesFilter =
-      filterBy === "all" ||
-      course.category.toLowerCase() === filterBy.toLowerCase();
-    return matchesSearch && matchesFilter;
+
+    return matchesSearch;
   });
+
+  useEffect(() => {
+    const fetchEnrolledCourses = async () => {
+      try {
+        const data = await courseEnrollmentApi.getCatalogEnrolledCourses(
+          pageNumber,
+          pageSize,
+          searchTerm
+        );
+        setCourses(data.content);
+        console.log("Enrolled courses fetched:", data.content);
+        toast.success("Khóa học đã được tải thành công!");
+      } catch (error) {
+        const msgErr = error as { message: string };
+        toast.error(msgErr.message || "Lỗi khi tải khóa học!");
+      }
+    };
+
+    fetchEnrolledCourses();
+  }, [pageNumber, pageSize, searchTerm]);
 
   return (
     <div className="student-dashboard student-dashboard-bg">
@@ -153,7 +178,7 @@ export const StudentDashboard = () => {
             className={"grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}
           >
             {filteredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard key={course.courseId} course={course} />
             ))}
           </div>
 

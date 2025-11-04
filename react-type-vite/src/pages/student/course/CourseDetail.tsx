@@ -1,10 +1,9 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Play,
   FileText,
-  Download,
   Users,
   Calendar,
   Clock,
@@ -13,359 +12,58 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronRight,
-  CheckCircle2,
   Circle,
-  FileDown,
-  Link as LinkIcon,
-  Rocket,
-  Atom,
-  MessagesSquare,
 } from "lucide-react";
 import "../../../styles/student-dashboard.css";
 import Header from "../dashboard/Header";
 import Footer from "../dashboard/Footer";
 
 import { course_tabs } from "../data/CourseDetailData";
-
-// Types
-interface Lesson {
-  id: number;
-  title: string;
-  type: "video" | "document" | "quiz" | "assignment" | "forum" | "link";
-  duration?: string;
-  completed: boolean;
-  url?: string;
-  description?: string;
-}
-
-interface Module {
-  id: number;
-  title: string;
-  description: string;
-  lessons: Lesson[];
-  isExpanded: boolean;
-}
-
-interface Instructor {
-  id: number;
-  name: string;
-  title: string;
-  avatar: string;
-  bio: string;
-}
-
-interface CourseInfo {
-  id: number;
-  title: string;
-  subtitle: string;
-  description: string;
-  image: string;
-  instructor: Instructor;
-  category: string;
-  startDate: string;
-  endDate: string;
-  totalHours: number;
-  studentsEnrolled: number;
-  rating: number;
-  totalRatings: number;
-  progress: number;
-  modules: Module[];
-}
-
-// Mock data cho khóa học chi tiết
-const mockCourseDetail: CourseInfo = {
-  id: 5,
-  title: "Kiem thu phan mem_ Nhom 04CLC",
-  subtitle: "2025-2026 HỌC KỲ 1 - ĐẠI HỌC CHÍNH QUY",
-  description:
-    "Khóa học về kiểm thử phần mềm cung cấp kiến thức toàn diện về các phương pháp, kỹ thuật và công cụ kiểm thử. Học viên sẽ được học về kiểm thử đơn vị, kiểm thử tích hợp, kiểm thử hệ thống và các phương pháp kiểm thử tự động.",
-  image: "/src/assets/images/courses/4by3/05.jpg",
-  instructor: {
-    id: 1,
-    name: "TS. Nguyễn Văn A",
-    title: "Giảng viên Khoa Công nghệ Thông tin",
-    avatar: "/src/assets/images/instructor/01.jpg",
-    bio: "Tiến sĩ Công nghệ Thông tin với hơn 10 năm kinh nghiệm trong lĩnh vực kiểm thử phần mềm và đảm bảo chất lượng.",
-  },
-  category: "Testing",
-  startDate: "2025-01-15",
-  endDate: "2025-05-15",
-  totalHours: 45,
-  studentsEnrolled: 35,
-  rating: 4.5,
-  totalRatings: 128,
-  progress: 65,
-  modules: [
-    {
-      id: 1,
-      title: "Giới thiệu về Kiểm thử Phần mềm",
-      description:
-        "Tổng quan về kiểm thử phần mềm, tầm quan trọng và quy trình",
-      isExpanded: true,
-      lessons: [
-        {
-          id: 1,
-          title: "Forum thảo luận chung",
-          type: "forum",
-          completed: true,
-          description: "Nơi thảo luận các vấn đề chung về khóa học",
-        },
-        {
-          id: 2,
-          title: "Giới thiệu về Kiểm thử Phần mềm",
-          type: "document",
-          completed: true,
-          description: "Tài liệu giới thiệu tổng quan về kiểm thử phần mềm",
-        },
-        {
-          id: 3,
-          title: "Tầm quan trọng của Kiểm thử",
-          type: "video",
-          duration: "15 min",
-          completed: true,
-          description:
-            "Video về tầm quan trọng của kiểm thử trong phát triển phần mềm",
-        },
-        {
-          id: 4,
-          title: "Quy trình Kiểm thử Phần mềm",
-          type: "document",
-          completed: false,
-          description: "Tài liệu về quy trình kiểm thử phần mềm",
-        },
-        {
-          id: 5,
-          title: "Bài tập 1: Phân tích Case Study",
-          type: "assignment",
-          completed: false,
-          description: "Phân tích một case study về kiểm thử phần mềm",
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "Các loại Kiểm thử và Phương pháp",
-      description:
-        "Tìm hiểu về các loại kiểm thử khác nhau và phương pháp áp dụng",
-      isExpanded: false,
-      lessons: [
-        {
-          id: 6,
-          title: "Kiểm thử Đơn vị (Unit Testing)",
-          type: "video",
-          duration: "25 min",
-          completed: true,
-          description: "Video hướng dẫn về kiểm thử đơn vị",
-        },
-        {
-          id: 7,
-          title: "Kiểm thử Tích hợp (Integration Testing)",
-          type: "document",
-          completed: false,
-          description: "Tài liệu về kiểm thử tích hợp",
-        },
-        {
-          id: 8,
-          title: "Kiểm thử Hệ thống (System Testing)",
-          type: "video",
-          duration: "30 min",
-          completed: false,
-          description: "Video về kiểm thử hệ thống",
-        },
-        {
-          id: 9,
-          title: "Thực hành với JUnit",
-          type: "link",
-          completed: false,
-          url: "https://junit.org/junit5/",
-          description: "Link đến tài liệu JUnit để thực hành",
-        },
-        {
-          id: 10,
-          title: "Bài tập 2: Viết Test Case",
-          type: "assignment",
-          completed: false,
-          description: "Viết test case cho một ứng dụng mẫu",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Công cụ Kiểm thử Tự động",
-      description: "Học về các công cụ kiểm thử tự động phổ biến",
-      isExpanded: false,
-      lessons: [
-        {
-          id: 11,
-          title: "Selenium WebDriver",
-          type: "video",
-          duration: "40 min",
-          completed: false,
-          description: "Video hướng dẫn sử dụng Selenium WebDriver",
-        },
-        {
-          id: 12,
-          title: "TestNG Framework",
-          type: "document",
-          completed: false,
-          description: "Tài liệu về TestNG Framework",
-        },
-        {
-          id: 13,
-          title: "Cypress Testing Tool",
-          type: "video",
-          duration: "35 min",
-          completed: false,
-          description: "Video về công cụ Cypress",
-        },
-        {
-          id: 14,
-          title: "Demo: Tạo Test Script",
-          type: "video",
-          duration: "50 min",
-          completed: false,
-          description: "Demo tạo test script với Selenium",
-        },
-        {
-          id: 15,
-          title: "Bài tập 3: Automation Testing",
-          type: "assignment",
-          completed: false,
-          description: "Tạo bộ test tự động cho một website",
-        },
-      ],
-    },
-    {
-      id: 4,
-      title: "Kiểm thử Hiệu năng và Bảo mật",
-      description: "Tìm hiểu về kiểm thử hiệu năng và kiểm thử bảo mật",
-      isExpanded: false,
-      lessons: [
-        {
-          id: 16,
-          title: "Performance Testing với JMeter",
-          type: "video",
-          duration: "45 min",
-          completed: false,
-          description: "Video hướng dẫn kiểm thử hiệu năng với JMeter",
-        },
-        {
-          id: 17,
-          title: "Load Testing vs Stress Testing",
-          type: "document",
-          completed: false,
-          description: "Tài liệu phân biệt các loại kiểm thử hiệu năng",
-        },
-        {
-          id: 18,
-          title: "Security Testing Fundamentals",
-          type: "video",
-          duration: "35 min",
-          completed: false,
-          description: "Video về cơ bản kiểm thử bảo mật",
-        },
-        {
-          id: 19,
-          title: "OWASP Top 10 Vulnerabilities",
-          type: "link",
-          url: "https://owasp.org/Top10/",
-          completed: false,
-          description: "Link đến OWASP Top 10",
-        },
-        {
-          id: 20,
-          title: "Project: Security Assessment",
-          type: "assignment",
-          completed: false,
-          description: "Đánh giá bảo mật cho một ứng dụng web",
-        },
-      ],
-    },
-    {
-      id: 5,
-      title: "Báo cáo và Quản lý Lỗi",
-      description: "Học cách báo cáo lỗi và quản lý quy trình kiểm thử",
-      isExpanded: false,
-      lessons: [
-        {
-          id: 21,
-          title: "Bug Report Best Practices",
-          type: "document",
-          completed: false,
-          description: "Tài liệu về cách viết báo cáo lỗi hiệu quả",
-        },
-        {
-          id: 22,
-          title: "JIRA for Bug Tracking",
-          type: "video",
-          duration: "30 min",
-          completed: false,
-          description: "Video hướng dẫn sử dụng JIRA",
-        },
-        {
-          id: 23,
-          title: "Test Management với TestRail",
-          type: "video",
-          duration: "25 min",
-          completed: false,
-          description: "Video về quản lý kiểm thử với TestRail",
-        },
-        {
-          id: 24,
-          title: "Final Project: Complete Testing Plan",
-          type: "assignment",
-          completed: false,
-          description: "Tạo kế hoạch kiểm thử hoàn chỉnh cho một dự án",
-        },
-      ],
-    },
-  ],
-};
+import type { EnrolledCourseContentResponse } from "@/services/api/student/courseEnrollmentApi";
+import courseEnrollmentApi from "@/services/api/student/courseEnrollmentApi";
 
 const CourseDetail = () => {
-  const [course, setCourse] = useState<CourseInfo>(mockCourseDetail);
+  const [course, setCourse] = useState<EnrolledCourseContentResponse>();
   const [activeTab, setActiveTab] = useState<string>("content");
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(
+    new Set()
+  );
+  const { id } = useParams<{ id: string }>();
 
-  const toggleModule = (moduleId: number) => {
-    setCourse((prev) => ({
-      ...prev,
-      modules: prev.modules.map((module) =>
-        module.id === moduleId
-          ? { ...module, isExpanded: !module.isExpanded }
-          : module
-      ),
-    }));
+  const toggleSection = (sectionId: number) => {
+    setExpandedSections((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
   };
 
-  const getLessonIcon = (type: string) => {
-    switch (type) {
-      case "video":
-        return <Play className="w-4 h-4" />;
-      case "document":
-        return <FileText className="w-4 h-4" />;
-      case "quiz":
-        return <BookOpen className="w-4 h-4" />;
-      case "assignment":
-        return <FileDown className="w-4 h-4" />;
-      case "forum":
-        return <MessageSquare className="w-4 h-4" />;
-      case "link":
-        return <LinkIcon className="w-4 h-4" />;
-      default:
-        return <FileText className="w-4 h-4" />;
-    }
-  };
+  useEffect(() => {
+    const fetchCourseContent = async () => {
+      try {
+        if (id) {
+          const data = await courseEnrollmentApi.getEnrolledCourseContents(
+            Number(id)
+          );
+          setCourse(data);
 
-  const completedLessons = course.modules.reduce(
-    (total, module) =>
-      total + module.lessons.filter((lesson) => lesson.completed).length,
-    0
-  );
+          // Mở section đầu tiên mặc định
+          if (data.sections && data.sections.size > 0) {
+            const firstSection = Array.from(data.sections)[0];
+            setExpandedSections(new Set([firstSection.id]));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching course content:", error);
+      }
+    };
 
-  const totalLessons = course.modules.reduce(
-    (total, module) => total + module.lessons.length,
-    0
-  );
+    fetchCourseContent();
+  }, [id]);
 
   return (
     <div className="student-dashboard student-dashboard-bg">
@@ -388,8 +86,8 @@ const CourseDetail = () => {
           <div className="md:flex gap-6">
             <div className="md:w-1/3">
               <img
-                src={course.image}
-                alt={course.title}
+                src="/src/assets/images/courses/4by3/05.jpg"
+                alt={course?.courseName || "Course"}
                 className="w-full object-cover rounded-lg"
               />
             </div>
@@ -397,16 +95,16 @@ const CourseDetail = () => {
             <div className="md:w-2/3 py-4 pr-4">
               <div className="mb-4">
                 <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full mb-2">
-                  {course.category}
+                  Khóa học
                 </span>
                 <h1 className="text-3xl font-bold student-dashboard-course-title mb-2">
-                  {course.title}
+                  {course?.courseName || "Loading..."}
                 </h1>
                 <p className="text-lg student-dashboard-course-subtitle mb-4">
-                  {course.subtitle}
+                  Năm học: {course?.schoolYear}
                 </p>
                 <p className="student-dashboard-text-muted mb-4">
-                  {course.description}
+                  {course?.description || ""}
                 </p>
               </div>
 
@@ -415,9 +113,7 @@ const CourseDetail = () => {
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-1">
                     <Users className="w-4 h-4 mr-1" />
-                    <span className="font-semibold">
-                      {course.studentsEnrolled}
-                    </span>
+                    <span className="font-semibold">N/A</span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
                     Học viên
@@ -427,7 +123,7 @@ const CourseDetail = () => {
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-1">
                     <Clock className="w-4 h-4 mr-1" />
-                    <span className="font-semibold">{course.totalHours}h</span>
+                    <span className="font-semibold">N/A</span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
                     Tổng thời gian
@@ -437,20 +133,24 @@ const CourseDetail = () => {
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-1">
                     <Calendar className="w-4 h-4 mr-1" />
-                    <span className="font-semibold">4 tháng</span>
+                    <span className="font-semibold">
+                      Năm {course?.schoolYear}
+                    </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
-                    Thời lượng
+                    Năm học
                   </span>
                 </div>
 
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-1">
-                    <Star className="w-4 h-4 mr-1 text-yellow-500" />
-                    <span className="font-semibold">{course.rating}</span>
+                    <BookOpen className="w-4 h-4 mr-1" />
+                    <span className="font-semibold">
+                      {course?.sections?.size || 0}
+                    </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
-                    ({course.totalRatings} đánh giá)
+                    Chương học
                   </span>
                 </div>
               </div>
@@ -460,15 +160,14 @@ const CourseDetail = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium">Tiến độ học tập</span>
                   <span className="text-sm student-dashboard-progress-text">
-                    {completedLessons}/{totalLessons} bài học (
-                    {Math.round((completedLessons / totalLessons) * 100)}%)
+                    {course?.progressPercentage || 0}%
                   </span>
                 </div>
                 <div className="w-full student-dashboard-progress-bg rounded-full h-3">
                   <div
                     className="student-dashboard-progress-fill h-3 rounded-full transition-all duration-300"
                     style={{
-                      width: `${(completedLessons / totalLessons) * 100}%`,
+                      width: `${course?.progressPercentage || 0}%`,
                     }}
                   ></div>
                 </div>
@@ -512,88 +211,106 @@ const CourseDetail = () => {
         <div className="min-h-96">
           {activeTab === "content" && (
             <div className="space-y-4">
-              {course.modules.map((module) => (
-                <div key={module.id} className="student-dashboard-course-card">
-                  <div className="p-4">
-                    <button
-                      onClick={() => toggleModule(module.id)}
-                      className="flex items-center justify-between w-full text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        {module.isExpanded ? (
-                          <ChevronDown className="w-5 h-5 text-gray-500" />
-                        ) : (
-                          <ChevronRight className="w-5 h-5 text-gray-500" />
-                        )}
-                        <div>
-                          <h3 className="text-lg font-semibold student-dashboard-course-title">
-                            {module.title}
-                          </h3>
-                          <p className="text-sm student-dashboard-text-muted mt-1">
-                            {module.description}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-sm student-dashboard-text-muted">
-                        {module.lessons.filter((l) => l.completed).length}/
-                        {module.lessons.length} bài
-                      </div>
-                    </button>
-
-                    {module.isExpanded && (
-                      <div className="mt-4 pl-8 space-y-3">
-                        {module.lessons.map((lesson) => (
-                          <div
-                            key={lesson.id}
-                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
-                          >
-                            <div className="flex-shrink-0">
-                              {lesson.completed ? (
-                                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-gray-400" />
-                              )}
-                            </div>
-
-                            <div className="flex-shrink-0 text-blue-600">
-                              {getLessonIcon(lesson.type)}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <h4
-                                className={`font-medium ${
-                                  lesson.completed
-                                    ? "text-gray-900"
-                                    : "text-gray-700"
-                                }`}
-                              >
-                                {lesson.title}
-                              </h4>
-                              {lesson.description && (
-                                <p className="text-sm student-dashboard-text-muted mt-1">
-                                  {lesson.description}
-                                </p>
-                              )}
-                            </div>
-
-                            {lesson.duration && (
-                              <div className="flex-shrink-0 text-sm student-dashboard-text-muted">
-                                {lesson.duration}
-                              </div>
-                            )}
-
-                            {lesson.type === "document" && (
-                              <button className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600">
-                                <Download className="w-4 h-4" />
-                              </button>
-                            )}
+              {course &&
+                course.sections &&
+                Array.from(course.sections).map((section) => (
+                  <div
+                    key={section.id}
+                    className="student-dashboard-course-card"
+                  >
+                    <div className="p-4">
+                      <button
+                        onClick={() => toggleSection(section.id)}
+                        className="flex items-center justify-between w-full text-left hover:bg-gray-50 rounded-lg p-2 -m-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedSections.has(section.id) ? (
+                            <ChevronDown className="w-5 h-5 text-gray-500" />
+                          ) : (
+                            <ChevronRight className="w-5 h-5 text-gray-500" />
+                          )}
+                          <div>
+                            <h3 className="text-lg font-semibold student-dashboard-course-title">
+                              {section.title}
+                            </h3>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                        <div className="text-sm student-dashboard-text-muted">
+                          {section.lessons
+                            ? Array.from(section.lessons).length
+                            : 0}{" "}
+                          bài
+                        </div>
+                      </button>
+
+                      {expandedSections.has(section.id) && (
+                        <div className="mt-4 pl-4 space-y-3">
+                          {section.lessons &&
+                            Array.from(section.lessons).map((lesson) => (
+                              <div
+                                key={lesson.id}
+                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border"
+                              >
+                                <div className="flex-shrink-0">
+                                  <Circle className="w-5 h-5 text-gray-400" />
+                                </div>
+
+                                <div className="flex-shrink-0 text-blue-600">
+                                  {lesson.videoUrl ? (
+                                    <Play className="w-4 h-4" />
+                                  ) : (
+                                    <FileText className="w-4 h-4" />
+                                  )}
+                                </div>
+
+                                <div className="flex-1 min-w-0 space-y-1">
+                                  <h4 className="font-medium text-gray-700">
+                                    {lesson.title}
+                                  </h4>
+                                  {lesson.videoUrl && (
+                                    <div className="flex space-x-1">
+                                      <p className="font-medium text-gray-700">
+                                        Video:{" "}
+                                      </p>
+                                      <a
+                                        href={lesson.videoUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:underline text-red-500"
+                                      >
+                                        {lesson.videoUrl}
+                                      </a>
+                                      <hr className="my-2 border-gray-200" />
+                                    </div>
+                                  )}
+
+                                  {lesson.description && (
+                                    <p className="text-sm student-dashboard-text-muted mt-1">
+                                      {lesson.description}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {lesson.videoUrl && (
+                                  <div className="flex-shrink-0 text-sm student-dashboard-text-muted">
+                                    Video
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                ))}
+
+              {(!course || !course.sections || course.sections.size === 0) && (
+                <div className="student-dashboard-course-card p-6">
+                  <p className="text-center student-dashboard-text-muted">
+                    Chưa có nội dung khóa học nào được tải lên.
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           )}
 
@@ -601,7 +318,9 @@ const CourseDetail = () => {
             <div className="student-dashboard-course-card p-6">
               <h3 className="text-xl font-semibold mb-4">Mô tả khóa học</h3>
               <div className="prose max-w-none">
-                <p className="mb-4">{course.description}</p>
+                <p className="mb-4">
+                  {course?.description || "Chưa có mô tả khóa học."}
+                </p>
                 <h4 className="text-lg font-semibold mb-3">
                   Mục tiêu khóa học:
                 </h4>
@@ -651,25 +370,26 @@ const CourseDetail = () => {
             <div className="student-dashboard-course-card p-6">
               <div className="flex items-start gap-4">
                 <img
-                  src={course.instructor.avatar}
-                  alt={course.instructor.name}
+                  src="/src/assets/images/instructor/01.jpg"
+                  alt="Giảng viên"
                   className="w-20 h-20 rounded-full object-cover"
                 />
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-1">
-                    {course.instructor.name}
+                    Giảng viên khóa học
                   </h3>
                   <p className="text-blue-600 mb-3">
-                    {course.instructor.title}
+                    Thông tin sẽ được cập nhật sau
                   </p>
                   <p className="student-dashboard-text-muted mb-4">
-                    {course.instructor.bio}
+                    Thông tin chi tiết về giảng viên sẽ được cập nhật trong thời
+                    gian sớm nhất.
                   </p>
 
                   <div className="grid grid-cols-3 gap-4 mt-6">
                     <div className="text-center">
                       <div className="text-2xl font-bold student-dashboard-course-title">
-                        10+
+                        N/A
                       </div>
                       <div className="text-sm student-dashboard-text-muted">
                         Năm kinh nghiệm
@@ -677,7 +397,7 @@ const CourseDetail = () => {
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold student-dashboard-course-title">
-                        500+
+                        N/A
                       </div>
                       <div className="text-sm student-dashboard-text-muted">
                         Học viên
@@ -685,7 +405,7 @@ const CourseDetail = () => {
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold student-dashboard-course-title">
-                        15
+                        N/A
                       </div>
                       <div className="text-sm student-dashboard-text-muted">
                         Khóa học
@@ -704,22 +424,15 @@ const CourseDetail = () => {
                 <div className="flex items-center gap-6">
                   <div className="text-center">
                     <div className="text-4xl font-bold student-dashboard-course-title">
-                      {course.rating}
+                      N/A
                     </div>
                     <div className="flex items-center justify-center mt-1">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`w-5 h-5 ${
-                            star <= course.rating
-                              ? "text-yellow-500 fill-current"
-                              : "text-gray-300"
-                          }`}
-                        />
+                        <Star key={star} className="w-5 h-5 text-gray-300" />
                       ))}
                     </div>
                     <div className="text-sm student-dashboard-text-muted mt-1">
-                      {course.totalRatings} đánh giá
+                      Chưa có đánh giá
                     </div>
                   </div>
 
@@ -733,8 +446,8 @@ const CourseDetail = () => {
                         <Star className="w-4 h-4 text-yellow-500" />
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
                           <div
-                            className="bg-yellow-500 h-2 rounded-full"
-                            style={{ width: `${Math.random() * 100}%` }}
+                            className="bg-gray-300 h-2 rounded-full"
+                            style={{ width: "0%" }}
                           ></div>
                         </div>
                       </div>
@@ -743,65 +456,18 @@ const CourseDetail = () => {
                 </div>
               </div>
 
-              {/* Sample Reviews */}
-              <div className="space-y-4">
-                {[
-                  {
-                    name: "Nguyễn Minh Tuấn",
-                    rating: 5,
-                    date: "2024-12-01",
-                    comment:
-                      "Khóa học rất hay và bổ ích. Giảng viên giải thích rất rõ ràng và dễ hiểu.",
-                  },
-                  {
-                    name: "Trần Thu Hằng",
-                    rating: 4,
-                    date: "2024-11-28",
-                    comment:
-                      "Nội dung khóa học phong phú, nhiều ví dụ thực tế. Chỉ mong có thêm bài tập thực hành.",
-                  },
-                  {
-                    name: "Lê Văn Nam",
-                    rating: 5,
-                    date: "2024-11-25",
-                    comment:
-                      "Tuyệt vời! Sau khóa học tôi đã có thể áp dụng kiểm thử tự động vào công việc.",
-                  },
-                ].map((review, index) => (
-                  <div
-                    key={index}
-                    className="student-dashboard-course-card p-6"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                        {review.name.charAt(0)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-semibold">{review.name}</h4>
-                          <div className="flex items-center">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-4 h-4 ${
-                                  star <= review.rating
-                                    ? "text-yellow-500 fill-current"
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm student-dashboard-text-muted">
-                            {review.date}
-                          </span>
-                        </div>
-                        <p className="student-dashboard-text-muted">
-                          {review.comment}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              {/* No Reviews Message */}
+              <div className="student-dashboard-course-card p-6">
+                <div className="text-center">
+                  <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    Chưa có đánh giá nào
+                  </h3>
+                  <p className="student-dashboard-text-muted">
+                    Các đánh giá và phản hồi từ học viên sẽ được hiển thị tại
+                    đây.
+                  </p>
+                </div>
               </div>
             </div>
           )}
