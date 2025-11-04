@@ -46,9 +46,15 @@ public class StudentController {
                 .build();
     }
 
+    @GetMapping("/by-user-id/{id}")
+    public ApiResponse<StudentResponse> getStudentById(@PathVariable String id) {
+        return ApiResponse.<StudentResponse>builder()
+                .result(studentService.getStudentById(id))
+                .build();
+    }
+
     @GetMapping("/by-student-id/{studentId}")
     public ApiResponse<StudentResponse> getStudentByStudentId(@PathVariable String studentId) {
-        log.info("Getting student by studentId: {}", studentId);
         return ApiResponse.<StudentResponse>builder()
                 .result(studentService.getStudentByStudentId(studentId))
                 .build();

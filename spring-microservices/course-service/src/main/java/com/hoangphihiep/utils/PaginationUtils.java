@@ -1,11 +1,12 @@
 package com.hoangphihiep.utils;
 
+import com.hoangphihiep.dto.response.PaginatedResponse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PaginationUtils {
+public class PaginationUtils<T> {
     private static final int MIN_PAGE_SIZE = 0;
     private static final int MAX_PAGE_SIZE = 100;
 
