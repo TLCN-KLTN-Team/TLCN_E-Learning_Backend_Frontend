@@ -9,7 +9,7 @@ import type { CourseRequest } from "@/services/api/request/courseRequest";
 interface CourseFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  educationalUnitId: string;
+  educationalUnitId: number;
   onSuccess?: () => void;
 }
 
@@ -158,12 +158,12 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                       Tên Khóa học
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <Input 
+                    <input 
                       name="courseName" 
                       placeholder="VD: Nhập môn Khoa học Máy tính" 
                       value={form.courseName} 
                       onChange={handleChange}
-                      className={`transition-colors ${errors.courseName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                      className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.courseName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                     />
                     {errors.courseName && (
                       <p className="text-red-500 text-xs flex items-center mt-1">
@@ -190,7 +190,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                       Số Tín chỉ
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <Input 
+                    <input 
                       name="credits" 
                       type="number" 
                       placeholder="3" 
@@ -198,7 +198,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                       onChange={handleChange} 
                       min="1" 
                       max="10"
-                      className={`transition-colors ${errors.credits ? 'border-red-500 focus:border-red-500' : 'focus:border-green-500'}`}
+                      className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.credits ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                     />
                     {errors.credits && (
                       <p className="text-red-500 text-xs flex items-center mt-1">
@@ -214,7 +214,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                       Số Học sinh Tối đa
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <Input 
+                    <input 
                       name="maxStudents" 
                       type="number" 
                       placeholder="30" 
@@ -222,7 +222,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                       onChange={handleChange} 
                       min="1" 
                       max="500"
-                      className={`transition-colors ${errors.maxStudents ? 'border-red-500 focus:border-red-500' : 'focus:border-green-500'}`}
+                      className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.maxStudents ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                     />
                     {errors.maxStudents && (
                       <p className="text-red-500 text-xs flex items-center mt-1">

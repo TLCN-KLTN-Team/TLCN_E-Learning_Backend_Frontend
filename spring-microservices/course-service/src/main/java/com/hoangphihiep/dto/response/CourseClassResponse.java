@@ -12,7 +12,7 @@ import java.util.Date;
 @AllArgsConstructor
 @Builder
 public class CourseClassResponse {
-    private Long id;
+    private Integer id;
     private String className;
     private String classCode;
     private Integer courseId;

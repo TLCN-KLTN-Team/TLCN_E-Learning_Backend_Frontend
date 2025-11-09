@@ -12,7 +12,7 @@ import type { DepartmentResponse } from "@/services/api/response/departmentRespo
 interface TeacherFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  educationalUnitId: string;
+  educationalUnitId: number;
   onSuccess?: () => void;
   editingTeacher?: TeacherResponse | null;
 }
@@ -363,12 +363,12 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                       Tên
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <Input 
+                    <input 
                       name="firstName" 
                       placeholder="Nhập tên" 
                       value={form.firstName} 
                       onChange={handleChange}
-                      className={`transition-colors ${errors.firstName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                      className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.firstName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                     />
                     {errors.firstName && (
                       <p className="text-red-500 text-xs flex items-center mt-1">
@@ -384,12 +384,12 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                       Họ
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <Input 
+                    <input 
                       name="lastName" 
                       placeholder="Nhập họ" 
                       value={form.lastName} 
                       onChange={handleChange}
-                      className={`transition-colors ${errors.lastName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                      className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.lastName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                     />
                     {errors.lastName && (
                       <p className="text-red-500 text-xs flex items-center mt-1">
@@ -406,12 +406,12 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                     Ngày Sinh
                     <span className="text-gray-400 ml-1 text-xs">(Phải từ 18 tuổi trở lên)</span>
                   </label>
-                  <Input 
+                  <input 
                     name="dob" 
                     type="date" 
                     value={form.dob} 
                     onChange={handleChange}
-                    className={`transition-colors ${errors.dob ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                    className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.dob ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                   />
                   {errors.dob && (
                     <p className="text-red-500 text-xs flex items-center mt-1">
@@ -436,12 +436,12 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                       Tên Đăng Nhập
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <Input 
+                    <input 
                       name="username" 
                       placeholder="Nhập tên đăng nhập (tối thiểu 3 ký tự)" 
                       value={form.username} 
                       onChange={handleChange}
-                      className={`transition-colors ${errors.username ? 'border-red-500 focus:border-red-500' : 'focus:border-green-500'}`}
+                      className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.username ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                     />
                     {errors.username && (
                       <p className="text-red-500 text-xs flex items-center mt-1">
@@ -458,13 +458,13 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                         Email
                         <span className="text-red-500 ml-1">*</span>
                       </label>
-                      <Input 
+                      <input 
                         name="email" 
                         type="email" 
                         placeholder="giaovien@example.com" 
                         value={form.email} 
                         onChange={handleChange}
-                        className={`transition-colors ${errors.email ? 'border-red-500 focus:border-red-500' : 'focus:border-green-500'}`}
+                        className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                       />
                       {errors.email && (
                         <p className="text-red-500 text-xs flex items-center mt-1">
@@ -482,13 +482,13 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                         {isEditMode && <span className="text-gray-400 ml-1 text-xs">(Để trống nếu không đổi)</span>}
                       </label>
                       <div className="relative">
-                        <Input 
+                        <input 
                           name="password" 
                           type={showPassword ? "text" : "password"}
                           placeholder={isEditMode ? "Nhập mật khẩu mới (tùy chọn)" : "Tối thiểu 6 ký tự"} 
                           value={form.password} 
                           onChange={handleChange}
-                          className={`transition-colors pr-10 ${errors.password ? 'border-red-500 focus:border-red-500' : 'focus:border-green-500'}`}
+                          className={`w-full px-3 py-2 border rounded-lg transition-colors pr-10 ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                         />
                         <button
                           type="button"
@@ -523,12 +523,12 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                       Mã Giảng Viên
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <Input 
+                    <input 
                       name="teacherId" 
                       placeholder="vd: GV001" 
                       value={form.teacherId} 
                       onChange={handleChange}
-                      className={`transition-colors ${errors.teacherId ? 'border-red-500 focus:border-red-500' : 'focus:border-purple-500'}`}
+                      className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.teacherId ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                     />
                     {errors.teacherId && (
                       <p className="text-red-500 text-xs flex items-center mt-1">
@@ -546,6 +546,7 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                     <div className="relative">
                       <select
                         name="departmentId"
+                        aria-label="Chọn khoa hoặc phòng ban"
                         value={form.departmentId || ""}
                         onChange={handleChange}
                         disabled={loadingDepartments}
@@ -585,12 +586,12 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                       <CreditCard size={14} className="mr-2 text-orange-600" />
                       Số Tài Khoản Ngân Hàng
                     </label>
-                    <Input 
+                    <input 
                       name="bankAccountNumber" 
                       placeholder="Nhập số tài khoản ngân hàng" 
                       value={form.bankAccountNumber} 
                       onChange={handleChange}
-                      className="focus:border-orange-500"
+                      className="w-full px-3 py-2 border rounded-lg transition-colors border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500"
                     />
                   </div>
                   
@@ -599,12 +600,12 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                       <Link size={14} className="mr-2 text-orange-600" />
                       Liên Kết Mạng Xã Hội
                     </label>
-                    <Input 
+                    <input 
                       name="socialUrl" 
                       placeholder="https://linkedin.com/in/giaovien" 
                       value={form.socialUrl} 
                       onChange={handleChange}
-                      className="focus:border-orange-500"
+                      className="w-full px-3 py-2 border rounded-lg transition-colors border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500"
                     />
                   </div>
                   

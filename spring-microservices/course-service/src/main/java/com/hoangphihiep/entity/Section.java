@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
@@ -34,12 +35,13 @@ import lombok.ToString;
 @NamedQuery(name="Section.findAll", query="SELECT s from Section s")
 public class Section implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -59,7 +61,7 @@ public class Section implements Serializable {
     private Set<Lesson> lessons = new HashSet<>();
 
     public void addLesson(Lesson lesson) {
-        if (lesson != null && lesson != null && !lessons.contains(lesson)) {
+        if (lesson != null) {
             lessons.add(lesson);
         }
     }
@@ -69,7 +71,7 @@ public class Section implements Serializable {
     private Set<Quiz> quizs = new HashSet<>();
 
     public void addQuiz(Quiz quiz) {
-        if (quiz != null && quiz != null && !quizs.contains(quiz)) {
+        if (quiz != null) {
             quizs.add(quiz);
         }
     }

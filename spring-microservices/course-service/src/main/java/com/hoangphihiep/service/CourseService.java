@@ -34,7 +34,6 @@ public class CourseService {
     private final DepartmentRepository departmentRepository;
 
     private final CourseRepository courseRepository;
-    private final CourseTypeRepository courseTypeRepository;
     private final EducationalUnitRepository educationalUnitRepository;
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
@@ -144,30 +143,23 @@ public class CourseService {
     @Transactional
     public CourseResponse updateCourseForEducationalUnit(int educationalUnitId, int courseId, CourseRequest request) {
 
-        // Validate quyền truy cập
         validateEducationalUnitAccess(educationalUnitId);
         validateCourseRequest(request, false); // false vì đây là update
 
-        // Kiểm tra Educational Unit tồn tại
         EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
-        // Tìm khóa học cần update
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        // Kiểm tra khóa học có thuộc educational unit này không
         if (course.getEducationalUnit().getId() != educationalUnitId) {
             throw new AppException(ErrorCode.COURSE_NOT_BELONG_TO_EDUCATIONAL_UNIT);
         }
 
         try {
-            // Cập nhật các trường
             course.setCourseName(request.getCourseName());
-            course.setIdTeacher(request.getIdTeacher());
             course.setUpdatedAt(new Date());
 
-            // Cập nhật các trường optional
             if (request.getDescription() != null) {
                 course.setDescription(request.getDescription());
             }
@@ -271,7 +263,7 @@ public class CourseService {
                     EducationalUnit edu = finalEduMap.get(Integer.parseInt(teacher.getEducationalUnitId()));
                     if (edu != null) {
                         EducationalUnitResponse eduResponse = EducationalUnitResponse.builder()
-                                .id(String.valueOf(edu.getId()))
+                                .id(edu.getId())
                                 .name(edu.getName())
                                 .description(edu.getDescription())
                                 .build();
@@ -373,7 +365,7 @@ public class CourseService {
                     EducationalUnit edu = finalEduMap.get(Integer.parseInt(student.getEducationalUnitId()));
                     if (edu != null) {
                         EducationalUnitResponse eduResponse = EducationalUnitResponse.builder()
-                                .id(String.valueOf(edu.getId()))
+                                .id(edu.getId())
                                 .name(edu.getName())
                                 .description(edu.getDescription())
                                 .build();
@@ -455,147 +447,6 @@ public class CourseService {
         }
     }
 
-
-    public List<CourseResponse> getAllCourses(int page, int size, String search) {
-        validatePaginationParameters(page, size);
-
-        if (search != null && search.trim().isEmpty()) {
-            search = null;
-        }
-
-        try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-            Page<Course> coursePage = courseRepository.findBySearch(search, pageable);
-
-            return coursePage.getContent().stream()
-                    .map(courseMapper::toCourseResponse)
-                    .toList();
-        } catch (Exception e) {
-            log.error("Error occurred while fetching courses", e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
-    public CourseResponse getCourseById(Integer id) {
-        if (id == null || id <= 0) {
-            throw new AppException(ErrorCode.INVALID_REQUEST);
-        }
-
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
-
-        return courseMapper.toCourseResponse(course);
-    }
-
-    @Transactional
-    public CourseResponse createCourse(CourseRequest request) {
-        validateCourseRequest(request, true);
-
-        if (courseRepository.existsByCourseName(request.getCourseName())) {
-            throw new AppException(ErrorCode.COURSE_DUPLICATE_NAME);
-        }
-
-        try {
-            Course course = new Course();
-            course.setCourseName(request.getCourseName());
-            course.setIdTeacher(request.getIdTeacher());
-            course.setCreatedAt(new Date());
-            course.setUpdatedAt(new Date());
-
-            Course savedCourse = courseRepository.save(course);
-            log.info("Created new course with ID: {}", savedCourse.getId());
-
-            return courseMapper.toCourseResponse(savedCourse);
-        } catch (DataIntegrityViolationException e) {
-            log.error("Data integrity violation while creating course", e);
-            throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION);
-        } catch (Exception e) {
-            log.error("Unexpected error while creating course", e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
-    @Transactional
-    public CourseResponse updateCourse(Integer id, CourseRequest request) {
-        if (id == null || id <= 0) {
-            throw new AppException(ErrorCode.INVALID_REQUEST);
-        }
-
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
-
-        validateCourseRequestForUpdate(request);
-
-        if (request.getCourseName() != null &&
-                !request.getCourseName().equals(course.getCourseName()) &&
-                courseRepository.existsByCourseName(request.getCourseName())) {
-            throw new AppException(ErrorCode.COURSE_DUPLICATE_NAME);
-        }
-
-        try {
-            updateCourseFields(course, request);
-            course.setUpdatedAt(new Date());
-
-            Course updatedCourse = courseRepository.save(course);
-            log.info("Updated course with ID: {}", updatedCourse.getId());
-
-            return courseMapper.toCourseResponse(updatedCourse);
-        } catch (DataIntegrityViolationException e) {
-            log.error("Data integrity violation while updating course", e);
-            throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION);
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error while updating course", e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-    public List<CourseResponse> getCoursesByTeacher(String teacherId) {
-        if (teacherId == null || teacherId.trim().isEmpty()) {
-            throw new AppException(ErrorCode.COURSE_TEACHER_REQUIRED);
-        }
-
-        try {
-            List<Course> courses = courseRepository.findByIdTeacher(teacherId);
-            return courses.stream()
-                    .map(courseMapper::toCourseResponse)
-                    .toList();
-        } catch (Exception e) {
-            log.error("Error occurred while fetching courses by teacher: {}", teacherId, e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
-    @Transactional
-    public CourseResponse publishCourse(Integer id, String teacherId) {
-        if (id == null || id <= 0) {
-            throw new AppException(ErrorCode.INVALID_REQUEST);
-        }
-
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
-
-        if (teacherId != null && !teacherId.equals(course.getIdTeacher())) {
-            throw new AppException(ErrorCode.COURSE_TEACHER_MISMATCH);
-        }
-
-        if (course.getSections() == null || course.getSections().isEmpty()) {
-            throw new AppException(ErrorCode.COURSE_EMPTY_SECTIONS);
-        }
-
-        try {
-            course.setUpdatedAt(new Date());
-
-            Course publishedCourse = courseRepository.save(course);
-            log.info("Published course with ID: {}", publishedCourse.getId());
-
-            return courseMapper.toCourseResponse(publishedCourse);
-        } catch (Exception e) {
-            log.error("Unexpected error while publishing course", e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
     private void validateCourseRequest(CourseRequest request, boolean isCreate) {
         if (request == null) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
@@ -603,20 +454,6 @@ public class CourseService {
 
         if (isCreate || request.getCourseName() != null) {
             validateCourseName(request.getCourseName(), isCreate);
-        }
-    }
-
-    private void validateCourseRequestForUpdate(CourseRequest request) {
-        if (request == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST);
-        }
-
-        if (request.getCourseName() != null) {
-            validateCourseName(request.getCourseName(), false);
-        }
-
-        if (request.getIdTeacher() != null) {
-            validateTeacherId(request.getIdTeacher(), false);
         }
     }
 
@@ -637,29 +474,6 @@ public class CourseService {
             throw new AppException(ErrorCode.COURSE_NAME_TOO_LONG);
         }
     }
-
-    private void validateTeacherId(String teacherId, boolean isRequired) {
-        if (teacherId == null || teacherId.trim().isEmpty()) {
-            if (isRequired) {
-                throw new AppException(ErrorCode.COURSE_TEACHER_REQUIRED);
-            }
-        }
-    }
-
-    private void validateCoursePrice(BigDecimal price) {
-        if (price == null) {
-            return;
-        }
-
-        if (price.compareTo(BigDecimal.ZERO) < 0) {
-            throw new AppException(ErrorCode.COURSE_PRICE_NEGATIVE);
-        }
-
-        if (price.compareTo(MAX_COURSE_PRICE) > 0) {
-            throw new AppException(ErrorCode.COURSE_PRICE_TOO_HIGH);
-        }
-    }
-
     private void validatePaginationParameters(int page, int size) {
         if (page < 0) {
             throw new AppException(ErrorCode.COURSE_PAGE_NUMBER_INVALID);
@@ -669,15 +483,6 @@ public class CourseService {
             throw new AppException(ErrorCode.COURSE_PAGE_SIZE_INVALID);
         }
     }
-
-    private void updateCourseFields(Course course, CourseRequest request) {
-        if (request.getCourseName() != null) {
-            course.setCourseName(request.getCourseName());
-        }
-    }
-
-
-
     // Lấy danh sách departments của đơn vị đào tạo
     public Page<DepartmentResponse> getDepartmentsByEducationalUnit(int educationalUnitId, int page, int size, String search) {
         validatePaginationParameters(page, size);
@@ -778,7 +583,6 @@ public class CourseService {
                 throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
             }
 
-            TeacherResponse teacher = teacherResponse.getResult();
             List<Course> courses = courseRepository.findByIdTeacher(teacherId);
 
             return courses.stream()
@@ -809,7 +613,6 @@ public class CourseService {
                 throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
             }
 
-            TeacherResponse teacher = teacherResponse.getResult();
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
             // Get all courses for teacher and convert to Page

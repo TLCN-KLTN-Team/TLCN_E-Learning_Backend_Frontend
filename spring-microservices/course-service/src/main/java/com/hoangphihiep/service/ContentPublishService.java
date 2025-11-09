@@ -1,0 +1,231 @@
+package com.hoangphihiep.service;
+
+import com.hoangphihiep.dto.request.BulkPublishRequest;
+import com.hoangphihiep.dto.response.ContentPublishStatusResponse;
+import com.hoangphihiep.entity.*;
+import com.hoangphihiep.exception.AppException;
+import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.repository.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Date;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ContentPublishService {
+
+    private final CourseRepository courseRepository;
+    private final SectionRepository sectionRepository;
+    private final LessonRepository lessonRepository;
+    private final QuizRepository quizRepository;
+    private final AssignmentRepository assignmentRepository;
+
+    @Transactional
+    public void toggleSectionPublish(Integer sectionId, Boolean isPublished) {
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
+
+
+        section.setIsPublished(isPublished);
+        section.setUpdateAt(new Date());
+
+        sectionRepository.save(section);
+        log.info("Section {} publish status changed to: {}", sectionId, isPublished);
+    }
+
+    @Transactional
+    public void toggleLessonPublish(Integer lessonId, Boolean isPublished) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new AppException(ErrorCode.LESSON_NOT_FOUND));
+
+
+        lesson.setIsPublished(isPublished);
+        lesson.setUpdateAt(new Date());
+
+        lessonRepository.save(lesson);
+        log.info("Lesson {} publish status changed to: {}", lessonId, isPublished);
+    }
+
+    @Transactional
+    public void toggleQuizPublish(Integer quizId, Boolean isPublished) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
+
+        quiz.setIsPublished(isPublished);
+        quiz.setUpdateAt(new Date());
+
+        quizRepository.save(quiz);
+        log.info("Quiz {} publish status changed to: {}", quizId, isPublished);
+    }
+
+    @Transactional
+    public void toggleAssignmentPublish(Integer assignmentId, Boolean isPublished) {
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        assignment.setIsPublished(isPublished);
+        assignment.setUpdateAt(new Date());
+
+        assignmentRepository.save(assignment);
+        log.info("Assignment {} publish status changed to: {}", assignmentId, isPublished);
+    }
+
+    @Transactional
+    public ContentPublishStatusResponse bulkPublish(BulkPublishRequest request) {
+        Course course = courseRepository.findById(request.getCourseId())
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        int sectionCount = 0;
+        int lessonCount = 0;
+        int quizCount = 0;
+        int assignmentCount = 0;
+
+        if (request.getSectionIds() != null && !request.getSectionIds().isEmpty()) {
+            List<Section> sections = sectionRepository.findAllById(request.getSectionIds());
+            for (Section section : sections) {
+                if (section.getCourse().getId() == course.getId()) {
+                    section.setIsPublished(request.getIsPublished());
+                    section.setUpdateAt(new Date());
+                    sectionCount++;
+                }
+            }
+            sectionRepository.saveAll(sections);
+        }
+
+        if (request.getLessonIds() != null && !request.getLessonIds().isEmpty()) {
+            List<Lesson> lessons = lessonRepository.findAllById(request.getLessonIds());
+            for (Lesson lesson : lessons) {
+                if (lesson.getSection().getCourse().getId() == course.getId()) {
+                    lesson.setIsPublished(request.getIsPublished());
+                    lesson.setUpdateAt(new Date());
+                    lessonCount++;
+                }
+            }
+            lessonRepository.saveAll(lessons);
+        }
+
+        if (request.getQuizIds() != null && !request.getQuizIds().isEmpty()) {
+            List<Quiz> quizzes = quizRepository.findAllById(request.getQuizIds());
+            for (Quiz quiz : quizzes) {
+                if (quiz.getSection().getCourse().getId() == course.getId()) {
+                    quiz.setIsPublished(request.getIsPublished());
+                    quiz.setUpdateAt(new Date());
+                    quizCount++;
+                }
+            }
+            quizRepository.saveAll(quizzes);
+        }
+
+        if (request.getAssignmentIds() != null && !request.getAssignmentIds().isEmpty()) {
+            List<Assignment> assignments = assignmentRepository.findAllById(request.getAssignmentIds());
+            for (Assignment assignment : assignments) {
+                if (assignment.getSection().getCourse().getId() == course.getId()) {
+                    assignment.setIsPublished(request.getIsPublished());
+                    assignment.setUpdateAt(new Date());
+                    assignmentCount++;
+                }
+            }
+            assignmentRepository.saveAll(assignments);
+        }
+
+        log.info("Bulk publish completed for course {}: {} sections, {} lessons, {} quizzes, {} assignments",
+                course.getId(), sectionCount, lessonCount, quizCount, assignmentCount);
+
+        return ContentPublishStatusResponse.builder()
+                .courseId(course.getId())
+                .sectionsUpdated(sectionCount)
+                .lessonsUpdated(lessonCount)
+                .quizzesUpdated(quizCount)
+                .assignmentsUpdated(assignmentCount)
+                .isPublished(request.getIsPublished())
+                .build();
+    }
+
+    public ContentPublishStatusResponse getPublishStatus(Integer courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        int totalSections = course.getSections().size();
+        int publishedSections = (int) course.getSections().stream()
+                .filter(s -> Boolean.TRUE.equals(s.getIsPublished()))
+                .count();
+
+        int totalLessons = course.getSections().stream()
+                .mapToInt(s -> s.getLessons().size())
+                .sum();
+        int publishedLessons = course.getSections().stream()
+                .flatMap(s -> s.getLessons().stream())
+                .filter(l -> Boolean.TRUE.equals(l.getIsPublished()))
+                .mapToInt(l -> 1)
+                .sum();
+
+        int totalQuizzes = course.getSections().stream()
+                .mapToInt(s -> s.getQuizs().size())
+                .sum();
+        int publishedQuizzes = course.getSections().stream()
+                .flatMap(s -> s.getQuizs().stream())
+                .filter(q -> Boolean.TRUE.equals(q.getIsPublished()))
+                .mapToInt(q -> 1)
+                .sum();
+
+        int totalAssignments = course.getSections().stream()
+                .mapToInt(s -> s.getAssignments().size())
+                .sum();
+        int publishedAssignments = course.getSections().stream()
+                .flatMap(s -> s.getAssignments().stream())
+                .filter(a -> Boolean.TRUE.equals(a.getIsPublished()))
+                .mapToInt(a -> 1)
+                .sum();
+
+        return ContentPublishStatusResponse.builder()
+                .courseId(courseId)
+                .totalSections(totalSections)
+                .publishedSections(publishedSections)
+                .totalLessons(totalLessons)
+                .publishedLessons(publishedLessons)
+                .totalQuizzes(totalQuizzes)
+                .publishedQuizzes(publishedQuizzes)
+                .totalAssignments(totalAssignments)
+                .publishedAssignments(publishedAssignments)
+                .isPublished(null)
+                .build();
+    }
+
+    @Transactional
+    public ContentPublishStatusResponse publishAllContent(Integer courseId, Boolean isPublished) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        for (Section section : course.getSections()) {
+            section.setIsPublished(isPublished);
+            section.setUpdateAt(new Date());
+
+            for (Lesson lesson : section.getLessons()) {
+                lesson.setIsPublished(isPublished);
+                lesson.setUpdateAt(new Date());
+            }
+
+            for (Quiz quiz : section.getQuizs()) {
+                quiz.setIsPublished(isPublished);
+                quiz.setUpdateAt(new Date());
+            }
+
+            for (Assignment assignment : section.getAssignments()) {
+                assignment.setIsPublished(isPublished);
+                assignment.setUpdateAt(new Date());
+            }
+        }
+
+        courseRepository.save(course);
+        log.info("Published all content for course {}: isPublished = {}", courseId, isPublished);
+
+        return getPublishStatus(courseId);
+    }
+
+}

@@ -5,7 +5,7 @@ import type { CourseClassResponse } from "../response/courseClassResponse";
 import type { StudentResponse } from "../response/studentResponse";
 
 export const createClass = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   classData: CourseClassRequest
 ): Promise<CourseClassResponse> => {
   const response = await axiosInstance.post<ApiResponse<CourseClassResponse>>(
@@ -16,7 +16,7 @@ export const createClass = async (
 };
 
 export const getClassesByEducationalUnit = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   page: number = 0,
   size: number = 20,
   search?: string
@@ -29,7 +29,7 @@ export const getClassesByEducationalUnit = async (
 };
 
 export const getClassesByCourse = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   courseId: number,
   page: number = 0,
   size: number = 20
@@ -41,7 +41,7 @@ export const getClassesByCourse = async (
 };
 
 export const updateClass = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   classId: number,
   classData: Partial<CourseClassRequest>
 ): Promise<CourseClassResponse> => {
@@ -53,7 +53,7 @@ export const updateClass = async (
 };
 
 export const deleteClass = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   classId: number
 ): Promise<void> => {
   await axiosInstance.delete(
@@ -63,7 +63,7 @@ export const deleteClass = async (
 
 // --- Class enrollment functions ---
 export const enrollStudentsToClass = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   classId: number,
   studentIds: string[]
 ): Promise<void> => {
@@ -74,7 +74,7 @@ export const enrollStudentsToClass = async (
 };
 
 export const getStudentsInClass = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   classId: number
 ): Promise<StudentResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<StudentResponse[]>>(
@@ -84,7 +84,7 @@ export const getStudentsInClass = async (
 };
 
 export const getAvailableStudentsForClass = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   classId: number
 ): Promise<StudentResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<StudentResponse[]>>(
@@ -94,7 +94,7 @@ export const getAvailableStudentsForClass = async (
 };
 
 export const unenrollStudentFromClass = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   classId: number,
   studentId: string
 ): Promise<void> => {

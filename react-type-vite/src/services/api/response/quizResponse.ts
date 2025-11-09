@@ -12,8 +12,8 @@ interface QuizResponse {
   numberItem: number
   showResults: boolean
   isPublished: boolean
-  startTime?: Date
-  endTime?: Date
+  startTime?: string;
+  endTime?: string;
   questions: Set<QuestionResponse>
   attemptsCount: number
   createdAt: Date

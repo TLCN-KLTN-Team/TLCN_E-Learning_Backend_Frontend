@@ -13,7 +13,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 public class EducationalUnitResponse {
-    private String id;
+    private Integer id;
 
     private String name;
 
@@ -29,6 +29,7 @@ public class EducationalUnitResponse {
 
     // URL on cloud
     private String logo;
+
     public String businessLicense;
 
     private String description;
@@ -44,6 +45,12 @@ public class EducationalUnitResponse {
     private Date createdAt;
 
     private Integer totalDepartments;
+
+    private Integer totalCourses;
+
+    private Integer totalTeachers;
+
+    private Integer totalStudents;
 
     private Set<DepartmentResponse> departments;
 

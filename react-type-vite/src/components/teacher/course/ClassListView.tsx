@@ -11,7 +11,7 @@ import type { CourseClassResponse } from "@/services/api/response/courseClassRes
 
 interface ClassListViewProps {
   courseId: string
-  educationalUnitId: string
+  educationalUnitId: number
   onSelectClass: (classData: CourseClassResponse) => void
 }
 
@@ -129,7 +129,7 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
                 {classData.description && <p className="text-sm text-gray-600 line-clamp-2">{classData.description}</p>}
 
                 {/* View Button */}
-                <Button onClick={() => onSelectClass(classData)} className="w-full bg-blue-600 hover:bg-blue-700 mt-2">
+                <Button onClick={() => onSelectClass(classData)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   Xem Chi Tiết
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>

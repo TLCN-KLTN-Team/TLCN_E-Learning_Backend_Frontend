@@ -12,7 +12,7 @@ interface AssignTeacherModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: CourseResponse | null;
-  educationalUnitId: string;
+  educationalUnitId: number;
   onSuccess?: () => void;
 }
 
@@ -230,12 +230,12 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                       </label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                        <Input
+                        <input
                           type="text"
                           placeholder="Tìm theo tên, mã giảng viên hoặc khoa..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10 focus:border-blue-500"
+                          className="w-full pl-10 pr-3 py-2 border rounded-lg transition-colors border-gray-300 focus:border-blue-500 outline-none"
                         />
                       </div>
                     </div>

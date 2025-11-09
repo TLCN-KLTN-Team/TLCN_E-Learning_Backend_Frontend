@@ -49,7 +49,15 @@ public class StudentController {
     @GetMapping("/by-user-id/{id}")
     public ApiResponse<StudentResponse> getStudentById(@PathVariable String id) {
         return ApiResponse.<StudentResponse>builder()
-                .result(studentService.getStudentById(id))
+                .result(studentService.getStudentById(id)).build();
+    }
+    @PutMapping("/{id}/status")
+    public ApiResponse<StudentResponse> toggleAccountStatus(
+            @PathVariable String id,
+            @RequestParam String status) {
+        log.info("Toggling account status for student ID: {} to {}", id, status);
+        return ApiResponse.<StudentResponse>builder()
+                .result(studentService.updateAccountStatus(id, status))
                 .build();
     }
 

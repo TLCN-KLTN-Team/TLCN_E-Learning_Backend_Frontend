@@ -4,7 +4,7 @@ import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import type { CourseResponse } from "../response/courseResponse";
 
 export const createCourse = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   courseData: CourseRequest
 ): Promise<CourseResponse> => {
   const response = await axiosInstance.post<ApiResponse<CourseResponse>>(
@@ -15,7 +15,7 @@ export const createCourse = async (
 };
 
 export const getCourses = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   page: number = 0,
   size: number = 20
 ): Promise<PaginatedResponse<CourseResponse>> => {
@@ -40,7 +40,7 @@ export const getCourses = async (
 };
 
 export const assignTeacherToCourse = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   courseId: number,
   teacherId: string
 ): Promise<CourseResponse> => {
@@ -52,7 +52,7 @@ export const assignTeacherToCourse = async (
 };
 
 export const removeTeacherFromCourse = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   courseId: number
 ): Promise<CourseResponse> => {
   const response = await axiosInstance.put<ApiResponse<CourseResponse>>(
@@ -62,7 +62,7 @@ export const removeTeacherFromCourse = async (
 };
 
 export const updateCourse = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   courseId: number,
   courseData: Partial<CourseRequest>
 ): Promise<CourseResponse> => {
@@ -74,7 +74,7 @@ export const updateCourse = async (
 };
 
 export const deleteCourse = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   courseId: number
 ): Promise<void> => {
   await axiosInstance.delete(

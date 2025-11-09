@@ -1,10 +1,10 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.devteria.identity.entity.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,12 +31,13 @@ import lombok.Setter;
 @NamedQuery(name="Discussion.findAll", query="SELECT d from Discussion d")
 public class Discussion implements Serializable{
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "content",nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -48,7 +49,7 @@ public class Discussion implements Serializable{
     private LocalDateTime askedAt;
 
     @ManyToOne
-    @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "published_course_id", nullable = false)
     private PublishedCourse course;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)

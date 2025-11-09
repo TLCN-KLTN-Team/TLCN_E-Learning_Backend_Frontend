@@ -1,6 +1,5 @@
 package com.hoangphihiep.entity;
 
-import com.devteria.identity.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.*;
@@ -15,7 +14,7 @@ public class QuizAttempt {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Column(name = "user_id")
     private String idUser;

@@ -182,4 +182,23 @@ public class StudentService {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
     }
+
+    public StudentResponse updateAccountStatus(String id, String status) {
+        log.info("Updating account status for student ID: {} to {}", id, status);
+
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        try {
+            AccountStatus accountStatus = AccountStatus.valueOf(status);
+            student.setAccountStatus(accountStatus);
+            student = studentRepository.save(student);
+
+            log.info("Successfully updated account status for student ID: {}", id);
+            return studentMapper.toStudentResponse(student);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid account status: {}", status);
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+    }
 }

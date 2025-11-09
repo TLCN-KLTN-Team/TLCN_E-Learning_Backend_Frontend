@@ -7,7 +7,7 @@ export interface StudentRequest {
   dob?: string;
   studentId: string;
   departmentId?: string;
-  educationalUnitId: string;
+  educationalUnitId: number;
   description?: string;
   socialUrl?: string;
   className?: string;

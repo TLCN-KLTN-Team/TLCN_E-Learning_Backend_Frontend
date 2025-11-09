@@ -8,7 +8,7 @@ import ClassStudentListView from "./ClassStudentListView"
 
 interface ClassManagementProps {
   courseId: string
-  educationalUnitId: string | null
+  educationalUnitId: number | null
 }
 
 const ClassManagement: React.FC<ClassManagementProps> = ({ courseId, educationalUnitId }) => {
@@ -19,7 +19,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ courseId, educational
       <ClassStudentListView
         classData={selectedClass}
         courseId={courseId}
-        educationalUnitId={educationalUnitId ?? ""}
+        educationalUnitId={educationalUnitId ?? 1}
         onBack={() => setSelectedClass(null)}
       />
     )
@@ -28,7 +28,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ courseId, educational
   return (
     <ClassListView
       courseId={courseId}
-      educationalUnitId={educationalUnitId ?? ""}
+      educationalUnitId={educationalUnitId ?? 0}
       onSelectClass={setSelectedClass}
     />
   )

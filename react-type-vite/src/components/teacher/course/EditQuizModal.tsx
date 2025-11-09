@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import Modal from "@/components/ui/modal"
 import { Button } from "@/components/ui/button"
-import { Save } from "lucide-react"
+import { Loader2, Save } from "lucide-react"
 import QuizSettings from "./QuizSettings"
 import QuestionList from "./QuestionList"
 import { convertQuestionsResponseToRequest } from "@/utils/converters"
@@ -47,11 +47,11 @@ const EditQuizModal: React.FC<{
         passingScore: quiz.passingScore || 70,
         numberItem: quiz.numberItem,
         showResults: quiz.showResults,
-        isPublished: quiz.isPublished,
+        isPublished: false,
         sectionId,
         questions: convertedQuestions,
-        startTime: quiz.startTime ? (quiz.startTime instanceof Date ? quiz.startTime.toISOString() : String(quiz.startTime)) : undefined,
-        endTime: quiz.endTime ? (quiz.endTime instanceof Date ? quiz.endTime.toISOString() : String(quiz.endTime)) : undefined,
+        ...(quiz.startTime && quiz.startTime.trim() !== "" && { startTime: new Date(quiz.startTime).toISOString() }),
+        ...(quiz.endTime && quiz.endTime.trim() !== "" && { endTime: new Date(quiz.endTime).toISOString() }),
       })
     }
   }, [quiz, isOpen, sectionId])
@@ -91,7 +91,7 @@ const EditQuizModal: React.FC<{
         attemptLimit: formData.attemptLimit,
         passingScore: formData.passingScore,
         showResults: formData.showResults,
-        isPublished: formData.isPublished,
+        isPublished: false,
         sectionId,
         numberItem: quiz.numberItem,
         questions: formData.questions,
@@ -128,9 +128,18 @@ const EditQuizModal: React.FC<{
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Hủy
           </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            <Save className="h-4 w-4 mr-2" />
-            {isLoading ? "Đang cập nhật..." : "Cập Nhật Bài Kiểm Tra"}
+          <Button onClick={handleSave} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Đang Cập Nhật...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Cập Nhật Bài Kiểm Tra
+              </>
+            )}
           </Button>
         </div>
       </div>

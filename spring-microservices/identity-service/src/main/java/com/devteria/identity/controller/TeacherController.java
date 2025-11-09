@@ -1,5 +1,6 @@
 package com.devteria.identity.controller;
 
+import com.devteria.identity.dto.response.StudentResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -41,6 +42,16 @@ public class TeacherController {
         log.info("Updating teacher with ID: {}", id);
         return ApiResponse.<TeacherResponse>builder()
                 .result(teacherService.updateTeacher(id, request))
+                .build();
+    }
+
+    @PutMapping("/{id}/status")
+    public ApiResponse<TeacherResponse> toggleAccountStatus(
+            @PathVariable String id,
+            @RequestParam String status) {
+        log.info("Toggling account status for student ID: {} to {}", id, status);
+        return ApiResponse.<TeacherResponse>builder()
+                .result(teacherService.updateAccountStatus(id, status))
                 .build();
     }
 

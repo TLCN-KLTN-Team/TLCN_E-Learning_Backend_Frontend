@@ -38,7 +38,7 @@ public class StudentController {
             @PathVariable int educationalUnitId,
             @Valid @RequestBody StudentRequest request) {
 
-        request.setEducationalUnitId(String.valueOf(educationalUnitId));
+        request.setEducationalUnitId(educationalUnitId);
 
         StudentResponse response = studentService.createStudent(request);
 
@@ -54,9 +54,25 @@ public class StudentController {
             @Valid @RequestBody StudentRequest request) {
 
         // Đảm bảo educationalUnitId khớp với institutionId
-        request.setEducationalUnitId(String.valueOf(educationalUnitId));
+        request.setEducationalUnitId(educationalUnitId);
 
         StudentResponse response = studentService.updateStudent(studentId, request);
+
+        return ApiResponse.<StudentResponse>builder()
+                .result(response)
+                .build();
+    }
+
+    @PutMapping("/students/{studentId}/status")
+    public ApiResponse<StudentResponse> updateStudentAccountStatus(
+            @PathVariable int educationalUnitId,
+            @PathVariable String studentId,
+            @RequestParam String status) {
+
+        log.info("Updating account status for student {} in educational unit {} to {}",
+                studentId, educationalUnitId, status);
+
+        StudentResponse response = studentService.updateStudentAccountStatus(studentId, status);
 
         return ApiResponse.<StudentResponse>builder()
                 .result(response)

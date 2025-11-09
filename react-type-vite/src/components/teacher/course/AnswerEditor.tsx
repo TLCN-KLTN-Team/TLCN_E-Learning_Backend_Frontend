@@ -67,7 +67,7 @@ const AnswerEditor: React.FC<{
             name={`correct-answer-${Math.random()}`} // Tên duy nhất cho mỗi câu hỏi
             checked={answer.isCorrect}
             onChange={(e) => handleCorrectChange(e.target.checked)}
-            className="h-4 w-4 text-blue-600"
+            className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
             title="Đánh dấu là đáp án đúng"
           />
         ) : (
@@ -75,7 +75,7 @@ const AnswerEditor: React.FC<{
             type="checkbox"
             checked={answer.isCorrect}
             onChange={(e) => handleCorrectChange(e.target.checked)}
-            className="h-4 w-4 text-blue-600"
+            className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
             title="Đánh dấu là đáp án đúng"
           />
         )}
@@ -86,7 +86,7 @@ const AnswerEditor: React.FC<{
         type="text"
         value={answer.content}
         onChange={(e) => onUpdate(index, { ...answer, content: e.target.value })}
-        className="flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
         placeholder="Nhập nội dung đáp án"
       />
       

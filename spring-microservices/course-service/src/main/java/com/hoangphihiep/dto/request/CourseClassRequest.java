@@ -22,7 +22,6 @@ public class CourseClassRequest {
     @NotBlank(message = "Class code is required")
     private String classCode;
 
-    @NotNull(message = "Course ID is required")
     private Integer courseId;
 
     @Positive(message = "Max students must be positive")

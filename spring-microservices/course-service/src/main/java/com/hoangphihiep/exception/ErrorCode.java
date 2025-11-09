@@ -159,6 +159,15 @@ public enum ErrorCode {
 
     COURSE_NOT_BELONG_TO_EDUCATIONAL_UNIT(1005, "Course does not belong to this educational unit", HttpStatus.BAD_REQUEST),
 
+    PUBLISHED_COURSE_NOT_FOUND(2301, "Published course not found", HttpStatus.BAD_REQUEST),
+    PUBLISHED_COURSE_CANNOT_UPDATE(2302, "Cannot update published course in current status", HttpStatus.BAD_REQUEST),
+    PUBLISHED_COURSE_ALREADY_SUBMITTED(2303, "Published course already submitted for approval", HttpStatus.BAD_REQUEST),
+    PUBLISHED_COURSE_NOT_PENDING(2304, "Published course is not in pending status", HttpStatus.BAD_REQUEST),
+    COURSE_DETAIL_REQUIRED(2305, "Course detail is required for publishing", HttpStatus.BAD_REQUEST),
+    COURSE_DETAIL_DESCRIPTION_REQUIRED(2306, "Course detail description is required", HttpStatus.BAD_REQUEST),
+    COURSE_DETAIL_INTRODUCTION_REQUIRED(2307, "Course detail introduction is required", HttpStatus.BAD_REQUEST),
+    COURSE_NO_PUBLISHED_CONTENT(2308, "Course must have at least one published section with content", HttpStatus.BAD_REQUEST),
+
     INVALID_FILE_NAME(400, "Tên file không hợp lệ", HttpStatus.BAD_REQUEST),
     // Email related errors (30xx)
     EMAIL_SENDING_FAILED(3001, "Gửi email thất bại", HttpStatus.INTERNAL_SERVER_ERROR),

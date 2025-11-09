@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { GripVertical, Edit, Trash, ChevronUp, ChevronDown, PlusCircle, BookOpen, AlertCircle } from "lucide-react"
+import { GripVertical, Edit, Trash, ChevronUp, ChevronDown, PlusCircle, BookOpen, AlertCircle, Eye } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import LessonItem from "./LessonItem"
 import QuizItem from "./QuizItem"
@@ -15,6 +15,7 @@ import EditQuizModal from "./EditQuizModal"
 import AssignmentItem from "./AssignmentItem"
 import AddAssignmentModal from "./AddAssignmentModal"
 import EditAssignmentModal from "./EditAssignmentModal"
+import SectionVisibilityModal from "./SectionVisibilityModal"
 import Modal from "@/components/ui/modal"
 import type { SectionResponse } from "@/services/api/response/sectionResponse"
 import type { LessonResponse } from "@/services/api/response/lessonResponse"
@@ -29,12 +30,13 @@ interface SectionItemProps {
   section: SectionResponse
   index: number
   courseId: string
+  educationalUnitId: string // NEW: for class management
   onUpdate: (section: SectionResponse) => void
   onDelete: (sectionId: number) => void
   onReorder: (fromIndex: number, toIndex: number) => void
 }
 
-const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onUpdate, onDelete, onReorder }) => {
+const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, educationalUnitId, onUpdate, onDelete, onReorder }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
@@ -46,6 +48,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onU
   const [isEditQuizModalOpen, setIsEditQuizModalOpen] = useState(false)
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false)
   const [isEditAssignmentModalOpen, setIsEditAssignmentModalOpen] = useState(false)
+  const [isVisibilityModalOpen, setIsVisibilityModalOpen] = useState(false) // NEW
   const [selectedLesson, setSelectedLesson] = useState<LessonResponse | null>(null)
   const [selectedQuiz, setSelectedQuiz] = useState<QuizResponse | null>(null)
   const [selectedAssignment, setSelectedAssignment] = useState<AssignmentResponse | null>(null)
@@ -148,7 +151,11 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onU
       createdAt: new Date(),
       updateAt: new Date(),
       questions: new Set((quizData.questions || []) as any),
+      ...(quizData.startTime && { startTime: quizData.startTime }),
+      ...(quizData.endTime && { endTime: quizData.endTime }),
     }
+
+    console.log('[SectionItem] newQuiz created:', newQuiz);
 
     const updatedQuizzes = new Set([...quizzesArray, newQuiz])
     onUpdate({ ...section, quizs: updatedQuizzes })
@@ -315,16 +322,23 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onU
                   <span>{lessonsArray.length} bài học</span>
                   <span>{quizzesArray.length} bài kiểm tra</span>
                   <span>{assignmentsArray.length} bài tập</span>
-                  {section.isPublished ? (
-                    <span className="text-green-600">● Đã Xuất Bản</span>
-                  ) : (
-                    <span className="text-gray-400">● Bản Nháp</span>
-                  )}
                 </div>
               )}
             </div>
           </div>
           <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 mr-1"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsVisibilityModalOpen(true)
+              }}
+              title="Quản lý hiển thị cho các lớp"
+            >
+              <Eye className="h-4 w-4 text-blue-600" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -385,6 +399,8 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onU
                       key={lesson.id}
                       lesson={lesson}
                       index={lessonIndex}
+                      courseId={courseId}
+                      educationalUnitId={educationalUnitId}
                       onUpdate={(updatedLesson) => {
                         const updatedLessons = lessonsArray.map((l) => (l.id === updatedLesson.id ? updatedLesson : l))
                         onUpdate({ ...section, lessons: new Set(updatedLessons) })
@@ -426,6 +442,8 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onU
                       key={quiz.id}
                       quiz={quiz}
                       index={quizIndex}
+                      courseId={courseId}
+                      educationalUnitId={educationalUnitId}
                       onUpdate={(updatedQuiz) => {
                         const updatedQuizzes = quizzesArray.map((q) => (q.id === updatedQuiz.id ? updatedQuiz : q))
                         onUpdate({ ...section, quizs: new Set(updatedQuizzes) })
@@ -466,6 +484,8 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onU
                       key={assignment.id}
                       assignment={assignment}
                       index={assignmentIndex}
+                      courseId={courseId}
+                      educationalUnitId={educationalUnitId}
                       onUpdate={(updatedAssignment) => {
                         const updatedAssignments = assignmentsArray.map((a) =>
                           a.id === updatedAssignment.id ? updatedAssignment : a,
@@ -491,9 +511,6 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onU
                 <span>Tạo: {new Date(section.createdAt).toLocaleDateString("vi-VN")}</span>
                 {section.updateAt && <span>Cập nhật: {new Date(section.updateAt).toLocaleDateString("vi-VN")}</span>}
               </div>
-              <span className={section.isPublished ? "text-green-600 font-medium" : "text-gray-400"}>
-                {section.isPublished ? "✓ Đã xuất bản" : "○ Bản nháp"}
-              </span>
             </div>
           </CardContent>
         )}
@@ -560,6 +577,15 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, onU
         assignment={selectedAssignment}
         sectionId={section.id}
         courseId={Number(courseId)}
+      />
+
+      <SectionVisibilityModal
+        isOpen={isVisibilityModalOpen}
+        onClose={() => setIsVisibilityModalOpen(false)}
+        sectionId={section.id}
+        sectionTitle={section.title}
+        courseId={Number(courseId)}
+        educationalUnitId={educationalUnitId}
       />
 
       <Modal

@@ -5,7 +5,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Modal from "@/components/ui/modal"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Loader2, Save } from "lucide-react"
 import FileUpload from "./FileUpload"
 import type { SectionRequest } from "@/services/api/request/sectionRequest"
 import { getNextAssignmentNumberItem } from "@/utils/orderIndexUtils"
@@ -93,7 +93,7 @@ const AddAssignmentModal: React.FC<{
         rubricFiles: formData.rubricFiles,
         maxScore: formData.maxScore,
         numberItem: nextNumberItem,
-        isPublished: formData.isPublished,
+        isPublished: false,
       }
 
       onAddAssignment(newAssignment)
@@ -147,7 +147,7 @@ const AddAssignmentModal: React.FC<{
             <label htmlFor="title" className="block text-sm font-medium mb-1">
               Tiêu Đề Bài Tập
             </label>
-            <Input
+            <input
               id="title"
               name="title"
               value={formData.title}
@@ -156,7 +156,7 @@ const AddAssignmentModal: React.FC<{
               required
               autoFocus
               disabled={isLoading}
-              className={errors.some((e) => e.field === "title") ? "border-red-500" : ""}
+              className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.some((e) => e.field === "title") ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"}`}
             />
           </div>
 
@@ -170,7 +170,7 @@ const AddAssignmentModal: React.FC<{
               value={formData.description}
               onChange={handleChange}
               placeholder="Mô tả chi tiết về yêu cầu bài tập"
-              className="w-full p-2 border rounded-md bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               rows={3}
               disabled={isLoading}
             />
@@ -181,7 +181,7 @@ const AddAssignmentModal: React.FC<{
               <label htmlFor="deadline" className="block text-sm font-medium mb-1">
                 Hạn Chót
               </label>
-              <Input
+              <input
                 id="deadline"
                 name="deadline"
                 type="date"
@@ -189,7 +189,7 @@ const AddAssignmentModal: React.FC<{
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                className={errors.some((e) => e.field === "deadline") ? "border-red-500" : ""}
+                className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.some((e) => e.field === "deadline") ? "border-red-500 focus:border-red-500"  : "border-gray-300 focus:border-blue-500"}`}
               />
             </div>
 
@@ -203,7 +203,7 @@ const AddAssignmentModal: React.FC<{
                 value={formData.submissionType}
                 onChange={handleChange}
                 disabled={isLoading}
-                className="w-full p-2 border rounded-md bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+               className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               >
                 <option value="UPLOAD_FILE">Tải lên tệp</option>
                 <option value="TEXT">Văn bản</option>
@@ -217,10 +217,11 @@ const AddAssignmentModal: React.FC<{
             <label htmlFor="maxScore" className="block text-sm font-medium mb-1">
               Điểm Tối Đa
             </label>
-            <Input
+            <input
               id="maxScore"
               name="maxScore"
               type="number"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               value={formData.maxScore || ""}
               onChange={handleChange}
               placeholder="100"
@@ -250,22 +251,6 @@ const AddAssignmentModal: React.FC<{
             maxFileSize={50}
             maxFiles={5}
           />
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="isPublished"
-              id="isPublished"
-              checked={formData.isPublished}
-              onChange={handleChange}
-              className="h-4 w-4"
-              disabled={isLoading}
-            />
-            <label htmlFor="isPublished" className="text-sm">
-              Xuất bản bài tập này
-            </label>
-          </div>
-
           <div className="bg-green-50 border border-green-200 rounded-md p-3">
             <p className="text-sm text-green-700">
               💡 <strong>Mẹo:</strong> Bài tập sẽ được thêm vào cuối phần này. Bạn có thể kéo và thả để sắp xếp lại bài
@@ -279,8 +264,18 @@ const AddAssignmentModal: React.FC<{
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Hủy
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "Đang thêm..." : "Thêm Bài Tập"}
+          <Button onClick={handleSubmit} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Đang lưu...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Lưu Bài Tập
+              </>
+            )}
           </Button>
         </div>
       </div>

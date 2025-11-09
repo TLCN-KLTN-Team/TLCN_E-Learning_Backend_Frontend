@@ -7,7 +7,7 @@ export interface TeacherRequest {
   dob?: string;
   teacherId: string;
   departmentId?: string;
-  educationalUnitId: string;
+  educationalUnitId: number;
   description?: string;
   socialUrl?: string;
   bankAccountNumber?: string;

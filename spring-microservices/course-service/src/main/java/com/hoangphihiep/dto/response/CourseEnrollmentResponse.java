@@ -13,7 +13,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class CourseEnrollmentResponse {
 
-    private Long id;
+    private Integer id;
     private Integer courseId;
     private String courseName;
     private String studentId;

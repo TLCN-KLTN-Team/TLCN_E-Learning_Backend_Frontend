@@ -2,6 +2,7 @@ package com.hoangphihiep.controller.Admin;
 
 import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.dto.response.StudentResponse;
 import com.hoangphihiep.dto.response.TeacherResponse;
 import com.hoangphihiep.service.*;
 import jakarta.validation.Valid;
@@ -39,7 +40,7 @@ public class TeacherController {
             @PathVariable int educationalUnitId,
             @Valid @RequestBody TeacherRequest request) {
 
-        request.setEducationalUnitId(String.valueOf(educationalUnitId));
+        request.setEducationalUnitId(educationalUnitId);
 
         TeacherResponse response = teacherService.createTeacher(request);
 
@@ -65,7 +66,7 @@ public class TeacherController {
             @PathVariable String teacherId,
             @Valid @RequestBody TeacherRequest request) {
 
-        request.setEducationalUnitId(String.valueOf(educationalUnitId));
+        request.setEducationalUnitId(educationalUnitId);
 
         TeacherResponse response = teacherService.updateTeacher(teacherId, request);
 
@@ -73,4 +74,21 @@ public class TeacherController {
                 .result(response)
                 .build();
     }
+
+    @PutMapping("/teachers/{teacherId}/status")
+    public ApiResponse<TeacherResponse> updateTeacherAccountStatus(
+            @PathVariable int educationalUnitId,
+            @PathVariable String teacherId,
+            @RequestParam String status) {
+
+        log.info("Updating account status for student {} in educational unit {} to {}",
+                teacherId, educationalUnitId, status);
+
+        TeacherResponse response = teacherService.updateTeacherAccountStatus(teacherId, status);
+
+        return ApiResponse.<TeacherResponse>builder()
+                .result(response)
+                .build();
+    }
+
 }

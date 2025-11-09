@@ -281,7 +281,7 @@ public class UserService {
         return response;
     }
 
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public UserResponse getUser(String id) {
         log.info("Call to db");
         return userMapper.toUserResponse(

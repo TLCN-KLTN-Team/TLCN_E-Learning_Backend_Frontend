@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { Bell, Search, Menu, User, Settings, LogOut, UserCircle, CreditCard, Globe, HelpCircle, BellDot, BellRing } from "lucide-react";
+import { Bell, Menu, User, Settings, LogOut, UserCircle, CreditCard, Globe, HelpCircle, BellDot, BellRing } from "lucide-react";
 import "../../../styles/admin.css";
 import { useResponsive } from "../../../hooks/useResponsive";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -34,11 +34,8 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
   const { isMobile } = useResponsive();
   const { user, logout } = useAuth();
 
@@ -130,25 +127,15 @@ const Header: React.FC<HeaderProps> = ({
       ) {
         setIsProfileOpen(false);
       }
-
-      // Handle search collapse on click outside
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node) &&
-        isMobile &&
-        isSearchExpanded
-      ) {
-        setIsSearchExpanded(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isNotificationOpen, isProfileOpen, isMobile, isSearchExpanded]);
+  }, [isNotificationOpen, isProfileOpen]);
 
   return (
-    <nav className="bg-white border-b border-gray-200 py-2 md:py-3">
+    <nav className="bg-white border-b border-gray-200 py-2 md:py-4.5">
       <div className="container-fluid px-4 md:px-6">
         <div className="flex items-center justify-between w-full">
           {/* Left side - Mobile logo and sidebar toggle */}
@@ -175,92 +162,8 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Center - Search */}
-          <div className="flex-1 flex justify-center md:justify-start max-w-lg mx-2 md:mx-4">
-            <div
-              className={`relative ${
-                isMobile
-                  ? isSearchExpanded
-                    ? "search-expanded"
-                    : "search-collapsed"
-                  : "w-full max-w-md"
-              }`}
-            >
-              {isMobile && !isSearchExpanded ? (
-                // Mobile collapsed search - just icon
-                <Button
-                  onClick={() => {
-                    setIsSearchExpanded(true);
-                    setTimeout(() => searchRef.current?.focus(), 100);
-                  }}
-                  className="w-10 h-10 flex items-center justify-end text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <Search className="w-5 h-5" />
-                </Button>
-              ) : (
-                // Expanded search input
-                <div className="relative w-full">
-                  <input
-                    ref={searchRef}
-                    type="search"
-                    placeholder="Search"
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        if (searchValue) {
-                          setSearchValue("");
-                        } else if (isMobile) {
-                          setIsSearchExpanded(false);
-                        }
-                      }
-                    }}
-                    className={`w-full pl-4 ml-4 pr-12 py-2 text-gray-900 bg-opacity-60 border-2 rounded-lg focus:outline-none hover:none text-sm md:text-base ${
-                      isMobile && isSearchExpanded
-                        ? "search-input-expanded"
-                        : ""
-                    }`}
-                    onBlur={() => {
-                      if (isMobile) {
-                        setTimeout(() => setIsSearchExpanded(false), 150);
-                      }
-                    }}
-                  />
-                  <button
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-transparent border-0 p-2"
-                    onClick={() => {
-                      if (searchValue) {
-                        // Clear search if there's text
-                        setSearchValue("");
-                        searchRef.current?.focus();
-                      } else if (isMobile && isSearchExpanded) {
-                        // Close search on mobile if empty
-                        setIsSearchExpanded(false);
-                      }
-                    }}
-                  >
-                    {searchValue ? (
-                      <svg
-                        className="w-4 h-4 md:w-5 md:h-5 text-gray-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    ) : (
-                      <Search className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Empty space for layout balance */}
+          <div className="flex-1"></div>
 
           {/* Right side - Notifications and Profile */}
           <div className="flex items-center space-x-2 md:space-x-3">

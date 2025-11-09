@@ -3,6 +3,7 @@ package com.hoangphihiep.service;
 import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.SectionResponse;
+import com.hoangphihiep.dto.response.StudentResponse;
 import com.hoangphihiep.dto.response.TeacherResponse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
@@ -127,6 +128,31 @@ public class TeacherService {
         } catch (Exception e) {
             log.error("Unexpected error updating teacher {}: {}", teacherId, e.getMessage(), e);
             throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
+        }
+    }
+
+    public TeacherResponse updateTeacherAccountStatus(String teacherId, String status) {
+        log.info("Updating account status for student ID: {} to {}", teacherId, status);
+
+        try {
+            ApiResponse<TeacherResponse> response = teacherRepository.updateTeacherAccountStatus(teacherId, status);
+
+            if (response.getResult() == null) {
+                log.error("Identity service returned null result for status update: {}", teacherId);
+                throw new AppException(ErrorCode.TEACHER_VALIDATION_FAILED);
+            }
+
+            TeacherResponse studentResponse = response.getResult();
+            log.info("Successfully updated account status for student ID: {}", studentResponse.getId());
+
+            return studentResponse;
+
+        } catch (AppException e) {
+            log.error("App exception while updating student status {}: {}", teacherId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error updating student status {}: {}", teacherId, e.getMessage(), e);
+            throw new AppException(ErrorCode.STUDENT_VALIDATION_FAILED);
         }
     }
 }

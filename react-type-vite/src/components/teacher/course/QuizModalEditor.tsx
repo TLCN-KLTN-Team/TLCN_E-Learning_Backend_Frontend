@@ -92,10 +92,10 @@ const QuizModalEditor: React.FC<{
         numberItem: nextQuizNumberItem,
         sectionId,
         showResults: quiz.showResults,
-        isPublished: quiz.isPublished,
+        isPublished: false,
         questions: questionsWithOrderIndex,
-        startTime: quiz.startTime ? new Date(quiz.startTime).toISOString() : undefined,
-        endTime: quiz.endTime ? new Date(quiz.endTime).toISOString() : undefined,
+        ...(quiz.startTime && quiz.startTime.trim() !== "" && { startTime: new Date(quiz.startTime).toISOString() }),
+        ...(quiz.endTime && quiz.endTime.trim() !== "" && { endTime: new Date(quiz.endTime).toISOString() }),
       }
 
       onSave(newQuiz)
@@ -149,7 +149,7 @@ const QuizModalEditor: React.FC<{
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Hủy
           </Button>
-          <Button onClick={handleSave} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={handleSave} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
