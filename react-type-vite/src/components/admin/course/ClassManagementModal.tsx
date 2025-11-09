@@ -13,7 +13,7 @@ interface ClassManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: CourseResponse | null;
-  educationalUnitId: string;
+  educationalUnitId: number;
   onSuccess?: () => void;
 }
 
@@ -399,17 +399,6 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                         <School className="mr-2 text-blue-600" size={24} />
                         {editingClass ? "Chỉnh Sửa Lớp Học" : "Tạo Lớp Học Mới"}
                       </h3>
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setShowCreateForm(false);
-                          setEditingClass(null);
-                          resetForm();
-                        }}
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        Quay lại danh sách
-                      </Button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
@@ -459,7 +448,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                         <label className="block text-sm font-medium text-gray-700">
                           Sĩ Số Tối Đa <span className="text-red-500">*</span>
                         </label>
-                        <Input
+                        <input
                           type="number"
                           min="1"
                           max="500"
@@ -481,7 +470,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                         <label className="block text-sm font-medium text-gray-700">
                           Ngày Bắt Đầu
                         </label>
-                        <Input
+                        <input
                           type="date"
                           value={formData.startDate}
                           onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
@@ -493,7 +482,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                         <label className="block text-sm font-medium text-gray-700">
                           Ngày Kết Thúc
                         </label>
-                        <Input
+                        <input
                           type="date"
                           value={formData.endDate}
                           onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}

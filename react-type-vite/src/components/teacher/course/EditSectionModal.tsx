@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Modal from "@/components/ui/modal"
 import type { SectionResponse } from "@/services/api/response/sectionResponse"
+import { Loader2, Save } from "lucide-react"
 
 const EditSectionModal: React.FC<{
   isOpen: boolean
@@ -27,7 +28,7 @@ const EditSectionModal: React.FC<{
       setFormData({
         title: section.title,
         description: section.description || "",
-        isPublished: section.isPublished || false,
+        isPublished: false,
       })
     }
   }, [section, isOpen])
@@ -58,7 +59,7 @@ const EditSectionModal: React.FC<{
         ...section,
         title: formData.title,
         description: formData.description,
-        isPublished: formData.isPublished,
+        isPublished: false,
       })
       onClose()
     } catch (err) {
@@ -87,13 +88,14 @@ const EditSectionModal: React.FC<{
             <label htmlFor="title" className="block text-sm font-medium mb-1">
               Tiêu Đề Phần
             </label>
-            <Input
+            <input
               id="title"
               name="title"
               type="text"
               value={formData.title}
               onChange={handleChange}
               placeholder="VD: Giới thiệu về React Cơ Bản"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               required
               disabled={isLoading}
             />
@@ -108,32 +110,28 @@ const EditSectionModal: React.FC<{
               value={formData.description}
               onChange={handleChange}
               placeholder="Mô tả ngắn gọn về nội dung phần này..."
-              className="w-full p-2 border rounded-md bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               rows={3}
               disabled={isLoading}
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="isPublished"
-              id="isPublished"
-              checked={formData.isPublished}
-              onChange={handleChange}
-              className="h-4 w-4"
-              disabled={isLoading}
-            />
-            <label htmlFor="isPublished" className="text-sm">
-              Xuất bản phần này
-            </label>
           </div>
           <div className="flex justify-end space-x-2 pt-2">
             <Button variant="ghost" onClick={onClose} disabled={isLoading}>
               Hủy
             </Button>
-            <Button onClick={handleSubmit} disabled={isLoading}>
-              {isLoading ? "Đang cập nhật..." : "Cập Nhật Phần"}
-            </Button>
+            <Button onClick={handleSubmit} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Đang Cập Nhật...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Cập Nhật Phần Học
+              </>
+            )}
+          </Button>
           </div>
         </div>
       </div>

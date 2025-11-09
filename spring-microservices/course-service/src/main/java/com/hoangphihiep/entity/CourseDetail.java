@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -18,12 +19,13 @@ import java.util.List;
 @NamedQuery(name="CourseDetail.findAll", query="SELECT cd from CourseDetail cd")
 public class CourseDetail implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "description", length = 1000)
     private String description;

@@ -5,6 +5,7 @@ import EditCoursePage from "../pages/teacher/course/EditCoursePage"
 import ProtectedRoute from "./protected/ProtectedRoute"
 import RoleProtectedRoute from "./protected/RoleProtectedRoute"
 import TeacherLayout from "../components/teacher/dashboard/TeacherLayout"
+import CoursePackagingPage from "@/pages/teacher/course/CoursePackagingPage"
 
 // Teacher routes - protected routes for teacher role
 const TeacherRoutes = [
@@ -15,6 +16,7 @@ const TeacherRoutes = [
         <Route key="teacher-dashboard" path="/teacher/dashboard" element={<TeacherHomePage />} />
         <Route key="teacher-assigned-courses" path="/teacher/assigned-courses" element={<AssignedCoursesPage />} />
         <Route key="teacher-edit-course" path="/teacher/courses/:courseId/edit" element={<EditCoursePage />} />
+        <Route key="teacher-package-course" path="/teacher/courses/:courseId/manage" element={<CoursePackagingPage />} />
         {/* Thêm các teacher routes khác ở đây */}
         {/* 
         <Route path="/teacher/students" element={<TeacherStudents />} />

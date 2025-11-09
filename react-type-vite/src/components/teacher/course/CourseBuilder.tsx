@@ -14,12 +14,13 @@ import { clearAutoSave, saveToLocalStorage } from "@/utils/autoSaveUtils"
 
 interface CourseBuilderProps {
   courseId: string
+  educationalUnitId: string
   sections: SectionResponse[]
   onSectionsChange: (sections: SectionResponse[]) => void
   onBack: () => void
 }
 
-const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, onSectionsChange, onBack }) => {
+const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections,educationalUnitId, onSectionsChange, onBack }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -170,8 +171,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, onSec
   const sortedSections = [...sections].sort((a, b) => a.orderIndex - b.orderIndex)
 
   // Calculate statistics
-  const totalLessons = sections.reduce((sum, s) => sum + (s.lessons?.size || 0), 0)
-  const totalQuizzes = sections.reduce((sum, s) => sum + (s.quizs?.size || 0), 0)
   const publishedSections = sections.filter((s) => s.isPublished).length
 
   return (
@@ -187,11 +186,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, onSec
             <span className="text-gray-500">
               {sections.length} sections
             </span>
-            <span className="text-green-600">{publishedSections} đã xuất bản</span>
             {hasUnsavedChanges && <span className="text-orange-600 font-medium">● Có thay đổi chưa lưu</span>}
           </div>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
           <PlusCircle className="mr-2 h-4 w-4" /> Thêm Section
         </Button>
       </div>
@@ -218,6 +216,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, onSec
               section={section}
               index={index}
               courseId={courseId}
+              educationalUnitId={educationalUnitId}
               onUpdate={handleUpdateSection}
               onDelete={handleDeleteSection}
               onReorder={handleSectionReorder}
@@ -231,7 +230,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, onSec
                 Thêm section đầu tiên để bắt đầu xây dựng khóa học. Mỗi section có thể chứa nhiều bài học và bài kiểm
                 tra.
               </p>
-              <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Thêm Section Đầu Tiên
               </Button>
@@ -252,7 +251,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, onSec
         <Button variant="outline" onClick={onBack}>
           Quay Lại Thông Tin Khóa Học
         </Button>
-        <Button size="lg" onClick={handleSaveCourse} disabled={isSaving} className="bg-green-600 hover:bg-green-700">
+        <Button size="lg" onClick={handleSaveCourse} disabled={isSaving} className="bg-green-600 hover:bg-green-700 text-white">
           {isSaving ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -260,8 +259,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, onSec
             </>
           ) : (
             <>
-              <Save className="h-4 w-4 mr-2" />
-              Lưu & Xuất Bản
+              <Save className="h-4 w-4 mr-2 " />
+              Lưu
             </>
           )}
         </Button>

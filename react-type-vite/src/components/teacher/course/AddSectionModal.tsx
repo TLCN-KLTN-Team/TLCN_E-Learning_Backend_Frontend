@@ -5,7 +5,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Modal from "@/components/ui/modal"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Loader2, Save } from "lucide-react"
 import type { SectionRequest } from "@/services/api/request/sectionRequest"
 import { getNextSectionOrderIndex } from "@/utils/orderIndexUtils"
 import { validateSection, type ValidationError } from "@/utils/validationUtils"
@@ -88,7 +88,7 @@ const AddSectionModal: React.FC<{
             <label htmlFor="title" className="block text-sm font-medium mb-1">
               Tiêu Đề Phần
             </label>
-            <Input
+            <input
               id="title"
               name="title"
               type="text"
@@ -98,7 +98,11 @@ const AddSectionModal: React.FC<{
               required
               autoFocus
               disabled={isLoading}
-              className={errors.some((e) => e.field === "title") ? "border-red-500" : ""}
+              className={`w-full px-3 py-2 border rounded-lg transition-colors ${
+                errors.some((e) => e.field === "title")
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-gray-300 focus:border-blue-500"
+              }`}
             />
           </div>
           <div>
@@ -111,7 +115,7 @@ const AddSectionModal: React.FC<{
               value={formData.description}
               onChange={handleChange}
               placeholder="Mô tả ngắn gọn về nội dung phần này..."
-              className="w-full p-2 border rounded-md bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full px-3 py-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               rows={3}
               disabled={isLoading}
             />
@@ -126,9 +130,19 @@ const AddSectionModal: React.FC<{
             <Button variant="ghost" onClick={onClose} disabled={isLoading}>
               Hủy
             </Button>
-            <Button onClick={handleSubmit} disabled={isLoading}>
-              {isLoading ? "Đang thêm..." : "Thêm Phần"}
-            </Button>
+            <Button onClick={handleSubmit} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Đang lưu...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Lưu Phần Học
+              </>
+            )}
+          </Button>
           </div>
         </div>
       </div>

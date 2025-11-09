@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -25,12 +26,13 @@ import lombok.*;
 @NamedQuery(name="CourseType.findAll", query="SELECT ct from CourseType ct")
 public class CourseType implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "course_type_name", nullable = false, length = 255)
     private String courseTypeName;

@@ -4,7 +4,7 @@ import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import type { TeacherResponse } from "../response/teacherResponse";
 
 export const createTeacher = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   teacherData: TeacherRequest
 ): Promise<TeacherResponse> => {
   try {
@@ -24,7 +24,7 @@ export const createTeacher = async (
 };
 
 export const getTeachers = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   page: number = 0,
   size: number = 20
 ): Promise<PaginatedResponse<TeacherResponse>> => {
@@ -37,7 +37,7 @@ export const getTeachers = async (
 };
 
 export const updateTeacher = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   teacherId: string,
   teacherData: Partial<TeacherRequest>
 ): Promise<TeacherResponse> => {
@@ -48,8 +48,19 @@ export const updateTeacher = async (
   return response.data.result;
 };
 
+export const updateTeacherAccountStatus = async (
+  educationalUnitId: number,
+  teacherId: string,
+  status: string
+): Promise<TeacherResponse> => {
+  const response = await axiosInstance.put<ApiResponse<TeacherResponse>>(
+    `/course-management/admin/educationalUnit/${educationalUnitId}/teachers/${teacherId}/status?status=${status}`
+  );
+  return response.data.result;
+};
+
 export const deleteTeacher = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   teacherId: string
 ): Promise<void> => {
   await axiosInstance.delete(

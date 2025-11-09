@@ -3,7 +3,7 @@ import type { DepartmentResponse } from "./departmentResponse";
 
 
 export interface EducationalUnitResponse {
-  id: string;
+  id: number;
   name: string;
   type?: string;
   address?: string;

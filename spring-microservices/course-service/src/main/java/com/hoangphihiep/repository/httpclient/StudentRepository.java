@@ -42,4 +42,9 @@ public interface StudentRepository {
 
     @DeleteMapping("/students/{id}")
     ApiResponse<Void> deleteStudent(@PathVariable String id);
+
+    @PutMapping("/students/{id}/status")
+    ApiResponse<StudentResponse> updateStudentAccountStatus(
+            @PathVariable String id,
+            @RequestParam String status);
 }

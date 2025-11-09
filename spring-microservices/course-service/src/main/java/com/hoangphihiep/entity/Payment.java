@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -18,12 +19,13 @@ import lombok.Setter;
 @NamedQuery(name="Payment.findAll", query="SELECT p from Payment p")
 public class Payment implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "payment_type", nullable = false, length = 1000)
     private String paymentType;

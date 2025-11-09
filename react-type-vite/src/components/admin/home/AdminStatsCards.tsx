@@ -1,143 +1,126 @@
-"use client";
-
-import type React from "react";
-import { useEffect, useState } from "react";
-import { BookOpen, Users, BookMarked, Clock } from "lucide-react";
-
-interface CounterProps {
-  end: number;
-  duration?: number;
-  suffix?: string;
-}
-
-const Counter: React.FC<CounterProps> = ({
-  end,
-  duration = 2000,
-  suffix = "",
-}) => {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    let startTime: number;
-    let animationFrame: number;
-
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-
-      setCount(Math.floor(progress * end));
-
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      animationFrame = requestAnimationFrame(animate);
-    }, 200);
-
-    return () => {
-      clearTimeout(timer);
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
-      }
-    };
-  }, [end, duration]);
-
-  return (
-    <span>
-      {count}
-      {suffix}
-    </span>
-  );
-};
-
-const userHover =
-  "transform hover:scale-105 hover:shadow-sm transition-transform duration-300";
+import React, { useState, useEffect } from 'react';
+import { GraduationCap, Users, BookOpen, Building, TrendingUp, TrendingDown } from 'lucide-react';
+import * as educationUnitApi from '@/services/api/admin/educationUnitApi';
+import type { EducationalUnitResponse } from '@/services/api/response/educationalUnitResponse';
 
 const AdminStatsCards: React.FC = () => {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 md:mb-6">
-      {/* Completed Courses */}
-      <div
-        className={`bg-orange-50 rounded-lg p-4 md:p-6 border border-orange-100 ${userHover}`}
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 purecounter">
-              <Counter end={1958} />
-            </h2>
-            <span className="text-gray-600 text-xs md:text-sm font-medium">
-              Completed Courses
-            </span>
-          </div>
-          <div className="w-12 h-12 md:w-14 md:h-14 bg-orange-400 rounded-full flex items-center justify-center text-white">
-            <BookOpen className="w-5 h-5 md:w-6 md:h-6" />
-          </div>
-        </div>
-      </div>
+  const [educationalUnit, setEducationalUnit] = useState<EducationalUnitResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
-      {/* Enrolled Courses */}
-      <div
-        className={`bg-purple-50 rounded-lg p-4 md:p-6 border border-purple-100 ${userHover}`}
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 purecounter">
-              <Counter end={1600} />
-            </h2>
-            <span className="text-gray-600 text-xs md:text-sm font-medium">
-              Enrolled Courses
-            </span>
-          </div>
-          <div className="w-12 h-12 md:w-14 md:h-14 bg-purple-500 rounded-full flex items-center justify-center text-white">
-            <Users className="w-5 h-5 md:w-6 md:h-6" />
-          </div>
-        </div>
-      </div>
+  useEffect(() => {
+    const loadEducationalUnit = async () => {
+      try {
+        setLoading(true);
+        const data = await educationUnitApi.getMyEducationalUnit();
+        setEducationalUnit(data);
+      } catch (error) {
+        console.error('Error loading educational unit:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      {/* Course In Progress */}
-      <div
-        className={`bg-blue-50 rounded-lg p-4 md:p-6 border border-blue-100 ${userHover}`}
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 purecounter">
-              <Counter end={1235} />
-            </h2>
-            <span className="text-gray-600 text-xs md:text-sm font-medium">
-              Course In Progress
-            </span>
-          </div>
-          <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-full flex items-center justify-center text-white">
-            <BookMarked className="w-5 h-5 md:w-6 md:h-6" />
-          </div>
-        </div>
-      </div>
+    loadEducationalUnit();
+  }, []);
 
-      {/* Total Watch Time */}
-      <div
-        className={`bg-green-50 rounded-lg p-4 md:p-6 border border-green-100 ${userHover}`}
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <div className="flex items-baseline">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 purecounter">
-                <Counter end={845} />
-              </h2>
-              <span className="text-xl md:text-2xl font-bold text-gray-900 ml-1">
-                hrs
-              </span>
+  const stats = [
+    {
+      title: 'Tổng Khóa Học',
+      value: educationalUnit?.totalCourses || 0,
+      icon: BookOpen,
+      color: 'blue',
+      bgColor: 'bg-blue-100',
+      textColor: 'text-blue-600',
+      change: '+12.5%',
+      trending: 'up'
+    },
+    {
+      title: 'Tổng Giảng Viên',
+      value: educationalUnit?.totalTeachers || 0,
+      icon: Users,
+      color: 'green',
+      bgColor: 'bg-green-100',
+      textColor: 'text-green-600',
+      change: '+8.2%',
+      trending: 'up'
+    },
+    {
+      title: 'Tổng Sinh Viên',
+      value: educationalUnit?.totalStudents || 0,
+      icon: GraduationCap,
+      color: 'purple',
+      bgColor: 'bg-purple-100',
+      textColor: 'text-purple-600',
+      change: '+23.1%',
+      trending: 'up'
+    },
+    {
+      title: 'Tổng Khoa',
+      value: educationalUnit?.totalDepartments || 0,
+      icon: Building,
+      color: 'orange',
+      bgColor: 'bg-orange-100',
+      textColor: 'text-orange-600',
+      change: '+5.0%',
+      trending: 'up'
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-6">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
+                <div className="h-8 bg-gray-200 rounded w-16 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-20"></div>
+              </div>
+              <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
             </div>
-            <span className="text-gray-600 text-xs md:text-sm font-medium">
-              Total Watch Time
-            </span>
           </div>
-          <div className="w-12 h-12 md:w-14 md:h-14 bg-green-500 rounded-full flex items-center justify-center text-white">
-            <Clock className="w-5 h-5 md:w-6 md:h-6" />
-          </div>
-        </div>
+        ))}
       </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-6">
+      {stats.map((stat, index) => {
+        const Icon = stat.icon;
+        return (
+          <div
+            key={index}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  {stat.title}
+                </p>
+                <p className="text-3xl font-bold text-gray-900 mb-2">
+                  {stat.value.toLocaleString()}
+                </p>
+                <div className="flex items-center space-x-1">
+                  {stat.trending === 'up' ? (
+                    <TrendingUp className="w-3 h-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3 text-red-500" />
+                  )}
+                  <span className={`text-xs font-medium ${stat.trending === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                    {stat.change}
+                  </span>
+                  <span className="text-xs text-gray-500">vs tháng trước</span>
+                </div>
+              </div>
+              <div className={`${stat.bgColor} p-3 rounded-full`}>
+                <Icon className={`w-6 h-6 ${stat.textColor}`} />
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

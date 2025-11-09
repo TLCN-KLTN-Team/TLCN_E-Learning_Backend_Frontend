@@ -21,7 +21,7 @@ const QuizSettings: React.FC<{
             type="text"
             value={settings.title}
             onChange={(e) => onSettingsChange({ title: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
             placeholder="Nhập tiêu đề bài kiểm tra"
           />
         </div>
@@ -30,7 +30,7 @@ const QuizSettings: React.FC<{
           <textarea
             value={settings.description || ''}
             onChange={(e) => onSettingsChange({ description: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
             rows={3}
             placeholder="Nhập mô tả bài kiểm tra"
           />
@@ -38,8 +38,9 @@ const QuizSettings: React.FC<{
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Thời Gian (phút)</label>
-            <Input
+            <input
               type="number"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               value={settings.duration || ''}
               onChange={(e) => onSettingsChange({ duration: parseInt(e.target.value) || 0 })}
               min="1"
@@ -47,8 +48,9 @@ const QuizSettings: React.FC<{
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Điểm Đạt (%)</label>
-            <Input
+            <input
               type="number"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               value={settings.passingScore || ''}
               onChange={(e) => onSettingsChange({ passingScore: parseInt(e.target.value) || 0 })}
               min="0"
@@ -59,8 +61,9 @@ const QuizSettings: React.FC<{
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Giới Hạn Số Lần Làm</label>
-            <Input
+            <input
               type="number"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               value={settings.attemptLimit ?? ''}
               onChange={(e) => onSettingsChange({ attemptLimit: parseInt(e.target.value) || 0 })}
               min="1"
@@ -77,16 +80,6 @@ const QuizSettings: React.FC<{
               />
               <label htmlFor="showResults" className="text-sm">Hiển Thị Kết Quả</label>
             </div>
-            <div className="flex items-center">
-              <input
-                id="isPublished"
-                type="checkbox"
-                checked={!!settings.isPublished}
-                onChange={(e) => onSettingsChange({ isPublished: e.target.checked })}
-                className="h-4 w-4 mr-2"
-              />
-              <label htmlFor="isPublished" className="text-sm">Xuất Bản</label>
-            </div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -95,8 +88,11 @@ const QuizSettings: React.FC<{
             <input
               type="datetime-local"
               value={toDateTimeLocal(settings.startTime)}
-              onChange={(e) => onSettingsChange({ startTime: e.target.value || undefined })}
-              className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                console.log('[QuizSettings] startTime changed:', e.target.value);
+                onSettingsChange({ startTime: e.target.value || undefined });
+              }}
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
             />
           </div>
           <div>
@@ -104,8 +100,11 @@ const QuizSettings: React.FC<{
             <input
               type="datetime-local"
               value={toDateTimeLocal(settings.endTime)}
-              onChange={(e) => onSettingsChange({ endTime: e.target.value || undefined })}
-              className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                console.log('[QuizSettings] endTime changed:', e.target.value);
+                onSettingsChange({ endTime: e.target.value || undefined });
+              }}
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
             />
           </div>
         </div>

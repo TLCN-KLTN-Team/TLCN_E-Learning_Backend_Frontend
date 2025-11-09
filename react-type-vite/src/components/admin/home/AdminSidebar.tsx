@@ -5,7 +5,7 @@ import {
   Home,
   Tv,
   Users,
-  MessageSquare,
+  Package,
   DollarSign,
   Settings,
   Lock,
@@ -15,6 +15,7 @@ import {
   LogOut,
   Globe,
   X,
+  Building2
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -76,49 +77,22 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       path: "/admin/instructors", // Full path
     },
     {
-      id: "reviews",
-      label: "Đánh giá",
-      icon: MessageSquare,
-      path: "/admin/reviews",
+      id: "departments",
+      label: "Khoa",
+      icon: Building2, // Import from lucide-react
+      path: "/admin/departments",
+    },
+    {
+      id: "published-courses",
+      label: "Duyệt Khóa Học Thương Mại",
+      icon: Package, // Import from lucide-react
+      path: "/admin/published-courses",
     },
     {
       id: "earnings",
       label: "Doanh thu",
       icon: DollarSign,
       path: "/admin/earnings",
-    },
-    {
-      id: "settings",
-      label: "Cài đặt Admin",
-      icon: Settings,
-      path: "/admin/settings",
-    },
-    {
-      id: "authentication",
-      label: "Xác thực",
-      icon: Lock,
-      children: [
-        { id: "sign-up", label: "Đăng ký", path: "/register" },
-        { id: "sign-in", label: "Đăng nhập", path: "/login" },
-        {
-          id: "forgot-password",
-          label: "Quên mật khẩu",
-          path: "/forgot-password",
-        },
-        { id: "error-404", label: "Lỗi 404", path: "/404" },
-      ],
-    },
-    {
-      id: "documentation",
-      label: "Tài liệu",
-      icon: FileText,
-      path: "/admin/docs",
-    },
-    {
-      id: "changelog",
-      label: "Nhật ký thay đổi",
-      icon: GitBranch,
-      path: "/admin/changelog",
     },
   ];
 

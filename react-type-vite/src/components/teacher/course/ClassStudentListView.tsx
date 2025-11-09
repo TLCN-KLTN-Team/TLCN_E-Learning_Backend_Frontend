@@ -22,7 +22,7 @@ import type { StudentResponse } from "@/services/api/response/studentResponse"
 interface ClassStudentListViewProps {
   classData: CourseClassResponse
   courseId: string
-  educationalUnitId: string
+  educationalUnitId: number
   onBack: () => void
 }
 
@@ -128,7 +128,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
             <p className="text-muted-foreground mt-1">Mã lớp: {classData.classCode}</p>
           </div>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
           <Plus className="mr-2 h-4 w-4" />
           Thêm Sinh Viên
         </Button>
@@ -183,11 +183,11 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
       {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-        <Input
+        <input
           placeholder="Tìm kiếm theo tên, MSSV hoặc email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
+          className="w-full pl-10 pr-3 py-2 border rounded-lg transition-colors border-gray-300 focus:border-blue-500 outline-none"
         />
       </div>
 
@@ -283,7 +283,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-600">Chưa có sinh viên nào trong lớp này</p>
-              <Button onClick={() => setIsAddModalOpen(true)} className="mt-4 bg-blue-600 hover:bg-blue-700">
+              <Button onClick={() => setIsAddModalOpen(true)} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="mr-2 h-4 w-4" />
                 Thêm Sinh Viên Đầu Tiên
               </Button>

@@ -22,7 +22,7 @@ import {
 const menuItems = [
   { name: "Dashboard", icon: LayoutGrid, path: "/teacher/home" },
   { name: "Khóa Học Được Gán", icon: BookOpen, path: "/teacher/assigned-courses" },
-  { name: "Quiz", icon: HelpCircle, path: "/teacher/quiz" },
+  { name: "Khóa học Thương mại", icon: HelpCircle, path: "/teacher/quiz" },
   { name: "Earnings", icon: TrendingUp, path: "/teacher/earnings" },
   { name: "Students", icon: Users, path: "/teacher/students" },
   { name: "Orders", icon: FolderCheck, path: "/teacher/orders" },
@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
   const location = useLocation()
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-background">
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!collapsed && (
           <div className="flex items-center space-x-2">
@@ -59,27 +59,33 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
 
       <div className="flex-1 p-3">
         <div className="space-y-1">
-          {menuItems.map((item) => (
-            <Link
-              key={item.name}
-              className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition-all duration-200 group ${
-                location.pathname === item.path
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-              to={item.path}
-              title={collapsed ? item.name : undefined}
-            >
-              <item.icon className={`w-4 h-4 ${collapsed ? "mx-auto" : "mr-3"}`} />
-              {!collapsed && <span>{item.name}</span>}
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path
+            return (
+              <Link
+                key={item.name}
+                className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group relative ${
+                  isActive
+                    ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+                to={item.path}
+                title={collapsed ? item.name : undefined}
+              >
+                {isActive && !collapsed && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-800 rounded-r-full" />
+                )}
+                <item.icon className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} ${isActive ? "text-white" : ""}`} />
+                {!collapsed && <span>{item.name}</span>}
+              </Link>
+            )
+          })}
 
           <button
-            className={`flex items-center w-full px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-all duration-200 group`}
+            className={`flex items-center w-full px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 group mt-4`}
             title={collapsed ? "Sign Out" : undefined}
           >
-            <LogOut className={`w-4 h-4 ${collapsed ? "mx-auto" : "mr-3"}`} />
+            <LogOut className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
             {!collapsed && <span>Sign Out</span>}
           </button>
         </div>

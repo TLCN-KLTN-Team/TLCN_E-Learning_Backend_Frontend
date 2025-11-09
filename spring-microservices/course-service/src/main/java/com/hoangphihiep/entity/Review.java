@@ -1,9 +1,9 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.sql.Date;
 
-import com.devteria.identity.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -29,12 +29,13 @@ import lombok.ToString;
 @NamedQuery(name="Review.findAll", query="SELECT r from Review r")
 public class Review implements Serializable{
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "rate")
     private int rate;

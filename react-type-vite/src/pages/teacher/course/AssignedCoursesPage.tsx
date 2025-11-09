@@ -210,7 +210,7 @@ const AssignedCoursesPage: React.FC = () => {
                           </Link>
                         </Button>
                         <Button variant="outline" asChild className="flex-1 bg-transparent">
-                          <Link to={`/teacher/courses/${course.id}/manage`}>Quản lý</Link>
+                          <Link to={`/teacher/courses/${course.id}/manage`}>Đóng gói</Link>
                         </Button>
                       </div>
                     </>
@@ -234,7 +234,7 @@ const AssignedCoursesPage: React.FC = () => {
                           </Link>
                         </Button>
                         <Button variant="outline" asChild size="sm">
-                          <Link to={`/teacher/courses/${course.id}/manage`}>Quản lý</Link>
+                          <Link to={`/teacher/courses/${course.id}/manage`}>Đóng gói</Link>
                         </Button>
                       </div>
                     </>
