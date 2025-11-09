@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useEffect, useRef } from "react"
-import { Monitor, GraduationCap, Gem } from "lucide-react"
+import { TrendingUp, Users, BookOpen } from "lucide-react"
 
 const useCounterAnimation = (end: number, duration = 2000) => {
   const countRef = useRef<HTMLHeadingElement>(null)
@@ -34,55 +34,55 @@ const useCounterAnimation = (end: number, duration = 2000) => {
 
 const StatsCards: React.FC = () => {
   const coursesCountRef = useCounterAnimation(25, 2000)
-  const studentsCountRef = useCounterAnimation(25, 2200)
-  const enrolledCountRef = useCounterAnimation(12, 2400)
+  const studentsCountRef = useCounterAnimation(12, 2200)
+  const enrolledCountRef = useCounterAnimation(95, 2400)
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* Counter item */}
-      <div className="flex justify-center items-center p-4 bg-[#fdf3d5] dark:bg-yellow-900/15 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-        <span className="text-6xl text-[#f7c32e] mb-0">
-          <Monitor className="w-12 h-12" />
-        </span>
-        <div className="ml-4">
-          <div className="flex items-baseline">
-            <h5 ref={coursesCountRef} className="text-2xl font-bold mb-0 text-gray-800">
-              0
-            </h5>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-blue-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600 mb-2 font-medium">Total Courses</p>
+            <h3 className="text-3xl font-bold text-gray-900 mb-1">
+              <span ref={coursesCountRef}>0</span>
+            </h3>
+            <p className="text-xs text-blue-600 font-semibold">+2 this month</p>
           </div>
-          <span className="text-sm font-light text-gray-600 dark:text-gray-400">Total Courses</span>
+          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+            <BookOpen className="w-6 h-6 text-white" />
+          </div>
         </div>
       </div>
 
-      {/* Counter item */}
-      <div className="flex justify-center items-center p-4 bg-[#f4f0ff] dark:bg-purple-900/10 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-        <span className="text-6xl text-[#6f42c1] mb-0">
-          <GraduationCap className="w-12 h-12" />
-        </span>
-        <div className="ml-4">
-          <div className="flex items-baseline">
-            <h5 ref={studentsCountRef} className="text-2xl font-bold mb-0 text-gray-800">
-              0
-            </h5>
-            <span className="text-xl font-bold text-gray-800">K+</span>
+      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-purple-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600 mb-2 font-medium">Total Students</p>
+            <h3 className="text-3xl font-bold text-gray-900 mb-1">
+              <span ref={studentsCountRef}>0</span>
+              <span className="text-lg">k+</span>
+            </h3>
+            <p className="text-xs text-purple-600 font-semibold">Growing daily</p>
           </div>
-          <span className="text-sm font-light text-gray-600 dark:text-gray-400">Total Students</span>
+          <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+            <Users className="w-6 h-6 text-white" />
+          </div>
         </div>
       </div>
 
-      {/* Counter item */}
-      <div className="flex justify-center items-center p-4 bg-[#cde1f4] dark:bg-blue-900/10 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-        <span className="text-6xl text-[#066ac9] mb-0">
-          <Gem className="w-12 h-12" />
-        </span>
-        <div className="ml-4">
-          <div className="flex items-baseline">
-            <h5 ref={enrolledCountRef} className="text-2xl font-bold mb-0 text-gray-800">
-              0
-            </h5>
-            <span className="text-xl font-bold text-gray-800">K</span>
+      <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-green-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600 mb-2 font-medium">Active Enrollment Rate</p>
+            <h3 className="text-3xl font-bold text-gray-900 mb-1">
+              <span ref={enrolledCountRef}>0</span>
+              <span className="text-lg">%</span>
+            </h3>
+            <p className="text-xs text-green-600 font-semibold">Excellent performance</p>
           </div>
-          <span className="text-sm font-light text-gray-600 dark:text-gray-400">Enrolled Students</span>
+          <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+            <TrendingUp className="w-6 h-6 text-white" />
+          </div>
         </div>
       </div>
     </div>

@@ -22,7 +22,7 @@ interface AddStudentsToClassModalProps {
   onClose: () => void
   classId: number
   courseId: string
-  educationalUnitId: string
+  educationalUnitId: number
   onStudentsAdded: () => void
 }
 

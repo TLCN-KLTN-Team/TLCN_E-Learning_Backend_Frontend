@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
@@ -21,12 +22,13 @@ import lombok.Setter;
 @NamedQuery(name="Question.findAll", query="SELECT q from Question q")
 public class Question implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "question_text", length = 1000)
     private String questionText;
@@ -49,7 +51,7 @@ public class Question implements Serializable {
     private Set<Answer> answers = new HashSet<>();
 
     public void addAnswer(Answer answer) {
-        if (answer != null && answer != null && !answers.contains(answer)) {
+        if (answer != null) {
             answers.add(answer);
         }
     }

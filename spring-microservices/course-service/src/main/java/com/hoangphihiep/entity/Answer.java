@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -28,12 +29,13 @@ import lombok.Setter;
 @NamedQuery(name="Answer.findAll", query="SELECT a from Answer a")
 public class Answer implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "content",length = 500)
     private String content;

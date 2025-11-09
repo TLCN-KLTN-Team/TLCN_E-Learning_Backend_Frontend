@@ -1,10 +1,10 @@
 import type React from "react";
 import AdminStatsCards from "../../components/admin/home/AdminStatsCards";
 import AdminEarningsChart from "../../components/admin/home/AdminEarningsChart";
-import AdminSupportRequests from "../../components/admin/home/AdminSupportRequests";
 import AdminTopInstructors from "../../components/admin/home/AdminTopInstructors";
 import AdminNoticeBoard from "../../components/admin/home/AdminNoticeBoard";
-import AdminTrafficSources from "../../components/admin/home/AdminTrafficSources";
+import AdminEducationalUnitInfo from "@/components/admin/home/AdminEducationalUnitInfo";
+import AdminProfileInfo from "@/components/admin/home/AdminProfileInfo";
 
 const AdminDashboardPage: React.FC = () => {
   return (
@@ -14,18 +14,19 @@ const AdminDashboardPage: React.FC = () => {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
           Dashboard
         </h1>
+        <p className="text-gray-600 mt-1">Chào mừng bạn quay trở lại!</p>
       </div>
 
       {/* Stats Cards */}
       <AdminStatsCards />
 
-      {/* Chart and Support Requests */}
+      {/* Chart and Educational Unit Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
         <div className="lg:col-span-2">
           <AdminEarningsChart />
         </div>
         <div className="lg:col-span-1">
-          <AdminSupportRequests />
+          <AdminEducationalUnitInfo />
         </div>
       </div>
 
@@ -33,7 +34,7 @@ const AdminDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <AdminTopInstructors />
         <AdminNoticeBoard />
-        <AdminTrafficSources />
+        <AdminProfileInfo />
       </div>
     </>
   );

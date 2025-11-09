@@ -5,7 +5,7 @@ import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import axiosInstance from "../httpClient/axiosInstance";
 
 export const createStudent = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   studentData: StudentRequest
 ): Promise<StudentResponse> => {
   const response = await axiosInstance.post<ApiResponse<StudentResponse>>(
@@ -16,7 +16,7 @@ export const createStudent = async (
 };
 
 export const getStudents = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   page: number = 0,
   size: number = 20
 ): Promise<PaginatedResponse<StudentResponse>> => {
@@ -27,7 +27,7 @@ export const getStudents = async (
 };
 
 export const updateStudent = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   studentId: string,
   studentData: Partial<StudentRequest>
 ): Promise<StudentResponse> => {
@@ -38,8 +38,19 @@ export const updateStudent = async (
   return response.data.result;
 };
 
+export const updateStudentAccountStatus = async (
+  educationalUnitId: number,
+  studentId: string,
+  status: string
+): Promise<StudentResponse> => {
+  const response = await axiosInstance.put<ApiResponse<StudentResponse>>(
+    `/course-management/admin/educationalUnit/${educationalUnitId}/students/${studentId}/status?status=${status}`
+  );
+  return response.data.result;
+};
+
 export const deleteStudent = async (
-  educationalUnitId: string,
+  educationalUnitId: number,
   studentId: string
 ): Promise<void> => {
   await axiosInstance.delete(

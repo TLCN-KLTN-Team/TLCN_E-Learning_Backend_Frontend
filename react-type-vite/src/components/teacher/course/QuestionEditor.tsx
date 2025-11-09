@@ -1,10 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Trash, PlusCircle, GripVertical, AlertCircle } from "lucide-react"
+import { Trash, PlusCircle, GripVertical, AlertCircle, Paperclip, ExternalLink } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import AnswerEditor from "./AnswerEditor"
 import FileUpload from "./FileUpload"
@@ -23,13 +23,68 @@ const QuestionEditor: React.FC<{
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [showValidationErrors, setShowValidationErrors] = useState(false)
 
+  // Quản lý files: Tách riêng files cũ và mới
+  const [existingServerFiles, setExistingServerFiles] = useState<string[]>([])
+  const [newFiles, setNewFiles] = useState<string[]>([])
+
+  // Phân loại files khi component mount hoặc question thay đổi
+  useEffect(() => {
+    const serverFiles: string[] = []
+    const blobFiles: string[] = []
+
+    ;(question.attachments || []).forEach((file) => {
+      if (isServerFile(file)) {
+        serverFiles.push(file)
+      } else {
+        blobFiles.push(file)
+      }
+    })
+
+    setExistingServerFiles(serverFiles)
+    setNewFiles(blobFiles)
+  }, [question.id]) // Chỉ chạy khi question ID thay đổi
+
+  // Helper: Kiểm tra file từ server
+  const isServerFile = (fileUrl: string): boolean => {
+    if (!fileUrl || typeof fileUrl !== "string") return false
+    
+    if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+      return true
+    }
+    
+    if (fileUrl.trim().startsWith("{")) {
+      try {
+        const meta = JSON.parse(fileUrl)
+        if (meta.url && (meta.url.startsWith("http://") || meta.url.startsWith("https://"))) {
+          return true
+        }
+      } catch {
+        // Ignore parse error
+      }
+    }
+    
+    return false
+  }
+
+  // Helper: Lấy tên file
   const getFileName = (fileData: string): string => {
     try {
       const metadata = JSON.parse(fileData)
-      return metadata.name || "Tệp không xác định"
+      return metadata.name || metadata.originalFilename || "Tệp không xác định"
     } catch {
-      // Fallback for old format or plain URLs
-      return fileData.split("/").pop() || "Tệp không xác định"
+      const urlParts = fileData.split("/")
+      const lastPart = urlParts[urlParts.length - 1]
+      return decodeURIComponent(lastPart.split("?")[0]) || "Tệp không xác định"
+    }
+  }
+
+  // Helper: Lấy URL thực
+  const getFileUrl = (fileData: string): string => {
+    try {
+      const metadata = JSON.parse(fileData)
+      return metadata.url || fileData
+    } catch {
+      return fileData
     }
   }
 
@@ -37,8 +92,31 @@ const QuestionEditor: React.FC<{
     onUpdate(index, { ...question, ...updates })
   }
 
+  // Xử lý thêm files mới
   const handleFilesChange = (files: string[]) => {
-    updateQuestion({ attachments: files })
+    const updatedNewFiles = [...newFiles, ...files]
+    setNewFiles(updatedNewFiles)
+    
+    const allFiles = [...existingServerFiles, ...updatedNewFiles]
+    updateQuestion({ attachments: allFiles })
+  }
+
+  // Xóa file cũ từ server
+  const handleRemoveServerFile = (fileToRemove: string) => {
+    const updated = existingServerFiles.filter((file) => file !== fileToRemove)
+    setExistingServerFiles(updated)
+    
+    const allFiles = [...updated, ...newFiles]
+    updateQuestion({ attachments: allFiles })
+  }
+
+  // Xóa file mới (blob)
+  const handleRemoveNewFile = (fileToRemove: string) => {
+    const updated = newFiles.filter((file) => file !== fileToRemove)
+    setNewFiles(updated)
+    
+    const allFiles = [...existingServerFiles, ...updated]
+    updateQuestion({ attachments: allFiles })
   }
 
   const addAnswer = () => {
@@ -144,8 +222,8 @@ const QuestionEditor: React.FC<{
           <textarea
             value={question.questionText}
             onChange={(e) => updateQuestion({ questionText: e.target.value })}
-            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 ${
-              validationErrors.some((e) => e.field === "questionText") && showValidationErrors ? "border-red-500" : ""
+            className={`w-full px-3 py-2 border rounded-lg transition-colors ${
+              validationErrors.some((e) => e.field === "questionText") && showValidationErrors ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
             }`}
             rows={3}
             placeholder="Nhập nội dung câu hỏi"
@@ -161,7 +239,7 @@ const QuestionEditor: React.FC<{
               id={`questionType-${index}`}
               value={question.questionType}
               onChange={(e) => updateQuestion({ questionType: e.target.value as any })}
-              className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
             >
               <option value="SINGLE_CHOICE">Một Lựa Chọn</option>
               <option value="MULTIPLE_CHOICE">Nhiều Lựa Chọn</option>
@@ -170,8 +248,9 @@ const QuestionEditor: React.FC<{
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Điểm</label>
-            <Input
+            <input
               type="number"
+              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               value={question.score || 1}
               onChange={(e) => updateQuestion({ score: Number.parseInt(e.target.value) || 1 })}
               min="1"
@@ -179,29 +258,95 @@ const QuestionEditor: React.FC<{
           </div>
         </div>
 
-        {/* Phần Tải Lên Tệp */}
-        <FileUpload
-          files={question.attachments || []}
-          onFilesChange={handleFilesChange}
-          title="Tài Liệu Đính Kèm Câu Hỏi"
-          description="Tải lên hình ảnh, tài liệu hoặc tệp khác để hỗ trợ câu hỏi này"
-          acceptedTypes={[".jpg", ".jpeg", ".png", ".gif", ".pdf", ".doc", ".docx", ".mp4", ".mov", ".txt"]}
-          maxFileSize={25}
-          maxFiles={5}
-        />
-
-        {question.attachments && question.attachments.length > 0 && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm font-medium text-blue-900 mb-2">Tệp đã tải lên:</p>
-            <ul className="space-y-1">
-              {question.attachments.map((file, idx) => (
-                <li key={idx} className="text-sm text-blue-700">
-                  📎 {getFileName(file)}
-                </li>
+        {/* Files đã upload từ server */}
+        {existingServerFiles.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Tài Liệu Đính Kèm Đã Upload ({existingServerFiles.length})
+            </label>
+            <div className="space-y-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              {existingServerFiles.map((file, idx) => (
+                <div
+                  key={`question-server-${idx}`}
+                  className="flex items-center justify-between p-2 bg-white rounded border hover:border-blue-300 transition-colors"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Paperclip className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                    <span className="text-sm text-gray-700 truncate">{getFileName(file)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => window.open(getFileUrl(file), "_blank")}
+                      title="Xem file"
+                    >
+                      <ExternalLink className="h-4 w-4 text-blue-600" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleRemoveServerFile(file)}
+                      title="Xóa file"
+                    >
+                      <Trash className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
+
+        {/* Files mới thêm */}
+        {newFiles.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Tài Liệu Mới Thêm ({newFiles.length})
+            </label>
+            <div className="space-y-2 p-3 bg-green-50 rounded-lg border border-green-200">
+              {newFiles.map((file, idx) => (
+                <div
+                  key={`question-new-${idx}`}
+                  className="flex items-center justify-between p-2 bg-white rounded border hover:border-green-300 transition-colors"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Paperclip className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    <span className="text-sm text-gray-700 truncate">{getFileName(file)}</span>
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded">Mới</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 flex-shrink-0"
+                    onClick={() => handleRemoveNewFile(file)}
+                    title="Xóa file"
+                  >
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Upload files mới */}
+        <div className="border-t pt-4">
+          <FileUpload
+            files={[]}
+            onFilesChange={handleFilesChange}
+            title="Thêm Tài Liệu Đính Kèm Mới"
+            description="Tải lên hình ảnh, tài liệu hoặc tệp khác để hỗ trợ câu hỏi này"
+            acceptedTypes={[".jpg", ".jpeg", ".png", ".gif", ".pdf", ".doc", ".docx", ".mp4", ".mov", ".txt"]}
+            maxFileSize={25}
+            maxFiles={5}
+          />
+        </div>
 
         <div>
           <div className="flex justify-between items-center mb-2">

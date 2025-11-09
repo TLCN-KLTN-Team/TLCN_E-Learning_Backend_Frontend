@@ -16,4 +16,5 @@ export interface TeacherResponse {
   bankAccountNumber?: string;
   department?: DepartmentResponse;
   educationalUnit?: EducationalUnitResponse;
+  accountStatus: string
 }

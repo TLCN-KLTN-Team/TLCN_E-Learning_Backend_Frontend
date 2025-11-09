@@ -33,8 +33,8 @@ public class SectionService {
     private final AssignmentRepository assignmentRepository;
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
     private final SectionMapper sectionMapper;
-    private final AssignmentMapper assignmentMapper;
     private final FileHandlerRepository fileHandlerRepository;
+    private final ContentVisibilityService contentVisibilityService;
 
     public List<SectionResponse> getAllSections() {
         try {
@@ -159,6 +159,13 @@ public class SectionService {
 
             Section savedSection = sectionRepository.save(section);
 
+            if (request.getVisibleClassIds() != null) {
+                contentVisibilityService.updateSectionVisibility(
+                        savedSection.getId(),
+                        request.getVisibleClassIds()
+                );
+            }
+
             // Process lessons
             if (request.getLessons() != null && !request.getLessons().isEmpty()) {
                 upsertLessons(request.getLessons(), savedSection, lessonFiles);
@@ -245,7 +252,7 @@ public class SectionService {
 
                     log.info("Đang cập nhật lesson đã tồn tại với id: {}", lessonRequest.getId());
 
-                    updateLessonFields(lesson, lessonRequest, section);
+                    updateLessonFields(lesson, lessonRequest, section, lessonFiles);
                 } else {
                     log.info("Đang tạo lesson mới với tiêu đề: {}", lessonRequest.getTitle());
                     lesson = createNewLesson(lessonRequest, section, lessonFiles);
@@ -282,10 +289,81 @@ public class SectionService {
         }
     }
 
-    private void updateLessonFields(Lesson lesson, LessonRequest request, Section section) {
+    private void updateLessonFields(Lesson lesson, LessonRequest request, Section section, List<MultipartFile> lessonFiles) {
         lesson.setTitle(request.getTitle());
         lesson.setDescription(request.getDescription());
         lesson.setContent(request.getContent());
+
+        // XỬ LÝ ATTACHMENTS
+        List<String> processedAttachments = new ArrayList<>();
+
+        if (request.getAttachments() != null && !request.getAttachments().isEmpty()) {
+            log.info("Processing {} attachments for lesson update", request.getAttachments().size());
+
+            for (String attachment : request.getAttachments()) {
+                // Case 1: FILE_INDEX - File mới cần upload
+                if (attachment.startsWith("FILE_INDEX:")) {
+                    try {
+                        int fileIndex = Integer.parseInt(attachment.substring("FILE_INDEX:".length()));
+
+                        if (fileIndex < 0 || fileIndex >= lessonFiles.size()) {
+                            log.warn("Invalid file index: {} (total files: {})", fileIndex, lessonFiles.size());
+                            continue;
+                        }
+
+                        MultipartFile file = lessonFiles.get(fileIndex);
+                        log.info("Uploading new file: {} (index: {})", file.getOriginalFilename(), fileIndex);
+
+                        Map<String, String> uploadResult = fileHandlerRepository.uploadFile(file);
+                        String uploadedUrl = uploadResult.get("url");
+
+                        if (uploadedUrl != null && !uploadedUrl.isEmpty()) {
+                            processedAttachments.add(uploadedUrl);
+                            log.info("Successfully uploaded file: {}", uploadedUrl);
+                        }
+                    } catch (NumberFormatException e) {
+                        log.error("Invalid FILE_INDEX format: {}", attachment, e);
+                    } catch (Exception e) {
+                        log.error("Failed to upload file at index: {}", attachment, e);
+                    }
+                }
+                // Case 2: HTTP/HTTPS URL - File cũ đã có trên server
+                else if (attachment.startsWith("http://") || attachment.startsWith("https://")) {
+                    log.info("Keeping existing server file: {}", attachment.substring(0, Math.min(50, attachment.length())));
+                    processedAttachments.add(attachment);
+                }
+                // Case 3: JSON metadata với URL từ server
+                else if (attachment.trim().startsWith("{")) {
+                    try {
+                        // Parse JSON để lấy URL
+                        ObjectMapper mapper = new ObjectMapper();
+                        Map<String, Object> metadata = mapper.readValue(attachment, Map.class);
+                        String url = (String) metadata.get("url");
+
+                        if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                            log.info("Keeping existing server file from JSON: {}", url.substring(0, Math.min(50, url.length())));
+                            processedAttachments.add(url);
+                        } else {
+                            log.warn("Invalid URL in JSON metadata: {}", attachment.substring(0, Math.min(100, attachment.length())));
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to parse JSON metadata: {}", attachment.substring(0, Math.min(100, attachment.length())), e);
+                    }
+                }
+                // Case 4: Các trường hợp khác - log warning
+                else {
+                    log.warn("Unknown attachment format, skipping: {}", attachment.substring(0, Math.min(50, attachment.length())));
+                }
+            }
+
+            log.info("Processed {} attachments for lesson: {}", processedAttachments.size(), lesson.getTitle());
+            lesson.setAttachments(processedAttachments);
+        } else {
+            // Nếu request không có attachments, giữ nguyên attachments cũ
+            log.info("No attachments in request, keeping existing attachments");
+            // Không set null, giữ nguyên list cũ
+        }
+
         lesson.setNumberItem(request.getNumberItem());
         lesson.setIsFreeLesson(request.getIsFreeLesson());
         lesson.setIsPublished(request.getIsPublished());
@@ -498,12 +576,54 @@ public class SectionService {
         question.setQuestionText(request.getQuestionText());
         question.setQuestionType(request.getQuestionType());
         question.setOrderIndex(request.getOrderIndex());
+
+        // XỬ LÝ ATTACHMENTS
+        List<String> processedAttachments = new ArrayList<>();
+
         if (request.getAttachments() != null && !request.getAttachments().isEmpty()) {
-            List<String> uploadedUrls = new ArrayList<>();
-            if (!uploadedUrls.isEmpty()) {
-                question.setAttachments(uploadedUrls);
+            log.info("Processing {} attachments for question update", request.getAttachments().size());
+
+            for (String attachment : request.getAttachments()) {
+                if (attachment.startsWith("FILE_INDEX:")) {
+                    try {
+                        int fileIndex = Integer.parseInt(attachment.substring("FILE_INDEX:".length()));
+
+                        if (fileIndex >= 0 && fileIndex < questionFiles.size()) {
+                            MultipartFile file = questionFiles.get(fileIndex);
+                            log.info("Uploading new question file: {}", file.getOriginalFilename());
+
+                            Map<String, String> uploadResult = fileHandlerRepository.uploadFile(file);
+                            String uploadedUrl = uploadResult.get("url");
+
+                            if (uploadedUrl != null && !uploadedUrl.isEmpty()) {
+                                processedAttachments.add(uploadedUrl);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to upload question file: {}", attachment, e);
+                    }
+                }
+                else if (attachment.startsWith("http://") || attachment.startsWith("https://")) {
+                    processedAttachments.add(attachment);
+                }
+                else if (attachment.trim().startsWith("{")) {
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        Map<String, Object> metadata = mapper.readValue(attachment, Map.class);
+                        String url = (String) metadata.get("url");
+
+                        if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                            processedAttachments.add(url);
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to parse question file metadata", e);
+                    }
+                }
             }
+
+            question.setAttachments(processedAttachments);
         }
+
         question.setScore(request.getScore());
         question.setUpdateAt(new Date());
     }
@@ -674,17 +794,84 @@ public class SectionService {
         }
     }
 
-    private void updateAssignmentFields(Assignment assignment, AssignmentRequest request, Section section, List<MultipartFile> assignmentFiles, List<MultipartFile> rubricFiles, int startIndex) {
+    private void updateAssignmentFields(Assignment assignment, AssignmentRequest request, Section section,
+                                        List<MultipartFile> assignmentFiles, List<MultipartFile> rubricFiles, int startIndex) {
         assignment.setTitle(request.getTitle());
         assignment.setDescription(request.getDescription());
         assignment.setDeadline(request.getDeadline());
-
         assignment.setSubmissionType(request.getSubmissionType());
-
         assignment.setMaxScore(request.getMaxScore());
         assignment.setNumberItem(request.getNumberItem());
         assignment.setIsPublished(request.getIsPublished());
+
+        // XỬ LÝ ASSIGNMENT FILES
+        if (request.getAssignmentFiles() != null && !request.getAssignmentFiles().isEmpty()) {
+            List<String> processedFiles = processFileList(
+                    request.getAssignmentFiles(),
+                    assignmentFiles,
+                    "assignment"
+            );
+            assignment.setAssignmentFiles(processedFiles);
+        }
+
+        // XỬ LÝ RUBRIC FILES
+        if (request.getRubricFiles() != null && !request.getRubricFiles().isEmpty()) {
+            List<String> processedFiles = processFileList(
+                    request.getRubricFiles(),
+                    rubricFiles,
+                    "rubric"
+            );
+            assignment.setRubricFiles(processedFiles);
+        }
+
         assignment.setUpdateAt(new Date());
+    }
+
+    private List<String> processFileList(List<String> fileStrings, List<MultipartFile> files, String fileType) {
+        List<String> processedFiles = new ArrayList<>();
+
+        for (String fileStr : fileStrings) {
+            if (fileStr.startsWith("FILE_INDEX:")) {
+                try {
+                    int fileIndex = Integer.parseInt(fileStr.substring("FILE_INDEX:".length()));
+
+                    if (fileIndex >= 0 && fileIndex < files.size()) {
+                        MultipartFile file = files.get(fileIndex);
+                        log.info("Uploading new {} file: {}", fileType, file.getOriginalFilename());
+
+                        Map<String, String> uploadResult = fileHandlerRepository.uploadFile(file);
+                        String uploadedUrl = uploadResult.get("url");
+
+                        if (uploadedUrl != null && !uploadedUrl.isEmpty()) {
+                            processedFiles.add(uploadedUrl);
+                            log.info("Successfully uploaded {} file: {}", fileType, uploadedUrl);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to upload {} file: {}", fileType, fileStr, e);
+                }
+            }
+            else if (fileStr.startsWith("http://") || fileStr.startsWith("https://")) {
+                log.info("Keeping existing {} file: {}", fileType, fileStr.substring(0, Math.min(50, fileStr.length())));
+                processedFiles.add(fileStr);
+            }
+            else if (fileStr.trim().startsWith("{")) {
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, Object> metadata = mapper.readValue(fileStr, Map.class);
+                    String url = (String) metadata.get("url");
+
+                    if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                        processedFiles.add(url);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to parse {} file metadata", fileType, e);
+                }
+            }
+        }
+
+        log.info("Processed {} {} files", processedFiles.size(), fileType);
+        return processedFiles;
     }
 
     private Assignment createNewAssignment(AssignmentRequest request, Section section, List<MultipartFile> assignmentFiles, List<MultipartFile> rubricFiles, int startIndex) {

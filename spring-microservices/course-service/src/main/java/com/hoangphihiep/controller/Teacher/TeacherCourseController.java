@@ -4,9 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.hoangphihiep.dto.request.BulkSectionRequest;
-import com.hoangphihiep.dto.request.CourseRequest;
-import com.hoangphihiep.dto.request.TeacherRequest;
+import com.hoangphihiep.dto.request.*;
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.service.*;
 import jakarta.validation.Valid;
@@ -31,11 +29,11 @@ public class TeacherCourseController {
 
     private final SectionService sectionService;
 
-    private final CourseClassService classService;
-
-    private final CourseEnrollmentService enrollmentService;
-
     private final StudentService studentService;
+
+    private final ContentVisibilityService contentVisibilityService;
+
+    private final ContentPublishService contentPublishService;
     @GetMapping("/{teacherId}")
     public ApiResponse<List<CourseResponse>> getCoursesByTeacher(
             @PathVariable String teacherId) {
@@ -130,6 +128,83 @@ public class TeacherCourseController {
                 .build();
     }
 
+    @GetMapping("/content-visibility/section/{sectionId}")
+    public ApiResponse<ContentVisibilityResponse> getSectionVisibility(
+            @PathVariable Integer sectionId,
+            @RequestParam Integer courseId) {
+        return ApiResponse.<ContentVisibilityResponse>builder()
+                .result(contentVisibilityService.getSectionVisibility(courseId, sectionId))
+                .build();
+    }
+
+    // THAY ĐỔI: Đổi từ /section/{sectionId} thành /content-visibility/section/{sectionId}
+    @PutMapping("/content-visibility/section/{sectionId}")
+    public ApiResponse<Void> updateSectionVisibility(
+            @PathVariable Integer sectionId,
+            @RequestBody ContentVisibilityRequest request) {
+        contentVisibilityService.updateSectionVisibility(sectionId, request.getVisibleClassIds());
+        return ApiResponse.<Void>builder()
+                .message("Cập nhật khả năng hiển thị thành công")
+                .build();
+    }
+
+    @GetMapping("/content-visibility/lesson/{lessonId}")
+    public ApiResponse<ContentVisibilityResponse> getLessonVisibility(
+            @PathVariable Integer lessonId,
+            @RequestParam Integer courseId) {
+        return ApiResponse.<ContentVisibilityResponse>builder()
+                .result(contentVisibilityService.getLessonVisibility(courseId, lessonId))
+                .build();
+    }
+
+    @PutMapping("/content-visibility/lesson/{lessonId}")
+    public ApiResponse<Void> updateLessonVisibility(
+            @PathVariable Integer lessonId,
+            @RequestBody ContentVisibilityRequest request) {
+        contentVisibilityService.updateLessonVisibility(lessonId, request.getVisibleClassIds());
+        return ApiResponse.<Void>builder()
+                .message("Cập nhật khả năng hiển thị bài học thành công")
+                .build();
+    }
+
+    @GetMapping("/content-visibility/quiz/{quizId}")
+    public ApiResponse<ContentVisibilityResponse> getQuizVisibility(
+            @PathVariable Integer quizId,
+            @RequestParam Integer courseId) {
+        return ApiResponse.<ContentVisibilityResponse>builder()
+                .result(contentVisibilityService.getQuizVisibility(courseId, quizId))
+                .build();
+    }
+
+    @PutMapping("/content-visibility/quiz/{quizId}")
+    public ApiResponse<Void> updateQuizVisibility(
+            @PathVariable Integer quizId,
+            @RequestBody ContentVisibilityRequest request) {
+        contentVisibilityService.updateQuizVisibility(quizId, request.getVisibleClassIds());
+        return ApiResponse.<Void>builder()
+                .message("Cập nhật khả năng hiển thị bài kiểm tra thành công")
+                .build();
+    }
+
+    @GetMapping("/content-visibility/assignment/{assignmentId}")
+    public ApiResponse<ContentVisibilityResponse> getAssignmentVisibility(
+            @PathVariable Integer assignmentId,
+            @RequestParam Integer courseId) {
+        return ApiResponse.<ContentVisibilityResponse>builder()
+                .result(contentVisibilityService.getAssignmentVisibility(courseId, assignmentId))
+                .build();
+    }
+
+    @PutMapping("/content-visibility/assignment/{assignmentId}")
+    public ApiResponse<Void> updateAssignmentVisibility(
+            @PathVariable Integer assignmentId,
+            @RequestBody ContentVisibilityRequest request) {
+        contentVisibilityService.updateAssignmentVisibility(assignmentId, request.getVisibleClassIds());
+        return ApiResponse.<Void>builder()
+                .message("Cập nhật khả năng hiển thị bài tập thành công")
+                .build();
+    }
+
 
     @GetMapping("/students/{studentId}")
     public ApiResponse<StudentResponse> getStudentsDetail(
@@ -153,5 +228,99 @@ public class TeacherCourseController {
             System.out.printf("  [%d] name=%s, originalFilename=%s, size=%d bytes%n",
                     i, file.getName(), file.getOriginalFilename(), file.getSize());
         }
+    }
+
+
+
+    @GetMapping("/{courseId}/publish-status")
+    public ApiResponse<ContentPublishStatusResponse> getPublishStatus(@PathVariable Integer courseId) {
+        log.info("Getting publish status for course: {}", courseId);
+        ContentPublishStatusResponse response = contentPublishService.getPublishStatus(courseId);
+
+        return ApiResponse.<ContentPublishStatusResponse>builder()
+                .message("Get publish status successfully")
+                .result(response)
+                .build();
+    }
+
+    @PutMapping("/sections/{sectionId}/publish")
+    public ApiResponse<Void> toggleSectionPublish(
+            @PathVariable Integer sectionId,
+            @RequestParam Boolean isPublished) {
+
+        log.info("Toggle section {} publish status to: {}", sectionId, isPublished);
+        contentPublishService.toggleSectionPublish(sectionId, isPublished);
+
+        return ApiResponse.<Void>builder()
+                .message("Section publish status updated successfully")
+                .build();
+    }
+
+    @PutMapping("/lessons/{lessonId}/publish")
+    public ApiResponse<Void> toggleLessonPublish(
+            @PathVariable Integer lessonId,
+            @RequestParam Boolean isPublished) {
+
+        log.info("Toggle lesson {} publish status to: {}", lessonId, isPublished);
+        contentPublishService.toggleLessonPublish(lessonId, isPublished);
+
+        return ApiResponse.<Void>builder()
+                .message("Lesson publish status updated successfully")
+                .build();
+    }
+
+    @PutMapping("/quizzes/{quizId}/publish")
+    public ApiResponse<Void> toggleQuizPublish(
+            @PathVariable Integer quizId,
+            @RequestParam Boolean isPublished) {
+
+        log.info("Toggle quiz {} publish status to: {}", quizId, isPublished);
+        contentPublishService.toggleQuizPublish(quizId, isPublished);
+
+        return ApiResponse.<Void>builder()
+                .message("Quiz publish status updated successfully")
+                .build();
+    }
+
+    @PutMapping("/assignments/{assignmentId}/publish")
+    public ApiResponse<Void> toggleAssignmentPublish(
+            @PathVariable Integer assignmentId,
+            @RequestParam Boolean isPublished) {
+
+        log.info("Toggle assignment {} publish status to: {}", assignmentId, isPublished);
+        contentPublishService.toggleAssignmentPublish(assignmentId, isPublished);
+
+        return ApiResponse.<Void>builder()
+                .message("Assignment publish status updated successfully")
+                .build();
+    }
+
+    @PostMapping("/bulk-publish")
+    public ApiResponse<ContentPublishStatusResponse> bulkPublish(
+            @Valid @RequestBody BulkPublishRequest request) {
+
+        log.info("Bulk publish request for course: {}, isPublished: {}",
+                request.getCourseId(), request.getIsPublished());
+
+        ContentPublishStatusResponse response = contentPublishService.bulkPublish(request);
+
+        return ApiResponse.<ContentPublishStatusResponse>builder()
+                .message("Bulk publish completed successfully")
+                .result(response)
+                .build();
+    }
+
+    @PostMapping("/{courseId}/publish-all")
+    public ApiResponse<ContentPublishStatusResponse> publishAllContent(
+            @PathVariable Integer courseId,
+            @RequestParam Boolean isPublished) {
+
+        log.info("Publish all content for course: {}, isPublished: {}", courseId, isPublished);
+        ContentPublishStatusResponse response = contentPublishService.publishAllContent(courseId, isPublished);
+
+        return ApiResponse.<ContentPublishStatusResponse>builder()
+                .message(isPublished ? "All content published successfully" : "All content unpublished successfully")
+                .result(response)
+                .build();
     }
 }

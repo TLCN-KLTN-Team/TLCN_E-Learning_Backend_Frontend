@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -21,7 +22,7 @@ public class PublishedCourse {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
 
     @OneToOne(cascade = CascadeType.ALL)
@@ -29,7 +30,7 @@ public class PublishedCourse {
     private CourseDetail courseDetail;
 
     @Column(name = "course_price")
-    private double coursePrice;
+    private BigDecimal coursePrice;
 
     private Date createdAt;
 

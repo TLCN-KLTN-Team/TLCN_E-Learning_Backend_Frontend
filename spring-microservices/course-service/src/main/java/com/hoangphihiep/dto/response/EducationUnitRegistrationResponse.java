@@ -11,8 +11,8 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TrainingUnitRegistrationResponse {
-    private String id;
+public class EducationUnitRegistrationResponse {
+    private Integer id;
     private String name;
     private String type;
     private String address;

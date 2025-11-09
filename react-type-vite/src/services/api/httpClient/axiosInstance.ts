@@ -1,8 +1,9 @@
 import axios from "axios";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { ErrorCodes, type ErrorResponse } from "@/types/error/ErrorResponse";
-import { AppError } from "@/errors/appError";
+
 import { getAccessToken, getRefreshToken } from "@/utils/localStorageVariables";
+import { AppError } from "@/errors";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:8888/api/v1",

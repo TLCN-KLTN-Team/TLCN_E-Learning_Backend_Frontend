@@ -13,13 +13,18 @@ const QuestionList: React.FC<{
   onQuestionsChange: (questions: QuestionRequest[]) => void
 }> = ({ questions, onQuestionsChange }) => {
   const addQuestion = () => {
-    const newAnswer: AnswerRequest = { content: "", isCorrect: true, orderIndex: 1 }
+    const defaultAnswers: AnswerRequest[] = [
+      { content: "", isCorrect: true, orderIndex: 1 },
+      { content: "", isCorrect: false, orderIndex: 2 },
+      { content: "", isCorrect: false, orderIndex: 3 },
+      { content: "", isCorrect: false, orderIndex: 4 }
+    ]
     const newQuestion: QuestionRequest = {
       questionText: "",
       questionType: "SINGLE_CHOICE",
       score: 10,
       orderIndex: questions.length + 1,
-      answers: [newAnswer],
+      answers: defaultAnswers,
     }
     onQuestionsChange([...questions, newQuestion])
   }

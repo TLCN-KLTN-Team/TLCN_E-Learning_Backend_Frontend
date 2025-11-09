@@ -6,6 +6,9 @@ import RoleProtectedRoute from "./protected/RoleProtectedRoute";
 import CourseListPage from "@/pages/admin/CourseListPage";
 import StudentListPage from "@/pages/admin/StudentListPage";
 import TeacherListPage from "@/pages/admin/TeacherListPage";
+import PendingCoursesPage from "@/pages/admin/PendingCoursesPage";
+import CourseApprovalDetailPage from "@/pages/admin/CourseApprovalDetailPage";
+import DepartmentManagementPage from "@/pages/admin/DepartmentManagementPage";
 
 // Admin routes - protected routes for admin roles
 const AdminRoutes = [
@@ -21,6 +24,9 @@ const AdminRoutes = [
         <Route path="courses" element={<CourseListPage />} />
         <Route path="students" element={<StudentListPage />} />
         <Route path="instructors" element={<TeacherListPage />} />
+        <Route path="published-courses" element={<PendingCoursesPage />} />
+        <Route path="published-courses/:publishedCourseId" element={<CourseApprovalDetailPage />} />
+        <Route path="departments" element={<DepartmentManagementPage />} />
       </Route>
     </Route>
   </Route>,

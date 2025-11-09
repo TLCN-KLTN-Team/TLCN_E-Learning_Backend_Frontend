@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
@@ -21,12 +22,13 @@ import lombok.NoArgsConstructor;
 @NamedQuery(name="Lesson.findAll", query="SELECT l from Lesson l")
 public class Lesson implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "title", length = 255)
     private String title;
@@ -39,7 +41,7 @@ public class Lesson implements Serializable {
     @ElementCollection
     private List<String> attachments;
 
-    @Column(name = "videoUrl", length = 1000)
+    @Column(name = "video_url", length = 1000)
     private String videoUrl;
 
     @Column(name = "number_item")

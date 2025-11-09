@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 import jakarta.persistence.Column;
@@ -25,12 +26,13 @@ import lombok.Setter;
 @NamedQuery(name="OrderItem.findAll", query="SELECT oi from OrderItem oi")
 public class OrderItem implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "course_id")

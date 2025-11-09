@@ -1,12 +1,12 @@
 package com.hoangphihiep.entity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
 
-import com.devteria.identity.entity.*;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +15,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
@@ -35,12 +34,13 @@ import lombok.Setter;
 @NamedQuery(name="Course.findAll", query="SELECT c from Course c")
 public class Course implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "course_name")
     private String courseName;
@@ -74,11 +74,11 @@ public class Course implements Serializable {
     private String idTeacher;
 
     @ManyToOne
-    @JoinColumn(name = "educationalUnit_id")
+    @JoinColumn(name = "educational_unit_id")
     private EducationalUnit educationalUnit;
 
     public void addSection(Section section) {
-        if (section != null && !sections.contains(section)) {
+        if (section != null) {
             sections.add(section);
         }
     }

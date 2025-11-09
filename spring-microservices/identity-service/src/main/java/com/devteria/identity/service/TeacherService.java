@@ -2,7 +2,9 @@ package com.devteria.identity.service;
 
 import java.util.HashSet;
 
+import com.devteria.identity.dto.response.StudentResponse;
 import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.entity.Student;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -205,5 +207,24 @@ public class TeacherService {
                 .findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherMapper.toTeacherResponse(teacher);
+    }
+
+    public TeacherResponse updateAccountStatus(String id, String status) {
+        log.info("Updating account status for student ID: {} to {}", id, status);
+
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        try {
+            AccountStatus accountStatus = AccountStatus.valueOf(status);
+            teacher.setAccountStatus(accountStatus);
+            teacher = teacherRepository.save(teacher);
+
+            log.info("Successfully updated account status for student ID: {}", id);
+            return teacherMapper.toTeacherResponse(teacher);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid account status: {}", status);
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
     }
 }

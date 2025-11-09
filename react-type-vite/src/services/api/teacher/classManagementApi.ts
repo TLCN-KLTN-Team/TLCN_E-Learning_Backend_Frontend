@@ -17,6 +17,7 @@ export const getStudentDetails = async (courseId: number, studentId: string): Pr
 }
 
 
+
 /**
  * Get statistics for a specific class
  * @param classId - The class ID

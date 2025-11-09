@@ -3,7 +3,7 @@ package com.hoangphihiep.controller.Admin;
 import com.hoangphihiep.dto.request.EducationalUnitRegistrationRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.EducationalUnitResponse;
-import com.hoangphihiep.dto.response.TrainingUnitRegistrationResponse;
+import com.hoangphihiep.dto.response.EducationUnitRegistrationResponse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.service.EducationalUnitService;
 import jakarta.validation.Valid;
@@ -46,14 +46,14 @@ public class EducationalUnitController {
                     .message("Không tìm thấy đơn vị đào tạo")
                     .build();
         }
-
+        System.out.println ("Kết quả cuối cùng: " + institution);
         return ApiResponse.<EducationalUnitResponse>builder()
                 .result(institution)
                 .build();
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<TrainingUnitRegistrationResponse>> registerEducationUnit(
+    public ResponseEntity<ApiResponse<EducationUnitRegistrationResponse>> registerEducationUnit(
             @RequestPart("data") @Valid EducationalUnitRegistrationRequest request,
             @RequestPart(value = "logo", required = false) MultipartFile logo,
             @RequestPart(value = "businessLicense", required = false) MultipartFile businessLicense) {
@@ -62,19 +62,19 @@ public class EducationalUnitController {
             request.setLogo(logo);
             request.setBusinessLicense(businessLicense);
 
-            TrainingUnitRegistrationResponse response = educationalUnitService.registerEducationalUnit(request);
+            EducationUnitRegistrationResponse response = educationalUnitService.registerEducationalUnit(request);
 
-            return ResponseEntity.ok(ApiResponse.<TrainingUnitRegistrationResponse>builder()
+            return ResponseEntity.ok(ApiResponse.<EducationUnitRegistrationResponse>builder()
                     .result(response)
                     .message("Đăng ký đơn vị đào tạo thành công")
                     .build());
 
         } catch (AppException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.<TrainingUnitRegistrationResponse>builder()
+            return ResponseEntity.badRequest().body(ApiResponse.<EducationUnitRegistrationResponse>builder()
                     .message(e.getMessage())
                     .build());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(ApiResponse.<TrainingUnitRegistrationResponse>builder()
+            return ResponseEntity.status(500).body(ApiResponse.<EducationUnitRegistrationResponse>builder()
                     .message("Đăng ký đơn vị đào tạo thất bại: " + e.getMessage())
                     .build());
         }

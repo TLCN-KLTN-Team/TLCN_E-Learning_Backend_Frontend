@@ -83,10 +83,12 @@ public class EducationalUnitService {
                 return null;
             }
 
+            UserResponse userInfo = userInfoApi.getUserInfo(adminId).getResult();
+
             EducationalUnit edu = educationalUnit.get();
 
             return EducationalUnitResponse.builder()
-                    .id(String.valueOf(edu.getId()))
+                    .id(edu.getId())
                     .name(edu.getName())
                     .type(edu.getType())
                     .address(edu.getAddress())
@@ -100,6 +102,9 @@ public class EducationalUnitService {
                     .subscriptionStartDate(edu.getSubscriptionStartDate())
                     .subscriptionEndDate(edu.getSubscriptionEndDate())
                     .createdAt(edu.getCreatedAt())
+                    .representativeName(userInfo.getFirstName() + " " + userInfo.getLastName())
+                    .representativeEmail(userInfo.getEmail())
+                    .representativePhone(userInfo.getPhoneNumber())
                     .build();
 
         } catch (Exception e) {
@@ -109,7 +114,7 @@ public class EducationalUnitService {
     }
 
     @Transactional
-    public TrainingUnitRegistrationResponse registerEducationalUnit(EducationalUnitRegistrationRequest request) {
+    public EducationUnitRegistrationResponse registerEducationalUnit(EducationalUnitRegistrationRequest request) {
         log.info("Starting training unit registration for: {}", request.getName());
 
         try {
@@ -183,8 +188,8 @@ public class EducationalUnitService {
             log.info("Training unit saved successfully with ID: {}", savedUnit.getId());
 
             // 5. Build and return response
-            return TrainingUnitRegistrationResponse.builder()
-                    .id(savedUnit.getId().toString())
+            return EducationUnitRegistrationResponse.builder()
+                    .id(savedUnit.getId())
                     .name(savedUnit.getName())
                     .type(savedUnit.getType())
                     .address(savedUnit.getAddress())

@@ -139,4 +139,30 @@ public class StudentService {
             throw new AppException(ErrorCode.STUDENT_VALIDATION_FAILED);
         }
     }
+
+    public StudentResponse updateStudentAccountStatus(String studentId, String status) {
+        log.info("Updating account status for student ID: {} to {}", studentId, status);
+
+        try {
+            ApiResponse<StudentResponse> response = studentRepository.updateStudentAccountStatus(studentId, status);
+
+            if (response.getResult() == null) {
+                log.error("Identity service returned null result for status update: {}", studentId);
+                throw new AppException(ErrorCode.STUDENT_VALIDATION_FAILED);
+            }
+
+            StudentResponse studentResponse = response.getResult();
+            log.info("Successfully updated account status for student ID: {}", studentResponse.getId());
+
+            return studentResponse;
+
+        } catch (AppException e) {
+            log.error("App exception while updating student status {}: {}", studentId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error updating student status {}: {}", studentId, e.getMessage(), e);
+            throw new AppException(ErrorCode.STUDENT_VALIDATION_FAILED);
+        }
+    }
+
 }

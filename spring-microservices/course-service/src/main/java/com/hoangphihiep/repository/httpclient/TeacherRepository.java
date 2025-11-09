@@ -35,4 +35,9 @@ public interface TeacherRepository {
 
     @GetMapping("/teachers/by-user-id/{userId}")
     ApiResponse<TeacherResponse> getTeacherByUserId(@PathVariable String userId);
+
+    @PutMapping("/teachers/{id}/status")
+    ApiResponse<TeacherResponse> updateTeacherAccountStatus(
+            @PathVariable String id,
+            @RequestParam String status);
 }
