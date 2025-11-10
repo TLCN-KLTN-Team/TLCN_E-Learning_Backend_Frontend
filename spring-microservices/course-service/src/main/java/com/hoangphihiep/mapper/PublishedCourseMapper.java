@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // ============================================
 // PublishedCourseMapper.java
 // ============================================
@@ -97,15 +96,3 @@ public class PublishedCourseMapper {
         };
     }
 }
-=======
-package com.hoangphihiep.mapper;
-
-import com.hoangphihiep.dto.response.PublishedCourseDetailResponse;
-import com.hoangphihiep.entity.PublishedCourse;
-import org.mapstruct.Mapper;
-
-@Mapper(componentModel = "spring")
-public interface PublishedCourseMapper {
-    PublishedCourseDetailResponse toPublishedCourseDetailResponse(PublishedCourse publishedCourse);
-}
->>>>>>> 21c8c7a ((e-learning features): load all published courses, watch detail course, and some pages for this apis)

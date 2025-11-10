@@ -29,12 +29,8 @@ public class PublishedCourse {
     @JoinColumn(name = "course_detail_id", referencedColumnName = "id")
     private CourseDetail courseDetail;
 
-<<<<<<< HEAD
-    @Column(name = "course_price")
-=======
 
     @Column(name = "course_price", precision = 18, scale = 2)
->>>>>>> 21c8c7a ((e-learning features): load all published courses, watch detail course, and some pages for this apis)
     private BigDecimal coursePrice;
 
     private Date createdAt;
