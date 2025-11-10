@@ -11,9 +11,8 @@ export interface PaginatedResponse<T> {
   size: number;
   totalElements: number;
   totalPages: number;
-  first: boolean;
-  last: boolean;
-  hasNext: boolean;
-  hasPrevious: boolean;
-  number: number;
+  first?: boolean;
+  last?: boolean;
+  hasNext?: boolean;
+  hasPrevious?: boolean;
 }
