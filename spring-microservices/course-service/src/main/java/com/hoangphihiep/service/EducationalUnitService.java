@@ -64,10 +64,6 @@ public class EducationalUnitService {
                 .size(size)
                 .totalElements(educationalUnits.getTotalElements())
                 .totalPages(educationalUnits.getTotalPages())
-                .first(educationalUnits.isFirst())
-                .last(educationalUnits.isLast())
-                .hasNext(educationalUnits.hasNext())
-                .hasPrevious(educationalUnits.hasPrevious())
                 .build();
     }
 
