@@ -50,10 +50,6 @@ public class CourseTypeService {
                 .size(size)
                 .totalElements(courseTypes.getTotalElements())
                 .totalPages(courseTypes.getTotalPages())
-                .first(courseTypes.isFirst())
-                .last(courseTypes.isLast())
-                .hasNext(courseTypes.hasNext())
-                .hasPrevious(courseTypes.hasPrevious())
                 .build();
     }
 
