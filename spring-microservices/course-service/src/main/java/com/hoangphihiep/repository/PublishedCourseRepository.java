@@ -1,6 +1,7 @@
 package com.hoangphihiep.repository;
 
 import com.hoangphihiep.entity.PublishedCourse;
+<<<<<<< HEAD
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -53,3 +54,11 @@ public interface PublishedCourseRepository extends JpaRepository<PublishedCourse
             @Param("courseTypeId") Integer courseTypeId,
             Pageable pageable);
 }
+=======
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface PublishedCourseRepository extends JpaRepository<PublishedCourse, Long> {
+}
+>>>>>>> 21c8c7a ((e-learning features): load all published courses, watch detail course, and some pages for this apis)

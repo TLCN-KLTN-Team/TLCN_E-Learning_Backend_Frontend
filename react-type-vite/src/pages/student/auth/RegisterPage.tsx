@@ -8,8 +8,8 @@ import { toast } from "react-toastify";
 import { isAfter } from "date-fns";
 import { Eye, EyeClosed, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
-import GoogleButton from "@/components/student/shared/GoogleButton";
-import FacebookButton from "@/components/student/shared/FacebookButton";
+import GoogleButton from "@/components/shared/button/GoogleButton";
+import FacebookButton from "@/components/shared/button/FacebookButton";
 import OtpVerification from "@/components/student/auth/OtpVerification";
 
 import { emailApi } from "@/services/api/index";
