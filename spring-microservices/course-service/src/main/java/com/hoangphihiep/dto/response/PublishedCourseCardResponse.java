@@ -9,7 +9,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PublishedCourseCardResponse {
-    Long id;
+    Integer id;
     String courseName;
     String authorName;
     String coursePrice;
