@@ -1,11 +1,8 @@
 package com.hoangphihiep.service.user;
 
-import com.devteria.identity.entity.Teacher;
 import com.hoangphihiep.dto.response.PaginatedResponse;
 import com.hoangphihiep.dto.response.PublishedCourseCardResponse;
 import com.hoangphihiep.dto.response.PublishedCourseDetailResponse;
-import com.hoangphihiep.dto.response.user.PublishedCourseContentResponse;
-import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
@@ -24,11 +21,10 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class PublishedCourseService {
+public class UserPublishedCourseService {
     private final PublishedCourseRepository publishedCourseRepository;
     private final CurrencyUtils currencyUtils;
     private final PublishedCourseSearchService publishedCourseSearchService;
-    private final PublishedCourseMapper publishedCourseMapper;
     private final TeacherRepository teacherApi;
 
     public PaginatedResponse<PublishedCourseCardResponse> getPublishedCoursesWithPaging(int page, int size) {
