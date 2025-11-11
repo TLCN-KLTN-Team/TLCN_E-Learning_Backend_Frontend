@@ -4,7 +4,7 @@ import com.hoangphihiep.document.PublishedCourseDocument;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.PaginatedResponse;
 import com.hoangphihiep.dto.response.PublishedCourseCardResponse;
-import com.hoangphihiep.service.user.PublishedCourseService;
+import com.hoangphihiep.service.user.UserPublishedCourseService;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,10 +14,10 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/user/published-courses")
+@RequestMapping("/published-courses")
 @RequiredArgsConstructor
 public class UserCourseController {
-    private final PublishedCourseService publishedCourseService;
+    private final UserPublishedCourseService publishedCourseService;
     private final PublishedCourseSearchService publishedCourseSearchService;
 
     // load courses published paging
