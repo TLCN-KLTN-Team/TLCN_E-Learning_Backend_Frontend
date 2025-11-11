@@ -175,7 +175,6 @@ public enum ErrorCode {
     // Course Class related errors (31xx)
     COURSE_CLASS_NOT_FOUND(3101, "Không tìm thấy lớp học", HttpStatus.NOT_FOUND),
 
-    PUBLISHED_COURSE_NOT_FOUND(3201, "Không tìm thấy khóa học đã xuất bản", HttpStatus.NOT_FOUND)
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
