@@ -1,4 +1,4 @@
-package com.hoangphihiep.service.user;
+package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.response.PaginatedResponse;
 import com.hoangphihiep.dto.response.PublishedCourseCardResponse;
@@ -6,7 +6,6 @@ import com.hoangphihiep.dto.response.PublishedCourseDetailResponse;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
-import com.hoangphihiep.mapper.PublishedCourseMapper;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;

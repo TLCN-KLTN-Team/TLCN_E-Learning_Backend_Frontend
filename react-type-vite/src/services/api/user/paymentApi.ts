@@ -13,9 +13,16 @@ interface VNPayReturnResponse {
   message: string;
 }
 
-export const createVNPayPayment = async (paymentData: {
+interface PaypalOrderResponse {
+  orderId: string;
+  status: string;
+}
+
+export const createPayment = async (paymentData: {
   amount: number;
   orderId: number;
+  currency: string;
+  paymentType: string;
 }): Promise<PaymentResponse> => {
   const response = await axiosInstance.post<PaymentResponse>(
     `${PAYMENT_API_BASE_URL}/create`,
@@ -34,7 +41,17 @@ export const handleVNPayPaymentReturn = async (
   return response.data;
 };
 
+export const capturePaypalOrder = async (
+  orderId: string
+): Promise<PaypalOrderResponse> => {
+  const response = await axiosInstance.post<PaypalOrderResponse>(
+    `${PAYMENT_API_BASE_URL}/paypal/capture/${orderId}`
+  );
+  return response.data;
+};
+
 export default {
-  createVNPayPayment,
+  createPayment,
   handleVNPayPaymentReturn,
+  capturePaypalOrder,
 };
