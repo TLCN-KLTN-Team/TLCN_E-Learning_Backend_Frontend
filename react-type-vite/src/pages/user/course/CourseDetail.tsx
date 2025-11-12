@@ -54,6 +54,7 @@ const CourseDetail: React.FC = () => {
   const handleEnrollNow = () => {
     // TODO: Implement enrollment logic
     console.log("Enrolling in course:", course?.courseName);
+    navigate(`/payment/checkout/express/course/${courseId}`);
   };
 
   const handleAddToWishlist = () => {

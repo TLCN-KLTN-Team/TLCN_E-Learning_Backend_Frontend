@@ -10,6 +10,7 @@ import Courses from "@/pages/user/Courses";
 import CourseDetail from "@/pages/user/course/CourseDetail";
 import Payment from "@/pages/user/payment/Payment";
 import VNPayReturn from "@/pages/user/payment/VNPayReturn";
+import PaypalReturn from "@/pages/user/payment/PaypalReturn";
 
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
@@ -45,8 +46,18 @@ const PublicRoutes = [
   // All user accessible routes can be added here
   <Route path={`/courses`} element={<Courses />} />,
   <Route path="/courses/course/:courseId" element={<CourseDetail />} />,
-  <Route path="/payment" element={<Payment />} />,
-  <Route path="/payment/return" element={<VNPayReturn />} />,
+  <Route
+    path="/payment/checkout/express/course/:courseId"
+    element={<Payment />}
+  />,
+  <Route
+    path="/payment/checkout/express/vnpay/return"
+    element={<VNPayReturn />}
+  />,
+  <Route
+    path="/payment/checkout/express/paypal/return"
+    element={<PaypalReturn />}
+  />,
 ];
 
 export default PublicRoutes;

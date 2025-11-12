@@ -27,20 +27,37 @@ public class PaymentController {
      * }
      */
     @PostMapping("/create")
-    public ResponseEntity<?> createPayment(@RequestBody PaymentRequest request,
+    public ResponseEntity<?> redirectGateway(@RequestBody PaymentRequest request,
                                            HttpServletRequest httpRequest) {
         try {
-            String paymentUrl = paymentService.createVNPayPaymentUrl(request, httpRequest);
+            String paymentUrl="";
+            if ("vnpay".equalsIgnoreCase(request.getPaymentType())) {
+                paymentUrl = paymentService.createVNPayPaymentUrl(request, httpRequest);
+            } else if ("paypal".equalsIgnoreCase(request.getPaymentType())) {
+                paymentUrl = paymentService.processPaypalPayment(request);
+            }
             return ResponseEntity.ok(Map.of("paymentUrl", paymentUrl));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    @GetMapping("/return")
+    @GetMapping("/vnpay/return")
     public ResponseEntity<?> paymentCallback(HttpServletRequest request) {
         // Xác thực chữ ký và xử lý kết quả thanh toán
         var response = paymentService.handleVNPayCallback(request);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/paypal/capture/{orderId}")
+    public ResponseEntity<?> capturePaypalPayment(@PathVariable String orderId) {
+        try {
+            var response = paymentService.capturePaypalOrder(orderId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error capturing PayPal payment: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
 }
