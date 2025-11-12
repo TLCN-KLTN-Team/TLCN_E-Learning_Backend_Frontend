@@ -12,8 +12,7 @@ export class CourseApiService {
   private static lastLoadTime: number = 0;
   private static CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  private static USER_COURSE_ENPOINT =
-    "/course-management/user/published-courses";
+  private static USER_COURSE_ENPOINT = "/course-management/published-courses";
 
   // Helper method to ensure data is loaded
   private static async ensureDataLoaded(): Promise<void> {

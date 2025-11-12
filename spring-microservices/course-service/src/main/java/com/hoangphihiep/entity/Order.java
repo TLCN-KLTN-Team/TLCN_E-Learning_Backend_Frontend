@@ -24,8 +24,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Table(name="orders")
-@NamedQuery(name="Orders.findAll", query="SELECT o from Orders o")
-public class Orders implements Serializable {
+@NamedQuery(name="Order.findAll", query="SELECT o from Order o")
+public class Order implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -34,6 +34,9 @@ public class Orders implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Integer id;
+
+    @Column(name = "order_id", unique = true, nullable = false)
+    private String orderId;
 
     @Column(name = "order_date")
     private Date orderDate;
