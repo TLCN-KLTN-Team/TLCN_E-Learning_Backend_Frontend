@@ -107,7 +107,7 @@ public class DataSeeder {
             );
 
             // Các teacher ID thực tế
-            String[] teacherIds = {"baf701dc-eb2a-4560-9102-cf41ff91d833", "bee87ec2-5fee-4600-92b4-e7d762e162d4"};
+            String[] teacherIds = {"baf701dc-eb2a-4560-9102-cf41ff91d833", "018d3478-2c48-4c31-8a7e-8c37a8b02853"};
             
             Random random = new Random();
             Date now = new Date();
@@ -172,7 +172,6 @@ public class DataSeeder {
                 } else {
                     // Create default course types if not exist
                     CourseType courseType = new CourseType();
-                    courseType.setId(1);
                     courseType.setCourseTypeName("Lập trình căn bản");
                     courseType.setDescription("Các khóa học nhập môn cho người mới bắt đầu học lập trình.");
                     courseType.setDeleted(false);

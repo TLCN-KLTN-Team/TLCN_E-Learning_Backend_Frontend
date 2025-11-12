@@ -4,7 +4,7 @@ import com.hoangphihiep.document.PublishedCourseDocument;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.PaginatedResponse;
 import com.hoangphihiep.dto.response.PublishedCourseCardResponse;
-import com.hoangphihiep.service.user.UserPublishedCourseService;
+import com.hoangphihiep.service.UserPublishedCourseService;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

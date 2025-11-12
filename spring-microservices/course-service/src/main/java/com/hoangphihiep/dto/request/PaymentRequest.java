@@ -16,7 +16,8 @@ public class PaymentRequest {
 //    BigDecimal originalPrice;
 //    BigDecimal discountedPrice;
     BigDecimal amount;
-    Integer orderId;
+    String currency;
+    String paymentType;
 //    String policy;
-//    String type;
+
 }

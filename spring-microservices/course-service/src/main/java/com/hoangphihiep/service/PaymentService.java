@@ -1,15 +1,23 @@
 package com.hoangphihiep.service;
 
+import com.hoangphihiep.config.PaypalConfig;
 import com.hoangphihiep.config.VNPayConfig;
 import com.hoangphihiep.dto.request.PaymentRequest;
+import com.hoangphihiep.dto.response.PaypalOrderResponse;
 import com.hoangphihiep.dto.response.VNPayReturnResponse;
+import com.hoangphihiep.exception.AppException;
+import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.PaymentRepository;
 import com.hoangphihiep.utils.VNPayUtils;
+import com.paypal.core.PayPalHttpClient;
+import com.paypal.http.HttpResponse;
+import com.paypal.orders.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -23,17 +31,19 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final VNPayConfig vnPayConfig;
     private final VNPayUtils vnPayUtils;
+    private final PaypalConfig paypalConfig;
+    private final PayPalHttpClient payPalHttpClient;
 
     public String createVNPayPaymentUrl(PaymentRequest request, HttpServletRequest httpRequest) throws Exception {
         long amount = request.getAmount().multiply(BigDecimal.valueOf(100)).longValue(); // VNPay yêu cầu số tiền nhân 100
-
+        String orderId = UUID.randomUUID().toString();
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", "2.1.0");
         vnp_Params.put("vnp_Command", "pay");
         vnp_Params.put("vnp_TmnCode", vnPayConfig.getVnp_TmnCode());
         vnp_Params.put("vnp_Amount", String.valueOf(amount)); // Nhân 100
         vnp_Params.put("vnp_CurrCode", "VND");
-        vnp_Params.put("vnp_TxnRef", "Thanh toan thnh cong:" + request.getOrderId());
+        vnp_Params.put("vnp_TxnRef", "Thanh toan thnh cong:" + orderId);
         vnp_Params.put("vnp_OrderInfo", "info");
         vnp_Params.put("vnp_OrderType", "other");
         vnp_Params.put("vnp_Locale", "vn");
@@ -87,7 +97,6 @@ public class PaymentService {
         String calculatedHash = vnPayUtils.hashAllFields(fields, vnPayConfig.getVnp_HashSecret());
 
         if (!calculatedHash.equals(vnpSecureHash)) {
-            log.error("Invalid signature! VNPay hash: {}, Calculated hash: {}", vnpSecureHash, calculatedHash);
             return VNPayReturnResponse.builder()
                     .success(false)
                     .message("Invalid signature - Data may have been tampered")
@@ -95,17 +104,78 @@ public class PaymentService {
         }
 
         if ("00".equals(fields.get("vnp_ResponseCode"))) {
-            log.info("Payment successful for order: {}", fields.get("vnp_TxnRef"));
+            // create order and save to database if needed
             return VNPayReturnResponse.builder()
                     .success(true)
                     .message("OK")
                     .build();
         } else {
-            log.warn("Payment failed with response code: {}", fields.get("vnp_ResponseCode"));
             return VNPayReturnResponse.builder()
                     .success(false)
                     .message("Payment failed with response code: " + fields.get("vnp_ResponseCode"))
                     .build();
+        }
+    }
+
+    // Implement paypal payment
+    // create paypal payment
+    public String processPaypalPayment(PaymentRequest paymentRequest) {
+        try {
+            OrderRequest orderRequest = new OrderRequest();
+            orderRequest.checkoutPaymentIntent("CAPTURE");
+
+            // Setup amount
+            AmountWithBreakdown amountWithBreakdown = new AmountWithBreakdown()
+                    .currencyCode(paymentRequest.getCurrency())
+                    .value(String.format("%.2f",paymentRequest.getAmount()));
+
+            // Purchase unit
+            PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest()
+                    .amountWithBreakdown(amountWithBreakdown);
+
+            orderRequest.purchaseUnits(Collections.singletonList(purchaseUnitRequest));
+
+            // Application context
+            ApplicationContext applicationContext = new ApplicationContext()
+                    .returnUrl(paypalConfig.getPaypalReturnUrl())
+                    .cancelUrl(paypalConfig.getPaypalCancelUrl());
+            orderRequest.applicationContext(applicationContext);
+
+            // Create order
+            OrdersCreateRequest request = new OrdersCreateRequest();
+            request.prefer("return=representation");
+            request.requestBody(orderRequest);
+
+            HttpResponse<Order> response = payPalHttpClient.execute(request);
+            Order order = response.result();
+
+            // Lấy approval link
+            for (LinkDescription link : order.links()) {
+                if ("approve".equals(link.rel())) {
+                    return link.href();
+                }
+            }
+
+            return null;
+        } catch (IOException e) {
+            throw new AppException(ErrorCode.PAYPAL_CREATE_PAYMENT_FAILED);
+        }
+    }
+
+    public PaypalOrderResponse capturePaypalOrder(String orderId) {
+        OrdersCaptureRequest request = new OrdersCaptureRequest(orderId);
+        request.requestBody(new OrderRequest());
+
+        try {
+            HttpResponse<Order> response = payPalHttpClient.execute(request);
+            Order order = response.result();
+
+            return PaypalOrderResponse.builder()
+                    .status(order.status())
+                    .orderId(orderId)
+                    .build();
+        } catch (IOException e) {
+            throw new AppException(ErrorCode.PAYPAL_CAPTURE_PAYMENT_FAILED);
         }
     }
 

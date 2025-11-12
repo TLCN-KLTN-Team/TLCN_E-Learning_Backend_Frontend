@@ -1,0 +1,99 @@
+server:
+  port: 8088
+  servlet:
+    context-path: /course-management
+  tomcat:
+    max-http-form-post-size: 104857600
+
+spring:
+  application:
+    name: course-management
+  doc:
+    api-docs:
+      enabled: true
+    swagger-ui:
+      csrf:
+        enabled: true
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  kafka:
+    bootstrap-servers: localhost:9094
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
+      file-size-threshold: 2KB
+      location: ${java.io.tmpdir}
+  elasticsearch:
+    uris: http://localhost:9200
+
+# JWT Configuration
+jwt:
+  signerKey: ${JWT_SIGNER_KEY}
+  valid-duration: 3600
+  refreshable-duration: 36000
+
+# SendGrid Configuration
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY}
+
+app:
+  email:
+    from: ${APP_EMAIL_FROM}
+    from-name: ${APP_EMAIL_FROM_NAME}
+  services:
+    identity: ${IDENTITY_SERVICE_URL:http://localhost:8080/identity}
+
+# Logging Configuration
+logging:
+  level:
+    com.hoangphihiep: DEBUG
+    org.springframework.web: DEBUG
+
+# OpenAPI / Swagger
+openapi:
+  services:
+    api-docs: api-docs
+    server: http://localhost:8888/api/v1${server.servlet.context-path}
+    title: Course Management APIs
+    version: 1.0.0
+    license:
+      name: Apache 2.0
+      url: https://springdoc.org
+
+# VNPay Configuration
+vnpay:
+  tmnCode: ${VNPAY_TMN_CODE}
+  hashSecret: ${VNPAY_HASH_SECRET}
+  payUrl: ${VNPAY_PAY_URL}
+  returnUrl: ${VNPAY_RETURN_URL}
+  apiUrl: ${VNPAY_API_URL}
+
+# PayPal Configuration
+paypal:
+  client:
+    id: ${PAYPAL_CLIENT_ID}
+    secret: ${PAYPAL_CLIENT_SECRET}
+  mode: sandbox
+  return-url: ${PAYPAL_RETURN_URL}
+  cancel-url: ${PAYPAL_CANCEL_URL}
+
+# Elasticsearch custom values
+elasticsearch:
+  host: localhost
+  port: 9200

@@ -56,5 +56,5 @@ public class Payment implements Serializable {
 
     @OneToOne
     @JoinColumn(name = "order_id", nullable = false)
-    private Orders order;
+    private Order order;
 }
