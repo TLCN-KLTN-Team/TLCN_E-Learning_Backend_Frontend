@@ -98,7 +98,7 @@ public class TeacherPublishedCourseController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<PublishedCourseResponse> getPublishedCourseById(@PathVariable Long id) {
+    public ApiResponse<PublishedCourseResponse> getPublishedCourseById(@PathVariable Integer id) {
         log.info("Getting published course by ID: {}", id);
         PublishedCourseResponse response = publishedCourseService.getPublishedCourseById(id);
 

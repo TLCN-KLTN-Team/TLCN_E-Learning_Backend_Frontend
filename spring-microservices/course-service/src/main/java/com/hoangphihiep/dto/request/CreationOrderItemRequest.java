@@ -3,17 +3,12 @@ package com.hoangphihiep.dto.request;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
-import java.util.Set;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class PaymentRequest {
-    BigDecimal amount;
-    String currency;
-    String paymentType;
-    Set<CreationOrderItemRequest> orderItems;
+public class CreationOrderItemRequest {
+    Integer publishedCourseId;
+    double finishedFee;
 }
