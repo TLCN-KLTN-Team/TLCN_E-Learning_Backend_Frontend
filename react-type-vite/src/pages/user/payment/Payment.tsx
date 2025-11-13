@@ -31,7 +31,7 @@ const Payment: React.FC = () => {
     // Handle payment logic here
     const data = await PaymentService.createPayment({
       amount: 5000000,
-      orderId: 1000000000,
+      orderId: 100000001,
       currency: "USD",
       paymentType: selectedPayment,
     });

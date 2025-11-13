@@ -176,7 +176,9 @@ public enum ErrorCode {
     COURSE_CLASS_NOT_FOUND(3101, "Không tìm thấy lớp học", HttpStatus.NOT_FOUND),
 
     PAYPAL_CREATE_PAYMENT_FAILED(4001, "Tạo thanh toán PayPal thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
-    PAYPAL_CAPTURE_PAYMENT_FAILED(4002, "Xác nhận thanh toán PayPal thất bại", HttpStatus.INTERNAL_SERVER_ERROR)
+    PAYPAL_CAPTURE_PAYMENT_FAILED(4002, "Xác nhận thanh toán PayPal thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    ORDER_NOT_FOUND(5001, "Order not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

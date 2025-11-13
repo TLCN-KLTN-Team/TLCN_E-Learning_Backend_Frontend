@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface PublishedCourseRepository extends JpaRepository<PublishedCourse, Long> {
+public interface PublishedCourseRepository extends JpaRepository<PublishedCourse, Integer> {
 
     Optional<PublishedCourse> findByCourseId(Integer courseId);
 
