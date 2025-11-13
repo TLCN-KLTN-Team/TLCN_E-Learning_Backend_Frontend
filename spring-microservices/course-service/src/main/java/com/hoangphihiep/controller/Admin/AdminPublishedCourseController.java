@@ -55,7 +55,7 @@ public class AdminPublishedCourseController {
     @PostMapping("/{publishedCourseId}/approve")
     public ApiResponse<PublishedCourseResponse> approveCourse(
             @PathVariable Integer educationalUnitId,
-            @PathVariable Long publishedCourseId) {
+            @PathVariable Integer publishedCourseId) {
 
         log.info("Admin approving published course ID: {}", publishedCourseId);
         PublishedCourseResponse response = publishedCourseService.approveCourse(publishedCourseId);
@@ -69,7 +69,7 @@ public class AdminPublishedCourseController {
     @PostMapping("/{publishedCourseId}/reject")
     public ApiResponse<PublishedCourseResponse> rejectCourse(
             @PathVariable Integer educationalUnitId,
-            @PathVariable Long publishedCourseId,
+            @PathVariable Integer publishedCourseId,
             @RequestParam String reason) {
 
         log.info("Admin rejecting published course ID: {} with reason: {}", publishedCourseId, reason);
@@ -84,7 +84,7 @@ public class AdminPublishedCourseController {
     @GetMapping("/{publishedCourseId}")
     public ApiResponse<PublishedCourseResponse> getPublishedCourseById(
             @PathVariable Integer educationalUnitId,
-            @PathVariable Long publishedCourseId) {
+            @PathVariable Integer publishedCourseId) {
 
         log.info("Admin getting published course by ID: {}", publishedCourseId);
         PublishedCourseResponse response = publishedCourseService.getPublishedCourseById(publishedCourseId);

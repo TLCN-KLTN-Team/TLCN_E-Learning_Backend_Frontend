@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.List;
 
 @Repository
-public interface OrdersRepository extends JpaRepository<Order, Integer> {
+public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     @Query("SELECT o FROM Order o WHERE o.idUser = :userId ORDER BY o.orderDate DESC")
     Page<Order> findByUserIdOrderByOrderDateDesc(@Param("userId") String userId, Pageable pageable);

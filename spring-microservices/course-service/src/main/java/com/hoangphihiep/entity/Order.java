@@ -2,6 +2,7 @@ package com.hoangphihiep.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,6 +17,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -23,6 +25,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Builder
 @Table(name="orders")
 @NamedQuery(name="Order.findAll", query="SELECT o from Order o")
 public class Order implements Serializable {
@@ -41,8 +44,13 @@ public class Order implements Serializable {
     @Column(name = "order_date")
     private Date orderDate;
 
+    @Column(precision = 18, scale = 2)
+    @Builder.Default
+    private BigDecimal amount = BigDecimal.ZERO;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private Set<OrderItem> orderItems = new HashSet<>();;
+    @Builder.Default
+    private Set<OrderItem> orderItems = new HashSet<>();
 
     @Column(name = "order_status")
     private String orderStatus;
@@ -52,6 +60,12 @@ public class Order implements Serializable {
 
     public int calculateTotal() {
         return 0;
+    }
+
+    public void calculateAmount() {
+        this.amount = orderItems.stream()
+                .map(item -> BigDecimal.valueOf(item.getFinishedFee()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
 }
