@@ -133,7 +133,7 @@ public class PublishedCourseService {
      * Admin duyệt khóa học
      */
     @Transactional
-    public PublishedCourseResponse approveCourse(Long publishedCourseId) {
+    public PublishedCourseResponse approveCourse(Integer publishedCourseId) {
         PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
 
@@ -160,7 +160,7 @@ public class PublishedCourseService {
      * Admin từ chối khóa học
      */
     @Transactional
-    public PublishedCourseResponse rejectCourse(Long publishedCourseId, String reason) {
+    public PublishedCourseResponse rejectCourse(Integer publishedCourseId, String reason) {
         PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
 
@@ -212,7 +212,7 @@ public class PublishedCourseService {
     /**
      * Lấy chi tiết published course
      */
-    public PublishedCourseResponse getPublishedCourseById(Long id) {
+    public PublishedCourseResponse getPublishedCourseById(Integer id) {
         PublishedCourse publishedCourse = publishedCourseRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
 

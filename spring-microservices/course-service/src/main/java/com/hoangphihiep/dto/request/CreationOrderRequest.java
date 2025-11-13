@@ -3,7 +3,7 @@ package com.hoangphihiep.dto.request;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
+import java.sql.Date;
 import java.util.Set;
 
 @Data
@@ -11,9 +11,8 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class PaymentRequest {
-    BigDecimal amount;
-    String currency;
-    String paymentType;
+public class CreationOrderRequest {
+    String orderId;
+    Date createTime;
     Set<CreationOrderItemRequest> orderItems;
 }

@@ -36,7 +36,7 @@ public class UserCourseController {
     }
 
     @GetMapping("/{courseId}")
-    public ApiResponse<?> getPublishedCourseById(@PathVariable Long courseId) {
+    public ApiResponse<?> getPublishedCourseById(@PathVariable Integer courseId) {
         var response = publishedCourseService.getPublishedCourseDetailById(courseId);
         return ApiResponse.success(
                 response,

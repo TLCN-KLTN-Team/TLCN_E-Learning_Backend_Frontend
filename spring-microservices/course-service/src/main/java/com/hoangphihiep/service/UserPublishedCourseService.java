@@ -50,7 +50,7 @@ public class UserPublishedCourseService {
                 .build();
     }
 
-    public PublishedCourseDetailResponse getPublishedCourseDetailById(Long publishedCourseId){
+    public PublishedCourseDetailResponse getPublishedCourseDetailById(Integer publishedCourseId){
         PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId).orElseThrow(
                 () -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND)
         );

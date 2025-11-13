@@ -2,6 +2,7 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.config.PaypalConfig;
 import com.hoangphihiep.config.VNPayConfig;
+import com.hoangphihiep.dto.request.CreationOrderRequest;
 import com.hoangphihiep.dto.request.PaymentRequest;
 import com.hoangphihiep.dto.response.PaypalOrderResponse;
 import com.hoangphihiep.dto.response.VNPayReturnResponse;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -33,6 +35,7 @@ public class PaymentService {
     private final VNPayUtils vnPayUtils;
     private final PaypalConfig paypalConfig;
     private final PayPalHttpClient payPalHttpClient;
+    private final OrderService orderService;
 
     public String createVNPayPaymentUrl(PaymentRequest request, HttpServletRequest httpRequest) throws Exception {
         long amount = request.getAmount().multiply(BigDecimal.valueOf(100)).longValue(); // VNPay yêu cầu số tiền nhân 100
@@ -43,7 +46,7 @@ public class PaymentService {
         vnp_Params.put("vnp_TmnCode", vnPayConfig.getVnp_TmnCode());
         vnp_Params.put("vnp_Amount", String.valueOf(amount)); // Nhân 100
         vnp_Params.put("vnp_CurrCode", "VND");
-        vnp_Params.put("vnp_TxnRef", "Thanh toan thnh cong:" + orderId);
+        vnp_Params.put("vnp_TxnRef", "Thanh toan thanh cong:" + orderId);
         vnp_Params.put("vnp_OrderInfo", "info");
         vnp_Params.put("vnp_OrderType", "other");
         vnp_Params.put("vnp_Locale", "vn");
@@ -58,6 +61,14 @@ public class PaymentService {
         cld.add(Calendar.MINUTE, 15);
         String vnp_ExpireDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
+
+        // create order with status PENDING
+        CreationOrderRequest orderRequest = CreationOrderRequest.builder()
+                .orderId(orderId)
+                .createTime(new Date(System.currentTimeMillis()))
+                .orderItems(request.getOrderItems())
+                .build();
+        orderService.createOrder(orderRequest);
 
         // Sắp xếp params và tạo hash
         List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
