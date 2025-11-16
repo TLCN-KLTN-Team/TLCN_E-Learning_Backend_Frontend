@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import {
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  ShoppingCart,
+} from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import Header from "../../../components/student/home/Header";
@@ -8,72 +13,136 @@ import Footer from "@/components/student/home/Footer";
 
 import PaymentService from "@/services/api/user/paymentApi";
 import { CourseApiService } from "@/services/api/user/courseApi";
-import type { PublishedCourseDetailResponse } from "@/types/course.types";
+import type { CartCourse } from "@/services/api/user/cart.api";
+
+interface CheckoutItem {
+  courseId: number;
+  courseName: string;
+  authorName: string;
+  price: number;
+  originalPrice?: number;
+  thumbnailUrl?: string;
+}
 
 const Payment: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { courseId } = useParams<{ courseId: string }>();
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedPayment, setSelectedPayment] = useState("vnpay");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [courseData, setCourseData] =
-    useState<PublishedCourseDetailResponse | null>(null);
+  const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const handleCompletePayment = async () => {
     if (!selectedCountry || !acceptedTerms) {
-      alert(
-        "Please complete all required fields and accept terms & conditions"
-      );
+      alert("Vui lòng hoàn thành tất cả các trường và chấp nhận điều khoản");
       return;
     }
-    // Handle payment logic here
-    const data = await PaymentService.createPayment({
-      amount: 5000000,
-      orderId: 100000001,
-      currency: "USD",
-      paymentType: selectedPayment,
-    });
-    console.log(data);
-    window.location.href = data.paymentUrl;
+
+    if (checkoutItems.length === 0) {
+      alert("Không có khóa học nào để thanh toán.");
+      return;
+    }
+
+    try {
+      // Calculate total amount from all items
+      const totalAmount = checkoutItems.reduce(
+        (sum, item) => sum + item.price,
+        0
+      );
+
+      // Create order items for payment
+      const orderItems = checkoutItems.map((item) => ({
+        publishedCourseId: item.courseId,
+        finishedFee: item.price,
+      }));
+
+      // Create payment with actual course data
+      const paymentData = {
+        amount: Math.round(totalAmount * 100), // Convert to cents/smallest currency unit
+        currency: selectedCountry === "vn" ? "VND" : "USD",
+        paymentType: selectedPayment,
+        orderItems: orderItems,
+      };
+
+      console.log("Creating payment with data:", paymentData);
+      const response = await PaymentService.createPayment(paymentData);
+
+      if (response.paymentUrl) {
+        window.location.href = response.paymentUrl;
+      } else {
+        alert("Không thể tạo thanh toán. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error("Payment creation error:", error);
+      alert("Đã xảy ra lỗi khi xử lý thanh toán. Vui lòng thử lại.");
+    }
   };
 
   useEffect(() => {
     document.title = "Checkout - E-Learning Platform";
-    const fetchCourseDetail = async () => {
+
+    const loadCheckoutData = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        if (!courseId) {
+        // Check if this is cart checkout (data passed via location state)
+        const cartItems = location.state?.cartItems as CartCourse[] | undefined;
+
+        if (cartItems && cartItems.length > 0) {
+          // Cart checkout with multiple items
+          const items: CheckoutItem[] = cartItems.map((item) => ({
+            courseId: item.courseId,
+            courseName: item.courseName,
+            authorName: item.authorName,
+            price: parseFloat(item.currentPrice.replace(/[^0-9.]/g, "")),
+            originalPrice: parseFloat(
+              item.originalPrice.replace(/[^0-9.]/g, "")
+            ),
+          }));
+          setCheckoutItems(items);
+          setIsLoading(false);
+        } else if (courseId) {
+          // Single course checkout
+          const course = await CourseApiService.getCourseById(courseId);
+
+          if (!course) {
+            setError("Không thể tải thông tin khóa học. Vui lòng thử lại sau.");
+            setIsLoading(false);
+            return;
+          }
+
+          const coursePrice = parseFloat(
+            course.coursePrice.replace(/[^0-9.]/g, "")
+          );
+          setCheckoutItems([
+            {
+              courseId: parseInt(courseId),
+              courseName: course.courseName,
+              authorName: course.authorName,
+              price: coursePrice,
+              thumbnailUrl: course.thumbnailUrl,
+            },
+          ]);
+          setIsLoading(false);
+        } else {
           setError(
             "Không tìm thấy thông tin khóa học. Vui lòng chọn khóa học từ danh sách."
           );
           setIsLoading(false);
-          return;
         }
-
-        const course = await CourseApiService.getCourseById(courseId);
-
-        if (!course) {
-          setError("Không thể tải thông tin khóa học. Vui lòng thử lại sau.");
-          setIsLoading(false);
-          return;
-        }
-
-        setCourseData(course);
-        setIsLoading(false);
       } catch (err) {
-        console.error("Error fetching course:", err);
-        setError(
-          "Đã xảy ra lỗi khi tải thông tin khóa học. Vui lòng thử lại sau."
-        );
+        console.error("Error loading checkout data:", err);
+        setError("Đã xảy ra lỗi khi tải thông tin. Vui lòng thử lại sau.");
         setIsLoading(false);
       }
     };
-    fetchCourseDetail();
-  }, [courseId]);
+
+    loadCheckoutData();
+  }, [courseId, location.state]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -126,7 +195,7 @@ const Payment: React.FC = () => {
           )}
 
           {/* Payment Form - Only show when data is loaded */}
-          {!isLoading && !error && courseData && (
+          {!isLoading && !error && checkoutItems.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column - Payment Form */}
               <div className="lg:col-span-2 space-y-6">
@@ -218,38 +287,100 @@ const Payment: React.FC = () => {
                 {/* Order Information */}
                 <Card className="p-6">
                   <h2 className="text-xl font-semibold mb-6">
-                    Order Information
+                    Thông tin đơn hàng
                   </h2>
 
-                  <div className="flex items-start gap-4 mb-6">
-                    <img
-                      src={courseData.thumbnailUrl}
-                      alt={courseData.courseName}
-                      className="w-20 h-14 object-cover rounded"
-                    />
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {courseData.courseName}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        by {courseData.authorName}
-                      </p>
-                    </div>
+                  {/* List of items */}
+                  <div className="space-y-4 mb-6">
+                    {checkoutItems.map((item) => (
+                      <div
+                        key={item.courseId}
+                        className="flex items-start gap-4 pb-4 border-b last:border-b-0"
+                      >
+                        {item.thumbnailUrl ? (
+                          <img
+                            src={item.thumbnailUrl}
+                            alt={item.courseName}
+                            className="w-20 h-14 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-20 h-14 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                            <ShoppingCart className="w-6 h-6 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">
+                            {item.courseName}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {item.authorName}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-gray-900">
+                            {new Intl.NumberFormat("vi-VN").format(item.price)}{" "}
+                            ₫
+                          </div>
+                          {item.originalPrice &&
+                            item.originalPrice > item.price && (
+                              <div className="text-sm text-gray-400 line-through">
+                                {new Intl.NumberFormat("vi-VN").format(
+                                  item.originalPrice
+                                )}{" "}
+                                ₫
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
+                  {/* Pricing Summary */}
                   <div className="space-y-3 border-t pt-4">
                     <div className="flex justify-between">
-                      <span>Original Price</span>
-                      <span>${courseData.coursePrice}</span>
+                      <span>Tổng giá gốc:</span>
+                      <span>
+                        {new Intl.NumberFormat("vi-VN").format(
+                          checkoutItems.reduce(
+                            (sum, item) =>
+                              sum + (item.originalPrice || item.price),
+                            0
+                          )
+                        )}{" "}
+                        ₫
+                      </span>
                     </div>
-                    <div className="flex justify-between text-green-600">
-                      <span>Discount (26% off)</span>
-                      <span>-$0</span>
-                    </div>
+                    {checkoutItems.some(
+                      (item) =>
+                        item.originalPrice && item.originalPrice > item.price
+                    ) && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Giảm giá:</span>
+                        <span>
+                          -
+                          {new Intl.NumberFormat("vi-VN").format(
+                            checkoutItems.reduce(
+                              (sum, item) =>
+                                sum +
+                                ((item.originalPrice || item.price) -
+                                  item.price),
+                              0
+                            )
+                          )}{" "}
+                          ₫
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-xl font-bold border-t pt-3">
-                      <span>Total</span>
+                      <span>Tổng cộng:</span>
                       <span className="text-blue-600">
-                        ${courseData.coursePrice}
+                        {new Intl.NumberFormat("vi-VN").format(
+                          checkoutItems.reduce(
+                            (sum, item) => sum + item.price,
+                            0
+                          )
+                        )}{" "}
+                        ₫
                       </span>
                     </div>
                   </div>
@@ -261,20 +392,32 @@ const Payment: React.FC = () => {
                 <div className="sticky top-24">
                   <Card className="p-6">
                     <h2 className="text-xl font-semibold mb-6">
-                      Order Summary
+                      Tóm tắt đơn hàng
                     </h2>
 
                     <div className="mb-4">
-                      <span className="text-sm text-gray-600">Course: </span>
-                      <span className="font-medium">
-                        {courseData.courseName}
+                      <span className="text-sm text-gray-600">
+                        {checkoutItems.length === 1
+                          ? "Khóa học:"
+                          : "Số khóa học:"}
+                      </span>
+                      <span className="font-medium ml-2">
+                        {checkoutItems.length === 1
+                          ? checkoutItems[0].courseName
+                          : `${checkoutItems.length} khóa học`}
                       </span>
                     </div>
 
                     <div className="mb-6">
-                      <span className="text-sm text-gray-600">Price: </span>
+                      <span className="text-sm text-gray-600">Tổng tiền: </span>
                       <span className="text-2xl font-bold">
-                        ${courseData.coursePrice}
+                        {new Intl.NumberFormat("vi-VN").format(
+                          checkoutItems.reduce(
+                            (sum, item) => sum + item.price,
+                            0
+                          )
+                        )}{" "}
+                        ₫
                       </span>
                     </div>
 

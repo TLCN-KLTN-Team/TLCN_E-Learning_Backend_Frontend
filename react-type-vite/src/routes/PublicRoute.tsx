@@ -11,6 +11,9 @@ import CourseDetail from "@/pages/user/course/CourseDetail";
 import Payment from "@/pages/user/payment/Payment";
 import VNPayReturn from "@/pages/user/payment/VNPayReturn";
 import PaypalReturn from "@/pages/user/payment/PaypalReturn";
+import Cart from "@/pages/user/cart/Cart";
+import MyCourses from "@/pages/user/my-courses/MyCourses";
+import Wishlist from "@/pages/user/wishlist/Wishlist";
 
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
@@ -50,6 +53,7 @@ const PublicRoutes = [
     path="/payment/checkout/express/course/:courseId"
     element={<Payment />}
   />,
+  <Route path="/payment/checkout/cart" element={<Payment />} />,
   <Route
     path="/payment/checkout/express/vnpay/return"
     element={<VNPayReturn />}
@@ -58,6 +62,10 @@ const PublicRoutes = [
     path="/payment/checkout/express/paypal/return"
     element={<PaypalReturn />}
   />,
+
+  <Route path="/cart" element={<Cart />} />,
+  <Route path="/wishlist" element={<Wishlist />} />,
+  <Route path="/my-courses" element={<MyCourses />} />,
 ];
 
 export default PublicRoutes;
