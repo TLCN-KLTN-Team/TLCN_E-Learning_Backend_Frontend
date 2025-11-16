@@ -13,6 +13,8 @@ import {
   HelpCircle,
   LogOut,
   UserCircle,
+  BookOpen,
+  Heart,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
@@ -94,6 +96,8 @@ const Header = () => {
     {
       section: "Học tập",
       items: [
+        { name: "Khóa học của tôi", icon: BookOpen, href: "/my-courses" },
+        { name: "Danh sách yêu thích", icon: Heart, href: "/wishlist" },
         { name: "Giỏ hàng của tôi", icon: ShoppingCart, href: "/cart" },
         { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
         {

@@ -33,6 +33,9 @@ public class PublishedCourse {
     @Column(name = "course_price", precision = 18, scale = 2)
     private BigDecimal coursePrice;
 
+    @Column(name = "course_name")
+    private String authorName;
+
     private Date createdAt;
 
     private Date updatedAt;
@@ -47,9 +50,8 @@ public class PublishedCourse {
     @ManyToMany(mappedBy = "courses", fetch = FetchType.EAGER)
     private Set<FavoriteCourse> favoriteCourse = new HashSet<>();
 
-    @ManyToMany(mappedBy = "courses", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "courses", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<Cart> cart = new HashSet<>();
-
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private Set<OrderItem> orderItems = new HashSet<>();

@@ -19,11 +19,9 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+@Builder
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
@@ -47,8 +45,23 @@ public class Cart implements Serializable {
             joinColumns = @JoinColumn(name = "cart_id"),
             inverseJoinColumns = @JoinColumn(name = "course_id")
     )
+    @Builder.Default
     private Set<PublishedCourse> courses = new HashSet<>();
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", unique = true)
     private String idUser;
+
+    public void addCourse(PublishedCourse course) {
+        if (course != null && !this.courses.contains(course)) {
+            this.courses.add(course);
+            course.getCart().add(this);
+        }
+    }
+
+    public void removeCourse(PublishedCourse course) {
+        if (course != null && this.courses.contains(course)) {
+            this.courses.remove(course);
+            course.getCart().remove(this);  // Đồng bộ ngược lại
+        }
+    }
 }

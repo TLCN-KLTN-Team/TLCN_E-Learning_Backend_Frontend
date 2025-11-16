@@ -19,5 +19,5 @@ public interface FavoriteCourseRepository extends JpaRepository<FavoriteCourse, 
     Optional<FavoriteCourse> findByUserIdAndCourseId(@Param("userId") String userId, @Param("courseId") int courseId);
 
     @Query("SELECT fc FROM FavoriteCourse fc WHERE fc.idUser = :userId")
-    List<FavoriteCourse> findByUserId(String userId);
+    Optional<FavoriteCourse> findByUserId(String userId);
 }
