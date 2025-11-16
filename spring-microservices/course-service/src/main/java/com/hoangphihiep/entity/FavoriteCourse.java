@@ -48,4 +48,18 @@ public class FavoriteCourse implements Serializable {
             inverseJoinColumns = @JoinColumn(name = "course_id")
     )
     private Set<PublishedCourse> courses = new HashSet<>();
+
+    public void addCourse(PublishedCourse course) {
+        if (course != null && !this.courses.contains(course)){
+            this.courses.add(course);
+            course.getFavoriteCourse().add(this);
+        }
+    }
+
+    public void removeCourse(PublishedCourse course) {
+        if (course != null && this.courses.contains(course)){
+            this.courses.remove(course);
+            course.getFavoriteCourse().remove(this);
+        }
+    }
 }

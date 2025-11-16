@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Star, Users, Clock, CheckCircle, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Star,
+  Users,
+  Clock,
+  CheckCircle,
+  User,
+  Heart,
+  ShoppingCart,
+} from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import { LoadingDots } from "../../../components/ui/LoadingDots";
@@ -8,6 +17,10 @@ import type { PublishedCourseDetailResponse } from "../../../types/course.types"
 import { CourseApiService } from "../../../services/api/user/courseApi";
 import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
+
+import CartService from "@/services/api/user/cart.api";
+import WishlistService from "@/services/api/user/wishlist.api";
+import { toast } from "react-toastify";
 
 const CourseDetail: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -17,14 +30,22 @@ const CourseDetail: React.FC = () => {
   );
   const [loading, setLoading] = useState(true);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isInCart, setIsInCart] = useState(false);
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
       setLoading(true);
       try {
         if (courseId) {
-          // Try to get course from API
-          const courseData = await CourseApiService.getCourseById(courseId);
+          // Get course data and check cart/wishlist status in parallel
+          const [courseData, inCart, inWishlist] = await Promise.all([
+            CourseApiService.getCourseById(courseId),
+            CartService.checkPublishedCourseInCart(Number(courseId)),
+            WishlistService.checkPublishedCourseInWishlist(Number(courseId)),
+          ]);
+
+          setIsInCart(inCart);
+          setIsInWishlist(inWishlist);
           setCourse(courseData);
         }
       } catch (error) {
@@ -36,7 +57,6 @@ const CourseDetail: React.FC = () => {
 
     fetchCourseDetail();
   }, [courseId]);
-
   const renderStars = (rating: number, size: "sm" | "md" = "sm") => {
     const starSize = size === "sm" ? "w-4 h-4" : "w-5 h-5";
     return Array.from({ length: 5 }, (_, i) => (
@@ -52,13 +72,45 @@ const CourseDetail: React.FC = () => {
   };
 
   const handleEnrollNow = () => {
-    // TODO: Implement enrollment logic
+    // Navigate to payment page for quick purchase
     console.log("Enrolling in course:", course?.courseName);
     navigate(`/payment/checkout/express/course/${courseId}`);
   };
 
-  const handleAddToWishlist = () => {
-    setIsInWishlist(!isInWishlist);
+  const handleAddToWishlist = async () => {
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        await WishlistService.removeFromWishlist(Number(courseId));
+        setIsInWishlist(false);
+        toast.success("Đã xóa khỏi danh sách yêu thích!");
+      } else {
+        // Add to wishlist
+        await WishlistService.addToWishlist(Number(courseId));
+        setIsInWishlist(true);
+        toast.success("Đã thêm vào danh sách yêu thích!");
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+      toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
+    }
+  };
+
+  const handleCartAction = async () => {
+    try {
+      if (isInCart) {
+        // Navigate to cart page
+        navigate("/cart");
+      } else {
+        // Add to cart
+        await CartService.addToCart(Number(courseId));
+        setIsInCart(true);
+        toast.success("Đã thêm vào giỏ hàng!");
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
+    }
   };
 
   if (loading) {
@@ -171,20 +223,42 @@ const CourseDetail: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-3 mb-6 w-full">
+                  {/* Hàng trên: Nút "Chuyển đến giỏ hàng" và icon Wishlist */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+                      onClick={handleCartAction}
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      {isInCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className={`border-blue-600 ${
+                        isInWishlist
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : "hover:bg-blue-50"
+                      }`}
+                      onClick={handleAddToWishlist}
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${
+                          isInWishlist
+                            ? "fill-white text-white"
+                            : "text-blue-600"
+                        }`}
+                      />
+                    </Button>
+                  </div>
+                  {/* Hàng dưới: Nút "Mua ngay" */}
                   <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
                     onClick={handleEnrollNow}
                   >
-                    Enroll Now
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleAddToWishlist}
-                  >
-                    {isInWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+                    Mua ngay
                   </Button>
                 </div>
 

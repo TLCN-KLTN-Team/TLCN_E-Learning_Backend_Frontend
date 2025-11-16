@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Integer> {
@@ -18,5 +19,5 @@ public interface CartRepository extends JpaRepository<Cart, Integer> {
     long countByUserId(@Param("userId") String userId);
 
     @Query("SELECT c FROM Cart c WHERE c.idUser = :userId")
-    List<Cart> findByUserId(String userId);
+    Optional<Cart> findByUserId(String userId);
 }
