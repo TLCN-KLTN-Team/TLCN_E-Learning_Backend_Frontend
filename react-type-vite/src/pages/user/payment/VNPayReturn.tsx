@@ -67,7 +67,7 @@ const VNPayReturn: React.FC = () => {
   };
 
   const handleViewMyCourses = () => {
-    navigate("/student/my-courses");
+    navigate("/my-courses");
   };
 
   if (loading) {

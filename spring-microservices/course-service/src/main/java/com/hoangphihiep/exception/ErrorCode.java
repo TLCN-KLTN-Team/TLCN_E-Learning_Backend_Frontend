@@ -179,6 +179,16 @@ public enum ErrorCode {
     PAYPAL_CAPTURE_PAYMENT_FAILED(4002, "Xác nhận thanh toán PayPal thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
     ORDER_NOT_FOUND(5001, "Order not found", HttpStatus.NOT_FOUND),
+
+    CART_NOT_FOUND(6001, "Cart not found", HttpStatus.NOT_FOUND),
+    COURSE_ALREADY_IN_CART(6002, "Course already in cart", HttpStatus.BAD_REQUEST),
+    COURSE_NOT_IN_CART(6003, "Course not in cart", HttpStatus.BAD_REQUEST),
+    CART_ALREADY_EXISTS(6004, "Cart already exists", HttpStatus.BAD_REQUEST),
+
+    WISHLIST_NOT_FOUND(7001, "Wishlist not found", HttpStatus.NOT_FOUND),
+    COURSE_ALREADY_IN_WISHLIST(7002, "Course already in wishlist", HttpStatus.BAD_REQUEST),
+    COURSE_NOT_IN_WISHLIST(7003, "Course not in wishlist", HttpStatus.NOT_FOUND),
+
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
