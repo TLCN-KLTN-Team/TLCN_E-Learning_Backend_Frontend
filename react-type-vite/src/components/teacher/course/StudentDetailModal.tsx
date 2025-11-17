@@ -34,7 +34,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
       const details = await getStudentDetails(Number(courseId), student.studentId)
       setDetailedStudent(details)
     } catch (err) {
-      console.error("[v0] Error fetching student details:", err)
+      console.error("Error fetching student details:", err)
       setDetailedStudent(student)
     } finally {
       setLoading(false)

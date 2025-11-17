@@ -41,7 +41,7 @@ public class Question implements Serializable {
     private List<String> attachments;
 
     @Column(name = "score")
-    private int score;
+    private Double score;
 
     private Date createdAt;
 

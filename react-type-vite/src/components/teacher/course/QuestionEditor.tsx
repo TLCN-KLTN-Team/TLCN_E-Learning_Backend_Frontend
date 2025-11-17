@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Trash, PlusCircle, GripVertical, AlertCircle, Paperclip, ExternalLink } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import AnswerEditor from "./AnswerEditor"
@@ -42,7 +41,7 @@ const QuestionEditor: React.FC<{
 
     setExistingServerFiles(serverFiles)
     setNewFiles(blobFiles)
-  }, [question.id]) // Chỉ chạy khi question ID thay đổi
+  }, [question.id])
 
   // Helper: Kiểm tra file từ server
   const isServerFile = (fileUrl: string): boolean => {
@@ -90,6 +89,54 @@ const QuestionEditor: React.FC<{
 
   const updateQuestion = (updates: Partial<QuestionRequest>) => {
     onUpdate(index, { ...question, ...updates })
+  }
+
+  // Xử lý thay đổi loại câu hỏi
+  const handleQuestionTypeChange = (newType: string) => {
+    let newAnswers: AnswerRequest[] = question.answers || []
+
+    // Nếu chuyển sang Đúng/Sai, tạo 2 đáp án mặc định
+    if (newType === "TRUE_FALSE") {
+      newAnswers = [
+        { content: "Đúng", isCorrect: true, orderIndex: 1 },
+        { content: "Sai", isCorrect: false, orderIndex: 2 }
+      ]
+    } 
+    // Nếu chuyển từ Đúng/Sai sang loại khác và chỉ có 2 đáp án
+    else if (question.questionType === "TRUE_FALSE" && newAnswers.length === 2) {
+      // Tạo 4 đáp án mặc định
+      newAnswers = [
+        { content: "", isCorrect: true, orderIndex: 1 },
+        { content: "", isCorrect: false, orderIndex: 2 },
+        { content: "", isCorrect: false, orderIndex: 3 },
+        { content: "", isCorrect: false, orderIndex: 4 }
+      ]
+    }
+    // Nếu chuyển sang SINGLE_CHOICE, đảm bảo chỉ có 1 đáp án đúng
+    else if (newType === "SINGLE_CHOICE") {
+      const hasCorrect = newAnswers.some(a => a.isCorrect)
+      if (!hasCorrect && newAnswers.length > 0) {
+        newAnswers = newAnswers.map((a, i) => ({
+          ...a,
+          isCorrect: i === 0 // Đánh dấu đáp án đầu tiên là đúng
+        }))
+      } else {
+        // Giữ chỉ đáp án đúng đầu tiên, các đáp án khác là sai
+        let foundCorrect = false
+        newAnswers = newAnswers.map(a => {
+          if (a.isCorrect && !foundCorrect) {
+            foundCorrect = true
+            return a
+          }
+          return { ...a, isCorrect: false }
+        })
+      }
+    }
+
+    updateQuestion({ 
+      questionType: newType as any,
+      answers: newAnswers
+    })
   }
 
   // Xử lý thêm files mới
@@ -146,6 +193,11 @@ const QuestionEditor: React.FC<{
   }
 
   const deleteAnswer = (answerIndex: number) => {
+    // Không cho xóa nếu là câu hỏi Đúng/Sai và chỉ còn 2 đáp án
+    if (question.questionType === 'TRUE_FALSE' && (question.answers?.length || 0) <= 2) {
+      return
+    }
+    
     updateQuestion({
       answers: (question.answers || []).filter((_, i) => i !== answerIndex),
     })
@@ -176,11 +228,28 @@ const QuestionEditor: React.FC<{
     setDraggedIndex(null)
   }
 
+  // Xử lý thay đổi điểm số (hỗ trợ số thập phân)
+  const handleScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // Cho phép nhập số thập phân hoặc để trống
+    if (value === '' || value === '.') {
+      updateQuestion({ score: 0 })
+    } else {
+      const numValue = parseFloat(value)
+      if (!isNaN(numValue) && numValue >= 0) {
+        updateQuestion({ score: numValue })
+      }
+    }
+  }
+
   const isDragging = draggedIndex === index
   const isDragOver = draggedIndex !== null && draggedIndex !== index
 
   const validationErrors = validateQuestion(question)
   const hasErrors = validationErrors.length > 0
+
+  // Kiểm tra xem có nên hiển thị nút thêm đáp án không
+  const canAddAnswer = question.questionType !== 'TRUE_FALSE'
 
   return (
     <Card
@@ -238,8 +307,8 @@ const QuestionEditor: React.FC<{
             <select
               id={`questionType-${index}`}
               value={question.questionType}
-              onChange={(e) => updateQuestion({ questionType: e.target.value as any })}
-              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
+              onChange={(e) => handleQuestionTypeChange(e.target.value)}
+              className="w-full p-2 border rounded-lg transition-colors border-gray-300 focus:border-blue-500"
             >
               <option value="SINGLE_CHOICE">Một Lựa Chọn</option>
               <option value="MULTIPLE_CHOICE">Nhiều Lựa Chọn</option>
@@ -250,10 +319,12 @@ const QuestionEditor: React.FC<{
             <label className="block text-sm font-medium mb-1">Điểm</label>
             <input
               type="number"
-              className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
-              value={question.score || 1}
-              onChange={(e) => updateQuestion({ score: Number.parseInt(e.target.value) || 1 })}
-              min="1"
+              className="w-full p-2 border rounded-lg transition-colors border-gray-300 focus:border-blue-500"
+              value={question.score || 0}
+              onChange={handleScoreChange}
+              min="0"
+              step="0.1"
+              placeholder="Ví dụ: 1.5"
             />
           </div>
         </div>
@@ -350,11 +421,15 @@ const QuestionEditor: React.FC<{
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium">Đáp Án (Kéo để sắp xếp lại)</label>
-            <Button variant="outline" size="sm" onClick={addAnswer}>
-              <PlusCircle className="h-4 w-4 mr-1" />
-              Thêm Đáp Án
-            </Button>
+            <label className="block text-sm font-medium">
+              Đáp Án {question.questionType !== 'TRUE_FALSE' && '(Kéo để sắp xếp lại)'}
+            </label>
+            {canAddAnswer && (
+              <Button variant="outline" size="sm" onClick={addAnswer}>
+                <PlusCircle className="h-4 w-4 mr-1" />
+                Thêm Đáp Án
+              </Button>
+            )}
           </div>
           {validationErrors.some((e) => e.field === "answers") && showValidationErrors && (
             <p className="text-sm text-red-700 mb-2">{validationErrors.find((e) => e.field === "answers")?.message}</p>

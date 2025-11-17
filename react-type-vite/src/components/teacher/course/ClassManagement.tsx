@@ -1,10 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
 import ClassListView from "./ClassListView"
 import ClassStudentListView from "./ClassStudentListView"
+import { useSelectedClass } from "@/context/teacher/SelectedClassContext"
 
 interface ClassManagementProps {
   courseId: string
@@ -12,7 +11,7 @@ interface ClassManagementProps {
 }
 
 const ClassManagement: React.FC<ClassManagementProps> = ({ courseId, educationalUnitId }) => {
-  const [selectedClass, setSelectedClass] = useState<CourseClassResponse | null>(null)
+  const { selectedClass, setSelectedClass } = useSelectedClass()
 
   if (selectedClass) {
     return (

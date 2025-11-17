@@ -5,7 +5,6 @@ import {
   Play,
   FileText,
   Users,
-  Calendar,
   Clock,
   BookOpen,
   Star,
@@ -13,18 +12,30 @@ import {
   ChevronDown,
   ChevronRight,
   Circle,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import "../../../styles/student-dashboard.css";
 import Header from "../dashboard/Header";
 import Footer from "../dashboard/Footer";
 
 import { course_tabs } from "../data/CourseDetailData";
-import type { EnrolledCourseContentResponse } from "@/services/api/student/courseEnrollmentApi";
 import courseEnrollmentApi from "@/services/api/student/courseEnrollmentApi";
+import type { SectionResponse } from "@/services/api/response/sectionResponse";
+import type { CourseClassResponse } from "@/services/api/response/courseClassResponse";
+import QuizDetailModal from "@/components/student/course/QuizDetailModal";
+import AssignmentDetailModal from "@/components/student/course/AssignmentDetailModal";
 
 const CourseDetail = () => {
-  const [course, setCourse] = useState<EnrolledCourseContentResponse>();
+  const [courseClass, setCourseClass] = useState<CourseClassResponse>();
+  const [sections, setSections] = useState<SectionResponse[]>([]); // NEW: For filtered sections
+  const [isLoadingSections, setIsLoadingSections] = useState(false); // NEW
+  const [sectionsError, setSectionsError] = useState<string | null>(null); // NEW
   const [activeTab, setActiveTab] = useState<string>("content");
+  const [selectedQuizId, setSelectedQuizId] = useState<number | null>(null)
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null)
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );
@@ -46,16 +57,10 @@ const CourseDetail = () => {
     const fetchCourseContent = async () => {
       try {
         if (id) {
-          const data = await courseEnrollmentApi.getEnrolledCourseContents(
+          const data = await courseEnrollmentApi.getClassById(
             Number(id)
           );
-          setCourse(data);
-
-          // Mở section đầu tiên mặc định
-          if (data.sections && data.sections.size > 0) {
-            const firstSection = Array.from(data.sections)[0];
-            setExpandedSections(new Set([firstSection.id]));
-          }
+          setCourseClass(data);
         }
       } catch (error) {
         console.error("Error fetching course content:", error);
@@ -64,6 +69,37 @@ const CourseDetail = () => {
 
     fetchCourseContent();
   }, [id]);
+
+  useEffect(() => {
+    const fetchFilteredSections = async () => {
+      if (!id) return;
+
+      try {
+        setIsLoadingSections(true);
+        setSectionsError(null);
+        
+        // Call the new API endpoint that returns filtered content
+        const filteredSections = await courseEnrollmentApi.getEnrolledCourseContents(Number(id));
+        
+        console.log("Filtered sections:", filteredSections);
+        setSections(filteredSections);
+
+        // Open first section by default
+        if (filteredSections.length > 0) {
+          setExpandedSections(new Set([filteredSections[0].id]));
+        }
+      } catch (error) {
+        console.error("Error fetching filtered sections:", error);
+        setSectionsError("Không thể tải nội dung khóa học");
+      } finally {
+        setIsLoadingSections(false);
+      }
+    };
+
+    if (activeTab === "content") {
+      fetchFilteredSections();
+    }
+  }, [id, activeTab]);
 
   return (
     <div className="student-dashboard student-dashboard-bg">
@@ -87,7 +123,7 @@ const CourseDetail = () => {
             <div className="md:w-1/3">
               <img
                 src="/src/assets/images/courses/4by3/05.jpg"
-                alt={course?.courseName || "Course"}
+                alt={courseClass?.courseName || "Course"}
                 className="w-full object-cover rounded-lg"
               />
             </div>
@@ -98,13 +134,13 @@ const CourseDetail = () => {
                   Khóa học
                 </span>
                 <h1 className="text-3xl font-bold student-dashboard-course-title mb-2">
-                  {course?.courseName || "Loading..."}
+                  {courseClass?.courseName || "Loading..."}
                 </h1>
                 <p className="text-lg student-dashboard-course-subtitle mb-4">
-                  Năm học: {course?.schoolYear}
+                  {courseClass?.className || "Loading..."}
                 </p>
                 <p className="student-dashboard-text-muted mb-4">
-                  {course?.description || ""}
+                  {courseClass?.description || ""}
                 </p>
               </div>
 
@@ -113,7 +149,7 @@ const CourseDetail = () => {
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-1">
                     <Users className="w-4 h-4 mr-1" />
-                    <span className="font-semibold">N/A</span>
+                    <span className="font-semibold">{courseClass?.currentStudents || ""}</span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
                     Học viên
@@ -123,22 +159,24 @@ const CourseDetail = () => {
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-1">
                     <Clock className="w-4 h-4 mr-1" />
-                    <span className="font-semibold">N/A</span>
+                    <span className="font-semibold">
+                      {courseClass?.startDate ? new Date(courseClass.startDate).toLocaleDateString() : ""}
+                    </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
-                    Tổng thời gian
+                    Thời gian bắt đầu
                   </span>
                 </div>
 
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-1">
-                    <Calendar className="w-4 h-4 mr-1" />
+                    <Clock className="w-4 h-4 mr-1" />
                     <span className="font-semibold">
-                      Năm {course?.schoolYear}
+                      {courseClass?.endDate ? new Date(courseClass.endDate).toLocaleDateString() : ""}
                     </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
-                    Năm học
+                    Thời gian kết thúc
                   </span>
                 </div>
 
@@ -146,7 +184,7 @@ const CourseDetail = () => {
                   <div className="flex items-center justify-center mb-1">
                     <BookOpen className="w-4 h-4 mr-1" />
                     <span className="font-semibold">
-                      {course?.sections?.size || 0}
+                      {sections.length || 0}
                     </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
@@ -160,14 +198,14 @@ const CourseDetail = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium">Tiến độ học tập</span>
                   <span className="text-sm student-dashboard-progress-text">
-                    {course?.progressPercentage || 0}%
+                    100%
                   </span>
                 </div>
                 <div className="w-full student-dashboard-progress-bg rounded-full h-3">
                   <div
                     className="student-dashboard-progress-fill h-3 rounded-full transition-all duration-300"
                     style={{
-                      width: `${course?.progressPercentage || 0}%`,
+                      width: `30%`,
                     }}
                   ></div>
                 </div>
@@ -211,212 +249,255 @@ const CourseDetail = () => {
         <div className="min-h-96">
           {activeTab === "content" && (
             <div className="space-y-4">
-              {course &&
-                course.sections &&
-                Array.from(course.sections).map((section) => (
-                  <div
-                    key={section.id}
-                    className="student-dashboard-course-card"
-                  >
-                    <div className="p-4">
-                      <button
-                        onClick={() => toggleSection(section.id)}
-                        className="flex items-center justify-between w-full text-left hover:bg-gray-50 rounded-lg p-2 -m-2"
-                      >
-                        <div className="flex items-center gap-3">
-                          {expandedSections.has(section.id) ? (
-                            <ChevronDown className="w-5 h-5 text-gray-500" />
-                          ) : (
-                            <ChevronRight className="w-5 h-5 text-gray-500" />
-                          )}
-                          <div>
-                            <h3 className="text-lg font-semibold student-dashboard-course-title">
-                              {section.title}
-                            </h3>
-                          </div>
-                        </div>
-                        <div className="text-sm student-dashboard-text-muted">
-                          {section.lessons
-                            ? Array.from(section.lessons).length
-                            : 0}{" "}
-                          bài
-                        </div>
-                      </button>
+              {/* Loading State */}
+              {isLoadingSections && (
+                <div className="student-dashboard-course-card p-8">
+                  <div className="flex flex-col items-center justify-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+                    <p className="text-gray-600">Đang tải nội dung khóa học...</p>
+                  </div>
+                </div>
+              )}
 
-                      {expandedSections.has(section.id) && (
-                        <div className="mt-4 pl-4 space-y-3">
-                          {section.lessons &&
-                            Array.from(section.lessons).map((lesson) => (
-                              <div
-                                key={lesson.id}
-                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border"
-                              >
-                                <div className="flex-shrink-0">
-                                  <Circle className="w-5 h-5 text-gray-400" />
-                                </div>
+              {/* Error State */}
+              {!isLoadingSections && sectionsError && (
+                <div className="student-dashboard-course-card p-6">
+                  <div className="flex items-start gap-3 text-red-600">
+                    <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium">Lỗi tải dữ liệu</p>
+                      <p className="text-sm">{sectionsError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                                <div className="flex-shrink-0 text-blue-600">
-                                  {lesson.videoUrl ? (
-                                    <Play className="w-4 h-4" />
-                                  ) : (
-                                    <FileText className="w-4 h-4" />
-                                  )}
-                                </div>
+              {/* Content - Using filtered sections */}
+              {!isLoadingSections && !sectionsError && sections.length > 0 && (
+                <>
+                  {sections
+                    .sort((a, b) => a.orderIndex - b.orderIndex)
+                    .map((section) => {
+                      const lessonsArray = section.lessons ? Array.from(section.lessons) : [];
+                      const quizzesArray = section.quizs ? Array.from(section.quizs) : [];
+                      const assignmentsArray = section.assignments ? Array.from(section.assignments) : [];
+                      
+                      const sortedLessons = lessonsArray.sort((a, b) => a.numberItem - b.numberItem);
+                      const sortedQuizzes = quizzesArray.sort((a, b) => a.numberItem - b.numberItem);
+                      const sortedAssignments = assignmentsArray.sort((a, b) => a.numberItem - b.numberItem);
 
-                                <div className="flex-1 min-w-0 space-y-1">
-                                  <h4 className="font-medium text-gray-700">
-                                    {lesson.title}
-                                  </h4>
-                                  {lesson.videoUrl && (
-                                    <div className="flex space-x-1">
-                                      <p className="font-medium text-gray-700">
-                                        Video:{" "}
-                                      </p>
-                                      <a
-                                        href={lesson.videoUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="hover:underline text-red-500"
-                                      >
-                                        {lesson.videoUrl}
-                                      </a>
-                                      <hr className="my-2 border-gray-200" />
-                                    </div>
-                                  )}
-
-                                  {lesson.description && (
-                                    <p className="text-sm student-dashboard-text-muted mt-1">
-                                      {lesson.description}
+                      return (
+                        <div
+                          key={section.id}
+                          className="student-dashboard-course-card"
+                        >
+                          <div className="p-4">
+                            <button
+                              onClick={() => toggleSection(section.id)}
+                              className="flex items-center justify-between w-full text-left hover:bg-gray-50 rounded-lg p-2 -m-2"
+                            >
+                              <div className="flex items-center gap-3">
+                                {expandedSections.has(section.id) ? (
+                                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                                ) : (
+                                  <ChevronRight className="w-5 h-5 text-gray-500" />
+                                )}
+                                <div>
+                                  <h3 className="text-lg font-semibold student-dashboard-course-title">
+                                    {section.orderIndex}. {section.title}
+                                  </h3>
+                                  {section.description && !expandedSections.has(section.id) && (
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      {section.description}
                                     </p>
                                   )}
                                 </div>
+                              </div>
+                              <div className="text-sm student-dashboard-text-muted">
+                                {lessonsArray.length + quizzesArray.length + assignmentsArray.length} nội dung
+                              </div>
+                            </button>
 
-                                {lesson.videoUrl && (
-                                  <div className="flex-shrink-0 text-sm student-dashboard-text-muted">
-                                    Video
+                            {expandedSections.has(section.id) && (
+                              <div className="mt-4 pl-4 space-y-4">
+                                {section.description && (
+                                  <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                                    <p className="text-sm text-gray-700">{section.description}</p>
+                                  </div>
+                                )}
+
+                                {/* Lessons */}
+                                {sortedLessons.length > 0 && (
+                                  <div>
+                                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                      📚 Bài học ({sortedLessons.length})
+                                    </h4>
+                                    <div className="space-y-2">
+                                      {sortedLessons.map((lesson) => (
+                                        <div
+                                          key={lesson.id}
+                                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border"
+                                        >
+                                          <div className="flex-shrink-0">
+                                            <Circle className="w-5 h-5 text-gray-400" />
+                                          </div>
+
+                                          <div className="flex-shrink-0 text-blue-600">
+                                            {lesson.videoUrl ? (
+                                              <Play className="w-4 h-4" />
+                                            ) : (
+                                              <FileText className="w-4 h-4" />
+                                            )}
+                                          </div>
+
+                                          <div className="flex-1 min-w-0 space-y-1">
+                                            <h5 className="font-medium text-gray-700">
+                                              #{lesson.numberItem} {lesson.title}
+                                            </h5>
+                                            {lesson.videoUrl && (
+                                              <div className="flex space-x-1">
+                                                <p className="font-medium text-gray-700">
+                                                  Video:{" "}
+                                                </p>
+                                                <a
+                                                  href={lesson.videoUrl}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="hover:underline text-red-500 truncate"
+                                                >
+                                                  {lesson.videoUrl}
+                                                </a>
+                                              </div>
+                                            )}
+
+                                            {lesson.description && (
+                                              <p className="text-sm student-dashboard-text-muted mt-1">
+                                                {lesson.description}
+                                              </p>
+                                            )}
+                                          </div>
+
+                                          {lesson.videoUrl && (
+                                            <div className="flex-shrink-0 text-sm student-dashboard-text-muted">
+                                              Video
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Quizzes */}
+                                {sortedQuizzes.length > 0 && (
+                                  <div className="pt-3 border-t">
+                                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                      📝 Bài kiểm tra ({sortedQuizzes.length})
+                                    </h4>
+                                    <div className="space-y-2">
+                                      {sortedQuizzes.map((quiz) => (
+                                        <div
+                                          key={quiz.id}
+                                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-purple-200 bg-purple-50"
+                                        >
+                                          <div className="flex-shrink-0 text-purple-600">
+                                            <FileText className="w-4 h-4" />
+                                          </div>
+                                          <div className="flex-1">
+                                            <h5 className="font-medium text-gray-700">
+                                              #{quiz.numberItem} {quiz.title}
+                                            </h5>
+                                            <p className="text-sm text-gray-500">
+                                              {quiz.duration} phút • {quiz.attemptLimit} lần làm • Điểm đạt: {quiz.passingScore}%
+                                            </p>
+                                          </div>
+                                          <button className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700" onClick={() => {
+                                              setSelectedQuizId(quiz.id)
+                                              setIsQuizModalOpen(true)
+                                            }}>
+                                            Làm bài
+                                          </button>
+                                          <QuizDetailModal
+                                              isOpen={isQuizModalOpen}
+                                              onClose={() => {
+                                                setIsQuizModalOpen(false)
+                                                setSelectedQuizId(null)
+                                              }}
+                                              quizId={selectedQuizId || 0}
+                                            />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Assignments */}
+                                {sortedAssignments.length > 0 && (
+                                  <div className="pt-3 border-t">
+                                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                      📋 Bài tập ({sortedAssignments.length})
+                                    </h4>
+                                    <div className="space-y-2">
+                                      {sortedAssignments.map((assignment) => (
+                                        <div
+                                          key={assignment.id}
+                                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-orange-200 bg-orange-50"
+                                        >
+                                          <div className="flex-shrink-0 text-orange-600">
+                                            <FileText className="w-4 h-4" />
+                                          </div>
+                                          <div className="flex-1">
+                                            <h5 className="font-medium text-gray-700">
+                                              #{assignment.numberItem} {assignment.title}
+                                            </h5>
+                                            <p className="text-sm text-gray-500">
+                                              Hạn: {new Date(assignment.deadline).toLocaleDateString("vi-VN")} • 
+                                              {assignment.submissionType}
+                                            </p>
+                                          </div>
+                                          <button 
+                                            className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              setSelectedAssignmentId(assignment.id)
+                                              setIsAssignmentModalOpen(true)
+                                            }}
+                                          >
+                                            Nộp bài
+                                          </button>
+                                          <AssignmentDetailModal
+                                              isOpen={isAssignmentModalOpen}
+                                              onClose={() => {
+                                                setIsAssignmentModalOpen(false)
+                                                setSelectedAssignmentId(null)
+                                              }}
+                                              assignmentId={selectedAssignmentId || 0}
+                                            />
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>
-                            ))}
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      );
+                    })}
+                </>
+              )}
 
-              {(!course || !course.sections || course.sections.size === 0) && (
+              {/* Empty State */}
+              {!isLoadingSections && !sectionsError && sections.length === 0 && (
                 <div className="student-dashboard-course-card p-6">
                   <p className="text-center student-dashboard-text-muted">
-                    Chưa có nội dung khóa học nào được tải lên.
+                    Chưa có nội dung khóa học nào được công bố cho lớp của bạn.
                   </p>
                 </div>
               )}
             </div>
           )}
-
-          {activeTab === "personal_assignments" && (
-            <div className="student-dashboard-course-card p-6">
-              <h3 className="text-xl font-semibold mb-4">Mô tả khóa học</h3>
-              <div className="prose max-w-none">
-                <p className="mb-4">
-                  {course?.description || "Chưa có mô tả khóa học."}
-                </p>
-                <h4 className="text-lg font-semibold mb-3">
-                  Mục tiêu khóa học:
-                </h4>
-                <ul className="list-disc pl-6 space-y-2 mb-4">
-                  <li>
-                    Hiểu rõ về quy trình kiểm thử phần mềm và tầm quan trọng
-                    trong phát triển phần mềm
-                  </li>
-                  <li>
-                    Nắm vững các loại kiểm thử: đơn vị, tích hợp, hệ thống, và
-                    kiểm thử chấp nhận
-                  </li>
-                  <li>
-                    Sử dụng thành thạo các công cụ kiểm thử tự động như
-                    Selenium, JUnit, TestNG
-                  </li>
-                  <li>
-                    Áp dụng kiểm thử hiệu năng và kiểm thử bảo mật trong thực tế
-                  </li>
-                  <li>
-                    Viết báo cáo lỗi hiệu quả và quản lý quy trình kiểm thử
-                  </li>
-                </ul>
-                <h4 className="text-lg font-semibold mb-3">
-                  Yêu cầu tiên quyết:
-                </h4>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Kiến thức cơ bản về lập trình (Java hoặc Python)</li>
-                  <li>Hiểu biết về phát triển phần mềm</li>
-                  <li>Có kinh nghiệm sử dụng máy tính và internet</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* person assignment */}
-          {activeTab === "group_assignments" && (
-            <div className="student-dashboard-course-card p-6">
-              <h3 className="text-xl font-semibold mb-4">Bài tập nhóm</h3>
-              <p className="student-dashboard-text-muted">
-                Chưa có bài tập nhóm nào được giao cho khóa học này.
-              </p>
-            </div>
-          )}
-
-          {activeTab === "quiz" && (
-            <div className="student-dashboard-course-card p-6">
-              <div className="flex items-start gap-4">
-                <img
-                  src="/src/assets/images/instructor/01.jpg"
-                  alt="Giảng viên"
-                  className="w-20 h-20 rounded-full object-cover"
-                />
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold mb-1">
-                    Giảng viên khóa học
-                  </h3>
-                  <p className="text-blue-600 mb-3">
-                    Thông tin sẽ được cập nhật sau
-                  </p>
-                  <p className="student-dashboard-text-muted mb-4">
-                    Thông tin chi tiết về giảng viên sẽ được cập nhật trong thời
-                    gian sớm nhất.
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-4 mt-6">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold student-dashboard-course-title">
-                        N/A
-                      </div>
-                      <div className="text-sm student-dashboard-text-muted">
-                        Năm kinh nghiệm
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold student-dashboard-course-title">
-                        N/A
-                      </div>
-                      <div className="text-sm student-dashboard-text-muted">
-                        Học viên
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold student-dashboard-course-title">
-                        N/A
-                      </div>
-                      <div className="text-sm student-dashboard-text-muted">
-                        Khóa học
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
+          
           {activeTab === "score_feedback" && (
             <div className="space-y-6">
               {/* Rating Summary */}

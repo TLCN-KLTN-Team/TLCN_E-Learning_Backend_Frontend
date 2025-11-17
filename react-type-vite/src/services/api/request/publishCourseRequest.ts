@@ -11,7 +11,13 @@ export interface CourseDetailRequest {
 export interface PublishCourseRequest {
   courseId: number;
   courseTypeId: number;
+  description: string;
+  courseIntroduction: string;
+  courseImage: string;
+  courseVideo: string;
+  learnerAchievements: string;
+  courseLearner: string;
+  courseTarget: string[];
   coursePrice: number;
-  courseDetail: CourseDetailRequest;
   note?: string;
 }

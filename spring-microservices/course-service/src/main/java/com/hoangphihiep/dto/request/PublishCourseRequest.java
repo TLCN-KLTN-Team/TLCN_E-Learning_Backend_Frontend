@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Builder
@@ -21,8 +22,13 @@ public class PublishCourseRequest {
     @NotNull(message = "Course type ID is required")
     private Integer courseTypeId;
 
-    @NotNull(message = "Course detail is required")
-    private CourseDetailRequest courseDetail;
+    private String description;
+    private String courseIntroduction;
+    private String courseImage;
+    private String courseVideo;
+    private String learnerAchievements;
+    private String courseLearner;
+    private List<String> courseTarget;
 
     @NotNull(message = "Course price is required")
     @Min(value = 0, message = "Course price must be greater than or equal to 0")

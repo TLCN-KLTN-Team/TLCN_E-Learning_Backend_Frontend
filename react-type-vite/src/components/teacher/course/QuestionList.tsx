@@ -59,15 +59,11 @@ const QuestionList: React.FC<{
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <div>
           <h3 className="text-lg font-semibold">Câu Hỏi</h3>
           <p className="text-sm text-gray-600">Thêm và cấu hình các câu hỏi cho bài kiểm tra này.</p>
         </div>
-        <Button onClick={addQuestion}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Thêm Câu Hỏi
-        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {questions.map((q, index) => (
@@ -81,10 +77,22 @@ const QuestionList: React.FC<{
           />
         ))}
         {questions.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Bài kiểm tra này chưa có câu hỏi nào.</p>
+          <div className="text-center py-8 border-2 border-dashed rounded-lg bg-gray-50">
+            <p className="text-gray-500 mb-4">Bài kiểm tra này chưa có câu hỏi nào.</p>
           </div>
         )}
+        {/* Nút Thêm Câu Hỏi - Di chuyển xuống dưới danh sách */}
+          <div className="flex justify-end pt-2"> 
+              <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={addQuestion}
+                      className="text-orange-600 hover:text-orange-700 "
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Thêm Câu Hỏi
+              </Button>
+          </div>
       </CardContent>
     </Card>
   )

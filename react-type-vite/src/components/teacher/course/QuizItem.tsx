@@ -59,7 +59,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
     const fromIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
     const toIndex = index
 
-    console.log("[v0] QuizItem handleDrop - từ vị trí:", fromIndex, "đến vị trí:", toIndex)
+    console.log("QuizItem handleDrop - từ vị trí:", fromIndex, "đến vị trí:", toIndex)
 
     if (fromIndex !== toIndex) {
       onReorder(fromIndex, toIndex)

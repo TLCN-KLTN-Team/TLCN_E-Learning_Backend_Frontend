@@ -159,7 +159,6 @@ public enum ErrorCode {
 
     COURSE_NOT_BELONG_TO_EDUCATIONAL_UNIT(1005, "Course does not belong to this educational unit", HttpStatus.BAD_REQUEST),
 
-    PUBLISHED_COURSE_NOT_FOUND(2301, "Published course not found", HttpStatus.BAD_REQUEST),
     PUBLISHED_COURSE_CANNOT_UPDATE(2302, "Cannot update published course in current status", HttpStatus.BAD_REQUEST),
     PUBLISHED_COURSE_ALREADY_SUBMITTED(2303, "Published course already submitted for approval", HttpStatus.BAD_REQUEST),
     PUBLISHED_COURSE_NOT_PENDING(2304, "Published course is not in pending status", HttpStatus.BAD_REQUEST),
@@ -189,6 +188,18 @@ public enum ErrorCode {
     COURSE_ALREADY_IN_WISHLIST(7002, "Course already in wishlist", HttpStatus.BAD_REQUEST),
     COURSE_NOT_IN_WISHLIST(7003, "Course not in wishlist", HttpStatus.NOT_FOUND),
 
+    QUIZ_NOT_STARTED(400, "Quiz has not started yet", HttpStatus.BAD_REQUEST),
+    QUIZ_ENDED(400, "Quiz has ended", HttpStatus.BAD_REQUEST),
+    QUIZ_ATTEMPT_LIMIT_REACHED(400, "Quiz attempt limit reached", HttpStatus.BAD_REQUEST),
+    QUIZ_ATTEMPT_NOT_FOUND(404, "Quiz attempt not found", HttpStatus.BAD_REQUEST),
+
+    ASSIGNMENT_ALREADY_SUBMITTED(400, "Assignment already submitted", HttpStatus.BAD_REQUEST),
+    SUBMISSION_ALREADY_GRADED(400, "Submission already graded, cannot be modified", HttpStatus.BAD_REQUEST),
+    ASSIGNMENT_DEADLINE_PASSED(400, "Assignment deadline has passed", HttpStatus.BAD_REQUEST),
+
+    INVALID_SCORE(1041, "Score is invalid or exceeds maximum allowed", HttpStatus.BAD_REQUEST),
+
+    PUBLISHED_COURSE_NOT_FOUND(3201, "Không tìm thấy khóa học đã xuất bản", HttpStatus.NOT_FOUND)
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

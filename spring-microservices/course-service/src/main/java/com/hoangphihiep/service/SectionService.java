@@ -36,28 +36,6 @@ public class SectionService {
     private final FileHandlerRepository fileHandlerRepository;
     private final ContentVisibilityService contentVisibilityService;
 
-    public List<SectionResponse> getAllSections() {
-        try {
-            return sectionRepository.findAll()
-                    .stream()
-                    .map(sectionMapper::toSectionResponse)
-                    .toList();
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
-    public SectionResponse getSectionById(Integer id) {
-        if (id == null || id <= 0) {
-            throw new AppException(ErrorCode.INVALID_REQUEST);
-        }
-
-        Section section = sectionRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
-
-        return sectionMapper.toSectionResponse(section);
-    }
-
     public List<SectionResponse> getSectionsByCourseId(Integer courseId) {
         if (courseId == null || courseId <= 0) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
@@ -794,8 +772,14 @@ public class SectionService {
         }
     }
 
-    private void updateAssignmentFields(Assignment assignment, AssignmentRequest request, Section section,
-                                        List<MultipartFile> assignmentFiles, List<MultipartFile> rubricFiles, int startIndex) {
+    private void updateAssignmentFields(
+            Assignment assignment,
+            AssignmentRequest request,
+            Section section,
+            List<MultipartFile> assignmentFiles,
+            List<MultipartFile> rubricFiles,
+            int startIndex) {
+
         assignment.setTitle(request.getTitle());
         assignment.setDescription(request.getDescription());
         assignment.setDeadline(request.getDeadline());
@@ -804,28 +788,29 @@ public class SectionService {
         assignment.setNumberItem(request.getNumberItem());
         assignment.setIsPublished(request.getIsPublished());
 
-        // XỬ LÝ ASSIGNMENT FILES
+        // XỬ LÝ ASSIGNMENT FILES — DÙNG LIST RIÊNG
         if (request.getAssignmentFiles() != null && !request.getAssignmentFiles().isEmpty()) {
-            List<String> processedFiles = processFileList(
+            List<String> assignmentProcessedFiles = processFileList(
                     request.getAssignmentFiles(),
                     assignmentFiles,
                     "assignment"
             );
-            assignment.setAssignmentFiles(processedFiles);
+            assignment.setAssignmentFiles(assignmentProcessedFiles);
         }
 
-        // XỬ LÝ RUBRIC FILES
+        // XỬ LÝ RUBRIC FILES — DÙNG LIST RIÊNG
         if (request.getRubricFiles() != null && !request.getRubricFiles().isEmpty()) {
-            List<String> processedFiles = processFileList(
+            List<String> rubricProcessedFiles = processFileList(
                     request.getRubricFiles(),
                     rubricFiles,
                     "rubric"
             );
-            assignment.setRubricFiles(processedFiles);
+            assignment.setRubricFiles(rubricProcessedFiles);
         }
 
         assignment.setUpdateAt(new Date());
     }
+
 
     private List<String> processFileList(List<String> fileStrings, List<MultipartFile> files, String fileType) {
         List<String> processedFiles = new ArrayList<>();
@@ -874,55 +859,57 @@ public class SectionService {
         return processedFiles;
     }
 
-    private Assignment createNewAssignment(AssignmentRequest request, Section section, List<MultipartFile> assignmentFiles, List<MultipartFile> rubricFiles, int startIndex) {
+    private Assignment createNewAssignment(
+            AssignmentRequest request,
+            Section section,
+            List<MultipartFile> assignmentFiles,
+            List<MultipartFile> rubricFiles,
+            int startIndex) {
+
         Assignment assignment = new Assignment();
         assignment.setTitle(request.getTitle());
         assignment.setDescription(request.getDescription());
         assignment.setDeadline(request.getDeadline());
-        // MAP ASSIGNMENT FILES
-        List<String> processedAttachments = new ArrayList<>();
 
+        List<String> assignmentAttachments = new ArrayList<>();
 
-        if (request.getAssignmentFiles() != null){
+        if (request.getAssignmentFiles() != null) {
             for (String attachment : request.getAssignmentFiles()) {
+
                 if (attachment.startsWith("FILE_INDEX:")) {
-                    // Extract file index
                     int fileIndex = Integer.parseInt(attachment.substring("FILE_INDEX:".length()));
-                    // Get corresponding file
                     MultipartFile file = assignmentFiles.get(fileIndex);
-                    // Upload to S3/Cloud Storage
+
                     String uploadedUrl = fileHandlerRepository.uploadFile(file).get("url");
-                    processedAttachments.add(uploadedUrl);
+                    assignmentAttachments.add(uploadedUrl);
                 } else {
-                    // Already uploaded URL, keep as is
-                    processedAttachments.add(attachment);
+                    assignmentAttachments.add(attachment);
                 }
             }
-
-            assignment.setAssignmentFiles(processedAttachments);
         }
 
+        assignment.setAssignmentFiles(assignmentAttachments);
 
         assignment.setSubmissionType(request.getSubmissionType());
 
-        if (request.getRubricFiles() != null){
+        List<String> rubricAttachments = new ArrayList<>();
+
+        if (request.getRubricFiles() != null) {
             for (String attachment : request.getRubricFiles()) {
+
                 if (attachment.startsWith("FILE_INDEX:")) {
-                    // Extract file index
                     int fileIndex = Integer.parseInt(attachment.substring("FILE_INDEX:".length()));
-                    // Get corresponding file
                     MultipartFile file = rubricFiles.get(fileIndex);
-                    // Upload to S3/Cloud Storage
+
                     String uploadedUrl = fileHandlerRepository.uploadFile(file).get("url");
-                    processedAttachments.add(uploadedUrl);
+                    rubricAttachments.add(uploadedUrl);
                 } else {
-                    // Already uploaded URL, keep as is
-                    processedAttachments.add(attachment);
+                    rubricAttachments.add(attachment);
                 }
             }
-
-            assignment.setRubricFiles(processedAttachments);
         }
+
+        assignment.setRubricFiles(rubricAttachments);
 
         assignment.setMaxScore(request.getMaxScore());
         assignment.setNumberItem(request.getNumberItem());
@@ -930,8 +917,10 @@ public class SectionService {
         assignment.setCreatedAt(new Date());
         assignment.setUpdateAt(new Date());
         assignment.setSection(section);
+
         return assignment;
     }
+
 
     @Transactional
     public void deleteSection(Integer id) {

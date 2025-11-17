@@ -9,6 +9,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -68,6 +69,27 @@ public class PublishedCourse {
     @OneToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false, unique = true)
     private Course course;
+
+    @Column(length = 1000)
+    private String description;
+
+    @Column(name = "course_introduction", length = 1000)
+    private String courseIntroduction;
+
+    @Column(name = "course_image", length = 255)
+    private String courseImage;
+
+    @Column(name = "course_video", length = 255)
+    private String courseVideo;
+
+    @Column(name = "learner_achievements", length = 500)
+    private String learnerAchievements;
+
+    @Column(name = "course_learner", length = 500)
+    private String courseLearner;
+
+    @ElementCollection
+    private List<String> courseTarget;
 
     public void addDiscussion(Discussion discussion) {
         if (discussion != null && !discussions.contains(discussion)) {

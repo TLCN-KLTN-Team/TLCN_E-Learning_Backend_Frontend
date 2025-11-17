@@ -3,7 +3,7 @@ package com.hoangphihiep.controller.Teacher;
 import com.hoangphihiep.dto.request.PublishCourseRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.PublishedCourseResponse;
-import com.hoangphihiep.service.PublishedCourseService;
+import com.hoangphihiep.service.PublishedCourseTeacherService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class TeacherPublishedCourseController {
 
-    private final PublishedCourseService publishedCourseService;
+    private final PublishedCourseTeacherService publishedCourseTeacherService;
 
     @PostMapping(value = "/draft", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<PublishedCourseResponse> createOrUpdateDraft(
@@ -27,29 +27,7 @@ public class TeacherPublishedCourseController {
             @RequestPart(value = "courseImage", required = false) MultipartFile courseImage,
             @RequestPart(value = "courseVideo", required = false) MultipartFile courseVideo) {
 
-        if (courseImage != null && !courseImage.isEmpty()) {
-            log.info("📸 Received courseImage: name = {}, size = {} bytes, type = {}",
-                    courseImage.getOriginalFilename(),
-                    courseImage.getSize(),
-                    courseImage.getContentType());
-        } else {
-            log.info("❌ No courseImage file received.");
-        }
-
-        // ✅ Kiểm tra file courseVideo
-        if (courseVideo != null && !courseVideo.isEmpty()) {
-            log.info("🎥 Received courseVideo: name = {}, size = {} bytes, type = {}",
-                    courseVideo.getOriginalFilename(),
-                    courseVideo.getSize(),
-                    courseVideo.getContentType());
-        } else {
-            log.info("❌ No courseVideo file received.");
-        }
-
-        log.info("Teacher creating/updating draft published course for course ID: {}", request.getCourseId());
-
-
-        PublishedCourseResponse response = publishedCourseService.createOrUpdateDraft(request, courseImage, courseVideo);
+        PublishedCourseResponse response = publishedCourseTeacherService.createOrUpdateDraft(request, courseImage, courseVideo);
 
         return ApiResponse.<PublishedCourseResponse>builder()
                 .message("Draft saved successfully")
@@ -60,7 +38,7 @@ public class TeacherPublishedCourseController {
     @PostMapping("/{courseId}/submit")
     public ApiResponse<PublishedCourseResponse> submitForApproval(@PathVariable Integer courseId) {
         log.info("Teacher submitting course {} for approval", courseId);
-        PublishedCourseResponse response = publishedCourseService.submitForApproval(courseId);
+        PublishedCourseResponse response = publishedCourseTeacherService.submitForApproval(courseId);
 
         return ApiResponse.<PublishedCourseResponse>builder()
                 .message("Course submitted for approval successfully")
@@ -77,7 +55,7 @@ public class TeacherPublishedCourseController {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("Getting published courses for teacher: {}, status: {}", teacherId, status);
 
-        Page<PublishedCourseResponse> response = publishedCourseService.getPublishedCoursesByTeacher(
+        Page<PublishedCourseResponse> response = publishedCourseTeacherService.getPublishedCoursesByTeacher(
                 teacherId, status, page, size);
 
         return ApiResponse.<Page<PublishedCourseResponse>>builder()
@@ -89,7 +67,7 @@ public class TeacherPublishedCourseController {
     @GetMapping("/course/{courseId}")
     public ApiResponse<PublishedCourseResponse> getPublishedCourseByCourseId(@PathVariable Integer courseId) {
         log.info("Getting published course for course ID: {}", courseId);
-        PublishedCourseResponse response = publishedCourseService.getPublishedCourseByCourseId(courseId);
+        PublishedCourseResponse response = publishedCourseTeacherService.getPublishedCourseByCourseId(courseId);
 
         return ApiResponse.<PublishedCourseResponse>builder()
                 .message("Get published course successfully")
@@ -100,7 +78,7 @@ public class TeacherPublishedCourseController {
     @GetMapping("/{id}")
     public ApiResponse<PublishedCourseResponse> getPublishedCourseById(@PathVariable Integer id) {
         log.info("Getting published course by ID: {}", id);
-        PublishedCourseResponse response = publishedCourseService.getPublishedCourseById(id);
+        PublishedCourseResponse response = publishedCourseTeacherService.getPublishedCourseById(id);
 
         return ApiResponse.<PublishedCourseResponse>builder()
                 .message("Get published course successfully")
@@ -111,7 +89,7 @@ public class TeacherPublishedCourseController {
     @GetMapping("/check/{courseId}")
     public ApiResponse<Boolean> checkCoursePublished(@PathVariable Integer courseId) {
         try {
-            publishedCourseService.getPublishedCourseByCourseId(courseId);
+            publishedCourseTeacherService.getPublishedCourseByCourseId(courseId);
             return ApiResponse.<Boolean>builder()
                     .message("Course is published")
                     .result(true)

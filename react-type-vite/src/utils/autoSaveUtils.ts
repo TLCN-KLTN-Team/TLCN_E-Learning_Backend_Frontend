@@ -27,7 +27,7 @@ export const saveToLocalStorage = (courseId: string, sections: SectionResponse[]
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data))
     localStorage.setItem(AUTOSAVE_TIMESTAMP_KEY, Date.now().toString())
   } catch (error) {
-    console.error("[v0] Failed to save to local storage:", error)
+    console.error("Failed to save to local storage:", error)
   }
 }
 
@@ -42,7 +42,7 @@ export const loadFromLocalStorage = (): AutoSaveData | null => {
     const parsed = JSON.parse(data) as AutoSaveData
     return parsed
   } catch (error) {
-    console.error("[v0] Failed to load from local storage:", error)
+    console.error("[] Failed to load from local storage:", error)
     return null
   }
 }
@@ -55,7 +55,7 @@ export const clearAutoSave = (): void => {
     localStorage.removeItem(AUTOSAVE_KEY)
     localStorage.removeItem(AUTOSAVE_TIMESTAMP_KEY)
   } catch (error) {
-    console.error("[v0] Failed to clear auto-save:", error)
+    console.error("Failed to clear auto-save:", error)
   }
 }
 
@@ -67,7 +67,7 @@ export const getLastAutoSaveTime = (): number | null => {
     const timestamp = localStorage.getItem(AUTOSAVE_TIMESTAMP_KEY)
     return timestamp ? Number.parseInt(timestamp) : null
   } catch (error) {
-    console.error("[v0] Failed to get auto-save timestamp:", error)
+    console.error("Failed to get auto-save timestamp:", error)
     return null
   }
 }

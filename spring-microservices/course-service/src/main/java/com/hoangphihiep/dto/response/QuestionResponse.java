@@ -25,7 +25,7 @@ public class QuestionResponse {
 
     private List<String> attachments;
 
-    private Integer score;
+    private Double score;
 
     private Date createdAt;
 

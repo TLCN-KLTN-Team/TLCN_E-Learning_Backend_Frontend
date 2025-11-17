@@ -30,7 +30,7 @@ interface SectionItemProps {
   section: SectionResponse
   index: number
   courseId: string
-  educationalUnitId: string // NEW: for class management
+  educationalUnitId: string
   onUpdate: (section: SectionResponse) => void
   onDelete: (sectionId: number) => void
   onReorder: (fromIndex: number, toIndex: number) => void
@@ -48,7 +48,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
   const [isEditQuizModalOpen, setIsEditQuizModalOpen] = useState(false)
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false)
   const [isEditAssignmentModalOpen, setIsEditAssignmentModalOpen] = useState(false)
-  const [isVisibilityModalOpen, setIsVisibilityModalOpen] = useState(false) // NEW
+  const [isVisibilityModalOpen, setIsVisibilityModalOpen] = useState(false)
   const [selectedLesson, setSelectedLesson] = useState<LessonResponse | null>(null)
   const [selectedQuiz, setSelectedQuiz] = useState<QuizResponse | null>(null)
   const [selectedAssignment, setSelectedAssignment] = useState<AssignmentResponse | null>(null)
@@ -382,15 +382,6 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                   📚 Bài Học
                   <span className="text-sm font-normal text-gray-500">({lessonsArray.length})</span>
                 </h4>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsLessonModalOpen(true)}
-                  className="text-blue-600 hover:text-blue-700"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Thêm Bài Học
-                </Button>
               </div>
               <div className="space-y-2">
                 {sortedLessons.length > 0 ? (
@@ -412,9 +403,22 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                   ))
                 ) : (
                   <div className="text-center py-8 border-2 border-dashed rounded-lg bg-gray-50">
-                    <p className="text-sm text-gray-500">Chưa có bài học nào. Thêm bài học đầu tiên!</p>
+                    <p className="text-sm text-gray-500">Chưa có bài học nào.</p>
                   </div>
                 )}
+                {/* Nút Thêm Bài Học - Di chuyển xuống dưới danh sách */}
+                 
+                <div className="flex justify-end pt-2"> 
+                    <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsLessonModalOpen(true)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Thêm Bài Học
+                </Button>
+                </div>
               </div>
             </div>
 
@@ -425,15 +429,6 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                   📝 Bài Kiểm Tra
                   <span className="text-sm font-normal text-gray-500">({quizzesArray.length})</span>
                 </h4>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsQuizModalOpen(true)}
-                  className="text-purple-600 hover:text-purple-700"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Thêm Bài Kiểm Tra
-                </Button>
               </div>
               <div className="space-y-2">
                 {sortedQuizzes.length > 0 ? (
@@ -455,27 +450,32 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                   ))
                 ) : (
                   <div className="text-center py-8 border-2 border-dashed rounded-lg bg-gray-50">
-                    <p className="text-sm text-gray-500">Chưa có bài kiểm tra nào. Thêm bài kiểm tra đầu tiên!</p>
+                    <p className="text-sm text-gray-500">Chưa có bài kiểm tra nào.</p>
                   </div>
                 )}
+                {/* Nút Thêm Bài Kiểm Tra - Di chuyển xuống dưới danh sách */}
+                
+                <div className="flex justify-end pt-2"> 
+                    <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsQuizModalOpen(true)}
+                  className="text-purple-600 hover:text-purple-700"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Thêm Bài Kiểm Tra
+                </Button>
+                </div>
               </div>
             </div>
 
+            {/* Phần Bài Tập */}
             <div className="pt-4 border-t">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-semibold text-lg flex items-center gap-2">
                   📋 Bài Tập
                   <span className="text-sm font-normal text-gray-500">({assignmentsArray.length})</span>
                 </h4>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsAssignmentModalOpen(true)}
-                  className="text-orange-600 hover:text-orange-700"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Thêm Bài Tập
-                </Button>
               </div>
               <div className="space-y-2">
                 {sortedAssignments.length > 0 ? (
@@ -499,9 +499,22 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                   ))
                 ) : (
                   <div className="text-center py-8 border-2 border-dashed rounded-lg bg-gray-50">
-                    <p className="text-sm text-gray-500">Chưa có bài tập nào. Thêm bài tập đầu tiên!</p>
+                    <p className="text-sm text-gray-500">Chưa có bài tập nào.</p>
                   </div>
                 )}
+                {/* Nút Thêm Bài Tập - Di chuyển xuống dưới danh sách */}
+                <div className="flex justify-end pt-2"> 
+                    <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsAssignmentModalOpen(true)}
+                    className="text-orange-600 hover:text-orange-700 "
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Thêm Bài Tập
+                  </Button>
+                </div>
+                
               </div>
             </div>
 

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, ChevronRight, AlertCircle, Loader2, Plus } from "lucide-react"
+import { Users, ChevronRight, AlertCircle, Loader2, Plus } from 'lucide-react'
 import * as classApi from "@/services/api/admin/classApi";
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
 
@@ -31,7 +31,7 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
       const classesData = await classApi.getClassesByCourse(educationalUnitId, Number(courseId))
       setClasses(classesData.content || [])
     } catch (err) {
-      console.error("[v0] Error fetching classes:", err)
+      console.error("Error fetching classes:", err)
       setError("Không thể tải danh sách lớp học. Vui lòng thử lại.")
     } finally {
       setLoading(false)
@@ -51,15 +51,12 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
-            <Users className="h-6 w-6 text-blue-600" />
-            Quản Lý Lớp Học
-          </h2>
-          <p className="text-muted-foreground mt-1">Chọn một lớp để xem danh sách sinh viên</p>
-        </div>
+      <div className="pb-4 border-b border-gray-200">
+        <h2 className="text-2xl font-semibold flex items-center gap-2 mb-1">
+          <Users className="h-6 w-6 text-blue-600" />
+          Quản Lý Lớp Học
+        </h2>
+        <p className="text-sm text-gray-600">Chọn một lớp để xem danh sách sinh viên</p>
       </div>
 
       {/* Error Message */}
@@ -96,7 +93,7 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
                     className={
                       classData.status === "ACTIVE"
                         ? "bg-green-100 text-green-800"
-                        : classData.status === "completed"
+                        : classData.status === "COMPLETED"
                           ? "bg-blue-100 text-blue-800"
                           : "bg-gray-100 text-gray-800"
                     }

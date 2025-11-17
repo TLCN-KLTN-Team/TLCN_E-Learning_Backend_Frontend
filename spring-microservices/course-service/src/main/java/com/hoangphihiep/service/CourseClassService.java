@@ -70,8 +70,14 @@ public class CourseClassService {
         return classPage.map(courseClassMapper::toCourseClassResponse);
     }
 
+    public CourseClassResponse getClassesById(Integer classId) {
+        return classRepository.findById(classId)
+                .map(courseClassMapper::toCourseClassResponse)
+                .orElse(null);
+    }
+
     @Transactional
-    public CourseClassResponse updateClass(Long classId, CourseClassRequest request) {
+    public CourseClassResponse updateClass(Integer classId, CourseClassRequest request) {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
@@ -95,7 +101,7 @@ public class CourseClassService {
     }
 
     @Transactional
-    public void deleteClass(Long classId) {
+    public void deleteClass(Integer classId) {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 

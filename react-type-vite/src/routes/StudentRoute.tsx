@@ -6,6 +6,8 @@ import StudentDashboard from "@/pages/student/dashboard/StudentDashboard";
 import CourseDetail from "@/pages/student/course/CourseDetail";
 import StudentEditProfile from "@/pages/student/dashboard/EditProfile";
 import EditProfile from "@/pages/student/home/EditProfile";
+import QuizTakingPage from "@/pages/student/quiz/QuizTakingPage";
+import QuizResultPage from "@/pages/student/quiz/QuizResultPage";
 
 // Student routes - protected routes for student role
 const StudentRoutes = [
@@ -41,6 +43,8 @@ const StudentRoutes = [
 
       {/* Thêm các student routes khác ở đây */}
     </Route>
+    <Route path="/student/quiz/:quizId/attempt/:attemptId" element={<QuizTakingPage />} />
+    <Route path="/student/quiz/:quizId/result/:attemptId" element={<QuizResultPage />} />
   </Route>,
 ];
 
