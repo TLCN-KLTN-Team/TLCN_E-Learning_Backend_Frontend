@@ -18,5 +18,5 @@ public class EnrolledCourseContentResponse {
     int schoolYear;
     String description;
     int progressPercentage;
-    Set<SectionContentResponse> sections;
+    Set<SectionResponse> sections;
 }

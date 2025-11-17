@@ -25,7 +25,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PublishedCourseService {
+public class PublishedCourseTeacherService {
 
     private final PublishedCourseRepository publishedCourseRepository;
     private final CourseRepository courseRepository;
@@ -89,9 +89,40 @@ public class PublishedCourseService {
             publishedCourse = createNewPublishedCourse(request, course, courseType);
         }
 
-        // Save or update course detail
-        CourseDetail courseDetail = saveOrUpdateCourseDetail(request.getCourseDetail(), publishedCourse, courseImage, courseVideo);
-        publishedCourse.setCourseDetail(courseDetail);
+        String imageUrl = null;
+        String videoUrl = null;
+
+        // Upload image if provided
+        if (courseImage != null && !courseImage.isEmpty()) {
+            log.info("Uploading course image");
+            try {
+                Map<String, String> imageUploadResponse = fileHandlerRepository.uploadFile(courseImage);
+                imageUrl = imageUploadResponse.get("url");
+                log.info("Image uploaded successfully: {}", imageUrl);
+            } catch (Exception e) {
+                log.error("Error uploading course image: {}", e.getMessage(), e);
+            }
+        }
+
+        // Upload video if provided
+        if (courseVideo != null && !courseVideo.isEmpty()) {
+            log.info("Uploading course video");
+            try {
+                Map<String, String> videoUploadResponse = fileHandlerRepository.uploadFile(courseVideo);
+                videoUrl = videoUploadResponse.get("url");
+                log.info("Video uploaded successfully: {}", videoUrl);
+            } catch (Exception e) {
+                log.error("Error uploading course video: {}", e.getMessage(), e);
+            }
+        }
+
+        publishedCourse.setDescription(request.getDescription());
+        publishedCourse.setCourseIntroduction(request.getCourseIntroduction());
+        publishedCourse.setCourseImage(imageUrl);
+        publishedCourse.setCourseVideo(videoUrl);
+        publishedCourse.setLearnerAchievements(request.getLearnerAchievements());
+        publishedCourse.setCourseLearner(request.getCourseLearner());
+        publishedCourse.setCourseTarget(request.getCourseTarget());
 
         PublishedCourse saved = publishedCourseRepository.save(publishedCourse);
         log.info("Created/Updated draft published course for course ID: {}", request.getCourseId());
@@ -249,60 +280,6 @@ public class PublishedCourseService {
         // Reset về Draft khi update
         publishedCourse.setStatus(0);
     }
-
-    private CourseDetail saveOrUpdateCourseDetail(
-            com.hoangphihiep.dto.request.CourseDetailRequest request,
-            PublishedCourse publishedCourse, MultipartFile courseImage, MultipartFile courseVideo) {
-
-        CourseDetail courseDetail;
-
-        if (publishedCourse.getCourseDetail() != null) {
-            courseDetail = publishedCourse.getCourseDetail();
-        } else if (request.getId() != null) {
-            courseDetail = courseDetailRepository.findById(request.getId())
-                    .orElse(new CourseDetail());
-        } else {
-            courseDetail = new CourseDetail();
-        }
-
-        String imageUrl = null;
-        String videoUrl = null;
-
-        // Upload image if provided
-        if (courseImage != null && !courseImage.isEmpty()) {
-            log.info("Uploading course image");
-            try {
-                Map<String, String> imageUploadResponse = fileHandlerRepository.uploadFile(courseImage);
-                imageUrl = imageUploadResponse.get("url");
-                log.info("Image uploaded successfully: {}", imageUrl);
-            } catch (Exception e) {
-                log.error("Error uploading course image: {}", e.getMessage(), e);
-            }
-        }
-
-        // Upload video if provided
-        if (courseVideo != null && !courseVideo.isEmpty()) {
-            log.info("Uploading course video");
-            try {
-                Map<String, String> videoUploadResponse = fileHandlerRepository.uploadFile(courseVideo);
-                videoUrl = videoUploadResponse.get("url");
-                log.info("Video uploaded successfully: {}", videoUrl);
-            } catch (Exception e) {
-                log.error("Error uploading course video: {}", e.getMessage(), e);
-            }
-        }
-
-        courseDetail.setDescription(request.getDescription());
-        courseDetail.setCourseIntroduction(request.getCourseIntroduction());
-        courseDetail.setCourseImage(imageUrl);
-        courseDetail.setCourseVideo(videoUrl);
-        courseDetail.setLearnerAchievements(request.getLearnerAchievements());
-        courseDetail.setCourseLearner(request.getCourseLearner());
-        courseDetail.setCourseTarget(request.getCourseTarget());
-
-        return courseDetailRepository.save(courseDetail);
-    }
-
     private void validatePublishedCourseForSubmission(PublishedCourse publishedCourse) {
         if (publishedCourse.getCourseDetail() == null) {
             throw new AppException(ErrorCode.COURSE_DETAIL_REQUIRED);

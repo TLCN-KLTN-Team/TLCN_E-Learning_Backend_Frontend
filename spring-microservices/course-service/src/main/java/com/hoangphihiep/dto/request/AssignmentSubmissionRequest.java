@@ -20,7 +20,6 @@ public class AssignmentSubmissionRequest {
     @NotNull(message = "Assignment ID is required")
     private Integer assignmentId;
 
-    @NotNull(message = "User ID is required")
     private String idUser;
 
     private String submissionText;

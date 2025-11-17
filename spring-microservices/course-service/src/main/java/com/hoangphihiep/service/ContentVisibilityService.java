@@ -41,7 +41,7 @@ public class ContentVisibilityService {
             List<ClassContentVisibility> visibilities = new ArrayList<>();
 
             for (Integer classId : visibleClassIds) {
-                CourseClass courseClass = classRepository.findById(Long.valueOf(classId))
+                CourseClass courseClass = classRepository.findById(classId)
                         .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
                 ClassContentVisibility visibility = ClassContentVisibility.builder()
@@ -111,7 +111,7 @@ public class ContentVisibilityService {
             List<ClassContentVisibility> visibilities = new ArrayList<>();
 
             for (Integer classId : visibleClassIds) {
-                CourseClass courseClass = classRepository.findById(Long.valueOf(classId))
+                CourseClass courseClass = classRepository.findById(classId)
                         .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
                 ClassContentVisibility visibility = ClassContentVisibility.builder()
@@ -181,7 +181,7 @@ public class ContentVisibilityService {
             List<ClassContentVisibility> visibilities = new ArrayList<>();
 
             for (Integer classId : visibleClassIds) {
-                CourseClass courseClass = classRepository.findById(Long.valueOf(classId))
+                CourseClass courseClass = classRepository.findById(classId)
                         .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
                 ClassContentVisibility visibility = ClassContentVisibility.builder()
@@ -251,7 +251,7 @@ public class ContentVisibilityService {
             List<ClassContentVisibility> visibilities = new ArrayList<>();
 
             for (Integer classId : visibleClassIds) {
-                CourseClass courseClass = classRepository.findById(Long.valueOf(classId))
+                CourseClass courseClass = classRepository.findById(classId)
                         .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
                 ClassContentVisibility visibility = ClassContentVisibility.builder()

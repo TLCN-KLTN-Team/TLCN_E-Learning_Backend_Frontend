@@ -14,9 +14,9 @@ public interface QuizRepository extends JpaRepository<Quiz, Integer> {
     @Query("SELECT q FROM Quiz q WHERE q.section.course.id = :courseId")
     List<Quiz> findByCourseId(@Param("courseId") int courseId);
 
-    @Query("SELECT q FROM Quiz q WHERE LOWER(q.title) LIKE LOWER(CONCAT('%', :name, '%'))")
-    List<Quiz> findByQuizNameContaining(@Param("name") String name);
-
     @Query("SELECT q FROM Quiz q WHERE q.section.id = :sectionId")
     List<Quiz> findBySectionId(@Param("sectionId") int sectionId);
+
+    @Query("SELECT COUNT(q) FROM Quiz q WHERE q.section.course.id = :courseId")
+    int countByCourseId(@Param("courseId") Integer courseId);
 }

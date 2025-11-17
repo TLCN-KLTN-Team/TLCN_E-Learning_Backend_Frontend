@@ -71,7 +71,7 @@ public class ClassController {
     @PutMapping("/classes/{classId}")
     public ApiResponse<CourseClassResponse> updateClass(
             @PathVariable int educationalUnitId,
-            @PathVariable Long classId,
+            @PathVariable Integer classId,
             @Valid @RequestBody CourseClassRequest request) {
 
         CourseClassResponse response = classService.updateClass(classId, request);
@@ -84,7 +84,7 @@ public class ClassController {
     @DeleteMapping("/classes/{classId}")
     public ApiResponse<Void> deleteClass(
             @PathVariable int educationalUnitId,
-            @PathVariable Long classId) {
+            @PathVariable Integer classId) {
 
         classService.deleteClass(classId);
 
@@ -98,7 +98,7 @@ public class ClassController {
     @PostMapping("/classes/{classId}/enroll-students")
     public ApiResponse<String> enrollStudentsInClass(
             @PathVariable int educationalUnitId,
-            @PathVariable Long classId,
+            @PathVariable Integer classId,
             @RequestBody List<String> studentIds) {
         try {
             enrollmentService.enrollStudentsToClass(classId, studentIds);
@@ -119,7 +119,7 @@ public class ClassController {
     @GetMapping("/classes/{classId}/students")
     public ApiResponse<List<StudentResponse>> getStudentsInClass(
             @PathVariable int educationalUnitId,
-            @PathVariable Long classId) {
+            @PathVariable Integer classId) {
 
         List<StudentResponse> students = enrollmentService.getStudentsInClass(classId);
 
@@ -131,7 +131,7 @@ public class ClassController {
     @GetMapping("/classes/{classId}/available-students")
     public ApiResponse<List<StudentResponse>> getAvailableStudentsForClass(
             @PathVariable int educationalUnitId,
-            @PathVariable Long classId) {
+            @PathVariable Integer classId) {
 
         List<StudentResponse> students = enrollmentService.getAvailableStudentsForClass(classId, educationalUnitId);
 
@@ -143,7 +143,7 @@ public class ClassController {
     @DeleteMapping("/classes/{classId}/students/{studentId}")
     public ApiResponse<Void> unenrollStudentFromClass(
             @PathVariable int educationalUnitId,
-            @PathVariable Long classId,
+            @PathVariable Integer classId,
             @PathVariable String studentId) {
 
         enrollmentService.unenrollStudentFromClass(classId, studentId);
@@ -156,8 +156,8 @@ public class ClassController {
     @DeleteMapping("/classes/{classId}/enrollments/{enrollmentId}")
     public ApiResponse<Void> removeEnrollmentFromClass(
             @PathVariable int educationalUnitId,
-            @PathVariable Long classId,
-            @PathVariable Long enrollmentId) {
+            @PathVariable Integer classId,
+            @PathVariable Integer enrollmentId) {
 
         try {
             enrollmentService.removeEnrollment(enrollmentId, classId);

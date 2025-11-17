@@ -4,6 +4,7 @@ import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.*;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.mapper.SectionMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,12 @@ public class CourseEnrollmentService {
     private final StudentRepository studentRepository;
     private final CourseClassRepository courseClassRepository;
     private final SectionRepository sectionRepository;
+    private final SectionMapper sectionMapper;
+    private final ClassContentVisibilityRepository visibilityRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final AssignmentSubmissionRepository submissionRepository;
     private final QuizRepository quizRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
@@ -71,81 +77,65 @@ public class CourseEnrollmentService {
         }
     }
 
-    public EnrolledCourseContentResponse getEnrolledCourseContentByClassId(Long classId) {
+    public List<SectionResponse> getEnrolledCourseContentByClassIdStrict(Integer classId) {
+        CourseClass courseClass = courseClassRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_CLASS_NOT_FOUND));
+
+        Course course = courseRepository.findById(courseClass.getCourse().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
         try {
-            CourseClass courseClass = courseClassRepository.findById(classId)
-                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_CLASS_NOT_FOUND));
-            Course course = courseRepository.findById(courseClass.getCourse().getId())
-                    .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+            List<Section> sections = sectionRepository.findByCourseIdOrderByOrderIndex(course.getId());
 
-            List<Section> sections = sectionRepository.findByCourseId(course.getId());
-            Set<SectionContentResponse> sectionContents = sections.stream()
-                    .map(sc -> {
-                        SectionContentResponse response = SectionContentResponse.builder()
-                                .title(sc.getTitle())
-                                .description(sc.getDescription())
-                                .id(sc.getId())
-                                .lessons(
-                                        new HashSet<>(sc.getLessons().stream()
-                                                .map(lesson -> LessonContentResponse.builder()
-                                                        .id(lesson.getId())
-                                                        .title(lesson.getTitle())
-                                                        .content(lesson.getContent())
-                                                        .description(lesson.getDescription())
-                                                        .videoUrl(lesson.getVideoUrl())
-                                                        .build()).collect(Collectors.toSet()
-                                                ))).build();
+            return sections.stream()
+                    .filter(section -> isContentVisibleToClass(classId, "SECTION", section.getId()))
+                    .map(section -> {
+                        SectionResponse response = sectionMapper.toSectionResponse(section);
+
+                        // Filter lessons
+                        if (response.getLessons() != null) {
+                            Set<LessonResponse> filteredLessons = response.getLessons().stream()
+                                    .filter(lesson -> isContentVisibleToClass(classId, "LESSON", lesson.getId()))
+                                    .collect(Collectors.toSet());
+                            response.setLessons(filteredLessons);
+                        }
+
+                        // Filter quizzes
+                        if (response.getQuizs() != null) {
+                            Set<QuizResponse> filteredQuizzes = response.getQuizs().stream()
+                                    .filter(quiz -> isContentVisibleToClass(classId, "QUIZ", quiz.getId()))
+                                    .collect(Collectors.toSet());
+                            response.setQuizs(filteredQuizzes);
+                        }
+
+                        // Filter assignments
+                        if (response.getAssignments() != null) {
+                            Set<AssignmentResponse> filteredAssignments = response.getAssignments().stream()
+                                    .filter(assignment -> isContentVisibleToClass(classId, "ASSIGNMENT", assignment.getId()))
+                                    .collect(Collectors.toSet());
+                            response.setAssignments(filteredAssignments);
+                        }
+
                         return response;
-                    }).collect(Collectors.toSet());
+                    })
+                    .collect(Collectors.toList());
 
-            return EnrolledCourseContentResponse.builder()
-                    .courseName(course.getCourseName())
-                    .description(course.getDescription())
-                    .schoolYear(courseClass.getCreatedAt().getYear() + 1900)
-                    .progressPercentage(0) // Placeholder for progress calculation
-                    .sections(sectionContents)
-                    .build();
-        } catch (AppException ae) {
-            throw ae;
         } catch (Exception e) {
+            log.error("Error getting course content for class {}: {}", classId, e.getMessage(), e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 
-//    public EnrolledCourseQuizResponse getEnrolledCourseQuizByClassId(Long classId) {
-//        Course course = courseClassRepository.findCourseIdById(classId);
-//        List<Section> sections = sectionRepository.findByCourseId(course.getId());
-//        List<List<Quiz>> quizzes = sections.stream()
-//                .map(section -> {
-//                    List<Quiz> quizListOfSection = quizRepository.findBySectionId(section.getId());
-//                    return quizListOfSection;
-//                }).toList();
-//
-//        List<List<Question>> questions = quizzes.stream()
-//                .map(quizList -> {
-//                    List<Question> questionListOfQuiz = quizList.stream()
-//                            .map(quiz -> quiz.getQuestions())
-//                            .flatMap(Collection::stream)
-//                            .toList();
-//                    return questionListOfQuiz;
-//                }).toList();
-//
-//        List<List<Answer>> answers = questions.stream()
-//                .map(questionList -> {
-//                    List<Answer> answerListOfQuestion = questionList.stream()
-//                            .map(question -> question.getAnswers())
-//                            .flatMap(Collection::stream)
-//                            .toList();
-//                    return answerListOfQuestion;
-//                }).toList();
-//
-//    }
+    private boolean isContentVisibleToClass(Integer classId, String contentType, Integer contentId) {
+        return visibilityRepository.existsByCourseClassIdAndContentTypeAndContentIdAndIsVisible(
+                classId, contentType, contentId, true);
+    }
 
     /**
      * Enroll multiple students to a class
      */
     @Transactional
-    public void enrollStudentsToClass(Long classId, List<String> studentIds) {
+    public void enrollStudentsToClass(Integer classId, List<String> studentIds) {
         validateEnrollmentRequest(classId, studentIds);
 
         CourseClass courseClass = classRepository.findById(classId)
@@ -204,7 +194,7 @@ public class CourseEnrollmentService {
     /**
      * Get students enrolled in a class
      */
-    public List<StudentResponse> getStudentsInClass(Long classId) {
+    public List<StudentResponse> getStudentsInClass(Integer classId) {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
@@ -215,13 +205,27 @@ public class CourseEnrollmentService {
                 return new ArrayList<>();
             }
 
-            // Batch fetch student details
+            // Get courseId from the class
+            Integer courseId = courseClass.getCourse().getId();
+
+            // Get total assignments and quizzes for this course (through sections)
+            int totalAssignments = assignmentRepository.countByCourseId(courseId);
+            System.out.println ("tổng số bài tập: " + totalAssignments);
+
+            int totalQuizzes = quizRepository.countByCourseId(courseId);
+            System.out.println ("tổng số bài kiểm tra: "+ totalQuizzes);
+            // Batch fetch student details with statistics
             List<StudentResponse> students = new ArrayList<>();
             for (String studentId : studentIds) {
                 try {
                     ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
                     if (response != null && response.getResult() != null) {
-                        students.add(response.getResult());
+                        StudentResponse student = response.getResult();
+                        System.out.println ("user id của student: " + studentId);
+                        // Calculate statistics for this student
+                        enrichStudentWithStatistics(student, student.getId(), courseId, totalAssignments, totalQuizzes);
+
+                        students.add(student);
                     }
                 } catch (Exception e) {
                     log.warn("Could not fetch student details for studentId: {}", studentId, e);
@@ -239,7 +243,7 @@ public class CourseEnrollmentService {
     /**
      * Get available students for a class (not yet enrolled)
      */
-    public List<StudentResponse> getAvailableStudentsForClass(Long classId, Integer educationalUnitId) {
+    public List<StudentResponse> getAvailableStudentsForClass(Integer classId, Integer educationalUnitId) {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
@@ -270,7 +274,7 @@ public class CourseEnrollmentService {
      * Unenroll a student from a class
      */
     @Transactional
-    public void unenrollStudentFromClass(Long classId, String studentId) {
+    public void unenrollStudentFromClass(Integer classId, String studentId) {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
@@ -301,7 +305,7 @@ public class CourseEnrollmentService {
      * Remove a specific enrollment by ID
      */
     @Transactional
-    public void removeEnrollment(Long enrollmentId, Long classId) {
+    public void removeEnrollment(Integer enrollmentId, Integer classId) {
         CourseEnrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_ENROLLMENT_NOT_FOUND));
 
@@ -325,27 +329,6 @@ public class CourseEnrollmentService {
             log.error("Error removing enrollment {} from class {}: {}", enrollmentId, classId, e.getMessage(), e);
             throw new AppException(ErrorCode.COURSE_UNENROLLMENT_FAILED);
         }
-    }
-
-    /**
-     * Check if a student is enrolled in a class
-     */
-    public boolean isStudentEnrolledInClass(Long classId, String studentId) {
-        return enrollmentRepository.existsByClassIdAndStudentId(classId, studentId);
-    }
-
-    /**
-     * Get enrollment count for a class
-     */
-    public int getEnrollmentCountByClass(Long classId) {
-        return enrollmentRepository.countByClassId(classId);
-    }
-
-    /**
-     * Get list of enrolled student IDs for a class
-     */
-    public List<String> getEnrolledStudentIds(Long classId) {
-        return enrollmentRepository.findStudentIdsByClassId(classId);
     }
 
     /**
@@ -373,7 +356,7 @@ public class CourseEnrollmentService {
 
     // Private helper methods
 
-    private void validateEnrollmentRequest(Long classId, List<String> studentIds) {
+    private void validateEnrollmentRequest(Integer classId, List<String> studentIds) {
         if (classId == null || classId <= 0) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
@@ -423,5 +406,59 @@ public class CourseEnrollmentService {
         }
 
         return validStudents;
+    }
+
+    private void enrichStudentWithStatistics(StudentResponse student, String studentId,
+                                             Integer courseId, int totalAssignments, int totalQuizzes) {
+        try {
+            // Get submitted assignments count
+            int submittedAssignments = submissionRepository.countSubmittedAssignmentsByStudentAndCourse(studentId, courseId);
+
+            // Get completed quizzes count
+            int completedQuizzes = quizAttemptRepository.countCompletedQuizzesByStudentAndCourse(studentId, courseId);
+
+            // Calculate average score from both assignments and quizzes
+            Double averageScore = calculateAverageScore(studentId, courseId);
+
+            // Set statistics
+            student.setSubmittedAssignments(submittedAssignments);
+            student.setTotalAssignments(totalAssignments);
+            student.setCompletedQuizzes(completedQuizzes);
+            student.setTotalQuizzes(totalQuizzes);
+            student.setAverageScore(averageScore != null ? averageScore.intValue() : 0);
+
+        } catch (Exception e) {
+            log.warn("Error calculating statistics for student {}: {}", studentId, e.getMessage());
+            // Set default values if calculation fails
+            student.setSubmittedAssignments(0);
+            student.setTotalAssignments(totalAssignments);
+            student.setCompletedQuizzes(0);
+            student.setTotalQuizzes(totalQuizzes);
+            student.setAverageScore(0);
+        }
+    }
+
+    private Double calculateAverageScore(String studentId, Integer courseId) {
+        try {
+            // Get average assignment score
+            Double avgAssignmentScore = submissionRepository.getAverageScoreByStudentAndCourse(studentId, courseId);
+
+            // Get average quiz score
+            Double avgQuizScore = quizAttemptRepository.getAverageScoreByStudentAndCourse(studentId, courseId);
+
+            // Calculate combined average
+            if (avgAssignmentScore != null && avgQuizScore != null) {
+                return (avgAssignmentScore + avgQuizScore) / 2.0;
+            } else if (avgAssignmentScore != null) {
+                return avgAssignmentScore;
+            } else if (avgQuizScore != null) {
+                return avgQuizScore;
+            }
+
+            return null;
+        } catch (Exception e) {
+            log.warn("Error calculating average score for student {}: {}", studentId, e.getMessage());
+            return null;
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { Atom, BookOpen, Boxes, MessagesSquare, Rocket } from "lucide-react";
+import {BookOpen, Boxes, MessagesSquare} from "lucide-react";
 
 export const course_tabs = [
   {
@@ -7,19 +7,9 @@ export const course_tabs = [
     icon: BookOpen,
   },
   {
-    id: "personal_assignments",
-    label: "Bài tập cá nhân",
-    icon: Rocket,
-  },
-  {
     id: "group_assignments",
     label: "Bài tập nhóm",
     icon: Boxes,
-  },
-  {
-    id: "quiz",
-    label: "Quiz và kiểm tra",
-    icon: Atom,
   },
   {
     id: "score_feedback",

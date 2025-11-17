@@ -2,6 +2,7 @@ import axiosInstance from "../httpClient/axiosInstance";
 import type { CourseClassRequest } from "../request/courseClassRequest";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import type { CourseClassResponse } from "../response/courseClassResponse";
+import type { ClassStudentStatsResponse } from "../response/studentEnrollmentResponse";
 import type { StudentResponse } from "../response/studentResponse";
 
 export const createClass = async (
@@ -80,6 +81,9 @@ export const getStudentsInClass = async (
   const response = await axiosInstance.get<ApiResponse<StudentResponse[]>>(
     `/course-management/admin/educationalUnit/${educationalUnitId}/classes/${classId}/students`
   );
+
+  console.log("DATA FROM BACKEND:", response.data.result);
+  
   return response.data.result;
 };
 
@@ -102,3 +106,10 @@ export const unenrollStudentFromClass = async (
     `/course-management/admin/educationalUnit/${educationalUnitId}/classes/${classId}/students/${studentId}`
   );
 };
+
+export const getClassStatisticsByClass = async (educationalUnitId: number,classId: number): Promise<ClassStudentStatsResponse> => {
+  const response = await axiosInstance.get<ApiResponse<ClassStudentStatsResponse>>(
+    `/course-management/admin/educationalUnit/${educationalUnitId}/classes/${classId}/statistics`,
+  )
+  return response.data.result
+}

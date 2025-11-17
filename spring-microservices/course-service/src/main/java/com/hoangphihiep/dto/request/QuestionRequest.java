@@ -34,7 +34,7 @@ public class QuestionRequest {
     private List<String> attachments;
 
     @NotNull(message = "Score is required")
-    private Integer score;
+    private Double score;
 
     private Date createdAt;
 
