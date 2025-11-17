@@ -19,9 +19,21 @@ public class PublishedCourseResponse {
 
     private CourseResponse course;
 
-    private CourseDetailResponse courseDetail;
-
     private CourseTypeResponse courseType;
+
+    private String description;
+
+    private String courseIntroduction;
+
+    private String courseImage;
+
+    private String courseVideo;
+
+    private String learnerAchievements;
+
+    private String courseLearner;
+
+    private List<String> courseTarget;
 
     private BigDecimal coursePrice;
 

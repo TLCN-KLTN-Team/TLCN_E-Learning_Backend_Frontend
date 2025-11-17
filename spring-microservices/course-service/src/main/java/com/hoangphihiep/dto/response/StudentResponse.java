@@ -39,6 +39,16 @@ public class StudentResponse {
 
     private EducationalUnitResponse educationalUnit;
 
+    private Integer submittedAssignments;
+
+    private Integer totalAssignments;
+
+    private Integer completedQuizzes;
+
+    private Integer totalQuizzes;
+
+    private Integer averageScore;
+
     private String accountStatus;
 }
 

@@ -2,7 +2,7 @@ package com.hoangphihiep.controller.Admin;
 
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.PublishedCourseResponse;
-import com.hoangphihiep.service.PublishedCourseService;
+import com.hoangphihiep.service.PublishedCourseTeacherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class AdminPublishedCourseController {
 
-    private final PublishedCourseService publishedCourseService;
+    private final PublishedCourseTeacherService publishedCourseTeacherService;
 
     @GetMapping
     public ApiResponse<Page<PublishedCourseResponse>> getAllPublishedCourses(
@@ -27,7 +27,7 @@ public class AdminPublishedCourseController {
                 educationalUnitId, status);
 
         // Tạo method mới trong service hoặc sử dụng existing method
-        Page<PublishedCourseResponse> response = publishedCourseService
+        Page<PublishedCourseResponse> response = publishedCourseTeacherService
                 .getPublishedCoursesForAdmin(educationalUnitId, status, page, size);
 
         return ApiResponse.<Page<PublishedCourseResponse>>builder()
@@ -43,7 +43,7 @@ public class AdminPublishedCourseController {
             @RequestParam(defaultValue = "10") int size) {
 
         log.info("Admin getting pending courses for educational unit: {}", educationalUnitId);
-        Page<PublishedCourseResponse> response = publishedCourseService.getPendingCoursesForAdmin(
+        Page<PublishedCourseResponse> response = publishedCourseTeacherService.getPendingCoursesForAdmin(
                 educationalUnitId, page, size);
 
         return ApiResponse.<Page<PublishedCourseResponse>>builder()
@@ -58,7 +58,7 @@ public class AdminPublishedCourseController {
             @PathVariable Integer publishedCourseId) {
 
         log.info("Admin approving published course ID: {}", publishedCourseId);
-        PublishedCourseResponse response = publishedCourseService.approveCourse(publishedCourseId);
+        PublishedCourseResponse response = publishedCourseTeacherService.approveCourse(publishedCourseId);
 
         return ApiResponse.<PublishedCourseResponse>builder()
                 .message("Course approved successfully")
@@ -73,7 +73,7 @@ public class AdminPublishedCourseController {
             @RequestParam String reason) {
 
         log.info("Admin rejecting published course ID: {} with reason: {}", publishedCourseId, reason);
-        PublishedCourseResponse response = publishedCourseService.rejectCourse(publishedCourseId, reason);
+        PublishedCourseResponse response = publishedCourseTeacherService.rejectCourse(publishedCourseId, reason);
 
         return ApiResponse.<PublishedCourseResponse>builder()
                 .message("Course rejected successfully")
@@ -87,7 +87,7 @@ public class AdminPublishedCourseController {
             @PathVariable Integer publishedCourseId) {
 
         log.info("Admin getting published course by ID: {}", publishedCourseId);
-        PublishedCourseResponse response = publishedCourseService.getPublishedCourseById(publishedCourseId);
+        PublishedCourseResponse response = publishedCourseTeacherService.getPublishedCourseById(publishedCourseId);
 
         return ApiResponse.<PublishedCourseResponse>builder()
                 .message("Get published course successfully")

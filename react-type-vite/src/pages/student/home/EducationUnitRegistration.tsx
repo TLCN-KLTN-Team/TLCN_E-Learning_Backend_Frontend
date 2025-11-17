@@ -392,6 +392,142 @@ const EducationUnitRegistration = () => {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Education Unit Information */}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Tài khoản quản trị viên
+                </CardTitle>
+                <CardDescription>Tạo tài khoản quản trị viên cho đơn vị đào tạo</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="adminName">Tên đăng nhập *</Label>
+                  <Input
+                    id="adminName"
+                    value={formData.adminName}
+                    onChange={(e) => handleInputChange("adminName", e.target.value)}
+                    placeholder="admin"
+                    required
+                    className={validationErrors.adminName ? "border-red-500 focus:border-red-500" : ""}
+                  />
+                  <FieldError error={validationErrors.adminName} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="adminPassword">Mật khẩu *</Label>
+                    <div className="relative">
+                      <Input
+                        id="adminPassword"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.adminPassword}
+                        onChange={(e) => handleInputChange("adminPassword", e.target.value)}
+                        placeholder="Nhập mật khẩu"
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Mật khẩu phải có ít nhất 6 ký tự</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="adminConfirmPassword">Xác nhận mật khẩu *</Label>
+                    <div className="relative">
+                      <Input
+                        id="adminConfirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.adminConfirmPassword}
+                        onChange={(e) => handleInputChange("adminConfirmPassword", e.target.value)}
+                        placeholder="Nhập lại mật khẩu"
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Representative Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Thông tin người đại diện
+                </CardTitle>
+                <CardDescription>Thông tin của người đại diện chính thức của đơn vị</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="representativeName">Họ và tên *</Label>
+                    <Input
+                      id="representativeName"
+                      value={formData.representativeName}
+                      onChange={(e) => handleInputChange("representativeName", e.target.value)}
+                      placeholder="Nhập họ và tên"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="representativePosition">Chức vụ *</Label>
+                    <Input
+                      id="representativePosition"
+                      value={formData.representativePosition}
+                      onChange={(e) => handleInputChange("representativePosition", e.target.value)}
+                      placeholder="Hiệu trưởng, Giám đốc..."
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="representativePhone">Số điện thoại *</Label>
+                    <Input
+                      id="representativePhone"
+                      value={formData.representativePhone}
+                      onChange={(e) => handleInputChange("representativePhone", e.target.value)}
+                      placeholder="Nhập số điện thoại"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="representativeEmail">Email *</Label>
+                    <Input
+                      id="representativeEmail"
+                      type="email"
+                      value={formData.representativeEmail}
+                      onChange={(e) => handleInputChange("representativeEmail", e.target.value)}
+                      placeholder="Nhập email"
+                      required
+                      className={validationErrors.representativeEmail ? "border-red-500 focus:border-red-500" : ""}
+                    />
+                    <FieldError error={validationErrors.representativeEmail} />
+                    <p className="text-xs text-muted-foreground">Email này sẽ được dùng cho tài khoản quản trị viên</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -529,140 +665,7 @@ const EducationUnitRegistration = () => {
             </Card>
 
             {/* Admin Account Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Tài khoản quản trị viên
-                </CardTitle>
-                <CardDescription>Tạo tài khoản quản trị viên cho đơn vị đào tạo</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="adminName">Tên đăng nhập *</Label>
-                  <Input
-                    id="adminName"
-                    value={formData.adminName}
-                    onChange={(e) => handleInputChange("adminName", e.target.value)}
-                    placeholder="admin"
-                    required
-                    className={validationErrors.adminName ? "border-red-500 focus:border-red-500" : ""}
-                  />
-                  <FieldError error={validationErrors.adminName} />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="adminPassword">Mật khẩu *</Label>
-                    <div className="relative">
-                      <Input
-                        id="adminPassword"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.adminPassword}
-                        onChange={(e) => handleInputChange("adminPassword", e.target.value)}
-                        placeholder="Nhập mật khẩu"
-                        required
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Mật khẩu phải có ít nhất 6 ký tự</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="adminConfirmPassword">Xác nhận mật khẩu *</Label>
-                    <div className="relative">
-                      <Input
-                        id="adminConfirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={formData.adminConfirmPassword}
-                        onChange={(e) => handleInputChange("adminConfirmPassword", e.target.value)}
-                        placeholder="Nhập lại mật khẩu"
-                        required
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Representative Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Thông tin người đại diện
-                </CardTitle>
-                <CardDescription>Thông tin của người đại diện chính thức của đơn vị</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="representativeName">Họ và tên *</Label>
-                    <Input
-                      id="representativeName"
-                      value={formData.representativeName}
-                      onChange={(e) => handleInputChange("representativeName", e.target.value)}
-                      placeholder="Nhập họ và tên"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="representativePosition">Chức vụ *</Label>
-                    <Input
-                      id="representativePosition"
-                      value={formData.representativePosition}
-                      onChange={(e) => handleInputChange("representativePosition", e.target.value)}
-                      placeholder="Hiệu trưởng, Giám đốc..."
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="representativePhone">Số điện thoại *</Label>
-                    <Input
-                      id="representativePhone"
-                      value={formData.representativePhone}
-                      onChange={(e) => handleInputChange("representativePhone", e.target.value)}
-                      placeholder="Nhập số điện thoại"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="representativeEmail">Email *</Label>
-                    <Input
-                      id="representativeEmail"
-                      type="email"
-                      value={formData.representativeEmail}
-                      onChange={(e) => handleInputChange("representativeEmail", e.target.value)}
-                      placeholder="Nhập email"
-                      required
-                      className={validationErrors.representativeEmail ? "border-red-500 focus:border-red-500" : ""}
-                    />
-                    <FieldError error={validationErrors.representativeEmail} />
-                    <p className="text-xs text-muted-foreground">Email này sẽ được dùng cho tài khoản quản trị viên</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            
 
             {/* Submit Button */}
             <div className="flex justify-center pt-6">

@@ -53,8 +53,14 @@ public class PublishedCourseMapper {
         return PublishedCourseResponse.builder()
                 .id(publishedCourse.getId())
                 .course(courseMapper.toCourseResponse(publishedCourse.getCourse()))
-                .courseDetail(toCourseDetailResponse(publishedCourse.getCourseDetail()))
                 .courseType(courseTypeMapper.toCourseTypeResponse(publishedCourse.getCourseType()))
+                .description(publishedCourse.getDescription())
+                .courseIntroduction(publishedCourse.getCourseIntroduction())
+                .courseImage(publishedCourse.getCourseImage())
+                .courseVideo(publishedCourse.getCourseVideo())
+                .learnerAchievements(publishedCourse.getLearnerAchievements())
+                .courseLearner(publishedCourse.getCourseLearner())
+                .courseTarget(publishedCourse.getCourseTarget())
                 .coursePrice(publishedCourse.getCoursePrice())
                 .status(publishedCourse.getStatus())
                 .statusText(getStatusText(publishedCourse.getStatus()))
@@ -64,23 +70,6 @@ public class PublishedCourseMapper {
                 .totalPublishedLessons(totalLessons)
                 .totalPublishedQuizzes(totalQuizzes)
                 .totalPublishedAssignments(totalAssignments)
-                .build();
-    }
-
-    private CourseDetailResponse toCourseDetailResponse(CourseDetail courseDetail) {
-        if (courseDetail == null) {
-            return null;
-        }
-
-        return CourseDetailResponse.builder()
-                .id(courseDetail.getId())
-                .description(courseDetail.getDescription())
-                .courseIntroduction(courseDetail.getCourseIntroduction())
-                .courseImage(courseDetail.getCourseImage())
-                .courseVideo(courseDetail.getCourseVideo())
-                .learnerAchievements(courseDetail.getLearnerAchievements())
-                .courseLearner(courseDetail.getCourseLearner())
-                .courseTarget(courseDetail.getCourseTarget())
                 .build();
     }
 

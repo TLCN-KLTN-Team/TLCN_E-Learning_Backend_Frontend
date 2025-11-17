@@ -116,7 +116,7 @@ const QuizModalEditor: React.FC<{
         endTime: undefined,
       })
     } catch (err) {
-      console.error("[v0] Lỗi khi lưu bài kiểm tra:", err)
+      console.error("Lỗi khi lưu bài kiểm tra:", err)
       setErrors([{ field: "general", message: "Không thể lưu bài kiểm tra. Vui lòng thử lại." }])
     } finally {
       setIsLoading(false)

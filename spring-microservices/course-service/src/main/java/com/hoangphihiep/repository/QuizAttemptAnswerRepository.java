@@ -11,13 +11,21 @@ import java.util.List;
 @Repository
 public interface QuizAttemptAnswerRepository extends JpaRepository<QuizAttemptAnswer, Integer> {
 
-    List<QuizAttemptAnswer> findByQuizAttemptId(int quizAttemptId);
+    /**
+     * Find all answers for a quiz attempt
+     */
+    @Query("SELECT qaa FROM QuizAttemptAnswer qaa " +
+            "WHERE qaa.quizAttempt.id = :attemptId " +
+            "ORDER BY qaa.question.orderIndex")
+    List<QuizAttemptAnswer> findByQuizAttemptId(@Param("attemptId") Integer attemptId);
 
-    List<QuizAttemptAnswer> findByQuestionId(int questionId);
-
-    @Query("SELECT qaa FROM QuizAttemptAnswer qaa WHERE qaa.quizAttempt.idUser = :userId")
-    List<QuizAttemptAnswer> findByUserId(@Param("userId") String userId);
-
-    @Query("SELECT qaa FROM QuizAttemptAnswer qaa WHERE qaa.quizAttempt.id = :attemptId AND qaa.question.id = :questionId")
-    List<QuizAttemptAnswer> findByQuizAttemptIdAndQuestionId(@Param("attemptId") int attemptId, @Param("questionId") int questionId);
+    /**
+     * Find answers for a quiz attempt with question details
+     */
+    @Query("SELECT qaa FROM QuizAttemptAnswer qaa " +
+            "LEFT JOIN FETCH qaa.question q " +
+            "LEFT JOIN FETCH qaa.selectedAnswer " +
+            "WHERE qaa.quizAttempt.id = :attemptId " +
+            "ORDER BY q.orderIndex")
+    List<QuizAttemptAnswer> findByQuizAttemptIdWithDetails(@Param("attemptId") Integer attemptId);
 }

@@ -1,17 +1,23 @@
 package com.hoangphihiep.controller.student;
 
-import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.EnrolledCoursesResponse;
-import com.hoangphihiep.dto.response.PaginatedResponse;
+import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.service.CourseClassService;
 import com.hoangphihiep.service.CourseEnrollmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/student/course-enrollments")
 @RequiredArgsConstructor
 public class StudentCourseController {
+
     private final CourseEnrollmentService enrollmentService;
+    private final CourseClassService classService;
 
     // get all paging courses
     @GetMapping("/catalog")
@@ -26,19 +32,21 @@ public class StudentCourseController {
 
     // get contents
     @GetMapping("/class/{classId}/contents")
-    public ApiResponse<?> getEnrolledCourseContents(@PathVariable Long classId) {
-        var contents = enrollmentService.getEnrolledCourseContentByClassId(classId);
-        return ApiResponse.success(
-                contents,
-                "Get enrolled course contents successfully"
-        );
+    public ApiResponse<?> getEnrolledCourseContents(@PathVariable Integer classId) {
+        var contents = enrollmentService.getEnrolledCourseContentByClassIdStrict(classId);
+        return ApiResponse.<List<SectionResponse>>builder()
+                .result(contents)
+                .build();
     }
 
-    // get personal assignments
+    @GetMapping("/class/{classId}")
+    public ApiResponse<CourseClassResponse> getClassesById(
+            @PathVariable Integer classId) {
 
-    // get group assignments
+        CourseClassResponse classes = classService.getClassesById(classId);
 
-    // get quizzes
-
-    // get scores and feedback
+        return ApiResponse.<CourseClassResponse>builder()
+                .result(classes)
+                .build();
+    }
 }

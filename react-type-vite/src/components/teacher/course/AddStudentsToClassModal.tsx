@@ -63,7 +63,7 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
       setAllAvailableStudents(available || [])
       setEnrolledStudents(enrolled || [])
     } catch (err: any) {
-      console.error("[v0] Error loading student data:", err)
+      console.error("Error loading student data:", err)
       setError("Không thể tải dữ liệu sinh viên. Vui lòng thử lại.")
       toast.error("Không thể tải dữ liệu sinh viên")
     } finally {
@@ -122,7 +122,7 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
       onStudentsAdded()
       onClose()
     } catch (err: any) {
-      console.error("[v0] Error adding students:", err)
+      console.error("Error adding students:", err)
       toast.error(err?.response?.data?.message || "Không thể thêm sinh viên vào lớp")
     } finally {
       setIsLoading(false)
@@ -137,7 +137,7 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
         toast.success("Đã loại bỏ sinh viên khỏi lớp thành công!")
         await loadData()
       } catch (err: any) {
-        console.error("[v0] Error unenrolling student:", err)
+        console.error("Error unenrolling student:", err)
         toast.error(err?.response?.data?.message || "Không thể loại bỏ sinh viên khỏi lớp")
       } finally {
         setIsLoading(false)

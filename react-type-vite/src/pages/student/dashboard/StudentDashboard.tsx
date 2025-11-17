@@ -5,10 +5,9 @@ import "../../../styles/student-dashboard.css";
 import CourseCard from "../../../components/student/dashboard/CourseCard";
 import Header from "./Header";
 import Footer from "./Footer";
-import courseEnrollmentApi, {
-  type EnrolledCoursesResponse,
-} from "@/services/api/student/courseEnrollmentApi";
 import { toast } from "react-toastify";
+import type { EnrolledCoursesResponse } from "@/services/api/student/courseEnrollmentApi";
+import { getCatalogEnrolledCourses } from "@/services/api/student/courseEnrollmentApi"
 
 interface Course {
   id: number;
@@ -91,7 +90,7 @@ export const StudentDashboard = () => {
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
       try {
-        const data = await courseEnrollmentApi.getCatalogEnrolledCourses(
+        const data = await getCatalogEnrolledCourses(
           pageNumber,
           pageSize,
           searchTerm

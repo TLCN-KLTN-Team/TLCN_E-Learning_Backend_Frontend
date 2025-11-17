@@ -159,7 +159,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections,educat
       setSuccessMessage("Khóa học đã được lưu thành công!")
       setTimeout(() => setSuccessMessage(null), 5000)
     } catch (err) {
-      console.error("[v0] Error saving course:", err)
+      console.error("Error saving course:", err)
       const errorMessage = err instanceof Error ? err.message : "Không thể lưu khóa học. Vui lòng thử lại."
       setError(errorMessage)
     } finally {
@@ -189,9 +189,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections,educat
             {hasUnsavedChanges && <span className="text-orange-600 font-medium">● Có thay đổi chưa lưu</span>}
           </div>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
-          <PlusCircle className="mr-2 h-4 w-4" /> Thêm Section
-        </Button>
       </div>
 
       {error && (
@@ -210,18 +207,26 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections,educat
 
       <div className="space-y-4">
         {sortedSections.length > 0 ? (
-          sortedSections.map((section, index) => (
-            <SectionItem
-              key={section.id}
-              section={section}
-              index={index}
-              courseId={courseId}
-              educationalUnitId={educationalUnitId}
-              onUpdate={handleUpdateSection}
-              onDelete={handleDeleteSection}
-              onReorder={handleSectionReorder}
-            />
-          ))
+          <>
+            {sortedSections.map((section, index) => (
+              <SectionItem
+                key={section.id}
+                section={section}
+                index={index}
+                courseId={courseId}
+                educationalUnitId={educationalUnitId}
+                onUpdate={handleUpdateSection}
+                onDelete={handleDeleteSection}
+                onReorder={handleSectionReorder}
+              />
+            ))}
+            {/* Nút thêm section ở cuối danh sách */}
+            <div className="flex justify-end pt-2">
+              <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <PlusCircle className="mr-2 h-4 w-4" /> Thêm Section
+              </Button>
+            </div>
+          </>
         ) : (
           <div className="text-center py-12 border-dashed border-2 rounded-lg bg-card">
             <div className="max-w-md mx-auto">

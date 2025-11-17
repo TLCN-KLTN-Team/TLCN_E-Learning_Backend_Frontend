@@ -59,15 +59,13 @@ const CoursePackagingPage = () => {
     courseId: courseId,
     courseTypeId: 1,
     coursePrice: 0,
-    courseDetail: {
-      description: "",
-      courseIntroduction: "",
-      courseImage: "",
-      courseVideo: "",
-      learnerAchievements: "",
-      courseLearner: "",
-      courseTarget: []
-    }
+    description: "",
+    courseIntroduction: "",
+    courseImage: "",
+    courseVideo: "",
+    learnerAchievements: "",
+    courseLearner: "",
+    courseTarget: []
   })
 
   const [targetInput, setTargetInput] = useState("")
@@ -113,25 +111,23 @@ const CoursePackagingPage = () => {
             courseId: publishedData.course.id,
             courseTypeId: publishedData.courseType.id,
             coursePrice: publishedData.coursePrice,
-            courseDetail: {
-              description: publishedData.courseDetail.description || "",
-              courseIntroduction: publishedData.courseDetail.courseIntroduction || "",
-              courseImage: publishedData.courseDetail.courseImage || "",
-              courseVideo: publishedData.courseDetail.courseVideo || "",
-              learnerAchievements: publishedData.courseDetail.learnerAchievements || "",
-              courseLearner: publishedData.courseDetail.courseLearner || "",
-              courseTarget: Array.isArray(publishedData.courseDetail.courseTarget) 
-                ? publishedData.courseDetail.courseTarget 
-                : []
-            }
+            description: publishedData.description || "",
+            courseIntroduction: publishedData.courseIntroduction || "",
+            courseImage: publishedData.courseImage || "",
+            courseVideo: publishedData.courseVideo || "",
+            learnerAchievements: publishedData.learnerAchievements || "",
+            courseLearner: publishedData.courseLearner || "",
+            courseTarget: Array.isArray(publishedData.courseTarget) 
+              ? publishedData.courseTarget 
+              : []
           })
           
           // Set preview URLs for existing files
-          if (publishedData.courseDetail.courseImage) {
-            setImagePreview(publishedData.courseDetail.courseImage)
+          if (publishedData.courseImage) {
+            setImagePreview(publishedData.courseImage)
           }
-          if (publishedData.courseDetail.courseVideo) {
-            setVideoPreview(publishedData.courseDetail.courseVideo)
+          if (publishedData.courseVideo) {
+            setVideoPreview(publishedData.courseVideo)
           }
         }
       } catch (err) {
@@ -198,22 +194,25 @@ const CoursePackagingPage = () => {
   }
 
   const removeImage = () => {
-    setCourseImage(null)
-    setImagePreview("")
+    setCourseImage(null);
+    setImagePreview("");
+
     setFormData(prev => ({
       ...prev,
-      courseDetail: { ...prev.courseDetail, courseImage: "" }
-    }))
-  }
+      courseImage: ""
+    }));
+  };
 
   const removeVideo = () => {
-    setCourseVideo(null)
-    setVideoPreview("")
+    setCourseVideo(null);
+    setVideoPreview("");
+
     setFormData(prev => ({
       ...prev,
-      courseDetail: { ...prev.courseDetail, courseVideo: "" }
-    }))
-  }
+      courseVideo: ""  // cập nhật trực tiếp
+    }));
+  };
+
 
   const toggleItemPublish = async (
     type: "section" | "lesson" | "quiz" | "assignment",
@@ -310,11 +309,11 @@ const CoursePackagingPage = () => {
       setExistingPublish(result)
       
       // Update preview URLs if new files were uploaded
-      if (result.courseDetail.courseImage) {
-        setImagePreview(result.courseDetail.courseImage)
+      if (result.courseImage) {
+        setImagePreview(result.courseImage)
       }
-      if (result.courseDetail.courseVideo) {
-        setVideoPreview(result.courseDetail.courseVideo)
+      if (result.courseVideo) {
+        setVideoPreview(result.courseVideo)
       }
       
       showNotification("success", "Đã lưu bản nháp", "Thông tin khóa học đã được lưu")
@@ -326,12 +325,12 @@ const CoursePackagingPage = () => {
   }
 
   const handleSubmit = async () => {
-    if (!formData.courseDetail.description?.trim()) {
+    if (!formData.description?.trim()) {
       showNotification("error", "Thiếu thông tin", "Vui lòng nhập mô tả khóa học")
       setActiveStep("details")
       return
     }
-    if (!formData.courseDetail.courseIntroduction?.trim()) {
+    if (!formData.courseIntroduction?.trim()) {
       showNotification("error", "Thiếu thông tin", "Vui lòng nhập giới thiệu khóa học")
       setActiveStep("details")
       return
@@ -373,26 +372,20 @@ const CoursePackagingPage = () => {
 
   const addCourseTarget = () => {
     if (targetInput.trim()) {
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
-        courseDetail: {
-          ...prev.courseDetail,
-          courseTarget: [...prev.courseDetail.courseTarget, targetInput.trim()],
-        },
-      }))
-      setTargetInput("")
+        courseTarget: [...prev.courseTarget, targetInput.trim()]
+      }));
+      setTargetInput("");
     }
-  }
+  };
 
   const removeCourseTarget = (index: number) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      courseDetail: {
-        ...prev.courseDetail,
-        courseTarget: prev.courseDetail.courseTarget.filter((_, i) => i !== index),
-      },
-    }))
-  }
+      courseTarget: prev.courseTarget.filter((_, i) => i !== index)
+    }));
+  };
 
   const convertSectionData = (section: SectionResponse): ConvertedSectionData => {
     return {
@@ -806,13 +799,14 @@ const CoursePackagingPage = () => {
                   className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
                   rows={4}
                   disabled={!canEdit}
-                  value={formData.courseDetail.description}
+                  value={formData.description}
                   onChange={(e) =>
-                    setFormData((prev) => ({
+                    setFormData(prev => ({
                       ...prev,
-                      courseDetail: { ...prev.courseDetail, description: e.target.value },
+                      description: e.target.value
                     }))
                   }
+
                   placeholder="Nhập mô tả chi tiết về khóa học..."
                 />
               </div>
@@ -823,14 +817,11 @@ const CoursePackagingPage = () => {
                   className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
                   rows={3}
                   disabled={!canEdit}
-                  value={formData.courseDetail.courseIntroduction}
+                  value={formData.courseIntroduction}
                   onChange={(e) =>
-                    setFormData((prev) => ({
+                    setFormData(prev => ({
                       ...prev,
-                      courseDetail: {
-                        ...prev.courseDetail,
-                        courseIntroduction: e.target.value,
-                      },
+                      courseIntroduction: e.target.value
                     }))
                   }
                   placeholder="Giới thiệu ngắn gọn về khóa học..."
@@ -843,16 +834,14 @@ const CoursePackagingPage = () => {
                   className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
                   rows={3}
                   disabled={!canEdit}
-                  value={formData.courseDetail.learnerAchievements}
+                  value={formData.learnerAchievements}
                   onChange={(e) =>
-                    setFormData((prev) => ({
+                    setFormData(prev => ({
                       ...prev,
-                      courseDetail: {
-                        ...prev.courseDetail,
-                        learnerAchievements: e.target.value,
-                      },
+                      courseIntroduction: e.target.value
                     }))
                   }
+
                   placeholder="Học viên sẽ đạt được gì sau khóa học..."
                 />
               </div>
@@ -863,14 +852,11 @@ const CoursePackagingPage = () => {
                   className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
                   rows={3}
                   disabled={!canEdit}
-                  value={formData.courseDetail.courseLearner}
+                  value={formData.courseLearner}
                   onChange={(e) =>
-                    setFormData((prev) => ({
+                    setFormData(prev => ({
                       ...prev,
-                      courseDetail: {
-                        ...prev.courseDetail,
-                        courseLearner: e.target.value,
-                      },
+                      courseLearner: e.target.value
                     }))
                   }
                   placeholder="Khóa học phù hợp với ai..."
@@ -898,7 +884,7 @@ const CoursePackagingPage = () => {
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {formData.courseDetail.courseTarget.map((target, idx) => (
+                  {formData.courseTarget.map((target, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between p-2 bg-gray-50 rounded"
@@ -1080,7 +1066,7 @@ const CoursePackagingPage = () => {
                   <div className="flex">
                     <dt className="w-1/3 text-gray-600">Mục tiêu:</dt>
                     <dd className="flex-1 font-medium">
-                      {formData.courseDetail.courseTarget.length} mục tiêu
+                      {formData.courseTarget.length} mục tiêu
                     </dd>
                   </div>
                   <div className="flex">
@@ -1137,27 +1123,27 @@ const CoursePackagingPage = () => {
               <div>
                 <h3 className="font-medium mb-2">Thông tin chi tiết:</h3>
                 <div className="border rounded-lg p-4 space-y-3">
-                  {formData.courseDetail.description && (
+                  {formData.description && (
                     <div>
                       <div className="text-sm font-medium text-gray-600">Mô tả:</div>
                       <div className="text-sm mt-1 line-clamp-3">
-                        {formData.courseDetail.description}
+                        {formData.description}
                       </div>
                     </div>
                   )}
-                  {formData.courseDetail.courseIntroduction && (
+                  {formData.courseIntroduction && (
                     <div>
                       <div className="text-sm font-medium text-gray-600">Giới thiệu:</div>
                       <div className="text-sm mt-1 line-clamp-2">
-                        {formData.courseDetail.courseIntroduction}
+                        {formData.courseIntroduction}
                       </div>
                     </div>
                   )}
-                  {formData.courseDetail.courseTarget.length > 0 && (
+                  {formData.courseTarget.length > 0 && (
                     <div>
                       <div className="text-sm font-medium text-gray-600">Mục tiêu:</div>
                       <ul className="text-sm mt-1 space-y-1">
-                        {formData.courseDetail.courseTarget.map((target, idx) => (
+                        {formData.courseTarget.map((target, idx) => (
                           <li key={idx}>• {target}</li>
                         ))}
                       </ul>
@@ -1176,8 +1162,8 @@ const CoursePackagingPage = () => {
                 </div>
               </div>
 
-              {(!formData.courseDetail.description?.trim() ||
-                !formData.courseDetail.courseIntroduction?.trim() ||
+              {(!formData.description?.trim() ||
+                !formData.courseIntroduction?.trim() ||
                 publishStatus.publishedSections === 0) && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex items-start gap-2">
@@ -1185,10 +1171,10 @@ const CoursePackagingPage = () => {
                     <div>
                       <h4 className="font-medium text-yellow-800">Cần hoàn thiện thêm:</h4>
                       <ul className="text-sm text-yellow-700 mt-1 space-y-1">
-                        {!formData.courseDetail.description?.trim() && (
+                        {!formData.description?.trim() && (
                           <li>• Chưa có mô tả chi tiết khóa học</li>
                         )}
-                        {!formData.courseDetail.courseIntroduction?.trim() && (
+                        {!formData.courseIntroduction?.trim() && (
                           <li>• Chưa có giới thiệu khóa học</li>
                         )}
                         {publishStatus.publishedSections === 0 && (
@@ -1213,8 +1199,8 @@ const CoursePackagingPage = () => {
                 onClick={handleSubmit}
                 disabled={
                   loading ||
-                  !formData.courseDetail.description?.trim() ||
-                  !formData.courseDetail.courseIntroduction?.trim() ||
+                  !formData.description?.trim() ||
+                  !formData.courseIntroduction?.trim() ||
                   publishStatus.publishedSections === 0 ||
                   !canEdit
                 }

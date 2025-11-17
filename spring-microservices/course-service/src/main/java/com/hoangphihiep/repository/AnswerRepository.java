@@ -13,9 +13,5 @@ public interface AnswerRepository extends JpaRepository<Answer, Integer> {
 
     List<Answer> findByQuestionId(int questionId);
 
-    @Query("SELECT a FROM Answer a WHERE a.question.id = :questionId AND a.isCorrect = true")
-    List<Answer> findCorrectAnswersByQuestionId(@Param("questionId") int questionId);
-
-    @Query("SELECT a FROM Answer a WHERE a.question.id = :questionId ORDER BY a.orderIndex")
-    List<Answer> findByQuestionIdOrderByOrderIndex(@Param("questionId") int questionId);
+    List<Answer> findByQuestionIdAndIsCorrect(Integer questionId, Boolean isCorrect);
 }

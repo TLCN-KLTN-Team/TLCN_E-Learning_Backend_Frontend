@@ -255,58 +255,58 @@ const CourseApprovalDetailPage = () => {
               </h2>
 
               {/* Description */}
-              {course.courseDetail.description && (
+              {course.description && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Mô tả:</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.courseDetail.description}
+                    {course.description}
                   </p>
                 </div>
               )}
 
               {/* Introduction */}
-              {course.courseDetail.courseIntroduction && (
+              {course.courseIntroduction && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Giới thiệu:</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.courseDetail.courseIntroduction}
+                    {course.courseIntroduction}
                   </p>
                 </div>
               )}
 
               {/* Learner Achievements */}
-              {course.courseDetail.learnerAchievements && (
+              {course.learnerAchievements && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
                     Thành tựu học viên:
                   </h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.courseDetail.learnerAchievements}
+                    {course.learnerAchievements}
                   </p>
                 </div>
               )}
 
               {/* Course Learner */}
-              {course.courseDetail.courseLearner && (
+              {course.courseLearner && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
                     Đối tượng học viên:
                   </h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.courseDetail.courseLearner}
+                    {course.courseLearner}
                   </p>
                 </div>
               )}
 
               {/* Course Targets */}
-              {course.courseDetail.courseTarget && course.courseDetail.courseTarget.length > 0 && (
+              {course.courseTarget && course.courseTarget.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                     <Target className="w-4 h-4" />
                     Mục tiêu khóa học:
                   </h3>
                   <ul className="space-y-2">
-                    {course.courseDetail.courseTarget.map((target, idx) => (
+                    {course.courseTarget.map((target, idx) => (
                       <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
                         <span className="text-blue-600 mt-1">•</span>
                         <span>{target}</span>
@@ -318,18 +318,18 @@ const CourseApprovalDetailPage = () => {
             </div>
 
             {/* Media */}
-            {(course.courseDetail.courseImage || course.courseDetail.courseVideo) && (
+            {(course.courseImage || course.courseVideo) && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold mb-4">Media</h2>
 
-                {course.courseDetail.courseImage && (
+                {course.courseImage && (
                   <div className="mb-4">
                     <div className="flex items-center gap-2 mb-2">
                       <ImageIcon className="w-4 h-4 text-gray-600" />
                       <h3 className="text-sm font-medium text-gray-700">Ảnh khóa học:</h3>
                     </div>
                     <img
-                      src={course.courseDetail.courseImage}
+                      src={course.courseImage}
                       alt="Course"
                       className="w-full rounded-lg border"
                       onError={(e) => {
@@ -339,19 +339,19 @@ const CourseApprovalDetailPage = () => {
                   </div>
                 )}
 
-                {course.courseDetail.courseVideo && (
+                {course.courseVideo && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Video className="w-4 h-4 text-gray-600" />
                       <h3 className="text-sm font-medium text-gray-700">Video giới thiệu:</h3>
                     </div>
                     <a
-                      href={course.courseDetail.courseVideo}
+                      href={course.courseVideo}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline text-sm break-all"
                     >
-                      {course.courseDetail.courseVideo}
+                      {course.courseVideo}
                     </a>
                   </div>
                 )}

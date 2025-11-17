@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @Builder
@@ -21,9 +22,9 @@ public class QuizAttemptRequest {
     @NotNull(message = "Quiz ID is required")
     private Integer quizId;
 
-    private Double score;
-    private Double totalScore;
-    private Boolean isPassed;
     private Date submittedAt;
+
     private Integer timeSpent;
+
+    private List<QuizAnswerRequest> answers;
 }

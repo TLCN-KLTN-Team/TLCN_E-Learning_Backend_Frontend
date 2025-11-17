@@ -4,10 +4,9 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Users, Plus, Search, AlertCircle, Loader2, Eye, Trash2, ArrowLeft } from "lucide-react"
+import { Users, Plus, Search, AlertCircle, Loader2, Eye, Trash2} from 'lucide-react'
 import {
   getClassStatisticsByClass,
 } from "@/services/api/teacher/classManagementApi"
@@ -30,7 +29,6 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
   classData,
   courseId,
   educationalUnitId,
-  onBack,
 }) => {
   const [students, setStudents] = useState<StudentResponse[]>([])
   const [stats, setStats] = useState<ClassStudentStatsResponse | null>(null)
@@ -59,7 +57,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
       setStudents(studentsData)
       setStats(statsData)
     } catch (err) {
-      console.error("[v0] Error fetching class data:", err)
+      console.error("Error fetching class data:", err)
       setError("Không thể tải danh sách sinh viên. Vui lòng thử lại.")
     } finally {
       setLoading(false)
@@ -86,7 +84,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
       await classApi.unenrollStudentFromClass(educationalUnitId, classData.id, studentId);
       setStudents(students.filter((s) => s.studentId !== studentId))
     } catch (err) {
-      console.error("[v0] Error removing student:", err)
+      console.error("Error removing student:", err)
       alert("Không thể xóa sinh viên. Vui lòng thử lại.")
     } finally {
       setIsDeleting(null)
@@ -113,20 +111,13 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={onBack} className="mr-2 bg-transparent">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Quay Lại
-          </Button>
-          <div>
-            <h2 className="text-2xl font-semibold flex items-center gap-2">
-              <Users className="h-6 w-6 text-blue-600" />
-              {classData.className}
-            </h2>
-            <p className="text-muted-foreground mt-1">Mã lớp: {classData.classCode}</p>
-          </div>
+      <div className="flex justify-between items-start pb-4 border-b border-gray-200">
+        <div>
+          <h2 className="text-2xl font-semibold mb-1 flex items-center gap-2">
+            <Users className="h-6 w-6 text-blue-600" />
+            {classData.className}
+          </h2>
+          <p className="text-sm text-gray-600">Mã lớp: {classData.classCode}</p>
         </div>
         <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
           <Plus className="mr-2 h-4 w-4" />
@@ -136,36 +127,36 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
 
       {/* Statistics Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-gray-600 text-sm">Tổng Sinh Viên</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.totalStudents}</p>
+              <div>
+                <p className="text-gray-600 text-xs uppercase tracking-wide">Tổng Sinh Viên</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">{stats.totalStudents}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-gray-600 text-sm">Sinh Viên Hoạt Động</p>
-                <p className="text-3xl font-bold text-green-600">{stats.activeStudents}</p>
+              <div>
+                <p className="text-gray-600 text-xs uppercase tracking-wide">Sinh Viên Hoạt Động</p>
+                <p className="text-3xl font-bold text-green-600 mt-2">{stats.activeStudents}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-gray-600 text-sm">Điểm Trung Bình</p>
-                <p className="text-3xl font-bold text-orange-600">{stats.averageScore.toFixed(1)}</p>
+              <div>
+                <p className="text-gray-600 text-xs uppercase tracking-wide">Điểm Trung Bình</p>
+                <p className="text-3xl font-bold text-orange-600 mt-2">{stats.averageScore.toFixed(1)}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-gray-600 text-sm">Tỷ Lệ Hoàn Thành</p>
-                <p className="text-3xl font-bold text-purple-600">{(stats.completionRate * 100).toFixed(0)}%</p>
+              <div>
+                <p className="text-gray-600 text-xs uppercase tracking-wide">Tỷ Lệ Hoàn Thành</p>
+                <p className="text-3xl font-bold text-purple-600 mt-2">{(stats.completionRate * 100).toFixed(0)}%</p>
               </div>
             </CardContent>
           </Card>
@@ -237,7 +228,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
                           className={
                             student.accountStatus === "ACTIVE"
                               ? "bg-green-100 text-green-800"
-                              : student.accountStatus === "completed"
+                              : student.accountStatus === "COMPLETED"
                                 ? "bg-blue-100 text-blue-800"
                                 : "bg-gray-100 text-gray-800"
                           }
