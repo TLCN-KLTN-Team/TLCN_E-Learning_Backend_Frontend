@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Filter, Star, Users, Clock, RotateCcw, X } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
@@ -7,68 +7,140 @@ import { Card } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Checkbox } from "../../components/ui/checkbox";
 import { LoadingDots } from "../../components/ui/LoadingDots";
-import { ServerPagination } from "../../components/ui/ServerPagination";
+import { Pagination } from "../../components/ui/Pagination";
 import type {
   Filters,
   PublishedCourseResponse,
 } from "../../types/course.types";
-import type { PaginationRequest } from "../../types/pagination.types";
 import { CourseApiService } from "../../services/api/user/courseApi";
-import { useServerPagination } from "../../hooks/useServerPagination";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 
+import SearchFilterService from "@/services/api/user/searchfilters.api";
+import type { CompletionSuggestionResponse } from "@/services/api/user/searchfilters.api";
+import { toast } from "react-toastify";
+
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 const Course: React.FC = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
 
-  const [filters, setFilters] = useState<Filters>({
-    priceRange: [0, 500],
-    minRating: 0,
-    levels: [],
+  // Auto-completion state
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
+
+  // Get initial values from URL params
+  const getInitialSearchTerm = () => searchParams.get("keyword") || "";
+  const getInitialFilters = (): Filters => ({
+    priceRange: [
+      parseInt(searchParams.get("minPrice") || "0"),
+      parseInt(searchParams.get("maxPrice") || "500"),
+    ],
+    minRating: parseInt(searchParams.get("minRating") || "0"),
+    levels: searchParams.getAll("levels"),
     practiceTypes: [],
-    categories: [],
+    categories: searchParams.getAll("categories"),
     duration: [],
   });
 
-  // Fetch function for server pagination - send filter params to server
-  const fetchCourses = useCallback(
-    async (params: PaginationRequest) => {
-      return await CourseApiService.getCoursesWithFilters({
-        page: params.page,
-        size: params.size,
-        searchTerm: searchTerm || undefined,
-        ...filters,
-      });
-    },
-    [searchTerm, filters]
-  );
+  const [searchTerm, setSearchTerm] = useState(getInitialSearchTerm);
+  const [filters, setFilters] = useState<Filters>(getInitialFilters);
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Use server pagination hook
-  const {
-    data: courses,
-    loading,
-    error,
-    currentPage,
-    pageSize,
-    totalElements,
-    totalPages,
-    startIndex,
-    endIndex,
-    goToPage,
-    changePageSize,
-    nextPage,
-    previousPage,
-    refresh,
-    triggerFetch,
-    getPageNumbers,
-  } = useServerPagination<PublishedCourseResponse>({
-    fetchFn: fetchCourses,
-    initialPage: 0,
-    initialSize: 12,
-  });
+  // Pagination and data state
+  const [courses, setCourses] = useState<PublishedCourseResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [currentPage, setCurrentPage] = useState(
+    parseInt(searchParams.get("page") || "0")
+  );
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const pageSize = 12;
+
+  // Update URL params whenever filters, search term, or page changes
+  const updateUrlParams = (
+    newSearchTerm: string,
+    newFilters: Filters,
+    page: number
+  ) => {
+    const params = new URLSearchParams();
+
+    if (newSearchTerm.trim()) {
+      params.set("keyword", newSearchTerm.trim());
+    }
+    if (page > 0) {
+      params.set("page", page.toString());
+    }
+    if (newFilters.priceRange[0] > 0) {
+      params.set("minPrice", newFilters.priceRange[0].toString());
+    }
+    if (newFilters.priceRange[1] < 500) {
+      params.set("maxPrice", newFilters.priceRange[1].toString());
+    }
+    if (newFilters.minRating > 0) {
+      params.set("minRating", newFilters.minRating.toString());
+    }
+    newFilters.levels.forEach((level) => params.append("levels", level));
+    newFilters.categories.forEach((category) =>
+      params.append("categories", category)
+    );
+
+    setSearchParams(params, { replace: true });
+  };
+
+  // Fetch courses from backend with search and filters
+  const fetchCourses = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response =
+        await SearchFilterService.searchAndFiltersPublishedCourses(
+          currentPage,
+          pageSize,
+          searchTerm.trim(),
+          filters.priceRange[0] > 0 ? filters.priceRange[0] : undefined,
+          filters.priceRange[1] < 500 ? filters.priceRange[1] : undefined,
+          filters.minRating > 0 ? filters.minRating : undefined,
+          filters.levels.length > 0 ? filters.levels : undefined,
+          filters.categories.length > 0 ? filters.categories : undefined,
+          undefined // sortBy
+        );
+      console.log("Fetched courses with filters:", response);
+
+      setCourses(response?.content || []);
+      setTotalPages(response?.totalPages || 0);
+      setTotalElements(response?.totalElements || 0);
+    } catch (err) {
+      setError(err as Error);
+      setCourses([]);
+      toast.error("Không thể tải danh sách khóa học. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load categories on component mount
   useEffect(() => {
@@ -83,47 +155,126 @@ const Course: React.FC = () => {
     };
 
     loadCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Trigger fetch when filters or searchTerm change
+  // Fetch courses when URL params change (on mount and when filters/search/page change)
   useEffect(() => {
-    triggerFetch();
-  }, [filters, searchTerm, triggerFetch]);
+    fetchCourses();
+    // Mark as not initial mount after first fetch
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Fetch auto-completion suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!debouncedSearchTerm || debouncedSearchTerm.trim().length < 2) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setLoadingSuggestions(true);
+      try {
+        const response: CompletionSuggestionResponse =
+          await SearchFilterService.autoCompletion(debouncedSearchTerm, 5);
+        setSuggestions(response.titleSuggestions || []);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error("Error fetching suggestions:", error);
+        setSuggestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, [debouncedSearchTerm]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchBoxRef.current &&
+        !searchBoxRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const resetFilters = () => {
-    setFilters({
+    const newFilters: Filters = {
       priceRange: [0, 500],
       minRating: 0,
       levels: [],
       practiceTypes: [],
       categories: [],
       duration: [],
-    });
-    // Note: searchTerm is not reset here since it's now separate from filters
+    };
+    setFilters(newFilters);
+    setSearchTerm("");
+    updateUrlParams("", newFilters, 0);
+    setCurrentPage(0);
   };
 
   const handleSearch = () => {
-    // Triggered when user presses Enter in search box
+    setShowSuggestions(false);
+    updateUrlParams(searchTerm, filters, 0);
+    setCurrentPage(0);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchTerm(suggestion);
+    setShowSuggestions(false);
+    updateUrlParams(suggestion, filters, 0);
+    setCurrentPage(0);
   };
 
   const clearSearch = () => {
-    setSearchTerm("");
+    if (searchTerm.trim()) {
+      setSearchTerm("");
+      setSuggestions([]);
+      setShowSuggestions(false);
+      updateUrlParams("", filters, 0);
+      setCurrentPage(0);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    updateUrlParams(searchTerm, filters, page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const updateFilter = (
     key: keyof Filters,
     value: number | [number, number]
   ) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    updateUrlParams(searchTerm, newFilters, 0);
+    setCurrentPage(0);
   };
 
   const toggleArrayFilter = (key: keyof Filters, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: (prev[key] as string[]).includes(value)
-        ? (prev[key] as string[]).filter((item) => item !== value)
-        : [...(prev[key] as string[]), value],
-    }));
+    const newFilters = {
+      ...filters,
+      [key]: (filters[key] as string[]).includes(value)
+        ? (filters[key] as string[]).filter((item) => item !== value)
+        : [...(filters[key] as string[]), value],
+    };
+    setFilters(newFilters);
+    updateUrlParams(searchTerm, newFilters, 0);
+    setCurrentPage(0);
   };
 
   const renderStars = (rating: number) => {
@@ -333,7 +484,7 @@ const Course: React.FC = () => {
               </div>
 
               {/* Categories */}
-              <div className="space-y-3">
+              <div className="space-y-3 mb-6">
                 <h3 className="font-medium">Categories</h3>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {categories.map((category) => (
@@ -357,6 +508,69 @@ const Course: React.FC = () => {
 
           {/* Main Content */}
           <div className="flex-1">
+            {/* Search Bar */}
+            <div className="mb-8">
+              <div className="relative w-full" ref={searchBoxRef}>
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
+                <Input
+                  placeholder="Tìm kiếm khóa học, giảng viên, danh mục..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch();
+                    }
+                  }}
+                  onFocus={() => {
+                    if (suggestions.length > 0) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  className="pl-12 pr-12 py-6 text-base border-2 border-gray-200 rounded-xl transition-all duration-200 focus:border-blue-500 hover:border-gray-300 w-full"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors z-10"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+
+                {/* Auto-completion Suggestions Dropdown */}
+                {showSuggestions &&
+                  (suggestions.length > 0 || loadingSuggestions) && (
+                    <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                      {loadingSuggestions ? (
+                        <div className="p-4 text-center text-gray-500">
+                          <LoadingDots />
+                        </div>
+                      ) : (
+                        <ul className="py-2">
+                          {suggestions.map((suggestion, index) => (
+                            <li
+                              key={index}
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              className="px-4 py-3 hover:bg-gray-100 cursor-pointer transition-colors flex items-center gap-3"
+                            >
+                              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <span className="text-sm text-gray-700">
+                                {suggestion}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+              </div>
+
+              <div className="text-xs text-gray-500 mt-2">
+                Gợi ý tự động sẽ xuất hiện khi bạn nhập từ khóa tìm kiếm
+              </div>
+            </div>
+
             {/* Header Controls */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div className="flex items-center gap-4">
@@ -372,41 +586,11 @@ const Course: React.FC = () => {
                 </Button>
               </div>
 
-              {!loading && (
+              {!loading && totalElements > 0 && (
                 <div className="text-sm text-gray-600">
-                  {totalElements} courses found
+                  Tìm thấy {totalElements} khóa học
                 </div>
               )}
-            </div>
-
-            {/* Search Bar */}
-            <div className="mb-6 flex flex-col gap-2">
-              <div className="relative max-w-lg">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  placeholder="Search courses, instructors, categories..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key == "Enter") {
-                      handleSearch();
-                    }
-                  }}
-                  className="pl-12 pr-12 py-6 text-base border-2 border-gray-200 rounded-xl transition-all duration-200 shadow-sm"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-
-              <div className="text-sm text-gray-600">
-                Từ khóa tìm kiếm: khi người dùng nhập từ khóa gần đúng
-              </div>
             </div>
 
             {/* Error State */}
@@ -416,13 +600,13 @@ const Course: React.FC = () => {
                   <span className="text-lg">⚠️</span>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Something went wrong
+                  Đã xảy ra lỗi
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  {error.message || "Failed to load courses"}
+                  {error.message || "Không thể tải danh sách khóa học"}
                 </p>
-                <Button onClick={refresh} variant="outline">
-                  Try again
+                <Button onClick={() => fetchCourses()} variant="outline">
+                  Thử lại
                 </Button>
               </div>
             )}
@@ -435,7 +619,7 @@ const Course: React.FC = () => {
             )}
 
             {/* Empty State */}
-            {!loading && !error && courses.length === 0 && (
+            {!loading && !error && (!courses || courses.length === 0) && (
               <div className="text-center py-20">
                 <div className="text-gray-400 mb-4">
                   <Search className="w-16 h-16 mx-auto" />
@@ -453,7 +637,7 @@ const Course: React.FC = () => {
             )}
 
             {/* Course Grid */}
-            {!loading && !error && courses.length > 0 && (
+            {!loading && !error && courses && courses.length > 0 && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
                   {courses.map((course, index) => (
@@ -467,19 +651,11 @@ const Course: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Server Pagination */}
-                <ServerPagination
+                {/* Pagination */}
+                <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
-                  totalElements={totalElements}
-                  startIndex={startIndex}
-                  endIndex={endIndex}
-                  pageSize={pageSize}
-                  onPageChange={goToPage}
-                  onPageSizeChange={changePageSize}
-                  onNext={nextPage}
-                  onPrevious={previousPage}
-                  getPageNumbers={getPageNumbers}
+                  onPageChange={handlePageChange}
                   className="mt-8"
                 />
               </>
