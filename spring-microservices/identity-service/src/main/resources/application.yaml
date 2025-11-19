@@ -59,7 +59,7 @@ spring:
 
 jwt:
   signerKey: "${JWT_SIGNER_KEY}"
-  valid-duration: 600 # in second around 10 minutes
+  valid-duration: 86400 # in second around 10 minutes
   refreshable-duration: 86400 # in seconds around a day
 
 outbound:
