@@ -206,11 +206,12 @@ public class TeacherCourseController {
     }
 
 
-    @GetMapping("/students/{studentId}")
-    public ApiResponse<StudentResponse> getStudentsDetail(
+    @GetMapping("/{classId}/students/{studentId}")
+    public ApiResponse<StudentResponse> getStudentDetails(
+            @PathVariable Integer classId,
             @PathVariable String studentId) {
 
-        StudentResponse student = studentService.getStudentByStudentId(studentId);
+        StudentResponse student = studentService.getStudentDetailByStudentId(studentId, classId);
 
         return ApiResponse.<StudentResponse>builder()
                 .result(student)

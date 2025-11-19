@@ -16,7 +16,6 @@ import Modal from "@/components/ui/modal"
 import assignmentApi from "@/services/api/student/assignmentApi"
 import type { AssignmentDetailResponse } from "@/services/api/response/assignmentDetailResponse"
 import type { AssignmentSubmissionResponse } from "@/services/api/response/assignmentSubmissionResponse"
-import fileApi from "@/services/api/teacher/fileApi"
 
 interface AssignmentSubmitFormProps {
   assignment: AssignmentDetailResponse
@@ -32,29 +31,33 @@ const AssignmentSubmitForm: React.FC<AssignmentSubmitFormProps> = ({
   onSuccess,
 }) => {
   const [submissionText, setSubmissionText] = useState(existingSubmission?.submissionText || "")
-  const [submissionFiles, setSubmissionFiles] = useState<string[]>(
+  const [submissionLink, setSubmissionLink] = useState(existingSubmission?.submissionLink || "")
+  
+  // Store File objects for new uploads
+  const [newFiles, setNewFiles] = useState<File[]>([])
+  
+  // Store existing file URLs (for updates)
+  const [existingFiles, setExistingFiles] = useState<string[]>(
     existingSubmission?.submissionFiles || []
   )
-  const [submissionLink, setSubmissionLink] = useState(existingSubmission?.submissionLink || "")
+  
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [uploadingFiles, setUploadingFiles] = useState(false)
 
   const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType)
   const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType)
   const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType)
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
 
-    setUploadingFiles(true)
     setError(null)
 
     try {
       const fileArray = Array.from(files)
       
-      // Validate file sizes before uploading
+      // Validate file sizes
       const maxSize = 10 * 1024 * 1024 // 10MB
       for (const file of fileArray) {
         if (file.size > maxSize) {
@@ -62,37 +65,24 @@ const AssignmentSubmitForm: React.FC<AssignmentSubmitFormProps> = ({
         }
       }
 
-      // Upload files using the API service
-      const uploadResults = await fileApi.uploadMultipleFiles(fileArray)
-      
-      // Extract URLs from results
-      const uploadedUrls = uploadResults.map(result => result.url)
-      
-      // Add to existing files
-      setSubmissionFiles([...submissionFiles, ...uploadedUrls])
+      // Add to new files array
+      setNewFiles([...newFiles, ...fileArray])
       
       // Reset file input
       event.target.value = ""
       
     } catch (err: any) {
-      console.error("Error uploading files:", err)
-      
-      // Handle different error types
-      if (err.message) {
-        setError(err.message)
-      } else if (err.code) {
-        // Handle AppError from axiosInstance
-        setError(err.message || "Lỗi khi upload file")
-      } else {
-        setError("Không thể upload file. Vui lòng kiểm tra kết nối mạng và thử lại.")
-      }
-    } finally {
-      setUploadingFiles(false)
+      console.error("Error selecting files:", err)
+      setError(err.message || "Lỗi khi chọn file")
     }
   }
 
-  const handleRemoveFile = (index: number) => {
-    setSubmissionFiles(submissionFiles.filter((_, i) => i !== index))
+  const handleRemoveNewFile = (index: number) => {
+    setNewFiles(newFiles.filter((_, i) => i !== index))
+  }
+
+  const handleRemoveExistingFile = (index: number) => {
+    setExistingFiles(existingFiles.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async () => {
@@ -101,7 +91,8 @@ const AssignmentSubmitForm: React.FC<AssignmentSubmitFormProps> = ({
       setError(null)
 
       // Validate
-      if (canSubmitText && !submissionText && submissionFiles.length === 0 && !submissionLink) {
+      const hasContent = submissionText || newFiles.length > 0 || existingFiles.length > 0 || submissionLink
+      if (!hasContent) {
         setError("Vui lòng nhập nội dung bài làm")
         setIsSubmitting(false)
         return
@@ -110,28 +101,42 @@ const AssignmentSubmitForm: React.FC<AssignmentSubmitFormProps> = ({
       const submitData = {
         assignmentId: assignment.id,
         submissionText: canSubmitText ? submissionText : undefined,
-        submissionFiles: canSubmitFile ? submissionFiles : undefined,
         submissionLink: canSubmitLink ? submissionLink : undefined,
       }
 
       if (existingSubmission) {
         // Update existing submission
-        await assignmentApi.updateSubmission(existingSubmission.id, submitData)
+        await assignmentApi.updateSubmission(
+          existingSubmission.id, 
+          submitData,
+          canSubmitFile ? newFiles : undefined,
+          canSubmitFile ? existingFiles : undefined
+        )
       } else {
         // Create new submission
-        await assignmentApi.submitAssignment(assignment.id, submitData)
+        await assignmentApi.submitAssignment(
+          assignment.id, 
+          submitData,
+          canSubmitFile ? newFiles : undefined
+        )
       }
 
       onSuccess()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting assignment:", err)
-      setError("Không thể nộp bài. Vui lòng thử lại.")
+      setError(err.message || "Không thể nộp bài. Vui lòng thử lại.")
       setIsSubmitting(false)
     }
   }
 
   const getFileName = (url: string): string => {
     return url.split("/").pop() || "file"
+  }
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
   }
 
   return (
@@ -187,52 +192,77 @@ const AssignmentSubmitForm: React.FC<AssignmentSubmitFormProps> = ({
               {/* Upload Button */}
               <div className="mb-3">
                 <label className="cursor-pointer">
-                  <div className={`flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition ${
-                    uploadingFiles 
-                      ? "border-gray-300 bg-gray-50 cursor-not-allowed" 
-                      : "border-gray-300 hover:border-blue-500 hover:bg-blue-50"
-                  }`}>
-                    {uploadingFiles ? (
-                      <Loader2 className="h-5 w-5 text-gray-600 animate-spin" />
-                    ) : (
-                      <Upload className="h-5 w-5 text-gray-600" />
-                    )}
+                  <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
+                    <Upload className="h-5 w-5 text-gray-600" />
                     <span className="text-sm text-gray-600">
-                      {uploadingFiles ? "Đang upload..." : "Chọn file để upload (Tối đa 10MB/file)"}
+                      Chọn file để upload (Tối đa 10MB/file)
                     </span>
                   </div>
                   <input
                     type="file"
                     multiple
-                    onChange={handleFileUpload}
+                    onChange={handleFileSelect}
                     className="hidden"
-                    disabled={uploadingFiles}
+                    disabled={isSubmitting}
                     accept="*/*"
                   />
                 </label>
               </div>
 
-              {/* Uploaded Files List */}
-              {submissionFiles.length > 0 && (
-                <div className="space-y-2">
-                  {submissionFiles.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 border rounded"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm">{getFileName(file)}</span>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveFile(index)}
-                        className="p-1 hover:bg-gray-200 rounded"
-                        disabled={uploadingFiles || isSubmitting}
+              {/* Existing Files (for updates) */}
+              {existingFiles.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-gray-500 mb-2">File đã tải lên trước đó:</p>
+                  <div className="space-y-2">
+                    {existingFiles.map((file, index) => (
+                      <div
+                        key={`existing-${index}`}
+                        className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded"
                       >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm">{getFileName(file)}</span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveExistingFile(index)}
+                          className="p-1 hover:bg-blue-100 rounded"
+                          disabled={isSubmitting}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New Files */}
+              {newFiles.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">File mới:</p>
+                  <div className="space-y-2">
+                    {newFiles.map((file, index) => (
+                      <div
+                        key={`new-${index}`}
+                        className="flex items-center justify-between p-3 bg-gray-50 border rounded"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm truncate">{file.name}</p>
+                            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveNewFile(index)}
+                          className="p-1 hover:bg-gray-200 rounded ml-2"
+                          disabled={isSubmitting}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -265,7 +295,7 @@ const AssignmentSubmitForm: React.FC<AssignmentSubmitFormProps> = ({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || uploadingFiles}
+            disabled={isSubmitting}
             className="bg-orange-600 hover:bg-orange-700 text-white"
           >
             {isSubmitting ? (

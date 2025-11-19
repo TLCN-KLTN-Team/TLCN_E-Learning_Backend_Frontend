@@ -73,4 +73,22 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     default void deleteByClassIdAndStudentId(Integer classId, String studentId) {
         deleteByCourseClassIdAndStudentId(classId, studentId);
     }
+
+    @Query("SELECT COUNT(ce) FROM CourseEnrollment ce WHERE ce.courseClass.id = :classId")
+    Integer countTotalStudentsByClassId(@Param("classId") Integer classId);
+
+    /**
+     * Count active students in a class (status = 'ACTIVE')
+     */
+    @Query("SELECT COUNT(ce) FROM CourseEnrollment ce " +
+            "WHERE ce.courseClass.id = :classId AND ce.status = 'ACTIVE'")
+    Integer countActiveStudentsByClassId(@Param("classId") Integer classId);
+
+    /**
+     * Calculate average score across all students in a class
+     * This requires fetching student data and calculating on application layer
+     * Or you can add averageScore field to CourseEnrollment entity
+     */
+    @Query("SELECT ce.studentId FROM CourseEnrollment ce WHERE ce.courseClass.id = :classId")
+    List<String> findStudentIdsForStatistics(@Param("classId") Integer classId);
 }

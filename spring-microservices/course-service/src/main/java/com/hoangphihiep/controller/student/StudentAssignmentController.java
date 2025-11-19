@@ -6,7 +6,9 @@ import com.hoangphihiep.dto.response.AssignmentSubmissionResponse;
 import com.hoangphihiep.service.StudentAssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -32,21 +34,39 @@ public class StudentAssignmentController {
                 .build();
     }
 
-    @PostMapping("/{assignmentId}/submit")
+    @PostMapping(value = "/{assignmentId}/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<AssignmentSubmissionResponse> submitAssignment(
             @PathVariable Integer assignmentId,
-            @Valid @RequestBody AssignmentSubmissionRequest request) {
+            @RequestPart(value = "submissionText", required = false) String submissionText,
+            @RequestPart(value = "submissionFiles", required = false) List<MultipartFile> submissionFiles,
+            @RequestPart(value = "submissionLink", required = false) String submissionLink) {
+
+        AssignmentSubmissionRequest request = AssignmentSubmissionRequest.builder()
+                .assignmentId(assignmentId)
+                .submissionText(submissionText)
+                .submissionLink(submissionLink)
+                .build();
+
         return ApiResponse.<AssignmentSubmissionResponse>builder()
-                .result(studentAssignmentService.submitAssignment(assignmentId, request))
+                .result(studentAssignmentService.submitAssignment(assignmentId, request, submissionFiles))
                 .build();
     }
 
-    @PutMapping("/submissions/{submissionId}")
+    @PutMapping(value = "/submissions/{submissionId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<AssignmentSubmissionResponse> updateSubmission(
             @PathVariable Integer submissionId,
-            @Valid @RequestBody AssignmentSubmissionRequest request) {
+            @RequestPart(value = "submissionText", required = false) String submissionText,
+            @RequestPart(value = "submissionFiles", required = false) List<MultipartFile> submissionFiles,
+            @RequestPart(value = "submissionLink", required = false) String submissionLink,
+            @RequestPart(value = "existingFiles", required = false) String existingFilesJson) {
+
+        AssignmentSubmissionRequest request = AssignmentSubmissionRequest.builder()
+                .submissionText(submissionText)
+                .submissionLink(submissionLink)
+                .build();
+
         return ApiResponse.<AssignmentSubmissionResponse>builder()
-                .result(studentAssignmentService.updateSubmission(submissionId, request))
+                .result(studentAssignmentService.updateSubmission(submissionId, request, submissionFiles, existingFilesJson))
                 .build();
     }
 

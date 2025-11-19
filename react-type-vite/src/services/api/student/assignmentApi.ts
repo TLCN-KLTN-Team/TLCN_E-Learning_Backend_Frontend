@@ -32,11 +32,33 @@ export const assignmentApi = {
   // Submit assignment
   submitAssignment: async (
     assignmentId: number,
-    data: AssignmentSubmissionRequest
+    data: AssignmentSubmissionRequest,
+    files?: File[]
   ): Promise<AssignmentSubmissionResponse> => {
+    const formData = new FormData()
+    
+    if (data.submissionText) {
+      formData.append('submissionText', data.submissionText)
+    }
+    
+    if (data.submissionLink) {
+      formData.append('submissionLink', data.submissionLink)
+    }
+    
+    if (files && files.length > 0) {
+      files.forEach(file => {
+        formData.append('submissionFiles', file)
+      })
+    }
+
     const response = await axiosInstance.post<ApiResponse<AssignmentSubmissionResponse>>(
       `${ASSIGNMENT_API_BASE}/${assignmentId}/submit`,
-      data
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     )
     return response.data.result
   },
@@ -44,11 +66,38 @@ export const assignmentApi = {
   // Update submission (nếu chưa quá hạn)
   updateSubmission: async (
     submissionId: number,
-    data: AssignmentSubmissionRequest
+    data: AssignmentSubmissionRequest,
+    files?: File[],
+    existingFiles?: string[]
   ): Promise<AssignmentSubmissionResponse> => {
+    const formData = new FormData()
+    
+    if (data.submissionText) {
+      formData.append('submissionText', data.submissionText)
+    }
+    
+    if (data.submissionLink) {
+      formData.append('submissionLink', data.submissionLink)
+    }
+    
+    if (files && files.length > 0) {
+      files.forEach(file => {
+        formData.append('submissionFiles', file)
+      })
+    }
+    
+    if (existingFiles && existingFiles.length > 0) {
+      formData.append('existingFiles', JSON.stringify(existingFiles))
+    }
+
     const response = await axiosInstance.put<ApiResponse<AssignmentSubmissionResponse>>(
       `${ASSIGNMENT_API_BASE}/submissions/${submissionId}`,
-      data
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     )
     return response.data.result
   },
