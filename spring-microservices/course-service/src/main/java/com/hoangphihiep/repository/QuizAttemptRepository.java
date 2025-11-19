@@ -15,6 +15,17 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Intege
 
     int countByQuizIdAndIdUser(Integer quizId, String userId);
 
+    @Query("SELECT COUNT(DISTINCT qa.quiz.id) FROM QuizAttempt qa " +
+            "WHERE qa.idUser = :userId " +
+            "AND qa.quiz.section.course.id = :courseId")
+    int countDistinctQuizzesByUserAndCourse(@Param("userId") String userId,
+                                            @Param("courseId") Integer courseId);
+    @Query("SELECT COUNT(qa) FROM QuizAttempt qa " +
+            "WHERE qa.idUser = :userId " +
+            "AND qa.quiz.id = :quizId")
+    int countByIdUserAndQuiz_Id(@Param("userId") String userId,
+                                @Param("quizId") Integer quizId);
+
     Optional<QuizAttempt> findTopByQuizIdAndIdUserAndSubmittedAtIsNullOrderByStartedAtDesc(
             Integer quizId, String userId);
 

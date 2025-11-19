@@ -1,5 +1,7 @@
 package com.hoangphihiep.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hoangphihiep.dto.request.AssignmentSubmissionRequest;
 import com.hoangphihiep.dto.response.AssignmentSubmissionResponse;
 import com.hoangphihiep.entity.Assignment;
@@ -9,16 +11,15 @@ import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.AssignmentSubmissionMapper;
 import com.hoangphihiep.repository.AssignmentRepository;
 import com.hoangphihiep.repository.AssignmentSubmissionRepository;
+import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +30,7 @@ public class StudentAssignmentService {
     private final AssignmentRepository assignmentRepository;
     private final AssignmentSubmissionRepository submissionRepository;
     private final AssignmentSubmissionMapper submissionMapper;
+    private final FileHandlerRepository fileHandlerRepository;
 
     /**
      * Get assignment detail with user's submission
@@ -89,7 +91,8 @@ public class StudentAssignmentService {
     @Transactional
     public AssignmentSubmissionResponse submitAssignment(
             Integer assignmentId,
-            AssignmentSubmissionRequest request) {
+            AssignmentSubmissionRequest request,
+            List<MultipartFile> files) {
 
         String userId = getCurrentUserId();
 
@@ -102,6 +105,22 @@ public class StudentAssignmentService {
                     throw new AppException(ErrorCode.ASSIGNMENT_ALREADY_SUBMITTED);
                 });
 
+        // Upload files if provided
+        List<String> fileUrls = null;
+        if (files != null && !files.isEmpty()) {
+            fileUrls = files.stream()
+                    .map(file -> {
+                        try {
+                            Map<String, String> result = fileHandlerRepository.uploadFile(file);
+                            return result.get("url");
+                        } catch (Exception e) {
+                            log.error("Error uploading file: {}", e.getMessage());
+                            throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
+
         // Determine status
         Date now = new Date();
         String status = now.after(assignment.getDeadline()) ? "LATE" : "SUBMITTED";
@@ -111,7 +130,7 @@ public class StudentAssignmentService {
         submission.setAssignment(assignment);
         submission.setIdUser(userId);
         submission.setSubmissionText(request.getSubmissionText());
-        submission.setSubmissionFiles(request.getSubmissionFiles());
+        submission.setSubmissionFiles(fileUrls);
         submission.setSubmissionLink(request.getSubmissionLink());
         submission.setSubmittedAt(now);
         submission.setStatus(status);
@@ -129,7 +148,9 @@ public class StudentAssignmentService {
     @Transactional
     public AssignmentSubmissionResponse updateSubmission(
             Integer submissionId,
-            AssignmentSubmissionRequest request) {
+            AssignmentSubmissionRequest request,
+            List<MultipartFile> newFiles,
+            String existingFilesJson) {
 
         String userId = getCurrentUserId();
 
@@ -141,22 +162,41 @@ public class StudentAssignmentService {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        // Check if already graded
-        if (submission.getScore() != null) {
-            throw new AppException(ErrorCode.SUBMISSION_ALREADY_GRADED);
+        // Parse existing files
+        List<String> existingFiles = new ArrayList<>();
+        if (existingFilesJson != null && !existingFilesJson.isEmpty()) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                existingFiles = mapper.readValue(existingFilesJson, new TypeReference<List<String>>() {});
+            } catch (Exception e) {
+                log.error("Error parsing existing files JSON: {}", e.getMessage());
+            }
         }
+
+        // Upload new files
+        List<String> newFileUrls = new ArrayList<>();
+        if (newFiles != null && !newFiles.isEmpty()) {
+            newFileUrls = newFiles.stream()
+                    .map(file -> {
+                        try {
+                            Map<String, String> result = fileHandlerRepository.uploadFile(file);
+                            return result.get("url");
+                        } catch (Exception e) {
+                            log.error("Error uploading file: {}", e.getMessage());
+                            throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // Combine existing and new files
+        List<String> allFiles = new ArrayList<>(existingFiles);
+        allFiles.addAll(newFileUrls);
 
         // Update submission
         submission.setSubmissionText(request.getSubmissionText());
-        submission.setSubmissionFiles(request.getSubmissionFiles());
+        submission.setSubmissionFiles(allFiles.isEmpty() ? null : allFiles);
         submission.setSubmissionLink(request.getSubmissionLink());
-        submission.setSubmittedAt(new Date()); // Update submission time
-
-        // Update status if needed
-        Date now = new Date();
-        if (now.after(submission.getAssignment().getDeadline())) {
-            submission.setStatus("LATE");
-        }
 
         AssignmentSubmission updated = submissionRepository.save(submission);
 

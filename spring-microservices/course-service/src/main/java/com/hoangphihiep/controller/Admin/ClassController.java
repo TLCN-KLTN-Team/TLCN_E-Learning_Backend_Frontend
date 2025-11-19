@@ -2,6 +2,7 @@ package com.hoangphihiep.controller.Admin;
 
 import com.hoangphihiep.dto.request.CourseClassRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.dto.response.ClassStudentStatsResponse;
 import com.hoangphihiep.dto.response.CourseClassResponse;
 import com.hoangphihiep.dto.response.StudentResponse;
 import com.hoangphihiep.exception.AppException;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -170,5 +172,18 @@ public class ClassController {
             log.error("Error removing enrollment {}: {}", enrollmentId, e.getMessage(), e);
             throw new AppException(ErrorCode.COURSE_UNENROLLMENT_FAILED);
         }
+    }
+
+    @GetMapping("/classes/{classId}/statistics")
+    public ResponseEntity<ApiResponse<ClassStudentStatsResponse>> getClassStatistics(
+            @PathVariable Integer educationalUnitId,
+            @PathVariable Integer classId) {
+
+        log.info("Fetching statistics for class {} in educational unit {}", classId, educationalUnitId);
+        ClassStudentStatsResponse stats = enrollmentService.getClassStatistics(classId);
+
+        return ResponseEntity.ok(ApiResponse.<ClassStudentStatsResponse>builder()
+                .result(stats)
+                .build());
     }
 }

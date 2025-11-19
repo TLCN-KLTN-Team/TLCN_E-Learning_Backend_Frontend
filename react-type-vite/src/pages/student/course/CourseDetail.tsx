@@ -14,6 +14,11 @@ import {
   Circle,
   Loader2,
   AlertCircle,
+  X,
+  Download,
+  ExternalLink,
+  CheckCircle,
+  CheckCircle2,
 } from "lucide-react";
 import "../../../styles/student-dashboard.css";
 import Header from "../dashboard/Header";
@@ -25,20 +30,33 @@ import type { SectionResponse } from "@/services/api/response/sectionResponse";
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse";
 import QuizDetailModal from "@/components/student/course/QuizDetailModal";
 import AssignmentDetailModal from "@/components/student/course/AssignmentDetailModal";
+import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
+import progressApi from "@/services/api/student/progressApi";
 
 const CourseDetail = () => {
   const [courseClass, setCourseClass] = useState<CourseClassResponse>();
-  const [sections, setSections] = useState<SectionResponse[]>([]); // NEW: For filtered sections
-  const [isLoadingSections, setIsLoadingSections] = useState(false); // NEW
-  const [sectionsError, setSectionsError] = useState<string | null>(null); // NEW
+  const [sections, setSections] = useState<SectionResponse[]>([]);
+  const [isLoadingSections, setIsLoadingSections] = useState(false);
+  const [sectionsError, setSectionsError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("content");
-  const [selectedQuizId, setSelectedQuizId] = useState<number | null>(null)
-  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null)
-  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<Set<number>>(
-    new Set()
-  );
+  
+  // Progress states
+  const [progressStats, setProgressStats] = useState<ProgressStatsResponse | null>(null);
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
+  const [isMarkingComplete, setIsMarkingComplete] = useState<Set<number>>(new Set());
+  
+  // Quiz modal state
+  const [selectedQuizId, setSelectedQuizId] = useState<number | null>(null);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  
+  // Assignment modal state
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null);
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+  
+  // Lesson detail state
+  const [expandedLessonId, setExpandedLessonId] = useState<number | null>(null);
+  
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
   const { id } = useParams<{ id: string }>();
 
   const toggleSection = (sectionId: number) => {
@@ -53,13 +71,67 @@ const CourseDetail = () => {
     });
   };
 
+  const toggleLessonDetail = (lessonId: number) => {
+    setExpandedLessonId(prev => prev === lessonId ? null : lessonId);
+  };
+
+  // Fetch progress stats
+  const fetchProgressStats = async () => {
+    if (!id) return;
+    
+    try {
+      const stats = await progressApi.getClassProgress(Number(id));
+      setProgressStats(stats);
+      
+      // Fetch completed lessons
+      const detail = await progressApi.getCourseProgressDetail(Number(id));
+      const completedLessonIds = new Set(
+        detail.courseProgress.lessonProgresses
+          .filter(lp => lp.isCompleted)
+          .map(lp => lp.lessonId)
+      );
+      setCompletedLessons(completedLessonIds);
+    } catch (error) {
+      console.error("Error fetching progress stats:", error);
+    }
+  };
+
+  // Mark lesson as complete
+  const handleMarkLessonComplete = async (lessonId: number) => {
+    if (!id || completedLessons.has(lessonId)) return;
+    
+    setIsMarkingComplete(prev => new Set(prev).add(lessonId));
+    
+    try {
+      await progressApi.markLessonComplete({
+        lessonId,
+        classId: Number(id),
+      });
+      
+      // Update local state
+      setCompletedLessons(prev => new Set(prev).add(lessonId));
+      
+      // Refresh progress stats
+      await fetchProgressStats();
+      
+      console.log("Lesson marked as complete!");
+    } catch (error) {
+      console.error("Error marking lesson complete:", error);
+      alert("Không thể đánh dấu bài học đã hoàn thành. Vui lòng thử lại.");
+    } finally {
+      setIsMarkingComplete(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(lessonId);
+        return newSet;
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchCourseContent = async () => {
       try {
         if (id) {
-          const data = await courseEnrollmentApi.getClassById(
-            Number(id)
-          );
+          const data = await courseEnrollmentApi.getClassById(Number(id));
           setCourseClass(data);
         }
       } catch (error) {
@@ -78,13 +150,10 @@ const CourseDetail = () => {
         setIsLoadingSections(true);
         setSectionsError(null);
         
-        // Call the new API endpoint that returns filtered content
         const filteredSections = await courseEnrollmentApi.getEnrolledCourseContents(Number(id));
         
-        console.log("Filtered sections:", filteredSections);
         setSections(filteredSections);
 
-        // Open first section by default
         if (filteredSections.length > 0) {
           setExpandedSections(new Set([filteredSections[0].id]));
         }
@@ -100,6 +169,13 @@ const CourseDetail = () => {
       fetchFilteredSections();
     }
   }, [id, activeTab]);
+
+  // Fetch progress when component mounts
+  useEffect(() => {
+    if (id) {
+      fetchProgressStats();
+    }
+  }, [id]);
 
   return (
     <div className="student-dashboard student-dashboard-bg">
@@ -198,17 +274,35 @@ const CourseDetail = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium">Tiến độ học tập</span>
                   <span className="text-sm student-dashboard-progress-text">
-                    100%
+                    {progressStats ? `${progressStats.overallProgress.toFixed(1)}%` : "0%"}
                   </span>
                 </div>
                 <div className="w-full student-dashboard-progress-bg rounded-full h-3">
                   <div
                     className="student-dashboard-progress-fill h-3 rounded-full transition-all duration-300"
                     style={{
-                      width: `30%`,
+                      width: `${progressStats?.overallProgress || 0}%`,
                     }}
                   ></div>
                 </div>
+                
+                {/* Progress Details */}
+                {progressStats && (
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <BookOpen className="w-3 h-3" />
+                      <span>{progressStats.completedLessons}/{progressStats.totalLessons} bài học</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      <span>{progressStats.completedQuizzes}/{progressStats.totalQuizzes} quiz</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      <span>{progressStats.completedAssignments}/{progressStats.totalAssignments} bài tập</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -221,16 +315,7 @@ const CourseDetail = () => {
               {course_tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() =>
-                    setActiveTab(
-                      tab.id as
-                        | "content"
-                        | "personal_assignments"
-                        | "group_assignments"
-                        | "quiz"
-                        | "score_feedback"
-                    )
-                  }
+                  onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? "border-blue-500 text-blue-600"
@@ -272,7 +357,7 @@ const CourseDetail = () => {
                 </div>
               )}
 
-              {/* Content - Using filtered sections */}
+              {/* Content */}
               {!isLoadingSections && !sectionsError && sections.length > 0 && (
                 <>
                   {sections
@@ -333,57 +418,219 @@ const CourseDetail = () => {
                                       📚 Bài học ({sortedLessons.length})
                                     </h4>
                                     <div className="space-y-2">
-                                      {sortedLessons.map((lesson) => (
-                                        <div
-                                          key={lesson.id}
-                                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border"
-                                        >
-                                          <div className="flex-shrink-0">
-                                            <Circle className="w-5 h-5 text-gray-400" />
-                                          </div>
+                                      {sortedLessons.map((lesson) => {
+                                        const isCompleted = completedLessons.has(lesson.id);
+                                        const isMarking = isMarkingComplete.has(lesson.id);
+                                        
+                                        return (
+                                          <div key={lesson.id} className="space-y-2">
+                                            {/* Lesson Header */}
+                                            <div
+                                              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                                                expandedLessonId === lesson.id
+                                                  ? 'bg-blue-100 border-blue-400 shadow-md'
+                                                  : 'hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm'
+                                              } ${isCompleted ? 'border-green-400 bg-green-50' : ''}`}
+                                            >
+                                              <div className="flex-shrink-0">
+                                                {isCompleted ? (
+                                                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                                ) : (
+                                                  <Circle className={`w-5 h-5 ${expandedLessonId === lesson.id ? 'text-blue-600' : 'text-gray-400'}`} />
+                                                )}
+                                              </div>
 
-                                          <div className="flex-shrink-0 text-blue-600">
-                                            {lesson.videoUrl ? (
-                                              <Play className="w-4 h-4" />
-                                            ) : (
-                                              <FileText className="w-4 h-4" />
-                                            )}
-                                          </div>
+                                              <div 
+                                                className="flex-shrink-0 text-blue-600 cursor-pointer"
+                                                onClick={() => toggleLessonDetail(lesson.id)}
+                                              >
+                                                {lesson.videoUrl ? (
+                                                  <Play className="w-4 h-4" />
+                                                ) : (
+                                                  <FileText className="w-4 h-4" />
+                                                )}
+                                              </div>
 
-                                          <div className="flex-1 min-w-0 space-y-1">
-                                            <h5 className="font-medium text-gray-700">
-                                              #{lesson.numberItem} {lesson.title}
-                                            </h5>
-                                            {lesson.videoUrl && (
-                                              <div className="flex space-x-1">
-                                                <p className="font-medium text-gray-700">
-                                                  Video:{" "}
-                                                </p>
-                                                <a
-                                                  href={lesson.videoUrl}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="hover:underline text-red-500 truncate"
+                                              <div 
+                                                className="flex-1 min-w-0 space-y-1 cursor-pointer"
+                                                onClick={() => toggleLessonDetail(lesson.id)}
+                                              >
+                                                <h5 className="font-medium text-gray-700">
+                                                  #{lesson.numberItem} {lesson.title}
+                                                </h5>
+                                                {lesson.videoUrl && (
+                                                  <div className="flex items-center gap-2">
+                                                    <Play className="w-3 h-3 text-red-500" />
+                                                    <span className="text-xs text-gray-500">Video bài học</span>
+                                                  </div>
+                                                )}
+
+                                                {lesson.description && !expandedLessonId && (
+                                                  <p className="text-sm student-dashboard-text-muted mt-1 line-clamp-2">
+                                                    {lesson.description}
+                                                  </p>
+                                                )}
+                                              </div>
+
+                                              <div className="flex items-center gap-2">
+                                                {!isCompleted && (
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleMarkLessonComplete(lesson.id);
+                                                    }}
+                                                    disabled={isMarking}
+                                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm rounded flex items-center gap-1 transition-colors"
+                                                  >
+                                                    {isMarking ? (
+                                                      <>
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                        Đang lưu...
+                                                      </>
+                                                    ) : (
+                                                      <>
+                                                        <CheckCircle className="w-3 h-3" />
+                                                        Hoàn thành
+                                                      </>
+                                                    )}
+                                                  </button>
+                                                )}
+                                                
+                                                {isCompleted && (
+                                                  <span className="px-3 py-1.5 bg-green-100 text-green-700 text-sm rounded flex items-center gap-1">
+                                                    <CheckCircle2 className="w-3 h-3" />
+                                                    Đã hoàn thành
+                                                  </span>
+                                                )}
+                                                
+                                                <div 
+                                                  className="flex-shrink-0 cursor-pointer"
+                                                  onClick={() => toggleLessonDetail(lesson.id)}
                                                 >
-                                                  {lesson.videoUrl}
-                                                </a>
+                                                  {expandedLessonId === lesson.id ? (
+                                                    <ChevronDown className="w-5 h-5 text-blue-600" />
+                                                  ) : (
+                                                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            {/* Lesson Detail Content - Inline */}
+                                            {expandedLessonId === lesson.id && (
+                                              <div className="ml-8 bg-white border border-blue-200 rounded-lg p-6 shadow-lg animate-in slide-in-from-top-2">
+                                                <div className="space-y-6">
+                                                  {/* Header */}
+                                                  <div className="flex items-start justify-between border-b pb-4">
+                                                    <div className="flex-1">
+                                                      <h3 className="text-xl font-bold text-gray-800 mb-2">
+                                                        {lesson.title}
+                                                      </h3>
+                                                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                                                        <span className="flex items-center gap-1">
+                                                          <BookOpen className="w-4 h-4" />
+                                                          Bài học #{lesson.numberItem}
+                                                        </span>
+                                                        <span className="flex items-center gap-1">
+                                                          <Clock className="w-4 h-4" />
+                                                          {new Date(lesson.createdAt).toLocaleDateString('vi-VN')}
+                                                        </span>
+                                                        {isCompleted && (
+                                                          <span className="flex items-center gap-1 text-green-600 font-medium">
+                                                            <CheckCircle2 className="w-4 h-4" />
+                                                            Đã hoàn thành
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                    <button
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setExpandedLessonId(null);
+                                                      }}
+                                                      className="text-gray-400 hover:text-gray-600"
+                                                    >
+                                                      <X className="w-5 h-5" />
+                                                    </button>
+                                                  </div>
+
+                                                  {/* Description */}
+                                                  {lesson.description && (
+                                                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                                                      <p className="text-sm text-gray-700">{lesson.description}</p>
+                                                    </div>
+                                                  )}
+
+                                                  {/* Video */}
+                                                  {lesson.videoUrl && (
+                                                    <div className="space-y-2">
+                                                      <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                                                        <Play className="w-5 h-5 text-red-500" />
+                                                        Video bài học
+                                                      </h4>
+                                                      <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                                                        <video
+                                                          src={lesson.videoUrl}
+                                                          controls
+                                                          className="w-full h-full"
+                                                        >
+                                                          Trình duyệt của bạn không hỗ trợ video.
+                                                        </video>
+                                                      </div>
+                                                    </div>
+                                                  )}
+
+                                                  {/* Content */}
+                                                  {lesson.content && (
+                                                    <div className="space-y-2">
+                                                      <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                                                        <FileText className="w-5 h-5 text-blue-500" />
+                                                        Nội dung bài học
+                                                      </h4>
+                                                      <div 
+                                                        className="prose prose-sm max-w-none bg-gray-50 p-4 rounded-lg"
+                                                        dangerouslySetInnerHTML={{ __html: lesson.content }}
+                                                      />
+                                                    </div>
+                                                  )}
+
+                                                  {/* Attachments */}
+                                                  {lesson.attachments && lesson.attachments.length > 0 && (
+                                                    <div className="space-y-2">
+                                                      <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                                                        <Download className="w-5 h-5 text-green-500" />
+                                                        Tài liệu đính kèm ({lesson.attachments.length})
+                                                      </h4>
+                                                      <div className="space-y-2">
+                                                        {lesson.attachments.map((attachment, index) => (
+                                                          <a
+                                                            key={index}
+                                                            href={attachment}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                                                          >
+                                                            <FileText className="w-5 h-5 text-gray-600" />
+                                                            <span className="flex-1 text-sm text-gray-700">
+                                                              Tài liệu {index + 1}
+                                                            </span>
+                                                            <ExternalLink className="w-4 h-4 text-gray-400" />
+                                                          </a>
+                                                        ))}
+                                                      </div>
+                                                    </div>
+                                                  )}
+
+                                                  {/* Section Info */}
+                                                  <div className="pt-4 border-t text-sm text-gray-500">
+                                                    <p>Thuộc chương: <span className="font-medium text-gray-700">{lesson.sectionName}</span></p>
+                                                  </div>
+                                                </div>
                                               </div>
                                             )}
-
-                                            {lesson.description && (
-                                              <p className="text-sm student-dashboard-text-muted mt-1">
-                                                {lesson.description}
-                                              </p>
-                                            )}
                                           </div>
-
-                                          {lesson.videoUrl && (
-                                            <div className="flex-shrink-0 text-sm student-dashboard-text-muted">
-                                              Video
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
@@ -395,38 +642,56 @@ const CourseDetail = () => {
                                       📝 Bài kiểm tra ({sortedQuizzes.length})
                                     </h4>
                                     <div className="space-y-2">
-                                      {sortedQuizzes.map((quiz) => (
-                                        <div
-                                          key={quiz.id}
-                                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-purple-200 bg-purple-50"
-                                        >
-                                          <div className="flex-shrink-0 text-purple-600">
-                                            <FileText className="w-4 h-4" />
+                                      {sortedQuizzes.map((quiz) => {
+                                        const isCompleted = quiz.attemptsCount > 0;
+                                        
+                                        return (
+                                          <div
+                                            key={quiz.id}
+                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
+                                              isCompleted 
+                                                ? 'border-green-400 bg-green-50' 
+                                                : 'border-purple-200 bg-purple-50 hover:bg-purple-100'
+                                            }`}
+                                          >
+                                            <div className="flex-shrink-0">
+                                              {isCompleted ? (
+                                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                              ) : (
+                                                <Circle className="w-5 h-5 text-purple-600" />
+                                              )}
+                                            </div>
+                                            <div className="flex-shrink-0 text-purple-600">
+                                              <FileText className="w-4 h-4" />
+                                            </div>
+                                            <div className="flex-1">
+                                              <h5 className="font-medium text-gray-700">
+                                                #{quiz.numberItem} {quiz.title}
+                                              </h5>
+                                              <p className="text-sm text-gray-500">
+                                                {quiz.duration} phút • {quiz.attemptLimit} lần làm • Điểm đạt: {quiz.passingScore}%
+                                                {isCompleted && ` • Đã làm ${quiz.attemptsCount} lần`}
+                                              </p>
+                                            </div>
+                                            {isCompleted ? (
+                                              <span className="px-3 py-1.5 bg-green-100 text-green-700 text-sm rounded flex items-center gap-1">
+                                                <CheckCircle2 className="w-3 h-3" />
+                                                Đã nộp
+                                              </span>
+                                            ) : (
+                                              <button 
+                                                className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
+                                                onClick={() => {
+                                                  setSelectedQuizId(quiz.id);
+                                                  setIsQuizModalOpen(true);
+                                                }}
+                                              >
+                                                Làm bài
+                                              </button>
+                                            )}
                                           </div>
-                                          <div className="flex-1">
-                                            <h5 className="font-medium text-gray-700">
-                                              #{quiz.numberItem} {quiz.title}
-                                            </h5>
-                                            <p className="text-sm text-gray-500">
-                                              {quiz.duration} phút • {quiz.attemptLimit} lần làm • Điểm đạt: {quiz.passingScore}%
-                                            </p>
-                                          </div>
-                                          <button className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700" onClick={() => {
-                                              setSelectedQuizId(quiz.id)
-                                              setIsQuizModalOpen(true)
-                                            }}>
-                                            Làm bài
-                                          </button>
-                                          <QuizDetailModal
-                                              isOpen={isQuizModalOpen}
-                                              onClose={() => {
-                                                setIsQuizModalOpen(false)
-                                                setSelectedQuizId(null)
-                                              }}
-                                              quizId={selectedQuizId || 0}
-                                            />
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
@@ -438,43 +703,58 @@ const CourseDetail = () => {
                                       📋 Bài tập ({sortedAssignments.length})
                                     </h4>
                                     <div className="space-y-2">
-                                      {sortedAssignments.map((assignment) => (
-                                        <div
-                                          key={assignment.id}
-                                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-orange-200 bg-orange-50"
-                                        >
-                                          <div className="flex-shrink-0 text-orange-600">
-                                            <FileText className="w-4 h-4" />
-                                          </div>
-                                          <div className="flex-1">
-                                            <h5 className="font-medium text-gray-700">
-                                              #{assignment.numberItem} {assignment.title}
-                                            </h5>
-                                            <p className="text-sm text-gray-500">
-                                              Hạn: {new Date(assignment.deadline).toLocaleDateString("vi-VN")} • 
-                                              {assignment.submissionType}
-                                            </p>
-                                          </div>
-                                          <button 
-                                            className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              setSelectedAssignmentId(assignment.id)
-                                              setIsAssignmentModalOpen(true)
-                                            }}
+                                      {sortedAssignments.map((assignment) => {
+                                        const isCompleted = (assignment.submissionsCount || 0) > 0;
+                                        
+                                        return (
+                                          <div
+                                            key={assignment.id}
+                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
+                                              isCompleted
+                                                ? 'border-green-400 bg-green-50'
+                                                : 'border-orange-200 bg-orange-50 hover:bg-orange-100'
+                                            }`}
                                           >
-                                            Nộp bài
-                                          </button>
-                                          <AssignmentDetailModal
-                                              isOpen={isAssignmentModalOpen}
-                                              onClose={() => {
-                                                setIsAssignmentModalOpen(false)
-                                                setSelectedAssignmentId(null)
-                                              }}
-                                              assignmentId={selectedAssignmentId || 0}
-                                            />
-                                        </div>
-                                      ))}
+                                            <div className="flex-shrink-0">
+                                              {isCompleted ? (
+                                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                              ) : (
+                                                <Circle className="w-5 h-5 text-orange-600" />
+                                              )}
+                                            </div>
+                                            <div className="flex-shrink-0 text-orange-600">
+                                              <FileText className="w-4 h-4" />
+                                            </div>
+                                            <div className="flex-1">
+                                              <h5 className="font-medium text-gray-700">
+                                                #{assignment.numberItem} {assignment.title}
+                                              </h5>
+                                              <p className="text-sm text-gray-500">
+                                                Hạn: {new Date(assignment.deadline).toLocaleDateString("vi-VN")} • 
+                                                {assignment.submissionType}
+                                                {isCompleted && ` • Đã nộp`}
+                                              </p>
+                                            </div>
+                                            {isCompleted ? (
+                                              <span className="px-3 py-1.5 bg-green-100 text-green-700 text-sm rounded flex items-center gap-1">
+                                                <CheckCircle2 className="w-3 h-3" />
+                                                Đã nộp
+                                              </span>
+                                            ) : (
+                                              <button 
+                                                className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedAssignmentId(assignment.id);
+                                                  setIsAssignmentModalOpen(true);
+                                                }}
+                                              >
+                                                Nộp bài
+                                              </button>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
@@ -556,6 +836,29 @@ const CourseDetail = () => {
       </main>
 
       <Footer />
+
+      {/* Modals */}
+      <QuizDetailModal
+        isOpen={isQuizModalOpen}
+        onClose={() => {
+          setIsQuizModalOpen(false);
+          setSelectedQuizId(null);
+          // Refresh progress after quiz submission
+          fetchProgressStats();
+        }}
+        quizId={selectedQuizId || 0}
+      />
+
+      <AssignmentDetailModal
+        isOpen={isAssignmentModalOpen}
+        onClose={() => {
+          setIsAssignmentModalOpen(false);
+          setSelectedAssignmentId(null);
+          // Refresh progress after assignment submission
+          fetchProgressStats();
+        }}
+        assignmentId={selectedAssignmentId || 0}
+      />
     </div>
   );
 };

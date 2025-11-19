@@ -200,7 +200,8 @@ public enum ErrorCode {
     INVALID_SCORE(1041, "Score is invalid or exceeds maximum allowed", HttpStatus.BAD_REQUEST),
 
     PUBLISHED_COURSE_NOT_FOUND(3201, "Không tìm thấy khóa học đã xuất bản", HttpStatus.NOT_FOUND),
-    ELASTICSEARCH_OPERATION_FAILED(8001, "Elasticsearch operation failed", HttpStatus.INTERNAL_SERVER_ERROR)
+    ELASTICSEARCH_OPERATION_FAILED(8001, "Elasticsearch operation failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    FILE_UPLOAD_FAILED(1027, "Failed to upload file", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

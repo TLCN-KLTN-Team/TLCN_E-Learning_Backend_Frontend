@@ -15,6 +15,17 @@ public interface AssignmentSubmissionRepository extends JpaRepository<Assignment
     List<AssignmentSubmission> findByIdUser(String idUser);
     Optional<AssignmentSubmission> findByAssignmentIdAndIdUser(Integer assignmentId, String idUser);
 
+    @Query("SELECT COUNT(DISTINCT asub.assignment.id) FROM AssignmentSubmission asub " +
+            "WHERE asub.idUser = :userId " +
+            "AND asub.assignment.section.course.id = :courseId")
+    int countDistinctAssignmentsByUserAndCourse(@Param("userId") String userId,
+                                                @Param("courseId") Integer courseId);
+    @Query("SELECT COUNT(asub) FROM AssignmentSubmission asub " +
+            "WHERE asub.idUser = :userId " +
+            "AND asub.assignment.id = :assignmentId")
+    int countByIdUserAndAssignment_Id(@Param("userId") String userId,
+                                      @Param("assignmentId") Integer assignmentId);
+
     /**
      * Find all submissions for a course and specific students
      */

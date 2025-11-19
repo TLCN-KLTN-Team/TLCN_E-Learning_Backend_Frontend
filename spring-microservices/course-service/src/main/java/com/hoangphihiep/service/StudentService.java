@@ -3,14 +3,21 @@ package com.hoangphihiep.service;
 import com.hoangphihiep.dto.request.StudentRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.StudentResponse;
+import com.hoangphihiep.entity.Course;
+import com.hoangphihiep.entity.CourseClass;
+import com.hoangphihiep.entity.CourseProgress;
+import com.hoangphihiep.entity.Section;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -20,6 +27,11 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final EmailService emailService;
+    private final CourseProgressRepository courseProgressRepository;
+    private final SectionRepository sectionRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
+    private final AssignmentSubmissionRepository assignmentSubmissionRepository;
+    private final CourseClassRepository courseClassRepository;
 
     public StudentResponse createStudent(StudentRequest request) {
         log.info("Creating new student with username: {}", request.getUsername());
@@ -85,6 +97,58 @@ public class StudentService {
         return response.getResult();
     }
 
+
+
+    public StudentResponse getStudentDetailByStudentId(String studentId, Integer classId) {
+        log.info("Getting student by studentId: {} in class: {}", studentId, classId);
+
+        // Get student basic info from repository
+        ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+
+        if (response.getResult() == null) {
+            throw new AppException(ErrorCode.STUDENT_NOT_FOUND);
+        }
+
+        StudentResponse studentResponse = response.getResult();
+        String userId = studentResponse.getId();
+
+        // Get course class
+        CourseClass courseClass = courseClassRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        Course course = courseClass.getCourse();
+
+        // Get or create course progress
+        Optional<CourseProgress> courseProgress = courseProgressRepository
+                .findByUserIdAndCourseId(userId, course.getId());
+
+        // Get all visible sections for this course and class
+        List<Section> sections = sectionRepository.findVisibleSectionsByClassId(course.getId(), classId);
+
+        // Calculate totals
+        int totalQuizzes = 0;
+        int totalAssignments = 0;
+
+        for (Section section : sections) {
+            totalQuizzes += section.getQuizs().size();
+            totalAssignments += section.getAssignments().size();
+        }
+
+        int completedQuizzes = quizAttemptRepository.countDistinctQuizzesByUserAndCourse(userId, course.getId());
+
+        int completedAssignments = assignmentSubmissionRepository.countDistinctAssignmentsByUserAndCourse(userId, course.getId());
+
+        // Calculate overall progress
+        int completedItems = completedQuizzes + completedAssignments;
+
+        // Update student response with calculated data
+        studentResponse.setTotalAssignments(totalAssignments);
+        studentResponse.setSubmittedAssignments(completedAssignments);
+        studentResponse.setTotalQuizzes(totalQuizzes);
+        studentResponse.setCompletedQuizzes(completedQuizzes);
+
+        return studentResponse;
+    }
     private void validateStudentRequest(StudentRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Student request cannot be null");
