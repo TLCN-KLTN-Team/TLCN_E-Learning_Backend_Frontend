@@ -364,9 +364,7 @@ public class SectionService {
                     // Extract file index
                     int fileIndex = Integer.parseInt(attachment.substring("FILE_INDEX:".length()));
 
-                    // Get corresponding file
                     MultipartFile file = lessonFiles.get(fileIndex);
-                    // Upload to S3/Cloud Storage
                     String uploadedUrl = fileHandlerRepository.uploadFile(file).get("url");
                     processedAttachments.add(uploadedUrl);
                 } else {

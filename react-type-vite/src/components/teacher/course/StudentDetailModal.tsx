@@ -15,10 +15,10 @@ interface StudentDetailModalProps {
   isOpen: boolean
   onClose: () => void
   student: StudentResponse
-  courseId: string
+  classId: number
 }
 
-const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose, student, courseId }) => {
+const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose, student, classId }) => {
   const [detailedStudent, setDetailedStudent] = useState<StudentResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -31,7 +31,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
   const fetchStudentDetails = async () => {
     try {
       setLoading(true)
-      const details = await getStudentDetails(Number(courseId), student.studentId)
+      const details = await getStudentDetails(classId,student.studentId)
       setDetailedStudent(details)
     } catch (err) {
       console.error("Error fetching student details:", err)
@@ -77,10 +77,6 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
                 <BookOpen className="h-4 w-4" />
                 <span className="hidden sm:inline">Điểm Số</span>
               </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span className="hidden sm:inline">Lịch Sử</span>
-              </TabsTrigger>
             </TabsList>
 
             {/* Personal Information Tab */}
@@ -107,14 +103,14 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
                       <p className="text-sm text-gray-600">Trạng Thái</p>
                       <Badge
                         className={
-                          currentStudent.accountStatus === "active"
+                          currentStudent.accountStatus === "ACTIVE"
                             ? "bg-green-100 text-green-800"
                             : currentStudent.accountStatus === "completed"
                               ? "bg-blue-100 text-blue-800"
                               : "bg-gray-100 text-gray-800"
                         }
                       >
-                        {currentStudent.accountStatus === "active"
+                        {currentStudent.accountStatus === "ACTIVE"
                           ? "Hoạt Động"
                           : currentStudent.accountStatus === "completed"
                             ? "Hoàn Thành"
@@ -216,55 +212,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
               </Card>
             </TabsContent>
 
-            {/* History Tab */}
-            <TabsContent value="history" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lịch Sử Tham Gia</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="font-medium">Lần Truy Cập Cuối</p>
-                          <p className="text-sm text-gray-600">
-                            {currentStudent.lastAccessTime
-                              ? new Date(currentStudent.lastAccessTime).toLocaleString("vi-VN")
-                              : "Chưa truy cập"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <BookOpen className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="font-medium">Tổng Giờ Học</p>
-                          <p className="text-sm text-gray-600">{currentStudent.totalLearningHours} giờ</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {currentStudent.enrollmentDate && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Clock className="h-5 w-5 text-gray-400" />
-                          <div>
-                            <p className="font-medium">Ngày Đăng Ký</p>
-                            <p className="text-sm text-gray-600">
-                              {new Date(currentStudent.enrollmentDate).toLocaleDateString("vi-VN")}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+            
           </Tabs>
         )}
       </DialogContent>

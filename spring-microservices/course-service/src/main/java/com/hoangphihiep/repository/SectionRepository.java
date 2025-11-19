@@ -16,6 +16,20 @@ public interface SectionRepository extends JpaRepository<Section, Integer> {
     @Query("SELECT s FROM Section s WHERE s.course.id = :courseId ORDER BY s.orderIndex")
     List<Section> findByCourseIdOrderByOrderIndex(@Param("courseId") int courseId);
 
-    @Query("SELECT s FROM Section s WHERE LOWER(s.title) LIKE LOWER(CONCAT('%', :name, '%'))")
-    List<Section> findBySectionNameContaining(@Param("name") String name);
+    @Query("SELECT s FROM Section s " +
+            "WHERE s.course.id = :courseId " +
+            "AND EXISTS (" +
+            "    SELECT 1 FROM ClassContentVisibility cv " +
+            "    WHERE cv.courseClass.id = :classId " +
+            "    AND cv.contentType = 'SECTION' " +
+            "    AND cv.contentId = s.id " +
+            "    AND cv.isVisible = true" +
+            ") " +
+            "ORDER BY s.orderIndex")
+    List<Section> findVisibleSectionsByClassId(@Param("courseId") Integer courseId,
+                                               @Param("classId") Integer classId);
+
+    @Query("SELECT s FROM Section s WHERE s.course.id = :courseId AND s.isPublished = true ORDER BY s.orderIndex")
+    List<Section> findByCourse_IdAndIsPublishedTrue(@Param("courseId") Integer courseId);
+
 }

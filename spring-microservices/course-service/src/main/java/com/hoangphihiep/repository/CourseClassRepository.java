@@ -27,7 +27,4 @@ public interface CourseClassRepository extends JpaRepository<CourseClass, Intege
                                                     Pageable pageable);
 
     List<CourseClass> findAllByCourseId(int courseId);
-
-    @Query("SELECT cc.course FROM CourseClass cc WHERE cc.id = :classId")
-    Course findCourseIdById(Long classId);
 }

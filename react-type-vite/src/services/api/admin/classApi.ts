@@ -107,7 +107,11 @@ export const unenrollStudentFromClass = async (
   );
 };
 
-export const getClassStatisticsByClass = async (educationalUnitId: number,classId: number): Promise<ClassStudentStatsResponse> => {
+
+export const getClassStatisticsByClass = async (
+  educationalUnitId: number,
+  classId: number
+): Promise<ClassStudentStatsResponse> => {
   const response = await axiosInstance.get<ApiResponse<ClassStudentStatsResponse>>(
     `/course-management/admin/educationalUnit/${educationalUnitId}/classes/${classId}/statistics`,
   )

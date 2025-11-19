@@ -36,6 +36,7 @@ public class CourseEnrollmentService {
     private final AssignmentSubmissionRepository submissionRepository;
     private final QuizRepository quizRepository;
     private final QuizAttemptRepository quizAttemptRepository;
+    private final AssignmentSubmissionRepository assignmentSubmissionRepository;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
@@ -354,6 +355,48 @@ public class CourseEnrollmentService {
         log.info("Updated course {} total students to {}", courseId, totalStudents);
     }
 
+    @Transactional(readOnly = true)
+    public List<SectionResponse> getEnrolledCourseContents(Integer classId) {
+        // Lấy userId từ SecurityContext
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // Verify enrollment
+        CourseClass courseClass = courseClassRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        Course course = courseClass.getCourse();
+
+        // Get published sections
+        List<Section> sections = sectionRepository.findByCourse_IdAndIsPublishedTrue(course.getId());
+
+        // Map to responses with counts
+        return sections.stream()
+                .map(section -> {
+                    SectionResponse response = sectionMapper.toSectionResponse(section);
+
+                    // Populate quiz attempts count for each quiz
+                    if (response.getQuizs() != null) {
+                        response.getQuizs().forEach(quizResponse -> {
+                            int attemptsCount = quizAttemptRepository
+                                    .countByIdUserAndQuiz_Id(userId, quizResponse.getId());
+                            quizResponse.setAttemptsCount(attemptsCount);
+                        });
+                    }
+
+                    // Populate assignment submissions count for each assignment
+                    if (response.getAssignments() != null) {
+                        response.getAssignments().forEach(assignmentResponse -> {
+                            int submissionsCount = assignmentSubmissionRepository
+                                    .countByIdUserAndAssignment_Id(userId, assignmentResponse.getId());
+                            assignmentResponse.setSubmissionsCount(submissionsCount);
+                        });
+                    }
+
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
+
     // Private helper methods
 
     private void validateEnrollmentRequest(Integer classId, List<String> studentIds) {
@@ -459,6 +502,96 @@ public class CourseEnrollmentService {
         } catch (Exception e) {
             log.warn("Error calculating average score for student {}: {}", studentId, e.getMessage());
             return null;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ClassStudentStatsResponse getClassStatistics(Integer classId) {
+        // Verify class exists
+        CourseClass courseClass = classRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        try {
+            // Get total students count
+            Integer totalStudents = enrollmentRepository.countTotalStudentsByClassId(classId);
+
+            // Get active students count
+            Integer activeStudents = enrollmentRepository.countActiveStudentsByClassId(classId);
+
+            // Get all student IDs for calculating average score and completion rate
+            List<String> studentIds = enrollmentRepository.findStudentIdsForStatistics(classId);
+
+            Double averageScore = 0.0;
+            Double completionRate = 0.0;
+
+            if (!studentIds.isEmpty()) {
+                Integer courseId = courseClass.getCourse().getId();
+
+                // Get total assignments and quizzes for this course
+                int totalAssignments = assignmentRepository.countByCourseId(courseId);
+                int totalQuizzes = quizRepository.countByCourseId(courseId);
+                int totalItems = totalAssignments + totalQuizzes;
+
+                double totalScore = 0.0;
+                int completedCount = 0;
+
+                // Calculate statistics for each student
+                for (String studentId : studentIds) {
+                    try {
+                        // Get student's user ID
+                        ApiResponse<StudentResponse> studentResponse = studentRepository.getStudentByStudentId(studentId);
+                        if (studentResponse != null && studentResponse.getResult() != null) {
+                            String userId = studentResponse.getResult().getId();
+
+                            // Calculate student's average score
+                            Double studentAvgScore = calculateAverageScore(userId, courseId);
+                            if (studentAvgScore != null) {
+                                totalScore += studentAvgScore;
+                            }
+
+                            // Check completion status
+                            if (totalItems > 0) {
+                                int submittedAssignments = submissionRepository.countSubmittedAssignmentsByStudentAndCourse(userId, courseId);
+                                int completedQuizzes = quizAttemptRepository.countCompletedQuizzesByStudentAndCourse(userId, courseId);
+                                int completedItems = submittedAssignments + completedQuizzes;
+
+                                // Consider completed if student finished >= 80% of total items
+                                if (completedItems >= totalItems * 0.8) {
+                                    completedCount++;
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("Error calculating statistics for student {}: {}", studentId, e.getMessage());
+                    }
+                }
+
+                // Calculate averages
+                if (studentIds.size() > 0) {
+                    averageScore = totalScore / studentIds.size();
+                    completionRate = totalItems > 0 ? (double) completedCount / studentIds.size() : 0.0;
+                }
+            }
+
+            log.info("Class {} statistics - Total: {}, Active: {}, Avg Score: {}, Completion: {}%",
+                    classId, totalStudents, activeStudents, averageScore, completionRate * 100);
+
+            return ClassStudentStatsResponse.builder()
+                    .totalStudents(totalStudents != null ? totalStudents : 0)
+                    .activeStudents(activeStudents != null ? activeStudents : 0)
+                    .averageScore(averageScore)
+                    .completionRate(completionRate)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error calculating statistics for class {}: {}", classId, e.getMessage(), e);
+            // Return default values if calculation fails
+            return ClassStudentStatsResponse.builder()
+                    .totalStudents(0)
+                    .activeStudents(0)
+                    .averageScore(0.0)
+                    .completionRate(0.0)
+                    .build();
         }
     }
 }

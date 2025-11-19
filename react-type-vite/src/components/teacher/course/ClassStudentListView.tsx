@@ -7,10 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Users, Plus, Search, AlertCircle, Loader2, Eye, Trash2} from 'lucide-react'
-import {
-  getClassStatisticsByClass,
-} from "@/services/api/teacher/classManagementApi"
-
 import * as classApi from "@/services/api/admin/classApi";
 import type { ClassStudentStatsResponse } from "@/services/api/response/studentEnrollmentResponse"
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
@@ -51,7 +47,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
 
       const [studentsData, statsData] = await Promise.all([
         classApi.getStudentsInClass(educationalUnitId, classData.id),
-        getClassStatisticsByClass(classData.id),
+        classApi.getClassStatisticsByClass(educationalUnitId, classData.id),
       ])
 
       setStudents(studentsData)
@@ -82,7 +78,9 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
     try {
       setIsDeleting(studentId)
       await classApi.unenrollStudentFromClass(educationalUnitId, classData.id, studentId);
-      setStudents(students.filter((s) => s.studentId !== studentId))
+      
+      // Refresh data to update statistics
+      await fetchClassData()
     } catch (err) {
       console.error("Error removing student:", err)
       alert("Không thể xóa sinh viên. Vui lòng thử lại.")
@@ -301,7 +299,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
             setSelectedStudent(null)
           }}
           student={selectedStudent}
-          courseId={courseId}
+          classId={classData.id}
         />
       )}
     </div>

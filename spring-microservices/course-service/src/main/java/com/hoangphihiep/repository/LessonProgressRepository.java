@@ -25,4 +25,9 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
 
     @Query("SELECT lp FROM LessonProgress lp WHERE lp.courseProgress.idUser = :userId AND lp.lesson.id = :lessonId")
     Optional<Object> findByUserIdAndLessonId(String userId, Integer lessonId);
+
+    @Query("SELECT lp FROM LessonProgress lp WHERE lp.courseProgress.id = :courseProgressId AND lp.lesson.id = :lessonId")
+    Optional<LessonProgress> findByCourseProgress_IdAndLesson_Id(
+            @Param("courseProgressId") Integer courseProgressId,
+            @Param("lessonId") Integer lessonId);
 }
