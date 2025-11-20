@@ -281,19 +281,6 @@ public class PublishedCourseTeacherService {
         publishedCourse.setStatus(0);
     }
     private void validatePublishedCourseForSubmission(PublishedCourse publishedCourse) {
-        if (publishedCourse.getCourseDetail() == null) {
-            throw new AppException(ErrorCode.COURSE_DETAIL_REQUIRED);
-        }
-
-        CourseDetail detail = publishedCourse.getCourseDetail();
-        if (detail.getDescription() == null || detail.getDescription().trim().isEmpty()) {
-            throw new AppException(ErrorCode.COURSE_DETAIL_DESCRIPTION_REQUIRED);
-        }
-
-        if (detail.getCourseIntroduction() == null || detail.getCourseIntroduction().trim().isEmpty()) {
-            throw new AppException(ErrorCode.COURSE_DETAIL_INTRODUCTION_REQUIRED);
-        }
-
         // Validate có ít nhất 1 section published
         boolean hasPublishedSection = publishedCourse.getCourse().getSections().stream()
                 .anyMatch(section -> Boolean.TRUE.equals(section.getIsPublished()) &&

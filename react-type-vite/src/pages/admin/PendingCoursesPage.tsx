@@ -239,8 +239,8 @@ const PendingCoursesPage = () => {
                   </div>
 
                   {/* Description */}
-                  {course.courseDetail.description && (
-                    <p className="text-sm text-gray-700 mb-4 line-clamp-2">{course.courseDetail.description}</p>
+                  {course.description && (
+                    <p className="text-sm text-gray-700 mb-4 line-clamp-2">{course.description}</p>
                   )}
 
                   {/* Actions */}
