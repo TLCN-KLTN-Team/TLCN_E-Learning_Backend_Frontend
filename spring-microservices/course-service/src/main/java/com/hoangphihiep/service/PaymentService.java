@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
@@ -37,8 +38,12 @@ public class PaymentService {
     private final PayPalHttpClient payPalHttpClient;
     private final OrderService orderService;
 
+    // Tạo URL thanh toán VNPay khi user nhấn "Process Payment" on frontend
     public String createVNPayPaymentUrl(PaymentRequest request, HttpServletRequest httpRequest) throws Exception {
-        long amount = request.getAmount().multiply(BigDecimal.valueOf(100)).longValue(); // VNPay yêu cầu số tiền nhân 100
+        BigDecimal amount = request.getAmount()
+                .multiply(BigDecimal.valueOf(1000))
+                .setScale(0, RoundingMode.DOWN);; // VNPay yêu cầu số tiền nhân 100
+        log.info("vnp_Amount sent to VNPay = {}",amount);
         String orderId = UUID.randomUUID().toString();
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", "2.1.0");
@@ -46,7 +51,7 @@ public class PaymentService {
         vnp_Params.put("vnp_TmnCode", vnPayConfig.getVnp_TmnCode());
         vnp_Params.put("vnp_Amount", String.valueOf(amount)); // Nhân 100
         vnp_Params.put("vnp_CurrCode", "VND");
-        vnp_Params.put("vnp_TxnRef", "Thanh toan thanh cong:" + orderId);
+        vnp_Params.put("vnp_TxnRef", orderId);
         vnp_Params.put("vnp_OrderInfo", "info");
         vnp_Params.put("vnp_OrderType", "other");
         vnp_Params.put("vnp_Locale", "vn");
@@ -99,6 +104,7 @@ public class PaymentService {
         return vnPayConfig.getVnp_PayUrl() + "?" + query.toString();
     }
 
+    // Xử lý callback từ VNPay
     public VNPayReturnResponse handleVNPayCallback(HttpServletRequest request){
         Map<String, String> fields = vnPayUtils.getQueryParams(request);
 
@@ -116,6 +122,8 @@ public class PaymentService {
 
         if ("00".equals(fields.get("vnp_ResponseCode"))) {
             // create order and save to database if needed
+            String orderId = fields.get("vnp_TxnRef");
+            orderService.updateSuccessOrder(orderId);
             return VNPayReturnResponse.builder()
                     .success(true)
                     .message("OK")
@@ -129,7 +137,7 @@ public class PaymentService {
     }
 
     // Implement paypal payment
-    // create paypal payment
+    // create paypal payment khi user nhấn "Process Payment" on frontend
     public String processPaypalPayment(PaymentRequest paymentRequest) {
         try {
             OrderRequest orderRequest = new OrderRequest();
@@ -173,6 +181,7 @@ public class PaymentService {
         }
     }
 
+    // capture paypal order khi user hoàn tất thanh toán trên paypal
     public PaypalOrderResponse capturePaypalOrder(String orderId) {
         OrdersCaptureRequest request = new OrdersCaptureRequest(orderId);
         request.requestBody(new OrderRequest());
@@ -180,6 +189,9 @@ public class PaymentService {
         try {
             HttpResponse<Order> response = payPalHttpClient.execute(request);
             Order order = response.result();
+
+            // Cập nhật trạng thái đơn hàng trong hệ thống
+            orderService.updateSuccessOrder(orderId);
 
             return PaypalOrderResponse.builder()
                     .status(order.status())

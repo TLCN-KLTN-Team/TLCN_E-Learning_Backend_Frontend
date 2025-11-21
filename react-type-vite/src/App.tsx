@@ -8,6 +8,7 @@ import StudentRoutes from "./routes/StudentRoute";
 import TeacherRoutes from "./routes/TeacherRoute";
 import AdminRoutes from "./routes/AdminRoute";
 import SystemAdminRoutes from "./routes/SystemAdminRoute";
+import UserRoutes from "./routes/UserRoute";
 
 function App() {
   // Khởi tạo token expiry monitoring
@@ -19,6 +20,8 @@ function App() {
           {/* A more descriptive route */}
           {/* Public routes - which accessible by anonymous users*/}
           {PublicRoutes}
+          {/* User Routes */}
+          {UserRoutes}
           {/* Student Routes */}
           {StudentRoutes}
           {/* Teacher Routes */}
