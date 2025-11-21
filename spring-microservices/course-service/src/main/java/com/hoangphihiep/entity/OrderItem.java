@@ -42,4 +42,8 @@ public class OrderItem implements Serializable {
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
+
+    public boolean containsCourse(Integer courseId) {
+        return this.course.getId().equals(courseId);
+    }
 }

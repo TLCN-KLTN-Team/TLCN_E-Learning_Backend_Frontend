@@ -1,6 +1,9 @@
 import axiosInstance from "../httpClient/axiosInstance";
+import type { ApiResponse } from "../response/apiResponse";
 
 const API_MY_COURSES_ENDPOINT = "/course-management/enrolled-courses";
+const API_PURCHASED_COURSES_ENDPOINT =
+  "/course-management/published-courses/my-courses";
 
 export interface EnrolledCourse {
   courseId: number;
@@ -16,9 +19,22 @@ export interface EnrolledCourse {
   enrolledDate?: string;
 }
 
+export interface PurchasedCourse {
+  publishedCourseId: number;
+  publishedCourseName: string;
+  authorName: string;
+  progressPercentage: number;
+  thumbnailUrl?: string;
+}
+
 export interface EnrolledCoursesResponse {
   courses: EnrolledCourse[];
   totalCourses: number;
+}
+
+export interface PurchasedCoursesResponse {
+  data: PurchasedCourse[];
+  message: string;
 }
 
 const getEnrolledCourses = async (): Promise<EnrolledCoursesResponse> => {
@@ -46,8 +62,16 @@ const updateCourseProgress = async (
   });
 };
 
+const getPurchasedCourses = async (): Promise<PurchasedCourse[]> => {
+  const response = await axiosInstance.get<ApiResponse<PurchasedCourse[]>>(
+    API_PURCHASED_COURSES_ENDPOINT
+  );
+  return response.data.result;
+};
+
 export default {
   getEnrolledCourses,
   getCourseProgress,
   updateCourseProgress,
+  getPurchasedCourses,
 };

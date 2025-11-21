@@ -28,6 +28,7 @@ export interface PublishedCourseDetailResponse {
   level: string;
   category: string;
   isHandsOn: boolean;
+  purchaserStatus: boolean;
 }
 
 export interface Course {

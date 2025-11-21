@@ -20,6 +20,7 @@ public class PublishedCourseDetailResponse {
     int studentCount;
     double duration;
     String authorName;
+    boolean purchaserStatus; // NOT_ENROLLED, ENROLLED, COMPLETED
 
     String thumbnailUrl;
     String coursePrice;

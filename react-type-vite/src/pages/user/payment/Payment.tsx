@@ -5,9 +5,17 @@ import {
   CheckCircle,
   AlertCircle,
   ShoppingCart,
+  Loader2,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
 import Header from "../../../components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 
@@ -34,6 +42,7 @@ const Payment: React.FC = () => {
   const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   const handleCompletePayment = async () => {
     if (!selectedCountry || !acceptedTerms) {
@@ -45,6 +54,9 @@ const Payment: React.FC = () => {
       alert("Không có khóa học nào để thanh toán.");
       return;
     }
+
+    // Show payment processing dialog
+    setShowPaymentDialog(true);
 
     try {
       // Calculate total amount from all items
@@ -74,9 +86,11 @@ const Payment: React.FC = () => {
         window.location.href = response.paymentUrl;
       } else {
         alert("Không thể tạo thanh toán. Vui lòng thử lại.");
+        setShowPaymentDialog(false);
       }
     } catch (error) {
       console.error("Payment creation error:", error);
+      setShowPaymentDialog(false);
       alert("Đã xảy ra lỗi khi xử lý thanh toán. Vui lòng thử lại.");
     }
   };
@@ -98,10 +112,8 @@ const Payment: React.FC = () => {
             courseId: item.courseId,
             courseName: item.courseName,
             authorName: item.authorName,
-            price: parseFloat(item.currentPrice.replace(/[^0-9.]/g, "")),
-            originalPrice: parseFloat(
-              item.originalPrice.replace(/[^0-9.]/g, "")
-            ),
+            price: parseFloat(item.currentPrice),
+            originalPrice: parseFloat(item.originalPrice),
           }));
           setCheckoutItems(items);
           setIsLoading(false);
@@ -318,8 +330,8 @@ const Payment: React.FC = () => {
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-gray-900">
-                            {new Intl.NumberFormat("vi-VN").format(item.price)}{" "}
-                            ₫
+                            {new Intl.NumberFormat("vi-VN").format(item.price)}
+                            {"  "}₫
                           </div>
                           {item.originalPrice &&
                             item.originalPrice > item.price && (
@@ -481,7 +493,7 @@ const Payment: React.FC = () => {
                       disabled={!selectedCountry || !acceptedTerms}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
-                      Complete Purchase
+                      Hoàn tất thanh toán
                     </Button>
                   </Card>
                 </div>
@@ -492,6 +504,79 @@ const Payment: React.FC = () => {
       </main>
 
       <Footer />
+
+      {/* Payment Processing Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent
+          showCloseButton={false}
+          className="sm:max-w-md bg-white dark:bg-gray-800"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl text-gray-900 dark:text-white">
+              Đang xử lý thanh toán
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2 text-gray-600 dark:text-gray-300">
+              Vui lòng đợi trong giây lát...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-6 space-y-4 bg-white dark:bg-gray-800">
+            {/* Loading Spinner */}
+            <div className="relative">
+              <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />
+            </div>
+
+            {/* Payment Method Info */}
+            <div className="text-center space-y-2">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Đang chuyển hướng đến cổng thanh toán
+              </p>
+              <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                {selectedPayment === "vnpay" ? (
+                  <>
+                    <div className="w-8 h-8 bg-blue-200 dark:bg-blue-700 rounded flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-200 font-bold text-xs">
+                        VP
+                      </span>
+                    </div>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      VNPay
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-8 h-8 bg-blue-200 dark:bg-blue-700 rounded flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-200 font-bold text-xs">
+                        PP
+                      </span>
+                    </div>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      PayPal
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Amount */}
+            <div className="text-center pt-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                Tổng thanh toán
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {checkoutItems.reduce((sum, item) => sum + item.price, 0)} ₫
+              </p>
+            </div>
+
+            {/* Security Notice */}
+            <div className="text-center text-xs text-gray-500 dark:text-gray-400 max-w-sm bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+              <p>
+                Giao dịch của bạn được bảo mật và mã hóa. Bạn sẽ được chuyển đến
+                trang thanh toán an toàn.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
