@@ -44,6 +44,8 @@ const CourseDetail: React.FC = () => {
             WishlistService.checkPublishedCourseInWishlist(Number(courseId)),
           ]);
 
+          console.log("Course Data:", courseData);
+
           setIsInCart(inCart);
           setIsInWishlist(inWishlist);
           setCourse(courseData);
@@ -75,6 +77,12 @@ const CourseDetail: React.FC = () => {
     // Navigate to payment page for quick purchase
     console.log("Enrolling in course:", course?.courseName);
     navigate(`/payment/checkout/express/course/${courseId}`);
+  };
+
+  const handleLearnNow = () => {
+    // Navigate to course learning page
+    console.log("Learning course:", course?.courseName);
+    navigate(`/user/course/${courseId}/learn`);
   };
 
   const handleAddToWishlist = async () => {
@@ -215,7 +223,7 @@ const CourseDetail: React.FC = () => {
                 <div className="text-center mb-6">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <span className="text-3xl font-bold text-gray-900">
-                      ${course.coursePrice}
+                      {course.coursePrice}
                     </span>
                     <span className="text-lg text-gray-500 line-through">
                       $219
@@ -254,12 +262,21 @@ const CourseDetail: React.FC = () => {
                     </Button>
                   </div>
                   {/* Hàng dưới: Nút "Mua ngay" */}
-                  <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
-                    onClick={handleEnrollNow}
-                  >
-                    Mua ngay
-                  </Button>
+                  {!course.purchaserStatus ? (
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
+                      onClick={handleEnrollNow}
+                    >
+                      Mua ngay
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
+                      onClick={handleLearnNow}
+                    >
+                      Bắt đầu học
+                    </Button>
+                  )}
                 </div>
 
                 {/* Course Info */}

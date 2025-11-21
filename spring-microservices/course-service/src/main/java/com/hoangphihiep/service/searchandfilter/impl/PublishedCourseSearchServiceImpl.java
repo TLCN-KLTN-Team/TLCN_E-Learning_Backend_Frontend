@@ -14,8 +14,10 @@ import com.hoangphihiep.dto.request.SearchFiltersRequest;
 import com.hoangphihiep.dto.response.CompletionSuggestionResponse;
 import com.hoangphihiep.dto.response.PaginatedResponse;
 import com.hoangphihiep.dto.response.PublishedCourseCardResponse;
+import com.hoangphihiep.entity.OrderItem;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.helper.Indices;
+import com.hoangphihiep.repository.OrderItemRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.repository.elasticsearch.CourseCompletionRepository;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
@@ -42,6 +44,7 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
     private RangeQuery.Builder r;
     private final CurrencyUtils currencyUtils;
     private final CourseCompletionRepository courseCompletionRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Override
     public void bulkIndexCoursesIfNotExists() {
@@ -220,15 +223,23 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
         int totalPages = (int) Math.ceil((double) totalHits / request.getSize());
         log.debug("Search completed. Total hits: {}", response.hits().total().value());
 
-        // Convert hits to response objects
-        List<PublishedCourseCardResponse> mapHits = response.hits().hits().stream()
+        List<PublishedCourse> publishedCourses = response.hits().hits()
+                .stream()
                 .map(Hit::source)
                 .filter(Objects::nonNull)
+                .map(doc -> publishedCourseRepository.findById(Integer.parseInt(doc.getId())).orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+
+        // Convert hits to response objects
+        List<OrderItem> orderItems = orderItemRepository.findAll();
+        List<PublishedCourseCardResponse> result = publishedCourses.stream()
+                .filter(course -> !orderItems.contains(course))
                 .map(this::convertToCardResponse)
                 .toList();
 
         return PaginatedResponse.<PublishedCourseCardResponse>builder()
-                .content(mapHits)
+                .content(result)
                 .page(request.getPage())
                 .size(request.getSize())
                 .totalElements(totalHits)
@@ -236,12 +247,12 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
                 .build();
     }
 
-    private PublishedCourseCardResponse convertToCardResponse(PublishedCourseDocument document) {
+    private PublishedCourseCardResponse convertToCardResponse(PublishedCourse entity) {
         return PublishedCourseCardResponse.builder()
-                .id(Integer.parseInt(document.getId()))
-                .courseName(document.getCourseName())
-                .category(document.getCategory())
-                .coursePrice(currencyUtils.formatCurrency(document.getPrice()))
+                .id(entity.getId())
+                .courseName(entity.getCourse().getCourseName())
+                .category(entity.getCourseType().getCourseTypeName())
+                .coursePrice(currencyUtils.formatCurrency(entity.getCoursePrice()))
                 .build();
     }
 

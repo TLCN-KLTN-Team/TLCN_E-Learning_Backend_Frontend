@@ -21,4 +21,5 @@ public class PublishedCourseCardResponse {
     boolean isHandsOn;
     double duration;
     String level;
+    String status;
 }

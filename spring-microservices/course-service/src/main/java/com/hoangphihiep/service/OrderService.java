@@ -12,17 +12,21 @@ import com.hoangphihiep.mapper.OrderItemMapper;
 import com.hoangphihiep.mapper.OrderMapper;
 import com.hoangphihiep.repository.OrderItemRepository;
 import com.hoangphihiep.repository.OrderRepository;
+import com.hoangphihiep.utils.JwtUtils;
+import com.hoangphihiep.utils.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final OrderItemService orderItemService;
     private final OrderItemMapper orderItemMapper;
     private final OrderMapper orderMapper;
@@ -34,7 +38,7 @@ public class OrderService {
         Order order = Order.builder()
                 .orderId(request.getOrderId())
                 .orderDate(request.getCreateTime())
-                .orderStatus("PENDING")
+                .orderStatus(OrderStatus.PENDING)
                 .idUser(userId)
                 .build();
 
@@ -49,16 +53,21 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public void updateSuccessOrder(Integer id){
-        Order order = orderRepository.findById(id)
+    public List<Order> getOrdersByUserId() {
+        String userId = JwtUtils.getCurrentUserId();
+        return orderRepository.findByUserIdOrderByOrderDateDesc(userId);
+    }
+
+    public void updateSuccessOrder(String orderId){
+        Order order = orderRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-        order.setOrderStatus("SUCCESS");
+        order.setOrderStatus(OrderStatus.COMPLETED);
         orderRepository.save(order);
     }
 
     public List<OrderResponse> getHistoryOrders() {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(userId, null).getContent();
+        List<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(userId);
         return orders.stream()
                 .map(order -> {
                     OrderResponse orderResponse = orderMapper.toResponse(order);
@@ -66,6 +75,21 @@ public class OrderService {
                     return orderResponse;
                 })
                 .toList();
+    }
+
+    public boolean checkCoursePurchased(Integer publishedCourseId) {
+        List<Order> ordersOfUser = this.getOrdersByUserId();
+        List<Integer> orderIds = ordersOfUser.stream()
+                .map(Order::getId)
+                .toList();
+        List<OrderItem> orderItems = new ArrayList<>();
+        orderIds.forEach(orderId -> {
+            List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
+            orderItems.addAll(items);
+        });
+
+        return orderItems.stream()
+                .anyMatch(item -> item.getCourse().getId().equals(publishedCourseId));
     }
 
 }
