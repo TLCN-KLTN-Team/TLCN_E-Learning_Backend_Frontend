@@ -2,6 +2,7 @@ package com.devteria.identity.service;
 
 import java.util.HashSet;
 
+import com.devteria.identity.entity.AccountStatus;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,7 @@ public class AdminService {
                 .phoneNumber(request.getPhone())
                 .dob(request.getDob())
                 .roles(roles)
+                .accountStatus(AccountStatus.INACTIVE)
                 .build();
 
         try {

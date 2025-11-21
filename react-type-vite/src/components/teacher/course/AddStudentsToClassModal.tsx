@@ -157,9 +157,9 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-white rounded-lg overflow-hidden max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="bg-white rounded-lg max-w-4xl h-[90vh] flex flex-col p-0 gap-0">
         {/* Header */}
-        <DialogHeader className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 -mx-6 -mt-6 mb-0">
+        <DialogHeader className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
               <Users className="w-5 h-5 text-white" />
@@ -173,11 +173,9 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
           </div>
         </DialogHeader>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Tabs */}
-          <div className="px-6 pt-6 pb-0">
-            <div className="flex space-x-1 mb-6 bg-gray-100 rounded-xl p-1">
+        {/* Tabs */}
+        <div className="px-6 pt-4 pb-3 flex-shrink-0">
+          <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
               <button
                 onClick={() => setActiveTab("available")}
                 className={`flex-1 px-4 lg:px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
@@ -205,11 +203,11 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
                 <span className="ml-1">({enrolledStudents.length})</span>
               </button>
             </div>
-          </div>
+        </div>
 
-          {/* Search Bar */}
-          <div className="px-6 pb-4">
-            <div className="relative">
+        {/* Search Bar */}
+        <div className="px-6 pb-3 flex-shrink-0">
+          <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <Input
                 type="text"
@@ -219,27 +217,27 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
                 className="pl-10 py-2.5 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg"
               />
             </div>
-          </div>
+        </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="px-6 pb-4">
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
+        {/* Error Message */}
+        {error && (
+          <div className="px-6 pb-3 flex-shrink-0">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700">{error}</p>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Scrollable Content */}
-          <div className="px-6 flex-1 overflow-y-auto">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto px-6" style={{ minHeight: 0 }}>
             {loadingData ? (
               <div className="flex items-center justify-center py-16">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <span className="ml-3 text-gray-600 font-medium">Đang tải danh sách sinh viên...</span>
               </div>
             ) : activeTab === "available" ? (
-              <div className="space-y-4">
+              <div className="space-y-4 pb-20">
                 {filteredAvailableStudents.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -286,7 +284,7 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
                     </div>
 
                     {/* Student List */}
-                    <div className="grid gap-3 pb-4">
+                    <div className="grid gap-3 pb-20">
                       {filteredAvailableStudents.map((student) => {
                         const isSelected = selectedStudents.includes(student.studentId)
 
@@ -351,7 +349,7 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
                 )}
               </div>
             ) : (
-              <div className="space-y-3 pb-4">
+              <div className="space-y-3 pb-20">
                 {filteredEnrolledStudents.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -411,11 +409,10 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
                 )}
               </div>
             )}
-          </div>
         </div>
 
         {/* Footer */}
-        <DialogFooter className="border-t bg-gray-50 px-6 py-4 mt-auto">
+        <DialogFooter className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 w-full">
             {activeTab === "available" && filteredAvailableStudents.length > 0 ? (
               <>

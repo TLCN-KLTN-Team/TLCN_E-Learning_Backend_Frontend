@@ -131,10 +131,20 @@ const ForgotPasswordPage = () => {
       return;
     }
 
+    // Frontend validation to match backend
+    const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{6,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      setError(
+        "Mật khẩu phải có ít nhất 6 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@#$%^&+=!)"
+      );
+      return;
+    }
+
     setIsLoading(true);
     setError("");
 
     try {
+      console.log("Sending reset password request with token:", resetToken);
       await forgotPasswordApi.resetPassword({
         token: resetToken,
         newPassword,
@@ -142,9 +152,19 @@ const ForgotPasswordPage = () => {
       });
       setCurrentStep("success");
     } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        "Không thể đặt lại mật khẩu. Vui lòng thử lại.";
+      console.error("Reset password error:", error);
+      console.error("Error response:", error?.response?.data);
+      
+      const errorCode = error?.response?.data?.code;
+      let message = error?.response?.data?.message || error?.message;
+      
+      // Custom error messages
+      if (errorCode === "CREDENTIAL_2003" || message?.includes("không đủ mạnh")) {
+        message = "Mật khẩu phải có ít nhất 6 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@#$%^&+=!)";
+      } else if (!message) {
+        message = "Không thể đặt lại mật khẩu. Vui lòng thử lại.";
+      }
+      
       setError(message);
     } finally {
       setIsLoading(false);
