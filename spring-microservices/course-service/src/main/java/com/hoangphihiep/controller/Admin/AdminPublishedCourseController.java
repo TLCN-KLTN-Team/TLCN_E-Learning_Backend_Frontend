@@ -30,6 +30,7 @@ public class AdminPublishedCourseController {
         Page<PublishedCourseResponse> response = publishedCourseTeacherService
                 .getPublishedCoursesForAdmin(educationalUnitId, status, page, size);
 
+
         return ApiResponse.<Page<PublishedCourseResponse>>builder()
                 .message("Get published courses successfully")
                 .result(response)

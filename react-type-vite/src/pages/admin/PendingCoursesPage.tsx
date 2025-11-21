@@ -11,7 +11,6 @@ import {
   AlertCircle,
   Package,
   Calendar,
-  DollarSign,
   BookOpen,
 } from "lucide-react"
 import * as adminPublishedCourseApi from "@/services/api/admin/adminPublishedCourseApi"
@@ -31,6 +30,14 @@ const PendingCoursesPage = () => {
   const [currentEducationalUnit, setCurrentEducationalUnit] = useState<EducationalUnitResponse | null>(null)
   const [educationalUnitId, setEducationalUnitId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  
+  // Stats state - tính toán từ tất cả khóa học
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  })
 
   useEffect(() => {
     const initializeEducationalUnit = async () => {
@@ -57,7 +64,38 @@ const PendingCoursesPage = () => {
     }
 
     loadCourses()
+    loadStats() // Load stats riêng
   }, [educationalUnitId, page, selectedTab])
+
+  // Load stats từ API "all" courses
+  const loadStats = async () => {
+    if (educationalUnitId === null) return
+
+    try {
+      // Gọi API để lấy tất cả khóa học (page 0, size lớn để lấy hết)
+      const allCoursesResult = await adminPublishedCourseApi.getPublishedCourses(
+        educationalUnitId,
+        undefined,
+        0,
+        1000 // Lấy tất cả khóa học
+      )
+
+      // Tính toán stats từ tất cả khóa học
+      const pending = allCoursesResult.content.filter((c) => c.status === 1).length
+      const approved = allCoursesResult.content.filter((c) => c.status === 2).length
+      const rejected = allCoursesResult.content.filter((c) => c.status === 3).length
+
+      setStats({
+        total: allCoursesResult.totalElements,
+        pending,
+        approved,
+        rejected,
+      })
+    } catch (error: any) {
+      console.error("Error loading stats:", error)
+      // Không set error ở đây để không ảnh hưởng đến UI chính
+    }
+  }
 
   const loadCourses = async () => {
     setLoading(true)
@@ -106,7 +144,7 @@ const PendingCoursesPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Tổng Khóa Học</p>
-                <p className="text-2xl font-bold text-gray-900">{totalElements}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
               <BookOpen className="w-10 h-10 text-blue-500" />
             </div>
@@ -116,7 +154,7 @@ const PendingCoursesPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Chờ Duyệt</p>
-                <p className="text-2xl font-bold text-yellow-600">{courses.filter((c) => c.status === 1).length}</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
               </div>
               <Clock className="w-10 h-10 text-yellow-500" />
             </div>
@@ -126,7 +164,7 @@ const PendingCoursesPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Đã Duyệt</p>
-                <p className="text-2xl font-bold text-green-600">{courses.filter((c) => c.status === 2).length}</p>
+                <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
               </div>
               <CheckCircle className="w-10 h-10 text-green-500" />
             </div>
@@ -136,7 +174,7 @@ const PendingCoursesPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Từ Chối</p>
-                <p className="text-2xl font-bold text-red-600">{courses.filter((c) => c.status === 3).length}</p>
+                <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
               </div>
               <XCircle className="w-10 h-10 text-red-500" />
             </div>
@@ -155,7 +193,7 @@ const PendingCoursesPage = () => {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Chờ Duyệt ({courses.filter((c) => c.status === 1).length})
+                Chờ Duyệt ({stats.pending})
               </button>
               <button
                 onClick={() => handleTabChange("all")}
@@ -165,7 +203,7 @@ const PendingCoursesPage = () => {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Tất Cả ({totalElements})
+                Tất Cả ({stats.total})
               </button>
             </nav>
           </div>
@@ -212,7 +250,6 @@ const PendingCoursesPage = () => {
                           Gửi: {formatDate(course.createdAt)}
                         </span>
                         <span className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4" />
                           {formatPrice(course.coursePrice)}
                         </span>
                         <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded">
@@ -246,7 +283,11 @@ const PendingCoursesPage = () => {
                   {/* Actions */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                     <div className="text-sm text-gray-600">
-                      Giảng viên: <span className="font-medium">{course.course.idTeacher}</span>
+                      Giảng viên: <span className="font-medium">
+                        {course.course.teacher 
+                          ? `${course.course.teacher.firstName} ${course.course.teacher.lastName}` 
+                          : course.course.idTeacher}
+                      </span>
                     </div>
                     <button
                       onClick={() => navigate(`/admin/published-courses/${course.id}`)}

@@ -64,6 +64,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request ->
                     request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                             .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
+                            .requestMatchers(HttpMethod.PUT, PUBLIC_ENDPOINTS).permitAll()
                             .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                 .anyRequest()
                 .authenticated());

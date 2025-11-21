@@ -6,7 +6,6 @@ import {
   XCircle,
   Loader2,
   AlertCircle,
-  DollarSign,
   Calendar,
   BookOpen,
   FileText,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import * as adminPublishedCourseApi from "@/services/api/admin/adminPublishedCourseApi";
 import type { PublishedCourseResponse } from "@/services/api/response/publishedCourseResponse";
+import ReadOnlySectionView from "@/components/admin/course/ReadOnlySectionView";
 
 const CourseApprovalDetailPage = () => {
   const { publishedCourseId } = useParams<{ publishedCourseId: string }>();
@@ -196,7 +196,6 @@ const CourseApprovalDetailPage = () => {
                   Gửi: {formatDate(course.createdAt)}
                 </span>
                 <span className="flex items-center gap-1">
-                  <DollarSign className="w-4 h-4" />
                   {formatPrice(course.coursePrice)}
                 </span>
                 <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
@@ -359,33 +358,21 @@ const CourseApprovalDetailPage = () => {
             )}
 
             {/* Published Content */}
-            {course.publishedSections && course.publishedSections.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-blue-600" />
-                  Nội Dung Được Xuất Bản
-                </h2>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-blue-600" />
+                Nội Dung Được Xuất Bản
+              </h2>
 
-                <div className="space-y-4">
-                  {course.publishedSections.map((section: any, idx: number) => (
-                    <div key={idx} className="border rounded-lg p-4">
-                      <h3 className="font-medium text-gray-900 mb-2">{section.title}</h3>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {section.lessons && section.lessons.length > 0 && (
-                          <p>📚 {section.lessons.length} bài học</p>
-                        )}
-                        {section.quizzes && section.quizzes.length > 0 && (
-                          <p>📝 {section.quizzes.length} bài kiểm tra</p>
-                        )}
-                        {section.assignments && section.assignments.length > 0 && (
-                          <p>📋 {section.assignments.length} bài tập</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+              {course?.publishedSections && course.publishedSections.length > 0 ? (
+                <ReadOnlySectionView sections={course.publishedSections} />
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Khóa học chưa có nội dung được xuất bản</p>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Right Column - Stats & Info */}
@@ -428,7 +415,11 @@ const CourseApprovalDetailPage = () => {
               <h2 className="text-lg font-semibold mb-4">Giảng Viên</h2>
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
-                  Mã GV: <span className="font-medium text-gray-900">{course.course.idTeacher}</span>
+                  Tên giảng viên: <span className="font-medium text-gray-900">
+                    {course.course.teacher 
+                      ? `${course.course.teacher.firstName} ${course.course.teacher.lastName}` 
+                      : course.course.idTeacher}
+                  </span>
                 </p>
                 <p className="text-sm text-gray-600">
                   Khóa học: <span className="font-medium text-gray-900">{course.course.courseName}</span>
