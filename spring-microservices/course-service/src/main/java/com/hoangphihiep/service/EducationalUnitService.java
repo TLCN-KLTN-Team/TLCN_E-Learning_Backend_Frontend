@@ -196,7 +196,7 @@ public class EducationalUnitService {
                     .businessLicense(businessLicenseUrl)
                     .description(savedUnit.getDescription())
                     .establishedYear(savedUnit.getEstablishedYear())
-                    .status("ACTIVE")
+                    .status(savedUnit.getStatus())
                     .createdAt(savedUnit.getCreatedAt())
                     .adminAccountId(adminUserId)
                     .build();

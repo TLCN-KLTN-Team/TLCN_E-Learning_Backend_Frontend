@@ -598,8 +598,8 @@ const CourseListPage: React.FC = () => {
             onClick={() => setShowCourseDetail(false)}
           ></div>
           
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 flex-shrink-0">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -621,7 +621,7 @@ const CourseListPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <div className="p-6 overflow-y-auto flex-1">
               <div className="space-y-6">
                 {/* Course Name */}
                 <div className="bg-blue-50 rounded-lg p-4">
@@ -756,7 +756,7 @@ const CourseListPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="border-t bg-gray-50 px-6 py-4">
+            <div className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
               <div className="flex justify-end space-x-3">
                 <Button 
                   variant="outline" 

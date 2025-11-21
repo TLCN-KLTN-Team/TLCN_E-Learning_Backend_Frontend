@@ -838,10 +838,9 @@ const CoursePackagingPage = () => {
                   onChange={(e) =>
                     setFormData(prev => ({
                       ...prev,
-                      courseIntroduction: e.target.value
+                      learnerAchievements: e.target.value
                     }))
                   }
-
                   placeholder="Học viên sẽ đạt được gì sau khóa học..."
                 />
               </div>

@@ -1,5 +1,6 @@
 import type { CourseResponse } from './courseResponse';
 import type { CourseCategoryResponse } from './courseTypeResponse';
+import type { SectionResponse } from './sectionResponse';
 
 
 export interface PublishedCourseResponse {
@@ -18,7 +19,7 @@ export interface PublishedCourseResponse {
   statusText: string;
   createdAt: string;
   updatedAt: string;
-  publishedSections?: any[]; // Replace 'any' with your SectionResponse type
+  publishedSections?: SectionResponse[]; // Sections với chỉ content đã published
   totalPublishedLessons?: number;
   totalPublishedQuizzes?: number;
   totalPublishedAssignments?: number;

@@ -27,6 +27,7 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onReset, onBack, isLoadin
     hasLowercase: false,
     hasNumber: false,
     hasSpecialChar: false,
+    noWhitespace: false,
     passwordsMatch: false,
   })
 
@@ -36,7 +37,8 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onReset, onBack, isLoadin
       hasUppercase: /[A-Z]/.test(password),
       hasLowercase: /[a-z]/.test(password),
       hasNumber: /\d/.test(password),
-      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      hasSpecialChar: /[@#$%^&+=!]/.test(password), // Match backend validation
+      noWhitespace: !/\s/.test(password), // No whitespace allowed
       passwordsMatch: password === confirmPassword && password.length > 0,
     }
     setValidations(newValidations)
@@ -151,7 +153,8 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onReset, onBack, isLoadin
           <ValidationItem isValid={validations.hasUppercase} text="Có chữ hoa (A-Z)" />
           <ValidationItem isValid={validations.hasLowercase} text="Có chữ thường (a-z)" />
           <ValidationItem isValid={validations.hasNumber} text="Có số (0-9)" />
-          <ValidationItem isValid={validations.hasSpecialChar} text="Có ký tự đặc biệt (!@#$%^&*)" />
+          <ValidationItem isValid={validations.hasSpecialChar} text="Có ký tự đặc biệt (@#$%^&+=!)" />
+          <ValidationItem isValid={validations.noWhitespace} text="Không có khoảng trắng" />
           <ValidationItem isValid={validations.passwordsMatch} text="Mật khẩu khớp nhau" />
         </div>
       </div>

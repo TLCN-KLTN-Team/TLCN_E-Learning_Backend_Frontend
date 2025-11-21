@@ -20,7 +20,6 @@ public class BulkPublishRequest {
     @NotNull(message = "Publish status is required")
     private Boolean isPublished;
 
-    // Danh sách ID cần publish/unpublish
     private List<Integer> sectionIds;
     private List<Integer> lessonIds;
     private List<Integer> quizIds;

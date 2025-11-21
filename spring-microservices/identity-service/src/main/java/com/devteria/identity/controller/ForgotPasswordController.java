@@ -78,7 +78,10 @@ public class ForgotPasswordController {
     @PostMapping("/reset-password")
     public ApiResponse<ResetPasswordResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
 
-        log.info("Received reset password request with token");
+        log.info("Received reset password request with token: {}", request.getToken());
+        log.info("Password length: {}, Confirm password length: {}", 
+                request.getNewPassword() != null ? request.getNewPassword().length() : 0,
+                request.getConfirmPassword() != null ? request.getConfirmPassword().length() : 0);
 
         ResetPasswordResponse response = forgotPasswordService.resetPassword(request);
 
