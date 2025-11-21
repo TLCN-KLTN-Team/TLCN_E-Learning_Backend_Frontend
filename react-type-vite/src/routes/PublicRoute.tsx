@@ -8,12 +8,6 @@ import EducationUnitRegistration from "../pages/student/home/EducationUnitRegist
 import FacebookAuthenticate from "@/pages/student/auth/FacebookAuthenticate";
 import Courses from "@/pages/user/Courses";
 import CourseDetail from "@/pages/user/course/CourseDetail";
-import Payment from "@/pages/user/payment/Payment";
-import VNPayReturn from "@/pages/user/payment/VNPayReturn";
-import PaypalReturn from "@/pages/user/payment/PaypalReturn";
-import Cart from "@/pages/user/cart/Cart";
-import MyCourses from "@/pages/user/my-courses/MyCourses";
-import Wishlist from "@/pages/user/wishlist/Wishlist";
 
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
@@ -49,23 +43,6 @@ const PublicRoutes = [
   // All user accessible routes can be added here
   <Route path={`/courses`} element={<Courses />} />,
   <Route path="/courses/course/:courseId" element={<CourseDetail />} />,
-  <Route
-    path="/payment/checkout/express/course/:courseId"
-    element={<Payment />}
-  />,
-  <Route path="/payment/checkout/cart" element={<Payment />} />,
-  <Route
-    path="/payment/checkout/express/vnpay/return"
-    element={<VNPayReturn />}
-  />,
-  <Route
-    path="/payment/checkout/express/paypal/return"
-    element={<PaypalReturn />}
-  />,
-
-  <Route path="/cart" element={<Cart />} />,
-  <Route path="/wishlist" element={<Wishlist />} />,
-  <Route path="/my-courses" element={<MyCourses />} />,
 ];
 
 export default PublicRoutes;

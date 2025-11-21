@@ -10,12 +10,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
+    @Query("SELECT o FROM Order o WHERE o.orderId = :orderId")
+    Optional<Order> findByOrderId (String orderId);
+
     @Query("SELECT o FROM Order o WHERE o.idUser = :userId ORDER BY o.orderDate DESC")
-    Page<Order> findByUserIdOrderByOrderDateDesc(@Param("userId") String userId, Pageable pageable);
+    List<Order> findByUserIdOrderByOrderDateDesc(@Param("userId") String userId);
 
     @Query("SELECT o FROM Order o WHERE o.orderDate BETWEEN :startDate AND :endDate")
     List<Order> findByOrderDateBetween(@Param("startDate") Date startDate, @Param("endDate") Date endDate);

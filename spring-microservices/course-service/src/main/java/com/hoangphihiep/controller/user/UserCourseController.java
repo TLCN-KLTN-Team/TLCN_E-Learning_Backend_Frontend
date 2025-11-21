@@ -44,6 +44,25 @@ public class UserCourseController {
         );
     }
 
+    // get bought courses
+    @GetMapping("/my-courses")
+    public ApiResponse<?> getBoughtCourses() {
+        var response = publishedCourseService.getMyPublishedCourse();
+        return ApiResponse.success(
+                response,
+                "Load bought courses successfully"
+        );
+    }
+
+    @GetMapping("/pending-orders")
+    public ApiResponse<?> getPendingOrders() {
+        var response = publishedCourseService.getPendingOrders();
+        return ApiResponse.success(
+                response,
+                "Load pending orders successfully"
+        );
+    }
+
     // load courses published filtered and paged
 //    @PostMapping("/index")
 //    public String indexCourse() throws IOException {

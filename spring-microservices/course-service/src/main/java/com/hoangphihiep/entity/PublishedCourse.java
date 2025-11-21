@@ -34,7 +34,7 @@ public class PublishedCourse {
     @Column(name = "course_price", precision = 18, scale = 2)
     private BigDecimal coursePrice;
 
-    @Column(name = "course_name")
+    @Column(name = "author_name")
     private String authorName;
 
     private Date createdAt;
