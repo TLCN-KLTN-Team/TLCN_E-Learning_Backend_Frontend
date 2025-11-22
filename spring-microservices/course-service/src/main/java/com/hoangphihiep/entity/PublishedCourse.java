@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import com.hoangphihiep.utils.PublishedCourseStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,11 +26,8 @@ public class PublishedCourse {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "course_detail_id", referencedColumnName = "id")
-    private CourseDetail courseDetail;
-
+    @Enumerated(EnumType.STRING)
+    private PublishedCourseStatus newStatus;
 
     @Column(name = "course_price", precision = 18, scale = 2)
     private BigDecimal coursePrice;
@@ -69,6 +67,9 @@ public class PublishedCourse {
     @OneToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false, unique = true)
     private Course course;
+
+    @Column(name = "course_name")
+    private String courseName;
 
     @Column(length = 1000)
     private String description;

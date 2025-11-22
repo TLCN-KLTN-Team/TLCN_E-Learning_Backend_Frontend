@@ -14,6 +14,10 @@ export interface PublishedCourseResponse {
   level: string;
 }
 
+export interface CompletionSuggestionResponse {
+  titleSuggestions: string[];
+}
+
 export interface PublishedCourseDetailResponse {
   courseName: string;
   description: string;

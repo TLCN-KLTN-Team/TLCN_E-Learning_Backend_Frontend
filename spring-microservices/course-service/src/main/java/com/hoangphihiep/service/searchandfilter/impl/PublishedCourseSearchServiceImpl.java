@@ -38,38 +38,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchService {
-    private final ElasticsearchOperations operations;
     private final ElasticsearchClient elasticsearchClient;
     private final PublishedCourseRepository publishedCourseRepository;
-    private RangeQuery.Builder r;
     private final CurrencyUtils currencyUtils;
     private final CourseCompletionRepository courseCompletionRepository;
     private final OrderItemRepository orderItemRepository;
-
-    @Override
-    public void bulkIndexCoursesIfNotExists() {
-        courseCompletionRepository.updateCompletionFields();
-        List<PublishedCourse> publishedCourses = publishedCourseRepository.findAll();
-        for (PublishedCourse course : publishedCourses) {
-            try {
-                this.indexCourse(course);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    @Override
-    public void indexCourse(PublishedCourse course) throws IOException {
-        PublishedCourseDocument document = this.toDocument(course);
-        document.buildCompletionFields();
-
-        elasticsearchClient.index(req -> req
-                .index(Indices.PUBLISHED_COURSE_INDEX)
-                .id(document.getId())
-                .document(document)
-        );
-    }
 
     private PublishedCourseDocument toDocument(PublishedCourse course) {
         return PublishedCourseDocument.builder()

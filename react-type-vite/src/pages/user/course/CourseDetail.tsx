@@ -14,15 +14,17 @@ import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import { LoadingDots } from "../../../components/ui/LoadingDots";
 import type { PublishedCourseDetailResponse } from "../../../types/course.types";
-import { CourseApiService } from "../../../services/api/user/courseApi";
+import PublishedCourseService from "@/services/api/anonymous/course.api";
 import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
 
 import CartService from "@/services/api/user/cart.api";
 import WishlistService from "@/services/api/user/wishlist.api";
 import { toast } from "react-toastify";
+import { useAuth } from "@/context/auth-context/useAuth";
 
 const CourseDetail: React.FC = () => {
+  const { user } = useAuth();
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [course, setCourse] = useState<PublishedCourseDetailResponse | null>(
@@ -38,17 +40,20 @@ const CourseDetail: React.FC = () => {
       try {
         if (courseId) {
           // Get course data and check cart/wishlist status in parallel
-          const [courseData, inCart, inWishlist] = await Promise.all([
-            CourseApiService.getCourseById(courseId),
-            CartService.checkPublishedCourseInCart(Number(courseId)),
-            WishlistService.checkPublishedCourseInWishlist(Number(courseId)),
-          ]);
-
-          console.log("Course Data:", courseData);
-
-          setIsInCart(inCart);
-          setIsInWishlist(inWishlist);
+          const courseData =
+            await PublishedCourseService.getPublishedCourseDetails(courseId);
           setCourse(courseData);
+          console.log("Course Data:", courseData);
+          // call if user signed in
+          if (user) {
+            const [inCart, inWishlist] = await Promise.all([
+              CartService.checkPublishedCourseInCart(Number(courseId)),
+              WishlistService.checkPublishedCourseInWishlist(Number(courseId)),
+            ]);
+
+            setIsInCart(inCart);
+            setIsInWishlist(inWishlist);
+          }
         }
       } catch (error) {
         console.error("Error fetching course detail:", error);

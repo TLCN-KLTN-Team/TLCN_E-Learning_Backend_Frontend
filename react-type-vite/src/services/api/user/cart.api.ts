@@ -1,7 +1,7 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
 
-const API_CART_ENPOINT = "/course-management/carts";
+const API_CART_ENPOINT = "/course-management/user/carts";
 
 export interface CartCourse {
   courseId: number;

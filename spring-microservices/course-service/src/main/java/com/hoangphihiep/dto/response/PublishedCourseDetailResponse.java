@@ -14,8 +14,8 @@ import java.util.List;
 public class PublishedCourseDetailResponse {
     String courseName;
     String description;
-    String whatYouWillLearn;
-    String targetAudience;
+    String courseIntroduction;
+    String achievements;
     int rating;
     int studentCount;
     double duration;

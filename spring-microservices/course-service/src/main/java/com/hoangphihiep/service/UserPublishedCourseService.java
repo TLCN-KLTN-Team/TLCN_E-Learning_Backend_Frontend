@@ -116,11 +116,14 @@ public class UserPublishedCourseService {
 //                    .build();
 
             PublishedCourseDetailResponse response = PublishedCourseDetailResponse.builder()
-                    .courseName(publishedCourse.getCourse().getCourseName())
-                    .description(publishedCourse.getCourse().getDescription())
-                    .authorName(teacher.getFirstName() + " " + teacher.getLastName())
+                    .courseName(publishedCourse.getCourseName())
+                    .description(publishedCourse.getDescription())
+                    .authorName(publishedCourse.getAuthorName())
                     .coursePrice(currencyUtils.formatCurrency(publishedCourse.getCoursePrice()))
                     .purchaserStatus(orderService.checkCoursePurchased(publishedCourse.getId()))
+                    .thumbnailUrl(publishedCourse.getCourseImage())
+                    .courseIntroduction(publishedCourse.getCourseIntroduction())
+                    .achievements(publishedCourse.getLearnerAchievements())
                     .build();
 
             return response;

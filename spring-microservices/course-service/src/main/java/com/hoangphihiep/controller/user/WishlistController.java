@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/wishlists")
+@RequestMapping("/user/wishlists")
 @RequiredArgsConstructor
 public class WishlistController {
     private final WishlistService wishlistService;

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Button } from "../../../components/ui/button";
-import AuthLayout from "../../../components/student/auth/AuthLayout";
+import { Button } from "../../components/ui/button";
+import AuthLayout from "../../components/student/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
 import { NavLink, useNavigate } from "react-router-dom";
 import GoogleButton from "@/components/shared/button/GoogleButton";
 import FacebookButton from "@/components/shared/button/FacebookButton";
-import { Eye, EyeClosed, LockKeyhole, Mail } from "lucide-react";
+import { Eye, EyeClosed, LockKeyhole, Mail, Loader2 } from "lucide-react";
 import { getRoles } from "@/utils/localStorageVariables";
 import { getRoleBasedRedirectPath } from "@/utils/roleUtils";
 
@@ -20,6 +20,7 @@ const LoginPage = () => {
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -31,6 +32,7 @@ const LoginPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     login(formData.username, formData.password)
       .then(() => {
         const roles = getRoles();
@@ -41,6 +43,9 @@ const LoginPage = () => {
       })
       .catch((error) => {
         toast.error(error.message || "Đăng nhập thất bại");
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
@@ -69,7 +74,8 @@ const LoginPage = () => {
               required
               value={formData.username}
               onChange={handleInputChange}
-              className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400"
+              disabled={isLoading}
+              className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="devzeus || devzeus@gmail.com"
               aria-describedby="username-description"
             />
@@ -107,7 +113,8 @@ const LoginPage = () => {
               required
               value={formData.password}
               onChange={handleInputChange}
-              className="w-full h-12 pl-10 pr-12 border border-gray-300 rounded-lg focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400"
+              disabled={isLoading}
+              className="w-full h-12 pl-10 pr-12 border border-gray-300 rounded-lg focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="••••••••"
               aria-describedby="password-description"
               style={{
@@ -151,9 +158,17 @@ const LoginPage = () => {
         {/* Login Button */}
         <Button
           type="submit"
-          className="w-full h-12 bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg"
+          disabled={isLoading}
+          className="w-full h-12 bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Đăng nhập
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Đang đăng nhập...
+            </span>
+          ) : (
+            "Đăng nhập"
+          )}
         </Button>
 
         {/* Divider */}
@@ -170,8 +185,15 @@ const LoginPage = () => {
 
         {/* Social Login Buttons */}
         <div className="grid grid-cols-2 gap-4">
-          <GoogleButton />
-          <FacebookButton />
+          {/* <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
+            <GoogleButton />
+          </div>
+          <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
+            <FacebookButton />
+          </div> */}
+
+          <GoogleButton disabled={isLoading} />
+          <FacebookButton disabled={isLoading} />
         </div>
 
         {/* Sign Up Link */}

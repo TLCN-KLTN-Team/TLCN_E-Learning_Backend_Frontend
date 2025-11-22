@@ -1,6 +1,10 @@
 import { OAuth2Utils } from "@/utils/oauth2Utils";
 
-const GoogleButton = () => {
+interface GoogleButtonProps {
+  disabled?: boolean;
+}
+
+const GoogleButton = ({ disabled }: GoogleButtonProps) => {
   const handleGoogleLogin = () => {
     // Logic for handling Google login
     const callbackUrl = OAuth2Utils.callBackUrl;
@@ -18,7 +22,9 @@ const GoogleButton = () => {
     <button
       type="button"
       onClick={handleGoogleLogin}
-      className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+      className={`flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors
+        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+        `}
     >
       <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
         <path

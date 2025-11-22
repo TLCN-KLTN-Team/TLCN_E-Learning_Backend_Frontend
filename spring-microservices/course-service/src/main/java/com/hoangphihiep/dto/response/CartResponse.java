@@ -25,8 +25,8 @@ public class CartResponse {
         Integer courseId;
         String courseName;
         String authorName;
-        float rating;
-        float duration;
+        double rating;
+        double duration;
         String originalPrice;
         String currentPrice;
     }

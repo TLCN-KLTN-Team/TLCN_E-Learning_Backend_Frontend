@@ -33,7 +33,8 @@ public class SecurityConfig {
             "/actuator/health/**",
             "/educational-unit/register",
             "/api/otp/send",
-            "/api/course/**"
+            "/api/course/**",
+            "/published-courses/**",
     };
 
     private static final String[] SWAGGER_ENDPOINTS = {

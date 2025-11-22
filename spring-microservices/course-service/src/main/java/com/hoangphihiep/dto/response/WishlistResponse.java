@@ -11,11 +11,7 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class WishlistResponse {
-    String originalPrice;
-    String discountedPrice;
-    String amount;
-    List<Course> cartCourses;
-    List<Course> favoriteCourses;
+    List<Course> courses;
 
     @Data
     @NoArgsConstructor
@@ -25,9 +21,10 @@ public class WishlistResponse {
         Integer courseId;
         String courseName;
         String authorName;
-        float rating;
-        float duration;
+        double rating;
+        double duration;
         String originalPrice;
         String currentPrice;
+        int numberOfLessons;
     }
 }
