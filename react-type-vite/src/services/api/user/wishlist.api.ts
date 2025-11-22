@@ -1,7 +1,7 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
 
-const API_WISHLIST_ENDPOINT = "/course-management/wishlists";
+const API_WISHLIST_ENDPOINT = "/course-management/user/wishlists";
 
 export interface WishlistCourse {
   courseId: number;
@@ -11,12 +11,12 @@ export interface WishlistCourse {
   duration: number;
   originalPrice: string;
   currentPrice: string;
+  numberOfLessons: number;
   thumbnailUrl?: string;
 }
 
 export interface WishlistResponse {
-  wishlistCourses: WishlistCourse[];
-  totalCourses: number;
+  courses: WishlistCourse[];
 }
 
 const getWishlist = async (): Promise<WishlistResponse> => {

@@ -8,20 +8,37 @@ import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.FavoriteCourseRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
+import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class WishlistService {
     private final FavoriteCourseRepository favoriteCourseRepository;
     private final PublishedCourseRepository publishedCourseRepository;
+    private final CurrencyUtils currencyUtils;
 
     public WishlistResponse getWishlist() {
         FavoriteCourse favoriteCourse = this.getEntity();
+        List<WishlistResponse.Course> courses = favoriteCourse.getCourses().stream()
+                .map(course -> WishlistResponse.Course.builder()
+                        .courseId(course.getId())
+                        .courseName(course.getCourseName())
+                        .authorName(course.getAuthorName())
+                        .rating(4.5)
+                        .duration(10)
+                        .originalPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .currentPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .build()
+                ).toList();
+
         return WishlistResponse.builder()
+                .courses(courses)
                 .build();
     }
 

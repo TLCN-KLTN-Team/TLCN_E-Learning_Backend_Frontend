@@ -3,10 +3,8 @@
 // ============================================
 package com.hoangphihiep.mapper;
 
-import com.hoangphihiep.dto.response.CourseDetailResponse;
 import com.hoangphihiep.dto.response.CourseResponse;
 import com.hoangphihiep.dto.response.PublishedCourseResponse;
-import com.hoangphihiep.entity.CourseDetail;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import lombok.RequiredArgsConstructor;

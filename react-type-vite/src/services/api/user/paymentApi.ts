@@ -2,7 +2,7 @@ import axiosInstance from "../httpClient/axiosInstance";
 
 const PAYMENT_API_BASE_URL = `${
   import.meta.env.VITE_BASE_URL
-}/course-management/payments`;
+}/course-management/payments/user`;
 
 interface PaymentResponse {
   paymentUrl: string;

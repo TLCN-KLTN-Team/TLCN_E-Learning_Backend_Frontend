@@ -1,11 +1,14 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.response.CartResponse;
+import com.hoangphihiep.dto.response.WishlistResponse;
 import com.hoangphihiep.entity.Cart;
+import com.hoangphihiep.entity.FavoriteCourse;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.CartRepository;
+import com.hoangphihiep.repository.FavoriteCourseRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.JwtUtils;
@@ -22,6 +25,7 @@ public class CartService {
     private final CartRepository cartRepository;
     private final PublishedCourseRepository publishedCourseRepository;
     private final CurrencyUtils currencyUtils;
+    private final FavoriteCourseRepository favoriteCourseRepository;
 
     public Cart createCart() {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -91,6 +95,8 @@ public class CartService {
     public CartResponse getCart(){
         Cart cart = cartRepository.findByUserId(JwtUtils.getCurrentUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+        FavoriteCourse favoriteCourse = favoriteCourseRepository.findByUserId(JwtUtils.getCurrentUserId())
+                .orElseThrow(() -> new AppException(ErrorCode.WISHLIST_NOT_FOUND));
 
         BigDecimal amount = cart.getCourses().stream()
                 .map(PublishedCourse::getCoursePrice)
@@ -111,12 +117,24 @@ public class CartService {
                 .toList();
 
         // call favorite here
+        List<CartResponse.Course> wishlistCourses = favoriteCourse.getCourses().stream()
+                .map(course -> CartResponse.Course.builder()
+                        .courseId(course.getId())
+                        .courseName(course.getCourseName())
+                        .authorName(course.getAuthorName())
+                        .rating(4.5)
+                        .duration(10)
+                        .originalPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .currentPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .build()
+                ).toList();
 
         return CartResponse.builder()
                 .amount(currencyUtils.formatCurrency(amount))
                 .originalPrice(currencyUtils.formatCurrency(originalPrice))
                 .discountedPrice(currencyUtils.formatCurrency(discountedPrice))
                 .cartCourses(cartCourses)
+                .favoriteCourses(wishlistCourses)
                 .build();
     }
 

@@ -20,7 +20,6 @@ public class DataSeeder {
 
     private final CourseRepository courseRepository;
     private final PublishedCourseRepository publishedCourseRepository;
-    private final CourseDetailRepository courseDetailRepository;
     private final CourseTypeRepository courseTypeRepository;
     private final EducationalUnitRepository educationalUnitRepository;
 
@@ -145,21 +144,9 @@ public class DataSeeder {
                 
                 Course savedCourse = courseRepository.save(course);
 
-                // Tạo CourseDetail
-                CourseDetail courseDetail = new CourseDetail();
-                courseDetail.setDescription(descriptions.get(random.nextInt(descriptions.size())));
-                courseDetail.setCourseIntroduction(introductions.get(random.nextInt(introductions.size())));
-                courseDetail.setCourseImage(images.get(random.nextInt(images.size())));
-                courseDetail.setCourseVideo("video_" + (i + 1) + ".mp4");
-                courseDetail.setLearnerAchievements(achievements.get(random.nextInt(achievements.size())));
-                courseDetail.setCourseLearner(String.valueOf(random.nextInt(200) + 50)); // 50-250 learners
-                
-                CourseDetail savedCourseDetail = courseDetailRepository.save(courseDetail);
-
                 // Tạo PublishedCourse
                 PublishedCourse publishedCourse = new PublishedCourse();
                 publishedCourse.setCourse(savedCourse);
-                publishedCourse.setCourseDetail(savedCourseDetail);
                 publishedCourse.setCoursePrice(BigDecimal.valueOf(random.nextInt(800000) + 200000)); // 200k-1M
                 publishedCourse.setCreatedAt(now);
                 publishedCourse.setUpdatedAt(now);

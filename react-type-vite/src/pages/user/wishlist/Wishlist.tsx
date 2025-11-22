@@ -23,7 +23,7 @@ const Wishlist = () => {
       try {
         setLoading(true);
         const data = await WishlistService.getWishlist();
-        setWishlistCourses(data.wishlistCourses || []);
+        setWishlistCourses(data.courses || []);
         toast.success("Danh sách yêu thích đã được tải thành công!");
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : "Unknown error";
@@ -42,7 +42,7 @@ const Wishlist = () => {
       await WishlistService.removeFromWishlist(courseId);
       // Reload wishlist after removing
       const updatedWishlist = await WishlistService.getWishlist();
-      setWishlistCourses(updatedWishlist.wishlistCourses || []);
+      setWishlistCourses(updatedWishlist.courses || []);
       toast.success("Đã xóa khỏi danh sách yêu thích!");
     } catch (error) {
       console.error("Error removing from wishlist:", error);
@@ -58,7 +58,7 @@ const Wishlist = () => {
 
       // Reload wishlist
       const updatedWishlist = await WishlistService.getWishlist();
-      setWishlistCourses(updatedWishlist.wishlistCourses || []);
+      setWishlistCourses(updatedWishlist.courses || []);
 
       toast.success("Đã chuyển vào giỏ hàng!");
     } catch (error) {

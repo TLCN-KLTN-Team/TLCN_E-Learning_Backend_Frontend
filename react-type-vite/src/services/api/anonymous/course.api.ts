@@ -1,23 +1,12 @@
-import type { PublishedCourseResponse } from "@/types/course.types";
-import axiosInstance from "../httpClient/axiosInstance";
+import type {
+  CompletionSuggestionResponse,
+  PublishedCourseDetailResponse,
+  PublishedCourseResponse,
+} from "@/types/course.types";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
+import axiosInstance from "../httpClient/axiosInstance";
 
-const API_URL_ENDPOINT = "/course-management/search-filters";
-
-interface PublishedCourseDocument {
-  id: string;
-  courseName: string;
-  description: string;
-  category: string;
-  level: string;
-  price: number;
-  rating: number;
-  studentsCount: number;
-}
-
-interface CompletionSuggestionResponse {
-  titleSuggestions: string[];
-}
+const PUBLISHED_COURSES_ENDPOINT = "/course-management/published-courses";
 
 const searchAndFiltersPublishedCourses = async (
   page: number,
@@ -60,7 +49,7 @@ const searchAndFiltersPublishedCourses = async (
 
   const response = await axiosInstance.get<
     ApiResponse<PaginatedResponse<PublishedCourseResponse>>
-  >(`${API_URL_ENDPOINT}/search?${params.toString()}`);
+  >(`${PUBLISHED_COURSES_ENDPOINT}/search?${params.toString()}`);
 
   return response.data.result;
 };
@@ -80,14 +69,22 @@ const autoCompletion = async (
 
   const response = await axiosInstance.get<
     ApiResponse<CompletionSuggestionResponse>
-  >(`${API_URL_ENDPOINT}/auto-completion?${params.toString()}`);
+  >(`${PUBLISHED_COURSES_ENDPOINT}/auto-completion?${params.toString()}`);
 
+  return response.data.result;
+};
+
+const getPublishedCourseDetails = async (
+  courseId: string
+): Promise<PublishedCourseDetailResponse> => {
+  const response = await axiosInstance.get<
+    ApiResponse<PublishedCourseDetailResponse>
+  >(`${PUBLISHED_COURSES_ENDPOINT}/${courseId}`);
   return response.data.result;
 };
 
 export default {
   searchAndFiltersPublishedCourses,
   autoCompletion,
+  getPublishedCourseDetails,
 };
-
-export type { PublishedCourseDocument, CompletionSuggestionResponse };

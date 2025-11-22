@@ -1,5 +1,5 @@
-import LoginPage from "@/pages/student/auth/LoginPage";
-import RegisterPage from "@/pages/student/auth/RegisterPage";
+import LoginPage from "@/pages/auth/LoginPage";
+import RegisterPage from "@/pages/auth/RegisterPage";
 import { useState } from "react";
 
 interface AuthPageProps {
