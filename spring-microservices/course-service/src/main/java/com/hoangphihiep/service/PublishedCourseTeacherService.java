@@ -8,6 +8,8 @@ import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.PublishedCourseMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
+import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
+import com.hoangphihiep.utils.ElasticSearchIndexInitializer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,9 +32,9 @@ public class PublishedCourseTeacherService {
     private final PublishedCourseRepository publishedCourseRepository;
     private final CourseRepository courseRepository;
     private final CourseTypeRepository courseTypeRepository;
-    private final CourseDetailRepository courseDetailRepository;
     private final PublishedCourseMapper publishedCourseMapper;
     private final FileHandlerRepository fileHandlerRepository;
+    private final ElasticSearchIndexInitializer elasticSearchIndexInitializer;
 
     public Page<PublishedCourseResponse> getPublishedCoursesForAdmin(
             Integer educationalUnitId, Integer status, int page, int size) {
@@ -49,6 +51,14 @@ public class PublishedCourseTeacherService {
         }
 
         return publishedCourses.map(publishedCourseMapper::toPublishedCourseResponse);
+    }
+
+    private void indexingForPublishedCourse(PublishedCourse publishedCourse) {
+        try {
+            elasticSearchIndexInitializer.indexCourse(publishedCourse);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.ELASTICSEARCH_OPERATION_FAILED);
+        }
     }
 
     /**
@@ -125,6 +135,8 @@ public class PublishedCourseTeacherService {
         publishedCourse.setCourseTarget(request.getCourseTarget());
 
         PublishedCourse saved = publishedCourseRepository.save(publishedCourse);
+        // indexing for elasticsearch here
+//        indexingForPublishedCourse(saved);
         log.info("Created/Updated draft published course for course ID: {}", request.getCourseId());
 
         return publishedCourseMapper.toPublishedCourseResponse(saved);
@@ -182,6 +194,8 @@ public class PublishedCourseTeacherService {
         publishedCourse.setUpdatedAt(new Date());
 
         PublishedCourse saved = publishedCourseRepository.save(publishedCourse);
+        // indexing
+        this.indexingForPublishedCourse(saved);
         log.info("Admin {} approved published course ID: {}", currentAdminId, publishedCourseId);
 
         return publishedCourseMapper.toPublishedCourseResponse(saved);

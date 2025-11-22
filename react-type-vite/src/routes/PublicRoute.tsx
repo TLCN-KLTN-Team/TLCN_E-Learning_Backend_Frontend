@@ -1,11 +1,11 @@
 import { Route } from "react-router-dom";
 import Home from "../pages/student/home/Home";
-import AuthPage from "../pages/student/auth/AuthPage";
-import GoogleAuthenticate from "../pages/student/auth/GoogleAuthenticate";
-import ForgotPasswordPage from "../pages/student/auth/ForgotPasswordPage";
+import AuthPage from "../pages/auth/AuthPage";
+import GoogleAuthenticate from "../pages/auth/GoogleAuthenticate";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import Contact from "../pages/student/home/Contact";
 import EducationUnitRegistration from "../pages/student/home/EducationUnitRegistration";
-import FacebookAuthenticate from "@/pages/student/auth/FacebookAuthenticate";
+import FacebookAuthenticate from "@/pages/auth/FacebookAuthenticate";
 import Courses from "@/pages/user/Courses";
 import CourseDetail from "@/pages/user/course/CourseDetail";
 

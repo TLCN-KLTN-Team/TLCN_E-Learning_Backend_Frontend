@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Button } from "../../../components/ui/button";
-import AuthLayout from "../../../components/student/auth/AuthLayout";
+import { Button } from "../../components/ui/button";
+import AuthLayout from "../../components/student/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { useNavigate } from "react-router-dom";
 import type { RegisterData } from "@/context/auth-context/types";

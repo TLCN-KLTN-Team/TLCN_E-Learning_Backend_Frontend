@@ -9,16 +9,16 @@ import { Checkbox } from "../../components/ui/checkbox";
 import { LoadingDots } from "../../components/ui/LoadingDots";
 import { Pagination } from "../../components/ui/Pagination";
 import type {
+  CompletionSuggestionResponse,
   Filters,
   PublishedCourseResponse,
 } from "../../types/course.types";
-import { CourseApiService } from "../../services/api/user/courseApi";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 
-import SearchFilterService from "@/services/api/user/searchfilters.api";
-import type { CompletionSuggestionResponse } from "@/services/api/user/searchfilters.api";
 import { toast } from "react-toastify";
+
+import PublishedCourseService from "@/services/api/anonymous/course.api";
 
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -117,7 +117,7 @@ const Course: React.FC = () => {
 
     try {
       const response =
-        await SearchFilterService.searchAndFiltersPublishedCourses(
+        await PublishedCourseService.searchAndFiltersPublishedCourses(
           currentPage,
           pageSize,
           searchTerm.trim(),
@@ -142,21 +142,21 @@ const Course: React.FC = () => {
     }
   };
 
-  // Load categories on component mount
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const fetchedCategories = await CourseApiService.getCategories();
-        setCategories(fetchedCategories);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        setCategories([]);
-      }
-    };
+  // // Load categories on component mount
+  // useEffect(() => {
+  //   const loadCategories = async () => {
+  //     try {
+  //       const fetchedCategories = await CourseApiService.getCategories();
+  //       setCategories(fetchedCategories);
+  //     } catch (error) {
+  //       console.error("Error fetching categories:", error);
+  //       setCategories([]);
+  //     }
+  //   };
 
-    loadCategories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  //   loadCategories();
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   // Fetch courses when URL params change (on mount and when filters/search/page change)
   useEffect(() => {
@@ -180,7 +180,7 @@ const Course: React.FC = () => {
       setLoadingSuggestions(true);
       try {
         const response: CompletionSuggestionResponse =
-          await SearchFilterService.autoCompletion(debouncedSearchTerm, 5);
+          await PublishedCourseService.autoCompletion(debouncedSearchTerm, 5);
         setSuggestions(response.titleSuggestions || []);
         setShowSuggestions(true);
       } catch (error) {
@@ -340,11 +340,11 @@ const Course: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold text-blue-600">
-              ${course.coursePrice}
+              {course.coursePrice}
             </span>
             {course.coursePrice && (
               <span className="text-sm text-gray-500 line-through">
-                ${course.coursePrice}
+                {course.coursePrice}
               </span>
             )}
           </div>
@@ -415,8 +415,8 @@ const Course: React.FC = () => {
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm text-gray-600 mt-1">
-                    <span>$0</span>
-                    <span>${filters.priceRange[1]}</span>
+                    <span>0</span>
+                    <span>{filters.priceRange[1]}</span>
                   </div>
                 </div>
               </div>

@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/published-courses")
+@RequestMapping("/user/published-courses")
 @RequiredArgsConstructor
 public class UserCourseController {
     private final UserPublishedCourseService publishedCourseService;
@@ -32,15 +32,6 @@ public class UserCourseController {
         return ApiResponse.success(
                 response,
                 "Load published courses successfully"
-        );
-    }
-
-    @GetMapping("/{courseId}")
-    public ApiResponse<?> getPublishedCourseById(@PathVariable Integer courseId) {
-        var response = publishedCourseService.getPublishedCourseDetailById(courseId);
-        return ApiResponse.success(
-                response,
-                "Load published course successfully"
         );
     }
 

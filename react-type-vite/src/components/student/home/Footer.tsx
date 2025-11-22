@@ -9,8 +9,8 @@ const Footer = () => {
   const { theme } = useTheme();
 
   return (
-    <footer className="bg-muted/50 border-t border-border p-12 lg:p-16">
-      <div className="container mx-auto px-4">
+    <footer className="bg-muted/50 border-t border-border py-8 lg:py-12">
+      <div className="px-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand Section */}

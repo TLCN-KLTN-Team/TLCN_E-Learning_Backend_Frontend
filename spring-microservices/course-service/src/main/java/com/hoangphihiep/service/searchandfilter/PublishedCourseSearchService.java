@@ -12,8 +12,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface PublishedCourseSearchService {
-    void bulkIndexCoursesIfNotExists(); // Index all published courses if the Elasticsearch index does not exist
-    void indexCourse(PublishedCourse course) throws IOException; // Index a new published course into Elasticsearch
     PaginatedResponse<PublishedCourseCardResponse> searchAndFiltersDSLWithFuzzy(SearchFiltersRequest request) throws IOException; // Search published courses based on a query string
     CompletionSuggestionResponse autocompleteSuggestion(String prefix, int size) throws IOException;
 

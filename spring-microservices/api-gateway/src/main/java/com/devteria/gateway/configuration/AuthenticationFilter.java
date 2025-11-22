@@ -29,8 +29,10 @@ import reactor.netty.http.Cookies;
 import reactor.netty.http.server.HttpServerResponse;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Component
 @Slf4j
@@ -42,17 +44,24 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     ObjectMapper objectMapper;
 
     @NonFinal
-    private String[] publicEndpoints = {
+    private List<String> courseServiceEndpoints = new ArrayList<>(
+            List.of(
+                    "/course-management/educational-unit/register",
+                    "/course-management/api/otp/send",
+                    "/course-management/published-courses/.*"
+            )
+    );
+
+    @NonFinal
+    private List<String> endpoints = new ArrayList<>(List.of(
             "/identity/auth/.*",
             "/identity/users/registration",
             "/identity/users/registration/.*",
             "/notification/email/send",
             "/file/media/download/.*",
             "/profile/users/.*",
-            "/course-management/educational-unit/register",
-            "/course-management/api/otp/send",
             "/identity/forgot-password/.*"
-    };
+    ));
 
     @Value("${app.api-prefix}")
     @NonFinal
@@ -100,7 +109,11 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isPublicEndpoint(ServerHttpRequest request){
-        return Arrays.stream(publicEndpoints)
+        List<String> publicEndpoints = Stream.concat(
+                courseServiceEndpoints.stream(),
+                endpoints.stream()
+        ).toList();
+        return publicEndpoints.stream()
                 .anyMatch(s -> request.getURI().getPath().matches(apiPrefix + s));
     }
 

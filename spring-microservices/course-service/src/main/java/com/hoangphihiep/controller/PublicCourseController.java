@@ -1,30 +1,47 @@
-package com.hoangphihiep.controller.user;
+package com.hoangphihiep.controller;
 
-import com.hoangphihiep.document.PublishedCourseDocument;
 import com.hoangphihiep.dto.request.SearchFiltersRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.service.UserPublishedCourseService;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
+import com.hoangphihiep.utils.ElasticSearchIndexInitializer;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Slf4j
 @RestController
-@RequestMapping("/search-filters")
+@RequestMapping("/published-courses")
 @RequiredArgsConstructor
-public class SearchFiltersController {
+public class PublicCourseController {
+    private final UserPublishedCourseService userPublishedCourseService;
     private final PublishedCourseSearchService publishedCourseSearchService;
+    private final ElasticSearchIndexInitializer elasticSearchIndexInitializer;
 
-    @PostMapping("/index-all")
-    public String indexAllCourses() throws IOException {
-        publishedCourseSearchService.bulkIndexCoursesIfNotExists();
-        return "Indexed all courses successfully !";
+    // some apis get data here
+    // get courses suggest for user
+
+    // get courses by favorite based on user behavior
+
+    // get educational units which joined our system
+
+    // get positive review from user
+
+    @GetMapping("/{courseId}")
+    public ApiResponse<?> getPublishedCourseById(@PathVariable Integer courseId) {
+        var response = userPublishedCourseService.getPublishedCourseDetailById(courseId);
+        return ApiResponse.success(
+                response,
+                "Load published course by " + courseId +  " successfully"
+        );
     }
 
     @GetMapping("/search")
-    public ApiResponse<?> searchPublishedCourses(@RequestParam (defaultValue = "0") int page,
+    public ApiResponse<?> searchPublishedCourses(@RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "12") int size,
                                                  @RequestParam(required = false) String keyword,
                                                  @RequestParam(required = false) BigDecimal minPrice, @RequestParam(required = false) BigDecimal maxPrice,
@@ -47,6 +64,9 @@ public class SearchFiltersController {
                 .sortBy(sortBy)
                 .build();
         // extra elastic search when implementing
+        //
+        elasticSearchIndexInitializer.bulkIndexCoursesIfNotExists();
+        //
         var result = publishedCourseSearchService.searchAndFiltersDSLWithFuzzy(request);
         return ApiResponse.success(
                 result,

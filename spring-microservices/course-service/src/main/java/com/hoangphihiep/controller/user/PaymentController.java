@@ -13,7 +13,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/payments")
+@RequestMapping("/user/payments")
 public class PaymentController {
     private final PaymentService paymentService;
 
