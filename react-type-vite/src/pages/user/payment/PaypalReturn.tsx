@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import Header from "../../../components/student/home/Header";
-import { capturePaypalOrder } from "../../../services/api/user/paymentApi";
+import { capturePaypalOrder } from "../../../services/api/user/payment.api";
 
 interface PaypalPaymentResult {
   orderId: string;

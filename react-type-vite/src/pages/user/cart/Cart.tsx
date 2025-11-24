@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, Star } from "lucide-react";
 
 import CartService, { type CartResponse } from "@/services/api/user/cart.api";
+import WishListService from "@/services/api/user/wishlist.api";
 import { toast } from "react-toastify";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
@@ -23,7 +24,8 @@ const Cart = () => {
         setCartData(data);
         toast.success("Giỏ hàng đã được tải thành công!");
       } catch (error) {
-        const errMsg = error instanceof Error ? error.message : "Unknown error";
+        const errMsg =
+          error instanceof Error ? error.message : "Lỗi không xác định";
         toast.error(`Lỗi khi tải giỏ hàng: ${errMsg}`);
         console.error("Error loading cart:", error);
       } finally {
@@ -47,20 +49,30 @@ const Cart = () => {
     }
   };
 
-  const addToCart = async (courseId: number) => {
+  const addWishlistItemToCart = async (courseId: number) => {
     try {
-      await CartService.addToCart(courseId);
+      await CartService.addWishlistItemToCart(courseId);
       // Reload cart after adding
       const updatedCart = await CartService.getCart();
       setCartData(updatedCart);
-      toast.success("Đã thêm vào giỏ hàng!");
+      toast.success("Đã thêm vào giỏ hàng từ danh sách yêu thích!");
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      toast.error("Lỗi khi thêm vào giỏ hàng");
+      console.error("Error adding wishlist item to cart:", error);
+      toast.error("Lỗi khi thêm vào giỏ hàng từ danh sách yêu thích");
     }
   };
 
-  const removeFromWishlist = async (courseId: number) => {};
+  const removeFromWishlist = async (courseId: number) => {
+    try {
+      await WishListService.removeFromWishlist(courseId);
+      const updatedWishlist = await CartService.getCart();
+      setCartData(updatedWishlist);
+      toast.success("Đã xóa khỏi danh sách yêu thích!");
+    } catch (error) {
+      console.error("Error removing from wishlist:", error);
+      toast.error("Lỗi khi xóa khỏi danh sách yêu thích");
+    }
+  };
 
   const handleCheckout = () => {
     if (!cartData?.cartCourses || cartData.cartCourses.length === 0) {
@@ -70,14 +82,14 @@ const Cart = () => {
       return;
     }
 
+    const courseIds = cartData.cartCourses.map((course) => course.courseId);
     // Navigate to payment page with cart items
     navigate("/payment/checkout/cart", {
       state: {
-        cartItems: cartData.cartCourses,
+        courseIds: courseIds,
       },
     });
   };
-
   if (loading) {
     return (
       <>
@@ -256,7 +268,9 @@ const Cart = () => {
                                 Xóa
                               </button>
                               <button
-                                onClick={() => addToCart(course.courseId)}
+                                onClick={() =>
+                                  addWishlistItemToCart(course.courseId)
+                                }
                                 className="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm font-medium transition-colors"
                               >
                                 Chuyển vào giỏ hàng

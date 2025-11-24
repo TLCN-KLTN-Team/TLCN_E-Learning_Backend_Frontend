@@ -49,6 +49,13 @@ const addToCart = async (courseId: number) => {
   return response.data;
 };
 
+const addWishlistItemToCart = async (courseId: number) => {
+  const response = await axiosInstance.post(
+    `${API_CART_ENPOINT}/add-from-wishlist/${courseId}`
+  );
+  return response.data;
+};
+
 const removeFromCart = async (courseId: number) => {
   const response = await axiosInstance.post(
     `${API_CART_ENPOINT}/remove/${courseId}`
@@ -61,5 +68,6 @@ export default {
   checkPublishedCourseInCart,
   createCart,
   addToCart,
+  addWishlistItemToCart,
   removeFromCart,
 };
