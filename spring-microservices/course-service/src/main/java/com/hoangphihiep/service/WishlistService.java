@@ -6,6 +6,7 @@ import com.hoangphihiep.entity.FavoriteCourse;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.repository.CartRepository;
 import com.hoangphihiep.repository.FavoriteCourseRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.utils.CurrencyUtils;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,8 +24,10 @@ public class WishlistService {
     private final FavoriteCourseRepository favoriteCourseRepository;
     private final PublishedCourseRepository publishedCourseRepository;
     private final CurrencyUtils currencyUtils;
+    private final CartRepository cartRepository;
 
     public WishlistResponse getWishlist() {
+        this.removeCoursesInCartOrInOrder();
         FavoriteCourse favoriteCourse = this.getEntity();
         List<WishlistResponse.Course> courses = favoriteCourse.getCourses().stream()
                 .map(course -> WishlistResponse.Course.builder()
@@ -103,6 +107,17 @@ public class WishlistService {
 
         favoriteCourse.removeCourse(course);
         favoriteCourseRepository.save(favoriteCourse);
+    }
+
+    public void removeCoursesInCartOrInOrder() {
+        List<PublishedCourse> courses = new ArrayList<>();
+        Cart cart = cartRepository.findByUserId(JwtUtils.getCurrentUserId())
+                .orElse(null);
+        if (cart != null) {
+            courses.addAll(cart.getCourses());
+        }
+
+        courses.forEach(course -> this.removeFromWishlist(course.getId()));
     }
 
 }

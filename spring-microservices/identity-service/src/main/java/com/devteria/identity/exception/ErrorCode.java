@@ -49,7 +49,7 @@ public enum ErrorCode {
     // User Management Errors (USER_xxxx)
     USER_ALREADY_EXISTS("USER_2001", "Người dùng đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND("USER_2002", "Không tìm thấy người dùng", HttpStatus.NOT_FOUND),
-    USER_EMAIL_EXISTED("USER_2003", "Email đã tồn tại", HttpStatus.BAD_REQUEST),
+    USER_EMAIL_EXISTED("USER_2003", "Email đã được sử dụng", HttpStatus.BAD_REQUEST),
 
     // Validation Errors (VALID_xxxx)
     VALID_EXCEPTION("VALID_3000", "Dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),

@@ -19,9 +19,9 @@ import {
 import Header from "../../../components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 
-import PaymentService from "@/services/api/user/paymentApi";
-import { CourseApiService } from "@/services/api/user/courseApi";
-import type { CartCourse } from "@/services/api/user/cart.api";
+import PaymentService, {
+  type OrderPreviewResponse,
+} from "@/services/api/user/payment.api";
 
 interface CheckoutItem {
   courseId: number;
@@ -40,6 +40,9 @@ const Payment: React.FC = () => {
   const [selectedPayment, setSelectedPayment] = useState("vnpay");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
+  const [orderPreview, setOrderPreview] = useState<OrderPreviewResponse | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -74,7 +77,7 @@ const Payment: React.FC = () => {
       // Create payment with actual course data
       const paymentData = {
         amount: Math.round(totalAmount * 100), // Convert to cents/smallest currency unit
-        currency: selectedCountry === "vn" ? "VND" : "USD",
+        currency: selectedCountry,
         paymentType: selectedPayment,
         orderItems: orderItems,
       };
@@ -103,42 +106,45 @@ const Payment: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        // Check if this is cart checkout (data passed via location state)
-        const cartItems = location.state?.cartItems as CartCourse[] | undefined;
+        // Get courseIds from location state
+        const courseIds = location.state?.courseIds as number[] | undefined;
 
-        if (cartItems && cartItems.length > 0) {
-          // Cart checkout with multiple items
-          const items: CheckoutItem[] = cartItems.map((item) => ({
-            courseId: item.courseId,
-            courseName: item.courseName,
-            authorName: item.authorName,
-            price: parseFloat(item.currentPrice),
-            originalPrice: parseFloat(item.originalPrice),
+        if (courseIds && courseIds.length > 0) {
+          // Call getOrderPreview API
+          const preview = await PaymentService.getOrderPreview({ courseIds });
+          setOrderPreview(preview);
+
+          // Map preview items to checkout items
+          const items: CheckoutItem[] = preview.items.map((item) => ({
+            courseId: item.id || 0,
+            courseName: item.name,
+            authorName: "", // Preview doesn't include author name
+            price: parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0,
+            originalPrice: item.discountedPrice
+              ? parseFloat(item.discountedPrice.replace(/[^0-9.]/g, ""))
+              : undefined,
+            thumbnailUrl: item.imageUrl,
           }));
           setCheckoutItems(items);
           setIsLoading(false);
         } else if (courseId) {
-          // Single course checkout
-          const course = await CourseApiService.getCourseById(courseId);
+          // Single course checkout - also use preview API
+          const preview = await PaymentService.getOrderPreview({
+            courseIds: [parseInt(courseId)],
+          });
+          setOrderPreview(preview);
 
-          if (!course) {
-            setError("Không thể tải thông tin khóa học. Vui lòng thử lại sau.");
-            setIsLoading(false);
-            return;
-          }
-
-          const coursePrice = parseFloat(
-            course.coursePrice.replace(/[^0-9.]/g, "")
-          );
-          setCheckoutItems([
-            {
-              courseId: parseInt(courseId),
-              courseName: course.courseName,
-              authorName: course.authorName,
-              price: coursePrice,
-              thumbnailUrl: course.thumbnailUrl,
-            },
-          ]);
+          const items: CheckoutItem[] = preview.items.map((item) => ({
+            courseId: parseInt(courseId),
+            courseName: item.name,
+            authorName: "",
+            price: parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0,
+            originalPrice: item.discountedPrice
+              ? parseFloat(item.discountedPrice.replace(/[^0-9.]/g, ""))
+              : undefined,
+            thumbnailUrl: item.imageUrl,
+          }));
+          setCheckoutItems(items);
           setIsLoading(false);
         } else {
           setError(
@@ -351,48 +357,19 @@ const Payment: React.FC = () => {
                   <div className="space-y-3 border-t pt-4">
                     <div className="flex justify-between">
                       <span>Tổng giá gốc:</span>
-                      <span>
-                        {new Intl.NumberFormat("vi-VN").format(
-                          checkoutItems.reduce(
-                            (sum, item) =>
-                              sum + (item.originalPrice || item.price),
-                            0
-                          )
-                        )}{" "}
-                        ₫
-                      </span>
+                      <span>{orderPreview?.amount || "0 ₫"}</span>
                     </div>
-                    {checkoutItems.some(
-                      (item) =>
-                        item.originalPrice && item.originalPrice > item.price
-                    ) && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Giảm giá:</span>
-                        <span>
-                          -
-                          {new Intl.NumberFormat("vi-VN").format(
-                            checkoutItems.reduce(
-                              (sum, item) =>
-                                sum +
-                                ((item.originalPrice || item.price) -
-                                  item.price),
-                              0
-                            )
-                          )}{" "}
-                          ₫
-                        </span>
-                      </div>
-                    )}
+                    {orderPreview?.discountedPrice &&
+                      orderPreview.discountedPrice !== "0 ₫" && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Giảm giá:</span>
+                          <span>-{orderPreview.discountedPrice}</span>
+                        </div>
+                      )}
                     <div className="flex justify-between text-xl font-bold border-t pt-3">
                       <span>Tổng cộng:</span>
                       <span className="text-blue-600">
-                        {new Intl.NumberFormat("vi-VN").format(
-                          checkoutItems.reduce(
-                            (sum, item) => sum + item.price,
-                            0
-                          )
-                        )}{" "}
-                        ₫
+                        {orderPreview?.amount || "0 ₫"}
                       </span>
                     </div>
                   </div>
@@ -423,13 +400,7 @@ const Payment: React.FC = () => {
                     <div className="mb-6">
                       <span className="text-sm text-gray-600">Tổng tiền: </span>
                       <span className="text-2xl font-bold">
-                        {new Intl.NumberFormat("vi-VN").format(
-                          checkoutItems.reduce(
-                            (sum, item) => sum + item.price,
-                            0
-                          )
-                        )}{" "}
-                        ₫
+                        {orderPreview?.amount || "0 ₫"}
                       </span>
                     </div>
 

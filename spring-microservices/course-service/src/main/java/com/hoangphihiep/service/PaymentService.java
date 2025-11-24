@@ -3,12 +3,17 @@ package com.hoangphihiep.service;
 import com.hoangphihiep.config.PaypalConfig;
 import com.hoangphihiep.config.VNPayConfig;
 import com.hoangphihiep.dto.request.CreationOrderRequest;
+import com.hoangphihiep.dto.request.OrderPreviewRequest;
 import com.hoangphihiep.dto.request.PaymentRequest;
+import com.hoangphihiep.dto.response.OrderPreviewResponse;
 import com.hoangphihiep.dto.response.PaypalOrderResponse;
 import com.hoangphihiep.dto.response.VNPayReturnResponse;
+import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.PaymentRepository;
+import com.hoangphihiep.repository.PublishedCourseRepository;
+import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.VNPayUtils;
 import com.paypal.core.PayPalHttpClient;
 import com.paypal.http.HttpResponse;
@@ -37,6 +42,8 @@ public class PaymentService {
     private final PaypalConfig paypalConfig;
     private final PayPalHttpClient payPalHttpClient;
     private final OrderService orderService;
+    private final PublishedCourseRepository publishedCourseRepository;
+    private final CurrencyUtils currencyUtils;
 
     // Tạo URL thanh toán VNPay khi user nhấn "Process Payment" on frontend
     public String createVNPayPaymentUrl(PaymentRequest request, HttpServletRequest httpRequest) throws Exception {
@@ -202,4 +209,30 @@ public class PaymentService {
         }
     }
 
+    public OrderPreviewResponse getOrderPreview(List<Integer> courseIds) {
+        List<PublishedCourse> courses = publishedCourseRepository.findAllById(courseIds);
+
+        BigDecimal totalAmount = courses.stream()
+                .map(PublishedCourse::getCoursePrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<OrderPreviewResponse.CourseItem> items = courses.stream()
+                        .map(course -> OrderPreviewResponse.CourseItem.builder()
+                                .name(course.getCourseName())
+                                .price(currencyUtils.formatCurrency(course.getCoursePrice()))
+                                .discountedPrice(currencyUtils.formatCurrency(
+                                        course.getCoursePrice().multiply(BigDecimal.valueOf(2.5))
+                                ))
+                                .imageUrl(course.getCourseImage())
+                                .build()
+                        ).toList();
+
+
+        return OrderPreviewResponse.builder()
+                .items(items)
+                .amount(currencyUtils.formatCurrency(totalAmount))
+                .discountedPrice(currencyUtils.formatCurrency(totalAmount.multiply(BigDecimal.valueOf(1.5))))
+                .build();
+
+    }
 }

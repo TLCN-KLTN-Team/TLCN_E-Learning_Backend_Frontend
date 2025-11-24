@@ -44,6 +44,7 @@ const CourseDetail: React.FC = () => {
             await PublishedCourseService.getPublishedCourseDetails(courseId);
           setCourse(courseData);
           console.log("Course Data:", courseData);
+
           // call if user signed in
           if (user) {
             const [inCart, inWishlist] = await Promise.all([
@@ -63,7 +64,7 @@ const CourseDetail: React.FC = () => {
     };
 
     fetchCourseDetail();
-  }, [courseId]);
+  }, [courseId, user]);
   const renderStars = (rating: number, size: "sm" | "md" = "sm") => {
     const starSize = size === "sm" ? "w-4 h-4" : "w-5 h-5";
     return Array.from({ length: 5 }, (_, i) => (
@@ -81,7 +82,9 @@ const CourseDetail: React.FC = () => {
   const handleEnrollNow = () => {
     // Navigate to payment page for quick purchase
     console.log("Enrolling in course:", course?.courseName);
-    navigate(`/payment/checkout/express/course/${courseId}`);
+    navigate(`/payment/checkout/express/course`, {
+      state: { courseIds: [Number(courseId)] },
+    });
   };
 
   const handleLearnNow = () => {
@@ -229,9 +232,6 @@ const CourseDetail: React.FC = () => {
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <span className="text-3xl font-bold text-gray-900">
                       {course.coursePrice}
-                    </span>
-                    <span className="text-lg text-gray-500 line-through">
-                      $219
                     </span>
                   </div>
                 </div>
