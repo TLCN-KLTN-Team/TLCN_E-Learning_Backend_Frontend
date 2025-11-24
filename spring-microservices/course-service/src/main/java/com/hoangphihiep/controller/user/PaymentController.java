@@ -1,6 +1,8 @@
 package com.hoangphihiep.controller.user;
 
+import com.hoangphihiep.dto.request.OrderPreviewRequest;
 import com.hoangphihiep.dto.request.PaymentRequest;
+import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.service.PaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,7 @@ public class PaymentController {
      * }
      */
     @PostMapping("/create")
-    public ResponseEntity<?> redirectGateway(@RequestBody PaymentRequest request,
+    public ResponseEntity<?> redirectPaymentGateway(@RequestBody PaymentRequest request,
                                            HttpServletRequest httpRequest) {
         try {
             String paymentUrl="";
@@ -58,6 +60,15 @@ public class PaymentController {
             log.error("Error capturing PayPal payment: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @PostMapping("/preview")
+    public ApiResponse<?> previewPayment(@RequestBody OrderPreviewRequest request) {
+        var response = paymentService.getOrderPreview(request.getCourseIds());
+        return ApiResponse.success(
+                response,
+                "Preview order successfully"
+        );
     }
 
 }

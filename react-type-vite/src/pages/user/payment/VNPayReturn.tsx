@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import Header from "../../../components/student/home/Header";
-import { handleVNPayPaymentReturn } from "../../../services/api/user/paymentApi";
+import { handleVNPayPaymentReturn } from "../../../services/api/user/payment.api";
 
 interface PaymentResult {
   success: boolean;

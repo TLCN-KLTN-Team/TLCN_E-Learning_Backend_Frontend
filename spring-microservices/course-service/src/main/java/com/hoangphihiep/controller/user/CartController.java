@@ -44,6 +44,14 @@ public class CartController {
                 .build();
     }
 
+    @PostMapping("/add-from-wishlist/{courseId}")
+    public ApiResponse<?> addWishlistItemToCart(@PathVariable Integer courseId){
+        cartService.addWishlistItemToCart(courseId);
+        return ApiResponse.builder()
+                .message("Add wishlist item to cart successfully")
+                .build();
+    }
+
     @PostMapping("/remove/{courseId}")
     public ApiResponse<?> removeFromCart(@PathVariable Integer courseId){
         cartService.removeFromCart(courseId);

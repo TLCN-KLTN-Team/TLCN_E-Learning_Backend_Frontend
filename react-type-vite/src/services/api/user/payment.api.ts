@@ -1,8 +1,9 @@
 import axiosInstance from "../httpClient/axiosInstance";
+import type { ApiResponse } from "../response/apiResponse";
 
 const PAYMENT_API_BASE_URL = `${
   import.meta.env.VITE_BASE_URL
-}/course-management/payments/user`;
+}/course-management/user/payments`;
 
 interface PaymentResponse {
   paymentUrl: string;
@@ -22,6 +23,34 @@ export interface OrderItem {
   publishedCourseId: number;
   finishedFee: number;
 }
+
+export interface OrderPreviewRequest {
+  courseIds: number[];
+}
+
+export interface OrderPreviewResponse {
+  items: CourseItem[];
+  amount: string;
+  discountedPrice: string;
+}
+
+export interface CourseItem {
+  id?: number;
+  name: string;
+  price: string;
+  discountedPrice?: string;
+  imageUrl?: string;
+}
+
+export const getOrderPreview = async (
+  request: OrderPreviewRequest
+): Promise<OrderPreviewResponse> => {
+  const response = await axiosInstance.post<ApiResponse<OrderPreviewResponse>>(
+    `${PAYMENT_API_BASE_URL}/preview`,
+    request
+  );
+  return response.data.result;
+};
 
 export const createPayment = async (paymentData: {
   amount: number;
@@ -56,6 +85,7 @@ export const capturePaypalOrder = async (
 };
 
 export default {
+  getOrderPreview,
   createPayment,
   handleVNPayPaymentReturn,
   capturePaypalOrder,

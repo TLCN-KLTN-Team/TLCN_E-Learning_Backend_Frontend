@@ -26,6 +26,7 @@ public class CartService {
     private final PublishedCourseRepository publishedCourseRepository;
     private final CurrencyUtils currencyUtils;
     private final FavoriteCourseRepository favoriteCourseRepository;
+    private final WishlistService wishlistService;
 
     public Cart createCart() {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -39,19 +40,17 @@ public class CartService {
     }
 
     public Cart getEntity() {
-        return cartRepository.findByUserId(JwtUtils.getCurrentUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+        Cart cart = cartRepository.findByUserId(JwtUtils.getCurrentUserId())
+                .orElse(null);
+        if (cart==null){
+            cart = this.createCart();
+            cart = cartRepository.save(cart);
+        }
+        return cart;
     }
     private PublishedCourse getPublishedCourse(Integer courseId) {
         return publishedCourseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
-    }
-
-    boolean existCart() {
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
-        return cart.getId() != null;
     }
 
     public boolean existCourseInCart(Integer courseId) {
@@ -78,6 +77,14 @@ public class CartService {
         cartRepository.save(cart);
     }
 
+    public void addWishlistItemToCart(Integer courseId) {
+        PublishedCourse course = publishedCourseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
+
+        this.addToCart(courseId);
+        wishlistService.removeFromWishlist(courseId);
+    }
+
     public void removeFromCart(Integer courseId){
         PublishedCourse course = publishedCourseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
@@ -93,8 +100,7 @@ public class CartService {
     }
 
     public CartResponse getCart(){
-        Cart cart = cartRepository.findByUserId(JwtUtils.getCurrentUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+        Cart cart = this.getEntity();
         FavoriteCourse favoriteCourse = favoriteCourseRepository.findByUserId(JwtUtils.getCurrentUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.WISHLIST_NOT_FOUND));
 
