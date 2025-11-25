@@ -6,6 +6,8 @@ import PaypalReturn from "@/pages/user/payment/PaypalReturn";
 import Cart from "@/pages/user/cart/Cart";
 import Wishlist from "@/pages/user/wishlist/Wishlist";
 import MyCourses from "@/pages/user/personal/MyCourses";
+import CourseLearning from "@/pages/user/course/CourseLearning";
+import UserQuizAttempt from "@/components/user/course/UserQuizAttempt";
 import RoleProtectedRoute from "./protected/RoleProtectedRoute";
 
 const UserRoutes = [
@@ -31,6 +33,8 @@ const UserRoutes = [
       <Route path="/cart" element={<Cart />} />,
       <Route path="/wishlist" element={<Wishlist />} />,
       <Route path="/my-courses" element={<MyCourses />} />,
+      <Route path="/course/:courseId/learn" element={<CourseLearning />} />,
+      <Route path="/user/quiz/:quizId" element={<UserQuizAttempt />} />,
     </Route>
   </Route>,
 ];

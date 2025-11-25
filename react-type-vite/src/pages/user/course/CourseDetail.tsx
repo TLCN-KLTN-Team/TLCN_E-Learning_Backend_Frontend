@@ -90,7 +90,7 @@ const CourseDetail: React.FC = () => {
   const handleLearnNow = () => {
     // Navigate to course learning page
     console.log("Learning course:", course?.courseName);
-    navigate(`/user/course/${courseId}/learn`);
+    navigate(`/course/${courseId}/learn`);
   };
 
   const handleAddToWishlist = async () => {

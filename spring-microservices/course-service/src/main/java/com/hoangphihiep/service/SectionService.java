@@ -77,11 +77,6 @@ public class SectionService {
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        System.out.println ("Có vào đây 888888888888888888888");
-
-        // Upload question files
-
-
         List<SectionResponse> responses = new ArrayList<>();
 
         try {
@@ -193,6 +188,7 @@ public class SectionService {
         section.setDescription(request.getDescription());
         section.setOrderIndex(request.getOrderIndex());
         section.setIsPublished(request.getIsPublished());
+        section.setIsPublished(request.getIsPublished());
         section.setUpdateAt(new Date());
     }
 
@@ -271,6 +267,7 @@ public class SectionService {
         lesson.setTitle(request.getTitle());
         lesson.setDescription(request.getDescription());
         lesson.setContent(request.getContent());
+        lesson.setIsPublished(request.getIsPublished());
 
         // XỬ LÝ ATTACHMENTS
         List<String> processedAttachments = new ArrayList<>();
@@ -468,6 +465,7 @@ public class SectionService {
         quiz.setShowResults(request.getShowResults());
         quiz.setStartTime(request.getStartTime());
         quiz.setEndTime(request.getEndTime());
+        quiz.setIsPublished(request.getIsPublished());
         quiz.setUpdateAt(new Date());
     }
 

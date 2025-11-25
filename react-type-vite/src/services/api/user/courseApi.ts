@@ -47,6 +47,8 @@ export class CourseApiService {
     }
   }
 
+  
+
   static async getCourses(
     page: number = 0,
     size: number = 12

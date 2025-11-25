@@ -239,11 +239,13 @@ const QuizResultPage: React.FC = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                                {question.questionType === "MULTIPLE_CHOICE" 
+                                {question.questionType === "SINGLE_CHOICE" 
+                                  ? "Một đáp án"
+                                  : question.questionType === "MULTIPLE_CHOICE"
                                   ? "Nhiều đáp án"
                                   : question.questionType === "TRUE_FALSE"
                                   ? "Đúng/Sai"
-                                  : "Một đáp án"}
+                                  : "Không xác định"}
                               </span>
                             </div>
                             <p className="font-medium text-gray-900 mb-1">
@@ -295,7 +297,7 @@ const QuizResultPage: React.FC = () => {
                         {question.questionType === "MULTIPLE_CHOICE" && (
                           <div>
                             <p className="text-sm font-medium text-gray-700 mb-3">
-                              Tất cả các đáp án:
+                              Các đáp án:
                             </p>
                             <div className="space-y-2">
                               {allAnswers.map((ans) => {
@@ -304,25 +306,25 @@ const QuizResultPage: React.FC = () => {
                                 
                                 let borderColor = "border-gray-300"
                                 let bgColor = "bg-white"
-                                let icon = null
+                                let label = ""
                                 
                                 if (isCorrectAnswer && isSelected) {
-                                  // Correct and selected - green
+                                  // Đúng và đã chọn
                                   borderColor = "border-green-500"
                                   bgColor = "bg-green-100"
-                                  icon = <CheckCircle className="h-5 w-5 text-green-600" />
+                                  label = "Bạn chọn (Đúng)"
                                 } else if (isCorrectAnswer && !isSelected) {
-                                  // Correct but not selected - light green
+                                  // Đúng nhưng không chọn
                                   borderColor = "border-green-400"
                                   bgColor = "bg-green-50"
-                                  icon = <CheckCircle className="h-5 w-5 text-green-500" />
+                                  label = "Đáp án đúng"
                                 } else if (!isCorrectAnswer && isSelected) {
-                                  // Wrong and selected - red
+                                  // Sai và đã chọn
                                   borderColor = "border-red-500"
                                   bgColor = "bg-red-100"
-                                  icon = <XCircle className="h-5 w-5 text-red-600" />
+                                  label = "Bạn chọn (Sai)"
                                 } else {
-                                  // Wrong and not selected - gray
+                                  // Không chọn và sai
                                   bgColor = "bg-gray-50"
                                 }
 
@@ -331,25 +333,33 @@ const QuizResultPage: React.FC = () => {
                                     key={ans.id}
                                     className={`flex items-start gap-3 p-3 border-2 rounded-lg ${borderColor} ${bgColor}`}
                                   >
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      disabled
-                                      className="mt-1 w-4 h-4"
-                                    />
-                                    <span className="flex-1 text-gray-900">
-                                      {ans.content}
-                                    </span>
-                                    {icon}
+                                    <div className="flex items-center gap-2 flex-1">
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        disabled
+                                        className="mt-1 w-4 h-4"
+                                        aria-label={ans.content}
+                                      />
+                                      <span className="flex-1 text-gray-900">
+                                        {ans.content}
+                                      </span>
+                                    </div>
+                                    {label && (
+                                      <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
+                                        isCorrectAnswer && isSelected
+                                          ? "bg-green-200 text-green-800"
+                                          : isCorrectAnswer
+                                          ? "bg-green-100 text-green-700"
+                                          : "bg-red-200 text-red-800"
+                                      }`}>
+                                        {label}
+                                      </span>
+                                    )}
                                   </div>
                                 )
                               })}
                             </div>
-                            {!answer.isCorrect && (
-                              <p className="text-sm text-gray-600 mt-3 italic">
-                                💡 Các đáp án có dấu ✓ màu xanh là đáp án đúng
-                              </p>
-                            )}
                           </div>
                         )}
 
@@ -357,7 +367,7 @@ const QuizResultPage: React.FC = () => {
                         {(question.questionType === "SINGLE_CHOICE" || question.questionType === "TRUE_FALSE") && (
                           <div>
                             <p className="text-sm font-medium text-gray-700 mb-3">
-                              Tất cả các đáp án:
+                              Các đáp án:
                             </p>
                             <div className="space-y-2">
                               {allAnswers.map((ans) => {
@@ -366,25 +376,25 @@ const QuizResultPage: React.FC = () => {
                                 
                                 let borderColor = "border-gray-300"
                                 let bgColor = "bg-white"
-                                let icon = null
+                                let label = ""
                                 
                                 if (isCorrectAnswer && isSelected) {
-                                  // Correct and selected - green
+                                  // Đúng và đã chọn
                                   borderColor = "border-green-500"
                                   bgColor = "bg-green-100"
-                                  icon = <CheckCircle className="h-5 w-5 text-green-600" />
+                                  label = "Bạn chọn (Đúng)"
                                 } else if (isCorrectAnswer && !isSelected) {
-                                  // Correct but not selected - light green (show correct answer)
+                                  // Đúng nhưng không chọn
                                   borderColor = "border-green-400"
                                   bgColor = "bg-green-50"
-                                  icon = <CheckCircle className="h-5 w-5 text-green-500" />
+                                  label = "Đáp án đúng"
                                 } else if (!isCorrectAnswer && isSelected) {
-                                  // Wrong and selected - red
+                                  // Sai và đã chọn
                                   borderColor = "border-red-500"
                                   bgColor = "bg-red-100"
-                                  icon = <XCircle className="h-5 w-5 text-red-600" />
+                                  label = "Bạn chọn (Sai)"
                                 } else {
-                                  // Not selected - gray
+                                  // Không chọn và sai
                                   bgColor = "bg-gray-50"
                                 }
 
@@ -393,25 +403,33 @@ const QuizResultPage: React.FC = () => {
                                     key={ans.id}
                                     className={`flex items-start gap-3 p-3 border-2 rounded-lg ${borderColor} ${bgColor}`}
                                   >
-                                    <input
-                                      type="radio"
-                                      checked={isSelected}
-                                      disabled
-                                      className="mt-1 w-4 h-4"
-                                    />
-                                    <span className="flex-1 text-gray-900">
-                                      {ans.content}
-                                    </span>
-                                    {icon}
+                                    <div className="flex items-center gap-2 flex-1">
+                                      <input
+                                        type="radio"
+                                        checked={isSelected}
+                                        disabled
+                                        className="mt-1 w-4 h-4"
+                                        aria-label={ans.content}
+                                      />
+                                      <span className="flex-1 text-gray-900">
+                                        {ans.content}
+                                      </span>
+                                    </div>
+                                    {label && (
+                                      <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
+                                        isCorrectAnswer && isSelected
+                                          ? "bg-green-200 text-green-800"
+                                          : isCorrectAnswer
+                                          ? "bg-green-100 text-green-700"
+                                          : "bg-red-200 text-red-800"
+                                      }`}>
+                                        {label}
+                                      </span>
+                                    )}
                                   </div>
                                 )
                               })}
                             </div>
-                            {!answer.isCorrect && (
-                              <p className="text-sm text-gray-600 mt-3 italic">
-                                💡 Đáp án có dấu ✓ màu xanh là đáp án đúng
-                              </p>
-                            )}
                           </div>
                         )}
                       </div>

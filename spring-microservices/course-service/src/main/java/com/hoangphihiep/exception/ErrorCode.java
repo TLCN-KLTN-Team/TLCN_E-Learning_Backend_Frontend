@@ -74,6 +74,7 @@ public enum ErrorCode {
     COURSE_DUPLICATE_NAME(2116, "Tên khóa học đã tồn tại", HttpStatus.CONFLICT),
     COURSE_CANNOT_DELETE_PUBLISHED(2117, "Không thể xóa khóa học đã xuất bản", HttpStatus.CONFLICT),
     COURSE_CANNOT_EDIT_PUBLISHED(2118, "Không thể chỉnh sửa khóa học đã xuất bản", HttpStatus.CONFLICT),
+    COURSE_NOT_PUBLIC(2119, "Khóa học không phải là khóa học công khai (có phí)", HttpStatus.BAD_REQUEST),
     COURSE_EMPTY_SECTIONS(2119, "Khóa học phải có ít nhất một phần học", HttpStatus.BAD_REQUEST),
     COURSE_PRICE_TOO_HIGH(2120, "Giá khóa học không được vượt quá 10,000,000 VNĐ", HttpStatus.BAD_REQUEST),
     COURSE_DESCRIPTION_TOO_LONG(2121, "Mô tả khóa học không được vượt quá 2000 ký tự", HttpStatus.BAD_REQUEST),
@@ -196,12 +197,17 @@ public enum ErrorCode {
     ASSIGNMENT_ALREADY_SUBMITTED(400, "Assignment already submitted", HttpStatus.BAD_REQUEST),
     SUBMISSION_ALREADY_GRADED(400, "Submission already graded, cannot be modified", HttpStatus.BAD_REQUEST),
     ASSIGNMENT_DEADLINE_PASSED(400, "Assignment deadline has passed", HttpStatus.BAD_REQUEST),
+    DEADLINE_PASSED(400, "Deadline has passed", HttpStatus.BAD_REQUEST),
 
     INVALID_SCORE(1041, "Score is invalid or exceeds maximum allowed", HttpStatus.BAD_REQUEST),
 
     PUBLISHED_COURSE_NOT_FOUND(3201, "Không tìm thấy khóa học đã xuất bản", HttpStatus.NOT_FOUND),
     ELASTICSEARCH_OPERATION_FAILED(8001, "Elasticsearch operation failed", HttpStatus.INTERNAL_SERVER_ERROR),
     FILE_UPLOAD_FAILED(1027, "Failed to upload file", HttpStatus.INTERNAL_SERVER_ERROR),
+    
+    // User course access errors (90xx)
+    COURSE_NOT_ENROLLED(9001, "Bạn chưa đăng ký hoặc mua khóa học này", HttpStatus.FORBIDDEN),
+    USER_NOT_ENROLLED(9001, "Bạn chưa đăng ký hoặc mua khóa học này", HttpStatus.FORBIDDEN),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

@@ -6,6 +6,10 @@ import ProtectedRoute from "./protected/ProtectedRoute"
 import RoleProtectedRoute from "./protected/RoleProtectedRoute"
 import TeacherLayout from "../components/teacher/dashboard/TeacherLayout"
 import CoursePackagingPage from "@/pages/teacher/course/CoursePackagingPage"
+import PublicCoursesPage from "@/pages/teacher/public/PublicCoursesPage"
+import CourseStudentsPage from "@/pages/teacher/public/CourseUsersPage"
+import StudentQuizzesPage from "@/pages/teacher/public/UserQuizzesPage"
+import StudentAssignmentsPage from "@/pages/teacher/public/UserAssignmentsPage"
 
 // Teacher routes - protected routes for teacher role
 const TeacherRoutes = [
@@ -17,6 +21,13 @@ const TeacherRoutes = [
         <Route key="teacher-assigned-courses" path="/teacher/assigned-courses" element={<AssignedCoursesPage />} />
         <Route key="teacher-edit-course" path="/teacher/courses/:courseId/edit" element={<EditCoursePage />} />
         <Route key="teacher-package-course" path="/teacher/courses/:courseId/manage" element={<CoursePackagingPage />} />
+        
+        {/* Public Courses Routes */}
+        <Route key="teacher-public-courses" path="/teacher/public-courses" element={<PublicCoursesPage />} />
+        <Route key="teacher-public-course-students" path="/teacher/public-courses/:courseId/students" element={<CourseStudentsPage />} />
+        <Route key="teacher-student-quizzes" path="/teacher/public-courses/:courseId/students/:studentId/quizzes" element={<StudentQuizzesPage />} />
+        <Route key="teacher-student-assignments" path="/teacher/public-courses/:courseId/students/:studentId/assignments" element={<StudentAssignmentsPage />} />
+        
         {/* Thêm các teacher routes khác ở đây */}
         {/* 
         <Route path="/teacher/students" element={<TeacherStudents />} />

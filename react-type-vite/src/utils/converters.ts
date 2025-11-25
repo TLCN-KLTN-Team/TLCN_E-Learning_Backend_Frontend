@@ -121,7 +121,8 @@ export const convertQuizzesResponseToRequest = (quizzes: QuizResponse[]): QuizRe
 export const convertAssignmentResponseToRequest = (assignment: AssignmentResponse): AssignmentRequest => {
   return {
     ...(assignment.id && !isTemporaryId(assignment.id) && { id: assignment.id }),
-    sectionId: assignment.sectionId,
+    // Don't include sectionId - backend will infer it from nested structure (same as lessons and quizzes)
+    // sectionId: assignment.sectionId,
     title: assignment.title,
     description: assignment.description,
     deadline: assignment.deadline instanceof Date ? assignment.deadline : new Date(assignment.deadline),

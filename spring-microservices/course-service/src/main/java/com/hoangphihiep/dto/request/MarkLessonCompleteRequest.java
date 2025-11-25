@@ -15,6 +15,9 @@ public class MarkLessonCompleteRequest {
     @NotNull(message = "Lesson ID is required")
     private Integer lessonId;
 
-    @NotNull(message = "Class ID is required")
+    // For student learning in a class
     private Integer classId;
+
+    // For user learning published course
+    private Integer publishedCourseId;
 }
