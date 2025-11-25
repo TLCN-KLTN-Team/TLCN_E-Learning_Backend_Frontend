@@ -15,9 +15,17 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
 
     List<OrderItem> findByCourseId(int courseId);
 
-    @Query("SELECT oi FROM OrderItem oi WHERE oi.order.idUser = :userId")
-    List<OrderItem> findByUserId(@Param("userId") String userId);
+    @Query("SELECT CASE WHEN COUNT(oi) > 0 THEN true ELSE false END " +
+            "FROM OrderItem oi " +
+            "WHERE oi.course.id = :courseId " +
+            "AND oi.order.idUser = :userId " +
+            "AND oi.order.orderStatus = 'COMPLETED'")
+    boolean existsByUserIdAndCourseIdAndOrderCompleted(
+            @Param("userId") String userId, 
+            @Param("courseId") Integer courseId);
 
-    @Query("SELECT SUM(oi.finishedFee) FROM OrderItem oi WHERE oi.order.id = :orderId")
-    Double calculateTotalByOrderId(@Param("orderId") int orderId);
+    @Query("SELECT oi FROM OrderItem oi " +
+            "WHERE oi.course.course.id = :courseId " +
+            "AND oi.order.orderStatus = 'COMPLETED'")
+    List<OrderItem> findByOriginalCourseId(@Param("courseId") Integer courseId);
 }

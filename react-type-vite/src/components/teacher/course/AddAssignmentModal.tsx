@@ -84,7 +84,7 @@ const AddAssignmentModal: React.FC<{
       const nextNumberItem = getNextAssignmentNumberItem(existingAssignments)
 
       const newAssignment: AssignmentRequest = {
-        sectionId: existingSection.id || 0,
+        // Don't include sectionId - backend will infer it from nested structure
         title: formData.title,
         description: formData.description,
         deadline: formData.deadline,

@@ -285,12 +285,12 @@ const EditCoursePageContent: React.FC = () => {
 
             {/* Grading Tab */}
             {activeTab === "grading" && (
-              <StudentAssignmentGrading courseId={courseId || ""} />
+              <StudentAssignmentGrading courseId={Number(courseId)} />
             )}
 
             {/* Exam Results Tab */}
             {activeTab === "exam" && (
-              <ExamResultsView courseId={courseId || ""} />
+              <ExamResultsView courseId={Number(courseId)} />
             )}
 
             {/* Class Workspace Tab */}

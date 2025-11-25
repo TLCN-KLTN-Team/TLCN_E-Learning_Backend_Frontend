@@ -1,9 +1,9 @@
 package com.hoangphihiep.controller.user;
 
 import com.hoangphihiep.document.PublishedCourseDocument;
-import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.PaginatedResponse;
-import com.hoangphihiep.dto.response.PublishedCourseCardResponse;
+import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.service.PublishedCourseTeacherService;
+import com.hoangphihiep.service.SectionService;
 import com.hoangphihiep.service.UserPublishedCourseService;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +19,7 @@ import java.util.List;
 public class UserCourseController {
     private final UserPublishedCourseService publishedCourseService;
     private final PublishedCourseSearchService publishedCourseSearchService;
+    private final PublishedCourseTeacherService publishedCourseTeacherService;
 
     // load courses published paging
     @GetMapping
@@ -52,6 +53,19 @@ public class UserCourseController {
                 response,
                 "Load pending orders successfully"
         );
+    }
+
+    @GetMapping("/section/{courseId}")
+    public ApiResponse<List<SectionResponse>> getCourseDetail(
+            @PathVariable Integer courseId) {
+
+        PublishedCourseResponse response = publishedCourseTeacherService.getPublishedCourseById(courseId);
+
+        List<SectionResponse> sectionResponse = response.getPublishedSections();
+
+        return ApiResponse.<List<SectionResponse>>builder()
+                .result(sectionResponse)
+                .build();
     }
 
     // load courses published filtered and paged
