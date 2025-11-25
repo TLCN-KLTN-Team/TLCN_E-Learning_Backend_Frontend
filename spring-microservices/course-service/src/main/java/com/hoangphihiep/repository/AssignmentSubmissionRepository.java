@@ -26,9 +26,6 @@ public interface AssignmentSubmissionRepository extends JpaRepository<Assignment
     int countByIdUserAndAssignment_Id(@Param("userId") String userId,
                                       @Param("assignmentId") Integer assignmentId);
 
-    /**
-     * Find all submissions for a course and specific students
-     */
     @Query("SELECT s FROM AssignmentSubmission s " +
             "WHERE s.assignment.section.course.id = :courseId " +
             "AND s.idUser IN :studentIds " +
@@ -38,9 +35,6 @@ public interface AssignmentSubmissionRepository extends JpaRepository<Assignment
             @Param("studentIds") List<String> studentIds
     );
 
-    /**
-     * Find submissions for specific assignment and students
-     */
     @Query("SELECT s FROM AssignmentSubmission s " +
             "WHERE s.assignment.id = :assignmentId " +
             "AND s.idUser IN :studentIds " +
@@ -50,9 +44,6 @@ public interface AssignmentSubmissionRepository extends JpaRepository<Assignment
             @Param("studentIds") List<String> studentIds
     );
 
-    /**
-     * Count total submissions for course and students
-     */
     @Query("SELECT COUNT(s) FROM AssignmentSubmission s " +
             "WHERE s.assignment.section.course.id = :courseId " +
             "AND s.idUser IN :studentIds " +
@@ -62,9 +53,6 @@ public interface AssignmentSubmissionRepository extends JpaRepository<Assignment
             @Param("studentIds") List<String> studentIds
     );
 
-    /**
-     * Count graded submissions
-     */
     @Query("SELECT COUNT(s) FROM AssignmentSubmission s " +
             "WHERE s.assignment.section.course.id = :courseId " +
             "AND s.idUser IN :studentIds " +
@@ -87,17 +75,23 @@ public interface AssignmentSubmissionRepository extends JpaRepository<Assignment
             "AND s.assignment.maxScore > 0")
     Double getAverageScoreByStudentAndCourse(@Param("studentId") String studentId, @Param("courseId") Integer courseId);
 
-    /**
-     * Find pending submissions (not graded yet) for a class
-     */
-    @Query("SELECT s FROM AssignmentSubmission s " +
-            "WHERE s.assignment.section.course.id = :courseId " +
-            "AND s.idUser IN :studentIds " +
-            "AND s.score IS NULL " +
-            "AND s.status IN ('SUBMITTED', 'LATE') " +
-            "ORDER BY s.submittedAt ASC")
-    List<AssignmentSubmission> findPendingSubmissionsByCourseAndStudents(
-            @Param("courseId") Integer courseId,
-            @Param("studentIds") List<String> studentIds
-    );
+    @Query("SELECT asub FROM AssignmentSubmission asub " +
+            "WHERE asub.idUser = :userId " +
+            "AND asub.assignment.section.course.id = :courseId " +
+            "ORDER BY asub.submittedAt DESC")
+    List<AssignmentSubmission> findByUserIdAndCourseId(@Param("userId") String userId, @Param("courseId") Integer courseId);
+
+    @Query("SELECT COUNT(asub) FROM AssignmentSubmission asub " +
+            "WHERE asub.idUser = :userId " +
+            "AND asub.assignment.section.course.id = :courseId")
+    int countByUserIdAndCourseId(@Param("userId") String userId, @Param("courseId") Integer courseId);
+
+    @Query("SELECT COUNT(asub) FROM AssignmentSubmission asub " +
+            "WHERE asub.assignment.section.course.id = :courseId")
+    int countByCourseId(@Param("courseId") Integer courseId);
+
+    @Query("SELECT COUNT(asub) FROM AssignmentSubmission asub " +
+            "WHERE asub.assignment.section.course.id = :courseId " +
+            "AND asub.score IS NULL")
+    int countByCourseIdAndScoreIsNull(@Param("courseId") Integer courseId);
 }

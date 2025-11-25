@@ -54,7 +54,7 @@ const MyCourses: React.FC = () => {
   });
 
   const handleContinueLearning = (courseId: number) => {
-    navigate(`/student/courses/${courseId}/learn`);
+    navigate(`/course/${courseId}/learn`);
   };
 
   if (loading) {

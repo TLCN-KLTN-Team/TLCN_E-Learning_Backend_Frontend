@@ -69,15 +69,17 @@ const CoursePackagingPage = () => {
   })
 
   const [targetInput, setTargetInput] = useState("")
+  const [editMode, setEditMode] = useState(false)
 
   // Computed states
-  const canEdit = !existingPublish || 
-                  existingPublish.status === 0 || // Draft
-                  existingPublish.status === 3;   // Rejected
-
   const isPending = existingPublish?.status === 1;
   const isApproved = existingPublish?.status === 2;
   const isRejected = existingPublish?.status === 3;
+  
+  const canEdit = !existingPublish || 
+                  existingPublish.status === 0 || // Draft
+                  existingPublish.status === 3 ||  // Rejected
+                  (existingPublish.status === 2 && editMode); // Approved but in edit mode
 
   useEffect(() => {
     if (courseId > 0) {
@@ -324,6 +326,40 @@ const CoursePackagingPage = () => {
     }
   }
 
+  const handleSaveApprovedCourse = async () => {
+    if (!editMode || !isApproved) {
+      showNotification("error", "Không thể lưu", "Chỉ có thể lưu khi đang ở chế độ chỉnh sửa")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const result = await coursePackagingApi.createOrUpdateDraft(
+        formData,
+        courseImage || undefined,
+        courseVideo || undefined
+      )
+      setExistingPublish(result)
+      
+      // Update preview URLs if new files were uploaded
+      if (result.courseImage) {
+        setImagePreview(result.courseImage)
+      }
+      if (result.courseVideo) {
+        setVideoPreview(result.courseVideo)
+      }
+      
+      // Exit edit mode after saving
+      setEditMode(false)
+      
+      showNotification("success", "Đã lưu thay đổi", "Thông tin khóa học đã được cập nhật")
+    } catch (error: any) {
+      showNotification("error", "Lỗi lưu thay đổi", error.message || "Không thể lưu thay đổi")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!formData.description?.trim()) {
       showNotification("error", "Thiếu thông tin", "Vui lòng nhập mô tả khóa học")
@@ -480,13 +516,37 @@ const CoursePackagingPage = () => {
                 <span className="font-semibold">
                   Trạng thái: {existingPublish.statusText}
                 </span>
+                {editMode && (
+                  <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded font-medium">
+                    Đang chỉnh sửa
+                  </span>
+                )}
               </div>
-              {!canEdit && (
-                <span className="text-sm text-gray-600">
-                  {isPending && "Đang chờ quản trị viên xét duyệt"}
-                  {isApproved && "Khóa học đã được phê duyệt"}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {isApproved && !editMode && (
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                    Chỉnh Sửa
+                  </button>
+                )}
+                {isApproved && editMode && (
+                  <button
+                    onClick={() => setEditMode(false)}
+                    className="px-4 py-2 border rounded-lg hover:bg-gray-100 transition"
+                  >
+                    Hủy
+                  </button>
+                )}
+                {!editMode && (
+                  <span className="text-sm text-gray-600">
+                    {isPending && "Đang chờ quản trị viên xét duyệt"}
+                    {isApproved && "Khóa học đã được phê duyệt"}
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -519,7 +579,19 @@ const CoursePackagingPage = () => {
               <h4 className="font-semibold text-yellow-800">Không thể chỉnh sửa</h4>
               <p className="text-sm text-yellow-700 mt-1">
                 {isPending && "Khóa học đang chờ duyệt. Bạn không thể chỉnh sửa cho đến khi quản trị viên xét duyệt."}
-                {isApproved && "Khóa học đã được phê duyệt. Liên hệ quản trị viên nếu cần chỉnh sửa."}
+                {isApproved && !editMode && "Vui lòng nhấn nút 'Chỉnh Sửa' để bắt đầu chỉnh sửa khóa học."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {editMode && isApproved && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-blue-800">Đang ở chế độ chỉnh sửa</h4>
+              <p className="text-sm text-blue-700 mt-1">
+                Bạn có thể chỉnh sửa nội dung xuất bản và thông tin chi tiết. Nhớ lưu thay đổi trước khi thoát.
               </p>
             </div>
           </div>
@@ -1015,14 +1087,26 @@ const CoursePackagingPage = () => {
                 Quay Lại
               </button>
               <div className="flex gap-2">
-                <button
-                  onClick={handleSaveDraft}
-                  disabled={loading || !canEdit}
-                  className="px-6 py-3 border rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Lưu Bản Nháp
-                </button>
+                {editMode && isApproved ? (
+                  <button
+                    onClick={handleSaveApprovedCourse}
+                    disabled={loading}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <CheckCircle className="w-4 h-4" />
+                    Lưu Thay Đổi
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSaveDraft}
+                    disabled={loading || !canEdit}
+                    className="px-6 py-3 border rounded-lg hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Lưu Bản Nháp
+                  </button>
+                )}
                 <button
                   onClick={() => setActiveStep("review")}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"

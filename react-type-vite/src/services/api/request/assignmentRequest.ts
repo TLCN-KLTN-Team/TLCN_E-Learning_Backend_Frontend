@@ -1,6 +1,6 @@
 export interface AssignmentRequest {
   id?: number
-  sectionId: number
+  sectionId?: number // Optional - backend infers from nested structure like lessons and quizzes
   title: string
   description?: string
   deadline: Date

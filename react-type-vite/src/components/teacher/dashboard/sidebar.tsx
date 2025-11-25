@@ -22,7 +22,7 @@ import {
 const menuItems = [
   { name: "Dashboard", icon: LayoutGrid, path: "/teacher/home" },
   { name: "Khóa Học Được Gán", icon: BookOpen, path: "/teacher/assigned-courses" },
-  { name: "Khóa học Thương mại", icon: HelpCircle, path: "/teacher/quiz" },
+  { name: "Khóa Học Thương Mại", icon: HelpCircle, path: "/teacher/public-courses" },
   { name: "Earnings", icon: TrendingUp, path: "/teacher/earnings" },
   { name: "Students", icon: Users, path: "/teacher/students" },
   { name: "Orders", icon: FolderCheck, path: "/teacher/orders" },
