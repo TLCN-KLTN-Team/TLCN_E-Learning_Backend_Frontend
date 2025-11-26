@@ -3,11 +3,11 @@
 import type React from "react";
 import { useState } from "react";
 
-import AuthLayout from "@/components/student/auth/AuthLayout";
+import AuthLayout from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import * as forgotPasswordApi from "@/services/api/emailApi";
-import OtpVerification from "@/components/student/auth/OtpVerification";
-import ResetPassword from "@/components/student/auth/ResetPassword";
+import OtpVerification from "@/components/auth/OtpVerification";
+import ResetPassword from "@/components/auth/ResetPassword";
 import { useNavigate } from "react-router-dom";
 
 type Step = "email" | "otp" | "reset" | "success";
@@ -132,7 +132,8 @@ const ForgotPasswordPage = () => {
     }
 
     // Frontend validation to match backend
-    const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{6,}$/;
+    const passwordRegex =
+      /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\S+$).{6,}$/;
     if (!passwordRegex.test(newPassword)) {
       setError(
         "Mật khẩu phải có ít nhất 6 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@#$%^&+=!)"
@@ -154,17 +155,21 @@ const ForgotPasswordPage = () => {
     } catch (error: any) {
       console.error("Reset password error:", error);
       console.error("Error response:", error?.response?.data);
-      
+
       const errorCode = error?.response?.data?.code;
       let message = error?.response?.data?.message || error?.message;
-      
+
       // Custom error messages
-      if (errorCode === "CREDENTIAL_2003" || message?.includes("không đủ mạnh")) {
-        message = "Mật khẩu phải có ít nhất 6 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@#$%^&+=!)";
+      if (
+        errorCode === "CREDENTIAL_2003" ||
+        message?.includes("không đủ mạnh")
+      ) {
+        message =
+          "Mật khẩu phải có ít nhất 6 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@#$%^&+=!)";
       } else if (!message) {
         message = "Không thể đặt lại mật khẩu. Vui lòng thử lại.";
       }
-      
+
       setError(message);
     } finally {
       setIsLoading(false);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../../context/theme-context";
 import { ThemeToggle } from "../../ui/ThemeToggle";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   User,
   Settings,
@@ -43,6 +43,7 @@ const Header = () => {
   const { theme } = useTheme();
   const profileRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -97,8 +98,8 @@ const Header = () => {
       section: "Học tập",
       items: [
         { name: "Khóa học của tôi", icon: BookOpen, href: "/my-courses" },
-        { name: "Danh sách yêu thích", icon: Heart, href: "/wishlist" },
         { name: "Giỏ hàng của tôi", icon: ShoppingCart, href: "/cart" },
+        { name: "Danh sách yêu thích", icon: Heart, href: "/wishlist" },
         { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
         {
           name: "Bảng điều khiển của giảng viên",
@@ -231,6 +232,28 @@ const Header = () => {
           {/* Desktop Actions when responsive*/}
           <div className="hidden lg:flex items-center space-x-4">
             <ThemeToggle />
+
+            {/* Wishlist Icon */}
+            {user && (
+              <button
+                onClick={() => navigate("/wishlist")}
+                className="p-2 text-foreground hover:text-bs-primary transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="Wishlist"
+              >
+                <Heart className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Cart Icon */}
+            {user && (
+              <button
+                onClick={() => navigate("/cart")}
+                className="p-2 text-foreground hover:text-bs-primary transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="Cart"
+              >
+                <ShoppingCart className="w-5 h-5" />
+              </button>
+            )}
             {user ? (
               // User Profile Dropdown
               <div className="relative" ref={profileRef}>
@@ -408,6 +431,28 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-3 lg:hidden">
+            {/* Wishlist Icon - Mobile */}
+            {user && (
+              <button
+                onClick={() => navigate("/wishlist")}
+                className="p-2 text-foreground hover:text-bs-primary transition-colors"
+                aria-label="Wishlist"
+              >
+                <Heart className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Cart Icon - Mobile */}
+            {user && (
+              <button
+                onClick={() => navigate("/cart")}
+                className="p-2 text-foreground hover:text-bs-primary transition-colors"
+                aria-label="Cart"
+              >
+                <ShoppingCart className="w-5 h-5" />
+              </button>
+            )}
+
             <ThemeToggle />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
