@@ -50,9 +50,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    ApiResponse<AuthenticationResponse> loginByUsernameOrEmail(@RequestBody AuthenticationRequest request,
-                                                               HttpServletRequest httpRequest,
-                                                               HttpServletResponse response) throws ParseException, JOSEException {
+    ApiResponse<AuthenticationResponse> loginByUsernameOrEmail(@RequestBody AuthenticationRequest request) throws ParseException, JOSEException {
 
         AuthenticationResponse result = authenticationService.authenticate(request);
 

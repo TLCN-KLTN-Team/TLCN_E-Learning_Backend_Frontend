@@ -30,7 +30,7 @@ public class User implements Serializable {
     @Column(name = "email", unique = true, columnDefinition = "VARCHAR(255) COLLATE utf8mb4_unicode_ci")
     String email;
 
-    @Column(name = "phone_number")
+    @Column(name = "phone_number", unique = true)
     String phoneNumber;
 
     @Column(name = "first_name")

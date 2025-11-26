@@ -1,8 +1,8 @@
-import welcome from "../../../assets/images/element/02.svg";
-import ava1 from "../../../assets/images/avatar/01.jpg";
-import ava2 from "../../../assets/images/avatar/02.jpg";
-import ava3 from "../../../assets/images/avatar/03.jpg";
-import ava4 from "../../../assets/images/avatar/04.jpg";
+import welcome from "../../assets/images/element/02.svg";
+import ava1 from "../../assets/images/avatar/01.jpg";
+import ava2 from "../../assets/images/avatar/02.jpg";
+import ava3 from "../../assets/images/avatar/03.jpg";
+import ava4 from "../../assets/images/avatar/04.jpg";
 import { useTheme } from "@/context/theme-context";
 
 import authLogo from "@/assets/auth-logo.png";

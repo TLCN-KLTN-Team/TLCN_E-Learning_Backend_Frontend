@@ -1,37 +1,44 @@
 import { useState } from "react";
 import { Button } from "../../components/ui/button";
-import AuthLayout from "../../components/student/auth/AuthLayout";
+import AuthLayout from "../../components/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { useNavigate } from "react-router-dom";
 import type { RegisterData } from "@/context/auth-context/types";
 import { toast } from "react-toastify";
 import { isAfter } from "date-fns";
-import { Eye, EyeClosed, LockKeyhole, Mail, UserRound } from "lucide-react";
+import {
+  Eye,
+  EyeClosed,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  UserRound,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import GoogleButton from "@/components/shared/button/GoogleButton";
 import FacebookButton from "@/components/shared/button/FacebookButton";
-import OtpVerification from "@/components/student/auth/OtpVerification";
+import OtpVerification from "@/components/auth/OtpVerification";
 
 import { emailApi } from "@/services/api/index";
 
 // Interface for form errors
 interface FormErrors {
-  firstName?: string;
+  firstName: string;
   lastName?: string;
-  username?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  dob?: string;
+  email: string;
+  username: string;
+  phoneNumber: string;
+  password: string;
+  confirmPassword: string;
   agreeToTerms?: string;
 }
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState<RegisterData>({
-    username: "",
     firstName: "",
     lastName: "",
     email: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
     dob: undefined,
@@ -43,6 +50,7 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [currentStep, setCurrentStep] = useState<string>("register");
+  const [isRegistering, setIsRegistering] = useState<boolean>(false);
 
   const { user, register } = useAuth();
   const [emailToVerify, setEmailToVerify] = useState<string>("");
@@ -59,12 +67,9 @@ const RegisterPage = () => {
           return "First name phải ít nhất 2 ký tự";
         }
         break;
-      case "username":
-        if (!value || (typeof value === "string" && value.trim().length < 3)) {
-          return "Username phải ít nhất 3 ký tự";
-        }
-        if (typeof value === "string" && !/^[a-zA-Z0-9_]+$/.test(value)) {
-          return "Username chỉ có thể chứa chữ cái, số và dấu gạch dưới (_)";
+      case "phoneNumber":
+        if (!value) {
+          return "Phone number là bắt buộc";
         }
         break;
       case "email":
@@ -176,6 +181,7 @@ const RegisterPage = () => {
     }
 
     // Step 1: Register user and send verification code
+    setIsRegistering(true);
     register(formData)
       .then((email: string) => {
         setEmailToVerify(email);
@@ -185,6 +191,9 @@ const RegisterPage = () => {
       .catch((error) => {
         console.error("Đăng ký thất bại:", error);
         toast.error(error.message || "Đăng ký thất bại");
+      })
+      .finally(() => {
+        setIsRegistering(false);
       });
   };
 
@@ -199,9 +208,12 @@ const RegisterPage = () => {
       try {
         await emailApi.verifyAccount(emailToVerify, otpCode);
         toast.success(
-          "Xác minh tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ."
+          "Xác minh tài khoản thành công! Đang chuyển hướng đến trang đăng nhập..."
         );
-        navigate("/login");
+        // Delay để người dùng thấy thông báo thành công trước khi chuyển hướng
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
       } catch (error: any) {
         const errorCode = error?.response?.data?.code;
         const message =
@@ -278,7 +290,6 @@ const RegisterPage = () => {
   const registerRender = () => {
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Username and Email Fields */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* First Name Field */}
           <div className="space-y-2">
@@ -351,42 +362,6 @@ const RegisterPage = () => {
               </p>
             )}
           </div>
-          {/* Username Field */}
-          <div className="space-y-2">
-            <label
-              htmlFor="username"
-              className="block text-sm font-semibold text-gray-900"
-            >
-              Username
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <UserRound className="w-4 h-4 text-gray-400" />
-              </div>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={formData.username}
-                onChange={handleInputChange}
-                onBlur={() => handleFieldBlur("username")}
-                className={cn(
-                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
-                  errors.username
-                    ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
-                )}
-                placeholder="Nhập username"
-              />
-            </div>
-            {errors.username && (
-              <p className="text-sm text-red-400 font-medium">
-                {errors.username}
-              </p>
-            )}
-          </div>
-
           {/* Email Field */}
           <div className="space-y-2">
             <label
@@ -418,6 +393,42 @@ const RegisterPage = () => {
             </div>
             {errors.email && (
               <p className="text-sm text-red-400 font-medium">{errors.email}</p>
+            )}
+          </div>
+
+          {/* Phone number Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="phoneNumber"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Phone Number
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <UserRound className="w-4 h-4 text-gray-400" />
+              </div>
+              <input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="number"
+                required
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
+                onBlur={() => handleFieldBlur("phoneNumber")}
+                className={cn(
+                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  errors.phoneNumber
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-300 focus:border-blue-500"
+                )}
+                placeholder="Nhập phone number"
+              />
+            </div>
+            {errors.phoneNumber && (
+              <p className="text-sm text-red-400 font-medium">
+                {errors.phoneNumber}
+              </p>
             )}
           </div>
         </div>
@@ -556,10 +567,17 @@ const RegisterPage = () => {
         {/* Register Button */}
         <Button
           type="submit"
-          disabled={!formData.agreeToTerms}
+          disabled={!formData.agreeToTerms || isRegistering}
           className="w-full h-12 bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg"
         >
-          Tạo tài khoản
+          {isRegistering ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Đang xử lý...
+            </span>
+          ) : (
+            "Tạo tài khoản"
+          )}
         </Button>
 
         {/* Divider */}

@@ -88,8 +88,8 @@ public class UserService {
             throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
         }
 
-        if (request.getUsername() != null && userRepository.existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+        if (request.getPhoneNumber() != null && userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new AppException(ErrorCode.PHONE_EXISTED);
         }
 
         try {

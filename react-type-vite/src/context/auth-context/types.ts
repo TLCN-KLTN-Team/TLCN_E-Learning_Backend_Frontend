@@ -35,8 +35,8 @@ export interface AuthContextType {
 
 // Define Register data type
 export interface RegisterData {
-  username: string;
   email: string;
+  phoneNumber: string;
   password: string;
   confirmPassword: string;
   firstName: string;

@@ -146,6 +146,7 @@ public class AuthenticationService {
                             .firstName(userInfo.getGivenName())
                             .lastName(userInfo.getFamilyName())
                             .avatarUrl(userInfo.getPicture())
+                            .isEmailVerified(true)
                             .roles(Collections.singleton(
                                     Role.builder().name(PredefinedRole.USER_ROLE).build()))
                             .build();
@@ -174,6 +175,7 @@ public class AuthenticationService {
                             .avatarUrl(fbUserInfo.getPicture().getData().getUrl())
                             .roles(Collections.singleton(
                                     Role.builder().name(PredefinedRole.USER_ROLE).build()))
+                            .isEmailVerified(true)
                             .build();
                     return userRepository.save(newUser);
                 });
@@ -188,22 +190,18 @@ public class AuthenticationService {
 
     // logic authen & login with username, not social login
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws ParseException, JOSEException {
-        var userByUsername = userRepository
-                .findByUsername(request.getUsername())
-                .orElse(null);
-        var userByEmail = userRepository.findByEmail(request.getUsername())
+        var user = userRepository.findByEmail(request.getUsername())
                 .orElse(null);
 
-        if (userByUsername == null && userByEmail == null)
+        if (user == null)
             throw new AppException(ErrorCode.USER_NOT_FOUND);
 
-        var user = (userByUsername != null) ? userByUsername : userByEmail;
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
-//        if (!user.isEmailVerified()) {
-//            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
-//        }
+        if (!user.isEmailVerified()) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+        }
 
         return getAuthorizationData(user);
     }

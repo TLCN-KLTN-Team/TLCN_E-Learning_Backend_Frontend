@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "../../components/ui/button";
-import AuthLayout from "../../components/student/auth/AuthLayout";
+import AuthLayout from "../../components/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -9,6 +9,8 @@ import FacebookButton from "@/components/shared/button/FacebookButton";
 import { Eye, EyeClosed, LockKeyhole, Mail, Loader2 } from "lucide-react";
 import { getRoles } from "@/utils/localStorageVariables";
 import { getRoleBasedRedirectPath } from "@/utils/roleUtils";
+import OtpVerification from "@/components/auth/OtpVerification";
+import { emailApi } from "@/services/api/index";
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -21,6 +23,9 @@ const LoginPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [emailToVerify, setEmailToVerify] = useState("");
+  const [otpError, setOtpError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -28,6 +33,103 @@ const LoginPage = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  // Gửi lại OTP khi phát hiện tài khoản chưa xác thực
+  const handleResendOtpFromLogin = async () => {
+    try {
+      await emailApi.resendOtp(formData.username);
+      toast.success("Mã OTP đã được gửi đến email của bạn");
+    } catch (error: any) {
+      console.error("Resend OTP error:", error);
+      const errorMessage =
+        error?.response?.data?.message || "Không thể gửi mã OTP";
+      setOtpError(errorMessage);
+    }
+  };
+
+  // Xác thực OTP
+  const handleVerifyOtp = async (otpCode: string) => {
+    setIsLoading(true);
+    setOtpError("");
+
+    try {
+      await emailApi.verifyAccount(emailToVerify, otpCode);
+      toast.success(
+        "Xác minh tài khoản thành công! Đang chuyển hướng đến trang đăng nhập..."
+      );
+      // Delay để người dùng thấy thông báo thành công
+      setTimeout(() => {
+        setShowOtpVerification(false);
+        setEmailToVerify("");
+        // Tự động đăng nhập sau khi xác thực thành công
+        login(formData.username, formData.password)
+          .then(() => {
+            const roles = getRoles();
+            const url = getRoleBasedRedirectPath(roles);
+            navigate(url, { replace: true });
+            toast.success("Đăng nhập thành công!");
+          })
+          .catch(() => {
+            toast.info("Vui lòng đăng nhập lại");
+          });
+      }, 1500);
+    } catch (error: any) {
+      const errorCode = error?.response?.data?.code;
+      const message =
+        error?.response?.data?.message ||
+        "Mã OTP không hợp lệ. Vui lòng thử lại.";
+
+      setOtpError(message);
+
+      // OTP expired
+      if (errorCode === "OTP_1019") {
+        setOtpError(
+          "Mã OTP đã hết hạn (sau 1 phút 30 giây). Vui lòng nhấn 'Gửi lại mã xác nhận'"
+        );
+      }
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Gửi lại OTP
+  const handleResendOtp = async () => {
+    setIsLoading(true);
+    setOtpError("");
+
+    try {
+      await emailApi.resendOtp(emailToVerify);
+      toast.success("Mã OTP mới đã được gửi đến email của bạn");
+    } catch (error: any) {
+      const errorCode = error?.response?.data?.code;
+      const message =
+        error?.response?.data?.message ||
+        "Không thể gửi lại mã OTP. Vui lòng thử lại.";
+
+      if (
+        errorCode === "OTP_1026" ||
+        message.includes("3 lần") ||
+        message.includes("5 phút")
+      ) {
+        setOtpError(
+          "Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút"
+        );
+      } else {
+        setOtpError(message);
+      }
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Quay lại form đăng nhập
+  const handleBackToLogin = () => {
+    setShowOtpVerification(false);
+    setEmailToVerify("");
+    setOtpError("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -42,12 +144,50 @@ const LoginPage = () => {
         toast.success("Đăng nhập thành công!");
       })
       .catch((error) => {
-        toast.error(error.message || "Đăng nhập thất bại");
+        console.log("Login error:", error);
+        const errorMessage = error.message || "Đăng nhập thất bại";
+
+        // Kiểm tra nếu tài khoản chưa được xác thực
+        if (
+          errorMessage.includes("Tài khoản chưa được xác thực") ||
+          errorMessage.includes("chưa được xác thực") ||
+          errorMessage.includes("not verified")
+        ) {
+          // Lưu email và chuyển sang form OTP
+          setEmailToVerify(formData.username);
+          setShowOtpVerification(true);
+          // Tự động gửi lại OTP
+          handleResendOtpFromLogin();
+          toast.info(
+            "Tài khoản chưa được xác thực. Vui lòng xác thực tài khoản."
+          );
+        } else {
+          toast.error(errorMessage);
+        }
       })
       .finally(() => {
         setIsLoading(false);
       });
   };
+
+  // Nếu cần xác thực OTP, hiển thị form OTP
+  if (showOtpVerification) {
+    return (
+      <AuthLayout
+        title="Xác thực tài khoản"
+        subtitle="Vui lòng xác thực tài khoản của bạn để tiếp tục."
+      >
+        <OtpVerification
+          email={emailToVerify}
+          onVerify={handleVerifyOtp}
+          onBack={handleBackToLogin}
+          onResend={handleResendOtp}
+          isLoading={isLoading}
+          error={otpError}
+        />
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout
@@ -61,7 +201,7 @@ const LoginPage = () => {
             htmlFor="username"
             className="block text-sm font-semibold text-gray-900"
           >
-            Username or Email
+            Email
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -80,7 +220,7 @@ const LoginPage = () => {
               aria-describedby="username-description"
             />
             <span id="username-description" className="sr-only">
-              Nhập tên đăng nhập hoặc email của bạn
+              Nhập email của bạn
             </span>
           </div>
         </div>
@@ -185,13 +325,6 @@ const LoginPage = () => {
 
         {/* Social Login Buttons */}
         <div className="grid grid-cols-2 gap-4">
-          {/* <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
-            <GoogleButton />
-          </div>
-          <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
-            <FacebookButton />
-          </div> */}
-
           <GoogleButton disabled={isLoading} />
           <FacebookButton disabled={isLoading} />
         </div>
