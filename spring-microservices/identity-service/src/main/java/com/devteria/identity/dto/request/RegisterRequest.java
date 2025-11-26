@@ -17,9 +17,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RegisterRequest {
-    @Size(min = 4, message = "USERNAME_INVALID")
-    String username;
-
     @Size(min = 6, message = "INVALID_PASSWORD")
     String password;
 
@@ -29,6 +26,9 @@ public class RegisterRequest {
     @Email(message = "INVALID_EMAIL")
     @NotBlank(message = "EMAIL_IS_REQUIRED")
     String email;
+
+    @NotBlank(message = "PHONE_NUMBER_IS_REQUIRED")
+    String phoneNumber;
 
     @NotBlank(message = "FIRST_NAME_IS_REQUIRED")
     String firstName;

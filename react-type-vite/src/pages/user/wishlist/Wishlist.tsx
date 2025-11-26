@@ -148,7 +148,7 @@ const Wishlist = () => {
                       className="absolute top-2 right-2 bg-white/90 hover:bg-white p-2 rounded-full transition-colors"
                       aria-label="Remove from wishlist"
                     >
-                      <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                      <Heart className="w-4 h-4 text-black fill-black" />
                     </button>
                   </div>
 

@@ -39,7 +39,7 @@ public enum ErrorCode {
     NON_EXECUTE("SYS_1002", "Không thể thực hiện yêu cầu", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Authentication Errors (AUTH_xxxx)
-    AUTH_INVALID_CREDENTIALS("AUTH_1001", "Tên đăng nhập hoặc mật khẩu không chính xác", HttpStatus.BAD_REQUEST),
+    AUTH_INVALID_CREDENTIALS("AUTH_1001", "Email hoặc mật khẩu không chính xác", HttpStatus.BAD_REQUEST),
     AUTH_REQUIRED("AUTH_1002", "Vui lòng đăng nhập để tiếp tục", HttpStatus.UNAUTHORIZED),
     AUTH_TOKEN_INVALID("AUTH_1003", "Token không hợp lệ hoặc đã hết hạn", HttpStatus.UNAUTHORIZED),
     AUTH_TOKEN_EXPIRED("AUTH_1004", "Phiên đăng nhập đã hết hạn", HttpStatus.UNAUTHORIZED),
@@ -50,6 +50,7 @@ public enum ErrorCode {
     USER_ALREADY_EXISTS("USER_2001", "Người dùng đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND("USER_2002", "Không tìm thấy người dùng", HttpStatus.NOT_FOUND),
     USER_EMAIL_EXISTED("USER_2003", "Email đã được sử dụng", HttpStatus.BAD_REQUEST),
+    PHONE_EXISTED("USER_2004", "Số điện thoại đã được sử dụng", HttpStatus.BAD_REQUEST),
 
     // Validation Errors (VALID_xxxx)
     VALID_EXCEPTION("VALID_3000", "Dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),

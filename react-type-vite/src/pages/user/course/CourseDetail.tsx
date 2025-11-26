@@ -250,18 +250,18 @@ const CourseDetail: React.FC = () => {
                     <Button
                       variant="outline"
                       size="icon"
-                      className={`border-blue-600 ${
+                      className={`${
                         isInWishlist
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : "hover:bg-blue-50"
+                          ? "border-red-600 hover:bg-red-50"
+                          : "border-gray-600 hover:bg-gray-50"
                       }`}
                       onClick={handleAddToWishlist}
                     >
                       <Heart
                         className={`w-5 h-5 ${
                           isInWishlist
-                            ? "fill-white text-white"
-                            : "text-blue-600"
+                            ? "fill-red-600 text-red-600"
+                            : "text-gray-900"
                         }`}
                       />
                     </Button>
