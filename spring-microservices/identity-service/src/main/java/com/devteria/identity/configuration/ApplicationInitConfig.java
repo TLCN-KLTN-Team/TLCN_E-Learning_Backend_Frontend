@@ -1,7 +1,9 @@
 package com.devteria.identity.configuration;
 
 import java.util.HashSet;
+import java.util.Set;
 
+import com.devteria.identity.entity.AccountStatus;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -26,15 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ApplicationInitConfig {
 
-    PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    @NonFinal
-    static final String ADMIN_USER_NAME = "admin";
-
-    @NonFinal
-    static final String ADMIN_PASSWORD = "admin";
-
-    static final String SUPER_ADMIN_ROLE = "superadmin";
+    static final String SUPER_ADMIN_EMAIL = "superadmin@example.com";
+    static final String SUPER_ADMIN_PASSWORD = "superadmin";
 
     @Bean
     @ConditionalOnProperty(
@@ -43,48 +40,49 @@ public class ApplicationInitConfig {
             havingValue = "com.mysql.cj.jdbc.Driver")
     ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
         log.info("Initializing application.....");
+
         return args -> {
-            if (userRepository.findByUsername(SUPER_ADMIN_ROLE).isEmpty()) {
-                var roles = new HashSet<Role>();
-                roles.add(Role.builder()
-                        .name(PredefinedRole.SUPER_ADMIN_ROLE)
-                        .description("Super Admin role")
-                        .build());
 
+            // 1) Tạo 5 roles nếu chưa tồn tại
+            createRoleIfNotExist(roleRepository, "USER");
+            createRoleIfNotExist(roleRepository, "STUDENT");
+            createRoleIfNotExist(roleRepository, "TEACHER");
+            createRoleIfNotExist(roleRepository, "ADMIN");
+            Role superAdminRole = createRoleIfNotExist(roleRepository, "SUPER_ADMIN");
+
+//            Set<Role> rolesOfSuperAdmin = new HashSet<>();
+//            rolesOfSuperAdmin.add(superAdminRole);
+
+            // 2) Tạo tài khoản SUPER_ADMIN mặc định
+            if (userRepository.findByEmail(SUPER_ADMIN_EMAIL).isEmpty()) {
                 User user = User.builder()
-                        .username(SUPER_ADMIN_ROLE)
-                        .password(passwordEncoder.encode(SUPER_ADMIN_ROLE))
-                        .roles(roles)
+                        .email(SUPER_ADMIN_EMAIL)
+                        .accountStatus(AccountStatus.ACTIVE)
+                        .isEmailVerified(true)
+                        .firstName("Super")
+                        .lastName("Admin")
+                        .phoneNumber("+1234567890")
+                        .password(passwordEncoder.encode(SUPER_ADMIN_PASSWORD))
+                        .roles(Set.of(superAdminRole))
                         .build();
 
                 userRepository.save(user);
-                log.warn("superadmin user has been created with default password: superadmin, please change it");
+
+                log.warn("Default SUPER_ADMIN created with email: {}, password: {}",
+                        SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD);
             }
 
-            if (userRepository.findByUsername(ADMIN_USER_NAME).isEmpty()) {
-                roleRepository.save(Role.builder()
-                        .name(PredefinedRole.USER_ROLE)
-                        .description("User role")
-                        .build());
-
-                Role adminRole = roleRepository.save(Role.builder()
-                        .name(PredefinedRole.ADMIN_ROLE)
-                        .description("Admin role")
-                        .build());
-
-                var roles = new HashSet<Role>();
-                roles.add(adminRole);
-
-                User user = User.builder()
-                        .username(ADMIN_USER_NAME)
-                        .password(passwordEncoder.encode(ADMIN_PASSWORD))
-                        .roles(roles)
-                        .build();
-
-                userRepository.save(user);
-                log.warn("admin user has been created with default password: admin, please change it");
-            }
-            log.info("Application initialization completed .....");
+            log.info("Application initialization completed.");
         };
     }
+
+    private Role createRoleIfNotExist(RoleRepository repo, String roleName) {
+        return repo.findByName((roleName)).orElseGet(() -> {
+            Role role = Role.builder()
+                    .name(roleName)
+                    .build();
+            return repo.save(role);
+        });
+    }
+
 }

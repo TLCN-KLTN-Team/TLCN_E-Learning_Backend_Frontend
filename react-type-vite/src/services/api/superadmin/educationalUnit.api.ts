@@ -1,0 +1,75 @@
+import axiosInstance from "../httpClient/axiosInstance";
+import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
+import type { EducationalUnitResponse } from "../response/educationalUnitResponse";
+
+const PREFIX = "/course-management/system-admin/education-unit-management";
+
+const getAllEducationalUnits = async (): Promise<
+  PaginatedResponse<EducationalUnitResponse>
+> => {
+  const response = await axiosInstance.get<
+    ApiResponse<PaginatedResponse<EducationalUnitResponse>>
+  >(`${PREFIX}/get-all`);
+
+  return response.data.result;
+};
+
+export const approveEducationalUnit = async (unitId: number): Promise<void> => {
+  const formData = new FormData();
+  await axiosInstance.put(`${PREFIX}/approve/${unitId}`, formData);
+};
+
+export const rejectEducationalUnit = async (
+  unitId: number,
+  reason: string
+): Promise<void> => {
+  const formData = new FormData();
+  formData.append("reason", reason);
+
+  await axiosInstance.put(`${PREFIX}/reject/${unitId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+export const sendFeedbackToEducationalUnit = async (
+  unitId: number,
+  feedback: string
+): Promise<void> => {
+  const formData = new FormData();
+  formData.append("feedback", feedback);
+
+  await axiosInstance.post(`${PREFIX}/send-feedback/${unitId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+export const changeEducationalUnitStatus = async (
+  unitId: number,
+  status: "suspend" | "reactive",
+  reason: string
+): Promise<void> => {
+  const formData = new FormData();
+  formData.append("reason", reason);
+
+  await axiosInstance.put(
+    `${PREFIX}/change-status/${unitId}?status=${status}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+};
+
+export default {
+  getAllEducationalUnits,
+  approveEducationalUnit,
+  rejectEducationalUnit,
+  sendFeedbackToEducationalUnit,
+  changeEducationalUnitStatus,
+};

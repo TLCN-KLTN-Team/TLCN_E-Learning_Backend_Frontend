@@ -56,8 +56,6 @@ public class UserController {
                 .build();
     }
 
-    //    ApiResponse<UserResponse> createUser()
-
     @GetMapping
     ApiResponse<PaginatedResponse<UserResponse>> getUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -120,10 +118,9 @@ public class UserController {
         return ApiResponse.<Void>success(null, "Password changed successfully");
     }
 
-    //    @PutMapping("/roles")
-    //    ApiResponse<UserResponse> updateRoles(@RequestBody RoleUpdateRequest request){
-    //        return ApiResponse.<UserResponse>builder()
-    //                .result(userService.updateUserRoles(request))
-    //                .build();
-    //    }
+    @PutMapping(value = "/verify-email-by-super-admin", consumes = "multipart/form-data")
+    ApiResponse<Void> verifyEmailBySuperAdmin(@RequestPart("email") String email) {
+        userService.adminVerifyAccount(email);
+        return ApiResponse.<Void>success(null, "Email verified successfully by Super Admin");
+    }
 }

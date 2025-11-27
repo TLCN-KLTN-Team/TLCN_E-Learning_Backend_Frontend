@@ -22,19 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class EducationalUnitController {
     private final EducationalUnitService educationalUnitService;
 
-    @GetMapping("/get-all")
-    public ApiResponse<?> getAllEducationalUnits(
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size
-    ) {
-
-        var response = educationalUnitService.getAllEducationalUnits(page,size);
-        return ApiResponse.success(
-                response,
-                "Lấy danh sách đơn vị đào tạo thành công"
-        );
-    }
-
     @GetMapping("/my-educationalUnit")
     public ApiResponse<EducationalUnitResponse> getMyEducationalUnit() {
         String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();

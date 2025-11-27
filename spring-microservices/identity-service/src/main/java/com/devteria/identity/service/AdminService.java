@@ -59,6 +59,7 @@ public class AdminService {
                 .dob(request.getDob())
                 .roles(roles)
                 .accountStatus(AccountStatus.INACTIVE)
+                .isEmailVerified(true)
                 .build();
 
         try {
