@@ -1,6 +1,8 @@
 package com.devteria.identity.entity;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 import jakarta.persistence.*;
@@ -51,4 +53,7 @@ public class User implements Serializable {
 
     @ManyToMany
     Set<Role> roles;
+
+    LocalDate createdAt;
+    LocalDate updatedAt;
 }

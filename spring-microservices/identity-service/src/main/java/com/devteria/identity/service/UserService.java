@@ -1,5 +1,6 @@
 package com.devteria.identity.service;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -236,17 +237,17 @@ public class UserService {
         userRepository.save(user);
     }
 
-    //    @PreAuthorize("hasRole('ADMIN')")
-    //    public UserResponse updateUserRoles(RoleUpdateRequest req) {
-    //        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-    //        User user = userRepository.findById(userId).orElseThrow(() -> new
-    // AppException(ErrorCode.USER_NOT_EXISTED));
-    //
-    //        var roles = roleRepository.findAllById(req.roles());
-    //        user.setRoles(new HashSet<>(roles));
-    //
-    //        return userMapper.toUserResponse(userRepository.save(user));
-    //    }
+    // update account status
+    public void changeAccountStatus(String userId, String status) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        try {
+            AccountStatus newStatus = AccountStatus.valueOf(status.toUpperCase());
+            user.setAccountStatus(newStatus);
+            userRepository.save(user);
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.INVALID_ACCOUNT_STATUS);
+        }
+    }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void deleteUser(String userId) {
@@ -272,7 +273,10 @@ public class UserService {
                     UserResponse res = userMapper.toUserResponse(user);
                     Set<String> userRoles =
                             user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
+                    String createdAt = user.getCreatedAt() != null ? user.getCreatedAt().toString() : LocalDate.now().toString();
                     res.setRoles(userRoles);
+                    res.setCreatedAt(createdAt);
+                    res.setAccountStatus(user.getAccountStatus().toString());
                     return res;
                 })
                 .toList();
