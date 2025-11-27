@@ -1,6 +1,6 @@
-import type React from "react"
-import { Link } from "react-router-dom"
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
+import type React from "react";
+import { Link } from "react-router-dom";
+import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 
 const Footer: React.FC = () => {
   return (
@@ -10,14 +10,18 @@ const Footer: React.FC = () => {
           {/* Widget */}
           <div className="text-center md:text-left mb-3 md:mb-0 md:w-1/3">
             <Link to="/">
-              <img className="h-5" src="/placeholder.svg?height=20&width=120" alt="logo" />
+              <img
+                className="h-5"
+                src="/placeholder.svg?height=20&width=120"
+                alt="logo"
+              />
             </Link>
           </div>
 
           {/* Widget */}
           <div className="mb-3 md:mb-0 md:w-1/3">
             <div className="text-center text-white">
-              Copyrights ©2024 Eduport. Build by{" "}
+              Copyrights ©2024 OpenEdu. Build by{" "}
               <a
                 href="https://www.stackbros.in/"
                 target="_blank"
@@ -34,22 +38,34 @@ const Footer: React.FC = () => {
           <div className="md:w-1/3">
             <ul className="flex justify-center md:justify-end space-x-2 mb-0">
               <li>
-                <a href="#" className="text-white hover:text-blue-400 transition-colors">
+                <a
+                  href="#"
+                  className="text-white hover:text-blue-400 transition-colors"
+                >
                   <Facebook className="w-5 h-5" />
                 </a>
               </li>
               <li>
-                <a href="#" className="text-white hover:text-blue-400 transition-colors">
+                <a
+                  href="#"
+                  className="text-white hover:text-blue-400 transition-colors"
+                >
                   <Instagram className="w-5 h-5" />
                 </a>
               </li>
               <li>
-                <a href="#" className="text-white hover:text-blue-400 transition-colors">
+                <a
+                  href="#"
+                  className="text-white hover:text-blue-400 transition-colors"
+                >
                   <Linkedin className="w-5 h-5" />
                 </a>
               </li>
               <li>
-                <a href="#" className="text-white hover:text-blue-400 transition-colors">
+                <a
+                  href="#"
+                  className="text-white hover:text-blue-400 transition-colors"
+                >
                   <Twitter className="w-5 h-5" />
                 </a>
               </li>
@@ -58,7 +74,7 @@ const Footer: React.FC = () => {
         </div>
       </div>
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;
