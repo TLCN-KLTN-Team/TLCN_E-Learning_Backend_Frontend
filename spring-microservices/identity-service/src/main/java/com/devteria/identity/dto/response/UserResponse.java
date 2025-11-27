@@ -24,4 +24,5 @@ public class UserResponse {
     String bio;
     //    Set<String> favoriteCategories;
     Set<String> roles;
+    String createdAt;
 }

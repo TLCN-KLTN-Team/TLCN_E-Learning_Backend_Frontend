@@ -115,6 +115,8 @@ public enum ErrorCode {
             HttpStatus.TOO_MANY_REQUESTS),
     EMAIL_NOT_FOUND("OTP_1027", "Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại", HttpStatus.NOT_FOUND),
     ACCOUNT_NOT_VERIFIED("OTP_1028", "Tài khoản chưa được xác thực. Vui lòng xác thực tài lại.", HttpStatus.BAD_REQUEST),
+    INVALID_ACCOUNT_STATUS(
+            "OTP_1029", "Trạng thái tài khoản không hợp lệ cho thao tác này", HttpStatus.BAD_REQUEST),
 
     FILE_EMPTY("FILE_5004", "File không được để trống", HttpStatus.BAD_REQUEST),
     ;

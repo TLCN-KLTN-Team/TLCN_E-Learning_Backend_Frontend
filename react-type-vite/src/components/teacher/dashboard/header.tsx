@@ -2,12 +2,24 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { Bell, Menu, User, Settings, LogOut, UserCircle, CreditCard, Globe, HelpCircle, BellDot, BellRing } from "lucide-react";
+import {
+  Bell,
+  Menu,
+  User,
+  Settings,
+  LogOut,
+  UserCircle,
+  CreditCard,
+  Globe,
+  HelpCircle,
+  BellDot,
+  BellRing,
+} from "lucide-react";
 import "../../../styles/admin.css";
 import { useResponsive } from "../../../hooks/useResponsive";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 
 import openEduIcon from "@/assets/open-edu-dark.png";
 
@@ -28,10 +40,7 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-const Header: React.FC<HeaderProps> = ({
-  isSidebarOpen,
-  setIsSidebarOpen,
-}) => {
+const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -55,9 +64,14 @@ const Header: React.FC<HeaderProps> = ({
           name: "Notifications",
           icon: BellRing,
           href: "/teacher/notifications",
-          badge: "New"
+          badge: "New",
         },
-        { name: "Messages", icon: BellDot, href: "/teacher/messages", badge: "5" },
+        {
+          name: "Messages",
+          icon: BellDot,
+          href: "/teacher/messages",
+          badge: "5",
+        },
       ],
     },
     {
@@ -144,7 +158,7 @@ const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center lg:hidden">
                 <img
                   src={openEduIcon}
-                  alt="Eduport"
+                  alt="OpenEdu"
                   className="h-6 w-6 md:h-8 mr-3 md:mr-4"
                 />
               </div>
@@ -304,7 +318,11 @@ const Header: React.FC<HeaderProps> = ({
                     <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-medium text-sm">
                       {user.avatar ? (
                         <img
-                          src={user.avatar instanceof File ? URL.createObjectURL(user.avatar) : user.avatar}
+                          src={
+                            user.avatar instanceof File
+                              ? URL.createObjectURL(user.avatar)
+                              : user.avatar
+                          }
                           alt={getFullName(user.firstName, user.lastName)}
                           className="w-full h-full rounded-full object-cover"
                         />
@@ -317,9 +335,7 @@ const Header: React.FC<HeaderProps> = ({
                       <div className="text-sm font-medium text-gray-900">
                         {getFullName(user.firstName, user.lastName)}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        Teacher
-                      </div>
+                      <div className="text-xs text-gray-500">Teacher</div>
                     </div>
                   </div>
                 </button>
@@ -333,7 +349,11 @@ const Header: React.FC<HeaderProps> = ({
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center font-medium">
                           {user.avatar ? (
                             <img
-                              src={user.avatar instanceof File ? URL.createObjectURL(user.avatar) : user.avatar}
+                              src={
+                                user.avatar instanceof File
+                                  ? URL.createObjectURL(user.avatar)
+                                  : user.avatar
+                              }
                               alt={getFullName(user.firstName, user.lastName)}
                               className="w-full h-full rounded-full object-cover"
                             />
@@ -348,9 +368,7 @@ const Header: React.FC<HeaderProps> = ({
                           <div className="text-sm text-gray-500">
                             {user.email}
                           </div>
-                          <div className="text-xs text-gray-400">
-                            Teacher
-                          </div>
+                          <div className="text-xs text-gray-400">Teacher</div>
                         </div>
                       </div>
                     </div>

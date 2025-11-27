@@ -1,13 +1,20 @@
 "use client";
 
-import { getUsers } from "@/services/api/userApi";
-import { Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { getUsers, changeUserStatus } from "@/services/api/userApi";
+import {
+  Lock,
+  Unlock,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { LoadingDots } from "../ui/LoadingDots";
 import AccountDetailModal from "./modals/AccountDetailModal";
-import EditAccountModal from "./modals/EditAccountModal";
+import ChangeStatusModal from "./modals/ChangeStatusModal";
 import {
   ROLE_FILTER_OPTIONS,
   TABLE_HEADERS,
@@ -22,6 +29,11 @@ import {
 } from "./data/AccountData";
 import type { UserResponse } from "@/services/api/response/userResponse";
 import type { PaginatedResponse } from "@/services/api/response/apiResponse";
+import {
+  AccountStatus,
+  ACCOUNT_STATUS_LABELS,
+  ACCOUNT_STATUS_COLORS,
+} from "@/types/account.enum";
 
 const AccountManagement: React.FC = () => {
   const [accounts, setAccounts] = useState<UserResponse[]>([]);
@@ -29,8 +41,11 @@ const AccountManagement: React.FC = () => {
     null
   );
   const [selectedRole, setSelectedRole] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [targetStatus, setTargetStatus] = useState<AccountStatus | null>(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(0);
@@ -41,7 +56,31 @@ const AccountManagement: React.FC = () => {
   const [hasPrevious, setHasPrevious] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const filteredAccounts = filterAccountsByRole(accounts, selectedRole);
+  // Filter accounts by role, status, and search query
+  const filteredAccounts = accounts.filter((account) => {
+    // Filter by role
+    if (selectedRole !== "all") {
+      const hasRole = account.roles.includes(selectedRole);
+      if (!hasRole) return false;
+    }
+
+    // Filter by status
+    if (selectedStatus !== "all") {
+      if (account.accountStatus !== selectedStatus) return false;
+    }
+
+    // Filter by search query (name or email)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const fullName = getUserFullName(account).toLowerCase();
+      const email = account.email.toLowerCase();
+      if (!fullName.includes(query) && !email.includes(query)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -51,6 +90,7 @@ const AccountManagement: React.FC = () => {
           currentPage,
           pageSize
         );
+        console.log("Fetched accounts:", result);
         setAccounts(result.content);
         setCurrentPage(result.page);
         setTotalElements(result.totalElements);
@@ -99,30 +139,54 @@ const AccountManagement: React.FC = () => {
     setShowViewModal(true);
   };
 
-  const handleEditClick = (account: UserResponse, e: React.MouseEvent) => {
+  const handleStatusChange = (
+    account: UserResponse,
+    newStatus: AccountStatus,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
     setSelectedAccount(account);
-    setShowEditModal(true);
+    setTargetStatus(newStatus);
+    setShowStatusModal(true);
   };
 
-  const handleSaveAccount = async (updatedData: Partial<UserResponse>) => {
+  const handleConfirmStatusChange = async (reason?: string) => {
+    if (!selectedAccount || !targetStatus) return;
+
     try {
-      // TODO: Call API to update user
-      // await updateUser(selectedAccount!.id, updatedData);
+      await changeUserStatus(selectedAccount.id, targetStatus);
 
       // Update local state
       setAccounts((prev) =>
         prev.map((acc) =>
-          acc.id === selectedAccount?.id ? { ...acc, ...updatedData } : acc
+          acc.id === selectedAccount.id
+            ? { ...acc, accountStatus: targetStatus }
+            : acc
         )
       );
 
-      toast.success("Đã cập nhật thông tin tài khoản thành công!");
-      setShowEditModal(false);
+      toast.success(
+        targetStatus === AccountStatus.BANNED
+          ? "Đã khóa tài khoản thành công! Email thông báo đã được gửi."
+          : targetStatus === AccountStatus.ACTIVE
+          ? "Đã mở khóa tài khoản thành công! Email thông báo đã được gửi."
+          : "Đã thay đổi trạng thái tài khoản thành công!"
+      );
+
+      setShowStatusModal(false);
+      setSelectedAccount(null);
+      setTargetStatus(null);
     } catch (error) {
-      toast.error("Lỗi khi cập nhật tài khoản");
-      throw error;
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Lỗi khi thay đổi trạng thái tài khoản"
+      );
     }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
   };
 
   if (loading) {
@@ -141,18 +205,83 @@ const AccountManagement: React.FC = () => {
         </h2>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-6">
-        <select
-          value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
-          className="border border-gray-300 text-gray-900 rounded-lg px-3 py-2 w-full sm:w-auto"
-        >
-          {ROLE_FILTER_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+      {/* Search and Filter Section */}
+      <div className="bg-white rounded-lg shadow p-4 space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên hoặc email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {searchQuery && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Loại tài khoản
+            </label>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2"
+            >
+              {ROLE_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Trạng thái
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value={AccountStatus.PENDING_VERIFICATION}>
+                {ACCOUNT_STATUS_LABELS[AccountStatus.PENDING_VERIFICATION]}
+              </option>
+              <option value={AccountStatus.ACTIVE}>
+                {ACCOUNT_STATUS_LABELS[AccountStatus.ACTIVE]}
+              </option>
+              <option value={AccountStatus.INACTIVE}>
+                {ACCOUNT_STATUS_LABELS[AccountStatus.INACTIVE]}
+              </option>
+              <option value={AccountStatus.BANNED}>
+                {ACCOUNT_STATUS_LABELS[AccountStatus.BANNED]}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        {/* Results count */}
+        {(searchQuery ||
+          selectedRole !== "all" ||
+          selectedStatus !== "all") && (
+          <div className="text-sm text-gray-600">
+            Tìm thấy{" "}
+            <span className="font-semibold">{filteredAccounts.length}</span> kết
+            quả
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -223,8 +352,12 @@ const AccountManagement: React.FC = () => {
                     {formatDate(account.dob)}
                   </td>
                   <td className={CSS_CLASSES.cell}>
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                      Hoạt động
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        ACCOUNT_STATUS_COLORS[account.accountStatus]
+                      }`}
+                    >
+                      {ACCOUNT_STATUS_LABELS[account.accountStatus]}
                     </span>
                   </td>
                   <td className={`${CSS_CLASSES.cell} text-sm font-medium`}>
@@ -232,21 +365,34 @@ const AccountManagement: React.FC = () => {
                       className="flex space-x-2"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <button
-                        onClick={(e) => handleEditClick(account, e)}
-                        className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors flex items-center gap-1"
-                        title="Sửa"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span className="hidden md:inline">Sửa</span>
-                      </button>
-                      <button
-                        className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="hidden md:inline">Xóa</span>
-                      </button>
+                      {account.accountStatus === AccountStatus.BANNED ||
+                      account.accountStatus === AccountStatus.INACTIVE ? (
+                        <button
+                          onClick={(e) =>
+                            handleStatusChange(account, AccountStatus.ACTIVE, e)
+                          }
+                          className="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded transition-colors flex items-center gap-1"
+                          title="Mở khóa"
+                        >
+                          <Unlock className="w-4 h-4" />
+                          <span className="hidden md:inline">Mở khóa</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) =>
+                            handleStatusChange(account, AccountStatus.BANNED, e)
+                          }
+                          className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
+                          title="Khóa"
+                          disabled={
+                            account.accountStatus ===
+                            AccountStatus.PENDING_VERIFICATION
+                          }
+                        >
+                          <Lock className="w-4 h-4" />
+                          <span className="hidden md:inline">Khóa</span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -310,17 +456,25 @@ const AccountManagement: React.FC = () => {
           </div>
         </div>
       </div>
+
       {showViewModal && selectedAccount && (
         <AccountDetailModal
           account={selectedAccount}
           onClose={() => setShowViewModal(false)}
         />
       )}
-      {showEditModal && selectedAccount && (
-        <EditAccountModal
-          account={selectedAccount}
-          onClose={() => setShowEditModal(false)}
-          onSave={handleSaveAccount}
+
+      {showStatusModal && selectedAccount && targetStatus && (
+        <ChangeStatusModal
+          accountName={getUserFullName(selectedAccount)}
+          currentStatus={selectedAccount.accountStatus}
+          targetStatus={targetStatus}
+          onClose={() => {
+            setShowStatusModal(false);
+            setSelectedAccount(null);
+            setTargetStatus(null);
+          }}
+          onConfirm={handleConfirmStatusChange}
         />
       )}
     </div>

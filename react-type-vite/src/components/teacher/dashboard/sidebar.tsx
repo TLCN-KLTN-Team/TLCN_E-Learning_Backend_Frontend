@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { Link, useLocation } from "react-router-dom"
+import type React from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutGrid,
   BookOpen,
@@ -17,12 +17,21 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react"
+} from "lucide-react";
+import openEduIcon from "@/assets/open-edu-dark.png";
 
 const menuItems = [
   { name: "Dashboard", icon: LayoutGrid, path: "/teacher/home" },
-  { name: "Khóa Học Được Gán", icon: BookOpen, path: "/teacher/assigned-courses" },
-  { name: "Khóa Học Thương Mại", icon: HelpCircle, path: "/teacher/public-courses" },
+  {
+    name: "Khóa Học Được Gán",
+    icon: BookOpen,
+    path: "/teacher/assigned-courses",
+  },
+  {
+    name: "Khóa Học Thương Mại",
+    icon: HelpCircle,
+    path: "/teacher/public-courses",
+  },
   { name: "Earnings", icon: TrendingUp, path: "/teacher/earnings" },
   { name: "Students", icon: Users, path: "/teacher/students" },
   { name: "Orders", icon: FolderCheck, path: "/teacher/orders" },
@@ -31,36 +40,40 @@ const menuItems = [
   { name: "Payouts", icon: Wallet, path: "/teacher/payouts" },
   { name: "Settings", icon: Settings, path: "/teacher/settings" },
   { name: "Delete Profile", icon: Trash2, path: "/teacher/delete-profile" },
-]
+];
 
 interface SidebarProps {
-  collapsed: boolean
-  onToggleCollapse: () => void
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
-  const location = useLocation()
+  const location = useLocation();
 
   return (
     <div className="h-full flex flex-col bg-background">
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!collapsed && (
           <div className="flex items-center space-x-2">
-            <img src="/src/assets/images/logo.svg" alt="E-Learning Platform" className="h-8 w-auto" />
+            <img src={openEduIcon} alt="OpenEdu" className="h-8 w-auto" />
           </div>
         )}
         <button
           onClick={onToggleCollapse}
           className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent transition-colors"
         >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {collapsed ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <ChevronLeft className="w-4 h-4" />
+          )}
         </button>
       </div>
 
       <div className="flex-1 p-3">
         <div className="space-y-1">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path
+            const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.name}
@@ -75,10 +88,14 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
                 {isActive && !collapsed && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-800 rounded-r-full" />
                 )}
-                <item.icon className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} ${isActive ? "text-white" : ""}`} />
+                <item.icon
+                  className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} ${
+                    isActive ? "text-white" : ""
+                  }`}
+                />
                 {!collapsed && <span>{item.name}</span>}
               </Link>
-            )
+            );
           })}
 
           <button
@@ -91,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;
