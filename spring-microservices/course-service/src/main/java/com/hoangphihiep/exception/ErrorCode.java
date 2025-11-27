@@ -208,6 +208,8 @@ public enum ErrorCode {
     // User course access errors (90xx)
     COURSE_NOT_ENROLLED(9001, "Bạn chưa đăng ký hoặc mua khóa học này", HttpStatus.FORBIDDEN),
     USER_NOT_ENROLLED(9001, "Bạn chưa đăng ký hoặc mua khóa học này", HttpStatus.FORBIDDEN),
+
+    CHANGE_EDUCATIONAL_UNIT_STATUS_FAILED(9002, "Change educationalUnit status failed", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

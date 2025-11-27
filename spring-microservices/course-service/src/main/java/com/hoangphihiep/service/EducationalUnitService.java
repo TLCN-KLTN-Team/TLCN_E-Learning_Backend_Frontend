@@ -13,6 +13,7 @@ import com.hoangphihiep.repository.SubscriptionPlanRepository;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
 import com.hoangphihiep.repository.httpclient.UserInfoApi;
 import com.hoangphihiep.repository.httpclient.UserRepository;
+import com.hoangphihiep.utils.EducationalUnitStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -94,7 +95,7 @@ public class EducationalUnitService {
                     .logo(edu.getLogo())
                     .description(edu.getDescription())
                     .establishedYear(edu.getEstablishedYear())
-                    .status(edu.getStatus())
+                    .status(edu.getStatus().getStatus())
                     .subscriptionStartDate(edu.getSubscriptionStartDate())
                     .subscriptionEndDate(edu.getSubscriptionEndDate())
                     .createdAt(edu.getCreatedAt())
@@ -173,7 +174,7 @@ public class EducationalUnitService {
                     .logo(logoUrl) // Set logo URL
                     .businessLicense(businessLicenseUrl) // Set business license URL (you'll need to add this field)
                     .idAdmin(adminUserId)
-                    .status("PENDING")
+                    .status(EducationalUnitStatus.PENDING)
                     .createdAt(new Date())
                     .subscriptionPlan(subscriptionPlan)
                     .subscriptionStartDate(new Date())
@@ -196,7 +197,7 @@ public class EducationalUnitService {
                     .businessLicense(businessLicenseUrl)
                     .description(savedUnit.getDescription())
                     .establishedYear(savedUnit.getEstablishedYear())
-                    .status(savedUnit.getStatus())
+                    .status(savedUnit.getStatus().getStatus())
                     .createdAt(savedUnit.getCreatedAt())
                     .adminAccountId(adminUserId)
                     .build();
@@ -216,10 +217,22 @@ public class EducationalUnitService {
         EducationalUnit educationalUnit = educationalUnitRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
-        educationalUnit.setStatus("ACTIVE");
+        educationalUnit.setStatus(EducationalUnitStatus.ACTIVE);
+
         educationalUnitRepository.save(educationalUnit);
 
         this.sendFeedback(id, "Đơn vị đào tạo của bạn đã được phê duyệt. Bạn có thể đăng nhập và bắt đầu sử dụng hệ thống.");
+    }
+
+    public void rejectEducationalUnit(Integer id, String reason){
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        educationalUnit.setStatus(EducationalUnitStatus.REJECTED);
+
+        educationalUnitRepository.save(educationalUnit);
+
+        this.sendFeedback(id, "Đơn vị đào tạo của bạn đã bị từ chối phê duyệt vì lý do sau: \n\n" + reason);
     }
 
     public void sendFeedback(Integer unitId, String feedback) {
@@ -234,5 +247,27 @@ public class EducationalUnitService {
                 throw new AppException(ErrorCode.EMAIL_SENDING_FAILED);
             }
         });
+    }
+
+    public void suspendEducationalUnit(Integer id, String reason){
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        educationalUnit.setStatus(EducationalUnitStatus.SUSPENDED);
+
+        educationalUnitRepository.save(educationalUnit);
+
+        this.sendFeedback(id, "Đơn vị đào tạo của bạn đã bị tạm ngưng hoạt động. Vui lòng liên hệ quản trị hệ thống để biết thêm chi tiết.\n\nLý do: " + reason);
+    }
+
+    public void reactivateEducationalUnit(Integer id, String reason){
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        educationalUnit.setStatus(EducationalUnitStatus.ACTIVE);
+
+        educationalUnitRepository.save(educationalUnit);
+
+        this.sendFeedback(id, "Đơn vị đào tạo của bạn đã bị tạm ngưng hoạt động. Vui lòng liên hệ quản trị hệ thống để biết thêm chi tiết.\n\nLý do: " + reason);
     }
 }

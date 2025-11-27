@@ -21,3 +21,19 @@ export const getUserById = async (userId: string): Promise<UserResponse> => {
   );
   return response.data.result;
 };
+
+export const verifyEmailBySuperAdmin = async (email: string): Promise<void> => {
+  const formData = new FormData();
+  formData.append("email", email);
+
+  const response = await axiosInstance.put<ApiResponse<void>>(
+    "/identity/users/verify-email-by-super-admin",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  return response.data.result;
+};

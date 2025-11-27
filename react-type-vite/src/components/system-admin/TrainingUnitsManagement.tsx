@@ -2,18 +2,21 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { LoadingDots } from "../ui/LoadingDots";
 
 import TraningUnitItem from "./item/TraningUnitItem";
 import SubmissionModal from "./modals/SubmissionModal";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import { toast } from "react-toastify";
-import { getAllEducationalUnits } from "@/services/api/admin/educationUnitApi";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { paginationUtils } from "@/utils/paginationUtils";
 import type { PaginationState } from "@/utils/paginationUtils";
 
+import EducationalUnitService from "@/services/api/superadmin/educationalUnit.api";
+
 const TrainingUnitsManagement: React.FC = () => {
   const [units, setUnits] = useState<EducationalUnitResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Pagination state using paginationUtils
   const [paginationState, setPaginationState] = useState<PaginationState>(
@@ -45,7 +48,7 @@ const TrainingUnitsManagement: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [modalRef, setModalRef] = useState<HTMLDivElement | null>(null);
 
-  const handleShowDetails = (unitId: string) => {
+  const handleShowDetails = (unitId: number) => {
     const unitData = units.find((unit) => unit.id === unitId) || null;
     setSelectedUnitData(unitData);
     setShowDetailModal(true);
@@ -58,8 +61,9 @@ const TrainingUnitsManagement: React.FC = () => {
   // Fetch units data
   useEffect(() => {
     const fetchEducationalUnits = async () => {
+      setIsLoading(true);
       try {
-        const data = await getAllEducationalUnits();
+        const data = await EducationalUnitService.getAllEducationalUnits();
         setUnits(data.content);
         console.log(data);
 
@@ -78,6 +82,8 @@ const TrainingUnitsManagement: React.FC = () => {
             ? `Lỗi khi tải các đơn vị đào tạo: ${error}`
             : "Lỗi khi tải các đơn vị đào tạo"
         );
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -96,6 +102,14 @@ const TrainingUnitsManagement: React.FC = () => {
   }, [modalRef]);
 
   const headerStyles = "px-6 py-3 text-left font-bold text-gray-900 uppercase";
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingDots />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

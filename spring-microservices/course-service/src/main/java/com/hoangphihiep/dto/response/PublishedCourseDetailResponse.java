@@ -14,21 +14,30 @@ import java.util.List;
 public class PublishedCourseDetailResponse {
     String courseName;
     String description;
-    String courseIntroduction;
-    String achievements;
-    int rating;
-    int studentCount;
+    double starNumber;
+    int reviews;
+    int students;
     double duration;
+    String courseIntroduction;
     String authorName;
     boolean purchaserStatus; // NOT_ENROLLED, ENROLLED, COMPLETED
-
     String thumbnailUrl;
+    String videoIntroUrl;
     String coursePrice;
     String level;
     String category;
     boolean isHandsOn;
 
+    // contents
     List<PublishedCourseContentResponse> contents;
+
+    //
+    String achievements;
+
+
+    // course type
+    String courseType;
+    String descriptionType;
 
     // reviews
 

@@ -1,18 +1,13 @@
 "use client";
 
 import { getUsers } from "@/services/api/userApi";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  View,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { LoadingDots } from "../ui/LoadingDots";
 import AccountDetailModal from "./modals/AccountDetailModal";
+import EditAccountModal from "./modals/EditAccountModal";
 import {
   ROLE_FILTER_OPTIONS,
   TABLE_HEADERS,
@@ -30,11 +25,12 @@ import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 
 const AccountManagement: React.FC = () => {
   const [accounts, setAccounts] = useState<UserResponse[]>([]);
-  const [secletedAccount, setSelectedAccount] = useState<UserResponse | null>(
+  const [selectedAccount, setSelectedAccount] = useState<UserResponse | null>(
     null
   );
   const [selectedRole, setSelectedRole] = useState("all");
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(0);
@@ -98,10 +94,44 @@ const AccountManagement: React.FC = () => {
     return pages;
   };
 
-  const handleOpenViewModal = (account: UserResponse) => {
+  const handleRowClick = (account: UserResponse) => {
     setSelectedAccount(account);
-    setShowViewModal(!showViewModal);
+    setShowViewModal(true);
   };
+
+  const handleEditClick = (account: UserResponse, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedAccount(account);
+    setShowEditModal(true);
+  };
+
+  const handleSaveAccount = async (updatedData: Partial<UserResponse>) => {
+    try {
+      // TODO: Call API to update user
+      // await updateUser(selectedAccount!.id, updatedData);
+
+      // Update local state
+      setAccounts((prev) =>
+        prev.map((acc) =>
+          acc.id === selectedAccount?.id ? { ...acc, ...updatedData } : acc
+        )
+      );
+
+      toast.success("Đã cập nhật thông tin tài khoản thành công!");
+      setShowEditModal(false);
+    } catch (error) {
+      toast.error("Lỗi khi cập nhật tài khoản");
+      throw error;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingDots />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -109,11 +139,6 @@ const AccountManagement: React.FC = () => {
         <h2 className="text-xl md:text-2xl font-bold text-gray-900">
           Quản lý Tài khoản
         </h2>
-        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 self-start md:self-auto">
-          <Plus className="w-5 h-5" />
-          <span className="hidden sm:inline">Tạo tài khoản</span>
-          <span className="sm:hidden">Tạo</span>
-        </button>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-6">
@@ -135,16 +160,20 @@ const AccountManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {TABLE_HEADERS.map((header, index) => (
-                  <th key={index} className={CSS_CLASSES.headerStyles}>
-                    {header}
-                  </th>
-                ))}
+                <th className={CSS_CLASSES.headerStyles}>Tài khoản</th>
+                <th className={CSS_CLASSES.headerStyles}>Vai trò</th>
+                <th className={CSS_CLASSES.headerStyles}>Ngày sinh</th>
+                <th className={CSS_CLASSES.headerStyles}>Trạng thái</th>
+                <th className={CSS_CLASSES.headerStyles}>Thao tác</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredAccounts.map((account) => (
-                <tr key={account.id} className={CSS_CLASSES.tableRow}>
+                <tr
+                  key={account.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(account)}
+                >
                   <td className={CSS_CLASSES.cell}>
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
@@ -164,13 +193,10 @@ const AccountManagement: React.FC = () => {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          Name: {getUserFullName(account)}
+                          {getUserFullName(account)}
                         </div>
                         <div className="text-sm text-gray-500">
-                          username: {account.username}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          email: {account.email}
+                          {account.email}
                         </div>
                       </div>
                     </div>
@@ -202,25 +228,24 @@ const AccountManagement: React.FC = () => {
                     </span>
                   </td>
                   <td className={`${CSS_CLASSES.cell} text-sm font-medium`}>
-                    <div className="flex space-x-2">
+                    <div
+                      className="flex space-x-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <button
-                        className={`text-green-600 hover:text-green-800 ${CSS_CLASSES.button}`}
-                        onClick={() => handleOpenViewModal(account)}
-                      >
-                        <View className="w-4 h-4" />
-                        Xem
-                      </button>
-                      <button
-                        className={`text-blue-600 hover:text-blue-900 ${CSS_CLASSES.button}`}
+                        onClick={(e) => handleEditClick(account, e)}
+                        className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors flex items-center gap-1"
+                        title="Sửa"
                       >
                         <Edit className="w-4 h-4" />
-                        Sửa
+                        <span className="hidden md:inline">Sửa</span>
                       </button>
                       <button
-                        className={`text-red-600 hover:text-red-900 ${CSS_CLASSES.button}`}
+                        className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
+                        title="Xóa"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Xóa
+                        <span className="hidden md:inline">Xóa</span>
                       </button>
                     </div>
                   </td>
@@ -285,10 +310,17 @@ const AccountManagement: React.FC = () => {
           </div>
         </div>
       </div>
-      {showViewModal && secletedAccount && (
+      {showViewModal && selectedAccount && (
         <AccountDetailModal
-          account={secletedAccount}
+          account={selectedAccount}
           onClose={() => setShowViewModal(false)}
+        />
+      )}
+      {showEditModal && selectedAccount && (
+        <EditAccountModal
+          account={selectedAccount}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleSaveAccount}
         />
       )}
     </div>

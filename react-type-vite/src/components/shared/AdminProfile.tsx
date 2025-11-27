@@ -16,6 +16,13 @@ const AdminProfile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const getAvatarInitials = () => {
+    if (!user) return "SA";
+    const firstName = user.firstName || "";
+    const lastName = user.lastName || "";
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "SA";
+  };
+
   const buttonStyles =
     "w-full px-4 py-2 text-left text-gray-900 hover:bg-gray-50 flex items-center";
 
@@ -24,11 +31,17 @@ const AdminProfile = () => {
       <div className="p-3">
         <div className="flex items-center">
           <div className="mr-3 mb-3">
-            <img
-              src="/placeholder.svg?height=40&width=40&text=LF"
-              alt="Profile"
-              className="w-10 h-10 rounded-full shadow"
-            />
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt="Profile"
+                className="w-10 h-10 rounded-full shadow object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full shadow bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                {getAvatarInitials()}
+              </div>
+            )}
           </div>
           <div>
             <h6 className="font-semibold text-gray-900 mt-2">
