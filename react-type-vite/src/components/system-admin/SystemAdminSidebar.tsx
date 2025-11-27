@@ -58,12 +58,6 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
       path: "/system-admin/revenue",
     },
     {
-      id: "statistics",
-      label: "Thống kê hệ thống",
-      icon: TrendingUp,
-      path: "/system-admin/statistics",
-    },
-    {
       id: "edit-profile",
       label: "Chỉnh sửa hồ sơ",
       icon: UserCog,

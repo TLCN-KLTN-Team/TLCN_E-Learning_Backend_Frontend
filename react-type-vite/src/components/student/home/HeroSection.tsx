@@ -7,8 +7,11 @@ import {
   heroImageVariant,
   staggerContainerVariant,
 } from "@/motion/variants";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <motion.section
       className="relative overflow-hidden bg-background py-12 lg:px-10 lg:py-16"
@@ -112,13 +115,13 @@ const HeroSection = () => {
               className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight"
               variants={heroTitleVariant}
             >
-              We will help you{" "}
+              Chúng tôi sẽ giúp bạn{" "}
               <motion.span
                 className="text-bs-primary relative"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.2 }}
               >
-                Grow
+                Phát triển
                 <motion.div
                   className="absolute -top-2 -right-2 w-3 h-3 bg-bs-warning rounded-full"
                   animate={{
@@ -131,18 +134,23 @@ const HeroSection = () => {
                   }}
                 />
               </motion.span>{" "}
-              your Knowledge and Skills
+              Kiến thức và Kỹ năng
             </motion.h1>
 
             <motion.h6
               className="text-lg lg:text-xl text-muted-foreground mb-6 font-medium"
               variants={heroSubtitleVariant}
             >
-              1000+ professional Courses for Your Career
+              Hơn 1000 khóa học chuyên nghiệp cho sự nghiệp của bạn
             </motion.h6>
 
-            <Button className="bg-bs-primary text-white px-6 py-3 text-base font-medium rounded-lg shadow-bs transition-all duration-300 relative group">
-              <span className="relative z-10">Explore now</span>
+            <Button
+              className="bg-bs-primary text-white px-6 py-3 text-base font-medium rounded-lg shadow-bs transition-all duration-300 relative group"
+              onClick={() => {
+                navigate("/courses");
+              }}
+            >
+              <span className="relative z-10">Khám phá ngay</span>
             </Button>
           </div>
 
@@ -153,7 +161,7 @@ const HeroSection = () => {
             <div className="relative z-10">
               <motion.img
                 src={element05}
-                alt="Education illustration"
+                alt="Minh họa giáo dục"
                 className="w-full h-auto max-w-lg mx-auto"
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.3 }}

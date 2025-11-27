@@ -1,7 +1,7 @@
-import type React from "react"
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Star, Users, BookOpen, CheckCircle } from "lucide-react"
+import type React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Star, Users, BookOpen, CheckCircle } from "lucide-react";
 
 const ProfileBanner: React.FC = () => {
   return (
@@ -57,7 +57,9 @@ const ProfileBanner: React.FC = () => {
                       </li>
                       <li className="flex items-center gap-1">
                         <Users className="w-4 h-4 text-[#fd7e14]" />
-                        <span className="font-light">12k Enrolled Students</span>
+                        <span className="font-light">
+                          12k Enrolled Students
+                        </span>
                       </li>
                       <li className="flex items-center gap-1">
                         <BookOpen className="w-4 h-4 text-[#6f42c1]" />
@@ -98,7 +100,7 @@ const ProfileBanner: React.FC = () => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default ProfileBanner
+export default ProfileBanner;

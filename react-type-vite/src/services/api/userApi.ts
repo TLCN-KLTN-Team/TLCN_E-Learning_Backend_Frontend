@@ -37,3 +37,13 @@ export const verifyEmailBySuperAdmin = async (email: string): Promise<void> => {
   );
   return response.data.result;
 };
+
+export const changeUserStatus = async (
+  userId: string,
+  status: string
+): Promise<void> => {
+  const response = await axiosInstance.put<ApiResponse<void>>(
+    `/identity/users/change-status?userId=${userId}&status=${status}`
+  );
+  return response.data.result;
+};

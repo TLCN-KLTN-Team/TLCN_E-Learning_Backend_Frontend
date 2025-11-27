@@ -123,4 +123,10 @@ public class UserController {
         userService.adminVerifyAccount(email);
         return ApiResponse.<Void>success(null, "Email verified successfully by Super Admin");
     }
+
+    @PutMapping("change-status")
+    ApiResponse<Void> changeUserStatus(@RequestParam String userId, @RequestParam String status) {
+        userService.changeAccountStatus(userId, status);
+        return ApiResponse.<Void>success(null, "User status changed successfully");
+    }
 }
