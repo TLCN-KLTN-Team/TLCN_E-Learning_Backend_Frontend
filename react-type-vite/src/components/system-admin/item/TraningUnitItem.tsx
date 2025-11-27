@@ -58,9 +58,9 @@ const TraningUnitItem = ({
           <button
             onClick={handleDropdownToggle}
             className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 hover:opacity-80 transition-opacity
-              ${getStatusStyle(unit.status.toLocaleLowerCase())}`}
+              ${getStatusStyle(unit.status)}`}
           >
-            {unitStatus(unit.status.toLocaleLowerCase())}
+            {unitStatus(unit.status)}
           </button>
         </div>
       </td>

@@ -79,6 +79,7 @@ public class TeacherService {
                 .socialUrl(request.getSocialUrl())
                 .bankAccountNumber(request.getBankAccountNumber())
                 .accountStatus(AccountStatus.ACTIVE)
+                .isEmailVerified(true)
                 .build();
 
         try {

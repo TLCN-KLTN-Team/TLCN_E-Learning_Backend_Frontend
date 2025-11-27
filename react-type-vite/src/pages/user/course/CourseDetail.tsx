@@ -171,150 +171,57 @@ const CourseDetail: React.FC = () => {
             Back to courses
           </Button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Content */}
-            <div className="lg:col-span-2">
-              <div className="mb-2">
-                <span className="text-purple-600 text-sm font-medium">
-                  {course.category}
-                </span>
+          {/* Course Header Info */}
+          <div className="mb-2">
+            <span className="text-purple-600 text-sm font-medium">
+              {course.category}
+            </span>
+          </div>
+
+          <h1 className="text-3xl lg:text-4xl font-bold mb-4 text-gray-900">
+            {course.courseName}: Master the Fundamentals
+          </h1>
+
+          <p className="text-lg text-gray-600 mb-6">{course.description}</p>
+
+          {/* Course Stats */}
+          <div className="flex flex-wrap items-center gap-6 text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center">
+                {renderStars(course.rating)}
               </div>
-
-              <h1 className="text-3xl lg:text-4xl font-bold mb-4 text-gray-900">
-                {course.courseName}: Master the Fundamentals
-              </h1>
-
-              <p className="text-lg text-gray-600 mb-6">{course.description}</p>
-
-              {/* Course Stats */}
-              <div className="flex flex-wrap items-center gap-6 text-sm text-gray-700">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    {renderStars(course.rating)}
-                  </div>
-                  <span className="font-medium">{course.rating}</span>
-                  <span className="text-gray-500">(0 reviews)</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>{course.studentCount.toLocaleString()} students</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>{course.duration}</span>
-                </div>
-              </div>
-
-              {/* Instructor */}
-              <div className="mt-6 flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-purple-200">Created by</p>
-                  <p className="font-medium">{course.authorName}</p>
-                </div>
-              </div>
+              <span className="font-medium">{course.rating}</span>
+              <span className="text-gray-500">(0 reviews)</span>
             </div>
 
-            {/* Right Sidebar - Course Card */}
-            <div className="lg:col-span-1">
-              <Card className="p-6 bg-white shadow-xl sticky top-4">
-                <img
-                  src={course.thumbnailUrl}
-                  alt={`${course.courseName}: Master the Fundamentals`}
-                  className="w-full h-48 object-cover rounded-lg mb-4"
-                />
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>{course.studentCount.toLocaleString()} students</span>
+            </div>
 
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="text-3xl font-bold text-gray-900">
-                      {course.coursePrice}
-                    </span>
-                  </div>
-                </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>{course.duration}</span>
+            </div>
+          </div>
 
-                <div className="space-y-3 mb-6 w-full">
-                  {/* Hàng trên: Nút "Chuyển đến giỏ hàng" và icon Wishlist */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
-                      onClick={handleCartAction}
-                    >
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                      {isInCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className={`${
-                        isInWishlist
-                          ? "border-red-600 hover:bg-red-50"
-                          : "border-gray-600 hover:bg-gray-50"
-                      }`}
-                      onClick={handleAddToWishlist}
-                    >
-                      <Heart
-                        className={`w-5 h-5 ${
-                          isInWishlist
-                            ? "fill-red-600 text-red-600"
-                            : "text-gray-900"
-                        }`}
-                      />
-                    </Button>
-                  </div>
-                  {/* Hàng dưới: Nút "Mua ngay" */}
-                  {!course.purchaserStatus ? (
-                    <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
-                      onClick={handleEnrollNow}
-                    >
-                      Mua ngay
-                    </Button>
-                  ) : (
-                    <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
-                      onClick={handleLearnNow}
-                    >
-                      Bắt đầu học
-                    </Button>
-                  )}
-                </div>
-
-                {/* Course Info */}
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Level</span>
-                    <span className="font-medium">{course.level}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Duration</span>
-                    <span className="font-medium">{course.duration}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Target Audience</span>
-                    <span className="font-medium">{course.targetAudience}</span>
-                  </div>
-                  {course.isHandsOn && (
-                    <div className="flex items-center gap-2 text-green-600 font-medium">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Hands-On Practice</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
+          {/* Instructor */}
+          <div className="mt-6 flex items-center gap-3 pb-6">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm text-purple-200">Created by</p>
+              <p className="font-medium">{course.authorName}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Course Card and Main Content Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Content */}
+          {/* Left Content - Main Course Details */}
           <div className="lg:col-span-2 space-y-8">
             {/* What you'll learn */}
             <Card className="p-6">
@@ -337,100 +244,181 @@ const CourseDetail: React.FC = () => {
                 </p>
               </div>
             </Card>
-          </div>
 
-          {/* Right Sidebar - Empty for now, can add related courses */}
-          <div className="lg:col-span-1">
-            {/* This space can be used for related courses, course progress, etc. */}
-          </div>
-        </div>
-
-        {/* Full Width Sections */}
-        <div className="mt-8 space-y-8">
-          {/* Target Audience */}
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-6">Target Audience</h2>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
-              <span className="text-gray-700">{course.targetAudience}</span>
-            </div>
-          </Card>
-
-          {/* Instructor */}
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-6">Instructor</h2>
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="w-8 h-8 text-gray-500" />
+            {/* Target Audience */}
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Target Audience</h2>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700">{course.targetAudience}</span>
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">
-                  {course.authorName}
-                </h3>
-                <p className="text-gray-600">
-                  Expert instructor with years of experience in{" "}
-                  {course.category}.
-                </p>
-              </div>
-            </div>
-          </Card>
+            </Card>
 
-          {/* Student Reviews */}
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-6">Student reviews</h2>
-            <div className="space-y-6">
-              {/* Mock reviews data */}
-              {[
-                {
-                  id: "1",
-                  studentName: "John Doe",
-                  rating: 5,
-                  comment:
-                    "Excellent course! Very comprehensive and well-explained.",
-                  date: "2 weeks ago",
-                },
-                {
-                  id: "2",
-                  studentName: "Jane Smith",
-                  rating: 4,
-                  comment:
-                    "Great content and practical examples. Highly recommended!",
-                  date: "1 month ago",
-                },
-                {
-                  id: "3",
-                  studentName: "Mike Johnson",
-                  rating: 5,
-                  comment:
-                    "Perfect for beginners. The instructor explains everything clearly.",
-                  date: "2 months ago",
-                },
-              ].map((review) => (
-                <div
-                  key={review.id}
-                  className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{review.studentName}</h4>
-                        <span className="text-sm text-gray-500">
-                          {review.date}
-                        </span>
+            {/* Instructor */}
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Instructor</h2>
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-8 h-8 text-gray-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {course.authorName}
+                  </h3>
+                  <p className="text-gray-600">
+                    Expert instructor with years of experience in{" "}
+                    {course.category}.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Student Reviews */}
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Student reviews</h2>
+              <div className="space-y-6">
+                {/* Mock reviews data */}
+                {[
+                  {
+                    id: "1",
+                    studentName: "John Doe",
+                    rating: 5,
+                    comment:
+                      "Excellent course! Very comprehensive and well-explained.",
+                    date: "2 weeks ago",
+                  },
+                  {
+                    id: "2",
+                    studentName: "Jane Smith",
+                    rating: 4,
+                    comment:
+                      "Great content and practical examples. Highly recommended!",
+                    date: "1 month ago",
+                  },
+                  {
+                    id: "3",
+                    studentName: "Mike Johnson",
+                    rating: 5,
+                    comment:
+                      "Perfect for beginners. The instructor explains everything clearly.",
+                    date: "2 months ago",
+                  },
+                ].map((review) => (
+                  <div
+                    key={review.id}
+                    className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-5 h-5 text-gray-500" />
                       </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        {renderStars(review.rating)}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{review.studentName}</h4>
+                          <span className="text-sm text-gray-500">
+                            {review.date}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          {renderStars(review.rating)}
+                        </div>
+                        <p className="text-gray-700">{review.comment}</p>
                       </div>
-                      <p className="text-gray-700">{review.comment}</p>
                     </div>
                   </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Sidebar - Course Card */}
+          <div className="lg:col-span-1">
+            <Card className="p-6 bg-white shadow-xl lg:sticky lg:top-24">
+              <img
+                src={course.thumbnailUrl}
+                alt={`${course.courseName}: Master the Fundamentals`}
+                className="w-full h-48 object-cover rounded-lg mb-4"
+              />
+
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-3xl font-bold text-gray-900">
+                    {course.coursePrice}
+                  </span>
                 </div>
-              ))}
-            </div>
-          </Card>
+              </div>
+
+              <div className="space-y-3 mb-6 w-full">
+                {/* Hàng trên: Nút "Chuyển đến giỏ hàng" và icon Wishlist */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+                    onClick={handleCartAction}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    {isInCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className={`${
+                      isInWishlist
+                        ? "border-red-600 hover:bg-red-50"
+                        : "border-gray-600 hover:bg-gray-50"
+                    }`}
+                    onClick={handleAddToWishlist}
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${
+                        isInWishlist
+                          ? "fill-red-600 text-red-600"
+                          : "text-gray-900"
+                      }`}
+                    />
+                  </Button>
+                </div>
+                {/* Hàng dưới: Nút "Mua ngay" */}
+                {!course.purchaserStatus ? (
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
+                    onClick={handleEnrollNow}
+                  >
+                    Mua ngay
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
+                    onClick={handleLearnNow}
+                  >
+                    Bắt đầu học
+                  </Button>
+                )}
+              </div>
+
+              {/* Course Info */}
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Level</span>
+                  <span className="font-medium">{course.level}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Duration</span>
+                  <span className="font-medium">{course.duration}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Target Audience</span>
+                  <span className="font-medium">{course.targetAudience}</span>
+                </div>
+                {course.isHandsOn && (
+                  <div className="flex items-center gap-2 text-green-600 font-medium">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Hands-On Practice</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
 

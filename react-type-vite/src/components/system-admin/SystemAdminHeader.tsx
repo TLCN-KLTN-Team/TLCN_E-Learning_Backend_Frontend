@@ -3,6 +3,7 @@ import type React from "react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import AdminProfile from "../shared/AdminProfile";
 import SystemAdminNotification from "../shared/SystemAdminNotification";
+import { useAuth } from "@/context/auth-context/useAuth";
 
 interface SystemAdminHeaderProps {
   isSidebarOpen: boolean;
@@ -13,11 +14,19 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
 }) => {
+  const { user } = useAuth();
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const [isNoficationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+
+  const getAvatarInitials = () => {
+    if (!user) return "SA";
+    const firstName = user.firstName || "";
+    const lastName = user.lastName || "";
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "SA";
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -111,11 +120,17 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden p-0 ring-2 ring-transparent hover:ring-blue-200 transition-all"
             >
-              <img
-                src="/placeholder.svg?height=40&width=40&text=SA"
-                alt="System Admin Profile"
-                className="w-full h-full object-cover rounded-full"
-              />
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt="System Admin Profile"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs md:text-sm">
+                  {getAvatarInitials()}
+                </div>
+              )}
             </button>
 
             {/* Profile Dropdown */}

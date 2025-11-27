@@ -1,6 +1,7 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.entity.CourseType;
 import com.hoangphihiep.entity.Order;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.exception.AppException;
@@ -115,15 +116,26 @@ public class UserPublishedCourseService {
 //
 //                    .build();
 
+            CourseType courseType = publishedCourse.getCourseType();
+
             PublishedCourseDetailResponse response = PublishedCourseDetailResponse.builder()
                     .courseName(publishedCourse.getCourseName())
                     .description(publishedCourse.getDescription())
+                    .starNumber(4.5)
+                    .reviews(1200)
+                    .students(3500)
+                    .duration(3.5)
                     .authorName(publishedCourse.getAuthorName())
                     .coursePrice(currencyUtils.formatCurrency(publishedCourse.getCoursePrice()))
                     .purchaserStatus(orderService.checkCoursePurchased(publishedCourse.getId()))
                     .thumbnailUrl(publishedCourse.getCourseImage())
+                    .videoIntroUrl(publishedCourse.getCourseVideo())
+
                     .courseIntroduction(publishedCourse.getCourseIntroduction())
                     .achievements(publishedCourse.getLearnerAchievements())
+
+                    .courseType(courseType.getCourseTypeName())
+                    .descriptionType(courseType.getDescription())
                     .build();
 
             return response;
@@ -131,6 +143,4 @@ public class UserPublishedCourseService {
             throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
         }
     }
-
-
 }

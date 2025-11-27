@@ -3,6 +3,7 @@
 import { Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { LoadingDots } from "../ui/LoadingDots";
 
 import { CSS_CLASSES } from "./data/CategoriesData";
 import {
@@ -26,6 +27,8 @@ const CategoryManagement: React.FC = () => {
   const [selectedCategory, setSelectedCategory] =
     useState<CourseCategoryResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Pagination state using paginationUtils
   const [paginationState, setPaginationState] = useState<PaginationState>(
@@ -55,6 +58,7 @@ const CategoryManagement: React.FC = () => {
     name: string;
     description: string;
   }) => {
+    setIsSubmitting(true);
     try {
       // TODO: Call API to create new course type
       if (selectedCategory) {
@@ -88,6 +92,8 @@ const CategoryManagement: React.FC = () => {
       const errMsg = error instanceof Error ? error.message : "";
       console.log("Error message:", errMsg);
       toast.error(error ? errMsg : "Có lỗi xảy ra khi thêm hoặc sửa danh mục");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -141,6 +147,7 @@ const CategoryManagement: React.FC = () => {
   useEffect(() => {
     // Fetch categories from service
     const fetchCourseCategories = async () => {
+      setIsLoading(true);
       try {
         const result: PaginatedResponse<CourseCategoryResponse> =
           await getCourseTypes(
@@ -159,11 +166,21 @@ const CategoryManagement: React.FC = () => {
       } catch (error) {
         console.error("Error fetching categories:", error);
         toast.error("Lỗi phân trang");
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchCourseCategories();
   }, [paginationState.currentPage, paginationState.pageSize]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingDots />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -364,7 +381,7 @@ const CategoryManagement: React.FC = () => {
 
       {/* Add Course Type Modal */}
       <AddCourseTypeModal
-        title={selectedCategory ? "Cập nhật danh mục" : "Thêm danh mục"}
+        title={selectedCategory ? "Cập nhật danh mục" : "Tạo danh mục"}
         isOpen={showAddModal}
         onClose={() => {
           setShowAddModal(false);
@@ -373,6 +390,7 @@ const CategoryManagement: React.FC = () => {
         onSubmit={handleAddCourseType}
         editData={selectedCategory || undefined}
         isEditing={!!selectedCategory}
+        isSubmitting={isSubmitting}
       />
 
       {/* Confirm Delete Modal */}

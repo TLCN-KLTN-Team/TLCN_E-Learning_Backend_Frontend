@@ -154,10 +154,10 @@ const Header = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
         isScrolled
-          ? "bg-background/95 backdrop-blur-sm shadow-bs border-b border-border"
-          : "bg-transparent"
+          ? "bg-background/95 backdrop-blur-md shadow-bs border-b border-border"
+          : "bg-background/95 backdrop-blur-md lg:bg-transparent lg:backdrop-blur-none"
       }`}
     >
       <div className="px-4">
@@ -199,7 +199,7 @@ const Header = () => {
                         />
                       </svg>
                     </a>
-                    <div className="absolute left-0 top-full pt-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300 ease-in-out z-[999]">
+                    <div className="absolute left-0 top-full pt-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300 ease-in-out z-[110]">
                       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-lg p-3 min-w-[220px] whitespace-nowrap backdrop-blur-sm">
                         {item.features.map((feature, index) => (
                           <NavLink
@@ -488,7 +488,7 @@ const Header = () => {
 
         {/* Mobile Menu when zoom out*/}
         {isMenuOpen && (
-          <div className="lg:hidden bg-background border-t border-border z-[999]">
+          <div className="lg:hidden bg-background/98 backdrop-blur-md border-t border-border z-[110] relative shadow-lg">
             <nav className="py-4 space-y-2">
               {navigation.map((item) => (
                 <a

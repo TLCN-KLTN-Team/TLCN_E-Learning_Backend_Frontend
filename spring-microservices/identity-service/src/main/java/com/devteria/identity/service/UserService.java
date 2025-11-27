@@ -60,6 +60,15 @@ public class UserService {
     OTPService otpService;
     EmailVerificationService emailVerificationService;
 
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void adminVerifyAccount(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        user.setEmailVerified(true);
+        userRepository.save(user);
+    }
+
     public void verifyAccount(String email, String otpCode){
         try {
             emailVerificationService.verifyOtp(email, otpCode);
@@ -105,6 +114,8 @@ public class UserService {
     public String createUser(RegisterRequest request) {
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setAccountStatus(AccountStatus.PENDING_VERIFICATION);
+        user.setEmailVerified(false);
         HashSet<Role> roles = new HashSet<>();
 
         roleRepository.findById(PredefinedRole.USER_ROLE).ifPresent(roles::add);
