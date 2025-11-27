@@ -2,12 +2,25 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { Bell, Search, Menu, User, Settings, LogOut, UserCircle, CreditCard, Globe, HelpCircle, BellDot, BellRing } from "lucide-react";
+import {
+  Bell,
+  Search,
+  Menu,
+  User,
+  Settings,
+  LogOut,
+  UserCircle,
+  CreditCard,
+  Globe,
+  HelpCircle,
+  BellDot,
+  BellRing,
+} from "lucide-react";
 import "../../../styles/admin.css";
 import { useResponsive } from "../../../hooks/useResponsive";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 
 import openEduIcon from "@/assets/open-edu-dark.png";
 
@@ -59,9 +72,14 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
           name: "Notifications",
           icon: BellRing,
           href: "/admin/notifications",
-          badge: "New"
+          badge: "New",
         },
-        { name: "Messages", icon: BellDot, href: "/admin/messages", badge: "5" },
+        {
+          name: "Messages",
+          icon: BellDot,
+          href: "/admin/messages",
+          badge: "5",
+        },
       ],
     },
     {
@@ -400,9 +418,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                   <div className="flex items-center space-x-3">
                     {/* Avatar */}
                     <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-medium text-sm">
-                      {user.avatar ? (
+                      {user.avatarUrl ? (
                         <img
-                          src={user.avatar instanceof File ? URL.createObjectURL(user.avatar) : user.avatar}
+                          src={user.avatarUrl}
                           alt={getFullName(user.firstName, user.lastName)}
                           className="w-full h-full rounded-full object-cover"
                         />
@@ -415,9 +433,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                       <div className="text-sm font-medium text-gray-900">
                         {getFullName(user.firstName, user.lastName)}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        Admin
-                      </div>
+                      <div className="text-xs text-gray-500">Admin</div>
                     </div>
                   </div>
                 </button>
@@ -429,9 +445,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                     <div className="px-4 py-3 border-b border-gray-200">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center font-medium">
-                          {user.avatar ? (
+                          {user.avatarUrl ? (
                             <img
-                              src={user.avatar instanceof File ? URL.createObjectURL(user.avatar) : user.avatar}
+                              src={user.avatarUrl}
                               alt={getFullName(user.firstName, user.lastName)}
                               className="w-full h-full rounded-full object-cover"
                             />

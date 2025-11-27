@@ -1,6 +1,7 @@
 package com.hoangphihiep.entity;
 
 
+import com.hoangphihiep.utils.EducationalUnitStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,7 +31,9 @@ public class EducationalUnit {
     private String businessLicense;
     private String description;
     private Integer establishedYear;
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private EducationalUnitStatus status;
 
     @Column(name = "admin_id")
     private String idAdmin;

@@ -139,9 +139,8 @@ public class AuthenticationService {
                                 .redirectUri(GOOGLE_CALLBACK_URL)
                                 .build());
                 GoogleUserInfoResponse userInfo = outboundUserInfoClient.getUserInfo("json", accessToken.getAccessToken());
-                                user = userRepository.findByUsername(userInfo.getEmail()).orElseGet(() -> {
+                                user = userRepository.findByEmail(userInfo.getEmail()).orElseGet(() -> {
                     User newUser = User.builder()
-                            .username(userInfo.getEmail())
                             .email(userInfo.getEmail())
                             .firstName(userInfo.getGivenName())
                             .lastName(userInfo.getFamilyName())
@@ -168,9 +167,9 @@ public class AuthenticationService {
 
                 String username = fbUserInfo.getName();
 
-                user = userRepository.findByUsername(username).orElseGet(() -> {
+                user = userRepository.findByEmail(username).orElseGet(() -> {
                     User newUser = User.builder()
-                            .username(username)
+                            .email(username)
                             .firstName(fbUserInfo.getName())
                             .avatarUrl(fbUserInfo.getPicture().getData().getUrl())
                             .roles(Collections.singleton(
@@ -190,8 +189,13 @@ public class AuthenticationService {
 
     // logic authen & login with username, not social login
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws ParseException, JOSEException {
-        var user = userRepository.findByEmail(request.getUsername())
+        var userByEmail = userRepository.findByEmail(request.getUsername())
                 .orElse(null);
+
+        var userByUsername = userRepository.findByUsername(request.getUsername())
+                .orElse(null);
+
+        User user = userByEmail != null ? userByEmail : userByUsername;
 
         if (user == null)
             throw new AppException(ErrorCode.USER_NOT_FOUND);

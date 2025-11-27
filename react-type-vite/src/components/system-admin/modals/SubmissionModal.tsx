@@ -20,8 +20,10 @@ import type { EducationalUnitResponse } from "@/services/api/response/educationa
 import { toast } from "react-toastify";
 import {
   approveEducationalUnit,
+  rejectEducationalUnit,
   sendFeedbackToEducationalUnit,
-} from "@/services/api/superadmin/educationalUnit";
+  changeEducationalUnitStatus,
+} from "@/services/api/superadmin/educationalUnit.api";
 
 interface SubmissionModalProps {
   unit: EducationalUnitResponse;
@@ -31,48 +33,82 @@ interface SubmissionModalProps {
 
 const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
   const [showPreview, setShowPreview] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState("approve");
+  const [feedback, setFeedback] = useState("");
 
-  const handleStatusAction = async () => {
+  const handleApprove = async () => {
     try {
-      switch (selectedStatus) {
-        case "approve":
-          await approveEducationalUnit(unit.id);
-          toast.success("Duyệt đơn vị đào tạo thành công");
-          break;
-        case "reject":
-          // TODO: Implement reject API call
-          toast.success("Từ chối đơn vị đào tạo thành công");
-          break;
-        case "suspend":
-          // TODO: Implement suspend API call
-          toast.success("Tạm ngừng đơn vị đào tạo thành công");
-          break;
-        case "reactivate":
-          // TODO: Implement reactivate API call
-          toast.success("Kích hoạt lại đơn vị đào tạo thành công");
-          break;
-        default:
-          toast.error("Hành động không hợp lệ");
-          return;
-      }
+      await approveEducationalUnit(unit.id);
+      toast.success("Duyệt đơn vị đào tạo thành công");
       window.location.reload();
       onClose();
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Lỗi thực hiện hành động";
+        error instanceof Error ? error.message : "Lỗi duyệt đơn vị";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      await rejectEducationalUnit(unit.id, feedback);
+      toast.success("Từ chối đơn vị đào tạo thành công");
+      window.location.reload();
+      onClose();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Lỗi từ chối đơn vị";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleSuspend = async () => {
+    if (!feedback.trim()) {
+      toast.error("Vui lòng nhập lý do tạm dừng");
+      return;
+    }
+
+    try {
+      await changeEducationalUnitStatus(unit.id, "suspend", feedback);
+      toast.success("Tạm dừng đơn vị đào tạo thành công");
+      window.location.reload();
+      onClose();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Lỗi tạm dừng đơn vị";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!feedback.trim()) {
+      toast.error("Vui lòng nhập lý do kích hoạt lại");
+      return;
+    }
+
+    try {
+      await changeEducationalUnitStatus(unit.id, "reactive", feedback);
+      toast.success("Kích hoạt lại đơn vị đào tạo thành công");
+      window.location.reload();
+      onClose();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Lỗi kích hoạt lại đơn vị";
       toast.error(errorMessage);
     }
   };
 
   const sendFeedback = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    sendFeedbackToEducationalUnit(
-      unit.id,
-      (e.target as HTMLButtonElement).form?.feedback.value || ""
-    )
+
+    if (!feedback.trim()) {
+      toast.error("Vui lòng nhập nội dung phản hồi");
+      return;
+    }
+
+    sendFeedbackToEducationalUnit(unit.id, feedback)
       .then(() => {
         toast.success("Gửi phản hồi thành công");
+        setFeedback("");
         onClose();
       })
       .catch((error) => {
@@ -363,45 +399,28 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
             </div>
           </div>
 
-          {/* Status management */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">
-              Quản lý trạng thái đơn vị
-            </h4>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chọn hành động:
-              </label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                {unit.status != "ACTIVE" && (
-                  <option value="approve">Phê duyệt</option>
-                )}
-                <option value="reject">Từ chối</option>
-                <option value="suspend">Tạm ngừng</option>
-                <option value="reactivate">Kích hoạt lại</option>
-              </select>
-            </div>
-          </div>
-
           {/* Feedback */}
           <div>
             <h4 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
               <MessageSquareReply className="w-5 h-5 text-blue-600" />
               Phản hồi yêu cầu đăng ký
             </h4>
-            <form action="post" className="flex flex-col">
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="flex flex-col"
+            >
               <textarea
                 name="feedback"
-                id=""
-                className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:outline-none"
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Nhập nội dung phản hồi..."
+                className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               ></textarea>
               <button
-                className="px-4 py-2 rounded-lg text-end bg-blue-600 text-white mt-3 hover:bg-blue-700 transition-colors self-end"
+                type="button"
+                className="px-4 py-2 rounded-lg text-end bg-blue-600 text-white mt-3 hover:bg-blue-700 transition-colors self-end disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={sendFeedback}
+                disabled={!feedback.trim()}
               >
                 Phản hồi
               </button>
@@ -411,18 +430,64 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
 
         {/* Footer */}
         <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Đóng
-          </button>
-          {unit?.status == "PENDING" && (
+          {unit?.status === "PENDING" ? (
+            // Trạng thái PENDING: hiển thị DUYỆT và TỪ CHỐI
+            <>
+              <button
+                onClick={handleReject}
+                disabled={!feedback.trim()}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                Từ chối
+              </button>
+              <button
+                onClick={handleApprove}
+                className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Duyệt
+              </button>
+            </>
+          ) : unit?.status === "ACTIVE" ? (
+            // Trạng thái ACTIVE: hiển thị TẠM DỪNG và ĐÓNG
+            <>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={handleSuspend}
+                disabled={!feedback.trim()}
+                className="px-4 py-2 text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                Tạm dừng
+              </button>
+            </>
+          ) : unit?.status === "SUSPEND" ? (
+            // Trạng thái SUSPEND: hiển thị KÍCH HOẠT LẠI và ĐÓNG
+            <>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={handleReactivate}
+                disabled={!feedback.trim()}
+                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                Kích hoạt lại
+              </button>
+            </>
+          ) : (
+            // Các trạng thái khác (REJECTED): chỉ hiển thị ĐÓNG
             <button
-              onClick={handleStatusAction}
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-600 transition-all"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Duyệt
+              Đóng
             </button>
           )}
         </div>

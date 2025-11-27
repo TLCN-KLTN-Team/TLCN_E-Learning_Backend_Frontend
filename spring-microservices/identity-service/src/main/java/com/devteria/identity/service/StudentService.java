@@ -79,6 +79,7 @@ public class StudentService {
                 .socialUrl(request.getSocialUrl())
                 .className(request.getClassName())
                 .accountStatus(AccountStatus.ACTIVE)
+                .isEmailVerified(true)
                 .build();
 
         try {

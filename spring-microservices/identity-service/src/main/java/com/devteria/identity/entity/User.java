@@ -45,12 +45,6 @@ public class User implements Serializable {
     String cloudinaryPublicId;
     String bio;
 
-    //    @ElementCollection
-    ////    Set<String> favoriteCategories;
-
-    //    @OneToOne(cascade = CascadeType.ALL)
-    //    Address address;
-
     @Enumerated(EnumType.STRING)
     AccountStatus accountStatus;
     boolean isEmailVerified;
