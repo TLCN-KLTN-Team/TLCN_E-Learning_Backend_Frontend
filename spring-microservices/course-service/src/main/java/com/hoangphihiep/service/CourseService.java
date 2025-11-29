@@ -7,8 +7,10 @@ import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseEnrollment;
 import com.hoangphihiep.entity.Department;
 import com.hoangphihiep.entity.EducationalUnit;
+import com.hoangphihiep.events.CourseCreatedEvent;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.kafka.CourseEventProducer;
 import com.hoangphihiep.mapper.CourseMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
@@ -21,6 +23,8 @@ import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.function.Function;
 
 import java.math.BigDecimal;
@@ -40,6 +44,7 @@ public class CourseService {
     private final CourseMapper courseMapper;
     private final UserRepository userRepository;
     private final CourseEnrollmentRepository courseEnrollmentRepository;
+    private final CourseEventProducer eventProducer;
 
     // Constants for validation
     private static final int MIN_COURSE_NAME_LENGTH = 3;
@@ -133,6 +138,19 @@ public class CourseService {
             }
 
             Course savedCourse = courseRepository.save(course);
+
+            // publish event course created
+            CourseCreatedEvent event = CourseCreatedEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .courseId(savedCourse.getId())
+                    .courseName(savedCourse.getCourseName())
+                    .description(savedCourse.getDescription())
+                    .instructorId(savedCourse.getIdTeacher())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            // Publish event lên Kafka
+            eventProducer.publishCourseCreatedEvent(event);
 
             return courseMapper.toCourseResponse(savedCourse);
         } catch (Exception e) {
