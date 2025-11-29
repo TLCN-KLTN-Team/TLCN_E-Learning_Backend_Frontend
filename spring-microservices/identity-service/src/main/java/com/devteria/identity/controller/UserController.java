@@ -60,10 +60,11 @@ public class UserController {
     ApiResponse<PaginatedResponse<UserResponse>> getUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection) {
+            @RequestParam String keyword,
+            @RequestParam String role,
+            @RequestParam String status) {
         return ApiResponse.<PaginatedResponse<UserResponse>>builder()
-                .result(userService.getUsers(page, size, sortBy, sortDirection))
+                .result(userService.getUsers(page, size, keyword, role, status))
                 .build();
     }
 

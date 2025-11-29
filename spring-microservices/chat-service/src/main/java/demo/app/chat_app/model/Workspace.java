@@ -2,6 +2,8 @@ package demo.app.chat_app.model;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -32,20 +34,24 @@ public class Workspace {
     String avatarUrl; // URL to the workspace avatar image
     
     @Indexed
-    String ownerId; // ID of the instructor managing the workspace
+    String ownerId; // ID of the instructor managing the workspace. Regularly a teacher
     
     @Indexed
-    String courseId; // ID of the course associated with the workspace
+    Integer courseId; // ID of the course associated with the workspace
 
-    List<Participant> members; // List of participants in the workspace
+    List<Participant> members; // List of students belong to a course
 
     // Store only channel references, not embedded documents
     List<String> channelIds; // List of channel IDs in the workspace
 
     @Indexed
+    @CreatedDate
     Instant createdAt;
-    
+
+    @LastModifiedDate  // Tự động update khi save
     Instant updatedAt;
+
+    Instant endedAt; // Timestamp when the workspace was soft deleted
     
     @Builder.Default
     @Indexed
@@ -74,13 +80,13 @@ public class Workspace {
             this.members.add(member);
         }
     }
-    
+
     public void removeMember(String userId) {
         if (this.members != null) {
             this.members.removeIf(m -> m.getUserId().equals(userId));
         }
     }
-    
+
     public boolean hasMember(String userId) {
         return this.members != null && 
                this.members.stream().anyMatch(m -> m.getUserId().equals(userId));

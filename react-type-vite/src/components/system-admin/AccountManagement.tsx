@@ -17,7 +17,6 @@ import AccountDetailModal from "./modals/AccountDetailModal";
 import ChangeStatusModal from "./modals/ChangeStatusModal";
 import {
   ROLE_FILTER_OPTIONS,
-  TABLE_HEADERS,
   CSS_CLASSES,
   getUserFullName,
   getInitials,
@@ -25,7 +24,6 @@ import {
   getRoleIcon,
   getRoleColor,
   formatDate,
-  filterAccountsByRole,
 } from "./data/AccountData";
 import type { UserResponse } from "@/services/api/response/userResponse";
 import type { PaginatedResponse } from "@/services/api/response/apiResponse";
@@ -43,6 +41,7 @@ const AccountManagement: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [committedSearchQuery, setCommittedSearchQuery] = useState("");
   const [showViewModal, setShowViewModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [targetStatus, setTargetStatus] = useState<AccountStatus | null>(null);
@@ -56,48 +55,27 @@ const AccountManagement: React.FC = () => {
   const [hasPrevious, setHasPrevious] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Filter accounts by role, status, and search query
-  const filteredAccounts = accounts.filter((account) => {
-    // Filter by role
-    if (selectedRole !== "all") {
-      const hasRole = account.roles.includes(selectedRole);
-      if (!hasRole) return false;
-    }
-
-    // Filter by status
-    if (selectedStatus !== "all") {
-      if (account.accountStatus !== selectedStatus) return false;
-    }
-
-    // Filter by search query (name or email)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      const fullName = getUserFullName(account).toLowerCase();
-      const email = account.email.toLowerCase();
-      if (!fullName.includes(query) && !email.includes(query)) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
         setLoading(true);
         const result: PaginatedResponse<UserResponse> = await getUsers(
           currentPage,
-          pageSize
+          pageSize,
+          committedSearchQuery,
+          selectedRole,
+          selectedStatus
         );
         console.log("Fetched accounts:", result);
         setAccounts(result.content);
         setCurrentPage(result.page);
         setTotalElements(result.totalElements);
         setTotalPages(result.totalPages);
-        setHasNext(result.hasNext);
-        setHasPrevious(result.hasPrevious);
-        toast.success("Tải tài khoản thành công");
+        setHasNext(result.hasNext ?? false);
+        setHasPrevious(result.hasPrevious ?? false);
+        if (result.content.length > 0) {
+          toast.success("Tải tài khoản thành công");
+        }
       } catch (error) {
         toast.error(error ? `${error}` : "Lỗi khi tải tài khoản");
       } finally {
@@ -105,7 +83,13 @@ const AccountManagement: React.FC = () => {
       }
     };
     fetchAccounts();
-  }, [currentPage, pageSize]);
+  }, [
+    currentPage,
+    pageSize,
+    committedSearchQuery,
+    selectedRole,
+    selectedStatus,
+  ]);
 
   const handlePageChange = async (newPage: number) => {
     if (newPage < 0 || newPage >= totalPages) return;
@@ -122,7 +106,7 @@ const AccountManagement: React.FC = () => {
     const maxVisible = 5;
 
     let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(totalPages - 1, start + maxVisible);
+    const end = Math.min(totalPages - 1, start + maxVisible);
 
     if (end - start + 1 < maxVisible) {
       start = Math.max(0, end - maxVisible + 1);
@@ -150,7 +134,7 @@ const AccountManagement: React.FC = () => {
     setShowStatusModal(true);
   };
 
-  const handleConfirmStatusChange = async (reason?: string) => {
+  const handleConfirmStatusChange = async () => {
     if (!selectedAccount || !targetStatus) return;
 
     try {
@@ -185,8 +169,21 @@ const AccountManagement: React.FC = () => {
     }
   };
 
+  const handleSearch = () => {
+    setCommittedSearchQuery(searchQuery);
+    setCurrentPage(0); // Reset to first page when searching
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   const clearSearch = () => {
     setSearchQuery("");
+    setCommittedSearchQuery("");
+    setCurrentPage(0);
   };
 
   if (loading) {
@@ -212,9 +209,10 @@ const AccountManagement: React.FC = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Tìm kiếm theo tên hoặc email..."
+            placeholder="Tìm kiếm theo tên hoặc email... (Nhấn Enter để tìm)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleKeyPress}
             className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {searchQuery && (
@@ -235,7 +233,10 @@ const AccountManagement: React.FC = () => {
             </label>
             <select
               value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
+              onChange={(e) => {
+                setSelectedRole(e.target.value);
+                setCurrentPage(0);
+              }}
               className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2"
             >
               {ROLE_FILTER_OPTIONS.map((option) => (
@@ -252,7 +253,10 @@ const AccountManagement: React.FC = () => {
             </label>
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value);
+                setCurrentPage(0);
+              }}
               className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2"
             >
               <option value="all">Tất cả trạng thái</option>
@@ -273,12 +277,11 @@ const AccountManagement: React.FC = () => {
         </div>
 
         {/* Results count */}
-        {(searchQuery ||
+        {(committedSearchQuery ||
           selectedRole !== "all" ||
           selectedStatus !== "all") && (
           <div className="text-sm text-gray-600">
-            Tìm thấy{" "}
-            <span className="font-semibold">{filteredAccounts.length}</span> kết
+            Tìm thấy <span className="font-semibold">{totalElements}</span> kết
             quả
           </div>
         )}
@@ -297,7 +300,7 @@ const AccountManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredAccounts.map((account) => (
+              {accounts.map((account) => (
                 <tr
                   key={account.id}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"

@@ -28,10 +28,11 @@ export const ROLE_CONFIG = {
 // Filter Options
 export const ROLE_FILTER_OPTIONS = [
   { value: "all", label: "Tất cả vai trò" },
-  { value: "SYSTEM_ADMIN", label: "Quản trị hệ thống" },
-  { value: "UNIT_ADMIN", label: "Quản lý đơn vị" },
+  { value: "SUPER_ADMIN", label: "Quản trị hệ thống" },
+  { value: "ADMIN", label: "Quản lý đơn vị" },
   { value: "TEACHER", label: "Giảng viên" },
-  { value: "STUDENT", label: "Học viên" },
+  { value: "STUDENT", label: "Học sinh" },
+  { value: "USER", label: "Người dùng" },
 ];
 
 // Status Configuration
