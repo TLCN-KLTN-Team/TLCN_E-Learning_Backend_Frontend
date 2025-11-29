@@ -192,7 +192,7 @@ public class ChannelServiceImpl implements ChannelService {
                 .orElseThrow(() -> new RuntimeException("Channel not found"));
 
         channel.setStatus(ChannelStatus.ENDED);
-        channel.setEndedAt(System.currentTimeMillis());
+//        channel.setEndedAt(System.currentTimeMillis());
 
         channelRepository.save(channel);
     }

@@ -36,6 +36,8 @@ public interface WorkspaceRepository extends MongoRepository<Workspace, String> 
     // Check if user has access to workspace
     @Query(value = "{ 'id': ?0, $or: [ { 'ownerId': ?1 }, { 'members.userId': ?1 } ], 'isActive': true }", exists = true)
     boolean existsByIdAndUserHasAccess(String workspaceId, String userId);
+
+    boolean existsByCourseId(Integer courseId);
     
     // Search workspaces by name
     @Query("{ 'name': { $regex: ?0, $options: 'i' }, 'isActive': true }")

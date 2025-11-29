@@ -7,6 +7,7 @@ import demo.app.chat_app.dto.response.BasicChannelResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.dto.response.PageResponse;
 import demo.app.chat_app.dto.response.WorkspaceResponse;
+import demo.app.chat_app.events.CourseCreatedEvent;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.WorkspaceMapper;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,13 +67,13 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         }
 
         // Check if members exist in the system
-        List<Participant> existingMembers = getExistingMembers(request.getMemberIds());
+        List<Participant> existingMembers = getExistingMembersFromCourseCreated(request.getMemberIds());
 
         Workspace workspace = Workspace.builder()
                 .name(request.getName())
                 .avatarUrl(request.getAvatarUrl())
                 .description(request.getDescription())
-                .courseId(request.getCourseId())
+//                .courseId(request.getCourseId())
                 .ownerId(instructorId)
                 .members(existingMembers)
                 .createdAt(Instant.now())
@@ -100,10 +102,48 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         return workspaceResponse;
     }
 
+    public void createWorkspaceWhenCourseCreated(CourseCreatedEvent event) {
+        if (workspaceRepository.existsByCourseId(event.getCourseId())) {
+            return; // Workspace already exists for this course
+        }
+
+        // add members for workspace
+        List<String> memberIds = Collections.singletonList(event.getStudentIds() + event.getInstructorId());
+        List<Participant> members = this.getExistingMembersFromCourseCreated(memberIds);
+
+        Workspace workspace = Workspace.builder()
+                .courseId(event.getCourseId())
+                .name(event.getCourseName())
+                .description(event.getDescription())
+                .ownerId(event.getInstructorId())
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+//                .endedAt(event.getEndedAt())
+                .isActive(true)
+                .members(members)
+                .build();
+
+        Workspace savedWorkspace = workspaceRepository.save(workspace);
+
+        // Create default "general" channel
+        Channel channel = Channel.builder()
+                .channelName("general")
+                .description("Đây là kênh chung của khóa học " + event.getCourseName() +".\n Mọi thắc mắc, trao đổi liên quan đến khóa học sẽ được thực hiện tại đây.")
+                .workspaceId(savedWorkspace.getId())
+                .participants(savedWorkspace.getMembers())
+                .createdAt(Instant.now())
+//                .endedAt(event.getEndedAt())
+                .build();
+
+        Channel savedChannel = channelRepository.save(channel);
+        savedWorkspace.addChannel(savedChannel.getId());
+        workspaceRepository.save(savedWorkspace);
+    }
+
     // Method add members and check if user exists in the system
-    private List<Participant> getExistingMembers(List<String> memberIds) {
+    private List<Participant> getExistingMembersFromCourseCreated(List<String> memberIds) {
         List<Participant> existingMembers = new ArrayList<>();
-        memberIds.stream().forEach(id -> {
+        memberIds.forEach(id -> {
             try{
                 var user = getUserClient.getUser(id).getResult();
                 Participant participant = Participant.builder()
@@ -111,6 +151,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
                         .avatarUrl(user.getAvatar())
+                        .joinedAt(Instant.now())
                         .build();
                 if (participant==null) {
                     throw new AppException(ErrorCode.USER_NOT_EXISTED);

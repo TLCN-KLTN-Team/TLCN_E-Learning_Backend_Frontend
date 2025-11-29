@@ -36,17 +36,20 @@ public class Channel {
     @Indexed
     String workspaceId; // ID of the workspace this channel belongs to
     
-    List<Participant> participants; // List of participants in the channel
+    List<Participant> participants; // List of participants in the channel (aka group for team chat)
 
     boolean isPrivate;
 
-    long endedAt; // Optional end time for the channel
+    Instant endedAt; // Optional end time for the channel
+
     @Builder.Default
     ChannelStatus status= ChannelStatus.ACTIVE;
 
     @CreatedDate
     @Indexed
     Instant createdAt;
+
+    Instant deletedAt; // Timestamp when the channel was ended, change status to ENDED
 
     // Helper methods for participants management
     public void addParticipant(Participant participant) {

@@ -27,10 +27,14 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+      acks: all
+      retries: 3
   servlet:
     multipart:
       enabled: true
@@ -102,3 +106,7 @@ paypal:
 elasticsearch:
   host: localhost
   port: 9200
+
+kafka:
+  topic:
+    course-events: course-events

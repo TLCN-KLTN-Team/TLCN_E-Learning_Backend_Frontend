@@ -1,6 +1,6 @@
-import { Search, Bell, Menu, X } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import AdminProfile from "../shared/AdminProfile";
 import SystemAdminNotification from "../shared/SystemAdminNotification";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -19,7 +19,6 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
   const notificationRef = useRef<HTMLDivElement>(null);
   const [isNoficationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
 
   const getAvatarInitials = () => {
     if (!user) return "SA";
@@ -50,16 +49,6 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
     };
   }, [isNoficationOpen, isProfileOpen]);
 
-  const escapeKeyHandler = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      setSearchValue("");
-    }
-  };
-
-  const handleSearchClear = () => {
-    setSearchValue("");
-  };
-
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-4">
       <div className="flex items-center justify-between">
@@ -71,25 +60,6 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
           >
             <Menu className="w-5 h-5" />
           </button>
-
-          {/* Search */}
-          <div className="relative flex items-center">
-            <input
-              type="text"
-              placeholder="Tìm kiếm tài khoản, đơn vị, khóa học..."
-              className="w-64 md:w-96 pl-10 pr-4 py-2.5 border-1 border-gray-200 rounded-lg bg-gray-50 focus:bg-white
-                         placeholder-gray-500 text-gray-800 transition-all duration-200
-                         hover:border-gray-300 hover:bg-white text-sm md:text-base"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyDown={(e) => escapeKeyHandler(e)}
-            />
-            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
-            <X
-              className="absolute right-3 top-3 text-gray-900"
-              onClick={handleSearchClear}
-            />
-          </div>
         </div>
 
         <div className="flex items-center space-x-2 md:space-x-4">

@@ -1,32 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Edit, Trash2, Building, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from 'react-toastify';
-import type { DepartmentResponse } from '@/services/api/response/departmentResponse';
-import type { EducationalUnitResponse } from '@/services/api/response/educationalUnitResponse';
-import { deleteDepartment, getDepartmentsByEducationalUnit } from '@/services/api/admin/departmentApi';
-import * as educationUnitApi from '@/services/api/admin/educationUnitApi';
-import DepartmentFormModal from '@/components/admin/department/DepartmentFormModal';
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Edit,
+  Trash2,
+  Building,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Plus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "react-toastify";
+import type { DepartmentResponse } from "@/services/api/response/departmentResponse";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
+import {
+  deleteDepartment,
+  getDepartmentsByEducationalUnit,
+} from "@/services/api/admin/departmentApi";
+import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import DepartmentFormModal from "@/components/admin/department/DepartmentFormModal";
 
 const DepartmentManagementPage: React.FC = () => {
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
-  const [currentEducationalUnit, setCurrentEducationalUnit] = useState<EducationalUnitResponse | null>(null);
-  const [educationalUnitId, setEducationalUnitId] = useState<number | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [currentEducationalUnit, setCurrentEducationalUnit] =
+    useState<EducationalUnitResponse | null>(null);
+  const [educationalUnitId, setEducationalUnitId] = useState<number | null>(
+    null
+  );
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  
+
   // Modal states
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
-  const [editingDepartment, setEditingDepartment] = useState<DepartmentResponse | null>(null);
-  
+  const [editingDepartment, setEditingDepartment] =
+    useState<DepartmentResponse | null>(null);
+
   // Detail modal state
-  const [selectedDepartment, setSelectedDepartment] = useState<DepartmentResponse | null>(null);
+  const [selectedDepartment, setSelectedDepartment] =
+    useState<DepartmentResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Initialize educationalUnit
@@ -38,8 +56,8 @@ const DepartmentManagementPage: React.FC = () => {
         setCurrentEducationalUnit(educationalUnit);
         setEducationalUnitId(educationalUnit.id);
       } catch (error: any) {
-        console.error('Failed to load educationalUnit:', error);
-        toast.error('Không thể tải dữ liệu cơ sở giáo dục');
+        console.error("Failed to load educationalUnit:", error);
+        toast.error("Không thể tải dữ liệu cơ sở giáo dục");
       } finally {
         setEducationalUnitLoading(false);
       }
@@ -48,9 +66,13 @@ const DepartmentManagementPage: React.FC = () => {
     initializeEducationalUnit();
   }, []);
 
-  const loadDepartments = async (page: number = currentPage, size: number = pageSize, search?: string) => {
+  const loadDepartments = async (
+    page: number = currentPage,
+    size: number = pageSize,
+    search?: string
+  ) => {
     if (!educationalUnitId) return;
-    
+
     try {
       setLoading(true);
       const response = await getDepartmentsByEducationalUnit(
@@ -59,14 +81,14 @@ const DepartmentManagementPage: React.FC = () => {
         size,
         search || undefined
       );
-      
+
       setDepartments(response.content || []);
       setTotalPages(response.totalPages || 0);
       setTotalElements(response.totalElements || 0);
       setCurrentPage(page);
     } catch (error) {
-      console.error('Error loading departments:', error);
-      toast.error('Không thể tải danh sách khoa. Vui lòng thử lại!');
+      console.error("Error loading departments:", error);
+      toast.error("Không thể tải danh sách khoa. Vui lòng thử lại!");
     } finally {
       setLoading(false);
     }
@@ -94,14 +116,18 @@ const DepartmentManagementPage: React.FC = () => {
   };
 
   const handleDelete = async (departmentId: string, departmentName: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa khoa "${departmentName}"? Hành động này không thể hoàn tác.`)) {
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn xóa khoa "${departmentName}"? Hành động này không thể hoàn tác.`
+      )
+    ) {
       return;
     }
 
     try {
       await deleteDepartment(educationalUnitId!, departmentId);
-      toast.success('Xóa khoa thành công!');
-      
+      toast.success("Xóa khoa thành công!");
+
       // Reload departments and adjust page if needed
       if (departments.length === 1 && currentPage > 0) {
         loadDepartments(currentPage - 1, pageSize);
@@ -109,8 +135,9 @@ const DepartmentManagementPage: React.FC = () => {
         loadDepartments(currentPage, pageSize);
       }
     } catch (error: any) {
-      console.error('Error deleting department:', error);
-      const errorMessage = error?.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại!';
+      console.error("Error deleting department:", error);
+      const errorMessage =
+        error?.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại!";
       toast.error(errorMessage);
     }
   };
@@ -162,8 +189,12 @@ const DepartmentManagementPage: React.FC = () => {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-medium text-red-900 mb-2">Không tìm thấy cơ sở giáo dục</h3>
-          <p className="text-red-700">Không thể tải dữ liệu cơ sở giáo dục. Vui lòng thử làm mới trang.</p>
+          <h3 className="text-lg font-medium text-red-900 mb-2">
+            Không tìm thấy cơ sở giáo dục
+          </h3>
+          <p className="text-red-700">
+            Không thể tải dữ liệu cơ sở giáo dục. Vui lòng thử làm mới trang.
+          </p>
         </div>
       </div>
     );
@@ -194,10 +225,11 @@ const DepartmentManagementPage: React.FC = () => {
             Quản lý Khoa
           </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý các khoa trong {currentEducationalUnit?.name || 'cơ sở giáo dục của bạn'}
+            Quản lý các khoa trong{" "}
+            {currentEducationalUnit?.name || "cơ sở giáo dục của bạn"}
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => setShowDepartmentModal(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
         >
@@ -216,15 +248,20 @@ const DepartmentManagementPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Tổng Khoa</p>
-                <p className="text-2xl font-bold text-gray-900">{totalElements}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {totalElements}
+                </p>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div className="lg:col-span-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <Input
               placeholder="Tìm kiếm khoa theo tên..."
               value={searchTerm}
@@ -244,9 +281,16 @@ const DepartmentManagementPage: React.FC = () => {
             {totalElements === 0 ? (
               <>
                 <Building className="mx-auto text-gray-400 mb-4" size={48} />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy khoa nào</h3>
-                <p className="text-gray-500 mb-4">Bắt đầu bằng cách tạo khoa đầu tiên</p>
-                <Button onClick={() => setShowDepartmentModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Không tìm thấy khoa nào
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Bắt đầu bằng cách tạo khoa đầu tiên
+                </p>
+                <Button
+                  onClick={() => setShowDepartmentModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
+                >
                   <Plus className="mr-2" size={16} />
                   Tạo Khoa
                 </Button>
@@ -254,8 +298,12 @@ const DepartmentManagementPage: React.FC = () => {
             ) : (
               <>
                 <Search className="mx-auto text-gray-400 mb-4" size={48} />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Không có khoa nào phù hợp với tìm kiếm</h3>
-                <p className="text-gray-500">Thử điều chỉnh từ khóa tìm kiếm của bạn</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Không có khoa nào phù hợp với tìm kiếm
+                </h3>
+                <p className="text-gray-500">
+                  Thử điều chỉnh từ khóa tìm kiếm của bạn
+                </p>
               </>
             )}
           </div>
@@ -281,7 +329,10 @@ const DepartmentManagementPage: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {departments.map((dept, index) => (
-                    <tr key={dept.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={dept.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {currentPage * pageSize + index + 1}
                       </td>
@@ -290,15 +341,20 @@ const DepartmentManagementPage: React.FC = () => {
                           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                             <Building className="text-blue-600" size={20} />
                           </div>
-                          <div>
-                            {dept.name}
-                          </div>
+                          <div>{dept.name}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-600 max-w-md">
-                          <div className="line-clamp-2" title={dept.description || ''}>
-                            {dept.description || <span className="text-gray-400 italic">Chưa có mô tả</span>}
+                          <div
+                            className="line-clamp-2"
+                            title={dept.description || ""}
+                          >
+                            {dept.description || (
+                              <span className="text-gray-400 italic">
+                                Chưa có mô tả
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -354,7 +410,7 @@ const DepartmentManagementPage: React.FC = () => {
                 <span className="text-sm text-gray-700">
                   Trang {currentPage + 1} / {totalPages || 1}
                 </span>
-                
+
                 <div className="flex space-x-1">
                   <Button
                     size="sm"
@@ -365,7 +421,7 @@ const DepartmentManagementPage: React.FC = () => {
                   >
                     <ChevronsLeft size={16} />
                   </Button>
-                  
+
                   <Button
                     size="sm"
                     variant="outline"
@@ -375,7 +431,7 @@ const DepartmentManagementPage: React.FC = () => {
                   >
                     <ChevronLeft size={16} />
                   </Button>
-                  
+
                   <Button
                     size="sm"
                     variant="outline"
@@ -385,7 +441,7 @@ const DepartmentManagementPage: React.FC = () => {
                   >
                     <ChevronRight size={16} />
                   </Button>
-                  
+
                   <Button
                     size="sm"
                     variant="outline"

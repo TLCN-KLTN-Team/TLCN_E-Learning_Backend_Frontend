@@ -148,6 +148,11 @@
 			<version>2.0.0</version>
 		</dependency>
 
+		<!--Kafka d-->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
 
 	</dependencies>
 

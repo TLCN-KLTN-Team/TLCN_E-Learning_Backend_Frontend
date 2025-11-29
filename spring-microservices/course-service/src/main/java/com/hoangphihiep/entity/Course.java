@@ -85,4 +85,6 @@ public class Course implements Serializable {
 
     @OneToOne(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private PublishedCourse publishedCourse;
+
+    private String workspaceId;
 }

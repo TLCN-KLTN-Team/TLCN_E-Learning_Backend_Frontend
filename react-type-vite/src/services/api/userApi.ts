@@ -7,11 +7,22 @@ import type { UserResponse } from "./response/userResponse";
 
 export const getUsers = async (
   page: number = 0,
-  size: number = 10
+  size: number = 10,
+  keyword: string = "",
+  role: string = "",
+  status: string = ""
 ): Promise<PaginatedResponse<UserResponse>> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    size: size.toString(),
+    keyword: keyword.trim(),
+    role: role === "all" ? "" : role,
+    status: status === "all" ? "" : status,
+  });
+
   const response = await axiosInstance.get<
     ApiResponse<PaginatedResponse<UserResponse>>
-  >(`/identity/users?page=${page}&size=${size}`);
+  >(`/identity/users?${params.toString()}`);
   return response.data.result;
 };
 

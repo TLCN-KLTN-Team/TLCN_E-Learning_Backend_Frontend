@@ -1,12 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Trash2, BookOpen, School, TrendingUp, ChevronLeft, ChevronRight, Edit2, X, Calendar, FileText, Hash } from "lucide-react";
-import { toast } from 'react-toastify';
+import {
+  Users,
+  UserPlus,
+  Trash2,
+  BookOpen,
+  School,
+  TrendingUp,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  X,
+  Calendar,
+  FileText,
+  Hash,
+} from "lucide-react";
+import { toast } from "react-toastify";
 import CourseFormModal from "@/components/admin/course/CourseFormModal";
 import AssignTeacherModal from "@/components/admin/course/AssignTeacherModal";
 import ClassManagementModal from "@/components/admin/course/ClassManagementModal";
 import * as courseApi from "@/services/api/admin/courseApi";
-import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
+import educationUnitApi from "@/services/api/admin/educationUnitApi";
 import * as classApi from "@/services/api/admin/classApi";
 import type { CourseResponse } from "@/services/api/response/courseResponse";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
@@ -19,17 +33,27 @@ const CourseListPage: React.FC = () => {
   const [showClassManagement, setShowClassManagement] = useState(false);
   const [showCourseDetail, setShowCourseDetail] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
-  const [currentEducationalUnit, setCurrentEducationalUnit] = useState<EducationalUnitResponse | null>(null);
-  const [educationalUnitId, setEducationalUnitId] = useState<number | null>(null);
-  const [classStats, setClassStats] = useState<Record<number, { 
-    totalClasses: number, 
-    totalStudents: number,
-    activeClasses: number,
-    capacity: number 
-  }>>({});
+  const [currentEducationalUnit, setCurrentEducationalUnit] =
+    useState<EducationalUnitResponse | null>(null);
+  const [educationalUnitId, setEducationalUnitId] = useState<number | null>(
+    null
+  );
+  const [classStats, setClassStats] = useState<
+    Record<
+      number,
+      {
+        totalClasses: number;
+        totalStudents: number;
+        activeClasses: number;
+        capacity: number;
+      }
+    >
+  >({});
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(0);
@@ -45,8 +69,8 @@ const CourseListPage: React.FC = () => {
         setCurrentEducationalUnit(educationalUnit);
         setEducationalUnitId(educationalUnit.id);
       } catch (error: any) {
-        console.error('Failed to load educationalUnit:', error);
-        toast.error('Không thể tải dữ liệu cơ sở giáo dục');
+        console.error("Failed to load educationalUnit:", error);
+        toast.error("Không thể tải dữ liệu cơ sở giáo dục");
       } finally {
         setEducationalUnitLoading(false);
       }
@@ -57,49 +81,69 @@ const CourseListPage: React.FC = () => {
 
   const loadCourses = async () => {
     if (!educationalUnitId) return;
-    
+
     try {
       setLoading(true);
-      const response: PaginatedResponse<CourseResponse> = await courseApi.getCourses(
-        educationalUnitId, 
-        currentPage, 
-        pageSize
-      );
-      
+      const response: PaginatedResponse<CourseResponse> =
+        await courseApi.getCourses(educationalUnitId, currentPage, pageSize);
+
       const coursesData = response.content || [];
       setCourses(coursesData);
       setTotalPages(response.totalPages || 0);
       setTotalElements(response.totalElements || 0);
-      
+
       await loadClassStats(coursesData);
     } catch (error: any) {
-      console.error('Error loading courses:', error);
-      toast.error('Không thể tải danh sách khóa học');
+      console.error("Error loading courses:", error);
+      toast.error("Không thể tải danh sách khóa học");
     } finally {
       setLoading(false);
     }
   };
 
   const loadClassStats = async (coursesData: CourseResponse[]) => {
-    const stats: Record<number, { totalClasses: number, totalStudents: number, activeClasses: number, capacity: number }> = {};
-    
+    const stats: Record<
+      number,
+      {
+        totalClasses: number;
+        totalStudents: number;
+        activeClasses: number;
+        capacity: number;
+      }
+    > = {};
+
     for (const course of coursesData) {
       try {
-        const classResponse = await classApi.getClassesByCourse(educationalUnitId!, course.id);
+        const classResponse = await classApi.getClassesByCourse(
+          educationalUnitId!,
+          course.id
+        );
         const classes = classResponse.content || [];
-        
+
         stats[course.id] = {
           totalClasses: classes.length,
-          totalStudents: classes.reduce((sum, cls) => sum + (cls.currentStudents || 0), 0),
-          activeClasses: classes.filter(cls => cls.status === 'ACTIVE').length,
-          capacity: classes.reduce((sum, cls) => sum + cls.maxStudents, 0)
+          totalStudents: classes.reduce(
+            (sum, cls) => sum + (cls.currentStudents || 0),
+            0
+          ),
+          activeClasses: classes.filter((cls) => cls.status === "ACTIVE")
+            .length,
+          capacity: classes.reduce((sum, cls) => sum + cls.maxStudents, 0),
         };
       } catch (error) {
-        console.error(`Error loading class stats for course ${course.id}:`, error);
-        stats[course.id] = { totalClasses: 0, totalStudents: 0, activeClasses: 0, capacity: 0 };
+        console.error(
+          `Error loading class stats for course ${course.id}:`,
+          error
+        );
+        stats[course.id] = {
+          totalClasses: 0,
+          totalStudents: 0,
+          activeClasses: 0,
+          capacity: 0,
+        };
       }
     }
-    
+
     setClassStats(stats);
   };
 
@@ -135,14 +179,18 @@ const CourseListPage: React.FC = () => {
   };
 
   const handleDeleteCourse = async (courseId: number, courseName: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa khóa học "${courseName}"? Điều này sẽ xóa tất cả lớp học và đăng ký liên quan. Hành động này không thể hoàn tác.`)) {
+    if (
+      window.confirm(
+        `Bạn có chắc chắn muốn xóa khóa học "${courseName}"? Điều này sẽ xóa tất cả lớp học và đăng ký liên quan. Hành động này không thể hoàn tác.`
+      )
+    ) {
       try {
         await courseApi.deleteCourse(educationalUnitId!, courseId);
-        toast.success('Xóa khóa học thành công!');
+        toast.success("Xóa khóa học thành công!");
         handleSuccess();
       } catch (error: any) {
-        console.error('Error deleting course:', error);
-        toast.error(error?.response?.data?.message || 'Không thể xóa khóa học');
+        console.error("Error deleting course:", error);
+        toast.error(error?.response?.data?.message || "Không thể xóa khóa học");
       }
     }
   };
@@ -194,8 +242,12 @@ const CourseListPage: React.FC = () => {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-medium text-red-900 mb-2">Không tìm thấy cơ sở giáo dục</h3>
-          <p className="text-red-700">Không thể tải dữ liệu cơ sở giáo dục. Vui lòng thử làm mới trang.</p>
+          <h3 className="text-lg font-medium text-red-900 mb-2">
+            Không tìm thấy cơ sở giáo dục
+          </h3>
+          <p className="text-red-700">
+            Không thể tải dữ liệu cơ sở giáo dục. Vui lòng thử làm mới trang.
+          </p>
         </div>
       </div>
     );
@@ -216,10 +268,22 @@ const CourseListPage: React.FC = () => {
     );
   }
 
-  const totalClasses = Object.values(classStats).reduce((sum, stat) => sum + stat.totalClasses, 0);
-  const totalStudents = Object.values(classStats).reduce((sum, stat) => sum + stat.totalStudents, 0);
-  const totalCapacity = Object.values(classStats).reduce((sum, stat) => sum + stat.capacity, 0);
-  const activeClasses = Object.values(classStats).reduce((sum, stat) => sum + stat.activeClasses, 0);
+  const totalClasses = Object.values(classStats).reduce(
+    (sum, stat) => sum + stat.totalClasses,
+    0
+  );
+  const totalStudents = Object.values(classStats).reduce(
+    (sum, stat) => sum + stat.totalStudents,
+    0
+  );
+  const totalCapacity = Object.values(classStats).reduce(
+    (sum, stat) => sum + stat.capacity,
+    0
+  );
+  const activeClasses = Object.values(classStats).reduce(
+    (sum, stat) => sum + stat.activeClasses,
+    0
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -231,10 +295,11 @@ const CourseListPage: React.FC = () => {
             Quản lý Khóa học
           </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý khóa học và lớp học cho {currentEducationalUnit?.name || 'cơ sở giáo dục của bạn'}
+            Quản lý khóa học và lớp học cho{" "}
+            {currentEducationalUnit?.name || "cơ sở giáo dục của bạn"}
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => setShowCourseModal(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
         >
@@ -252,11 +317,13 @@ const CourseListPage: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tổng Khóa học</p>
-              <p className="text-2xl font-bold text-gray-900">{totalElements}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {totalElements}
+              </p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -265,34 +332,44 @@ const CourseListPage: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Có Giáo viên</p>
               <p className="text-2xl font-bold text-gray-900">
-                {courses.filter(c => c.teacher).length}
+                {courses.filter((c) => c.teacher).length}
               </p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
               <School className="text-purple-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Lớp Đang hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">{activeClasses}</p>
+              <p className="text-sm font-medium text-gray-600">
+                Lớp Đang hoạt động
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {activeClasses}
+              </p>
               <p className="text-xs text-gray-500">trên {totalClasses} tổng</p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-orange-100 rounded-lg">
               <UserPlus className="text-orange-600" size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Học sinh Đã đăng ký</p>
-              <p className="text-2xl font-bold text-gray-900">{totalStudents}</p>
-              <p className="text-xs text-gray-500">trên {totalCapacity} sức chứa</p>
+              <p className="text-sm font-medium text-gray-600">
+                Học sinh Đã đăng ký
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {totalStudents}
+              </p>
+              <p className="text-xs text-gray-500">
+                trên {totalCapacity} sức chứa
+              </p>
             </div>
           </div>
         </div>
@@ -305,7 +382,10 @@ const CourseListPage: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Tỷ lệ Sử dụng</p>
               <p className="text-2xl font-bold text-gray-900">
-                {totalCapacity > 0 ? Math.round((totalStudents / totalCapacity) * 100) : 0}%
+                {totalCapacity > 0
+                  ? Math.round((totalStudents / totalCapacity) * 100)
+                  : 0}
+                %
               </p>
               <p className="text-xs text-gray-500">sức chứa tổng thể</p>
             </div>
@@ -318,9 +398,16 @@ const CourseListPage: React.FC = () => {
         {courses.length === 0 ? (
           <div className="p-12 text-center">
             <BookOpen className="mx-auto text-gray-400 mb-4" size={48} />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy khóa học nào</h3>
-            <p className="text-gray-500 mb-4">Bắt đầu bằng cách tạo khóa học đầu tiên của bạn</p>
-            <Button onClick={() => setShowCourseModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Không tìm thấy khóa học nào
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Bắt đầu bằng cách tạo khóa học đầu tiên của bạn
+            </p>
+            <Button
+              onClick={() => setShowCourseModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
+            >
               <BookOpen className="mr-2" size={16} />
               Tạo Khóa học
             </Button>
@@ -353,16 +440,22 @@ const CourseListPage: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {courses.map((course) => {
-                    const stats = classStats[course.id] || { 
-                      totalClasses: 0, 
-                      totalStudents: 0, 
+                    const stats = classStats[course.id] || {
+                      totalClasses: 0,
+                      totalStudents: 0,
                       activeClasses: 0,
-                      capacity: 0 
+                      capacity: 0,
                     };
-                    const capacityBadge = getCapacityBadge(stats.totalStudents, stats.capacity);
-                    
+                    const capacityBadge = getCapacityBadge(
+                      stats.totalStudents,
+                      stats.capacity
+                    );
+
                     return (
-                      <tr key={course.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={course.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
                         <td className="px-6 py-4">
                           <div>
                             <button
@@ -388,12 +481,14 @@ const CourseListPage: React.FC = () => {
                             <div className="flex items-center">
                               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                                 <span className="text-blue-600 font-medium text-sm">
-                                  {course.teacher.firstName[0]}{course.teacher.lastName[0]}
+                                  {course.teacher.firstName[0]}
+                                  {course.teacher.lastName[0]}
                                 </span>
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-900">
-                                  {course.teacher.firstName} {course.teacher.lastName}
+                                  {course.teacher.firstName}{" "}
+                                  {course.teacher.lastName}
                                 </div>
                                 <div className="text-sm text-gray-500">
                                   ID: {course.teacher.teacherId}
@@ -405,7 +500,9 @@ const CourseListPage: React.FC = () => {
                               <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
                                 <Users className="w-4 h-4 text-gray-400" />
                               </div>
-                              <span className="text-sm text-gray-500 italic">Chưa phân công giáo viên</span>
+                              <span className="text-sm text-gray-500 italic">
+                                Chưa phân công giáo viên
+                              </span>
                             </div>
                           )}
                         </td>
@@ -421,20 +518,31 @@ const CourseListPage: React.FC = () => {
                             )}
                           </div>
                           <div className="flex items-center mt-1">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              capacityBadge.color === 'red' ? 'bg-red-100 text-red-800' :
-                              capacityBadge.color === 'orange' ? 'bg-orange-100 text-orange-800' :
-                              capacityBadge.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-                              capacityBadge.color === 'green' ? 'bg-green-100 text-green-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                capacityBadge.color === "red"
+                                  ? "bg-red-100 text-red-800"
+                                  : capacityBadge.color === "orange"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : capacityBadge.color === "yellow"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : capacityBadge.color === "green"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
                               {capacityBadge.text}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <span className={`text-sm font-medium ${getCapacityColor(stats.totalStudents, stats.capacity)}`}>
+                            <span
+                              className={`text-sm font-medium ${getCapacityColor(
+                                stats.totalStudents,
+                                stats.capacity
+                              )}`}
+                            >
                               {stats.totalStudents}
                             </span>
                             <span className="text-sm text-gray-500 ml-1">
@@ -442,20 +550,32 @@ const CourseListPage: React.FC = () => {
                             </span>
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            {stats.capacity === 0 ? 'Chưa thiết lập sức chứa' : 
-                             `${stats.capacity - stats.totalStudents} chỗ còn trống`}
+                            {stats.capacity === 0
+                              ? "Chưa thiết lập sức chứa"
+                              : `${
+                                  stats.capacity - stats.totalStudents
+                                } chỗ còn trống`}
                           </div>
                           {stats.capacity > 0 && (
                             <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                              <div 
+                              <div
                                 className={`h-1.5 rounded-full ${
-                                  stats.totalStudents >= stats.capacity ? 'bg-red-600' :
-                                  stats.totalStudents / stats.capacity >= 0.9 ? 'bg-orange-500' :
-                                  stats.totalStudents / stats.capacity >= 0.7 ? 'bg-yellow-500' :
-                                  'bg-green-500'
+                                  stats.totalStudents >= stats.capacity
+                                    ? "bg-red-600"
+                                    : stats.totalStudents / stats.capacity >=
+                                      0.9
+                                    ? "bg-orange-500"
+                                    : stats.totalStudents / stats.capacity >=
+                                      0.7
+                                    ? "bg-yellow-500"
+                                    : "bg-green-500"
                                 }`}
-                                style={{ 
-                                  width: `${Math.min((stats.totalStudents / stats.capacity) * 100, 100)}%` 
+                                style={{
+                                  width: `${Math.min(
+                                    (stats.totalStudents / stats.capacity) *
+                                      100,
+                                    100
+                                  )}%`,
                                 }}
                               ></div>
                             </div>
@@ -498,7 +618,9 @@ const CourseListPage: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleDeleteCourse(course.id, course.courseName)}
+                              onClick={() =>
+                                handleDeleteCourse(course.id, course.courseName)
+                              }
                               className="text-red-600 border-red-200 hover:bg-red-50"
                             >
                               <Trash2 size={14} />
@@ -519,7 +641,9 @@ const CourseListPage: React.FC = () => {
                   <span className="text-sm text-gray-700">Hiển thị</span>
                   <select
                     value={pageSize}
-                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      handlePageSizeChange(Number(e.target.value))
+                    }
                     className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value={5}>5</option>
@@ -527,12 +651,15 @@ const CourseListPage: React.FC = () => {
                     <option value={20}>20</option>
                     <option value={50}>50</option>
                   </select>
-                  <span className="text-sm text-gray-700">khóa học mỗi trang</span>
+                  <span className="text-sm text-gray-700">
+                    khóa học mỗi trang
+                  </span>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-700">
-                    Trang {currentPage + 1} / {totalPages || 1} - Tổng {totalElements} khóa học
+                    Trang {currentPage + 1} / {totalPages || 1} - Tổng{" "}
+                    {totalElements} khóa học
                   </span>
                 </div>
 
@@ -547,7 +674,7 @@ const CourseListPage: React.FC = () => {
                     <ChevronLeft size={16} />
                     Trước
                   </Button>
-                  
+
                   {[...Array(Math.min(5, totalPages))].map((_, idx) => {
                     let pageNum;
                     if (totalPages <= 5) {
@@ -563,10 +690,16 @@ const CourseListPage: React.FC = () => {
                     return (
                       <Button
                         key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
+                        variant={
+                          currentPage === pageNum ? "default" : "outline"
+                        }
                         size="sm"
                         onClick={() => handlePageChange(pageNum)}
-                        className={currentPage === pageNum ? "bg-blue-600 text-white" : ""}
+                        className={
+                          currentPage === pageNum
+                            ? "bg-blue-600 text-white"
+                            : ""
+                        }
                       >
                         {pageNum + 1}
                       </Button>
@@ -593,11 +726,11 @@ const CourseListPage: React.FC = () => {
       {/* Course Detail Modal */}
       {showCourseDetail && selectedCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowCourseDetail(false)}
           ></div>
-          
+
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 flex-shrink-0">
               <div className="flex justify-between items-center">
@@ -606,13 +739,17 @@ const CourseListPage: React.FC = () => {
                     <BookOpen className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-white">Chi tiết Khóa học</h2>
-                    <p className="text-blue-100 text-sm mt-1">Thông tin đầy đủ về khóa học</p>
+                    <h2 className="text-2xl font-bold text-white">
+                      Chi tiết Khóa học
+                    </h2>
+                    <p className="text-blue-100 text-sm mt-1">
+                      Thông tin đầy đủ về khóa học
+                    </p>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowCourseDetail(false)}
                   className="text-white hover:bg-white/20 h-10 w-10 p-0"
                 >
@@ -629,7 +766,9 @@ const CourseListPage: React.FC = () => {
                     <BookOpen size={16} className="mr-2 text-blue-600" />
                     Tên Khóa học
                   </h3>
-                  <p className="text-2xl font-bold text-gray-900">{selectedCourse.courseName}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {selectedCourse.courseName}
+                  </p>
                 </div>
 
                 {/* Course Info Grid */}
@@ -639,7 +778,9 @@ const CourseListPage: React.FC = () => {
                       <Hash size={16} className="mr-2 text-green-600" />
                       Mã Khóa học
                     </h3>
-                    <p className="text-lg font-medium text-gray-900">#{selectedCourse.id}</p>
+                    <p className="text-lg font-medium text-gray-900">
+                      #{selectedCourse.id}
+                    </p>
                   </div>
 
                   <div className="bg-purple-50 rounded-lg p-4">
@@ -647,7 +788,9 @@ const CourseListPage: React.FC = () => {
                       <Calendar size={16} className="mr-2 text-purple-600" />
                       Số Tín chỉ
                     </h3>
-                    <p className="text-lg font-medium text-gray-900">{selectedCourse.credits || 0} tín chỉ</p>
+                    <p className="text-lg font-medium text-gray-900">
+                      {selectedCourse.credits || 0} tín chỉ
+                    </p>
                   </div>
 
                   <div className="bg-orange-50 rounded-lg p-4">
@@ -655,7 +798,9 @@ const CourseListPage: React.FC = () => {
                       <Users size={16} className="mr-2 text-orange-600" />
                       Sĩ số Tối đa
                     </h3>
-                    <p className="text-lg font-medium text-gray-900">{selectedCourse.maxStudents || 0} sinh viên</p>
+                    <p className="text-lg font-medium text-gray-900">
+                      {selectedCourse.maxStudents || 0} sinh viên
+                    </p>
                   </div>
 
                   <div className="bg-cyan-50 rounded-lg p-4">
@@ -678,11 +823,13 @@ const CourseListPage: React.FC = () => {
                     </h3>
                     <div className="flex items-center space-x-4">
                       <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                        {selectedCourse.teacher.firstName[0]}{selectedCourse.teacher.lastName[0]}
+                        {selectedCourse.teacher.firstName[0]}
+                        {selectedCourse.teacher.lastName[0]}
                       </div>
                       <div className="flex-1">
                         <h4 className="font-bold text-gray-900 text-xl">
-                          {selectedCourse.teacher.firstName} {selectedCourse.teacher.lastName}
+                          {selectedCourse.teacher.firstName}{" "}
+                          {selectedCourse.teacher.lastName}
                         </h4>
                         <div className="flex items-center space-x-3 mt-2">
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium">
@@ -703,7 +850,9 @@ const CourseListPage: React.FC = () => {
                       <Users size={16} className="mr-2 text-gray-600" />
                       Giảng viên Phụ trách
                     </h3>
-                    <p className="text-gray-500 italic">Chưa phân công giảng viên</p>
+                    <p className="text-gray-500 italic">
+                      Chưa phân công giảng viên
+                    </p>
                   </div>
                 )}
 
@@ -714,7 +863,9 @@ const CourseListPage: React.FC = () => {
                       <FileText size={16} className="mr-2 text-yellow-600" />
                       Mô tả Khóa học
                     </h3>
-                    <p className="text-gray-700 leading-relaxed">{selectedCourse.description}</p>
+                    <p className="text-gray-700 leading-relaxed">
+                      {selectedCourse.description}
+                    </p>
                   </div>
                 )}
 
@@ -730,13 +881,17 @@ const CourseListPage: React.FC = () => {
                         <p className="text-2xl font-bold text-green-600">
                           {classStats[selectedCourse.id].totalClasses}
                         </p>
-                        <p className="text-xs text-gray-600 mt-1">Tổng số lớp</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Tổng số lớp
+                        </p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-blue-600">
                           {classStats[selectedCourse.id].activeClasses}
                         </p>
-                        <p className="text-xs text-gray-600 mt-1">Lớp hoạt động</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Lớp hoạt động
+                        </p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-orange-600">
@@ -758,8 +913,8 @@ const CourseListPage: React.FC = () => {
 
             <div className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
               <div className="flex justify-end space-x-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setShowCourseDetail(false)}
                   className="px-6 py-2"
                 >
@@ -862,7 +1017,9 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
     return newErrors;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value, type } = e.target;
     setForm({
       ...form,
@@ -877,18 +1034,18 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
     e.preventDefault();
     const newErrors = validate();
     setErrors(newErrors);
-    
+
     if (Object.keys(newErrors).length > 0) return;
 
     try {
       setIsLoading(true);
       await courseApi.updateCourse(educationalUnitId, course.id, form);
-      toast.success('Cập nhật khóa học thành công!');
+      toast.success("Cập nhật khóa học thành công!");
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Error updating course:', error);
-      toast.error('Không thể cập nhật khóa học');
+      console.error("Error updating course:", error);
+      toast.error("Không thể cập nhật khóa học");
     } finally {
       setIsLoading(false);
     }
@@ -902,11 +1059,11 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={handleBackdropClick}
       ></div>
-      
+
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
         <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
           <div className="flex justify-between items-center">
@@ -914,21 +1071,28 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
               <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                 <Edit2 className="w-5 h-5 text-white" />
               </div>
-              <h2 className="text-xl font-bold text-white">Chỉnh sửa Khóa học</h2>
+              <h2 className="text-xl font-bold text-white">
+                Chỉnh sửa Khóa học
+              </h2>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onClose}
               className="text-white hover:bg-white/20 h-8 w-8 p-0"
             >
               <X size={18} />
             </Button>
           </div>
-          <p className="text-purple-100 text-sm mt-2">Cập nhật thông tin khóa học</p>
+          <p className="text-purple-100 text-sm mt-2">
+            Cập nhật thông tin khóa học
+          </p>
         </div>
-        
-        <form onSubmit={handleSubmit} className="flex flex-col h-[calc(90vh-120px)]">
+
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col h-[calc(90vh-120px)]"
+        >
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="space-y-6">
               <div className="bg-blue-50 rounded-lg p-4">
@@ -936,7 +1100,7 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
                   <BookOpen size={16} className="mr-2" />
                   Thông tin Khóa học
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">
@@ -950,7 +1114,9 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
                       value={form.courseName}
                       onChange={handleChange}
                       className={`w-full px-3 py-2 border rounded-lg transition-colors ${
-                        errors.courseName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                        errors.courseName
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-blue-500"
                       }`}
                     />
                     {errors.courseName && (
@@ -968,7 +1134,7 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
                   <Users size={16} className="mr-2" />
                   Chi tiết Khóa học
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">
@@ -985,7 +1151,9 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
                       min="1"
                       max="10"
                       className={`w-full px-3 py-2 border rounded-lg transition-colors ${
-                        errors.credits ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-green-500'
+                        errors.credits
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-green-500"
                       }`}
                     />
                     {errors.credits && (
@@ -995,7 +1163,7 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
                       </p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">
                       <Users size={14} className="mr-2 text-green-600" />
@@ -1011,7 +1179,9 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
                       min="1"
                       max="500"
                       className={`w-full px-3 py-2 border rounded-lg transition-colors ${
-                        errors.maxStudents ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-green-500'
+                        errors.maxStudents
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-green-500"
                       }`}
                     />
                     {errors.maxStudents && (
@@ -1028,9 +1198,11 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                   <FileText size={16} className="mr-2" />
                   Thông tin Bổ sung
-                  <span className="text-gray-400 ml-2 text-xs">(Không bắt buộc)</span>
+                  <span className="text-gray-400 ml-2 text-xs">
+                    (Không bắt buộc)
+                  </span>
                 </h3>
-                
+
                 <div className="space-y-2">
                   <label className="flex items-center text-sm font-medium text-gray-700">
                     <FileText size={14} className="mr-2 text-orange-600" />
@@ -1048,19 +1220,19 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
               </div>
             </div>
           </div>
-          
+
           <div className="border-t bg-gray-50 px-6 py-4 mt-auto">
             <div className="flex justify-end space-x-3">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={onClose}
                 className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
                 disabled={isLoading}
               >
                 Hủy
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 disabled={isLoading}
                 className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Clock,
   Eye,
@@ -12,119 +12,138 @@ import {
   Package,
   Calendar,
   BookOpen,
-} from "lucide-react"
-import * as adminPublishedCourseApi from "@/services/api/admin/adminPublishedCourseApi"
-import type { PublishedCourseResponse } from "@/services/api/response/publishedCourseResponse"
-import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse"
-import * as educationUnitApi from "@/services/api/admin/educationUnitApi"
+} from "lucide-react";
+import * as adminPublishedCourseApi from "@/services/api/admin/adminPublishedCourseApi";
+import type { PublishedCourseResponse } from "@/services/api/response/publishedCourseResponse";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
+import educationUnitApi from "@/services/api/admin/educationUnitApi";
 
 const PendingCoursesPage = () => {
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-  const [courses, setCourses] = useState<PublishedCourseResponse[]>([])
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [totalElements, setTotalElements] = useState(0)
-  const [selectedTab, setSelectedTab] = useState<"pending" | "all">("pending")
-  const [educationalUnitLoading, setEducationalUnitLoading] = useState(true)
-  const [currentEducationalUnit, setCurrentEducationalUnit] = useState<EducationalUnitResponse | null>(null)
-  const [educationalUnitId, setEducationalUnitId] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<PublishedCourseResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [selectedTab, setSelectedTab] = useState<"pending" | "all">("pending");
+  const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
+  const [currentEducationalUnit, setCurrentEducationalUnit] =
+    useState<EducationalUnitResponse | null>(null);
+  const [educationalUnitId, setEducationalUnitId] = useState<number | null>(
+    null
+  );
+  const [error, setError] = useState<string | null>(null);
+
   // Stats state - tính toán từ tất cả khóa học
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
     approved: 0,
     rejected: 0,
-  })
+  });
 
   useEffect(() => {
     const initializeEducationalUnit = async () => {
       try {
-        setEducationalUnitLoading(true)
-        const educationalUnit = await educationUnitApi.getMyEducationalUnit()
-        setCurrentEducationalUnit(educationalUnit)
-        setEducationalUnitId(Number(educationalUnit.id))
+        setEducationalUnitLoading(true);
+        const educationalUnit = await educationUnitApi.getMyEducationalUnit();
+        setCurrentEducationalUnit(educationalUnit);
+        setEducationalUnitId(Number(educationalUnit.id));
       } catch (error: any) {
-        console.error("Failed to load educationalUnit:", error)
-        setError("Không thể tải thông tin đơn vị giáo dục")
+        console.error("Failed to load educationalUnit:", error);
+        setError("Không thể tải thông tin đơn vị giáo dục");
       } finally {
-        setEducationalUnitLoading(false)
+        setEducationalUnitLoading(false);
       }
-    }
+    };
 
-    initializeEducationalUnit()
-  }, [])
+    initializeEducationalUnit();
+  }, []);
 
   useEffect(() => {
     if (educationalUnitId === null) {
-      console.warn("educationalUnitId is not loaded yet")
-      return
+      console.warn("educationalUnitId is not loaded yet");
+      return;
     }
 
-    loadCourses()
-    loadStats() // Load stats riêng
-  }, [educationalUnitId, page, selectedTab])
+    loadCourses();
+    loadStats(); // Load stats riêng
+  }, [educationalUnitId, page, selectedTab]);
 
   // Load stats từ API "all" courses
   const loadStats = async () => {
-    if (educationalUnitId === null) return
+    if (educationalUnitId === null) return;
 
     try {
       // Gọi API để lấy tất cả khóa học (page 0, size lớn để lấy hết)
-      const allCoursesResult = await adminPublishedCourseApi.getPublishedCourses(
-        educationalUnitId,
-        undefined,
-        0,
-        1000 // Lấy tất cả khóa học
-      )
+      const allCoursesResult =
+        await adminPublishedCourseApi.getPublishedCourses(
+          educationalUnitId,
+          undefined,
+          0,
+          1000 // Lấy tất cả khóa học
+        );
 
       // Tính toán stats từ tất cả khóa học
-      const pending = allCoursesResult.content.filter((c) => c.status === 1).length
-      const approved = allCoursesResult.content.filter((c) => c.status === 2).length
-      const rejected = allCoursesResult.content.filter((c) => c.status === 3).length
+      const pending = allCoursesResult.content.filter(
+        (c) => c.status === 1
+      ).length;
+      const approved = allCoursesResult.content.filter(
+        (c) => c.status === 2
+      ).length;
+      const rejected = allCoursesResult.content.filter(
+        (c) => c.status === 3
+      ).length;
 
       setStats({
         total: allCoursesResult.totalElements,
         pending,
         approved,
         rejected,
-      })
+      });
     } catch (error: any) {
-      console.error("Error loading stats:", error)
+      console.error("Error loading stats:", error);
       // Không set error ở đây để không ảnh hưởng đến UI chính
     }
-  }
+  };
 
   const loadCourses = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      let result
+      let result;
 
       if (selectedTab === "pending") {
-        result = await adminPublishedCourseApi.getPendingPublishedCourses(educationalUnitId!, page, 10)
+        result = await adminPublishedCourseApi.getPendingPublishedCourses(
+          educationalUnitId!,
+          page,
+          10
+        );
       } else {
-        result = await adminPublishedCourseApi.getPublishedCourses(educationalUnitId!, undefined, page, 10)
+        result = await adminPublishedCourseApi.getPublishedCourses(
+          educationalUnitId!,
+          undefined,
+          page,
+          10
+        );
       }
 
-      setCourses(result.content)
-      setTotalPages(result.totalPages)
-      setTotalElements(result.totalElements)
+      setCourses(result.content);
+      setTotalPages(result.totalPages);
+      setTotalElements(result.totalElements);
     } catch (error: any) {
-      console.error("Error loading courses:", error)
-      setError(error?.message || "Lỗi khi tải danh sách khóa học")
-      setCourses([])
+      console.error("Error loading courses:", error);
+      setError(error?.message || "Lỗi khi tải danh sách khóa học");
+      setCourses([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleTabChange = (tab: "pending" | "all") => {
-    setSelectedTab(tab)
-    setPage(0) // Reset to first page when changing tabs
-  }
+    setSelectedTab(tab);
+    setPage(0); // Reset to first page when changing tabs
+  };
 
   return (
     <div className="p-8">
@@ -133,9 +152,13 @@ const PendingCoursesPage = () => {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Package className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Quản Lý Khóa Học Thương Mại</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Quản Lý Khóa Học Thương Mại
+            </h1>
           </div>
-          <p className="text-gray-600">Xem xét và phê duyệt các khóa học được giảng viên gửi lên</p>
+          <p className="text-gray-600">
+            Xem xét và phê duyệt các khóa học được giảng viên gửi lên
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -144,7 +167,9 @@ const PendingCoursesPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Tổng Khóa Học</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.total}
+                </p>
               </div>
               <BookOpen className="w-10 h-10 text-blue-500" />
             </div>
@@ -154,7 +179,9 @@ const PendingCoursesPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Chờ Duyệt</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {stats.pending}
+                </p>
               </div>
               <Clock className="w-10 h-10 text-yellow-500" />
             </div>
@@ -164,7 +191,9 @@ const PendingCoursesPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Đã Duyệt</p>
-                <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.approved}
+                </p>
               </div>
               <CheckCircle className="w-10 h-10 text-green-500" />
             </div>
@@ -174,7 +203,9 @@ const PendingCoursesPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Từ Chối</p>
-                <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {stats.rejected}
+                </p>
               </div>
               <XCircle className="w-10 h-10 text-red-500" />
             </div>
@@ -225,9 +256,13 @@ const PendingCoursesPage = () => {
         ) : courses.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Không có khóa học nào</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Không có khóa học nào
+            </h3>
             <p className="text-gray-600">
-              {selectedTab === "pending" ? "Chưa có khóa học nào chờ duyệt" : "Chưa có khóa học nào được đóng gói"}
+              {selectedTab === "pending"
+                ? "Chưa có khóa học nào chờ duyệt"
+                : "Chưa có khóa học nào được đóng gói"}
             </p>
           </div>
         ) : (
@@ -241,7 +276,9 @@ const PendingCoursesPage = () => {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-semibold text-gray-900">{course.course.courseName}</h3>
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          {course.course.courseName}
+                        </h3>
                         {getStatusBadge(course.status)}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -263,34 +300,45 @@ const PendingCoursesPage = () => {
                   <div className="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="text-xs text-gray-600 mb-1">Bài học</p>
-                      <p className="text-lg font-semibold text-gray-900">{course.totalPublishedLessons || 0}</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {course.totalPublishedLessons || 0}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600 mb-1">Bài kiểm tra</p>
-                      <p className="text-lg font-semibold text-gray-900">{course.totalPublishedQuizzes || 0}</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {course.totalPublishedQuizzes || 0}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600 mb-1">Bài tập</p>
-                      <p className="text-lg font-semibold text-gray-900">{course.totalPublishedAssignments || 0}</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {course.totalPublishedAssignments || 0}
+                      </p>
                     </div>
                   </div>
 
                   {/* Description */}
                   {course.description && (
-                    <p className="text-sm text-gray-700 mb-4 line-clamp-2">{course.description}</p>
+                    <p className="text-sm text-gray-700 mb-4 line-clamp-2">
+                      {course.description}
+                    </p>
                   )}
 
                   {/* Actions */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                     <div className="text-sm text-gray-600">
-                      Giảng viên: <span className="font-medium">
-                        {course.course.teacher 
-                          ? `${course.course.teacher.firstName} ${course.course.teacher.lastName}` 
+                      Giảng viên:{" "}
+                      <span className="font-medium">
+                        {course.course.teacher
+                          ? `${course.course.teacher.firstName} ${course.course.teacher.lastName}`
                           : course.course.idTeacher}
                       </span>
                     </div>
                     <button
-                      onClick={() => navigate(`/admin/published-courses/${course.id}`)}
+                      onClick={() =>
+                        navigate(`/admin/published-courses/${course.id}`)
+                      }
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
@@ -308,8 +356,11 @@ const PendingCoursesPage = () => {
           <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow">
             <div className="text-sm text-gray-700">
               Hiển thị <span className="font-medium">{page * 10 + 1}</span> đến{" "}
-              <span className="font-medium">{Math.min((page + 1) * 10, totalElements)}</span> trong tổng số{" "}
-              <span className="font-medium">{totalElements}</span> khóa học
+              <span className="font-medium">
+                {Math.min((page + 1) * 10, totalElements)}
+              </span>{" "}
+              trong tổng số <span className="font-medium">{totalElements}</span>{" "}
+              khóa học
             </div>
             <div className="flex gap-2">
               <button
@@ -331,7 +382,7 @@ const PendingCoursesPage = () => {
         )}
       </div>
     </div>
-  )
+  );
 
   function getStatusBadge(status: number) {
     switch (status) {
@@ -341,30 +392,30 @@ const PendingCoursesPage = () => {
             <Clock className="w-3 h-3" />
             Draft
           </span>
-        )
+        );
       case 1:
         return (
           <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full flex items-center gap-1">
             <Clock className="w-3 h-3" />
             Chờ Duyệt
           </span>
-        )
+        );
       case 2:
         return (
           <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
             <CheckCircle className="w-3 h-3" />
             Đã Duyệt
           </span>
-        )
+        );
       case 3:
         return (
           <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full flex items-center gap-1">
             <XCircle className="w-3 h-3" />
             Từ Chối
           </span>
-        )
+        );
       default:
-        return null
+        return null;
     }
   }
 
@@ -373,15 +424,15 @@ const PendingCoursesPage = () => {
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
+    });
   }
 
   function formatPrice(price: number) {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
-    }).format(price)
+    }).format(price);
   }
-}
+};
 
-export default PendingCoursesPage
+export default PendingCoursesPage;

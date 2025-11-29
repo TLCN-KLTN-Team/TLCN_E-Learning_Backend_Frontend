@@ -1,12 +1,12 @@
 "use client";
 
+import { useAuth } from "@/context/auth-context/useAuth";
 import {
   BarChart3,
   Building2,
   Users,
   FolderOpen,
   DollarSign,
-  TrendingUp,
   Settings,
   LogOut,
   X,
@@ -25,6 +25,7 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
   setIsSidebarOpen,
 }) => {
   const location = useLocation();
+  const { logout } = useAuth();
 
   const menuItems = [
     {
@@ -142,7 +143,10 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
               <button className="p-2 rounded-lg hover:bg-gray-800 transition-colors">
                 <Settings className="w-5 h-5" />
               </button>
-              <button className="p-2 rounded-lg hover:bg-gray-800 transition-colors">
+              <button
+                className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                onClick={logout}
+              >
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
