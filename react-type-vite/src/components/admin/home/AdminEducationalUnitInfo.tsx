@@ -1,10 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Building, MapPin, Phone, Mail, Globe, Calendar, CheckCircle, XCircle } from 'lucide-react';
-import * as educationUnitApi from '@/services/api/admin/educationUnitApi';
-import type { EducationalUnitResponse } from '@/services/api/response/educationalUnitResponse';
+import React, { useState, useEffect } from "react";
+import {
+  Building,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Calendar,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 
 const AdminEducationalUnitInfo: React.FC = () => {
-  const [educationalUnit, setEducationalUnit] = useState<EducationalUnitResponse | null>(null);
+  const [educationalUnit, setEducationalUnit] =
+    useState<EducationalUnitResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,7 +24,7 @@ const AdminEducationalUnitInfo: React.FC = () => {
         const data = await educationUnitApi.getMyEducationalUnit();
         setEducationalUnit(data);
       } catch (error) {
-        console.error('Error loading educational unit:', error);
+        console.error("Error loading educational unit:", error);
       } finally {
         setLoading(false);
       }
@@ -24,23 +34,28 @@ const AdminEducationalUnitInfo: React.FC = () => {
   }, []);
 
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; className: string; icon: React.ReactElement }> = {
+    const statusMap: Record<
+      string,
+      { label: string; className: string; icon: React.ReactElement }
+    > = {
       ACTIVE: {
-        label: 'Đang hoạt động',
-        className: 'bg-green-100 text-green-800 border-green-200',
-        icon: <CheckCircle className="w-4 h-4" />
+        label: "Đang hoạt động",
+        className: "bg-green-100 text-green-800 border-green-200",
+        icon: <CheckCircle className="w-4 h-4" />,
       },
       INACTIVE: {
-        label: 'Ngừng hoạt động',
-        className: 'bg-gray-100 text-gray-800 border-gray-200',
-        icon: <XCircle className="w-4 h-4" />
-      }
+        label: "Ngừng hoạt động",
+        className: "bg-gray-100 text-gray-800 border-gray-200",
+        icon: <XCircle className="w-4 h-4" />,
+      },
     };
 
     const statusInfo = statusMap[status] || statusMap.INACTIVE;
 
     return (
-      <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium border ${statusInfo.className}`}>
+      <span
+        className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium border ${statusInfo.className}`}
+      >
         {statusInfo.icon}
         <span>{statusInfo.label}</span>
       </span>
@@ -65,7 +80,9 @@ const AdminEducationalUnitInfo: React.FC = () => {
   if (!educationalUnit) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <p className="text-gray-500 text-center">Không thể tải thông tin đơn vị đào tạo</p>
+        <p className="text-gray-500 text-center">
+          Không thể tải thông tin đơn vị đào tạo
+        </p>
       </div>
     );
   }
@@ -89,7 +106,9 @@ const AdminEducationalUnitInfo: React.FC = () => {
       <div className="p-6 space-y-4">
         {/* Name and Status */}
         <div>
-          <h4 className="text-xl font-bold text-gray-900 mb-2">{educationalUnit.name}</h4>
+          <h4 className="text-xl font-bold text-gray-900 mb-2">
+            {educationalUnit.name}
+          </h4>
           {getStatusBadge(educationalUnit.status)}
         </div>
 
@@ -100,7 +119,9 @@ const AdminEducationalUnitInfo: React.FC = () => {
               <Building className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-xs text-gray-500">Loại hình</p>
-                <p className="text-sm text-gray-900 font-medium">{educationalUnit.type}</p>
+                <p className="text-sm text-gray-900 font-medium">
+                  {educationalUnit.type}
+                </p>
               </div>
             </div>
           )}
@@ -110,7 +131,9 @@ const AdminEducationalUnitInfo: React.FC = () => {
               <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-xs text-gray-500">Địa chỉ</p>
-                <p className="text-sm text-gray-900">{educationalUnit.address}</p>
+                <p className="text-sm text-gray-900">
+                  {educationalUnit.address}
+                </p>
               </div>
             </div>
           )}
@@ -157,7 +180,9 @@ const AdminEducationalUnitInfo: React.FC = () => {
               <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-xs text-gray-500">Năm thành lập</p>
-                <p className="text-sm text-gray-900 font-medium">{educationalUnit.establishedYear}</p>
+                <p className="text-sm text-gray-900 font-medium">
+                  {educationalUnit.establishedYear}
+                </p>
               </div>
             </div>
           )}
@@ -167,7 +192,9 @@ const AdminEducationalUnitInfo: React.FC = () => {
         {educationalUnit.description && (
           <div className="pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-500 mb-2">Mô tả</p>
-            <p className="text-sm text-gray-700 leading-relaxed">{educationalUnit.description}</p>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {educationalUnit.description}
+            </p>
           </div>
         )}
       </div>

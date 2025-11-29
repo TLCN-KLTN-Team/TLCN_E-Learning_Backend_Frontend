@@ -4,6 +4,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.Instant;
+
 @Builder
 @Data
 @NoArgsConstructor
@@ -15,4 +17,5 @@ public class Participant {
     String lastName;
     String mssv;
     String avatarUrl; // URL to the user's avatar image
+    Instant joinedAt; // Timestamp when the participant joined
 }

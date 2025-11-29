@@ -1,10 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { GraduationCap, Users, BookOpen, Building, TrendingUp, TrendingDown } from 'lucide-react';
-import * as educationUnitApi from '@/services/api/admin/educationUnitApi';
-import type { EducationalUnitResponse } from '@/services/api/response/educationalUnitResponse';
+import React, { useState, useEffect } from "react";
+import {
+  GraduationCap,
+  Users,
+  BookOpen,
+  Building,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
+import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 
 const AdminStatsCards: React.FC = () => {
-  const [educationalUnit, setEducationalUnit] = useState<EducationalUnitResponse | null>(null);
+  const [educationalUnit, setEducationalUnit] =
+    useState<EducationalUnitResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,7 +22,7 @@ const AdminStatsCards: React.FC = () => {
         const data = await educationUnitApi.getMyEducationalUnit();
         setEducationalUnit(data);
       } catch (error) {
-        console.error('Error loading educational unit:', error);
+        console.error("Error loading educational unit:", error);
       } finally {
         setLoading(false);
       }
@@ -25,52 +33,55 @@ const AdminStatsCards: React.FC = () => {
 
   const stats = [
     {
-      title: 'Tổng Khóa Học',
+      title: "Tổng Khóa Học",
       value: educationalUnit?.totalCourses || 0,
       icon: BookOpen,
-      color: 'blue',
-      bgColor: 'bg-blue-100',
-      textColor: 'text-blue-600',
-      change: '+12.5%',
-      trending: 'up'
+      color: "blue",
+      bgColor: "bg-blue-100",
+      textColor: "text-blue-600",
+      change: "+12.5%",
+      trending: "up",
     },
     {
-      title: 'Tổng Giảng Viên',
+      title: "Tổng Giảng Viên",
       value: educationalUnit?.totalTeachers || 0,
       icon: Users,
-      color: 'green',
-      bgColor: 'bg-green-100',
-      textColor: 'text-green-600',
-      change: '+8.2%',
-      trending: 'up'
+      color: "green",
+      bgColor: "bg-green-100",
+      textColor: "text-green-600",
+      change: "+8.2%",
+      trending: "up",
     },
     {
-      title: 'Tổng Sinh Viên',
+      title: "Tổng Sinh Viên",
       value: educationalUnit?.totalStudents || 0,
       icon: GraduationCap,
-      color: 'purple',
-      bgColor: 'bg-purple-100',
-      textColor: 'text-purple-600',
-      change: '+23.1%',
-      trending: 'up'
+      color: "purple",
+      bgColor: "bg-purple-100",
+      textColor: "text-purple-600",
+      change: "+23.1%",
+      trending: "up",
     },
     {
-      title: 'Tổng Khoa',
+      title: "Tổng Khoa",
       value: educationalUnit?.totalDepartments || 0,
       icon: Building,
-      color: 'orange',
-      bgColor: 'bg-orange-100',
-      textColor: 'text-orange-600',
-      change: '+5.0%',
-      trending: 'up'
-    }
+      color: "orange",
+      bgColor: "bg-orange-100",
+      textColor: "text-orange-600",
+      change: "+5.0%",
+      trending: "up",
+    },
   ];
 
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-6">
         {[...Array(4)].map((_, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+          <div
+            key={index}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse"
+          >
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
@@ -103,12 +114,16 @@ const AdminStatsCards: React.FC = () => {
                   {stat.value.toLocaleString()}
                 </p>
                 <div className="flex items-center space-x-1">
-                  {stat.trending === 'up' ? (
+                  {stat.trending === "up" ? (
                     <TrendingUp className="w-3 h-3 text-green-500" />
                   ) : (
                     <TrendingDown className="w-3 h-3 text-red-500" />
                   )}
-                  <span className={`text-xs font-medium ${stat.trending === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                  <span
+                    className={`text-xs font-medium ${
+                      stat.trending === "up" ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
                     {stat.change}
                   </span>
                   <span className="text-xs text-gray-500">vs tháng trước</span>

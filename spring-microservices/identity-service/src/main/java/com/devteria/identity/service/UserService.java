@@ -261,13 +261,12 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public PaginatedResponse<UserResponse> getUsers(int page, int size, String sortBy, String sortDirection) {
+    public PaginatedResponse<UserResponse> getUsers(int page, int size, String keyword, String role, String status) {
         log.info("Vo day va chua cache");
-        Sort sort = Sort.by("ASC".equalsIgnoreCase(sortDirection) ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<User> users = userRepository.findAll(pageable);
+        Page<User> users = userRepository.findByFilters(keyword,role,status,pageable);
         List<UserResponse> userList = users.getContent().stream()
                 .map(user -> {
                     UserResponse res = userMapper.toUserResponse(user);
@@ -281,19 +280,29 @@ public class UserService {
                 })
                 .toList();
 
+
+
         PaginatedResponse<UserResponse> response = PaginatedResponse.<UserResponse>builder()
                 .content(userList)
                 .page(users.getNumber())
                 .size(users.getSize())
                 .totalElements(users.getTotalElements())
                 .totalPages(users.getTotalPages())
-                .first(users.isFirst())
-                .last(users.isLast())
-                .hasNext(users.hasNext())
-                .hasPrevious(users.hasPrevious())
                 .build();
 
         return response;
+    }
+
+    private static boolean isMatchKeyword(String keyword, User user) {
+        boolean matchKeyword = true;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String lowerKeyword = keyword.toLowerCase().trim();
+            matchKeyword = (user.getUsername() != null && user.getUsername().toLowerCase().contains(lowerKeyword)) ||
+                    (user.getEmail() != null && user.getEmail().toLowerCase().contains(lowerKeyword)) ||
+                    (user.getFirstName() != null && user.getFirstName().toLowerCase().contains(lowerKeyword)) ||
+                    (user.getLastName() != null && user.getLastName().toLowerCase().contains(lowerKeyword));
+        }
+        return matchKeyword;
     }
 
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER')")

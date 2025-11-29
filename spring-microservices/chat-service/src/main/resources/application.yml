@@ -5,11 +5,18 @@ spring:
     mongodb:
       uri: mongodb://root:root@mongodb:27017/mongo_notification?authSource=admin
       auto-index-creation: true
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: workspace-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: demo.app.chat_app.events.CourseCreatedEvent
+    listener:
+      ack-mode: manual
 
 springdoc:
   api-docs:
@@ -49,10 +56,6 @@ services:
   identity:
     url: http://localhost:8080/identity
 
-rabbitmq:
-  exchange:
-    name: notification.exchange
-  routing:
-    key: notification.routingkey
-  queue:
-    edu-unit-queue: edu-unit-queue
+kafka:
+  topic:
+    course-events: course-events
