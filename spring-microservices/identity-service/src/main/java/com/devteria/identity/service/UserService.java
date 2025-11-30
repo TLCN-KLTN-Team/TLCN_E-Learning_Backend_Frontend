@@ -318,7 +318,7 @@ public class UserService {
         }
         return matchKeyword;
     }
-    
+
     public UserResponse getUser(String id) {
         log.info("Call to db");
         return userMapper.toUserResponse(
