@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { X, Plus, Edit, Trash2, Users, School, Calendar, Hash } from "lucide-react";
 import { toast } from 'react-toastify';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import * as classApi from "@/services/api/admin/classApi";
 import EnrollStudentsToClassModal from "./EnrollStudentsToClassModal";
 import type { CourseResponse } from "@/services/api/response/courseResponse";

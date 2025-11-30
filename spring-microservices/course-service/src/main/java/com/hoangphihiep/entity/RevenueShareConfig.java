@@ -3,7 +3,10 @@ package com.hoangphihiep.entity;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.hoangphihiep.utils.RecipientType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,15 +29,16 @@ public class RevenueShareConfig implements Serializable {
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "entity_type", length = 50, nullable = false)
-    private String entityType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recipient_type", length = 50, nullable = false)
+    private RecipientType recipientType;
 
     @Column(name = "share_percentage", nullable = false)
-    private double sharePercentage;
+    private Double sharePercentage;
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
 
-    @Column(name = "effective_from")
-    private LocalDateTime effectiveFrom;
+    @OneToMany(mappedBy = "revenueShareConfig")
+    private List<PayoutOrderItem> payoutOrderItems = new ArrayList<>();
 }
