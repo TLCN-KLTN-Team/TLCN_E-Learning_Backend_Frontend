@@ -2,16 +2,12 @@ package com.hoangphihiep.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
+import com.hoangphihiep.utils.PaymentStatus;
+import com.hoangphihiep.utils.PayoutStatus;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -42,6 +38,22 @@ public class OrderItem implements Serializable {
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", length = 50)
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
+    @Column(name = "payment_txn_id", unique = true)
+    private String paymentTxnId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payout_status", length = 50)
+    @Builder.Default
+    private PayoutStatus payoutStatus = PayoutStatus.NOT_SETTLED;
+
+    @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PayoutOrderItem> payoutOrderItems = new ArrayList<>();
 
     public boolean containsCourse(Integer courseId) {
         return this.course.getId().equals(courseId);

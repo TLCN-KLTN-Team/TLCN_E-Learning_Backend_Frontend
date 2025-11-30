@@ -2,13 +2,15 @@ package com.hoangphihiep.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.hoangphihiep.utils.PayoutPayoutStatus;
+import com.hoangphihiep.utils.RecipientType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @AllArgsConstructor
@@ -26,17 +28,22 @@ public class Payout implements Serializable {
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "teacher_id")
-    private String idTeacher;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recipient_type", length = 50, nullable = false)
+    private RecipientType recipientType;
+
+    @Column(name = "recipient_id", nullable = false)
+    private String recipientId;
 
     @Column(name = "amount", nullable = false)
-    private double amount;
+    private BigDecimal amount;
 
     @Column(name = "currency", length = 10)
     private String currency;
 
-    @Column(name = "status", length = 50)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 50, nullable = false)
+    private PayoutPayoutStatus status;
 
     @Column(name = "payout_method", length = 50)
     private String payoutMethod;
@@ -49,4 +56,20 @@ public class Payout implements Serializable {
 
     @Column(name = "transaction_id")
     private String transactionId;
+
+    @OneToMany(mappedBy = "payout", cascade = CascadeType.ALL)
+    private List<PayoutOrderItem> payoutOrderItems = new ArrayList<>();
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
+
+    @PrePersist
+    protected void onCreate() {
+        if (requestDate == null) {
+            requestDate = LocalDateTime.now();
+        }
+        if (currency == null) {
+            currency = "VND";
+        }
+    }
 }

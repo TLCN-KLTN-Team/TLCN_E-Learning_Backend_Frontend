@@ -3,7 +3,6 @@ package com.hoangphihiep.service;
 import com.hoangphihiep.config.PaypalConfig;
 import com.hoangphihiep.config.VNPayConfig;
 import com.hoangphihiep.dto.request.CreationOrderRequest;
-import com.hoangphihiep.dto.request.OrderPreviewRequest;
 import com.hoangphihiep.dto.request.PaymentRequest;
 import com.hoangphihiep.dto.response.OrderPreviewResponse;
 import com.hoangphihiep.dto.response.PaypalOrderResponse;
@@ -11,7 +10,6 @@ import com.hoangphihiep.dto.response.VNPayReturnResponse;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
-import com.hoangphihiep.repository.PaymentRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.VNPayUtils;
@@ -36,7 +34,6 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
-    private final PaymentRepository paymentRepository;
     private final VNPayConfig vnPayConfig;
     private final VNPayUtils vnPayUtils;
     private final PaypalConfig paypalConfig;

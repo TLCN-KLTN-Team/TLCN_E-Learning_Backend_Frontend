@@ -16,7 +16,4 @@ public interface PayoutRepository extends JpaRepository<Payout, Integer> {
 
     @Query("SELECT p FROM Payout p WHERE p.processedDate BETWEEN :startDate AND :endDate")
     List<Payout> findByPayoutDateBetween(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
-
-    @Query("SELECT SUM(p.amount) FROM Payout p WHERE p.idTeacher = :teacherId AND p.status = 'COMPLETED'")
-    Double calculateTotalPayoutByTeacherId(@Param("teacherId") String teacherId);
 }

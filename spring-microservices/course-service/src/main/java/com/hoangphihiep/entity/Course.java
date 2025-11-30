@@ -60,7 +60,7 @@ public class Course implements Serializable {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private Set<Section> sections = new HashSet<>();
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     private Set<CourseEnrollment> enrollments = new HashSet<>();
 
     @OneToMany(mappedBy = "targetCourse", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
