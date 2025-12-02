@@ -2,16 +2,15 @@ import { useState } from "react";
 import { Lock, Eye, EyeOff, Shield } from "lucide-react";
 import { useTheme } from "@/context/theme-context/useTheme";
 import type { ChangePasswordData } from "@/types/profile.types";
+import { toast } from "react-toastify";
+
+import UserApi from "@/services/api/userApi";
 
 interface ChangePasswordProps {
-  onChangePassword: (data: ChangePasswordData) => void;
   isLoading?: boolean;
 }
 
-const ChangePassword = ({
-  onChangePassword,
-  isLoading = false,
-}: ChangePasswordProps) => {
+const ChangePassword = ({ isLoading = false }: ChangePasswordProps) => {
   const { resolvedTheme } = useTheme();
   const [formData, setFormData] = useState<ChangePasswordData>({
     currentPassword: "",
@@ -49,17 +48,22 @@ const ChangePassword = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const togglePasswordVisibility = (field: keyof typeof showPasswords) => {
+    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const passwordStrength = validatePassword(formData.newPassword);
+
+  const changePwd = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate all fields
     const newErrors: Record<string, string> = {};
 
-    // Validate current password
     if (!formData.currentPassword) {
       newErrors.currentPassword = "Vui lòng nhập mật khẩu hiện tại";
     }
 
-    // Validate new password
     if (!formData.newPassword) {
       newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
     } else {
@@ -69,30 +73,52 @@ const ChangePassword = ({
       }
     }
 
-    // Validate confirm password
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu mới";
     } else if (formData.newPassword !== formData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
     }
 
-    // Check if new password is same as current
     if (formData.currentPassword === formData.newPassword) {
       newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu hiện tại";
     }
 
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      onChangePassword(formData);
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
+    try {
+      await UserApi.changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+        confirmPassword: formData.confirmPassword,
+      });
+      toast.success("Đổi mật khẩu thành công!");
+
+      // Reset form after success
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setShowPasswords({
+        current: false,
+        new: false,
+        confirm: false,
+      });
+    } catch (error) {
+      let errorMessage = "Đổi mật khẩu thất bại. Vui lòng thử lại.";
+      if (error && typeof error === "object" && "response" in error) {
+        const response = (
+          error as { response?: { data?: { message?: string } } }
+        ).response;
+        errorMessage = response?.data?.message || errorMessage;
+      }
+      toast.error(errorMessage);
     }
   };
-
-  const togglePasswordVisibility = (field: keyof typeof showPasswords) => {
-    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
-  };
-
-  const passwordStrength = validatePassword(formData.newPassword);
 
   return (
     <div
@@ -107,7 +133,7 @@ const ChangePassword = ({
         <h2>Đổi mật khẩu</h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={changePwd} className="space-y-6">
         {/* Current Password */}
         <div>
           <label

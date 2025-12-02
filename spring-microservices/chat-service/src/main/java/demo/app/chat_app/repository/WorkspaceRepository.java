@@ -55,4 +55,6 @@ public interface WorkspaceRepository extends MongoRepository<Workspace, String> 
     @Query("{ 'id': ?0 }")
     @org.springframework.data.mongodb.repository.Update("{ $set: { 'isActive': false, 'updatedAt': ?1 } }")
     void softDeleteWorkspace(String workspaceId, java.time.Instant deletedAt);
+
+    Optional<Workspace> findByCourseId(Integer courseId);
 }

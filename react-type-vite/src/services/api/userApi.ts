@@ -4,6 +4,7 @@ import type {
 } from "@/services/api/response/apiResponse";
 import axiosInstance from "./httpClient/axiosInstance";
 import type { UserResponse } from "./response/userResponse";
+import type { ChangePasswordData } from "@/types/profile.types";
 
 export const getUsers = async (
   page: number = 0,
@@ -57,4 +58,16 @@ export const changeUserStatus = async (
     `/identity/users/change-status?userId=${userId}&status=${status}`
   );
   return response.data.result;
+};
+
+const changePassword = async (request: ChangePasswordData): Promise<void> => {
+  const response = await axiosInstance.put<ApiResponse<void>>(
+    "/identity/users/change-password",
+    request
+  );
+  return response.data.result;
+};
+
+export default {
+  changePassword,
 };

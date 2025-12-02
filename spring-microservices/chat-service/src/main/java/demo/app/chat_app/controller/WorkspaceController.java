@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.*;
 public class WorkspaceController {
     private final WorkspaceService workspaceService;
 
-    @PostMapping("/create")
-    public ResponseEntity<ApiResponse<WorkspaceResponse>> createWorkspace(@RequestBody WorkspaceCreationRequest request) {
-
-        ApiResponse<WorkspaceResponse> response = ApiResponse.<WorkspaceResponse>builder()
-                .result(workspaceService.createWorkspace(request))
+    @GetMapping
+    public ResponseEntity<?> getWorkspaces(@RequestParam(value = "page", defaultValue = "0") int page,
+                                           @RequestParam(value = "size", defaultValue = "6") int size) {
+        ApiResponse<PageResponse<WorkspaceResponse>> response = ApiResponse.<PageResponse<WorkspaceResponse>>builder()
+                .result(workspaceService.getWorkspaces(page, size))
                 .build();
 
         return ResponseEntity.ok(response);
@@ -35,11 +35,11 @@ public class WorkspaceController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping
-    public ResponseEntity<?> getWorkspaces(@RequestParam(value = "page", defaultValue = "0") int page,
-                                           @RequestParam(value = "size", defaultValue = "5") int size) {
-        ApiResponse<PageResponse<WorkspaceResponse>> response = ApiResponse.<PageResponse<WorkspaceResponse>>builder()
-                .result(workspaceService.getWorkspaces(page, size))
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponse<WorkspaceResponse>> createWorkspace(@RequestBody WorkspaceCreationRequest request) {
+
+        ApiResponse<WorkspaceResponse> response = ApiResponse.<WorkspaceResponse>builder()
+                .result(workspaceService.createWorkspace(request))
                 .build();
 
         return ResponseEntity.ok(response);

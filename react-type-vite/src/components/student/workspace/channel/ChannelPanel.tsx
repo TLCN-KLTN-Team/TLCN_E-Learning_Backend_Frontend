@@ -7,7 +7,7 @@ import AddChannelModal from "./AddChannelModal";
 
 import { toast } from "react-toastify";
 import type { ChannelResponse, WorkspaceResponse } from "@/types/chat.types";
-import { getBasicChannelsByWorkspaceId } from "@/services/api/channelApi";
+import { getBasicChannelsByWorkspaceId } from "@/services/api/channel.api";
 
 interface ChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;

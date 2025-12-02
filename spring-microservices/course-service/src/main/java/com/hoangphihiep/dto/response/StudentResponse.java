@@ -50,5 +50,7 @@ public class StudentResponse {
     private Integer averageScore;
 
     private String accountStatus;
+
+    private String avatarUrl;
 }
 

@@ -2,8 +2,12 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.*;
+import com.hoangphihiep.events.ClassCreatedEvent;
+import com.hoangphihiep.events.EnrollStudentsEvent;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.kafka.producer.ClassEventProducer;
+import com.hoangphihiep.kafka.producer.CourseEventProducer;
 import com.hoangphihiep.mapper.SectionMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
@@ -37,6 +41,7 @@ public class CourseEnrollmentService {
     private final QuizRepository quizRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
+    private final ClassEventProducer producer;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
@@ -183,6 +188,24 @@ public class CourseEnrollmentService {
 
             // Update course total students count across all classes
             updateCourseTotalStudents(courseClass.getCourse().getId());
+
+            // send event to create channel for a class
+            EnrollStudentsEvent event = EnrollStudentsEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .courseId(courseClass.getCourse().getId())
+                    .classId(courseClass.getId())
+                    .students(validStudents.stream()
+                            .map(s -> EnrollStudentsEvent.Student.builder()
+                                    .studentId(s.getId())
+                                    .firstName(s.getFirstName())
+                                    .lastName(s.getLastName())
+                                    .avatarUrl(s.getAvatarUrl())
+                                    .build())
+                            .toList()
+                    )
+                    .build();
+
+            producer.addMembersToClassChannel(event);
 
             log.info("Successfully enrolled {} students to class {}", studentsToEnroll.size(), classId);
 
