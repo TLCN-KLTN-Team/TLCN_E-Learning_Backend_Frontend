@@ -5,32 +5,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CourseCreatedEvent {
+public class EnrollStudentsEvent {
     private String eventId;
     private Integer courseId;
-    private String courseAvatarUrl;
-    private String courseName;
-    private String description;
-    private Teacher teacher;
-    private List<String> studentIds;
-    private String createdAt;
-    private String endedAt; // time course ends
-    @Builder.Default
-    private String eventType = "COURSE_CREATED";
+    private Integer classId;
+    private List<Student> students;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class Teacher {
-        private String teacherId;
+    public static class Student {
+        private String studentId;
         private String firstName;
         private String lastName;
         private String avatarUrl;

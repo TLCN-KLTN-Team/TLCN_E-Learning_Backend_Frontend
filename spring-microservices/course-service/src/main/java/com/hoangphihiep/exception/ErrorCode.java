@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatusCode;
 public enum ErrorCode {
     // General errors (9xxx)
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi không xác định", HttpStatus.INTERNAL_SERVER_ERROR),
+    JSON_PROCESSING_ERROR(9998, "Lỗi xử lý JSON", HttpStatus.INTERNAL_SERVER_ERROR),
+    KAFKA_PUBLISH_FAILED(9997, "Lỗi khi xuất bản sự kiện Kafka", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Authentication & Authorization errors (10xx)
     INVALID_KEY(1001, "Khóa không hợp lệ", HttpStatus.BAD_REQUEST),

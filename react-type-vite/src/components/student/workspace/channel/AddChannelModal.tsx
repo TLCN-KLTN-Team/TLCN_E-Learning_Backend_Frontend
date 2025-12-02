@@ -16,7 +16,7 @@ import type {
   UserResponse,
   WorkspaceResponse,
 } from "@/types/chat.types";
-import { createChannel } from "@/services/api/channelApi";
+import { createChannel } from "@/services/api/channel.api";
 
 interface AddChannelModalProps {
   isOpen: boolean;

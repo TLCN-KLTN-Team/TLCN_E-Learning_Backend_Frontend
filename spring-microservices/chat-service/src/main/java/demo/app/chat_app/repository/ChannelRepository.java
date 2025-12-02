@@ -48,4 +48,6 @@ public interface ChannelRepository extends MongoRepository<Channel, String> {
     // Search channels by name pattern
     @Query("{ 'workspaceId': ?0, 'channelName': { $regex: ?1, $options: 'i' } }")
     List<Channel> findByWorkspaceIdAndChannelNameContaining(String workspaceId, String namePattern);
+
+    Optional<Channel> findByClassId(Integer classId);
 }

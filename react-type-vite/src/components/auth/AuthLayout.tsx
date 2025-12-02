@@ -85,10 +85,10 @@ const AuthLayout = ({
           {/* Welcome Text at Top */}
           <div className="space-y-4">
             <h1 className="heading-1 text-gray-800">
-              Welcome to our educational ecosystem!
+              Chào mừng đến với OpenEdu!
             </h1>
             <p className="body-large text-gray-600">
-              Let's learn something new today!
+              Hãy cùng học điều gì đó mới hôm nay!
             </p>
           </div>
 
@@ -128,7 +128,7 @@ const AuthLayout = ({
               />
             </div>
             <p className="body-small text-gray-600 ml-3">
-              4k+ Students joined us, now it's your turn.
+              Hơn 4000+ sinh viên đã tham gia
             </p>
           </div>
         </div>

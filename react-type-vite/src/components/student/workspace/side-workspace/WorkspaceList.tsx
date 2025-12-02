@@ -37,13 +37,11 @@ const WorkspaceList = ({
               selectedWorkspace?.id === workspace.id ? "rounded-xl" : ""
             }`}
           >
-            {workspace.avatarUrl && (
-              <img
-                src={getAvartarFromName(workspace.name)}
-                className="w-full h-full rounded-2xl hover:rounded-xl object-cover"
-                alt={workspace.name}
-              />
-            )}
+            <img
+              src={workspace.avatarUrl || getAvartarFromName(workspace.name)}
+              className="w-full h-full rounded-2xl hover:rounded-xl object-cover"
+              alt={workspace.name}
+            />
 
             {/* Tooltip */}
             <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap top-1/2 transform -translate-y-1/2 pointer-events-none z-50">

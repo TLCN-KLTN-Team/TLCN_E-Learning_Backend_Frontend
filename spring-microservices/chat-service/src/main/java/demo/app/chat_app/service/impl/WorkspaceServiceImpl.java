@@ -74,8 +74,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 .avatarUrl(request.getAvatarUrl())
                 .description(request.getDescription())
 //                .courseId(request.getCourseId())
-                .ownerId(instructorId)
-                .members(existingMembers)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .isActive(true)
@@ -88,7 +86,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 .channelName("general")
                 .description("This is the start of the #general channel.")
                 .workspaceId(workspace.getId())
-                .participants(workspace.getMembers())
                 .createdAt(Instant.now())
                 .build();
         
@@ -102,25 +99,29 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         return workspaceResponse;
     }
 
-    public void createWorkspaceWhenCourseCreated(CourseCreatedEvent event) {
+    public void createWorkspaceWhenCourseCreatedAndAssignForATeacher(CourseCreatedEvent event) {
         if (workspaceRepository.existsByCourseId(event.getCourseId())) {
             return; // Workspace already exists for this course
         }
 
         // add members for workspace
-        List<String> memberIds = Collections.singletonList(event.getStudentIds() + event.getInstructorId());
-        List<Participant> members = this.getExistingMembersFromCourseCreated(memberIds);
 
         Workspace workspace = Workspace.builder()
                 .courseId(event.getCourseId())
                 .name(event.getCourseName())
                 .description(event.getDescription())
-                .ownerId(event.getInstructorId())
+                .ownerId(event.getTeacher().getTeacherId())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
 //                .endedAt(event.getEndedAt())
                 .isActive(true)
-                .members(members)
+                .members(Collections.singletonList(Participant.builder()
+                                .userId(event.getTeacher().getTeacherId())
+                                .firstName(event.getTeacher().getFirstName())
+                                .lastName(event.getTeacher().getLastName())
+                                .avatarUrl(event.getTeacher().getAvatarUrl())
+                                .joinedAt(Instant.now())
+                        .build()))
                 .build();
 
         Workspace savedWorkspace = workspaceRepository.save(workspace);
@@ -132,7 +133,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 .workspaceId(savedWorkspace.getId())
                 .participants(savedWorkspace.getMembers())
                 .createdAt(Instant.now())
-//                .endedAt(event.getEndedAt())
                 .build();
 
         Channel savedChannel = channelRepository.save(channel);

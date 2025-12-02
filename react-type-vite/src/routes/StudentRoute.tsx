@@ -1,6 +1,5 @@
 import { Route } from "react-router-dom";
 import ProtectedRoute from "./protected/ProtectedRoute";
-import WorkspacePage from "../pages/workspace/WorkspacePage";
 import RoleProtectedRoute from "./protected/RoleProtectedRoute";
 import StudentDashboard from "@/pages/student/dashboard/StudentDashboard";
 import CourseDetail from "@/pages/student/course/CourseDetail";
@@ -13,8 +12,6 @@ import QuizResultPage from "@/pages/student/quiz/QuizResultPage";
 const StudentRoutes = [
   <Route key="student-protected" element={<ProtectedRoute />}>
     <Route key="student-role-protected" element={<RoleProtectedRoute />}>
-      <Route key="workspace" path="/workspace" element={<WorkspacePage />} />
-
       <Route
         key="edit-profile"
         path="/edit-profile"
@@ -43,8 +40,14 @@ const StudentRoutes = [
 
       {/* Thêm các student routes khác ở đây */}
     </Route>
-    <Route path="/student/quiz/:quizId/attempt/:attemptId" element={<QuizTakingPage />} />
-    <Route path="/student/quiz/:quizId/result/:attemptId" element={<QuizResultPage />} />
+    <Route
+      path="/student/quiz/:quizId/attempt/:attemptId"
+      element={<QuizTakingPage />}
+    />
+    <Route
+      path="/student/quiz/:quizId/result/:attemptId"
+      element={<QuizResultPage />}
+    />
   </Route>,
 ];
 

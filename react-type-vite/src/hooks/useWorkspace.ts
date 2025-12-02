@@ -4,7 +4,7 @@ import { getWorkspaces } from "@/services/api/workspaceApi";
 import {
   getChannel,
   getBasicChannelsByWorkspaceId,
-} from "@/services/api/channelApi";
+} from "@/services/api/channel.api";
 import type {
   ChannelResponse,
   Participant,
