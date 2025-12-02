@@ -4,8 +4,10 @@ import com.hoangphihiep.dto.request.CourseClassRequest;
 import com.hoangphihiep.dto.response.CourseClassResponse;
 import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseClass;
+import com.hoangphihiep.events.ClassCreatedEvent;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
+import com.hoangphihiep.kafka.producer.ClassEventProducer;
 import com.hoangphihiep.mapper.CourseClassMapper;
 import com.hoangphihiep.repository.CourseClassRepository;
 import com.hoangphihiep.repository.CourseRepository;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class CourseClassService {
     private final CourseClassRepository classRepository;
     private final CourseRepository courseRepository;
     private final CourseClassMapper courseClassMapper;
+    private final ClassEventProducer producer;
 
     @Transactional
     public CourseClassResponse createClass(CourseClassRequest request) {
@@ -54,6 +58,19 @@ public class CourseClassService {
                 .build();
 
         CourseClass savedClass = classRepository.save(courseClass);
+
+        // create a new channel for this class in chat service
+        ClassCreatedEvent event = ClassCreatedEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .classId(savedClass.getId())
+                .courseId(course.getId())
+                .className(savedClass.getClassName())
+                .description(savedClass.getDescription())
+                .isPrivate(true)
+                .createdAt(savedClass.toString())
+                .endedAt(savedClass.getEndDate().toString())
+                .build();
+        producer.publishClassCreatedEvent(event);
 
         return courseClassMapper.toCourseClassResponse(savedClass);
     }

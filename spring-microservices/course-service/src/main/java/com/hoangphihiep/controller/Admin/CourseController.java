@@ -1,8 +1,11 @@
 package com.hoangphihiep.controller.Admin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hoangphihiep.dto.request.CourseRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.CourseResponse;
+import com.hoangphihiep.exception.AppException;
+import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -62,11 +65,17 @@ public class CourseController {
             @PathVariable int courseId,
             @RequestParam String teacherId) {
 
-        CourseResponse response = adminCourseService.assignTeacherToCourse(courseId, teacherId);
+        try {
+            CourseResponse response = adminCourseService.assignTeacherToCourse(courseId, teacherId);
 
-        return ApiResponse.<CourseResponse>builder()
-                .result(response)
-                .build();
+            return ApiResponse.<CourseResponse>builder()
+                    .result(response)
+                    .build();
+        } catch (JsonProcessingException je) {
+            throw new AppException(ErrorCode.JSON_PROCESSING_ERROR);
+        }catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
     @PutMapping("/courses/{courseId}/remove-teacher")

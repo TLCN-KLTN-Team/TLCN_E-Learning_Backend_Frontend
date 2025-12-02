@@ -297,7 +297,7 @@ const RegisterPage = () => {
               htmlFor="firstName"
               className="block text-sm font-semibold text-gray-900"
             >
-              First Name
+              Tên
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -317,7 +317,7 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Nhập first name"
+                placeholder="Nhập tên"
               />
             </div>
             {errors.firstName && (
@@ -333,7 +333,7 @@ const RegisterPage = () => {
               htmlFor="lastName"
               className="block text-sm font-semibold text-gray-900"
             >
-              Last Name
+              Họ
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -353,7 +353,7 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Nhập last name"
+                placeholder="Nhập họ"
               />
             </div>
             {errors.lastName && (
@@ -368,7 +368,7 @@ const RegisterPage = () => {
               htmlFor="email"
               className="block text-sm font-semibold text-gray-900"
             >
-              Email address
+              Địa chỉ Email
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -402,7 +402,7 @@ const RegisterPage = () => {
               htmlFor="phoneNumber"
               className="block text-sm font-semibold text-gray-900"
             >
-              Phone Number
+              Số điện thoại
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -422,7 +422,7 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Nhập phone number"
+                placeholder="Nhập số điện thoại"
               />
             </div>
             {errors.phoneNumber && (
@@ -441,7 +441,7 @@ const RegisterPage = () => {
               htmlFor="password"
               className="block text-sm font-semibold text-gray-900"
             >
-              Password
+              Mật khẩu
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -461,7 +461,7 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Nhập password"
+                placeholder="Nhập mật khẩu"
               />
               <button
                 type="button"
@@ -490,7 +490,7 @@ const RegisterPage = () => {
               htmlFor="confirmPassword"
               className="block text-sm font-semibold text-gray-900"
             >
-              Confirm Password
+              Xác nhận mật khẩu
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -510,7 +510,7 @@ const RegisterPage = () => {
                     ? "border-red-300 focus:border-red-500"
                     : "border-gray-300 focus:border-blue-500"
                 )}
-                placeholder="Nhập confirm password"
+                placeholder="Nhập lại mật khẩu"
               />
               <button
                 type="button"

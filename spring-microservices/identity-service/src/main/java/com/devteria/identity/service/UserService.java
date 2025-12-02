@@ -229,7 +229,7 @@ public class UserService {
             throw new AppException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
         }
 
-        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.PASSWORD_OLD_INCORRECT);
         }
 

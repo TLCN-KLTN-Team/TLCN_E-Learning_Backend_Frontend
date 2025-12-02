@@ -35,12 +35,12 @@ public class Channel {
     
     @Indexed
     String workspaceId; // ID of the workspace this channel belongs to
+
+    Integer classId; // Optional class ID if the channel is linked to a class
     
     List<Participant> participants; // List of participants in the channel (aka group for team chat)
 
     boolean isPrivate;
-
-    Instant endedAt; // Optional end time for the channel
 
     @Builder.Default
     ChannelStatus status= ChannelStatus.ACTIVE;

@@ -1,16 +1,16 @@
 package com.hoangphihiep.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hoangphihiep.dto.request.CourseRequest;
 import com.hoangphihiep.dto.request.DepartmentRequest;
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.Course;
-import com.hoangphihiep.entity.CourseEnrollment;
 import com.hoangphihiep.entity.Department;
 import com.hoangphihiep.entity.EducationalUnit;
 import com.hoangphihiep.events.CourseCreatedEvent;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
-import com.hoangphihiep.kafka.CourseEventProducer;
+import com.hoangphihiep.kafka.producer.CourseEventProducer;
 import com.hoangphihiep.mapper.CourseMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
@@ -18,7 +18,6 @@ import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.repository.httpclient.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -138,19 +137,6 @@ public class CourseService {
             }
 
             Course savedCourse = courseRepository.save(course);
-
-            // publish event course created
-            CourseCreatedEvent event = CourseCreatedEvent.builder()
-                    .eventId(UUID.randomUUID().toString())
-                    .courseId(savedCourse.getId())
-                    .courseName(savedCourse.getCourseName())
-                    .description(savedCourse.getDescription())
-                    .instructorId(savedCourse.getIdTeacher())
-                    .createdAt(LocalDateTime.now())
-                    .build();
-
-            // Publish event lên Kafka
-            eventProducer.publishCourseCreatedEvent(event);
 
             return courseMapper.toCourseResponse(savedCourse);
         } catch (Exception e) {
@@ -401,7 +387,7 @@ public class CourseService {
     }
 
     @Transactional
-    public CourseResponse assignTeacherToCourse(int courseId, String teacherId) {
+    public CourseResponse assignTeacherToCourse(int courseId, String teacherId) throws JsonProcessingException {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
@@ -412,6 +398,28 @@ public class CourseService {
         course.setUpdatedAt(new Date());
 
         Course updatedCourse = courseRepository.save(course);
+
+        var teacher = teacherRepository.getTeacherByTeacherId(updatedCourse.getIdTeacher()).getResult();
+
+        // publish event course created
+        CourseCreatedEvent event = CourseCreatedEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .courseId(updatedCourse.getId())
+                .courseName(updatedCourse.getCourseName())
+                .description(updatedCourse.getDescription())
+                .teacher(CourseCreatedEvent.Teacher.builder()
+                        .teacherId(teacher.getId())
+                        .firstName(teacher.getFirstName())
+                        .lastName(teacher.getLastName())
+                        .avatarUrl(teacher.getAvatarUrl())
+                        .build())
+                .createdAt(LocalDateTime.now().toString())
+                .build();
+
+        // Publish event lên Kafka
+        eventProducer.publishCourseCreatedEvent(event);
+
+        // use kafka send event to create a workspace
 
         return courseMapper.toCourseResponse(updatedCourse);
     }

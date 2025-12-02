@@ -28,6 +28,15 @@ public class ChannelController {
                 .build();
     }
 
+    @GetMapping("/basic/{workspaceId}")
+    public ApiResponse<List<BasicChannelResponse>> getBasicChannelsByWorkspace(@PathVariable String workspaceId) {
+        List<BasicChannelResponse> channels = channelService.getBasicChannels(workspaceId);
+        return ApiResponse.<List<BasicChannelResponse>>builder()
+                .result(channels)
+                .message("Basic channels retrieved successfully")
+                .build();
+    }
+
     @GetMapping("/workspace/{workspaceId}")
     public ApiResponse<List<ChannelResponse>> getChannelsByWorkspace(@PathVariable String workspaceId) {
         List<ChannelResponse> channels = channelService.getChannels(workspaceId);
@@ -80,15 +89,6 @@ public class ChannelController {
                     .message("Failed to delete channel: " + e.getMessage())
                     .build();
         }
-    }
-
-    @GetMapping("/basic/{workspaceId}")
-    public ApiResponse<List<BasicChannelResponse>> getBasicChannelsByWorkspace(@PathVariable String workspaceId) {
-        List<BasicChannelResponse> channels = channelService.getBasicChannels(workspaceId);
-        return ApiResponse.<List<BasicChannelResponse>>builder()
-                .result(channels)
-                .message("Basic channels retrieved successfully")
-                .build();
     }
 
     @PutMapping("/submit/{channelId}")

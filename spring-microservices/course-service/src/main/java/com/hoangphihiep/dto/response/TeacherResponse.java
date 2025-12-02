@@ -41,4 +41,6 @@ public class TeacherResponse {
     private EducationalUnitResponse educationalUnit;
 
     private String accountStatus;
+
+    private String avatarUrl;
 }

@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatusCode;
 @Getter
 public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+    JSON_PROCESSING_ERROR(9998, "Lỗi xử lý JSON", HttpStatus.INTERNAL_SERVER_ERROR),
+
+
     INVALID_TOKEN(1001, "Invalid token", HttpStatus.BAD_REQUEST),
     USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
     USERNAME_INVALID(1003, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),

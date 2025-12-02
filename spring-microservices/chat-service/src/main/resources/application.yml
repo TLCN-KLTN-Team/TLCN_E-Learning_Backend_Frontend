@@ -6,17 +6,12 @@ spring:
       uri: mongodb://root:root@mongodb:27017/mongo_notification?authSource=admin
       auto-index-creation: true
   kafka:
-    bootstrap-servers: localhost:9092
     consumer:
-      group-id: workspace-service-group
+      bootstrap-servers: localhost:9092
+      group-id: myGroup
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-        spring.json.value.default.type: demo.app.chat_app.events.CourseCreatedEvent
-    listener:
-      ack-mode: manual
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 springdoc:
   api-docs:
@@ -59,3 +54,4 @@ services:
 kafka:
   topic:
     course-events: course-events
+    class-events: class-events
