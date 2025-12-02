@@ -7,11 +7,13 @@ import type {
   CreateChannelRequest,
 } from "@/types/chat.types";
 
+const CHANNEL_API_BASE_URL = "/server/channels";
+
 export const getBasicChannelsByWorkspaceId = async (
   workspaceId: string
 ): Promise<ChannelResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<ChannelResponse[]>>(
-    `/server/channels/basic/${workspaceId}`
+    `${CHANNEL_API_BASE_URL}/basic/${workspaceId}`
   );
   return response.data.result;
 };
@@ -20,7 +22,7 @@ export const getChannel = async (
   channelId: string
 ): Promise<ChannelResponse> => {
   const response = await axiosInstance.get<ApiResponse<ChannelResponse>>(
-    `/server/channels/${channelId}`
+    `${CHANNEL_API_BASE_URL}/${channelId}`
   );
   return response.data.result;
 };
@@ -29,7 +31,7 @@ export const createChannel = async (
   request: CreateChannelRequest
 ): Promise<ChannelResponse> => {
   const response = await axiosInstance.post<ApiResponse<ChannelResponse>>(
-    `/server/channels/create`,
+    `${CHANNEL_API_BASE_URL}/create`,
     request
   );
   return response.data.result;

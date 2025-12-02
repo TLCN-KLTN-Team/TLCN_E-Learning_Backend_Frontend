@@ -6,7 +6,6 @@ import type { AuthContextType, User, RegisterData } from "./types";
 import { doSocialLogin, getMe } from "../../services/api/authApi";
 import { doLogin, doRegister } from "../../services/api/authApi";
 import { getAccessToken, getRefreshToken } from "@/utils/localStorageVariables";
-import { toast } from "react-toastify";
 
 // Define Provider props type
 interface AuthProviderProps {
@@ -78,7 +77,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     localStorage.removeItem("expiryTime");
     localStorage.removeItem("refreshExpiryTime");
     sessionStorage.clear(); // Xóa cả sessionStorage để reset first login flag
-    toast.success("Đăng xuất thành công");
     setUser(null);
   };
 

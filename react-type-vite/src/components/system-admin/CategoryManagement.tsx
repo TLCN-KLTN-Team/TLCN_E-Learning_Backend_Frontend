@@ -163,6 +163,7 @@ const CategoryManagement: React.FC = () => {
           result.totalElements
         );
         setPaginationState(newPaginationState);
+        toast.success("Tải danh mục thành công!");
       } catch (error) {
         console.error("Error fetching categories:", error);
         toast.error("Lỗi phân trang");

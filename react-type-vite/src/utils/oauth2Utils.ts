@@ -1,6 +1,6 @@
 export const OAuth2Utils = {
   callBackUrl:
-    import.meta.env.VITE_GOOGLE_URL_REDIRECT ||
+    import.meta.env.VITE_GOOGLE_URL_REDIRECT_DEVELOPMENT ||
     "http://localhost:3000/auth/google/callback",
   authUri: "https://accounts.google.com/o/oauth2/v2/auth",
   googleClientId:

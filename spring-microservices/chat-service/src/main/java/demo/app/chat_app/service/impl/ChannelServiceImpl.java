@@ -5,6 +5,8 @@ import demo.app.chat_app.dto.response.BasicChannelResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.dto.response.ChatMessageResponse;
 import demo.app.chat_app.dto.response.UserProfileResponse;
+import demo.app.chat_app.events.ClassCreatedEvent;
+import demo.app.chat_app.events.EnrollStudentsEvent;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChannelMapper;
@@ -13,12 +15,12 @@ import demo.app.chat_app.model.Participant;
 import demo.app.chat_app.model.Workspace;
 import demo.app.chat_app.model.enums.ChannelStatus;
 import demo.app.chat_app.repository.ChannelRepository;
-import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.repository.httpclient.GetListUsersClient;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.ChannelService;
 import demo.app.chat_app.service.ChatMessageService;
+import demo.app.chat_app.utils.JwtUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -27,9 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -42,6 +42,50 @@ public class ChannelServiceImpl implements ChannelService {
     ChatMessageService chatMessageService;
     private final GetUserClient getUserClient;
     private final GetListUsersClient getListUsersClient;
+
+    public void createChannelWhenStudentsEnrolled(ClassCreatedEvent event) {
+        Workspace workspace = workspaceRepository.findByCourseId(event.getCourseId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
+
+        Participant owner = workspace.getMembers().stream()
+                .filter(participant -> participant.getUserId().equals(workspace.getOwnerId()))
+                .findFirst().orElse(null);
+
+        Channel channel = Channel.builder()
+                .channelName(event.getClassName())
+                .description(event.getDescription())
+                .classId(event.getClassId())
+                .isPrivate(event.isPrivate())
+                .createdAt(Instant.now())
+                .workspaceId(workspace.getId())
+                .participants(Collections.singletonList(owner))
+                .build();
+        channelRepository.save(channel);
+
+    }
+
+    public void addParticipantsWhenStudentsEnrolled(EnrollStudentsEvent event) {
+        Channel channel = channelRepository.findByClassId(event.getClassId())
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        Workspace workspace = workspaceRepository.findById(channel.getWorkspaceId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
+
+        channel.setParticipants(event.getStudents().stream()
+                .map(student -> Participant.builder()
+                        .userId(student.getStudentId())
+                        .firstName(student.getFirstName())
+                        .lastName(student.getLastName())
+                        .joinedAt(Instant.now())
+                        .build()
+                )
+                .toList()
+        );
+
+        var savedChannelData = channelRepository.save(channel);
+        workspace.setMembers(channel.getParticipants());
+        workspaceRepository.save(workspace);
+    }
 
     @Override
     public BasicChannelResponse createChannel(ChannelCreationRequest request) {
@@ -126,7 +170,7 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public List<BasicChannelResponse> getBasicChannels(String workspaceId) {
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String userId = JwtUtils.getUserId();
 
         // Verify workspace exists and user has access
         Workspace workspace = workspaceRepository.findById(workspaceId)
@@ -137,7 +181,7 @@ public class ChannelServiceImpl implements ChannelService {
         }
 
         // Get channels where user is participant (more efficient than loading all workspace channels)
-        List<Channel> channels = channelRepository.findByWorkspaceIdAndParticipantUserId(workspaceId, userId);
+        List<Channel> channels = channelRepository.findByWorkspaceId(workspaceId);
 
 
         List<BasicChannelResponse> channelResponse = channels.stream()
