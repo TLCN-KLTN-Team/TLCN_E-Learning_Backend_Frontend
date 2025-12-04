@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Clock, AlertTriangle } from "lucide-react";
-import { softDeleteChannel } from "@/services/api/channel.api";
+import { softDeleteChannel } from "@/services/api/workspace/channel.api";
 import { toast } from "react-toastify";
 
 interface ChannelTimerProps {

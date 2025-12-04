@@ -1,10 +1,7 @@
 package demo.app.chat_app.service.impl;
 
 import demo.app.chat_app.dto.request.ChannelCreationRequest;
-import demo.app.chat_app.dto.response.BasicChannelResponse;
-import demo.app.chat_app.dto.response.ChannelResponse;
-import demo.app.chat_app.dto.response.ChatMessageResponse;
-import demo.app.chat_app.dto.response.UserProfileResponse;
+import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.events.ClassCreatedEvent;
 import demo.app.chat_app.events.EnrollStudentsEvent;
 import demo.app.chat_app.exception.AppException;
@@ -26,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -43,7 +41,17 @@ public class ChannelServiceImpl implements ChannelService {
     private final GetUserClient getUserClient;
     private final GetListUsersClient getListUsersClient;
 
-    public void createChannelWhenStudentsEnrolled(ClassCreatedEvent event) {
+    public List<SectionResponse.Channel> getChannelsForSection(List<String> channelIds) {
+        List<Channel> channels = channelRepository.findAllById(channelIds);
+        return channels.stream()
+                .map(channel -> SectionResponse.Channel.builder()
+                        .id(channel.getId())
+                        .channelName(channel.getChannelName())
+                        .build())
+                .toList();
+    }
+
+    public Channel createChannelWhenStudentsEnrolled(ClassCreatedEvent event) {
         Workspace workspace = workspaceRepository.findByCourseId(event.getCourseId())
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
@@ -53,15 +61,14 @@ public class ChannelServiceImpl implements ChannelService {
 
         Channel channel = Channel.builder()
                 .channelName(event.getClassName())
-                .description(event.getDescription())
+                .description("Đây là kênh chung dành cho lớp " + event.getClassName() + "\n" +
+                        "Ghi chú giáo viên: " + event.getDescription())
                 .classId(event.getClassId())
                 .isPrivate(event.isPrivate())
                 .createdAt(Instant.now())
-                .workspaceId(workspace.getId())
                 .participants(Collections.singletonList(owner))
                 .build();
-        channelRepository.save(channel);
-
+        return channelRepository.save(channel);
     }
 
     public void addParticipantsWhenStudentsEnrolled(EnrollStudentsEvent event) {
@@ -86,6 +93,16 @@ public class ChannelServiceImpl implements ChannelService {
         var savedChannelData = channelRepository.save(channel);
         workspace.addMembers(savedChannelData.getParticipants());
         workspaceRepository.save(workspace);
+    }
+
+    public Channel createGeneralChannel(List<Participant> participants) {
+        Channel channel = Channel.builder()
+                .channelName("general")
+                .description("Đây là kênh chung của workspace.\n Mọi thắc mắc, trao đổi liên quan đến workspace sẽ được thực hiện tại đây.")
+                .participants(participants)
+                .createdAt(Instant.now())
+                .build();
+        return channelRepository.save(channel);
     }
 
     @Override
