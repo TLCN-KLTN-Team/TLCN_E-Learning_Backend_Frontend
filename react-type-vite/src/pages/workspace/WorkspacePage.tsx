@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 
 import { useSafeChatWebSocket } from "@/hooks/useSafeChatWebSocket";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -10,6 +11,12 @@ import ChannelPanel from "@/components/student/workspace/channel/ChannelPanel";
 import ChatWindow from "@/components/student/workspace/chat-window/ChatWindow";
 
 const WorkspacePageContent = () => {
+  const { workspaceId, channelId } = useParams<{
+    workspaceId: string;
+    channelId: string;
+  }>();
+  const navigate = useNavigate();
+
   // Use custom hooks for workspace management and WebSocket
   const {
     selectedWorkspace,
@@ -87,6 +94,35 @@ const WorkspacePageContent = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Intentionally empty to prevent re-connections on every render
+
+  // Update URL when workspace or channel changes
+  useEffect(() => {
+    if (selectedWorkspace) {
+      if (selectedChannel) {
+        // Navigate to workspace with channel
+        navigate(`/workspace/${selectedWorkspace.id}/${selectedChannel.id}`, {
+          replace: true,
+        });
+      } else {
+        // Navigate to workspace only
+        navigate(`/workspace/${selectedWorkspace.id}`, { replace: true });
+      }
+    }
+  }, [selectedWorkspace, selectedChannel, navigate]);
+
+  // Load workspace and channel from URL params on mount
+  useEffect(() => {
+    if (workspaceId) {
+      // TODO: Load workspace by ID from URL
+      // This would require a new function in useWorkspace hook
+      console.log("Loading workspace from URL:", workspaceId);
+
+      if (channelId) {
+        // TODO: Load channel by ID from URL
+        console.log("Loading channel from URL:", channelId);
+      }
+    }
+  }, [workspaceId, channelId]);
 
   const handleSendMessage = async (content: string) => {
     console.log("🚀 handleSendMessage called", {

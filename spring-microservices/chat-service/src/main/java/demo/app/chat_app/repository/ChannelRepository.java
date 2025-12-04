@@ -50,4 +50,5 @@ public interface ChannelRepository extends MongoRepository<Channel, String> {
     List<Channel> findByWorkspaceIdAndChannelNameContaining(String workspaceId, String namePattern);
 
     Optional<Channel> findByClassId(Integer classId);
+
 }

@@ -19,7 +19,7 @@ public class OrderPreviewResponse {
     @AllArgsConstructor
     @Builder
     public static class CourseItem {
-        private Long id;
+        private Integer id;
         private String name;
         private String price;
         private String discountedPrice;

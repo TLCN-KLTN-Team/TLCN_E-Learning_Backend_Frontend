@@ -16,6 +16,7 @@ public class ChannelResponse {
     String id;
     String participantHash;
     String channelName;
+    String description;
     List<Participant> participants;
     List<ChatMessageResponse> messages;
     boolean isPrivate;

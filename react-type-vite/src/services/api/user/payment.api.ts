@@ -3,7 +3,7 @@ import type { ApiResponse } from "../response/apiResponse";
 
 const PAYMENT_API_BASE_URL = `${
   import.meta.env.VITE_BASE_URL
-}/course-management/user/payments`;
+}/course-management/payments`;
 
 interface PaymentResponse {
   paymentUrl: string;

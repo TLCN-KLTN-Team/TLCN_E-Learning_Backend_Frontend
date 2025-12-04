@@ -218,6 +218,7 @@ public class PaymentService {
 
         List<OrderPreviewResponse.CourseItem> items = courses.stream()
                         .map(course -> OrderPreviewResponse.CourseItem.builder()
+                                .id(course.getId())
                                 .name(course.getCourseName())
                                 .price(currencyUtils.formatCurrency(course.getCoursePrice()))
                                 .discountedPrice(currencyUtils.formatCurrency(

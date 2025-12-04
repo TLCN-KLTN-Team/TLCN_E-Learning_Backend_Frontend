@@ -8,6 +8,14 @@ export interface UserResponse {
   avatarUrl?: string | null;
 }
 
+export interface UserProfileResponse {
+  id: string;
+  firstName: string;
+  lastName: string;
+  mssv: string;
+  avatar?: string | null;
+}
+
 export interface Participant {
   userId: string;
   mssv: string;
@@ -29,14 +37,25 @@ export interface BasicChannelResponse {
   participantHash?: string | null;
 }
 
+export interface GroupResponse {
+  id: string;
+  groupName: string;
+  channelId: string;
+  description?: string;
+  participants?: Participant[];
+  createdDate?: string;
+}
+
 export interface ChannelResponse {
   id: string;
   participantHash?: string | null;
   channelName: string;
+  description?: string;
   participants?: Participant[];
   messages?: ChatMessageResponse[] | null;
   isPrivate: boolean;
   endTime: number; // ISO 8601 format
+  groups?: GroupResponse[];
 }
 
 export interface CreateChannelRequest {
@@ -45,6 +64,13 @@ export interface CreateChannelRequest {
   description?: string;
   memberIds?: string[];
   isPrivate: boolean;
+}
+
+export interface CreateGroupRequest {
+  channelId: string;
+  name: string;
+  description?: string;
+  memberIds?: string[];
 }
 
 export interface ChatMessageRequest {
