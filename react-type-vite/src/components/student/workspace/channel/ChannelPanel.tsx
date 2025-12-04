@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import ChannelList from "./ChannelList";
-import InvitePeopleButton from "@/components/student/workspace/channel/InvitePeopleButton";
 import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
-import { PackagePlus } from "lucide-react";
-import AddChannelModal from "./AddChannelModal";
+import AddGroupModal from "../group/AddGroupModal";
 
 import { toast } from "react-toastify";
-import type { ChannelResponse, WorkspaceResponse } from "@/types/chat.types";
+import type {
+  ChannelResponse,
+  WorkspaceResponse,
+  GroupResponse,
+} from "@/types/chat.types";
 import { getBasicChannelsByWorkspaceId } from "@/services/api/channel.api";
+import { getAllGroupsByChannelId } from "@/services/api/workspace/group.api";
 
 interface ChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;
@@ -21,25 +24,36 @@ const ChannelPanel = ({
   onChannelSelect,
 }: ChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [showAddChannel, setShowAddChannel] = useState(false);
+  const [showAddGroup, setShowAddGroup] = useState(false);
   const [channels, setChannels] = useState<ChannelResponse[]>([]);
+  const [selectedChannelForAction, setSelectedChannelForAction] =
+    useState<ChannelResponse | null>(null);
 
-  // Function to handle new channel creation
-  const handleChannelCreated = (newChannel: ChannelResponse) => {
-    // Convert ChannelResponse to BasicChannelResponse format
-    const basicChannel: ChannelResponse = {
-      id: newChannel.id,
-      channelName: newChannel.channelName,
-      participantHash: newChannel.participantHash || null,
-      isPrivate: newChannel.isPrivate,
-      endTime: newChannel.endTime,
-    };
+  // Handle invite people to a specific channel
+  const handleInvitePeople = (channel: ChannelResponse) => {
+    setSelectedChannelForAction(channel);
+    setShowInviteModal(true);
+  };
 
-    // Add new channel to the list
-    setChannels((prevChannels) => [...prevChannels, basicChannel]);
+  // Handle create group for a specific channel
+  const handleCreateGroup = (channel: ChannelResponse) => {
+    setSelectedChannelForAction(channel);
+    setShowAddGroup(true);
+  };
 
-    // Note: We could auto-select the new channel here if desired:
-    // onChannelSelect(newChannel);
+  // Handle group creation
+  const handleGroupCreated = (newGroup: GroupResponse) => {
+    // Update the channels list to include the new group
+    setChannels((prevChannels) =>
+      prevChannels.map((channel) =>
+        channel.id === newGroup.channelId
+          ? {
+              ...channel,
+              groups: [...(channel.groups || []), newGroup],
+            }
+          : channel
+      )
+    );
   };
 
   useEffect(() => {
@@ -51,7 +65,24 @@ const ChannelPanel = ({
             await getBasicChannelsByWorkspaceId(selectedWorkspace.id);
           if (chennelsData) {
             console.log("Fetched channels:", chennelsData);
-            setChannels(chennelsData);
+
+            // Fetch groups for each channel
+            const channelsWithGroups = await Promise.all(
+              chennelsData.map(async (channel) => {
+                try {
+                  const groups = await getAllGroupsByChannelId(channel.id);
+                  return { ...channel, groups };
+                } catch (error) {
+                  console.error(
+                    `Error fetching groups for channel ${channel.id}:`,
+                    error
+                  );
+                  return { ...channel, groups: [] };
+                }
+              })
+            );
+
+            setChannels(channelsWithGroups);
           } else {
             setChannels([]);
           }
@@ -86,28 +117,21 @@ const ChannelPanel = ({
         {selectedWorkspace && (
           <div className="flex-1 overflow-y-auto">
             <div className="p-2">
+              {/* Section Header */}
+              <div className="flex items-center justify-between px-2 py-2 mb-2">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                  Kênh văn bản
+                </h3>
+              </div>
+
               {/* Text Channels */}
               <ChannelList
                 channels={channels || []}
                 selectedChannel={selectedChannel}
                 onChannelSelect={onChannelSelect}
+                onInvitePeople={handleInvitePeople}
+                onCreateGroup={handleCreateGroup}
               />
-
-              {/* Add Channel Button */}
-              <div className="px-2 my-2">
-                <button
-                  className="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded-lg px-4 py-2 transition-colors"
-                  onClick={() => setShowAddChannel(true)}
-                >
-                  <PackagePlus className="w-4 h-4 mr-2" />
-                  <span className="text-sm">Thêm kênh</span>
-                </button>
-              </div>
-
-              {/* Invite People Button */}
-              <div className="px-2">
-                <InvitePeopleButton onClick={() => setShowInviteModal(true)} />
-              </div>
             </div>
           </div>
         )}
@@ -116,17 +140,26 @@ const ChannelPanel = ({
       {/* Invite People Modal */}
       <InvitePeopleModal
         isOpen={showInviteModal}
-        onClose={() => setShowInviteModal(false)}
+        onClose={() => {
+          setShowInviteModal(false);
+          setSelectedChannelForAction(null);
+        }}
         workspaceName={selectedWorkspace?.name || ""}
-        channelName={selectedChannel?.channelName || "general"}
+        channelName={
+          selectedChannelForAction?.channelName ||
+          selectedChannel?.channelName ||
+          "general"
+        }
       />
 
-      {/* Add Channel Modal */}
-      <AddChannelModal
-        isOpen={showAddChannel}
-        onClose={() => setShowAddChannel(false)}
-        workspace={selectedWorkspace}
-        onChannelCreated={handleChannelCreated}
+      {/* Add Group Modal */}
+      <AddGroupModal
+        isOpen={showAddGroup}
+        onClose={() => {
+          setShowAddGroup(false);
+          setSelectedChannelForAction(null);
+        }}
+        onGroupCreated={handleGroupCreated}
       />
     </>
   );

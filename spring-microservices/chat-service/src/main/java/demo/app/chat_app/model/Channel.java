@@ -51,6 +51,17 @@ public class Channel {
 
     Instant deletedAt; // Timestamp when the channel was ended, change status to ENDED
 
+    public void addParticipants(List<Participant> newParticipants) {
+        if (this.participants == null) {
+            this.participants = new java.util.ArrayList<>();
+        }
+        for (Participant participant : newParticipants) {
+            if (!this.participants.contains(participant)) {
+                this.participants.add(participant);
+            }
+        }
+    }
+
     // Helper methods for participants management
     public void addParticipant(Participant participant) {
         if (this.participants == null) {

@@ -38,6 +38,8 @@ public enum ErrorCode {
     UPLOAD_IN_PROGRESS(1023, "Upload is in progress", HttpStatus.ACCEPTED),
 
     END_TIME_INVALID(1025, "End time must be in the future", HttpStatus.BAD_REQUEST),
+
+    UN_EXISTING_GROUP(1026, "Group not existed", HttpStatus.NOT_FOUND)
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
