@@ -204,7 +204,20 @@ const CourseDetail: React.FC = () => {
               <div className="flex items-center">
                 {renderStars(course.rating)}
               </div>
-              <span className="text-purple-400 underline">(23,288 ratings)</span>
+              <span className="font-medium">{course.rating}</span>
+              <span className="text-gray-500">(0 reviews)</span>
+            </div>
+
+            {/* <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+            </div>
+
+              <span>{course.studentCount.toLocaleString()} students</span>
+            </div> */}
+
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>{course.duration}</span>
             </div>
             <span>167,760 students</span>
           </div>
