@@ -1,5 +1,5 @@
-import axiosInstance from "./httpClient/axiosInstance";
-import type { ApiResponse } from "./response/apiResponse";
+import axiosInstance from "../httpClient/axiosInstance";
+import type { ApiResponse } from "../response/apiResponse";
 import type {
   ChannelResponse,
   ChatMessageRequest,

@@ -44,6 +44,9 @@ public class Workspace {
     // Store only channel references, not embedded documents
     List<String> channelIds; // List of channel IDs in the workspace
 
+    // for quick access
+    List<String> sectionIds;
+
     @Indexed
     @CreatedDate
     Instant createdAt;
@@ -56,6 +59,15 @@ public class Workspace {
     @Builder.Default
     @Indexed
     boolean isActive = true; // Soft delete support
+
+    public void addSectionId(String sectionId) {
+        if (this.sectionIds == null) {
+            this.sectionIds = new ArrayList<>();
+        }
+        if (!this.sectionIds.contains(sectionId)) {
+            this.sectionIds.add(sectionId);
+        }
+    }
 
     public void addChannel(String channelId) {
         if (this.channelIds == null) {

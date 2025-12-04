@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import ChannelList from "./ChannelList";
+import SectionList from "../section/SectionList";
 import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
-import AddGroupModal from "../group/AddGroupModal";
+import AddChannelModal from "@/components/student/workspace/channel/AddChannelModal";
 
 import { toast } from "react-toastify";
 import type {
   ChannelResponse,
   WorkspaceResponse,
-  GroupResponse,
+  SectionResponse,
 } from "@/types/chat.types";
-import { getBasicChannelsByWorkspaceId } from "@/services/api/channel.api";
+import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
 import { getAllGroupsByChannelId } from "@/services/api/workspace/group.api";
+import { getChannel } from "@/services/api/workspace/channel.api";
 
 interface ChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;
@@ -24,8 +25,14 @@ const ChannelPanel = ({
   onChannelSelect,
 }: ChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [showAddGroup, setShowAddGroup] = useState(false);
-  const [channels, setChannels] = useState<ChannelResponse[]>([]);
+  const [showAddChannelModal, setShowAddChannelModal] = useState(false);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
+    null
+  );
+  const [sections, setSections] = useState<SectionResponse[]>([]);
+  const [channelDetailsMap, setChannelDetailsMap] = useState<
+    Map<string, ChannelResponse>
+  >(new Map());
   const [selectedChannelForAction, setSelectedChannelForAction] =
     useState<ChannelResponse | null>(null);
 
@@ -35,62 +42,85 @@ const ChannelPanel = ({
     setShowInviteModal(true);
   };
 
-  // Handle create group for a specific channel
-  const handleCreateGroup = (channel: ChannelResponse) => {
+  // Handle channel settings
+  const handleChannelSettings = (channel: ChannelResponse) => {
     setSelectedChannelForAction(channel);
-    setShowAddGroup(true);
+    // TODO: Implement channel settings modal
+    console.log("Channel settings for:", channel);
+    toast.info("Tính năng cài đặt channel đang được phát triển");
   };
 
-  // Handle group creation
-  const handleGroupCreated = (newGroup: GroupResponse) => {
-    // Update the channels list to include the new group
-    setChannels((prevChannels) =>
-      prevChannels.map((channel) =>
-        channel.id === newGroup.channelId
-          ? {
-              ...channel,
-              groups: [...(channel.groups || []), newGroup],
-            }
-          : channel
-      )
-    );
+  // Handle create channel in section
+  const handleCreateChannel = (sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    setShowAddChannelModal(true);
+  };
+
+  // Handle channel created callback
+  const handleChannelCreated = (newChannel: ChannelResponse) => {
+    // Refresh sections to show new channel
+    if (selectedWorkspace) {
+      getSectionsByWorkspaceId(selectedWorkspace.id)
+        .then((sectionsData) => {
+          setSections(sectionsData);
+          toast.success(
+            `Kênh "${newChannel.channelName}" đã được tạo thành công!`
+          );
+        })
+        .catch((error) => {
+          console.error("Error refreshing sections:", error);
+        });
+    }
+  };
+
+  // Handle channel select - fetch full details if needed
+  const handleChannelSelectInternal = async (channel: ChannelResponse) => {
+    try {
+      // If we already have full details with groups, use them
+      const cachedDetails = channelDetailsMap.get(channel.id);
+      if (cachedDetails) {
+        onChannelSelect(cachedDetails);
+        return;
+      }
+
+      // Otherwise fetch full channel details including groups
+      const fullChannel = await getChannel(channel.id);
+      const groups = await getAllGroupsByChannelId(channel.id);
+      const channelWithGroups = { ...fullChannel, groups };
+
+      // Cache the details
+      setChannelDetailsMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(channel.id, channelWithGroups);
+        return newMap;
+      });
+
+      onChannelSelect(channelWithGroups);
+    } catch (error) {
+      console.error("Error fetching channel details:", error);
+      onChannelSelect(channel); // Fallback to basic channel
+    }
   };
 
   useEffect(() => {
     if (selectedWorkspace) {
-      // Fetch channels from workspaceId
-      const fetchChannels = async () => {
+      // Fetch sections from workspaceId
+      const fetchSections = async () => {
         try {
-          const chennelsData: ChannelResponse[] =
-            await getBasicChannelsByWorkspaceId(selectedWorkspace.id);
-          if (chennelsData) {
-            console.log("Fetched channels:", chennelsData);
-
-            // Fetch groups for each channel
-            const channelsWithGroups = await Promise.all(
-              chennelsData.map(async (channel) => {
-                try {
-                  const groups = await getAllGroupsByChannelId(channel.id);
-                  return { ...channel, groups };
-                } catch (error) {
-                  console.error(
-                    `Error fetching groups for channel ${channel.id}:`,
-                    error
-                  );
-                  return { ...channel, groups: [] };
-                }
-              })
-            );
-
-            setChannels(channelsWithGroups);
+          const sectionsData: SectionResponse[] =
+            await getSectionsByWorkspaceId(selectedWorkspace.id);
+          if (sectionsData) {
+            console.log("Fetched sections:", sectionsData);
+            setSections(sectionsData);
           } else {
-            setChannels([]);
+            setSections([]);
           }
         } catch (error) {
-          toast.error("Không thể tải kênh " + error);
+          console.error("Error fetching sections:", error);
+          toast.error("Không thể tải sections: " + error);
         }
       };
-      fetchChannels();
+      fetchSections();
     }
   }, [selectedWorkspace]);
 
@@ -113,24 +143,18 @@ const ChannelPanel = ({
           </button>
         </div>
 
-        {/* Channels */}
+        {/* Sections */}
         {selectedWorkspace && (
           <div className="flex-1 overflow-y-auto">
             <div className="p-2">
-              {/* Section Header */}
-              <div className="flex items-center justify-between px-2 py-2 mb-2">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  Kênh văn bản
-                </h3>
-              </div>
-
-              {/* Text Channels */}
-              <ChannelList
-                channels={channels || []}
+              {/* Sections List */}
+              <SectionList
+                sections={sections || []}
                 selectedChannel={selectedChannel}
-                onChannelSelect={onChannelSelect}
+                onChannelSelect={handleChannelSelectInternal}
                 onInvitePeople={handleInvitePeople}
-                onCreateGroup={handleCreateGroup}
+                onChannelSettings={handleChannelSettings}
+                onCreateChannel={handleCreateChannel}
               />
             </div>
           </div>
@@ -152,15 +176,19 @@ const ChannelPanel = ({
         }
       />
 
-      {/* Add Group Modal */}
-      <AddGroupModal
-        isOpen={showAddGroup}
+      {/* Add Channel Modal */}
+      <AddChannelModal
+        isOpen={showAddChannelModal}
         onClose={() => {
-          setShowAddGroup(false);
-          setSelectedChannelForAction(null);
+          setShowAddChannelModal(false);
+          setSelectedSectionId(null);
         }}
-        onGroupCreated={handleGroupCreated}
+        workspace={selectedWorkspace}
+        sectionId={selectedSectionId}
+        onChannelCreated={handleChannelCreated}
       />
+
+      {/* TODO: Add Channel Settings Modal */}
     </>
   );
 };

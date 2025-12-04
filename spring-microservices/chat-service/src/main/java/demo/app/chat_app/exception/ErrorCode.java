@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum ErrorCode {
+
+    SUCCESS(1000, "Yêu cầu thành công", HttpStatus.OK),
+
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     JSON_PROCESSING_ERROR(9998, "Lỗi xử lý JSON", HttpStatus.INTERNAL_SERVER_ERROR),
 

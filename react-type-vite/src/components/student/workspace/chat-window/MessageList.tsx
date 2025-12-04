@@ -3,7 +3,7 @@ import { Hash, Edit } from "lucide-react";
 import { getRoles } from "@/utils/localStorageVariables";
 import MessageItem from "./MessageItem";
 import { useEffect, useState, useRef } from "react";
-import { getMessagesByChannelId } from "@/services/api/messageApi";
+import { getMessagesByChannelId } from "@/services/api/workspace/messageApi";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
 import { useAuth } from "@/context/auth-context/useAuth";
 
