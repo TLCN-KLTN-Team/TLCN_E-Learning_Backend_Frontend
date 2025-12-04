@@ -32,6 +32,7 @@ import QuizDetailModal from "@/components/student/course/QuizDetailModal";
 import AssignmentDetailModal from "@/components/student/course/AssignmentDetailModal";
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
 import progressApi from "@/services/api/student/progressApi";
+import { fixCloudinaryVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl } from "@/utils/videoUrlHelper";
 
 const CourseDetail = () => {
   const [courseClass, setCourseClass] = useState<CourseClassResponse>();
@@ -86,9 +87,9 @@ const CourseDetail = () => {
       // Fetch completed lessons
       const detail = await progressApi.getCourseProgressDetail(Number(id));
       const completedLessonIds = new Set(
-        detail.courseProgress.lessonProgresses
-          .filter(lp => lp.isCompleted)
-          .map(lp => lp.lessonId)
+        detail?.courseProgress?.lessonProgresses
+          ?.filter(lp => lp.isCompleted)
+          ?.map(lp => lp.lessonId) || []
       );
       setCompletedLessons(completedLessonIds);
     } catch (error) {
@@ -236,7 +237,7 @@ const CourseDetail = () => {
                   <div className="flex items-center justify-center mb-1">
                     <Clock className="w-4 h-4 mr-1" />
                     <span className="font-semibold">
-                      {courseClass?.startDate ? new Date(courseClass.startDate).toLocaleDateString() : ""}
+                      {courseClass?.startDate ? new Date(courseClass?.startDate).toLocaleDateString() : ""}
                     </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
@@ -248,7 +249,7 @@ const CourseDetail = () => {
                   <div className="flex items-center justify-center mb-1">
                     <Clock className="w-4 h-4 mr-1" />
                     <span className="font-semibold">
-                      {courseClass?.endDate ? new Date(courseClass.endDate).toLocaleDateString() : ""}
+                      {courseClass?.endDate ? new Date(courseClass?.endDate).toLocaleDateString() : ""}
                     </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
@@ -569,14 +570,48 @@ const CourseDetail = () => {
                                                         Video bài học
                                                       </h4>
                                                       <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                                                        <video
-                                                          src={lesson.videoUrl}
-                                                          controls
-                                                          className="w-full h-full"
-                                                        >
-                                                          Trình duyệt của bạn không hỗ trợ video.
-                                                        </video>
+                                                        {isYouTubeUrl(lesson.videoUrl) ? (
+                                                          // YouTube iframe
+                                                          <iframe
+                                                            src={getYouTubeEmbedUrl(lesson.videoUrl) || ''}
+                                                            className="w-full h-full"
+                                                            frameBorder="0"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowFullScreen
+                                                            title={lesson.title}
+                                                            onLoad={() => {
+                                                              console.log('✅ YouTube iframe loaded successfully!');
+                                                            }}
+                                                            onError={(e) => {
+                                                              console.error('❌ YouTube iframe load error:', e);
+                                                            }}
+                                                          />
+                                                        ) : (
+                                                          // Regular video file (Cloudinary, direct URL, etc.)
+                                                          <video
+                                                            src={fixCloudinaryVideoUrl(lesson.videoUrl)}
+                                                            controls
+                                                            controlsList="nodownload"
+                                                            className="w-full h-full"
+                                                            onError={(e) => {
+                                                              console.error('❌ Video load error:', e);
+                                                              console.error('Video src:', (e.target as HTMLVideoElement).src);
+                                                              const videoElement = e.target as HTMLVideoElement;
+                                                              console.error('Error details:', {
+                                                                error: videoElement.error,
+                                                                networkState: videoElement.networkState,
+                                                                readyState: videoElement.readyState,
+                                                              });
+                                                            }}
+                                                            onLoadedMetadata={() => {
+                                                              console.log('✅ Video loaded successfully!');
+                                                            }}
+                                                          >
+                                                            Trình duyệt của bạn không hỗ trợ video.
+                                                          </video>
+                                                        )}
                                                       </div>
+                                                      
                                                     </div>
                                                   )}
 

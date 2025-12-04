@@ -272,7 +272,16 @@ public class TeacherPublicCourseService {
 
         ApiResponse<UserResponse> userResponse = userInfoApi.getUserInfo(userId);
         UserResponse user = userResponse.getResult();
-        String userName = user.getUsername();
+        
+        // Ưu tiên firstName + lastName, fallback về username, cuối cùng là userId
+        String userName = "";
+        if (user.getFirstName() != null && user.getLastName() != null) {
+            userName = user.getLastName() + " " + user.getFirstName();
+        } else if (user.getUsername() != null && !user.getUsername().isEmpty()) {
+            userName = user.getUsername();
+        } else {
+            userName = user.getId();
+        }
         String userEmail = user.getEmail();
 
         return PublicCourseStudentResponse.builder()
@@ -299,9 +308,20 @@ public class TeacherPublicCourseService {
             ? attempt.getSubmittedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
             : null;
 
+        log.info("🔍 Fetching user info for userId: {}", attempt.getIdUser());
         ApiResponse<UserResponse> userResponse = userInfoApi.getUserInfo(attempt.getIdUser());
         UserResponse user = userResponse.getResult();
-        String studentName = user.getUsername();
+        
+        // Ưu tiên firstName + lastName, fallback về username, cuối cùng là userId
+        String studentName = "";
+        if (user.getFirstName() != null && user.getLastName() != null) {
+            studentName = user.getLastName() + " " + user.getFirstName();
+        } else if (user.getUsername() != null && !user.getUsername().isEmpty()) {
+            studentName = user.getUsername();
+        } else {
+            studentName = user.getId();
+        }
+        log.info("✅ User fetched - ID: {}, Name: {}", user.getId(), studentName);
 
         return StudentQuizAttemptResponse.builder()
                 .attemptId(attempt.getId())
@@ -340,7 +360,16 @@ public class TeacherPublicCourseService {
 
         ApiResponse<UserResponse> userResponse = userInfoApi.getUserInfo(submission.getIdUser());
         UserResponse user = userResponse.getResult();
-        String studentName = user.getUsername();
+        
+        // Ưu tiên firstName + lastName, fallback về username, cuối cùng là userId
+        String studentName = "";
+        if (user.getFirstName() != null && user.getLastName() != null) {
+            studentName = user.getLastName() + " " + user.getFirstName();
+        } else if (user.getUsername() != null && !user.getUsername().isEmpty()) {
+            studentName = user.getUsername();
+        } else {
+            studentName = user.getId();
+        }
 
         return StudentAssignmentSubmissionResponse.builder()
                 .submissionId(submission.getId())

@@ -77,6 +77,8 @@ public class PaymentService {
                 .createTime(new Date(System.currentTimeMillis()))
                 .orderItems(request.getOrderItems())
                 .build();
+
+        System.out.println ("Các item 1: " + request.getOrderItems());
         orderService.createOrder(orderRequest);
 
         // Sắp xếp params và tạo hash

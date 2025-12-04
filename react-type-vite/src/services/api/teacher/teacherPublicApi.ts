@@ -122,6 +122,8 @@ const teacherPublicApi = {
     const response = await axiosInstance.get(
       `/course-management/teacher/public/courses/${courseId}/students/${studentId}/quizzes`
     )
+    console.log("🟢 Dữ liệu backend trả về:", response.data)         // In toàn bộ data
+    console.log("🟢 result:", response.data.result)   
     return response.data.result
   },
 

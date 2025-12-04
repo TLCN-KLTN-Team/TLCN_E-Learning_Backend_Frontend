@@ -33,14 +33,39 @@ public class ContentVisibilityService {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
 
-        // Xóa tất cả visibility cũ của section này
-        visibilityRepository.deleteByContentTypeAndContentId("SECTION", sectionId);
+        // Lấy tất cả visibility hiện có
+        List<ClassContentVisibility> existingVisibilities = 
+                visibilityRepository.findByContentTypeAndContentId("SECTION", sectionId);
 
-        // Tạo visibility mới cho các lớp được chọn
-        if (visibleClassIds != null && !visibleClassIds.isEmpty()) {
+        // Tạo danh sách classId hiện có
+        List<Integer> existingClassIds = existingVisibilities.stream()
+                .map(v -> v.getCourseClass().getId())
+                .collect(Collectors.toList());
+
+        // Xác định các class cần xóa
+        List<ClassContentVisibility> toDelete = existingVisibilities.stream()
+                .filter(v -> visibleClassIds == null || !visibleClassIds.contains(v.getCourseClass().getId()))
+                .collect(Collectors.toList());
+
+        // Xác định các class cần thêm mới
+        List<Integer> toAdd = new ArrayList<>();
+        if (visibleClassIds != null) {
+            toAdd = visibleClassIds.stream()
+                    .filter(classId -> !existingClassIds.contains(classId))
+                    .collect(Collectors.toList());
+        }
+
+        // Xóa các visibility không còn cần thiết
+        if (!toDelete.isEmpty()) {
+            visibilityRepository.deleteAll(toDelete);
+            visibilityRepository.flush(); // Đảm bảo delete được thực thi trước insert
+        }
+
+        // Thêm visibility mới cho các lớp được chọn
+        if (!toAdd.isEmpty()) {
             List<ClassContentVisibility> visibilities = new ArrayList<>();
 
-            for (Integer classId : visibleClassIds) {
+            for (Integer classId : toAdd) {
                 CourseClass courseClass = classRepository.findById(classId)
                         .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
@@ -55,7 +80,7 @@ public class ContentVisibilityService {
             }
 
             visibilityRepository.saveAll(visibilities);
-            log.info("Updated visibility for section {} to {} classes", sectionId, visibleClassIds.size());
+            log.info("Updated visibility for section {} to {} classes", sectionId, visibleClassIds != null ? visibleClassIds.size() : 0);
         }
     }
 
@@ -103,14 +128,39 @@ public class ContentVisibilityService {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new AppException(ErrorCode.LESSON_NOT_FOUND));
 
-        // Xóa tất cả visibility cũ của lesson này
-        visibilityRepository.deleteByContentTypeAndContentId("LESSON", lessonId);
+        // Lấy tất cả visibility hiện có
+        List<ClassContentVisibility> existingVisibilities = 
+                visibilityRepository.findByContentTypeAndContentId("LESSON", lessonId);
 
-        // Tạo visibility mới cho các lớp được chọn
-        if (visibleClassIds != null && !visibleClassIds.isEmpty()) {
+        // Tạo danh sách classId hiện có
+        List<Integer> existingClassIds = existingVisibilities.stream()
+                .map(v -> v.getCourseClass().getId())
+                .collect(Collectors.toList());
+
+        // Xác định các class cần xóa
+        List<ClassContentVisibility> toDelete = existingVisibilities.stream()
+                .filter(v -> visibleClassIds == null || !visibleClassIds.contains(v.getCourseClass().getId()))
+                .collect(Collectors.toList());
+
+        // Xác định các class cần thêm mới
+        List<Integer> toAdd = new ArrayList<>();
+        if (visibleClassIds != null) {
+            toAdd = visibleClassIds.stream()
+                    .filter(classId -> !existingClassIds.contains(classId))
+                    .collect(Collectors.toList());
+        }
+
+        // Xóa các visibility không còn cần thiết
+        if (!toDelete.isEmpty()) {
+            visibilityRepository.deleteAll(toDelete);
+            visibilityRepository.flush(); // Đảm bảo delete được thực thi trước insert
+        }
+
+        // Thêm visibility mới cho các lớp được chọn
+        if (!toAdd.isEmpty()) {
             List<ClassContentVisibility> visibilities = new ArrayList<>();
 
-            for (Integer classId : visibleClassIds) {
+            for (Integer classId : toAdd) {
                 CourseClass courseClass = classRepository.findById(classId)
                         .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
@@ -125,7 +175,7 @@ public class ContentVisibilityService {
             }
 
             visibilityRepository.saveAll(visibilities);
-            log.info("Updated visibility for lesson {} to {} classes", lessonId, visibleClassIds.size());
+            log.info("Updated visibility for lesson {} to {} classes", lessonId, visibleClassIds != null ? visibleClassIds.size() : 0);
         }
     }
 
@@ -173,14 +223,39 @@ public class ContentVisibilityService {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
 
-        // Xóa tất cả visibility cũ của quiz này
-        visibilityRepository.deleteByContentTypeAndContentId("QUIZ", quizId);
+        // Lấy tất cả visibility hiện có
+        List<ClassContentVisibility> existingVisibilities = 
+                visibilityRepository.findByContentTypeAndContentId("QUIZ", quizId);
 
-        // Tạo visibility mới cho các lớp được chọn
-        if (visibleClassIds != null && !visibleClassIds.isEmpty()) {
+        // Tạo danh sách classId hiện có
+        List<Integer> existingClassIds = existingVisibilities.stream()
+                .map(v -> v.getCourseClass().getId())
+                .collect(Collectors.toList());
+
+        // Xác định các class cần xóa
+        List<ClassContentVisibility> toDelete = existingVisibilities.stream()
+                .filter(v -> visibleClassIds == null || !visibleClassIds.contains(v.getCourseClass().getId()))
+                .collect(Collectors.toList());
+
+        // Xác định các class cần thêm mới
+        List<Integer> toAdd = new ArrayList<>();
+        if (visibleClassIds != null) {
+            toAdd = visibleClassIds.stream()
+                    .filter(classId -> !existingClassIds.contains(classId))
+                    .collect(Collectors.toList());
+        }
+
+        // Xóa các visibility không còn cần thiết
+        if (!toDelete.isEmpty()) {
+            visibilityRepository.deleteAll(toDelete);
+            visibilityRepository.flush(); // Đảm bảo delete được thực thi trước insert
+        }
+
+        // Thêm visibility mới cho các lớp được chọn
+        if (!toAdd.isEmpty()) {
             List<ClassContentVisibility> visibilities = new ArrayList<>();
 
-            for (Integer classId : visibleClassIds) {
+            for (Integer classId : toAdd) {
                 CourseClass courseClass = classRepository.findById(classId)
                         .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
@@ -195,7 +270,7 @@ public class ContentVisibilityService {
             }
 
             visibilityRepository.saveAll(visibilities);
-            log.info("Updated visibility for quiz {} to {} classes", quizId, visibleClassIds.size());
+            log.info("Updated visibility for quiz {} to {} classes", quizId, visibleClassIds != null ? visibleClassIds.size() : 0);
         }
     }
 
@@ -243,14 +318,39 @@ public class ContentVisibilityService {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
 
-        // Xóa tất cả visibility cũ của assignment này
-        visibilityRepository.deleteByContentTypeAndContentId("ASSIGNMENT", assignmentId);
+        // Lấy tất cả visibility hiện có
+        List<ClassContentVisibility> existingVisibilities = 
+                visibilityRepository.findByContentTypeAndContentId("ASSIGNMENT", assignmentId);
 
-        // Tạo visibility mới cho các lớp được chọn
-        if (visibleClassIds != null && !visibleClassIds.isEmpty()) {
+        // Tạo danh sách classId hiện có
+        List<Integer> existingClassIds = existingVisibilities.stream()
+                .map(v -> v.getCourseClass().getId())
+                .collect(Collectors.toList());
+
+        // Xác định các class cần xóa
+        List<ClassContentVisibility> toDelete = existingVisibilities.stream()
+                .filter(v -> visibleClassIds == null || !visibleClassIds.contains(v.getCourseClass().getId()))
+                .collect(Collectors.toList());
+
+        // Xác định các class cần thêm mới
+        List<Integer> toAdd = new ArrayList<>();
+        if (visibleClassIds != null) {
+            toAdd = visibleClassIds.stream()
+                    .filter(classId -> !existingClassIds.contains(classId))
+                    .collect(Collectors.toList());
+        }
+
+        // Xóa các visibility không còn cần thiết
+        if (!toDelete.isEmpty()) {
+            visibilityRepository.deleteAll(toDelete);
+            visibilityRepository.flush(); // Đảm bảo delete được thực thi trước insert
+        }
+
+        // Thêm visibility mới cho các lớp được chọn
+        if (!toAdd.isEmpty()) {
             List<ClassContentVisibility> visibilities = new ArrayList<>();
 
-            for (Integer classId : visibleClassIds) {
+            for (Integer classId : toAdd) {
                 CourseClass courseClass = classRepository.findById(classId)
                         .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
@@ -265,7 +365,7 @@ public class ContentVisibilityService {
             }
 
             visibilityRepository.saveAll(visibilities);
-            log.info("Updated visibility for assignment {} to {} classes", assignmentId, visibleClassIds.size());
+            log.info("Updated visibility for assignment {} to {} classes", assignmentId, visibleClassIds != null ? visibleClassIds.size() : 0);
         }
     }
 

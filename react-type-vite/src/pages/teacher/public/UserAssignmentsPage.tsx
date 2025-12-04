@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "react-toastify"
 import teacherPublicApi, { type StudentAssignmentSubmission } from "@/services/api/teacher/teacherPublicApi"
+import { getUserById } from "@/services/api/userApi"
 
 const StudentAssignmentsPage: React.FC = () => {
   const { courseId, studentId } = useParams<{ courseId: string; studentId: string }>()
@@ -36,16 +37,21 @@ const StudentAssignmentsPage: React.FC = () => {
       try {
         setLoading(true)
         
+        // Load user info first
+        try {
+          const user = await getUserById(studentId)
+          const displayName = user.firstName && user.lastName 
+            ? `${user.lastName} ${user.firstName}`
+            : user.username || studentId
+          setStudentName(displayName)
+        } catch (error) {
+          console.error("Error loading user info:", error)
+          setStudentName(studentId)
+        }
+
         // Load assignment submissions from API
         const submissions = await teacherPublicApi.getStudentAssignments(Number(courseId), studentId)
         setAssignments(submissions)
-        
-        // Set student name from API response or fallback to studentId
-        if (submissions.length > 0 && submissions[0].studentName) {
-          setStudentName(submissions[0].studentName)
-        } else {
-          setStudentName(studentId)
-        }
       } catch (error) {
         console.error("Error loading assignment submissions:", error)
         toast.error("Đã có lỗi khi tải dữ liệu bài tập")
