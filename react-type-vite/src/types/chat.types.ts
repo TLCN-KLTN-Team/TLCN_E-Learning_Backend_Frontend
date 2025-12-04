@@ -31,6 +31,18 @@ export interface WorkspaceResponse {
   avatarUrl: string;
 }
 
+export interface SectionChannel {
+  id: string;
+  channelName: string;
+}
+
+export interface SectionResponse {
+  id: string;
+  title: string;
+  isPublic: boolean;
+  channels: SectionChannel[];
+}
+
 export interface BasicChannelResponse {
   id: string;
   channelName: string;
@@ -60,6 +72,7 @@ export interface ChannelResponse {
 
 export interface CreateChannelRequest {
   workspaceId: string;
+  sectionId?: string;
   name: string;
   description?: string;
   memberIds?: string[];

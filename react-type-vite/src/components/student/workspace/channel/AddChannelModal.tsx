@@ -16,12 +16,13 @@ import type {
   UserResponse,
   WorkspaceResponse,
 } from "@/types/chat.types";
-import { createChannel } from "@/services/api/channel.api";
+import { createChannel } from "@/services/api/workspace/channel.api";
 
 interface AddChannelModalProps {
   isOpen: boolean;
   onClose: () => void;
   workspace: WorkspaceResponse | null;
+  sectionId?: string | null;
   onChannelCreated?: (newChannel: ChannelResponse) => void;
 }
 
@@ -31,6 +32,7 @@ const AddChannelModal = ({
   isOpen,
   onClose,
   workspace,
+  sectionId,
   onChannelCreated,
 }: AddChannelModalProps) => {
   const [selectedType, setSelectedType] = useState<ChannelType>("text");
@@ -106,6 +108,7 @@ const AddChannelModal = ({
       try {
         const newChannel: ChannelResponse = await createChannel({
           workspaceId: workspace?.id || "",
+          sectionId: sectionId || undefined,
           description: channelDescription.trim(),
           name: channelName.trim(),
           memberIds: selectedStudents.map((student) => student.id),

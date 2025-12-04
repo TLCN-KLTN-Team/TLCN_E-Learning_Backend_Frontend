@@ -1,6 +1,7 @@
 package demo.app.chat_app.model;
 
 import demo.app.chat_app.model.enums.ChannelStatus;
+import demo.app.chat_app.utils.ChannelType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.CreatedDate;
@@ -41,6 +42,9 @@ public class Channel {
     List<Participant> participants; // List of participants in the channel (aka group for team chat)
 
     boolean isPrivate;
+
+    @Builder.Default
+    ChannelType type = ChannelType.TEXT;
 
     @Builder.Default
     ChannelStatus status= ChannelStatus.ACTIVE;

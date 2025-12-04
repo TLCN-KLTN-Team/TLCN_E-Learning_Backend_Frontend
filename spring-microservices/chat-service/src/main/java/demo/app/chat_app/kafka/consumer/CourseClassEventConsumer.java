@@ -10,6 +10,7 @@ import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.service.ChannelService;
 import demo.app.chat_app.service.impl.ChannelServiceImpl;
+import demo.app.chat_app.service.impl.SectionServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 public class CourseClassEventConsumer {
     private final ObjectMapper mapper = new ObjectMapper();
     private final ChannelServiceImpl channelService;
+    private final SectionServiceImpl sectionService;
 
     @KafkaListener(
             topics = "${kafka.topic.class-events}",
@@ -40,7 +42,7 @@ public class CourseClassEventConsumer {
                 case "CLASS_CREATED":
                     log.info("Received CLASS_CREATED event: {}", message);
                     ClassCreatedEvent classCreatedEvent = mapper.convertValue(data, ClassCreatedEvent.class);
-                    channelService.createChannelWhenStudentsEnrolled(classCreatedEvent);
+                    sectionService.createSectionWhenClassCreated(classCreatedEvent);
                     break;
                 case "STUDENTS_ENROLLED":
                     log.info("Received STUDENTS_ENROLLED event: {}", message);
