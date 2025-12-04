@@ -22,8 +22,8 @@ const MessageItem = ({
       message.sender.lastName || ""
     }&background=3b82f6&color=fff`;
 
-  const displayName = `${fullName || "Anonymous"} ${
-    message.sender.lastName || ""
+  const displayName = `${message.sender.lastName || "Anonymous"} ${
+    message.sender.firstName || ""
   }`.trim();
 
   const messageTime = new Date(message.createdDate).toLocaleTimeString(

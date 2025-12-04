@@ -65,6 +65,17 @@ public class Workspace {
             this.channelIds.add(channelId);
         }
     }
+
+    public void addMembers(List<Participant> newMembers) {
+        if (this.members == null) {
+            this.members = new ArrayList<>();
+        }
+        for (Participant member : newMembers) {
+            if (!this.members.contains(member)) {
+                this.members.add(member);
+            }
+        }
+    }
     
     public void removeChannel(String channelId) {
         if (this.channelIds != null) {

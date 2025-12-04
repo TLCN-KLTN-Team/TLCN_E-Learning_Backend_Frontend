@@ -84,6 +84,8 @@ const MessageList = ({
   useEffect(() => {
     if (!selectedChannel) return;
 
+    console.log(`Selected channel`, selectedChannel);
+
     // Filter WebSocket messages for current channel
     const currentChannelWsMessages = wsMessages.filter(
       (msg) => msg.channelId === selectedChannel.id
@@ -169,7 +171,8 @@ const MessageList = ({
           Welcome to #{selectedChannel.channelName}!
         </h1>
         <p className="text-gray-300 mb-4">
-          This is the start of the #{selectedChannel.channelName} channel.
+          {selectedChannel.description ||
+            `This is the start of the #${selectedChannel.channelName} channel.`}
         </p>
         {getRoles().includes("TEACHER") && (
           <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">

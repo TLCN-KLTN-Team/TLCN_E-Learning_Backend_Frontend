@@ -113,6 +113,7 @@ const Payment: React.FC = () => {
           // Call getOrderPreview API
           const preview = await PaymentService.getOrderPreview({ courseIds });
           setOrderPreview(preview);
+          console.log("Order preview data:", preview);
 
           // Map preview items to checkout items
           const items: CheckoutItem[] = preview.items.map((item) => ({

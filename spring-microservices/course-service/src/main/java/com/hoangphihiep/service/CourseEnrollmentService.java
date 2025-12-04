@@ -199,6 +199,7 @@ public class CourseEnrollmentService {
                                     .studentId(s.getId())
                                     .firstName(s.getFirstName())
                                     .lastName(s.getLastName())
+                                    .mssv(s.getStudentId())
                                     .avatarUrl(s.getAvatarUrl())
                                     .build())
                             .toList()

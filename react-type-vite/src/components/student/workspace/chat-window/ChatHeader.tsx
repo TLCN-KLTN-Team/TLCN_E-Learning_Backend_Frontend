@@ -28,13 +28,16 @@ const ChatHeader = ({
       </h3>
       <div className="ml-auto flex items-center space-x-4">
         <button
-          className={`transition-colors ${
+          className={`transition-colors flex items-center gap-2 ${
             showParticipants ? "text-white" : "text-gray-400 hover:text-white"
           }`}
           onClick={onToggleParticipants}
-          title={`${showParticipants ? "Hide" : "Show"} participants`}
+          title={`${showParticipants ? "Ẩn" : "Hiện"} danh sách thành viên`}
         >
           <Users className="w-5 h-5" />
+          <span className="text-sm font-medium">
+            {selectedChannel.participants?.length || 0}
+          </span>
         </button>
         <button className="text-gray-400 hover:text-white">
           <Bell className="w-5 h-5" />
