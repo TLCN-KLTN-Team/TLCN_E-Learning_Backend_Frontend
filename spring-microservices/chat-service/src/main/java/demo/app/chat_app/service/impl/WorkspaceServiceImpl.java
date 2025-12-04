@@ -13,6 +13,7 @@ import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.WorkspaceMapper;
 import demo.app.chat_app.model.Channel;
 import demo.app.chat_app.model.Participant;
+import demo.app.chat_app.model.Section;
 import demo.app.chat_app.model.Workspace;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
@@ -45,6 +46,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     GetUserClient getUserClient;
     WorkspaceMapper workspaceMapper;
     ChannelServiceImpl channelService;
+    SectionServiceImpl sectionService;
 
     @Override
     public void createWorkspacesWhenRegisteredForCourses(CreateWorkspacesRequest request) {
@@ -126,17 +128,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
         Workspace savedWorkspace = workspaceRepository.save(workspace);
 
-        // Create default "general" channel
-        Channel channel = Channel.builder()
-                .channelName("general")
-                .description("Đây là kênh chung của khóa học " + event.getCourseName() +".\n Mọi thắc mắc, trao đổi liên quan đến khóa học sẽ được thực hiện tại đây.")
-                .workspaceId(savedWorkspace.getId())
-                .participants(savedWorkspace.getMembers())
-                .createdAt(Instant.now())
-                .build();
-
-        Channel savedChannel = channelRepository.save(channel);
-        savedWorkspace.addChannel(savedChannel.getId());
+        Section section = sectionService.createGeneralSection(workspace.getMembers(), savedWorkspace.getId());
+        savedWorkspace.addSectionId(section.getId());
         workspaceRepository.save(savedWorkspace);
     }
 

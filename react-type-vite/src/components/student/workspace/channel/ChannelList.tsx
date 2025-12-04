@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ChannelResponse, GroupResponse } from "@/types/chat.types";
-import { ChevronDown, ChevronRight, UserPlus, FolderPlus } from "lucide-react";
+import { ChevronDown, ChevronRight, UserPlus, Settings } from "lucide-react";
 import GroupList from "../group/GroupList";
 
 interface ChannelListProps {
@@ -8,7 +8,7 @@ interface ChannelListProps {
   selectedChannel: ChannelResponse | null;
   onChannelSelect: (channel: ChannelResponse) => void;
   onInvitePeople?: (channel: ChannelResponse) => void;
-  onCreateGroup?: (channel: ChannelResponse) => void;
+  onChannelSettings?: (channel: ChannelResponse) => void;
 }
 
 const ChannelList = ({
@@ -16,7 +16,7 @@ const ChannelList = ({
   selectedChannel,
   onChannelSelect,
   onInvitePeople,
-  onCreateGroup,
+  onChannelSettings,
 }: ChannelListProps) => {
   const [expandedChannels, setExpandedChannels] = useState<Set<string>>(
     new Set()
@@ -46,9 +46,12 @@ const ChannelList = ({
     onInvitePeople?.(channel);
   };
 
-  const handleCreateGroup = (channel: ChannelResponse, e: React.MouseEvent) => {
+  const handleChannelSettings = (
+    channel: ChannelResponse,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
-    onCreateGroup?.(channel);
+    onChannelSettings?.(channel);
   };
 
   const handleGroupSelect = (group: GroupResponse) => {
@@ -67,12 +70,12 @@ const ChannelList = ({
           <div key={channel.id}>
             {/* Channel Header with Arrow */}
             <div className="flex items-center justify-between px-2 py-1.5 group">
-              <div className="flex items-center gap-1 flex-1">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
                 {/* Expand/Collapse Arrow - Only visible if has groups */}
                 {hasGroups ? (
                   <button
                     onClick={(e) => toggleChannel(channel.id, e)}
-                    className="p-0.5 hover:bg-gray-700 rounded transition-colors"
+                    className="p-0.5 hover:bg-gray-700 rounded transition-colors flex-shrink-0"
                   >
                     {isExpanded ? (
                       <ChevronDown className="w-3 h-3 text-gray-400" />
@@ -81,40 +84,40 @@ const ChannelList = ({
                     )}
                   </button>
                 ) : (
-                  <div className="w-4" /> // Spacer when no groups
+                  <div className="w-4 flex-shrink-0" /> // Spacer when no groups
                 )}
 
                 {/* Channel Name - Clickable */}
                 <div
                   onClick={() => onChannelSelect(channel)}
-                  className={`flex items-center gap-1.5 cursor-pointer flex-1 py-1 px-2 rounded transition-colors ${
+                  className={`flex items-center gap-1.5 cursor-pointer flex-1 py-1 px-2 rounded transition-colors min-w-0 ${
                     selectedChannel?.id === channel.id
                       ? "bg-gray-600 text-white"
                       : "hover:bg-gray-700 text-gray-300 hover:text-white"
                   }`}
                 >
-                  <span className="text-gray-400">#</span>
+                  <span className="text-gray-400 flex-shrink-0">#</span>
                   <span className="text-sm font-medium truncate">
                     {channel.channelName}
                   </span>
                 </div>
               </div>
 
-              {/* Action Buttons - Show on hover */}
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Action Buttons - Always visible */}
+              <div className="flex items-center gap-0.5 ml-1 flex-shrink-0">
                 <button
                   onClick={(e) => handleInvitePeople(channel, e)}
-                  className="p-1.5 hover:bg-gray-600 rounded transition-colors"
+                  className="p-1 hover:bg-gray-600 rounded transition-colors"
                   title="Thêm người vào channel"
                 >
-                  <UserPlus className="w-4 h-4 text-gray-400 hover:text-white" />
+                  <UserPlus className="w-3.5 h-3.5 text-gray-500 hover:text-white" />
                 </button>
                 <button
-                  onClick={(e) => handleCreateGroup(channel, e)}
-                  className="p-1.5 hover:bg-gray-600 rounded transition-colors"
-                  title="Tạo nhóm mới"
+                  onClick={(e) => handleChannelSettings(channel, e)}
+                  className="p-1 hover:bg-gray-600 rounded transition-colors"
+                  title="Cài đặt channel"
                 >
-                  <FolderPlus className="w-4 h-4 text-gray-400 hover:text-white" />
+                  <Settings className="w-3.5 h-3.5 text-gray-500 hover:text-white" />
                 </button>
               </div>
             </div>
