@@ -25,6 +25,7 @@ public class EnrollStudentsEvent {
         private String studentId;
         private String firstName;
         private String lastName;
+        private String mssv;
         private String avatarUrl;
     }
 }

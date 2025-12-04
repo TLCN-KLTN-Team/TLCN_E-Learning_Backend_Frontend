@@ -203,9 +203,9 @@ public class AuthenticationService {
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
-        if (!user.isEmailVerified()) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
-        }
+//        if (!user.isEmailVerified()) {
+//            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+//        }
 
         return getAuthorizationData(user);
     }

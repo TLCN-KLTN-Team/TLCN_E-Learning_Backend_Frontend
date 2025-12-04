@@ -71,11 +71,12 @@ public class ChannelServiceImpl implements ChannelService {
         Workspace workspace = workspaceRepository.findById(channel.getWorkspaceId())
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
-        channel.setParticipants(event.getStudents().stream()
+        channel.addParticipants(event.getStudents().stream()
                 .map(student -> Participant.builder()
                         .userId(student.getStudentId())
                         .firstName(student.getFirstName())
                         .lastName(student.getLastName())
+                        .mssv(student.getMssv())
                         .joinedAt(Instant.now())
                         .build()
                 )
@@ -83,7 +84,7 @@ public class ChannelServiceImpl implements ChannelService {
         );
 
         var savedChannelData = channelRepository.save(channel);
-        workspace.setMembers(channel.getParticipants());
+        workspace.addMembers(savedChannelData.getParticipants());
         workspaceRepository.save(workspace);
     }
 
@@ -164,6 +165,7 @@ public class ChannelServiceImpl implements ChannelService {
         return BasicChannelResponse.builder()
                 .id(channel.getId())
                 .channelName(channel.getChannelName())
+                .description(channel.getDescription())
                 .participantHash(channel.getParticipantHash())
                 .build();
     }
@@ -184,10 +186,10 @@ public class ChannelServiceImpl implements ChannelService {
         List<Channel> channels = channelRepository.findByWorkspaceId(workspaceId);
 
 
-        List<BasicChannelResponse> channelResponse = channels.stream()
+        List<BasicChannelResponse> channelsResponse = channels.stream()
                 .map(channelMapper::toBasicChannelResponse)
                 .toList();
-        return channelResponse;
+        return channelsResponse;
     }
 
     @Override

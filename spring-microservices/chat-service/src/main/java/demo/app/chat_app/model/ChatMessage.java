@@ -28,6 +28,9 @@ public class ChatMessage {
     @Indexed
     String channelId; // ID of the channel this message belongs to
 
+    @Indexed
+    String groupId; // Optional group ID if the message is linked to a group chat
+
     String content;
 
     Participant sender;

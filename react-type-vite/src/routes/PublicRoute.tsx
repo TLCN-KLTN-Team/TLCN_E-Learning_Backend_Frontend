@@ -46,6 +46,16 @@ const PublicRoutes = [
   <Route path="/courses/course/:courseId" element={<CourseDetail />} />,
 
   <Route key="workspace" path="/workspace" element={<WorkspacePage />} />,
+  <Route
+    key="workspace-with-params"
+    path="/workspace/:workspaceId"
+    element={<WorkspacePage />}
+  />,
+  <Route
+    key="workspace-with-channel"
+    path="/workspace/:workspaceId/:channelId"
+    element={<WorkspacePage />}
+  />,
 ];
 
 export default PublicRoutes;
