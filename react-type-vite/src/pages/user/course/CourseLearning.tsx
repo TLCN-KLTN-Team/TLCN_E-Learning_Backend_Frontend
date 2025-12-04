@@ -39,6 +39,7 @@ import UserQuizAttempt from "@/components/user/course/UserQuizAttempt"
 import userQuizApi from "@/services/api/user/userQuizApi"
 import assignmentApi from "@/services/api/student/assignmentApi"
 import progressApi from "@/services/api/user/progressApi"
+import reviewApi from "@/services/api/user/reviewApi"
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse"
 
 type ContentItem = {
@@ -70,6 +71,8 @@ const CourseLearning: React.FC = () => {
   // Progress tracking states
   const [progressStats, setProgressStats] = useState<ProgressStatsResponse | null>(null)
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set())
+  const [completedQuizzes, setCompletedQuizzes] = useState<Set<number>>(new Set())
+  const [completedAssignments, setCompletedAssignments] = useState<Set<number>>(new Set())
   const [isMarkingComplete, setIsMarkingComplete] = useState<Set<number>>(new Set())
   
   // Assignment submission modal
@@ -86,15 +89,68 @@ const CourseLearning: React.FC = () => {
     try {
       const stats = await progressApi.getPublishedCourseProgress(Number(courseId))
       setProgressStats(stats)
+      console.log("📊 Progress Stats:", stats)
 
       // Fetch completed lessons detail
       const detail = await progressApi.getPublishedCourseProgressDetail(Number(courseId))
+      console.log("📋 Progress Detail Full:", detail)
+      console.log("📋 Lesson Progresses:", detail.courseProgress.lessonProgresses)
+      
+      // If lessonProgress exists, consider it completed (even if isCompleted is false)
+      // This is because the backend creates lessonProgress when user completes a lesson
       const completedLessonIds = new Set(
-        detail.courseProgress.lessonProgresses
-          .filter(lp => lp.isCompleted)
-          .map(lp => lp.lessonId)
+        detail.courseProgress.lessonProgresses.map(lp => lp.lessonId)
       )
+      console.log("✅ Completed Lesson IDs:", Array.from(completedLessonIds))
       setCompletedLessons(completedLessonIds)
+
+      // Fetch completed quizzes and assignments (check from sections which items have attempts/submissions)
+      const sectionsData = await getSectionsByCourseId(Number(courseId))
+      
+      // Collect all quiz and assignment IDs
+      const allQuizIds: number[] = []
+      const allAssignmentIds: number[] = []
+      
+      sectionsData.forEach(section => {
+        if (section.quizs) {
+          section.quizs.forEach(quiz => allQuizIds.push(quiz.id))
+        }
+        if (section.assignments) {
+          section.assignments.forEach(assignment => allAssignmentIds.push(assignment.id))
+        }
+      })
+
+      // Fetch all quiz attempts in parallel
+      const quizPromises = allQuizIds.map(async (quizId) => {
+        try {
+          const attempts = await userQuizApi.getQuizAttemptHistory(quizId)
+          return attempts && attempts.length > 0 ? quizId : null
+        } catch (error) {
+          return null
+        }
+      })
+
+      // Fetch all assignment submissions in parallel
+      const assignmentPromises = allAssignmentIds.map(async (assignmentId) => {
+        try {
+          const submission = await assignmentApi.getMySubmission(assignmentId)
+          return submission ? assignmentId : null
+        } catch (error) {
+          return null
+        }
+      })
+
+      const [completedQuizResults, completedAssignmentResults] = await Promise.all([
+        Promise.all(quizPromises),
+        Promise.all(assignmentPromises)
+      ])
+
+      const completedQuizIds = new Set(completedQuizResults.filter((id): id is number => id !== null))
+      const completedAssignmentIds = new Set(completedAssignmentResults.filter((id): id is number => id !== null))
+
+      setCompletedQuizzes(completedQuizIds)
+      setCompletedAssignments(completedAssignmentIds)
+
     } catch (error) {
       console.error("Error fetching progress stats:", error)
     }
@@ -112,18 +168,12 @@ const CourseLearning: React.FC = () => {
         publishedCourseId: Number(courseId),
       })
 
-      // Update local state
-      setCompletedLessons(prev => new Set(prev).add(lessonId))
-
-      // Update content items
-      const updatedItems = [...contentItems]
-      const itemIndex = updatedItems.findIndex(
-        item => item.type === "lesson" && item.id === lessonId
-      )
-      if (itemIndex !== -1) {
-        updatedItems[itemIndex].isCompleted = true
-        setContentItems(updatedItems)
-      }
+      // Update local state - this will trigger the useEffect to update contentItems
+      setCompletedLessons(prev => {
+        const newSet = new Set(prev)
+        newSet.add(lessonId)
+        return newSet
+      })
 
       // Refresh progress stats
       await fetchProgressStats()
@@ -145,6 +195,43 @@ const CourseLearning: React.FC = () => {
     loadCourseData()
     fetchProgressStats()
   }, [courseId])
+
+  // Sync completedLessons with contentItems
+  useEffect(() => {
+    if (contentItems.length > 0) {
+      console.log("🔄 Syncing completion status:", {
+        lessons: Array.from(completedLessons),
+        quizzes: Array.from(completedQuizzes),
+        assignments: Array.from(completedAssignments),
+        totalItems: contentItems.length
+      })
+      
+      let hasChanges = false
+      const updatedItems = contentItems.map(item => {
+        let shouldBeCompleted = false
+        
+        if (item.type === 'lesson') {
+          shouldBeCompleted = completedLessons.has(item.id)
+        } else if (item.type === 'quiz') {
+          shouldBeCompleted = completedQuizzes.has(item.id)
+        } else if (item.type === 'assignment') {
+          shouldBeCompleted = completedAssignments.has(item.id)
+        }
+        
+        if (shouldBeCompleted !== item.isCompleted) {
+          hasChanges = true
+          console.log(`${shouldBeCompleted ? '✅' : '❌'} ${item.type} #${item.id} "${item.title}" completed=${shouldBeCompleted}`)
+        }
+        
+        return { ...item, isCompleted: shouldBeCompleted }
+      })
+      
+      if (hasChanges) {
+        console.log("📝 Updating contentItems with new completion status")
+        setContentItems(updatedItems)
+      }
+    }
+  }, [completedLessons, completedQuizzes, completedAssignments])
 
   // Auto-hide sidebar when entering quiz/assignment mode
   useEffect(() => {
@@ -343,6 +430,9 @@ const CourseLearning: React.FC = () => {
       setSubmissionFiles([])
       setSubmissionLink('')
       
+      // Update completed assignments immediately
+      setCompletedAssignments(prev => new Set(prev).add(currentItem.id))
+      
       // Reload assignment data to show new submission
       loadCourseData()
       
@@ -358,7 +448,17 @@ const CourseLearning: React.FC = () => {
   const renderContent = () => {
     // Show Quiz Attempt
     if (contentDisplayMode === 'quiz' && currentItem?.type === 'quiz') {
-      return <UserQuizAttempt quizIdProp={currentItem.id} />
+      return (
+        <UserQuizAttempt 
+          quizIdProp={currentItem.id} 
+          onQuizCompleted={() => {
+            // Mark quiz as completed
+            setCompletedQuizzes(prev => new Set(prev).add(currentItem.id))
+            // Refresh progress stats
+            fetchProgressStats()
+          }}
+        />
+      )
     }
     // Normal content
     if (!currentItem) {
@@ -772,6 +872,8 @@ const CourseLearning: React.FC = () => {
                               .map((item) => {
                                 const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
                                 const isActive = itemIndex === currentItemIndex
+                                // Get the actual item from contentItems to ensure we have latest isCompleted
+                                const actualItem = contentItems[itemIndex] || item
 
                                 return (
                                   <div
@@ -783,7 +885,7 @@ const CourseLearning: React.FC = () => {
                                     }`}
                                   >
                                     <div className="flex-shrink-0 pt-0.5">
-                                      {item.isCompleted ? (
+                                      {actualItem.isCompleted ? (
                                         <CheckCircle className="w-4 h-4 text-blue-600" />
                                       ) : (
                                         <div className={`w-4 h-4 rounded-full border-2 ${
@@ -808,7 +910,7 @@ const CourseLearning: React.FC = () => {
                                         <span>3min</span>
                                       </div>
                                     </div>
-                                    {!item.isCompleted && isActive && (
+                                    {!actualItem.isCompleted && isActive && (
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation()
@@ -841,6 +943,7 @@ const CourseLearning: React.FC = () => {
                               .map((item) => {
                                 const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
                                 const isActive = itemIndex === currentItemIndex
+                                const actualItem = contentItems[itemIndex] || item
 
                                 return (
                                   <button
@@ -853,7 +956,7 @@ const CourseLearning: React.FC = () => {
                                     }`}
                                   >
                                     <div className="flex-shrink-0 pt-0.5">
-                                      {item.isCompleted ? (
+                                      {actualItem.isCompleted ? (
                                         <CheckCircle className="w-4 h-4 text-purple-600" />
                                       ) : (
                                         <div className={`w-4 h-4 rounded-full border-2 ${
@@ -892,6 +995,7 @@ const CourseLearning: React.FC = () => {
                               .map((item) => {
                                 const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
                                 const isActive = itemIndex === currentItemIndex
+                                const actualItem = contentItems[itemIndex] || item
 
                                 return (
                                   <button
@@ -904,7 +1008,7 @@ const CourseLearning: React.FC = () => {
                                     }`}
                                   >
                                     <div className="flex-shrink-0 pt-0.5">
-                                      {item.isCompleted ? (
+                                      {actualItem.isCompleted ? (
                                         <CheckCircle className="w-4 h-4 text-green-600" />
                                       ) : (
                                         <div className={`w-4 h-4 rounded-full border-2 ${
@@ -1269,35 +1373,343 @@ const AnnouncementsTab: React.FC = () => {
 // Reviews Tab Component  
 /* eslint-disable react/forbid-dom-props */
 const ReviewsTab: React.FC = () => {
-  const mockReviews = [
-    {
-      id: 1,
-      author: "Dusan",
-      rating: 4,
-      date: "2 weeks ago",
-      content: "The course offers many useful tips, often explained through metaphors that make the concepts easy to understand. It covers all the key areas of public speaking but doesn't go too deeply into any specific topic. It's up to you to identify your weaker areas and work on improving them further.",
-      helpful: 12
-    },
-    {
-      id: 2,
-      author: "Nguyễn Văn A",
-      rating: 5,
-      date: "1 month ago",
-      content: "Khóa học rất hay và bổ ích. Giảng viên giải thích rất dễ hiểu, các ví dụ thực tế giúp tôi áp dụng ngay vào công việc. Rất đáng để đầu tư thời gian học.",
-      helpful: 8
-    },
-    {
-      id: 3,
-      author: "Trần Thị B",
-      rating: 5,
-      date: "2 months ago",
-      content: "Nội dung khóa học được tổ chức khoa học, từ cơ bản đến nâng cao. Video chất lượng cao, âm thanh rõ ràng. Tôi đã học được rất nhiều kỹ năng mới.",
-      helpful: 15
+  const { courseId } = useParams<{ courseId: string }>()
+  const [reviews, setReviews] = useState<any[]>([])
+  const [reviewStats, setReviewStats] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filterRating, setFilterRating] = useState("all")
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [userReview, setUserReview] = useState<any>(null)
+  const [reviewForm, setReviewForm] = useState({ rate: 5, content: "" })
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    loadReviews()
+  }, [courseId])
+
+  const loadReviews = async () => {
+    if (!courseId) return
+    
+    try {
+      setLoading(true)
+      
+      // Load reviews and stats in parallel
+      const [reviewsData, statsData, userReviewData] = await Promise.all([
+        reviewApi.getCourseReviews(Number(courseId)),
+        reviewApi.getCourseReviewStats(Number(courseId)),
+        reviewApi.getUserReviewForCourse(Number(courseId))
+      ])
+      
+      setReviews(reviewsData)
+      setReviewStats(statsData)
+      setUserReview(userReviewData)
+    } catch (error) {
+      console.error("Error loading reviews:", error)
+      toast.error("Không thể tải đánh giá")
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
+
+  const handleSubmitReview = async () => {
+    if (!courseId || !reviewForm.content.trim()) {
+      toast.error("Vui lòng nhập nội dung đánh giá")
+      return
+    }
+
+    if (reviewForm.content.trim().length < 3) {
+      toast.error("Nội dung đánh giá phải có ít nhất 3 ký tự")
+      return
+    }
+
+    if (reviewForm.content.trim().length > 1000) {
+      toast.error("Nội dung đánh giá không được vượt quá 1000 ký tự")
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      
+      if (userReview) {
+        // Update existing review
+        console.log("Updating review:", userReview.id, reviewForm)
+        await reviewApi.updateReview(userReview.id, {
+          rate: reviewForm.rate,
+          content: reviewForm.content.trim()
+        })
+        toast.success("Cập nhật đánh giá thành công!")
+      } else {
+        // Create new review
+        console.log("Creating new review for course:", courseId, reviewForm)
+        await reviewApi.createReview({
+          courseId: Number(courseId),
+          rate: reviewForm.rate,
+          content: reviewForm.content.trim()
+        })
+        toast.success("Gửi đánh giá thành công!")
+      }
+      
+      setShowReviewForm(false)
+      setReviewForm({ rate: 5, content: "" })
+      await loadReviews()
+    } catch (error: any) {
+      console.error("Submit review error:", error)
+      const errorMessage = error.response?.data?.message || error.message || "Không thể gửi đánh giá"
+      toast.error(errorMessage)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDeleteReview = async () => {
+    if (!userReview) return
+    
+    if (!window.confirm("Bạn có chắc chắn muốn xóa đánh giá này? Hành động này không thể hoàn tác.")) return
+
+    try {
+      console.log("Deleting review with ID:", userReview.id)
+      await reviewApi.deleteReview(userReview.id)
+      toast.success("Đã xóa đánh giá thành công!")
+      setShowReviewForm(false)
+      setReviewForm({ rate: 5, content: "" })
+      await loadReviews()
+    } catch (error: any) {
+      console.error("Delete review error:", error)
+      const errorMessage = error.response?.data?.message || error.message || "Không thể xóa đánh giá"
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleEditReview = () => {
+    if (userReview) {
+      setReviewForm({
+        rate: userReview.rate,
+        content: userReview.content
+      })
+      setShowReviewForm(true)
+    }
+  }
+
+  // Filter reviews
+  const filteredReviews = reviews.filter(review => {
+    const matchesSearch = review.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         review.createdByName?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesRating = filterRating === "all" || review.rate === Number(filterRating)
+    return matchesSearch && matchesRating
+  })
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  const averageRating = reviewStats?.averageRating || 0
+  const totalReviews = reviewStats?.totalReviews || 0
+  const distribution = reviewStats?.ratingDistribution || {
+    fiveStar: 0,
+    fourStar: 0,
+    threeStar: 0,
+    twoStar: 0,
+    oneStar: 0
+  }
 
   return (
     <div>
+      {/* User Review Section - Create/Edit */}
+      {!userReview && (
+        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="font-semibold text-lg mb-4">Đánh giá khóa học này</h3>
+          {!showReviewForm ? (
+            <Button
+              onClick={() => setShowReviewForm(true)}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              <Star className="w-4 h-4 mr-2" />
+              Viết đánh giá
+            </Button>
+          ) : (
+            <div className="space-y-4">
+              {/* Rating Stars */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Đánh giá của bạn</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setReviewForm({ ...reviewForm, rate: star })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          star <= reviewForm.rate
+                            ? "fill-orange-500 text-orange-500"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Nội dung đánh giá</label>
+                <textarea
+                  value={reviewForm.content}
+                  onChange={(e) => setReviewForm({ ...reviewForm, content: e.target.value })}
+                  rows={4}
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleSubmitReview}
+                  disabled={submitting || !reviewForm.content.trim()}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Đang gửi...
+                    </>
+                  ) : (
+                    "Gửi đánh giá"
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowReviewForm(false)
+                    setReviewForm({ rate: 5, content: "" })
+                  }}
+                  disabled={submitting}
+                >
+                  Hủy
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* User's Existing Review */}
+      {userReview && (
+        <div className="mb-8 bg-green-50 border border-green-200 rounded-lg p-6">
+          <div className="flex items-start justify-between mb-4">
+            <h3 className="font-semibold text-lg">Đánh giá của bạn</h3>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleEditReview}
+                className="text-blue-600"
+              >
+                Sửa
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDeleteReview}
+                className="text-red-600"
+              >
+                Xóa
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex gap-1 mb-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={`w-5 h-5 ${
+                  star <= userReview.rate
+                    ? "fill-orange-500 text-orange-500"
+                    : "text-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+          
+          <p className="text-gray-700">{userReview.content}</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {new Date(userReview.createdAt).toLocaleDateString('vi-VN')}
+          </p>
+
+          {/* Edit Form */}
+          {showReviewForm && (
+            <div className="mt-4 pt-4 border-t space-y-4">
+              {/* Rating Stars */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Đánh giá</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setReviewForm({ ...reviewForm, rate: star })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          star <= reviewForm.rate
+                            ? "fill-orange-500 text-orange-500"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Nội dung</label>
+                <textarea
+                  value={reviewForm.content}
+                  onChange={(e) => setReviewForm({ ...reviewForm, content: e.target.value })}
+                  rows={4}
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleSubmitReview}
+                  disabled={submitting || !reviewForm.content.trim()}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Đang cập nhật...
+                    </>
+                  ) : (
+                    "Cập nhật"
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowReviewForm(false)
+                    setReviewForm({ rate: userReview.rate, content: userReview.content })
+                  }}
+                  disabled={submitting}
+                >
+                  Hủy
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Student Feedback Section */}
       <div className="mb-12">
         <h2 className="text-2xl font-bold mb-6">Student feedback</h2>
@@ -1305,47 +1717,62 @@ const ReviewsTab: React.FC = () => {
         <div className="flex gap-8 items-start mb-8">
           {/* Rating Score */}
           <div className="text-center">
-            <div className="text-6xl font-bold text-orange-500 mb-2">4.4</div>
-            <div className="flex gap-1 justify-center mb-2">
-              {[1, 2, 3, 4].map(i => (
-                <Star key={i} className="w-4 h-4 fill-orange-500 text-orange-500" />
-              ))}
-              <Star className="w-4 h-4 fill-orange-500 text-orange-500 opacity-50" />
+            <div className="text-6xl font-bold text-orange-500 mb-2">
+              {averageRating.toFixed(1)}
             </div>
-            <div className="text-sm text-orange-500 font-medium">Tutorial rating</div>
+            <div className="flex gap-1 justify-center mb-2">
+              {[1, 2, 3, 4, 5].map(i => (
+                <Star 
+                  key={i} 
+                  className={`w-4 h-4 ${
+                    i <= Math.round(averageRating)
+                      ? "fill-orange-500 text-orange-500"
+                      : "text-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="text-sm text-orange-500 font-medium">
+              {totalReviews} đánh giá
+            </div>
           </div>
 
           {/* Rating Bars */}
           <div className="flex-1 space-y-2">
             {[
-              { stars: 5, percentage: 44 },
-              { stars: 4, percentage: 37 },
-              { stars: 3, percentage: 15 },
-              { stars: 2, percentage: 3 },
-              { stars: 1, percentage: 1 }
-            ].map(({ stars, percentage }) => (
-              <div key={stars} className="flex items-center gap-3">
-                <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-orange-500"
-                    {...({ style: { width: `${percentage}%` } } as any)}
-                  />
+              { stars: 5, count: distribution.fiveStar },
+              { stars: 4, count: distribution.fourStar },
+              { stars: 3, count: distribution.threeStar },
+              { stars: 2, count: distribution.twoStar },
+              { stars: 1, count: distribution.oneStar }
+            ].map(({ stars, count }) => {
+              const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0
+              return (
+                <div key={stars} className="flex items-center gap-3">
+                  <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-orange-500"
+                      {...({ style: { width: `${percentage}%` } } as any)}
+                    />
+                  </div>
+                  <div className="flex gap-1">
+                    {[...Array(stars)].map((_, i) => (
+                      <Star key={i} className="w-3 h-3 fill-orange-500 text-orange-500" />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600 font-medium w-16">
+                    {percentage.toFixed(0)}% ({count})
+                  </span>
                 </div>
-                <div className="flex gap-1">
-                  {[...Array(stars)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 fill-orange-500 text-orange-500" />
-                  ))}
-                </div>
-                <span className="text-sm text-purple-600 font-medium">{percentage}%</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
 
       {/* Reviews Section */}
       <div>
-        <h2 className="text-2xl font-bold mb-6">Reviews</h2>
+        <h2 className="text-2xl font-bold mb-6">Reviews ({filteredReviews.length})</h2>
 
         {/* Search and Filter */}
         <div className="flex gap-3 mb-6">
@@ -1354,11 +1781,15 @@ const ReviewsTab: React.FC = () => {
             <input
               type="text"
               placeholder="Search reviews"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full border rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
           </div>
           
           <select 
+            value={filterRating}
+            onChange={(e) => setFilterRating(e.target.value)}
             className="border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
             aria-label="Filter ratings"
           >
@@ -1372,51 +1803,53 @@ const ReviewsTab: React.FC = () => {
         </div>
 
         {/* Reviews List */}
-        <div className="space-y-6">
-          {mockReviews.map((review) => (
-            <div key={review.id} className="border-b pb-6">
-              <div className="flex items-start gap-4">
-                {/* Avatar */}
-                <div className="w-12 h-12 rounded-full bg-gray-800 text-white flex items-center justify-center font-semibold text-lg flex-shrink-0">
-                  {review.author.charAt(0).toUpperCase()}
-                </div>
-
-                <div className="flex-1">
-                  {/* Header */}
-                  <div className="mb-2">
-                    <h3 className="font-semibold">{review.author}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            className={`w-4 h-4 ${
-                              i < review.rating 
-                                ? 'fill-orange-500 text-orange-500' 
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-600">{review.date}</span>
-                    </div>
+        {filteredReviews.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Chưa có đánh giá nào</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {filteredReviews.map((review) => (
+              <div key={review.id} className="border-b pb-6">
+                <div className="flex items-start gap-4">
+                  {/* Avatar */}
+                  <div className="w-12 h-12 rounded-full bg-gray-800 text-white flex items-center justify-center font-semibold text-lg flex-shrink-0">
+                    {(review.createdByName || 'U').charAt(0).toUpperCase()}
                   </div>
 
-                  {/* Content */}
-                  <p className="text-gray-700 mb-3">{review.content}</p>
+                  <div className="flex-1">
+                    {/* Header */}
+                    <div className="mb-2">
+                      <h3 className="font-semibold">
+                        {review.createdByName}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-4 h-4 ${
+                                i < review.rate 
+                                  ? 'fill-orange-500 text-orange-500' 
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                        </span>
+                      </div>
+                    </div>
 
-                  {/* Helpful */}
-                  <div className="flex items-center gap-4 text-sm">
-                    <button className="text-gray-600 hover:text-gray-900">
-                      Helpful? <span className="font-medium">Yes ({review.helpful})</span>
-                    </button>
-                    <button className="text-gray-600 hover:text-gray-900">Report</button>
+                    {/* Content */}
+                    <p className="text-gray-700">{review.content}</p>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

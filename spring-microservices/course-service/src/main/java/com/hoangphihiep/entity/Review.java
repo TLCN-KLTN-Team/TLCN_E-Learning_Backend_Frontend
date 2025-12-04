@@ -13,11 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Entity
 @AllArgsConstructor
@@ -26,6 +22,7 @@ import lombok.ToString;
 @Setter
 @ToString(exclude = {"createdBy"})
 @Table(name="review")
+@Builder
 @NamedQuery(name="Review.findAll", query="SELECT r from Review r")
 public class Review implements Serializable{
 

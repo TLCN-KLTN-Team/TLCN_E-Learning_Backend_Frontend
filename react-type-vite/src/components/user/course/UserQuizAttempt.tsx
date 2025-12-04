@@ -28,9 +28,10 @@ interface UserAnswer {
 
 interface Props {
   quizIdProp?: number
+  onQuizCompleted?: () => void
 }
 
-export default function UserQuizAttempt({ quizIdProp }: Props = {}) {
+export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props = {}) {
   const { quizId: quizIdParam } = useParams<{ quizId: string }>()
   const quizId = quizIdProp ? String(quizIdProp) : quizIdParam
   const navigate = useNavigate()
@@ -190,6 +191,11 @@ export default function UserQuizAttempt({ quizIdProp }: Props = {}) {
       setAttemptResult(result)
       setViewMode('result')
       toast.success('Nộp bài thành công!')
+      
+      // Notify parent component
+      if (onQuizCompleted) {
+        onQuizCompleted()
+      }
       
       // Reload history
       const history = await userQuizApi.getQuizAttemptHistory(Number(quizId))

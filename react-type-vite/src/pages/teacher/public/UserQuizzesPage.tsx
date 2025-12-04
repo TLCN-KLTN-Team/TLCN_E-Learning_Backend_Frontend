@@ -10,6 +10,7 @@ import teacherPublicApi, {
   type StudentQuizAttempt,
   type QuizAttemptDetail 
 } from "@/services/api/teacher/teacherPublicApi"
+import { getUserById } from "@/services/api/userApi"
 
 const StudentQuizzesPage: React.FC = () => {
   const { courseId, studentId } = useParams<{ courseId: string; studentId: string }>()
@@ -25,19 +26,21 @@ const StudentQuizzesPage: React.FC = () => {
       if (!courseId || !studentId) return
 
       try {
+        // Load user info first
+        const user = await getUserById(studentId)
+        const displayName = user.firstName && user.lastName 
+          ? `${user.lastName} ${user.firstName}`
+          : user.username || studentId
+        setStudentName(displayName)
+
         // Load quiz attempts from API
         const attempts = await teacherPublicApi.getStudentQuizAttempts(Number(courseId), studentId)
         setQuizAttempts(attempts)
-        
-        // Get student name from first attempt if available
-        if (attempts.length > 0 && attempts[0].studentName) {
-          setStudentName(attempts[0].studentName)
-        } else {
-          setStudentName(studentId)
-        }
       } catch (error) {
         console.error("Error loading quiz attempts:", error)
         toast.error("Đã có lỗi khi tải dữ liệu bài kiểm tra")
+        // Fallback to studentId if user fetch fails
+        setStudentName(studentId)
       }
     }
 
