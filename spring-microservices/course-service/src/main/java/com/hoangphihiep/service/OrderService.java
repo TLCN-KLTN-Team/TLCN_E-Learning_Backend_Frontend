@@ -14,7 +14,10 @@ import com.hoangphihiep.repository.OrderItemRepository;
 import com.hoangphihiep.repository.OrderRepository;
 import com.hoangphihiep.utils.JwtUtils;
 import com.hoangphihiep.utils.OrderStatus;
+import com.hoangphihiep.utils.PaymentStatus;
+import com.hoangphihiep.utils.PayoutStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -30,6 +34,7 @@ public class OrderService {
     private final OrderItemService orderItemService;
     private final OrderItemMapper orderItemMapper;
     private final OrderMapper orderMapper;
+    private final PayoutOrderItemService payoutOrderItemService;
 
     //
     @Transactional
@@ -43,6 +48,7 @@ public class OrderService {
                 .build();
 
         for (CreationOrderItemRequest itemRequest : request.getOrderItems()){
+            System.out.println ("các item: " + itemRequest);
             OrderItem item = orderItemService.createOrderItem(itemRequest, order);
             order.getOrderItems().add(item);
         }
@@ -58,11 +64,48 @@ public class OrderService {
         return orderRepository.findByUserIdOrderByOrderDateDesc(userId);
     }
 
+    /**
+     * Cập nhật trạng thái Order và OrderItem khi thanh toán thành công
+     * Đồng thời tính toán và tạo PayoutOrderItem cho revenue share
+     */
+    @Transactional
     public void updateSuccessOrder(String orderId){
+        log.info("Processing successful payment for order: {}", orderId);
+        
+        // 1. Find order
         Order order = orderRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        
+        // 2. Update order status
         order.setOrderStatus(OrderStatus.COMPLETED);
+        
+        // 3. Update each order item status and create payout items
+        for (OrderItem orderItem : order.getOrderItems()) {
+            // Update payment status to PAID
+            orderItem.setPaymentStatus(PaymentStatus.PAID);
+            orderItem.setPaymentTxnId(orderId); // Store transaction reference
+            
+            log.info("Updated OrderItem ID: {} to PAID status", orderItem.getId());
+            
+            // Create payout order items for revenue sharing
+            try {
+                payoutOrderItemService.createPayoutOrderItems(orderItem);
+                
+                // Update payout status to indicate revenue has been calculated
+                orderItem.setPayoutStatus(PayoutStatus.NOT_SETTLED);
+                
+                log.info("Successfully created payout items for OrderItem ID: {}", orderItem.getId());
+            } catch (Exception e) {
+                log.error("Error creating payout items for OrderItem ID: {}", orderItem.getId(), e);
+                // Continue processing other items even if one fails
+            }
+        }
+        
+        // 4. Save all changes
         orderRepository.save(order);
+        
+        log.info("Successfully processed payment for order: {} with {} items", 
+                orderId, order.getOrderItems().size());
     }
 
     public List<OrderResponse> getHistoryOrders() {

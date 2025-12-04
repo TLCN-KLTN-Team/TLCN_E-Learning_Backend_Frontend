@@ -194,9 +194,12 @@ const CourseDetail: React.FC = () => {
               <span className="text-gray-500">(0 reviews)</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
             </div>
+
+              <span>{course.studentCount.toLocaleString()} students</span>
+            </div> */}
 
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
