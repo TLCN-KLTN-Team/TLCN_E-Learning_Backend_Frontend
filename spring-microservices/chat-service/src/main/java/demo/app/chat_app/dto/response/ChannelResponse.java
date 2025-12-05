@@ -19,8 +19,8 @@ public class ChannelResponse {
     String description;
     List<Participant> participants;
     List<ChatMessageResponse> messages;
+    int durationMinutes;
     boolean isPrivate;
     Instant createdAt;
     boolean ended;
-    long endTime;
 }

@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Builder
@@ -39,7 +40,7 @@ public class Channel {
 
     Integer classId; // Optional class ID if the channel is linked to a class
     
-    List<Participant> participants; // List of participants in the channel (aka group for team chat)
+    List<String> memberIds; // List of participants in the channel (aka group for team chat)
 
     boolean isPrivate;
 
@@ -49,41 +50,39 @@ public class Channel {
     @Builder.Default
     ChannelStatus status= ChannelStatus.ACTIVE;
 
+    int durationMinutes;
+
     @CreatedDate
     @Indexed
     Instant createdAt;
 
     Instant deletedAt; // Timestamp when the channel was ended, change status to ENDED
 
-    public void addParticipants(List<Participant> newParticipants) {
-        if (this.participants == null) {
-            this.participants = new java.util.ArrayList<>();
+    public void addMember(String memberId) {
+        if (memberIds == null) {
+            memberIds = new ArrayList<>();
         }
-        for (Participant participant : newParticipants) {
-            if (!this.participants.contains(participant)) {
-                this.participants.add(participant);
+        if (!memberIds.contains(memberId)) {
+            memberIds.add(memberId);
+        }
+    }
+
+    public void addMembers(List<String> memberIds) {
+        if (this.memberIds == null) {
+            this.memberIds = new ArrayList<>();
+        }
+        boolean added = false;
+        for (String memberId : memberIds) {
+            if (!this.memberIds.contains(memberId)) {
+                this.memberIds.add(memberId);
             }
         }
     }
 
-    // Helper methods for participants management
-    public void addParticipant(Participant participant) {
-        if (this.participants == null) {
-            this.participants = new java.util.ArrayList<>();
-        }
-        if (!this.participants.contains(participant)) {
-            this.participants.add(participant);
+    public void removeMember(String memberId) {
+        if (memberIds != null) {
+            memberIds.remove(memberId);
         }
     }
 
-    public void removeParticipant(String userId) {
-        if (this.participants != null) {
-            this.participants.removeIf(p -> p.getUserId().equals(userId));
-        }
-    }
-
-    public boolean hasParticipant(String userId) {
-        return this.participants != null && 
-               this.participants.stream().anyMatch(p -> p.getUserId().equals(userId));
-    }
 }

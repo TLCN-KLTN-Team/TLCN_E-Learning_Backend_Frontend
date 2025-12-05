@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum ChannelType {
     TEXT("TEXT"),
+    GROUP("GROUP"),
     ANNOUNCEMENT("ANNOUNCEMENT"),
     VOICE_LIVE("VOICE_LIVE"),
     POST("POST");

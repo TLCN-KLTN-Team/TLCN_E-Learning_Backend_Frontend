@@ -42,7 +42,10 @@ public enum ErrorCode {
 
     END_TIME_INVALID(1025, "End time must be in the future", HttpStatus.BAD_REQUEST),
 
-    UN_EXISTING_GROUP(1026, "Group not existed", HttpStatus.NOT_FOUND)
+    UN_EXISTING_GROUP(1026, "Group not existed", HttpStatus.NOT_FOUND),
+
+    SECTION_NOT_EXISTED(1027, "Section not existed", HttpStatus.NOT_FOUND)
+
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

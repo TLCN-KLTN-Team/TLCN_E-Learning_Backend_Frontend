@@ -194,16 +194,7 @@ public class CourseEnrollmentService {
                     .eventId(UUID.randomUUID().toString())
                     .courseId(courseClass.getCourse().getId())
                     .classId(courseClass.getId())
-                    .students(validStudents.stream()
-                            .map(s -> EnrollStudentsEvent.Student.builder()
-                                    .studentId(s.getId())
-                                    .firstName(s.getFirstName())
-                                    .lastName(s.getLastName())
-                                    .mssv(s.getStudentId())
-                                    .avatarUrl(s.getAvatarUrl())
-                                    .build())
-                            .toList()
-                    )
+                    .studentIds(studentsToEnroll)
                     .build();
 
             producer.addMembersToClassChannel(event);

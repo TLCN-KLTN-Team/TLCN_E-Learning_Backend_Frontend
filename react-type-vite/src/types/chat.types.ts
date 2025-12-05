@@ -1,10 +1,27 @@
 import type { MessageType } from "./chat.enums";
 
+// Channel Type Enum matching backend
+export const ChannelType = {
+  TEXT: "TEXT",
+  GROUP: "GROUP",
+  ANNOUNCEMENT: "ANNOUNCEMENT",
+  VOICE_LIVE: "VOICE_LIVE",
+  POST: "POST",
+} as const;
+
+export type ChannelType = (typeof ChannelType)[keyof typeof ChannelType];
+
 export interface UserResponse {
   id: string;
   firstName: string;
   lastName: string;
   mssv: string;
+  avatarUrl?: string | null;
+}
+
+export interface UserChatInfo {
+  id: string;
+  fullName: string;
   avatarUrl?: string | null;
 }
 
@@ -47,6 +64,9 @@ export interface BasicChannelResponse {
   id: string;
   channelName: string;
   participantHash?: string | null;
+  description?: string;
+  endTime?: number;
+  ended?: boolean;
 }
 
 export interface GroupResponse {
@@ -66,17 +86,21 @@ export interface ChannelResponse {
   participants?: Participant[];
   messages?: ChatMessageResponse[] | null;
   isPrivate: boolean;
-  endTime: number; // ISO 8601 format
+  endTime: number;
+  ended?: boolean;
+  channelType?: ChannelType;
   groups?: GroupResponse[];
 }
 
 export interface CreateChannelRequest {
   workspaceId: string;
   sectionId?: string;
-  name: string;
+  channelName: string;
   description?: string;
   memberIds?: string[];
   isPrivate: boolean;
+  channelType?: ChannelType;
+  durationInMinutes?: number; // Duration in minutes
 }
 
 export interface CreateGroupRequest {

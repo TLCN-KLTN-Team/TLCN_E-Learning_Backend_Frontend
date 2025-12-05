@@ -36,8 +36,8 @@ public class SectionServiceImpl {
                 .toList();
     }
 
-    public Section createGeneralSection(List<Participant> members, String workspaceId) {
-        Channel channel = channelService.createGeneralChannel(members);
+    public Section createGeneralSection(List<String> members, String workspaceId, String workspaceName) {
+        Channel channel = channelService.createGeneralChannel(members, workspaceName);
 
         Section section = Section.builder()
                 .title("Thông báo chung")
@@ -52,7 +52,7 @@ public class SectionServiceImpl {
         Workspace w = workspaceRepository.findByCourseId(event.getCourseId())
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
-        Channel channel = channelService.createChannelWhenStudentsEnrolled(event);
+        Channel channel = channelService.createFirstChannelInSectionWhenStudentsEnrolled(event);
 
         Section section = Section.builder()
                 .title(event.getClassName())
