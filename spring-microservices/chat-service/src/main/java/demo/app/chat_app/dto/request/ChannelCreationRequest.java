@@ -13,10 +13,13 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ChannelCreationRequest {
+    String sectionId;
     String workspaceId;
-    String name;
+    String channelType;
+    String channelName;
     String description;
     List<String> memberIds;
+    int durationInMinutes;
     boolean isPrivate;
     long endTime;
 }

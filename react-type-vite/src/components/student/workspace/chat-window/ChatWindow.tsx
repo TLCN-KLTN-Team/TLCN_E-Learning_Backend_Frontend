@@ -4,6 +4,8 @@ import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChannelWorkspace from "../channel/ChannelWorkspace";
+import TimeBasedChannelView from "../channel/TimeBasedChannelView";
+import { ChannelType } from "@/types/chat.types";
 import type {
   ChannelResponse,
   ChatMessageResponse,
@@ -42,6 +44,25 @@ const ChatWindow = ({
     return selectedChannel?.endTime && selectedChannel.endTime > 0;
   };
 
+  // Check if this is a time-based channel (TEXT, GROUP, etc. with endTime)
+  const isTimeBasedChannel = () => {
+    if (!selectedChannel?.endTime || selectedChannel.endTime <= 0) {
+      return false;
+    }
+
+    // Check if it's one of the time-based channel types
+    const timeBasedTypes = [
+      ChannelType.TEXT,
+      ChannelType.GROUP,
+      ChannelType.ANNOUNCEMENT,
+      ChannelType.POST,
+    ];
+
+    return timeBasedTypes.includes(
+      selectedChannel.channelType || ChannelType.TEXT
+    );
+  };
+
   // Handle channel expiration
   const handleChannelExpired = () => {
     console.log("Channel expired, redirecting to channel list...");
@@ -63,7 +84,20 @@ const ChatWindow = ({
     );
   }
 
-  // If this is an exercise channel, show the workspace interface
+  // If this is a time-based channel with endTime, show the time-based view
+  if (isTimeBasedChannel()) {
+    return (
+      <TimeBasedChannelView
+        channel={selectedChannel}
+        participants={participants}
+        wsMessages={wsMessages}
+        isConnected={isConnected}
+        onSendMessage={onSendMessage}
+      />
+    );
+  }
+
+  // If this is an exercise channel (legacy), show the workspace interface
   if (isExerciseChannel()) {
     return (
       <div className="flex-1 flex flex-col bg-gray-100">

@@ -18,21 +18,10 @@ public class CourseCreatedEvent {
     private String courseAvatarUrl;
     private String courseName;
     private String description;
-    private Teacher teacher;
+    private String teacherId;
     private List<String> studentIds;
     private String createdAt;
     private String endedAt; // time course ends
     @Builder.Default
     private String eventType = "COURSE_CREATED";
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class Teacher {
-        private String teacherId;
-        private String firstName;
-        private String lastName;
-        private String avatarUrl;
-    }
 }

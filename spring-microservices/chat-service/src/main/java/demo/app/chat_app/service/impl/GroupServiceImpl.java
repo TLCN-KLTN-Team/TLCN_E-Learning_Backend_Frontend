@@ -82,17 +82,4 @@ public class GroupServiceImpl {
         groupRepository.save(group);
     }
 
-    public List<UserProfileResponse> getMembersInChannelByMssv(String channelId, String key) {
-        Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-        List<Participant> participants = channel.getParticipants().stream()
-                .filter(participant -> participant.getMssv().contains(key))
-                .toList();
-        return participants.stream().map(participant -> UserProfileResponse.builder()
-                .id(participant.getUserId())
-                .firstName(participant.getFirstName())
-                .lastName(participant.getLastName())
-                .mssv(participant.getMssv())
-                .build()).toList();
-    }
 }

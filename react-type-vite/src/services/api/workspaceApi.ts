@@ -1,6 +1,10 @@
 import axiosInstance from "./httpClient/axiosInstance";
 import type { ApiResponse, PaginatedResponse } from "./response/apiResponse";
-import type { UserResponse, WorkspaceResponse } from "@/types/chat.types";
+import type {
+  UserResponse,
+  WorkspaceResponse,
+  UserChatInfo,
+} from "@/types/chat.types";
 
 export const getWorkspaces = async (
   pageNumber: number,
@@ -26,6 +30,15 @@ export const getStudentsByMSSV = async (
 ): Promise<UserResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<UserResponse[]>>(
     `/identity/users/students?mssv=${mssv}`
+  );
+  return response.data.result;
+};
+
+export const getUsersByKeyword = async (
+  keyword: string
+): Promise<UserChatInfo[]> => {
+  const response = await axiosInstance.get<ApiResponse<UserChatInfo[]>>(
+    `/identity/users/student/ids?keyword=${encodeURIComponent(keyword)}`
   );
   return response.data.result;
 };

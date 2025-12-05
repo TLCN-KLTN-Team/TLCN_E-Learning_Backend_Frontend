@@ -70,32 +70,32 @@ public class FileUploadService {
     /**
      * Create a message is attachment type with parallel uploads
      */
-    public List<ChatMessageResponse> uploadMultipleFilesToMessage(MultipartFile[] files,
-                                                                  String channelId,
-                                                                  Principal principal) {
-        Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-
-        String userId = principal.getName(); // Assuming user ID is the principal name
-
-        Participant sender = channel.getParticipants().stream()
-                .filter(p -> p.getUserId().equals(userId))
-                .findFirst()
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL));
-
-        // using CompletableFuture to upload files in parallel. return futures object
-        List<CompletableFuture<ChatMessageResponse>> futures = Arrays.stream(files)
-                .map((file) -> CompletableFuture.supplyAsync(() -> uploadSingleFileAsync(
-                        file, channelId, sender
-                ))).toList();
-
-        // get response from futures
-        List<ChatMessageResponse> responses = futures.stream()
-                .map(CompletableFuture::join)
-                .toList();
-
-        return responses;
-    }
+//    public List<ChatMessageResponse> uploadMultipleFilesToMessage(MultipartFile[] files,
+//                                                                  String channelId,
+//                                                                  Principal principal) {
+//        Channel channel = channelRepository.findById(channelId)
+//                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+//
+//        String userId = principal.getName(); // Assuming user ID is the principal name
+//
+//        Participant sender = channel.getMemberIds().stream()
+//                .filter(p -> p.getUserId().equals(userId))
+//                .findFirst()
+//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL));
+//
+//        // using CompletableFuture to upload files in parallel. return futures object
+//        List<CompletableFuture<ChatMessageResponse>> futures = Arrays.stream(files)
+//                .map((file) -> CompletableFuture.supplyAsync(() -> uploadSingleFileAsync(
+//                        file, channelId, sender
+//                ))).toList();
+//
+//        // get response from futures
+//        List<ChatMessageResponse> responses = futures.stream()
+//                .map(CompletableFuture::join)
+//                .toList();
+//
+//        return responses;
+//    }
 
     private ChatMessageResponse uploadSingleFileAsync(MultipartFile file,
                                                            String channelId, Participant sender) {
