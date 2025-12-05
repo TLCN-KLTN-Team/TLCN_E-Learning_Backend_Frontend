@@ -15,17 +15,5 @@ public class EnrollStudentsEvent {
     private String eventId;
     private Integer courseId;
     private Integer classId;
-    private List<Student> students;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class Student {
-        private String studentId;
-        private String firstName;
-        private String lastName;
-        private String mssv;
-        private String avatarUrl;
-    }
+    private List<String> studentIds;
 }

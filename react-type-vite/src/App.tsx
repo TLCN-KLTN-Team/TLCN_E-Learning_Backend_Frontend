@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "./context/theme-context";
 import AuthProvider from "./context/auth-context";
 import ScrollProgressBar from "./components/ui/ScrollProgressBar";
+import { Toaster } from "@/components/ui/toaster.tsx";
 import NotFound from "./pages/NotFound";
 import PublicRoutes from "./routes/PublicRoute";
 import StudentRoutes from "./routes/StudentRoute";
@@ -33,6 +34,7 @@ function App() {
           {/* Add other routes as needed */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <Toaster />
       </AuthProvider>
     </ThemeProvider>
   );

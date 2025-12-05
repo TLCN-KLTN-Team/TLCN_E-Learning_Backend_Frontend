@@ -19,6 +19,14 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     boolean existsByStudentId(String studentId);
 
+    List<Student> findByStudentIdContainingIgnoreCase(String studentId);
+
+    List<Student> findByStudentIdContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+            String studentCode,
+            String firstName,
+            String lastName
+    );
+
     @Query("SELECT s FROM Student s WHERE " + "(:studentId IS NULL OR s.studentId LIKE %:studentId%) AND "
             + "(:departmentId IS NULL OR s.idDepartment = :departmentId) AND "
             + "(:educationalUnitId IS NULL OR s.idEducational = :educationalUnitId)")

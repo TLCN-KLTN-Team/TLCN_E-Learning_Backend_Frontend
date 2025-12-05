@@ -407,12 +407,7 @@ public class CourseService {
                 .courseId(updatedCourse.getId())
                 .courseName(updatedCourse.getCourseName())
                 .description(updatedCourse.getDescription())
-                .teacher(CourseCreatedEvent.Teacher.builder()
-                        .teacherId(teacher.getId())
-                        .firstName(teacher.getFirstName())
-                        .lastName(teacher.getLastName())
-                        .avatarUrl(teacher.getAvatarUrl())
-                        .build())
+                .teacherId(teacher.getId())
                 .createdAt(LocalDateTime.now().toString())
                 .build();
 

@@ -1,5 +1,6 @@
 package com.devteria.identity.controller;
 
+import com.devteria.identity.dto.response.UserChatInfo;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/users")
@@ -79,6 +82,13 @@ public class UserController {
     ApiResponse<UserResponse> getMyInfo() {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getMyInfo())
+                .build();
+    }
+
+    @GetMapping("/student/ids")
+    ApiResponse<?> getUserByStudentIds(@RequestParam String keyword) {
+        return ApiResponse.<List<UserChatInfo>>builder()
+                .result(userService.getUserIdsByStudentIds(keyword))
                 .build();
     }
 

@@ -22,9 +22,6 @@ public interface WorkspaceRepository extends MongoRepository<Workspace, String> 
     Page<Workspace> findByMemberUserIdAndIsActive(String userId, Pageable pageable);
     
     // Find all workspaces for user (as owner or member)
-    @Query("{ $or: [ { 'ownerId': ?0 }, { 'members.userId': ?0 } ], 'isActive': true }")
-    Page<Workspace> findByOwnerIdOrMemberUserIdAndIsActive(String userId, Pageable pageable);
-    
     // Find workspaces by course
     @Query("{ 'courseId': ?0, 'isActive': true }")
     List<Workspace> findByCourseIdAndIsActive(String courseId);
@@ -57,4 +54,7 @@ public interface WorkspaceRepository extends MongoRepository<Workspace, String> 
     void softDeleteWorkspace(String workspaceId, java.time.Instant deletedAt);
 
     Optional<Workspace> findByCourseId(Integer courseId);
+
+    @Query("{ 'participants': ?0 }")
+    Page<Workspace> findByParticipants(String participantId, Pageable pageable);
 }

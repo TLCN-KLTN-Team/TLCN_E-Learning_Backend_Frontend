@@ -112,23 +112,17 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 .courseId(event.getCourseId())
                 .name(event.getCourseName())
                 .description(event.getDescription())
-                .ownerId(event.getTeacher().getTeacherId())
+                .ownerId(event.getTeacherId())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
 //                .endedAt(event.getEndedAt())
                 .isActive(true)
-                .members(Collections.singletonList(Participant.builder()
-                                .userId(event.getTeacher().getTeacherId())
-                                .firstName(event.getTeacher().getFirstName())
-                                .lastName(event.getTeacher().getLastName())
-                                .avatarUrl(event.getTeacher().getAvatarUrl())
-                                .joinedAt(Instant.now())
-                        .build()))
+                .participants(Collections.singletonList(event.getTeacherId()))
                 .build();
 
         Workspace savedWorkspace = workspaceRepository.save(workspace);
 
-        Section section = sectionService.createGeneralSection(workspace.getMembers(), savedWorkspace.getId());
+        Section section = sectionService.createGeneralSection(workspace.getParticipants(), savedWorkspace.getId(), workspace.getName());
         savedWorkspace.addSectionId(section.getId());
         workspaceRepository.save(savedWorkspace);
     }
@@ -176,7 +170,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
         // Use repository method with pagination
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Workspace> workspacePage = workspaceRepository.findByOwnerIdOrMemberUserIdAndIsActive(userId, pageable);
+        Page<Workspace> workspacePage = workspaceRepository.findByParticipants(userId, pageable);
 
         return toPageResponse(workspacePage);
     }
