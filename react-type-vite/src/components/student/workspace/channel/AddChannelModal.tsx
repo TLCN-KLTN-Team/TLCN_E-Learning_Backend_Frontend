@@ -8,14 +8,18 @@ import {
   Search,
   UserPlus,
   UserMinus,
+  Users,
+  Megaphone,
+  FileText,
 } from "lucide-react";
-import { getStudentsByMSSV } from "@/services/api/workspaceApi";
+import { getUsersByKeyword } from "@/services/api/workspaceApi";
 import { toast } from "react-toastify";
 import type {
   ChannelResponse,
-  UserResponse,
   WorkspaceResponse,
+  UserChatInfo,
 } from "@/types/chat.types";
+import { ChannelType } from "@/types/chat.types";
 import { createChannel } from "@/services/api/workspace/channel.api";
 
 interface AddChannelModalProps {
@@ -26,8 +30,6 @@ interface AddChannelModalProps {
   onChannelCreated?: (newChannel: ChannelResponse) => void;
 }
 
-type ChannelType = "text" | "voice" | "forum";
-
 const AddChannelModal = ({
   isOpen,
   onClose,
@@ -35,7 +37,9 @@ const AddChannelModal = ({
   sectionId,
   onChannelCreated,
 }: AddChannelModalProps) => {
-  const [selectedType, setSelectedType] = useState<ChannelType>("text");
+  const [selectedType, setSelectedType] = useState<ChannelType>(
+    ChannelType.TEXT
+  );
   const [channelName, setChannelName] = useState("");
   const [channelDescription, setChannelDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
@@ -49,20 +53,20 @@ const AddChannelModal = ({
 
   // Student search states
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<UserResponse[]>([]);
-  const [selectedStudents, setSelectedStudents] = useState<UserResponse[]>([]);
+  const [searchResults, setSearchResults] = useState<UserChatInfo[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<UserChatInfo[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Search students function using real API
-  const searchStudents = async (query: string): Promise<UserResponse[]> => {
+  // Search students by keyword (studentId contains keyword - ignoring case)
+  const searchStudents = async (query: string): Promise<UserChatInfo[]> => {
     if (!query.trim()) return [];
 
     setIsSearching(true);
 
     try {
-      const studentsByMSSV: UserResponse[] = await getStudentsByMSSV(query);
+      const users: UserChatInfo[] = await getUsersByKeyword(query);
       setIsSearching(false);
-      return studentsByMSSV || [];
+      return users || [];
     } catch (error) {
       console.error("Error searching students:", error);
       setIsSearching(false);
@@ -83,20 +87,52 @@ const AddChannelModal = ({
     }
   };
 
-  const addStudent = (student: UserResponse) => {
+  const addStudent = (student: UserChatInfo) => {
     if (!selectedStudents.find((s) => s.id === student.id)) {
       setSelectedStudents([...selectedStudents, student]);
       console.log("Added student:", student);
     }
-    setSearchQuery("");
-    setSearchResults([]);
+    // Keep search query for continuous adding
+  };
+
+  const addAllStudents = () => {
+    const newStudents = searchResults.filter(
+      (result) => !selectedStudents.find((s) => s.id === result.id)
+    );
+    if (newStudents.length > 0) {
+      setSelectedStudents([...selectedStudents, ...newStudents]);
+      setSearchQuery("");
+      setSearchResults([]);
+      toast.success(`Đã thêm ${newStudents.length} sinh viên`);
+    }
   };
 
   const removeStudent = (studentId: string) => {
     setSelectedStudents(selectedStudents.filter((s) => s.id !== studentId));
   };
 
-  // Simple function to get duration in minutes
+  // Calculate duration in minutes
+  const getDurationInMinutes = (): number | undefined => {
+    // Only return duration for TEXT and GROUP channel types
+    if (
+      selectedType !== ChannelType.TEXT &&
+      selectedType !== ChannelType.GROUP
+    ) {
+      return undefined;
+    }
+
+    if (customDuration) {
+      const duration = parseInt(customDuration);
+      return durationUnit === "hours" ? duration * 60 : duration;
+    }
+
+    if (selectedDuration) {
+      const duration = parseInt(selectedDuration);
+      return durationUnit === "hours" ? duration * 60 : duration;
+    }
+
+    return undefined;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,13 +142,22 @@ const AddChannelModal = ({
       selectedStudents.length > 0
     ) {
       try {
+        const memberIds = selectedStudents.map((student) => student.id);
+        const durationInMinutes = getDurationInMinutes();
+
+        console.log("📋 Student IDs being sent to create channel:", memberIds);
+        console.log("👥 Selected students with full info:", selectedStudents);
+        console.log("⏰ Duration in minutes:", durationInMinutes);
+
         const newChannel: ChannelResponse = await createChannel({
           workspaceId: workspace?.id || "",
           sectionId: sectionId || undefined,
           description: channelDescription.trim(),
-          name: channelName.trim(),
-          memberIds: selectedStudents.map((student) => student.id),
+          channelName: channelName.trim(),
+          memberIds: memberIds,
           isPrivate: isPrivate,
+          channelType: selectedType,
+          durationInMinutes: durationInMinutes,
         });
         console.log("🚀 Creating channel with data:", newChannel);
 
@@ -133,7 +178,7 @@ const AddChannelModal = ({
         // Reset form
         setChannelName("");
         setChannelDescription("");
-        setSelectedType("text");
+        setSelectedType(ChannelType.TEXT);
         setIsPrivate(false);
         setSelectedStudents([]);
         setSearchQuery("");
@@ -149,7 +194,7 @@ const AddChannelModal = ({
   const handleClose = () => {
     setChannelName("");
     setChannelDescription("");
-    setSelectedType("text");
+    setSelectedType(ChannelType.TEXT);
     setIsPrivate(false);
     setSelectedStudents([]);
     setSearchQuery("");
@@ -163,7 +208,7 @@ const AddChannelModal = ({
         // Reset form and close modal
         setChannelName("");
         setChannelDescription("");
-        setSelectedType("text");
+        setSelectedType(ChannelType.TEXT);
         setIsPrivate(false);
         setSelectedStudents([]);
         setSearchQuery("");
@@ -222,16 +267,14 @@ const AddChannelModal = ({
                 Channel Type
               </h3>
 
-              {/* Text Channel */}
+              {/* TEXT Channel */}
               <label className="flex items-center p-3 rounded-lg border border-gray-600 hover:border-gray-500 cursor-pointer transition-colors">
                 <input
                   type="radio"
                   name="channelType"
-                  value="text"
-                  checked={selectedType === "text"}
-                  onChange={(e) =>
-                    setSelectedType(e.target.value as ChannelType)
-                  }
+                  value={ChannelType.TEXT}
+                  checked={selectedType === ChannelType.TEXT}
+                  onChange={() => setSelectedType(ChannelType.TEXT)}
                   className="w-5 h-5 text-indigo-500 bg-gray-600 border-gray-500 focus:ring-indigo-500 focus:ring-2"
                 />
                 <div className="ml-4 flex-1">
@@ -240,64 +283,104 @@ const AddChannelModal = ({
                     <div>
                       <h4 className="text-white font-medium">Text</h4>
                       <p className="text-sm text-gray-400">
-                        Send messages, images, GIFs, emoji, opinions, and puns
+                        Kênh văn bản để gửi tin nhắn, hình ảnh và trao đổi
                       </p>
                     </div>
                   </div>
                 </div>
               </label>
 
-              {/* Voice Channel */}
-              {/* <label className="flex items-center p-3 rounded-lg border border-gray-600 hover:border-gray-500 cursor-pointer transition-colors">
-              <input
-                type="radio"
-                name="channelType"
-                value="voice"
-                checked={selectedType === "voice"}
-                onChange={(e) => setSelectedType(e.target.value as ChannelType)}
-                className="w-5 h-5 text-indigo-500 bg-gray-600 border-gray-500 focus:ring-indigo-500 focus:ring-2"
-              />
-              <div className="ml-4 flex-1">
-                <div className="flex items-center space-x-3">
-                  <Volume2 className="w-6 h-6 text-gray-400" />
-                  <div>
-                    <h4 className="text-white font-medium">Voice</h4>
-                    <p className="text-sm text-gray-400">
-                      Hang out together with voice, video, and screen share
-                    </p>
+              {/* GROUP Channel */}
+              <label className="flex items-center p-3 rounded-lg border border-gray-600 hover:border-gray-500 cursor-pointer transition-colors">
+                <input
+                  type="radio"
+                  name="channelType"
+                  value={ChannelType.GROUP}
+                  checked={selectedType === ChannelType.GROUP}
+                  onChange={() => setSelectedType(ChannelType.GROUP)}
+                  className="w-5 h-5 text-indigo-500 bg-gray-600 border-gray-500 focus:ring-indigo-500 focus:ring-2"
+                />
+                <div className="ml-4 flex-1">
+                  <div className="flex items-center space-x-3">
+                    <Users className="w-6 h-6 text-gray-400" />
+                    <div>
+                      <h4 className="text-white font-medium">Group</h4>
+                      <p className="text-sm text-gray-400">
+                        Kênh nhóm để làm việc theo nhóm nhỏ
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </label> */}
+              </label>
 
-              {/* Forum Channel */}
-              {/* <label className="flex items-center p-3 rounded-lg border border-gray-600 hover:border-gray-500 cursor-pointer transition-colors">
-              <input
-                type="radio"
-                name="channelType"
-                value="forum"
-                checked={selectedType === "forum"}
-                onChange={(e) => setSelectedType(e.target.value as ChannelType)}
-                className="w-5 h-5 text-indigo-500 bg-gray-600 border-gray-500 focus:ring-indigo-500 focus:ring-2"
-              />
-              <div className="ml-4 flex-1">
-                <div className="flex items-center space-x-3">
-                  <MessageSquare className="w-6 h-6 text-gray-400" />
-                  <div>
-                    <h4 className="text-white font-medium">Forum</h4>
-                    <p className="text-sm text-gray-400">
-                      Create a space for organized discussions
-                    </p>
-                    <button
-                      type="button"
-                      className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
-                    >
-                      Learn More
-                    </button>
+              {/* ANNOUNCEMENT Channel */}
+              <label className="flex items-center p-3 rounded-lg border border-gray-600 hover:border-gray-500 cursor-pointer transition-colors">
+                <input
+                  type="radio"
+                  name="channelType"
+                  value={ChannelType.ANNOUNCEMENT}
+                  checked={selectedType === ChannelType.ANNOUNCEMENT}
+                  onChange={() => setSelectedType(ChannelType.ANNOUNCEMENT)}
+                  className="w-5 h-5 text-indigo-500 bg-gray-600 border-gray-500 focus:ring-indigo-500 focus:ring-2"
+                />
+                <div className="ml-4 flex-1">
+                  <div className="flex items-center space-x-3">
+                    <Megaphone className="w-6 h-6 text-gray-400" />
+                    <div>
+                      <h4 className="text-white font-medium">Announcement</h4>
+                      <p className="text-sm text-gray-400">
+                        Kênh thông báo chỉ giáo viên có thể gửi tin
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </label> */}
+              </label>
+
+              {/* VOICE_LIVE Channel */}
+              <label className="flex items-center p-3 rounded-lg border border-gray-600 hover:border-gray-500 cursor-pointer transition-colors">
+                <input
+                  type="radio"
+                  name="channelType"
+                  value={ChannelType.VOICE_LIVE}
+                  checked={selectedType === ChannelType.VOICE_LIVE}
+                  onChange={() => setSelectedType(ChannelType.VOICE_LIVE)}
+                  className="w-5 h-5 text-indigo-500 bg-gray-600 border-gray-500 focus:ring-indigo-500 focus:ring-2"
+                />
+                <div className="ml-4 flex-1">
+                  <div className="flex items-center space-x-3">
+                    <Volume2 className="w-6 h-6 text-gray-400" />
+                    <div>
+                      <h4 className="text-white font-medium">Voice Live</h4>
+                      <p className="text-sm text-gray-400">
+                        Kênh voice chat trực tiếp để trao đổi bằng giọng nói
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </label>
+
+              {/* POST Channel */}
+              <label className="flex items-center p-3 rounded-lg border border-gray-600 hover:border-gray-500 cursor-pointer transition-colors">
+                <input
+                  type="radio"
+                  name="channelType"
+                  value={ChannelType.POST}
+                  checked={selectedType === ChannelType.POST}
+                  onChange={() => setSelectedType(ChannelType.POST)}
+                  className="w-5 h-5 text-indigo-500 bg-gray-600 border-gray-500 focus:ring-indigo-500 focus:ring-2"
+                />
+                <div className="ml-4 flex-1">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="w-6 h-6 text-gray-400" />
+                    <div>
+                      <h4 className="text-white font-medium">Post</h4>
+                      <p className="text-sm text-gray-400">
+                        Kênh đăng bài để tổ chức các bài thảo luận
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </label>
             </div>
 
             {/* Channel Name */}
@@ -307,14 +390,20 @@ const AddChannelModal = ({
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  {selectedType === "text" && (
+                  {selectedType === ChannelType.TEXT && (
                     <Hash className="w-5 h-5 text-gray-400" />
                   )}
-                  {selectedType === "voice" && (
+                  {selectedType === ChannelType.VOICE_LIVE && (
                     <Volume2 className="w-5 h-5 text-gray-400" />
                   )}
-                  {selectedType === "forum" && (
+                  {selectedType === ChannelType.POST && (
                     <MessageSquare className="w-5 h-5 text-gray-400" />
+                  )}
+                  {selectedType === ChannelType.GROUP && (
+                    <Users className="w-5 h-5 text-gray-400" />
+                  )}
+                  {selectedType === ChannelType.ANNOUNCEMENT && (
+                    <Megaphone className="w-5 h-5 text-gray-400" />
                   )}
                 </div>
                 <input
@@ -347,6 +436,10 @@ const AddChannelModal = ({
               <label className="block text-sm font-semibold text-gray-200 uppercase tracking-wide">
                 Add Members
               </label>
+              <p className="text-xs text-gray-400 mb-2">
+                💡 Gõ bất kỳ phần nào của mã số sinh viên để tìm kiếm (VD: 2051,
+                1200, ...)
+              </p>
 
               {/* Search Input */}
               <div className="relative">
@@ -357,7 +450,7 @@ const AddChannelModal = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Tìm sinh viên theo mã số hoặc tên..."
+                  placeholder="Nhập mã số sinh viên (VD: 2051120001)..."
                   className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
                 {isSearching && (
@@ -369,24 +462,34 @@ const AddChannelModal = ({
 
               {/* Search Results */}
               {searchResults.length > 0 && (
-                <div className="bg-gray-800 rounded-lg border border-gray-600 max-h-48 overflow-y-auto">
-                  {searchResults.map((student) => (
-                    <div
-                      key={student.id}
-                      onClick={() => addStudent(student)}
-                      className="flex items-center justify-between p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-600 last:border-b-0"
-                    >
-                      <div>
-                        <p className="text-white font-medium">
-                          {`${student.firstName || ""} ${
-                            student.lastName || ""
-                          }`.trim() || "Không có tên"}
-                        </p>
-                        <p className="text-sm text-gray-400">{student.mssv}</p>
+                <div className="space-y-2">
+                  {/* Add All Button */}
+                  <button
+                    type="button"
+                    onClick={addAllStudents}
+                    className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Thêm tất cả ({searchResults.length} sinh viên)</span>
+                  </button>
+
+                  {/* Results List */}
+                  <div className="bg-gray-800 rounded-lg border border-gray-600 max-h-48 overflow-y-auto">
+                    {searchResults.map((student) => (
+                      <div
+                        key={student.id}
+                        onClick={() => addStudent(student)}
+                        className="flex items-center justify-between p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-600 last:border-b-0"
+                      >
+                        <div>
+                          <p className="text-white font-medium">
+                            {student.fullName || "Không có tên"}
+                          </p>
+                        </div>
+                        <UserPlus className="w-5 h-5 text-green-400" />
                       </div>
-                      <UserPlus className="w-5 h-5 text-green-400" />
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -404,12 +507,7 @@ const AddChannelModal = ({
                       >
                         <div>
                           <p className="text-white text-sm font-medium">
-                            {`${student.firstName || ""} ${
-                              student.lastName || ""
-                            }`.trim() || "Không có tên"}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {student.mssv}
+                            {student.fullName || "Không có tên"}
                           </p>
                         </div>
                         <button
@@ -426,109 +524,112 @@ const AddChannelModal = ({
               )}
             </div>
 
-            {/* TIME TO END CHANNEL */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-5 h-5 text-gray-400">⏰</div>
-                <div>
-                  <h4 className="text-white font-medium">Channel Duration</h4>
-                  <p className="text-sm text-gray-400">
-                    Set how long this channel will remain active.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {/* Preset Duration Options */}
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-300 font-medium">
-                    Quick Duration
-                  </label>
-                  <select
-                    value={
-                      selectedDuration
-                        ? `${selectedDuration}-${durationUnit}`
-                        : ""
-                    }
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        const [value, unit] = e.target.value.split("-");
-                        setSelectedDuration(value);
-                        setDurationUnit(unit as "minutes" | "hours");
-                        setCustomDuration("");
-                      }
-                    }}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="5-minutes">5 minutes</option>
-                    <option value="15-minutes">15 minutes</option>
-                    <option value="45-minutes">45 minutes</option>
-                    <option value="1-hours">1 hour</option>
-                  </select>
-                </div>
-
-                {/* Custom Duration Input */}
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-300 font-medium">
-                    Custom Duration
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="999"
-                      value={customDuration}
-                      onChange={(e) => {
-                        setCustomDuration(e.target.value);
-                        if (e.target.value) {
-                          setSelectedDuration("");
-                        }
-                      }}
-                      placeholder="Enter duration"
-                      className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
-                    <select
-                      value={durationUnit}
-                      onChange={(e) =>
-                        setDurationUnit(e.target.value as "minutes" | "hours")
-                      }
-                      className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="minutes">Minutes</option>
-                      <option value="hours">Hours</option>
-                    </select>
+            {/* TIME TO END CHANNEL - Only for TEXT and GROUP Channel */}
+            {(selectedType === ChannelType.TEXT ||
+              selectedType === ChannelType.GROUP) && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-5 h-5 text-gray-400">⏰</div>
+                  <div>
+                    <h4 className="text-white font-medium">Channel Duration</h4>
+                    <p className="text-sm text-gray-400">
+                      Set how long this channel will remain active.
+                    </p>
                   </div>
                 </div>
 
-                {/* Duration Summary */}
-                <div className="p-3 bg-gray-800 rounded-md">
-                  <p className="text-sm text-gray-300">
-                    <span className="text-white font-medium">Duration: </span>
-                    {customDuration
-                      ? `${customDuration} ${durationUnit}`
-                      : selectedDuration
-                      ? `${selectedDuration} ${durationUnit}`
-                      : "Not set"}
-                  </p>
-                  {(customDuration || selectedDuration) && (
-                    <>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Channel will automatically expire after this duration.
-                      </p>
-                      <p className="text-xs text-green-400 mt-1">
-                        <span className="font-medium">Will expire in: </span>
-                        {customDuration
-                          ? `${customDuration} ${durationUnit}`
-                          : selectedDuration
-                          ? `${selectedDuration} ${durationUnit}`
-                          : "15 minutes"}{" "}
-                        from creation time
-                      </p>
-                    </>
-                  )}
+                <div className="space-y-3">
+                  {/* Preset Duration Options */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-gray-300 font-medium">
+                      Quick Duration
+                    </label>
+                    <select
+                      value={
+                        selectedDuration
+                          ? `${selectedDuration}-${durationUnit}`
+                          : ""
+                      }
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const [value, unit] = e.target.value.split("-");
+                          setSelectedDuration(value);
+                          setDurationUnit(unit as "minutes" | "hours");
+                          setCustomDuration("");
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="5-minutes">5 minutes</option>
+                      <option value="15-minutes">15 minutes</option>
+                      <option value="45-minutes">45 minutes</option>
+                      <option value="1-hours">1 hour</option>
+                    </select>
+                  </div>
+
+                  {/* Custom Duration Input */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-gray-300 font-medium">
+                      Custom Duration
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="999"
+                        value={customDuration}
+                        onChange={(e) => {
+                          setCustomDuration(e.target.value);
+                          if (e.target.value) {
+                            setSelectedDuration("");
+                          }
+                        }}
+                        placeholder="Enter duration"
+                        className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      />
+                      <select
+                        value={durationUnit}
+                        onChange={(e) =>
+                          setDurationUnit(e.target.value as "minutes" | "hours")
+                        }
+                        className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      >
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Duration Summary */}
+                  <div className="p-3 bg-gray-800 rounded-md">
+                    <p className="text-sm text-gray-300">
+                      <span className="text-white font-medium">Duration: </span>
+                      {customDuration
+                        ? `${customDuration} ${durationUnit}`
+                        : selectedDuration
+                        ? `${selectedDuration} ${durationUnit}`
+                        : "Not set"}
+                    </p>
+                    {(customDuration || selectedDuration) && (
+                      <>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Channel will automatically expire after this duration.
+                        </p>
+                        <p className="text-xs text-green-400 mt-1">
+                          <span className="font-medium">Will expire in: </span>
+                          {customDuration
+                            ? `${customDuration} ${durationUnit}`
+                            : selectedDuration
+                            ? `${selectedDuration} ${durationUnit}`
+                            : "15 minutes"}{" "}
+                          from creation time
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             {/* Private Channel Toggle */}
             <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
               <div className="flex items-center space-x-3">

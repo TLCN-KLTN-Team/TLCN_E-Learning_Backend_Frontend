@@ -39,7 +39,7 @@ public class Workspace {
     @Indexed
     Integer courseId; // ID of the course associated with the workspace
 
-    List<Participant> members; // List of students belong to a course
+    List<String> participants; // for quick access and query
 
     // Store only channel references, not embedded documents
     List<String> channelIds; // List of channel IDs in the workspace
@@ -78,40 +78,36 @@ public class Workspace {
         }
     }
 
-    public void addMembers(List<Participant> newMembers) {
-        if (this.members == null) {
-            this.members = new ArrayList<>();
+    public void addParticipant(String userId) {
+        if (this.participants == null) {
+            this.participants = new ArrayList<>();
         }
-        for (Participant member : newMembers) {
-            if (!this.members.contains(member)) {
-                this.members.add(member);
+        if (!this.participants.contains(userId)) {
+            this.participants.add(userId);
+        }
+    }
+
+    public void addParticipants(List<String> userIds) {
+        if (this.participants == null) {
+            this.participants = new ArrayList<>();
+        }
+        for (String userId : userIds) {
+            if (!this.participants.contains(userId)) {
+                this.participants.add(userId);
             }
         }
     }
-    
-    public void removeChannel(String channelId) {
-        if (this.channelIds != null) {
-            this.channelIds.remove(channelId);
-        }
-    }
-    
-    public void addMember(Participant member) {
-        if (this.members == null) {
-            this.members = new ArrayList<>();
-        }
-        if (!this.members.contains(member)) {
-            this.members.add(member);
+
+    public void removeParticipant(String userId) {
+        if (this.participants != null) {
+            this.participants.remove(userId);
         }
     }
 
-    public void removeMember(String userId) {
-        if (this.members != null) {
-            this.members.removeIf(m -> m.getUserId().equals(userId));
+    public boolean hasParticipant(String userId) {
+        if (this.participants != null) {
+            return this.participants.contains(userId);
         }
-    }
-
-    public boolean hasMember(String userId) {
-        return this.members != null && 
-               this.members.stream().anyMatch(m -> m.getUserId().equals(userId));
+        return false;
     }
 }

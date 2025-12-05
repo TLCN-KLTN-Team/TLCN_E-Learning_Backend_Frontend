@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import SectionList from "../section/SectionList";
 import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
 import AddChannelModal from "@/components/student/workspace/channel/AddChannelModal";
+import { ChannelSettings } from "@/pages/workspace/settings/index.ts";
 
 import { toast } from "react-toastify";
 import type {
@@ -9,6 +10,11 @@ import type {
   WorkspaceResponse,
   SectionResponse,
 } from "@/types/chat.types";
+import type { Channel } from "@/types/channel.types";
+import {
+  ChannelType as ChannelSettingsType,
+  ChannelStatus,
+} from "@/types/channel.types";
 import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
 import { getAllGroupsByChannelId } from "@/services/api/workspace/group.api";
 import { getChannel } from "@/services/api/workspace/channel.api";
@@ -42,12 +48,83 @@ const ChannelPanel = ({
     setShowInviteModal(true);
   };
 
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
   // Handle channel settings
   const handleChannelSettings = (channel: ChannelResponse) => {
     setSelectedChannelForAction(channel);
-    // TODO: Implement channel settings modal
-    console.log("Channel settings for:", channel);
-    toast.info("Tính năng cài đặt channel đang được phát triển");
+    setShowSettingsModal(true);
+  };
+
+  // Convert ChannelResponse to Channel type for settings
+  const convertToChannelSettings = (channel: ChannelResponse): Channel => {
+    return {
+      id: channel.id,
+      participantHash: channel.participantHash || "",
+      channelName: channel.channelName,
+      description: channel.description || "",
+      workspaceId: selectedWorkspace?.id || "",
+      classId: null,
+      memberIds: channel.participants?.map((p) => p.userId) || [],
+      isPrivate: channel.isPrivate,
+      type: ChannelSettingsType.TEXT,
+      status: channel.ended ? ChannelStatus.LOCKED : ChannelStatus.ACTIVE,
+      durationMinutes: Math.floor(channel.endTime / 60000) || 60,
+    };
+  };
+
+  // Handle save channel settings
+  const handleSaveChannelSettings = async (channelData: Channel) => {
+    try {
+      // TODO: Call API to update channel
+      console.log("Saving channel data:", channelData);
+      toast.success("Cập nhật channel thành công!");
+      setShowSettingsModal(false);
+      // Refresh sections to get updated channel data
+      if (selectedWorkspace) {
+        try {
+          const sectionsData = await getSectionsByWorkspaceId(
+            selectedWorkspace.id
+          );
+          setSections(sectionsData);
+        } catch (error) {
+          console.error("Error refreshing sections:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error saving channel:", error);
+      toast.error("Không thể cập nhật channel");
+      throw error;
+    }
+  };
+
+  // Handle delete channel
+  const handleDeleteChannel = async (channelId: string) => {
+    try {
+      // TODO: Call API to delete channel
+      console.log("Deleting channel:", channelId);
+      toast.success("Xóa channel thành công!");
+      setShowSettingsModal(false);
+      // Refresh sections
+      if (selectedWorkspace) {
+        try {
+          const sectionsData = await getSectionsByWorkspaceId(
+            selectedWorkspace.id
+          );
+          setSections(sectionsData);
+        } catch (error) {
+          console.error("Error refreshing sections:", error);
+        }
+      }
+      // If deleted channel was selected, clear selection
+      if (selectedChannel?.id === channelId) {
+        onChannelSelect(null as any);
+      }
+    } catch (error) {
+      console.error("Error deleting channel:", error);
+      toast.error("Không thể xóa channel");
+      throw error;
+    }
   };
 
   // Handle create channel in section
@@ -188,7 +265,15 @@ const ChannelPanel = ({
         onChannelCreated={handleChannelCreated}
       />
 
-      {/* TODO: Add Channel Settings Modal */}
+      {/* Channel Settings Modal */}
+      {showSettingsModal && selectedChannelForAction && (
+        <ChannelSettings
+          channel={convertToChannelSettings(selectedChannelForAction)}
+          onClose={() => setShowSettingsModal(false)}
+          onSave={handleSaveChannelSettings}
+          onDelete={handleDeleteChannel}
+        />
+      )}
     </>
   );
 };

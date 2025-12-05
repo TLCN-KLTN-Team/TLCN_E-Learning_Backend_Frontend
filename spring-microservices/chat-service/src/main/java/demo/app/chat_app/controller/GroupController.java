@@ -20,15 +20,6 @@ public class GroupController {
                 .build();
     }
 
-    @GetMapping("/members/{channelId}")
-    public ApiResponse<?> getMembersByKeyword(@PathVariable String channelId,
-                                              @RequestParam String keyword) {
-        return ApiResponse.builder()
-                .result(groupService.getMembersInChannelByMssv(channelId, keyword))
-                .message("Members retrieved successfully")
-                .build();
-    }
-
     @PostMapping
     public ApiResponse<?> createGroup(@RequestBody CreateGroupRequest request) {
         return ApiResponse.builder()

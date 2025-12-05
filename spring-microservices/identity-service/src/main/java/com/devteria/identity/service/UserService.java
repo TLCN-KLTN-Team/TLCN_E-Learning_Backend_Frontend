@@ -1,12 +1,12 @@
 package com.devteria.identity.service;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import com.devteria.identity.dto.response.UserChatInfo;
+import com.devteria.identity.entity.Student;
+import com.devteria.identity.repository.StudentRepository;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -53,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserService {
     UserRepository userRepository;
+    StudentRepository studentRepository;
     RoleRepository roleRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
@@ -291,6 +292,19 @@ public class UserService {
                 .build();
 
         return response;
+    }
+
+    public List<UserChatInfo> getUserIdsByStudentIds(String keyword) {
+        List<Student> users = studentRepository.findByStudentIdContainingIgnoreCase(keyword);
+        return users.stream()
+                .map(
+                        user -> UserChatInfo.builder()
+                                .id(user.getId())
+                                .fullName(user.getFirstName() + " " + user.getLastName())
+                                .avatarUrl(user.getAvatarUrl())
+                                .build()
+                )
+                .collect(Collectors.toList());
     }
 
     private static boolean isMatchKeyword(String keyword, User user) {
