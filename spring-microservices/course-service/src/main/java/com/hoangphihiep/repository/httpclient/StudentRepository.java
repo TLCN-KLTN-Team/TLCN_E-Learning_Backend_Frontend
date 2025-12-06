@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @FeignClient(
         name = "identity-service",
@@ -36,6 +37,11 @@ public interface StudentRepository {
 
     @GetMapping("/students/all-by-educationalUnit/{educationalUnitId}")
     ApiResponse<List<StudentResponse>> getAllStudentsByEducationalUnit(@PathVariable int educationalUnitId);
+
+    @PostMapping("/students/users-by-student-ids")
+    ApiResponse<List<String>> getUsersByStudentIds(
+            @RequestBody Map<String, List<String>> request
+    );
 
     @PutMapping("/students/{id}")
     ApiResponse<StudentResponse> updateStudent(@PathVariable String id, @RequestBody StudentRequest request);
