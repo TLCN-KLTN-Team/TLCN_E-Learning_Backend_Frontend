@@ -8,5 +8,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ChatMessageMapper {
     @Mapping(target = "me", ignore = true) // Will be set in service layer
+    @Mapping(target = "sender", ignore = true)
     ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage);
 }

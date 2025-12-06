@@ -5,6 +5,7 @@ import demo.app.chat_app.dto.response.ChatMessageResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.service.ChatMessageService;
+import demo.app.chat_app.websocket.WebSocketAuthInterceptor;
 import demo.app.chat_app.websocket.WebsocketSessionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +34,19 @@ public class ChatRealtimeController {
     @MessageMapping("/chat.sendMessage")
     public void sendTextMessage(@Payload TextMessageRequest request, SimpMessageHeaderAccessor accessor) {
         try {
+            // Get userId from session
             String userId = WebsocketSessionUtil.getCurrentUserId(accessor);
+            
+            // Get token from session attributes and ensure it's in ThreadLocal for Feign
+            String token = (String) accessor.getSessionAttributes().get("authToken");
+            if (token != null) {
+                WebSocketAuthInterceptor.setToken(token);
+                log.debug("Token set for Feign client: {}", token.substring(0, Math.min(30, token.length())));
+            } else {
+                log.warn("No auth token found in session for user: {}", userId);
+            }
+            
+            // Set authentication context
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(userId, null, null);
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
@@ -53,6 +66,9 @@ public class ChatRealtimeController {
         } catch (Exception e) {
             log.error("Failed to send text message", e);
             throw new AppException(ErrorCode.SEND_MESSAGE_FAILED);
+        } finally {
+            // Clean up ThreadLocal to prevent memory leaks
+            WebSocketAuthInterceptor.clearToken();
         }
     }
 
@@ -60,9 +76,19 @@ public class ChatRealtimeController {
      * Handle message status updates (e.g., when attachments are uploaded)
      */
     @MessageMapping("/chat.updateMessageStatus")
-    public void updateMessageStatus(@Payload String messageId, Principal principal) {
+    public void updateMessageStatus(@Payload String messageId, SimpMessageHeaderAccessor accessor) {
         try {
-            SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
+            // Get token from session and set to ThreadLocal
+            String token = (String) accessor.getSessionAttributes().get("authToken");
+            if (token != null) {
+                WebSocketAuthInterceptor.setToken(token);
+            }
+            
+            // Set authentication
+            String userId = WebsocketSessionUtil.getCurrentUserId(accessor);
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(userId, null, null);
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             
             // Get updated message with attachments
             ChatMessageResponse updatedMessage = chatMessageService.getMessageById(messageId);
@@ -75,6 +101,9 @@ public class ChatRealtimeController {
             
         } catch (Exception e) {
             log.error("Failed to update message status", e);
+        } finally {
+            // Clean up ThreadLocal
+            WebSocketAuthInterceptor.clearToken();
         }
     }
 }

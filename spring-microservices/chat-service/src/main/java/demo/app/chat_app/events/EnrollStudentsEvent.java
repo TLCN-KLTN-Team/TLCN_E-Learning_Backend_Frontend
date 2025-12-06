@@ -12,7 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class EnrollStudentsEvent {
-    private String eventId;
     private Integer courseId;
     private Integer classId;
     private List<String> studentIds;

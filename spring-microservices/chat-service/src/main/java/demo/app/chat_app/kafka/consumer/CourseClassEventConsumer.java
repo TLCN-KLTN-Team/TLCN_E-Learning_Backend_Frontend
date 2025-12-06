@@ -40,12 +40,12 @@ public class CourseClassEventConsumer {
 
             switch (eventType) {
                 case "CLASS_CREATED":
-                    log.info("Received CLASS_CREATED event: {}", message);
+                    log.info("Received CLASS_CREATED event: {}", data);
                     ClassCreatedEvent classCreatedEvent = mapper.convertValue(data, ClassCreatedEvent.class);
                     sectionService.createSectionWhenClassCreated(classCreatedEvent);
                     break;
                 case "STUDENTS_ENROLLED":
-                    log.info("Received STUDENTS_ENROLLED event: {}", message);
+                    log.info("Received STUDENTS_ENROLLED event: {}", data);
                     EnrollStudentsEvent enrollStudentsEvent = mapper.convertValue(data, EnrollStudentsEvent.class);
                     channelService.addParticipantsWhenStudentsEnrolled(enrollStudentsEvent);
                     break;
@@ -54,6 +54,7 @@ public class CourseClassEventConsumer {
             }
 
         } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
             throw new AppException(ErrorCode.JSON_PROCESSING_ERROR);
         }
     }
