@@ -34,7 +34,7 @@ export interface UserProfileResponse {
 }
 
 export interface Participant {
-  userId: string;
+  id: string;
   mssv: string;
   firstName?: string | null;
   lastName?: string | null;

@@ -42,6 +42,7 @@ public class CourseEnrollmentService {
     private final QuizAttemptRepository quizAttemptRepository;
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
     private final ClassEventProducer producer;
+    private final StudentRepository studentClient;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
@@ -190,10 +191,13 @@ public class CourseEnrollmentService {
             updateCourseTotalStudents(courseClass.getCourse().getId());
 
             // send event to create channel for a class
+            Map<String, List<String>> request = new HashMap<>();
+            request.put("studentIds", studentIds);
+            List<String> userIdsOfStudents = studentClient.getUsersByStudentIds(request).getResult();
             EnrollStudentsEvent event = EnrollStudentsEvent.builder()
                     .courseId(courseClass.getCourse().getId())
                     .classId(courseClass.getId())
-                    .studentIds(studentIds)
+                    .studentIds(userIdsOfStudents)
                     .build();
 
             producer.addMembersToClassChannel(event);

@@ -1,6 +1,7 @@
 package demo.app.chat_app.service.impl;
 
 import demo.app.chat_app.dto.response.ChatMessageResponse;
+import demo.app.chat_app.dto.response.UserResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChatMessageMapper;
@@ -10,14 +11,20 @@ import demo.app.chat_app.model.enums.MessageType;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.MessageAttachmentRepository;
+import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.ChatMessageService;
+import demo.app.chat_app.service.util.ChatMessageUtils;
 import demo.app.chat_app.service.util.CloudinaryService;
 import demo.app.chat_app.utils.FileUtils;
+import demo.app.chat_app.websocket.WebSocketAuthInterceptor;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
@@ -38,6 +45,8 @@ public class FileUploadService {
     ChatMessageService chatMessageService;
     ChannelRepository channelRepository;
     ChatMessageMapper chatMessageMapper;
+    ChatMessageUtils chatMessageUtils;
+    GetUserClient getUserClient;
 
     // Track upload status for messages
     ConcurrentHashMap<String, String> uploadStatusMap = new ConcurrentHashMap<>();
@@ -66,11 +75,16 @@ public class FileUploadService {
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
         String userId = principal.getName(); // Assuming user ID is the principal name
+        log.info("Uploading {} files to channel {} by user {}", files.length, channelId, userId);
+
+        // Lấy token từ HTTP request context
+        String authToken = getAuthTokenFromContext();
+        log.info("Auth token retrieved for file upload: {}", authToken != null ? "present" : "missing");
 
         // using CompletableFuture to upload files in parallel. return futures object
         List<CompletableFuture<ChatMessageResponse>> futures = Arrays.stream(files)
                 .map((file) -> CompletableFuture.supplyAsync(() -> uploadSingleFileAsync(
-                        file, channelId, userId
+                        file, channelId, userId, authToken
                 ))).toList();
 
         // get response from futures
@@ -82,8 +96,13 @@ public class FileUploadService {
     }
 
     private ChatMessageResponse uploadSingleFileAsync(MultipartFile file,
-                                                           String channelId, String sender) {
+                                                           String channelId, String sender, String authToken) {
         try {
+            // Set token vào ThreadLocal trước khi gọi Feign client
+            if (StringUtils.hasText(authToken)) {
+                WebSocketAuthInterceptor.setToken(authToken);
+                log.debug("Token set in ThreadLocal for async task");
+            }
 
             // Validate file
             if (!fileUtils.validateFile(file)) {
@@ -112,11 +131,14 @@ public class FileUploadService {
 
             chatMessage = chatMessageRepository.save(chatMessage);
 
-            return this.toChatMessageResponse(chatMessage, sender);
+            return this.toChatMessageResponse(chatMessage,sender);
 
         } catch (Exception e) {
             log.error("Failed to upload file {} for message {}", file.getOriginalFilename(), e);
             throw new AppException(ErrorCode.SEND_MESSAGE_FAILED);
+        } finally {
+            // Clean up ThreadLocal sau khi xong
+            WebSocketAuthInterceptor.clearToken();
         }
     }
 
@@ -125,6 +147,16 @@ public class FileUploadService {
         boolean isMe = chatMessage.getSender().equals(userId);
         chatMessageResponse.setMe(isMe);
         chatMessageResponse.setMessageType(chatMessage.getMessageType());
+
+        log.info("Mapping chat message to response for messageId: {}, isMe: {}", chatMessage.getId(), isMe);
+
+        // get user profile info
+        try {
+            UserResponse senderProfile = getUserClient.getUser(chatMessage.getSender()).getResult();
+            chatMessageResponse.setSender(senderProfile);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.GET_USER_PROFILE_FAILED);
+        }
 
         return chatMessageResponse;
     }
@@ -141,5 +173,28 @@ public class FileUploadService {
      */
     public void clearUploadStatus(String messageId) {
         uploadStatusMap.remove(messageId);
+    }
+
+    /**
+     * Lấy token từ HTTP request context hoặc WebSocket ThreadLocal
+     */
+    private String getAuthTokenFromContext() {
+        // 1) Ưu tiên lấy từ WebSocket ThreadLocal
+        String authToken = WebSocketAuthInterceptor.getToken();
+        
+        // 2) Nếu không có, lấy từ HTTP request
+        if (!StringUtils.hasText(authToken)) {
+            ServletRequestAttributes servletRequestAttributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            
+            if (servletRequestAttributes != null && servletRequestAttributes.getRequest() != null) {
+                authToken = servletRequestAttributes.getRequest().getHeader("Authorization");
+                log.debug("Token retrieved from HTTP request context");
+            }
+        } else {
+            log.debug("Token retrieved from WebSocket ThreadLocal");
+        }
+        
+        return authToken;
     }
 }

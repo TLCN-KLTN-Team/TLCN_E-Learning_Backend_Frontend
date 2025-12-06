@@ -7,6 +7,69 @@ import { getMessagesByChannelId } from "@/services/api/workspace/messageApi";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
 import { useAuth } from "@/context/auth-context/useAuth";
 
+// Time separator component (like Discord)
+const TimeSeparator = ({ date }: { date: Date }) => {
+  const formatDate = (date: Date) => {
+    const now = new Date();
+    const messageDate = new Date(date);
+
+    const isToday = messageDate.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = messageDate.toDateString() === yesterday.toDateString();
+
+    const isSameYear = messageDate.getFullYear() === now.getFullYear();
+    const isSameMonth = isSameYear && messageDate.getMonth() === now.getMonth();
+
+    // Nếu cùng ngày -> hiển thị giờ
+    if (isToday) {
+      return `Hôm nay lúc ${messageDate.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+    } else if (isYesterday) {
+      return `Hôm qua lúc ${messageDate.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+    }
+    // Nếu cùng tháng -> hiển thị ngày
+    else if (isSameMonth) {
+      return messageDate.toLocaleDateString("vi-VN", {
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    // Nếu cùng năm -> hiển thị ngày tháng
+    else if (isSameYear) {
+      return messageDate.toLocaleDateString("vi-VN", {
+        day: "numeric",
+        month: "long",
+      });
+    }
+    // Khác năm -> hiển thị đầy đủ
+    else {
+      return messageDate.toLocaleDateString("vi-VN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
+  };
+
+  return (
+    <div className="flex items-center my-4">
+      <div className="flex-1 h-px bg-gray-600"></div>
+      <span className="px-3 text-xs text-gray-400 font-medium">
+        {formatDate(date)}
+      </span>
+      <div className="flex-1 h-px bg-gray-600"></div>
+    </div>
+  );
+};
+
 interface MessageListProps {
   selectedChannel: ChannelResponse;
   wsMessages: ChatMessageResponse[];
@@ -53,8 +116,9 @@ const MessageList = ({
   ): boolean => {
     if (!previousMessage) return false;
 
-    const isSameSender =
-      currentMessage.sender.userId === previousMessage.sender.userId;
+    console.log("Comparing messages:", { currentMessage, previousMessage });
+
+    const isSameSender = currentMessage.sender.id === previousMessage.sender.id;
     const timeDifference =
       new Date(currentMessage.createdDate).getTime() -
       new Date(previousMessage.createdDate).getTime();
@@ -72,7 +136,7 @@ const MessageList = ({
         // Set 'me' property for messages from API
         const messagesWithMe = messagesData.map((msg) => ({
           ...msg,
-          me: user?.id === msg.sender.userId,
+          me: user?.id === msg.sender.id,
         }));
 
         setAllMessages(messagesWithMe);
@@ -80,7 +144,9 @@ const MessageList = ({
       };
       fetchMessages();
     }
-  }, [selectedChannel, user?.id]); // Effect to sync WebSocket messages with allMessages
+  }, [selectedChannel, user?.id]);
+
+  // Effect to sync WebSocket messages with allMessages
   useEffect(() => {
     if (!selectedChannel) return;
 
@@ -108,7 +174,7 @@ const MessageList = ({
         // Add 'me' property to new WebSocket messages
         const processedNewMessages = newMessages.map((msg) => ({
           ...msg,
-          me: user?.id === msg.sender.userId,
+          me: user?.id === msg.sender.id,
         }));
 
         // Combine and sort all messages by timestamp
@@ -122,17 +188,45 @@ const MessageList = ({
     }
   }, [wsMessages, selectedChannel, user?.id]);
 
-  // Function to render messages with grouping logic
-  const renderMessages = (messages: ChatMessageResponse[]) => {
-    return messages.map((message, index) => {
-      if (messages.length === 0) {
-        return <MessageItem key={message.id} message={message} />;
-      }
+  // Function to check if time separator should be shown (1 hour difference)
+  const shouldShowTimeSeparator = (
+    currentMessage: ChatMessageResponse,
+    previousMessage: ChatMessageResponse | null
+  ): boolean => {
+    if (!previousMessage) return true;
 
+    const currentTime = new Date(currentMessage.createdDate).getTime();
+    const previousTime = new Date(previousMessage.createdDate).getTime();
+    const timeDifference = currentTime - previousTime;
+
+    // Show separator if difference is >= 1 hour (3600000 milliseconds)
+    return timeDifference >= 3600000;
+  };
+
+  // Function to render messages with grouping logic and time separators
+  const renderMessages = (messages: ChatMessageResponse[]) => {
+    const elements: React.ReactElement[] = [];
+
+    messages.forEach((message, index) => {
       const previousMessage = index > 0 ? messages[index - 1] : null;
       const shouldGroup = shouldGroupMessages(message, previousMessage);
+      const showTimeSeparator = shouldShowTimeSeparator(
+        message,
+        previousMessage
+      );
 
-      return (
+      // Add time separator if needed
+      if (showTimeSeparator) {
+        elements.push(
+          <TimeSeparator
+            key={`separator-${message.id}`}
+            date={new Date(message.createdDate)}
+          />
+        );
+      }
+
+      // Add message
+      elements.push(
         <MessageItem
           key={message.id}
           message={message}
@@ -141,6 +235,8 @@ const MessageList = ({
         />
       );
     });
+
+    return elements;
   };
   if (isLoadingMessages) {
     return (
@@ -187,6 +283,28 @@ const MessageList = ({
   return (
     <>
       <div className="p-4 space-y-4">
+        {/* Channel description header - shown even when messages exist */}
+        <div className="pb-4 border-gray-700">
+          <div className="flex items-center mb-3">
+            <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
+              <Hash className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Welcome to #{selectedChannel.channelName}!
+          </h1>
+          <p className="text-gray-300 mb-3">
+            {selectedChannel.description ||
+              `This is the start of the #${selectedChannel.channelName} channel.`}
+          </p>
+          {getRoles().includes("TEACHER") && (
+            <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
+              <Edit className="w-4 h-4 mr-1" />
+              Edit Channel
+            </button>
+          )}
+        </div>
+
         {/* Display all messages (API + WebSocket combined and sorted) */}
         {renderMessages(allMessages)}
         {/* Invisible element to scroll to */}
