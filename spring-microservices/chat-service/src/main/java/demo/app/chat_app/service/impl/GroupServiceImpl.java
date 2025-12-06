@@ -1,21 +1,17 @@
 package demo.app.chat_app.service.impl;
 
 import demo.app.chat_app.dto.request.CreateGroupRequest;
-import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.dto.response.CreateGroupResponse;
 import demo.app.chat_app.dto.response.GroupResponse;
-import demo.app.chat_app.dto.response.UserProfileResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.model.Channel;
 import demo.app.chat_app.model.Group;
-import demo.app.chat_app.model.Participant;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.GroupRepository;
 import demo.app.chat_app.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;

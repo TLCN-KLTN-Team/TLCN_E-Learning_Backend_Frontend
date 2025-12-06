@@ -2,9 +2,7 @@ package demo.app.chat_app.service.impl;
 
 import demo.app.chat_app.dto.request.ChatMessageRequest;
 import demo.app.chat_app.dto.request.TextMessageRequest;
-import demo.app.chat_app.dto.response.AttachmentResponse;
-import demo.app.chat_app.dto.response.ChatMessageResponse;
-import demo.app.chat_app.dto.response.PageResponse;
+import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChatMessageMapper;
@@ -16,9 +14,11 @@ import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.MessageAttachmentRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
+import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.repository.httpclient.ProfileClient;
 import demo.app.chat_app.service.ChatMessageService;
 import demo.app.chat_app.service.util.CloudinaryService;
+import demo.app.chat_app.utils.JwtUtils;
 import demo.app.chat_app.websocket.WebsocketSessionUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +47,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     ChatMessageRepository chatMessageRepository;
     ChatMessageMapper chatMessageMapper;
     ChannelRepository channelRepository;
+    WorkspaceRepository workspaceRepository;
+    GetUserClient getUserClient;
 
     @Override
     public ChatMessageResponse sendMessage(ChatMessageRequest request, Principal principal) {
@@ -80,9 +82,18 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage) {
         var chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatMessage);
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isMe = chatMessage.getSender().getUserId().equals(userId);
+        boolean isMe = chatMessage.getSender().equals(userId);
         chatMessageResponse.setMe(isMe);
         chatMessageResponse.setMessageType(chatMessage.getMessageType());
+
+        // get user profile info
+        try {
+            UserResponse senderProfile = getUserClient.getUser(chatMessage.getSender()).getResult();
+            chatMessageResponse.setSender(senderProfile);
+        } catch (Exception e) {
+            log.info("Failed to fetch user profile for userId: {}", chatMessage.getSender(), e);
+            throw new AppException(ErrorCode.GET_USER_PROFILE_FAILED);
+        }
 
         return chatMessageResponse;
     }
@@ -94,10 +105,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         // Verify channel exists and user has access
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-//
-//        if (!channel.hasParticipant(userId)) {
-//            throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
-//        }
+
+        checkIsMemberChannel(channel, userId);
 
         // Use paginated query for better performance
         // For now, get first 50 messages - should be parameterized
@@ -148,17 +157,11 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // Find sender participant info
-//        Participant sender = channel.getParticipants().stream()
-//                .filter(p -> p.getUserId().equals(userId))
-//                .findFirst()
-//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL));
+        String userId = JwtUtils.getUserId();
 
         // Create and save message with PENDING status (for file uploads)
         ChatMessage message = ChatMessage.builder()
-//                .sender(sender)
+                .sender(userId)
                 .channelId(request.getChannelId())
                 .content(request.getContent())
                 .createdDate(Instant.now())
@@ -166,7 +169,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .build();
 
         message = chatMessageRepository.save(message);
-        log.info("Text message created with ID: {}", message.getId());
+        log.info("Text message created with ID: {}", message);
 
         return this.toChatMessageResponse(message);
     }
@@ -175,23 +178,34 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     public ChatMessageResponse getMessageById(String messageId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NOT_FOUND));
-        
+
         // Check if user has access to this message's channel
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         Channel channel = channelRepository.findById(message.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-                
-//        if (!channel.hasParticipant(userId)) {
-//            throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
-//        }
+
+        checkIsMemberChannel(channel, userId);
 
         return this.toChatMessageResponse(message);
     }
 
+    private void checkIsMemberChannel(Channel channel, String userId) {
+        if (channel.isGeneral() && channel.getWorkspaceId() != null) {
+            Workspace workspace = workspaceRepository.findById(channel.getWorkspaceId())
+                    .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
+            if (!workspace.hasParticipant(userId)) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
+            }
+        } else {
+            if (!channel.hasMember(userId)) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
+            }
+        }
+    }
 
     private ChatMessageResponse toUploadedResponse(ChatMessage chatMessage, String userId) {
         var chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatMessage);
-        boolean isMe = chatMessage.getSender().getUserId().equals(userId);
+        boolean isMe = chatMessage.getSender().equals(userId);
         chatMessageResponse.setMe(isMe);
 
         return chatMessageResponse;

@@ -33,7 +33,7 @@ public class ChatMessage {
 
     String content;
 
-    Participant sender;
+    String sender;
 
     @Builder.Default
     MessageType messageType = MessageType.TEXT;

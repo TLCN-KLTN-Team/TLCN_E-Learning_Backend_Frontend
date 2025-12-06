@@ -4,7 +4,14 @@ import lombok.Getter;
 
 @Getter
 public enum MessageType {
-    TEXT, // Regular text message
-    IMAGE, // image
-    FILE, // file attachment
+    TEXT("TEXT"), // Regular text message
+    IMAGE("IMAGE"), // image
+    FILE("FILE"),
+    ; // file attachment
+
+    private final String type;
+
+    MessageType(String type) {
+        this.type = type;
+    }
 }

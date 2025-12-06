@@ -1,6 +1,5 @@
 package demo.app.chat_app.dto.request;
 
-import demo.app.chat_app.model.Participant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;

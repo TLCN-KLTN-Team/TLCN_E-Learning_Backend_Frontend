@@ -1,13 +1,10 @@
 package demo.app.chat_app.dto.response;
 
-import demo.app.chat_app.model.Participant;
-import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -19,7 +16,7 @@ public class ChatMessageResponse {
     String channelId;
     boolean me;
     String content;
-    Participant sender;
+    UserResponse sender;
     MessageType messageType;
     String fileUrl;
     Instant createdDate;

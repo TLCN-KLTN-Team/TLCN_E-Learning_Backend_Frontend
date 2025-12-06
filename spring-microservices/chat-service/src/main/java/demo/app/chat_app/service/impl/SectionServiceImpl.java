@@ -5,7 +5,6 @@ import demo.app.chat_app.events.ClassCreatedEvent;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.model.Channel;
-import demo.app.chat_app.model.Participant;
 import demo.app.chat_app.model.Section;
 import demo.app.chat_app.model.Workspace;
 import demo.app.chat_app.repository.SectionRepository;
@@ -57,6 +56,7 @@ public class SectionServiceImpl {
         Section section = Section.builder()
                 .title(event.getClassName())
                 .workspaceId(w.getId())
+                .classId(event.getClassId())
                 .isPublic(false)
                 .build();
 

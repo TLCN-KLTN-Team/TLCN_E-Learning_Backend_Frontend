@@ -1,6 +1,5 @@
 package demo.app.chat_app.dto.response;
 
-import demo.app.chat_app.model.Participant;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -17,7 +16,7 @@ public class ChannelResponse {
     String participantHash;
     String channelName;
     String description;
-    List<Participant> participants;
+//    List<Participant> participants;
     List<ChatMessageResponse> messages;
     int durationMinutes;
     boolean isPrivate;

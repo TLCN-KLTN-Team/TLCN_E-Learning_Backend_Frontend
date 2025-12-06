@@ -1,10 +1,7 @@
 package demo.app.chat_app.service.impl;
 
-import demo.app.chat_app.dto.request.ChannelCreationRequest;
 import demo.app.chat_app.dto.request.CreateWorkspacesRequest;
 import demo.app.chat_app.dto.request.WorkspaceCreationRequest;
-import demo.app.chat_app.dto.response.BasicChannelResponse;
-import demo.app.chat_app.dto.response.ChannelResponse;
 import demo.app.chat_app.dto.response.PageResponse;
 import demo.app.chat_app.dto.response.WorkspaceResponse;
 import demo.app.chat_app.events.CourseCreatedEvent;
@@ -12,7 +9,6 @@ import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.WorkspaceMapper;
 import demo.app.chat_app.model.Channel;
-import demo.app.chat_app.model.Participant;
 import demo.app.chat_app.model.Section;
 import demo.app.chat_app.model.Workspace;
 import demo.app.chat_app.repository.ChannelRepository;
@@ -24,7 +20,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -69,7 +64,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         }
 
         // Check if members exist in the system
-        List<Participant> existingMembers = getExistingMembersFromCourseCreated(request.getMemberIds());
 
         Workspace workspace = Workspace.builder()
                 .name(request.getName())
@@ -128,29 +122,29 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     }
 
     // Method add members and check if user exists in the system
-    private List<Participant> getExistingMembersFromCourseCreated(List<String> memberIds) {
-        List<Participant> existingMembers = new ArrayList<>();
-        memberIds.forEach(id -> {
-            try{
-                var user = getUserClient.getUser(id).getResult();
-                Participant participant = Participant.builder()
-                        .userId(user.getId())
-                        .firstName(user.getFirstName())
-                        .lastName(user.getLastName())
-                        .avatarUrl(user.getAvatar())
-                        .joinedAt(Instant.now())
-                        .build();
-                if (participant==null) {
-                    throw new AppException(ErrorCode.USER_NOT_EXISTED);
-                }
-                existingMembers.add(participant);
-            }
-            catch (FeignException fe) {
-                throw new AppException(ErrorCode.USER_NOT_FOUND_FROM_FEIGN_CLIENT);
-            }
-        });
-        return existingMembers;
-    }
+//    private List<Participant> getExistingMembersFromCourseCreated(List<String> memberIds) {
+//        List<Participant> existingMembers = new ArrayList<>();
+//        memberIds.forEach(id -> {
+//            try{
+//                var user = getUserClient.getUser(id).getResult();
+//                Participant participant = Participant.builder()
+//                        .userId(user.getId())
+//                        .firstName(user.getFirstName())
+//                        .lastName(user.getLastName())
+//                        .avatarUrl(user.getAvatar())
+//                        .joinedAt(Instant.now())
+//                        .build();
+//                if (participant==null) {
+//                    throw new AppException(ErrorCode.USER_NOT_EXISTED);
+//                }
+//                existingMembers.add(participant);
+//            }
+//            catch (FeignException fe) {
+//                throw new AppException(ErrorCode.USER_NOT_FOUND_FROM_FEIGN_CLIENT);
+//            }
+//        });
+//        return existingMembers;
+//    }
 
     @Override
     public WorkspaceResponse updateWorkspace(WorkspaceCreationRequest request) {
