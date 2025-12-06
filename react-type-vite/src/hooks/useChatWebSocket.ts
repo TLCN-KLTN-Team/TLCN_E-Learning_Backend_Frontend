@@ -327,6 +327,9 @@ export const useChatWebSocket = () => {
           body: JSON.stringify(messagePayload),
           headers: {
             "content-type": "application/json",
+            Authorization: `Bearer ${
+              localStorage.getItem("accessToken") || ""
+            }`,
           },
         });
       } catch (error) {
