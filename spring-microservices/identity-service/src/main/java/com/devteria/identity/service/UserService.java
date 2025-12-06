@@ -319,7 +319,6 @@ public class UserService {
         return matchKeyword;
     }
 
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER')")
     public UserResponse getUser(String id) {
         log.info("Call to db");
         return userMapper.toUserResponse(

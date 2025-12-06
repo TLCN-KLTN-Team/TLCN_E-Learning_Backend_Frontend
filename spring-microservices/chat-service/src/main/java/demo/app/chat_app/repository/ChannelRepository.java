@@ -32,6 +32,8 @@ public interface ChannelRepository extends MongoRepository<Channel, String> {
     // Find channels in workspace where user is participant
     @Query("{ 'workspaceId': ?0, 'participants.userId': ?1 }")
     List<Channel> findByWorkspaceIdAndParticipantUserId(String workspaceId, String userId);
+
+    Optional<Channel> findByChannelNameContainingIgnoreCase(String channelName);
     
     // Check if user is in channel
     @Query(value = "{ 'id': ?0, 'participants.userId': ?1 }", exists = true)
@@ -49,6 +51,7 @@ public interface ChannelRepository extends MongoRepository<Channel, String> {
     @Query("{ 'workspaceId': ?0, 'channelName': { $regex: ?1, $options: 'i' } }")
     List<Channel> findByWorkspaceIdAndChannelNameContaining(String workspaceId, String namePattern);
 
+    @Query("{ 'classId': ?0 }")
     Optional<Channel> findByClassId(Integer classId);
 
 }
