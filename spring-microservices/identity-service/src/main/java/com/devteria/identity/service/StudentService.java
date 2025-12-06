@@ -4,7 +4,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,6 +41,7 @@ public class StudentService {
     StudentRepository studentRepository;
     UserRepository userRepository;
     StudentMapper studentMapper;
+    UserMapper userMapper;
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
 
@@ -201,5 +204,12 @@ public class StudentService {
             log.error("Invalid account status: {}", status);
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
+    }
+
+    public List<String> getUsersByStudentIds(List<String> studentIds) {
+        List<Student> students = studentRepository.findByStudentIdIn(studentIds);
+        return students.stream()
+                .map(Student::getId)
+                .collect(Collectors.toList());
     }
 }
