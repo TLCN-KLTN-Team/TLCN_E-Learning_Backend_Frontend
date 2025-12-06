@@ -37,8 +37,9 @@ const MessageItem = ({
     }
   );
 
+  // All messages use the same left-aligned layout
   return (
-    <div className="flex items-start">
+    <div className="flex items-start mb-2">
       {showAvatar ? (
         <img
           src={avatarUrl}
@@ -52,11 +53,17 @@ const MessageItem = ({
       <div className="flex-1">
         {showTimestamp && (
           <div className="flex items-baseline space-x-2">
-            <span className="font-semibold text-white">{displayName}</span>
+            <span
+              className={`font-semibold ${
+                message.me ? "text-blue-400" : "text-white"
+              }`}
+            >
+              {displayName}
+            </span>
             <span className="text-xs text-gray-400">{messageTime}</span>
             {message.me && (
-              <span className="text-xs bg-green-100 text-green-700 px-1 py-0.5 rounded-full">
-                (You)
+              <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
+                You
               </span>
             )}
           </div>

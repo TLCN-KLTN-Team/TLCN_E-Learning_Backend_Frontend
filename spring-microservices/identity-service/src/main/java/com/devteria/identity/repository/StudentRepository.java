@@ -48,4 +48,6 @@ public interface StudentRepository extends JpaRepository<Student, String> {
             @Param("institutionId") int educationalUnitId, @Param("search") String search, Pageable pageable);
 
     List<Student> findByIdEducational(int educationalUnitId);
+
+    List<Student> findByStudentIdIn(List<String> studentIds);
 }

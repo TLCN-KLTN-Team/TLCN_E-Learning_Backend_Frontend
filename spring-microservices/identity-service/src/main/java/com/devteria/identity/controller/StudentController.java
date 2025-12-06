@@ -1,7 +1,9 @@
 package com.devteria.identity.controller;
 
 import java.util.List;
+import java.util.Map;
 
+import com.devteria.identity.dto.response.UserResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -46,11 +48,22 @@ public class StudentController {
                 .build();
     }
 
+    @PostMapping("/users-by-student-ids")
+    public ApiResponse<List<String>> getUsersByStudentIds(
+            @RequestBody Map<String, List<String>> request) {
+        List<String> studentIds = request.get("studentIds");
+        log.info("Fetching users for student IDs: {}", studentIds);
+        return ApiResponse.<List<String>>builder()
+                .result(studentService.getUsersByStudentIds(studentIds))
+                .build();
+    }
+
     @GetMapping("/by-user-id/{id}")
     public ApiResponse<StudentResponse> getStudentById(@PathVariable String id) {
         return ApiResponse.<StudentResponse>builder()
                 .result(studentService.getStudentById(id)).build();
     }
+
     @PutMapping("/{id}/status")
     public ApiResponse<StudentResponse> toggleAccountStatus(
             @PathVariable String id,
