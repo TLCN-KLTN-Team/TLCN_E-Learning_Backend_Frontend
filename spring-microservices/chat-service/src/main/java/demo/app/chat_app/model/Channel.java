@@ -37,12 +37,11 @@ public class Channel {
     
     @Indexed
     String workspaceId; // ID of the workspace this channel belongs to
-
-    Integer classId; // Optional class ID if the channel is linked to a class
     
     List<String> memberIds; // List of participants in the channel (aka group for team chat)
 
     boolean isPrivate;
+    boolean isGeneral; // General channel in the workspace
 
     @Builder.Default
     ChannelType type = ChannelType.TEXT;
@@ -83,6 +82,10 @@ public class Channel {
         if (memberIds != null) {
             memberIds.remove(memberId);
         }
+    }
+
+    public boolean hasMember(String memberId) {
+        return memberIds != null && memberIds.contains(memberId);
     }
 
 }

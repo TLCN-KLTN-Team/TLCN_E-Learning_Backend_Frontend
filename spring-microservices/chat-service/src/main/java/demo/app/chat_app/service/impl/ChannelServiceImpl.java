@@ -8,7 +8,6 @@ import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChannelMapper;
 import demo.app.chat_app.model.Channel;
-import demo.app.chat_app.model.Participant;
 import demo.app.chat_app.model.Section;
 import demo.app.chat_app.model.Workspace;
 import demo.app.chat_app.model.enums.ChannelStatus;
@@ -25,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -40,7 +38,7 @@ public class ChannelServiceImpl implements ChannelService {
     SectionRepository sectionRepository;
     ChannelRepository channelRepository;
     ChannelMapper channelMapper;
-    ChatMessageService chatMessageService;
+    ChatMessageServiceImpl chatMessageService;
     private final GetUserClient getUserClient;
     private final GetListUsersClient getListUsersClient;
 
@@ -62,24 +60,31 @@ public class ChannelServiceImpl implements ChannelService {
                 .channelName(event.getClassName())
                 .description("Đây là kênh chung dành cho lớp " + event.getClassName() +
                         ".\nGhi chú giáo viên: " + event.getDescription())
-                .classId(event.getClassId())
                 .isPrivate(event.isPrivate())
                 .createdAt(Instant.now())
                 .memberIds(Collections.singletonList(workspace.getOwnerId()))
+                .isGeneral(true)
                 .build();
         return channelRepository.save(channel);
     }
 
     public void addParticipantsWhenStudentsEnrolled(EnrollStudentsEvent event) {
-        Channel channel = channelRepository.findByClassId(event.getClassId())
-                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        Section section = sectionRepository.findByClassId(event.getClassId())
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
 
-        Workspace workspace = workspaceRepository.findById(channel.getWorkspaceId())
+        Workspace workspace = workspaceRepository.findById(section.getWorkspaceId())
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
-        channel.addMembers(event.getStudentIds());
+        Channel generalChannelForSection = section.getChannelIds().stream()
+                .map(channelId -> channelRepository.findById(channelId)
+                        .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL)))
+                .filter(Channel::isGeneral)
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.GENERAL_CHANNEL_NOT_FOUND));
 
-        var savedChannelData = channelRepository.save(channel);
+        generalChannelForSection.addMembers(event.getStudentIds());
+
+        var savedChannelData = channelRepository.save(generalChannelForSection);
         workspace.addParticipants(savedChannelData.getMemberIds());
         workspaceRepository.save(workspace);
     }
@@ -129,16 +134,6 @@ public class ChannelServiceImpl implements ChannelService {
         sectionRepository.save(section);
 
         return channelMapper.toBasicChannelResponse(channel);
-    }
-
-    private Participant toParticipant(UserProfileResponse user) {
-        return Participant.builder()
-                .userId(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .mssv(user.getMssv())
-                .avatarUrl(user.getAvatar())
-                .build();
     }
 
     @Override

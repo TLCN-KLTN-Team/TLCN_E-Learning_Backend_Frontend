@@ -12,4 +12,5 @@ public class UserChatInfo {
     String id;
     String fullName;
     String avatarUrl;
+    String mssv;
 }

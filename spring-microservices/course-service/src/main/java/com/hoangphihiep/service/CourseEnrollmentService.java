@@ -191,10 +191,9 @@ public class CourseEnrollmentService {
 
             // send event to create channel for a class
             EnrollStudentsEvent event = EnrollStudentsEvent.builder()
-                    .eventId(UUID.randomUUID().toString())
                     .courseId(courseClass.getCourse().getId())
                     .classId(courseClass.getId())
-                    .studentIds(studentsToEnroll)
+                    .studentIds(studentIds)
                     .build();
 
             producer.addMembersToClassChannel(event);

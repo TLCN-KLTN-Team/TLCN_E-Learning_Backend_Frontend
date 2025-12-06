@@ -28,40 +28,40 @@ public class FileUploadController {
      * Upload multiple files in parallel to existing message
      * Each file is processed independently
      */
-//    @PostMapping("/upload-multiple")
-//    public ApiResponse<List<ChatMessageResponse>> uploadMultipleFilesToMessage(
-//            @RequestParam("files") MultipartFile[] files,
-//            @RequestParam("channelId") String channelId,
-//            Principal principal) {
-//        try {
-//            List<ChatMessageResponse> responses = fileUploadService.uploadMultipleFilesToMessage(
-//                files, channelId, principal
-//            );
-//
-//            // Notify about each upload completion
-//            CompletableFuture.runAsync(() -> {
-//                responses.forEach(response -> {
-//                    try {
-//                        messagingTemplate.convertAndSend(
-//                            "/topic/channel/" + channelId + "/attachments",
-//                            response
-//                        );
-//                    } catch (Exception e) {
-//                        log.error("Failed to notify attachment upload", e);
-//                    }
-//                });
-//            });
-//
-//            return ApiResponse.<List<ChatMessageResponse>>builder()
-//                    .result(responses)
-//                    .message("Files upload completed")
-//                    .build();
-//
-//        } catch (Exception e) {
-//            log.error("Error uploading files to message {}", e);
-//            throw e;
-//        }
-//    }
+    @PostMapping("/upload-multiple")
+    public ApiResponse<List<ChatMessageResponse>> uploadMultipleFilesToMessage(
+            @RequestParam("files") MultipartFile[] files,
+            @RequestParam("channelId") String channelId,
+            Principal principal) {
+        try {
+            List<ChatMessageResponse> responses = fileUploadService.uploadMultipleFilesToMessage(
+                files, channelId, principal
+            );
+
+            // Notify about each upload completion
+            CompletableFuture.runAsync(() -> {
+                responses.forEach(response -> {
+                    try {
+                        messagingTemplate.convertAndSend(
+                            "/topic/channel/" + channelId + "/attachments",
+                            response
+                        );
+                    } catch (Exception e) {
+                        log.error("Failed to notify attachment upload", e);
+                    }
+                });
+            });
+
+            return ApiResponse.<List<ChatMessageResponse>>builder()
+                    .result(responses)
+                    .message("Files upload completed")
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error uploading files to message {}", e);
+            throw e;
+        }
+    }
 
     /**
      * Get upload progress for a specific message

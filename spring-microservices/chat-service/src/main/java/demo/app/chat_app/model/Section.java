@@ -22,6 +22,9 @@ public class Section {
     @Indexed
     String workspaceId;
 
+    @Indexed
+    Integer classId;
+
     @Builder.Default
     List<String> channelIds = new ArrayList<>();
 

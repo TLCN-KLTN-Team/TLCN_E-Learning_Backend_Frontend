@@ -24,8 +24,6 @@ public class Group {
 
     String channelId;
 
-    List<Participant> members;
-
     @CreatedDate @Indexed
     Instant createdAt;
     Instant deletedAt;

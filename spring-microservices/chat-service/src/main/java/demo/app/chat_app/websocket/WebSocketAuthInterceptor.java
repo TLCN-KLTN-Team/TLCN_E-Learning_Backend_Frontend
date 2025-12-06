@@ -26,6 +26,22 @@ import java.util.List;
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private final CustomJwtDecoder jwtDecoder;
     private final VerifyAccessToken verifyAccessToken;
+    
+    // ThreadLocal to store token for Feign client
+    private static final ThreadLocal<String> TOKEN_HOLDER = new ThreadLocal<>();
+    
+    public static String getToken() {
+        return TOKEN_HOLDER.get();
+    }
+    
+    public static void setToken(String token) {
+        TOKEN_HOLDER.set(token);
+    }
+    
+    public static void clearToken() {
+        TOKEN_HOLDER.remove();
+    }
+    
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
@@ -38,12 +54,13 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 throw new IllegalArgumentException("Missing or invalid Authorization header");
             }
 
-            token = token.substring(7);
-            log.info("ChannelInterceptor preSend: Processing CONNECT command with token: {}", token);
+            String bearerToken = token; // Keep full "Bearer xxx" format
+            String jwtToken = token.substring(7); // Remove "Bearer " for decoding
+            log.info("ChannelInterceptor preSend: Processing CONNECT command with token: {}", jwtToken.substring(0, Math.min(20, jwtToken.length())));
 
             try {
                 // Validate token using CustomJwtDecoder
-                Jwt jwt = jwtDecoder.decode(token);
+                Jwt jwt = jwtDecoder.decode(jwtToken);
 
                 if (jwt == null) {
                     throw new AppException(ErrorCode.INVALID_TOKEN);
@@ -53,13 +70,28 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userId, null, null);
 
-                // Lưu vào session attributes
+                // Lưu vào session attributes (BAO GỒM TOKEN)
                 accessor.getSessionAttributes().put("userId", userId);
+                accessor.getSessionAttributes().put("authToken", bearerToken); // Lưu token đầy đủ với "Bearer "
+                
+                // Set to ThreadLocal for immediate use
+                TOKEN_HOLDER.set(bearerToken);
+                
+                log.info("Token stored in session for user: {}", userId);
 
                 accessor.setUser(authentication);
             } catch (Exception e) {
                 log.error("Error processing CONNECT command", e);
                 throw new IllegalArgumentException("Invalid token: " + e.getMessage());
+            }
+        } else {
+            // For MESSAGE commands, retrieve token from session
+            if (accessor.getSessionAttributes() != null) {
+                String sessionToken = (String) accessor.getSessionAttributes().get("authToken");
+                if (sessionToken != null) {
+                    TOKEN_HOLDER.set(sessionToken);
+                    log.debug("Token retrieved from session for MESSAGE command");
+                }
             }
         }
 
@@ -68,6 +100,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     @Override
     public void afterSendCompletion(Message<?> message, MessageChannel channel, boolean sent, Exception ex) {
-
+        // Clear ThreadLocal after message processing
+        TOKEN_HOLDER.remove();
     }
 }

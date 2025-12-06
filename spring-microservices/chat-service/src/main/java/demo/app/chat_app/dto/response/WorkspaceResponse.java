@@ -1,10 +1,7 @@
 package demo.app.chat_app.dto.response;
 
-import demo.app.chat_app.model.Participant;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.util.List;
 
 @Data
 @Builder
