@@ -41,6 +41,7 @@ import assignmentApi from "@/services/api/student/assignmentApi"
 import progressApi from "@/services/api/user/progressApi"
 import reviewApi from "@/services/api/user/reviewApi"
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse"
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer"
 
 type ContentItem = {
   id: number
@@ -1935,7 +1936,7 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
           <div className="border-l-4 border-blue-500 pl-6">
             <h2 className="text-2xl font-semibold mb-4 text-gray-900">Nội dung bài học</h2>
             <div className="prose prose-lg max-w-none">
-              <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">{lesson.content}</p>
+              <MarkdownRenderer content={lesson.content} />
             </div>
           </div>
         </div>

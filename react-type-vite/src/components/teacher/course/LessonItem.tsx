@@ -6,6 +6,7 @@ import { GripVertical, FileVideo, Star, Edit, Trash, Paperclip, Clock, Eye } fro
 import { Button } from "@/components/ui/button"
 import type { LessonResponse } from "@/services/api/response/lessonResponse"
 import LessonVisibilityModal from "./LessonVisibilityModal"
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer"
 
 interface LessonItemProps {
   lesson: LessonResponse
@@ -164,8 +165,8 @@ const LessonItem: React.FC<LessonItemProps> = ({
             {lesson.content && (
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-1">Nội dung:</p>
-                <div className="text-sm text-gray-600 bg-white p-2 rounded border max-h-40 overflow-y-auto">
-                  {lesson.content}
+                <div className="text-sm bg-white p-2 rounded border max-h-40 overflow-y-auto">
+                  <MarkdownRenderer content={lesson.content} />
                 </div>
               </div>
             )}

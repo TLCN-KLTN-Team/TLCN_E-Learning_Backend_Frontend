@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import "./styles/hero-animations.css";
 import "./styles/theme-overrides.css";
+import "./styles/tinymce-content.css";
 import App from "./App.tsx";
 import { BrowserRouter } from "react-router-dom";
 import AuthProvider from "./context/auth-context/index.tsx";

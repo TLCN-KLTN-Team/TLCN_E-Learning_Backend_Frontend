@@ -9,6 +9,7 @@ import TeacherListPage from "@/pages/admin/TeacherListPage";
 import PendingCoursesPage from "@/pages/admin/PendingCoursesPage";
 import CourseApprovalDetailPage from "@/pages/admin/CourseApprovalDetailPage";
 import DepartmentManagementPage from "@/pages/admin/DepartmentManagementPage";
+import AdminRevenuePage from "@/pages/admin/revenue/AdminRevenuePage";
 
 // Admin routes - protected routes for admin roles
 const AdminRoutes = [
@@ -27,6 +28,7 @@ const AdminRoutes = [
         <Route path="published-courses" element={<PendingCoursesPage />} />
         <Route path="published-courses/:publishedCourseId" element={<CourseApprovalDetailPage />} />
         <Route path="departments" element={<DepartmentManagementPage />} />
+        <Route path="revenue" element={<AdminRevenuePage />} />
       </Route>
     </Route>
   </Route>,

@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, ArrowRight, CheckCircle2, Package, AlertCircle, CheckCircle, Eye, EyeOff, Loader2, Lock, Upload, X } from "lucide-react"
+import { Editor } from "@tinymce/tinymce-react"
+import type { Editor as TinyMCEEditor } from "tinymce"
 import type { ContentPublishStatusResponse } from "@/services/api/response/contentPublishStatusResponse"
 import type { SectionResponse } from "@/services/api/response/sectionResponse"
 import type { CourseCategoryResponse } from "@/services/api/response/courseTypeResponse"
@@ -303,6 +305,10 @@ const CoursePackagingPage = () => {
 
     setLoading(true)
     try {
+      console.log("Saving draft with formData:", formData)
+      console.log("Course Image:", courseImage)
+      console.log("Course Video:", courseVideo)
+      
       const result = await coursePackagingApi.createOrUpdateDraft(
         formData,
         courseImage || undefined,
@@ -320,7 +326,10 @@ const CoursePackagingPage = () => {
       
       showNotification("success", "Đã lưu bản nháp", "Thông tin khóa học đã được lưu")
     } catch (error: any) {
-      showNotification("error", "Lỗi lưu bản nháp", error.message || "Không thể lưu bản nháp")
+      console.error("Error saving draft:", error)
+      console.error("Error response:", error.response?.data)
+      const errorMessage = error.response?.data?.message || error.message || "Không thể lưu bản nháp"
+      showNotification("error", "Lỗi lưu bản nháp", errorMessage)
     } finally {
       setLoading(false)
     }
@@ -867,70 +876,118 @@ const CoursePackagingPage = () => {
 
               <div>
                 <label className="block text-sm font-medium mb-2">Mô Tả Chi Tiết *</label>
-                <textarea
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  rows={4}
-                  disabled={!canEdit}
+                <Editor
+                  apiKey="vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx"
                   value={formData.description}
-                  onChange={(e) =>
+                  disabled={!canEdit}
+                  init={{
+                    height: 300,
+                    menubar: false,
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | ' +
+                      'bold italic forecolor | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist outdent indent | ' +
+                      'removeformat | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                    placeholder: "Nhập mô tả chi tiết về khóa học..."
+                  }}
+                  onEditorChange={(content) => {
                     setFormData(prev => ({
                       ...prev,
-                      description: e.target.value
+                      description: content
                     }))
-                  }
-
-                  placeholder="Nhập mô tả chi tiết về khóa học..."
+                  }}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Giới Thiệu Khóa Học *</label>
-                <textarea
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  rows={3}
-                  disabled={!canEdit}
+                <Editor
+                  apiKey="vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx"
                   value={formData.courseIntroduction}
-                  onChange={(e) =>
+                  disabled={!canEdit}
+                  init={{
+                    height: 200,
+                    menubar: false,
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'charmap',
+                      'searchreplace', 'visualblocks', 'code',
+                      'insertdatetime', 'table', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | ' +
+                      'bold italic forecolor | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist | removeformat | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                    placeholder: "Giới thiệu ngắn gọn về khóa học..."
+                  }}
+                  onEditorChange={(content) => {
                     setFormData(prev => ({
                       ...prev,
-                      courseIntroduction: e.target.value
+                      courseIntroduction: content
                     }))
-                  }
-                  placeholder="Giới thiệu ngắn gọn về khóa học..."
+                  }}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Thành Tựu Học Viên</label>
-                <textarea
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  rows={3}
-                  disabled={!canEdit}
+                <Editor
+                  apiKey="vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx"
                   value={formData.learnerAchievements}
-                  onChange={(e) =>
+                  disabled={!canEdit}
+                  init={{
+                    height: 200,
+                    menubar: false,
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'charmap',
+                      'searchreplace', 'visualblocks', 'code',
+                      'insertdatetime', 'table', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | ' +
+                      'bold italic forecolor | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist | removeformat | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                    placeholder: "Học viên sẽ đạt được gì sau khóa học..."
+                  }}
+                  onEditorChange={(content) => {
                     setFormData(prev => ({
                       ...prev,
-                      learnerAchievements: e.target.value
+                      learnerAchievements: content
                     }))
-                  }
-                  placeholder="Học viên sẽ đạt được gì sau khóa học..."
+                  }}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Đối Tượng Học Viên</label>
-                <textarea
-                  className="w-full p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  rows={3}
-                  disabled={!canEdit}
+                <Editor
+                  apiKey="vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx"
                   value={formData.courseLearner}
-                  onChange={(e) =>
+                  disabled={!canEdit}
+                  init={{
+                    height: 200,
+                    menubar: false,
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'charmap',
+                      'searchreplace', 'visualblocks', 'code',
+                      'insertdatetime', 'table', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | ' +
+                      'bold italic forecolor | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist | removeformat | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                    placeholder: "Khóa học phù hợp với ai..."
+                  }}
+                  onEditorChange={(content) => {
                     setFormData(prev => ({
                       ...prev,
-                      courseLearner: e.target.value
+                      courseLearner: content
                     }))
-                  }
-                  placeholder="Khóa học phù hợp với ai..."
+                  }}
                 />
               </div>
 

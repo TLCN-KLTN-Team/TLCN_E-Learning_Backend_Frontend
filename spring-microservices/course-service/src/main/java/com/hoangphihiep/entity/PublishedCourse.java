@@ -71,10 +71,10 @@ public class PublishedCourse {
     @Column(name = "course_name")
     private String courseName;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "LONGTEXT")
     private String description;
 
-    @Column(name = "course_introduction", length = 1000)
+    @Column(name = "course_introduction", columnDefinition = "LONGTEXT")
     private String courseIntroduction;
 
     @Column(name = "course_image", length = 255)
@@ -83,10 +83,10 @@ public class PublishedCourse {
     @Column(name = "course_video", length = 255)
     private String courseVideo;
 
-    @Column(name = "learner_achievements", length = 500)
+    @Column(name = "learner_achievements", columnDefinition = "LONGTEXT")
     private String learnerAchievements;
 
-    @Column(name = "course_learner", length = 500)
+    @Column(name = "course_learner", columnDefinition = "LONGTEXT")
     private String courseLearner;
 
     @ElementCollection

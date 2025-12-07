@@ -130,6 +130,7 @@ export const createOrUpdateSections = async (
 
   // Track file mappings
   const lessonFileMap: { sectionIndex: number; lessonIndex: number; fileIndex: number; attachmentIndex: number }[] = []
+  const lessonVideoMap: { sectionIndex: number; lessonIndex: number; fileIndex: number }[] = []
   const questionFileMap: { sectionIndex: number; quizIndex: number; questionIndex: number; fileIndex: number; attachmentIndex: number }[] = []
   const assignmentFileMap: { sectionIndex: number; assignmentIndex: number; fileIndex: number; attachmentIndex: number }[] = []
   const rubricFileMap: { sectionIndex: number; assignmentIndex: number; fileIndex: number; attachmentIndex: number }[] = []
@@ -138,6 +139,25 @@ export const createOrUpdateSections = async (
 
   bulkRequest.sections.forEach((section, sIdx) => {
     ;(section.lessons || []).forEach((lesson: any, lIdx: number) => {
+      // Xử lý video file từ videoUrl
+      if (lesson.videoUrl && typeof lesson.videoUrl === "string") {
+        fetchPromises.push(
+          (async () => {
+            const file = await urlToFile(lesson.videoUrl, `section${sIdx}_lesson${lIdx}_video`)
+            if (file) {
+              const fileIndex = lessonFilesFromUrls.length
+              lessonFilesFromUrls.push(file)
+              lessonVideoMap.push({
+                sectionIndex: sIdx,
+                lessonIndex: lIdx,
+                fileIndex: fileIndex,
+              })
+            }
+          })(),
+        )
+      }
+
+      // Xử lý attachments
       ;(lesson.attachments || []).forEach((att: any, attIdx: number) => {
         if (typeof att === "string") {
           fetchPromises.push(
@@ -233,6 +253,23 @@ export const createOrUpdateSections = async (
   // Replace blob URLs with FILE_INDEX, keep server URLs as-is
   bulkRequest.sections.forEach((section, sIdx) => {
     ;(section.lessons || []).forEach((lesson: any, lIdx: number) => {
+      // Xử lý videoUrl
+      if (lesson.videoUrl && typeof lesson.videoUrl === "string") {
+        // Nếu là file cũ từ server, giữ nguyên
+        if (isExistingFile(lesson.videoUrl)) {
+          // Keep as-is
+        } else {
+          // Nếu là file mới, thay bằng FILE_INDEX
+          const mapping = lessonVideoMap.find(
+            m => m.sectionIndex === sIdx && m.lessonIndex === lIdx
+          )
+          if (mapping) {
+            lesson.videoUrl = `FILE_INDEX:${mapping.fileIndex}`
+          }
+        }
+      }
+
+      // Xử lý attachments
       if (lesson.attachments) {
         lesson.attachments = lesson.attachments.map((att: any, attIdx: number) => {
           if (typeof att === "string") {

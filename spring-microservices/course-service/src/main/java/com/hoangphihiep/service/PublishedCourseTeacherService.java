@@ -89,8 +89,9 @@ public class PublishedCourseTeacherService {
             publishedCourse = publishedCourseRepository.findByCourseId(request.getCourseId())
                     .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
 
-            // Chỉ cho phép update nếu đang ở trạng thái Draft hoặc Rejected
-            if (publishedCourse.getStatus() != 0 && publishedCourse.getStatus() != 3) {
+            // Chỉ cho phép update nếu đang ở trạng thái Draft, Rejected, hoặc Approved
+            // Khi update Approved course, sẽ reset về Draft để admin xét duyệt lại
+            if (publishedCourse.getStatus() != 0 && publishedCourse.getStatus() != 2 && publishedCourse.getStatus() != 3) {
                 throw new AppException(ErrorCode.PUBLISHED_COURSE_CANNOT_UPDATE);
             }
 
@@ -128,8 +129,15 @@ public class PublishedCourseTeacherService {
 
         publishedCourse.setDescription(request.getDescription());
         publishedCourse.setCourseIntroduction(request.getCourseIntroduction());
-        publishedCourse.setCourseImage(imageUrl);
-        publishedCourse.setCourseVideo(videoUrl);
+        
+        // Only update image/video if new file was uploaded
+        if (imageUrl != null) {
+            publishedCourse.setCourseImage(imageUrl);
+        }
+        if (videoUrl != null) {
+            publishedCourse.setCourseVideo(videoUrl);
+        }
+        
         publishedCourse.setLearnerAchievements(request.getLearnerAchievements());
         publishedCourse.setCourseLearner(request.getCourseLearner());
         publishedCourse.setCourseTarget(request.getCourseTarget());
@@ -291,8 +299,11 @@ public class PublishedCourseTeacherService {
         publishedCourse.setCourseType(courseType);
         publishedCourse.setCoursePrice(request.getCoursePrice());
         publishedCourse.setUpdatedAt(new Date());
-        // Reset về Draft khi update
-        publishedCourse.setStatus(0);
+        // Chỉ reset về Draft nếu đang ở trạng thái Draft hoặc Rejected
+        // Nếu đã Approved (status=2), giữ nguyên trạng thái
+        if (publishedCourse.getStatus() == 0 || publishedCourse.getStatus() == 3) {
+            publishedCourse.setStatus(0);
+        }
     }
     private void validatePublishedCourseForSubmission(PublishedCourse publishedCourse) {
         // Validate có ít nhất 1 section published

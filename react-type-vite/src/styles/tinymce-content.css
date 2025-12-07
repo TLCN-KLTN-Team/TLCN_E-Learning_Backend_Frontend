@@ -1,0 +1,58 @@
+/* TinyMCE Content Styles - Add this to your global CSS */
+
+/* Make sure HTML elements render properly */
+.lesson-content p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+
+.lesson-content strong {
+  font-weight: 600;
+}
+
+.lesson-content em {
+  font-style: italic;
+}
+
+.lesson-content ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.lesson-content ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.lesson-content li {
+  margin-bottom: 0.25rem;
+}
+
+.lesson-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.lesson-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.lesson-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.lesson-content br {
+  display: block;
+  content: "";
+  margin-top: 0.5rem;
+}

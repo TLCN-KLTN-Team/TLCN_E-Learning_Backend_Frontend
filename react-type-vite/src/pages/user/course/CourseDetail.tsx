@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Star,
   Users,
   Clock,
   CheckCircle,
   User,
   Heart,
-  ShoppingCart,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
@@ -33,6 +31,26 @@ const CourseDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
+  const [hoursLeft] = useState(5);
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
+
+  const toggleSection = (sectionId: number) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const expandAllSections = () => {
+    if (course?.sections) {
+      setExpandedSections(new Set(course.sections.map(s => s.id)));
+    }
+  };
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
@@ -158,97 +176,231 @@ const CourseDetail: React.FC = () => {
       {/* Site Header */}
       <Header />
 
-      {/* Course Header Section */}
-      <div className="bg-white pt-20 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="text-gray-700 hover:bg-gray-100 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to courses
-          </Button>
-
-          {/* Course Header Info */}
-          <div className="mb-2">
-            <span className="text-purple-600 text-sm font-medium">
-              {course.category}
-            </span>
+      {/* Course Header Section - Dark Background like Udemy */}
+      <div className="bg-gray-900 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm text-purple-400 mb-4">
+            <span className="hover:text-purple-300 cursor-pointer">Development</span>
+            <span className="text-gray-500">›</span>
+            <span className="hover:text-purple-300 cursor-pointer">Data Science</span>
+            <span className="text-gray-500">›</span>
+            <span className="hover:text-purple-300 cursor-pointer">{course.category}</span>
           </div>
 
-          <h1 className="text-3xl lg:text-4xl font-bold mb-4 text-gray-900">
-            {course.courseName}: Master the Fundamentals
+          {/* Course Title */}
+          <h1 className="text-3xl lg:text-4xl font-bold mb-4 text-white max-w-3xl">
+            {course.courseName}
           </h1>
 
-          <p className="text-lg text-gray-600 mb-6">{course.description}</p>
+          {/* Course Subtitle */}
+          <p className="text-lg text-gray-300 mb-4 max-w-3xl">{course.description}</p>
 
           {/* Course Stats */}
-          <div className="flex flex-wrap items-center gap-6 text-sm text-gray-700">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300 mb-4">
+            <span className="px-2 py-1 bg-yellow-400 text-gray-900 text-xs font-bold rounded">Bestseller</span>
             <div className="flex items-center gap-2">
+              <span className="text-yellow-400 font-bold">{course.rating}</span>
               <div className="flex items-center">
                 {renderStars(course.rating)}
               </div>
-              <span className="font-medium">{course.rating}</span>
-              <span className="text-gray-500">(0 reviews)</span>
+              <span className="text-purple-400 underline">(23,288 ratings)</span>
             </div>
-
-            {/* <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-            </div>
-
-              <span>{course.studentCount.toLocaleString()} students</span>
-            </div> */}
-
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span>{course.duration}</span>
-            </div>
+            <span>167,760 students</span>
           </div>
 
-          {/* Instructor */}
-          <div className="mt-6 flex items-center gap-3 pb-6">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5" />
+          {/* Creator and Updated Info */}
+          <div className="flex items-center gap-4 text-sm text-gray-300">
+            <span>Created by <span className="text-purple-400 underline">{course.authorName}</span></span>
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              <span>Last updated 11/2025</span>
             </div>
-            <div>
-              <p className="text-sm text-purple-200">Created by</p>
-              <p className="font-medium">{course.authorName}</p>
+            <div className="flex items-center gap-1">
+              <span>🌐</span>
+              <span>English [Auto], Arabic [Auto], +20 more</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Course Card and Main Content Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Content - Main Course Details */}
           <div className="lg:col-span-2 space-y-8">
             {/* What you'll learn */}
-            <Card className="p-6">
+            <Card className="p-6 border border-gray-200">
               <h2 className="text-2xl font-bold mb-6">What you'll learn</h2>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-700">{course.whatYouWillLearn}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {course.courseTarget && course.courseTarget.length > 0 ? (
+                  course.courseTarget.map((item, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-gray-900 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-700">{item}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 col-span-2">No learning objectives available</p>
+                )}
               </div>
             </Card>
 
             {/* Course Content */}
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-2">Course content</h2>
-              <p className="text-gray-600 mb-6">
-                Duration: {course.duration} hours • Level: {course.level}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Course content</h2>
+              <p className="text-sm text-gray-600">
+                {course.sections?.length || 0} sections •{" "}
+                {course.sections?.reduce((total, s) => total + (s.lessons?.length || 0) + (s.quizzes?.length || 0) + (s.assignments?.length || 0), 0) || 0} lectures
               </p>
-              <div className="text-gray-700">
+              
+              {course.sections && course.sections.length > 0 ? (
+                <div className="space-y-2">
+                  <Button 
+                    variant="link" 
+                    className="text-purple-600 p-0 h-auto font-normal mb-2"
+                    onClick={expandAllSections}
+                  >
+                    Expand all sections
+                  </Button>
+                  
+                  {course.sections
+                    .sort((a, b) => a.orderIndex - b.orderIndex)
+                    .map((section) => {
+                      const totalItems = (section.lessons?.length || 0) + (section.quizzes?.length || 0) + (section.assignments?.length || 0);
+                      const isExpanded = expandedSections.has(section.id);
+                      
+                      return (
+                        <Card key={section.id} className="border border-gray-200">
+                          <div 
+                            className="p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                            onClick={() => toggleSection(section.id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-400">{isExpanded ? '▼' : '▶'}</span>
+                                <span className="font-medium">{section.title}</span>
+                              </div>
+                              <span className="text-sm text-gray-600">{totalItems} items</span>
+                            </div>
+                            {section.description && (
+                              <p className="text-sm text-gray-600 mt-2 ml-6">{section.description}</p>
+                            )}
+                          </div>
+                          
+                          {isExpanded && (
+                            <div className="p-4 space-y-2">
+                              {/* Lessons */}
+                              {section.lessons?.sort((a, b) => a.numberItem - b.numberItem).map((lesson) => (
+                                <div key={`lesson-${lesson.id}`} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded">
+                                  <div className="flex items-center gap-3">
+                                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div>
+                                      <p className="text-sm font-medium">{lesson.title}</p>
+                                      {lesson.isFreeLesson && (
+                                        <span className="text-xs text-purple-600">Free Preview</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-gray-500">{lesson.duration || '5min'}</span>
+                                </div>
+                              ))}
+                              
+                              {/* Quizzes */}
+                              {section.quizzes?.sort((a, b) => a.numberItem - b.numberItem).map((quiz) => (
+                                <div key={`quiz-${quiz.id}`} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded">
+                                  <div className="flex items-center gap-3">
+                                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                    </svg>
+                                    <div>
+                                      <p className="text-sm font-medium">{quiz.title}</p>
+                                      {quiz.questionCount && (
+                                        <span className="text-xs text-gray-500">{quiz.questionCount} questions</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-gray-500">{quiz.duration ? `${quiz.duration}min` : 'Quiz'}</span>
+                                </div>
+                              ))}
+                              
+                              {/* Assignments */}
+                              {section.assignments?.sort((a, b) => a.numberItem - b.numberItem).map((assignment) => (
+                                <div key={`assignment-${assignment.id}`} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded">
+                                  <div className="flex items-center gap-3">
+                                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <div>
+                                      <p className="text-sm font-medium">{assignment.title}</p>
+                                      {assignment.dueDate && (
+                                        <span className="text-xs text-gray-500">Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-gray-500">Assignment</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </Card>
+                      );
+                    })}
+                </div>
+              ) : (
+                <Card className="border border-gray-200">
+                  <div className="p-4 text-sm text-gray-600">
+                    <p>Course content details will be available after enrollment.</p>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            {/* Requirements */}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Requirements</h2>
+              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  While it's ideal if you can code in Python and have some experience working with LLMs, this course is
+                  designed for a very wide audience, regardless of background. I've included a whole folder of self-study labs
+                  that cover foundational technical and programming skills. If you're new to coding, there's only one
+                  requirement: plenty of patience!
+                </li>
+                <li>
+                  The course runs best if you have a small budget for APIs, but it's totally your choice. You can complete the
+                  entire course with no API spend. If you do wish to use frontier models, the typical spend would be under $5.
+                  You can choose to access more capabilities if you're comfortable spending a little more.
+                </li>
+              </ul>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Description</h2>
+              <div className="text-sm text-gray-700 space-y-3">
                 <p>
-                  Course content details will be available after enrollment.
+                  2025 is the year that Agents enter the workforce. This is nothing short of a watershed moment for Artificial
+                  Intelligence. It has never been more important to be an expert with Agentic AI. And that is precisely the goal of this
+                  course: to equip you with the skills and expertise to design, build and deploy Autonomous AI Agents, opening up
+                  new career and commercial opportunities.
                 </p>
+                <p>
+                  This is an intensive 6-week program to master Agentic AI. We start by building foundational expertise, connecting
+                  LLMs using proven design patterns. Then, each week, we upskill with new frameworks: OpenAI Agents SDK,
+                  CrewAI, LangGraph and Autogen. The course culminates with a full week on the remarkable opportunities opened
+                  up by MCP.
+                </p>
+                <Button variant="link" className="text-purple-600 p-0 h-auto font-normal">
+                  Show more ▼
+                </Button>
               </div>
-            </Card>
+            </div>
 
             {/* Target Audience */}
-            <Card className="p-6">
+            <Card className="p-6 border border-gray-200">
               <h2 className="text-2xl font-bold mb-6">Target Audience</h2>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
@@ -335,90 +487,183 @@ const CourseDetail: React.FC = () => {
 
           {/* Right Sidebar - Course Card */}
           <div className="lg:col-span-1">
-            <Card className="p-6 bg-white shadow-xl lg:sticky lg:top-24">
-              <img
-                src={course.thumbnailUrl}
-                alt={`${course.courseName}: Master the Fundamentals`}
-                className="w-full h-48 object-cover rounded-lg mb-4"
-              />
-
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-3xl font-bold text-gray-900">
-                    {course.coursePrice}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-3 mb-6 w-full">
-                {/* Hàng trên: Nút "Chuyển đến giỏ hàng" và icon Wishlist */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
-                    onClick={handleCartAction}
+            <Card className="p-0 bg-white shadow-xl lg:sticky lg:top-24 overflow-hidden">
+              {/* Video Preview */}
+              <div className="relative group cursor-pointer">
+                {course.courseVideo ? (
+                  /* Real video player */
+                  <video
+                    className="w-full h-52 object-cover"
+                    poster={course.thumbnailUrl}
+                    controls
+                    preload="metadata"
                   >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    {isInCart ? "Chuyển đến giỏ hàng" : "Thêm vào giỏ hàng"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className={`${
-                      isInWishlist
-                        ? "border-red-600 hover:bg-red-50"
-                        : "border-gray-600 hover:bg-gray-50"
-                    }`}
-                    onClick={handleAddToWishlist}
-                  >
-                    <Heart
-                      className={`w-5 h-5 ${
-                        isInWishlist
-                          ? "fill-red-600 text-red-600"
-                          : "text-gray-900"
-                      }`}
-                    />
-                  </Button>
-                </div>
-                {/* Hàng dưới: Nút "Mua ngay" */}
-                {!course.purchaserStatus ? (
-                  <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
-                    onClick={handleEnrollNow}
-                  >
-                    Mua ngay
-                  </Button>
+                    <source src={course.courseVideo} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
                 ) : (
-                  <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 font-semibold"
-                    onClick={handleLearnNow}
-                  >
-                    Bắt đầu học
-                  </Button>
+                  /* Fallback to thumbnail with play button */
+                  <>
+                    <img
+                      src={course.thumbnailUrl}
+                      alt={`${course.courseName}: Master the Fundamentals`}
+                      className="w-full h-52 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center group-hover:bg-opacity-40 transition-all">
+                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <div className="w-0 h-0 border-t-8 border-t-transparent border-l-12 border-l-gray-900 border-b-8 border-b-transparent ml-1"></div>
+                      </div>
+                    </div>
+                  </>
                 )}
+                <span className="absolute top-3 left-3 bg-white px-2 py-1 text-xs font-medium rounded">Preview this course</span>
               </div>
+
+              {/* Pricing Section */}
+              <div className="p-6">
+                <div className="mb-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl font-bold text-gray-900">
+                      {course.coursePrice}
+                    </span>
+                    <span className="text-lg text-gray-400 line-through">
+                      {(() => {
+                        // Extract number from formatted price string (e.g., "₫1,000,000" -> 1000000)
+                        const priceNumber = parseFloat(course.coursePrice.replace(/[^0-9.]/g, ''));
+                        if (!isNaN(priceNumber)) {
+                          return `₫${(priceNumber * 1.32).toLocaleString('vi-VN')}`;
+                        }
+                        return course.coursePrice;
+                      })()}
+                    </span>
+                    <span className="text-sm font-medium text-gray-900">24% off</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
+                    <Clock className="w-4 h-4" />
+                    <span>{hoursLeft} hours left at this price!</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6 w-full">
+                  {/* Main Action Button */}
+                  {!course.purchaserStatus ? (
+                    <Button
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 text-lg font-semibold"
+                      onClick={handleEnrollNow}
+                    >
+                      Add to cart
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 text-lg font-semibold"
+                      onClick={handleLearnNow}
+                    >
+                      Bắt đầu học
+                    </Button>
+                  )}
+
+                  {/* Buy Now Button */}
+                  {!course.purchaserStatus && (
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 border-gray-900 hover:bg-gray-50 py-6 text-lg font-semibold"
+                      onClick={handleCartAction}
+                    >
+                      Buy now
+                    </Button>
+                  )}
+
+                  {/* 30-Day Money-Back Guarantee */}
+                  <p className="text-center text-xs text-gray-600">30-Day Money-Back Guarantee</p>
+                </div>
+
+                {/* Share and Coupon */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <button className="text-sm font-medium hover:text-purple-600">
+                        Share
+                      </button>
+                      <button className="text-sm font-medium hover:text-purple-600">
+                        Gift this course
+                      </button>
+                      <button className="text-sm font-medium hover:text-purple-600">
+                        Apply Coupon
+                      </button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-gray-100"
+                      onClick={handleAddToWishlist}
+                    >
+                      <Heart
+                        className={`w-6 h-6 ${
+                          isInWishlist
+                            ? "fill-red-600 text-red-600"
+                            : "text-gray-900"
+                        }`}
+                      />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Subscription Promo */}
+                <div className="border-t pt-4">
+                  <p className="text-xs font-bold mb-2">Subscribe to Udemy's top courses</p>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Get this course, plus 26,000+ of our top-rated courses, with Personal Plan.{" "}
+                    <a href="#" className="text-purple-600 underline">Learn more</a>
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full border-gray-900 hover:bg-gray-50 font-semibold"
+                  >
+                    Start subscription
+                  </Button>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Starting at ₫280,000 per month<br />
+                    Cancel anytime
+                  </p>
+                </div>
 
               {/* Course Info */}
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Level</span>
-                  <span className="font-medium">{course.level}</span>
+              <div className="space-y-3 text-sm pt-6 border-t mt-6">
+                <h3 className="font-bold text-base mb-4">This course includes:</h3>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5" />
+                  <span>{course.duration} on-demand video</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Duration</span>
-                  <span className="font-medium">{course.duration}</span>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>10 articles</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Target Audience</span>
-                  <span className="font-medium">{course.targetAudience}</span>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>67 downloadable resources</span>
                 </div>
-                {course.isHandsOn && (
-                  <div className="flex items-center gap-2 text-green-600 font-medium">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Hands-On Practice</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Full lifetime access</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <span>Access on mobile and TV</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                  <span>Certificate of completion</span>
+                </div>
               </div>
+            </div>
             </Card>
           </div>
         </div>
