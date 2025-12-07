@@ -4,7 +4,9 @@ import demo.app.chat_app.dto.request.ChannelCreationRequest;
 import demo.app.chat_app.dto.response.ApiResponse;
 import demo.app.chat_app.dto.response.BasicChannelResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
+import demo.app.chat_app.dto.response.UserResponse;
 import demo.app.chat_app.service.ChannelService;
+import demo.app.chat_app.service.impl.ChannelServiceImpl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -17,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ChannelController {
-    ChannelService channelService;
+    ChannelServiceImpl channelService;
 
     @GetMapping("/{channelId}")
     public ApiResponse<ChannelResponse> getChannel(@PathVariable String channelId) {
@@ -43,6 +45,14 @@ public class ChannelController {
         return ApiResponse.<List<ChannelResponse>>builder()
                 .result(channels)
                 .message("Channels retrieved successfully")
+                .build();
+    }
+
+    @GetMapping("/members/{channelId}")
+    public ApiResponse<List<UserResponse>> getMembersInChannel(@PathVariable String channelId) {
+        return ApiResponse.<List<UserResponse>>builder()
+                .result(channelService.getMembersInChannel(channelId))
+                .message("Channel members retrieved successfully")
                 .build();
     }
 

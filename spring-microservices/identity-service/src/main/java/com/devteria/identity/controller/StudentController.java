@@ -58,6 +58,15 @@ public class StudentController {
                 .build();
     }
 
+    @PostMapping("/students-by-user-ids")
+    public ApiResponse<List<StudentResponse>> getStudentsByUserIds(
+            @RequestBody Map<String, List<String>> request) {
+        List<String> studentIds = request.get("userIds");
+        return ApiResponse.<List<StudentResponse>>builder()
+                .result(studentService.getStudentsByUserIds(studentIds))
+                .build();
+    }
+
     @GetMapping("/by-user-id/{id}")
     public ApiResponse<StudentResponse> getStudentById(@PathVariable String id) {
         return ApiResponse.<StudentResponse>builder()

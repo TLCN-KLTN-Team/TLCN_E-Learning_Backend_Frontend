@@ -212,4 +212,11 @@ public class StudentService {
                 .map(Student::getId)
                 .collect(Collectors.toList());
     }
+
+    public List<StudentResponse> getStudentsByUserIds(List<String> userIds) {
+        List<Student> students = studentRepository.findByIdIn((userIds));
+        return students.stream()
+                .map(studentMapper::toStudentResponse)
+                .collect(Collectors.toList());
+    }
 }

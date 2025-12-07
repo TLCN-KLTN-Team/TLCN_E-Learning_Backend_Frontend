@@ -149,6 +149,7 @@ const ChatWindow = ({
         participants={participants}
         isVisible={showParticipants}
         onClose={() => setShowParticipants(false)}
+        channelId={selectedChannel?.id}
       />
     </div>
   );

@@ -15,6 +15,7 @@ import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.SectionRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.repository.httpclient.GetListUsersClient;
+import demo.app.chat_app.repository.httpclient.GetStudentClient;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.ChannelService;
 import demo.app.chat_app.service.ChatMessageService;
@@ -39,8 +40,9 @@ public class ChannelServiceImpl implements ChannelService {
     ChannelRepository channelRepository;
     ChannelMapper channelMapper;
     ChatMessageServiceImpl chatMessageService;
-    private final GetUserClient getUserClient;
-    private final GetListUsersClient getListUsersClient;
+    GetUserClient getUserClient;
+    GetListUsersClient getListUsersClient;
+    GetStudentClient getStudentClient;
 
     public List<SectionResponse.Channel> getChannelsForSection(List<String> channelIds) {
         List<Channel> channels = channelRepository.findAllById(channelIds);
@@ -57,7 +59,7 @@ public class ChannelServiceImpl implements ChannelService {
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
         Channel channel = Channel.builder()
-                .channelName(event.getClassName())
+                .channelName(String.format("%s - %s",event.getClassName(), event.getClassCode()))
                 .description("Đây là kênh chung dành cho lớp " + event.getClassName() +
                         ".\nGhi chú giáo viên: " + event.getDescription())
                 .isPrivate(event.isPrivate())
@@ -218,6 +220,22 @@ public class ChannelServiceImpl implements ChannelService {
         return channelResponse;
     }
 
+    //
+    public List<UserResponse> getMembersInChannel(String channelId) {
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        List<String> memberIds = channel.getMemberIds();
+        List<StudentResponse> studentResponses = getStudentClient.getStudentsByUserIds(
+                Map.of("userIds", memberIds)
+        ).getResult();
+        return studentResponses.stream()
+                .map(studentResponse -> UserResponse.builder()
+                        .id(studentResponse.getStudentId())
+                        .firstName(studentResponse.getFirstName())
+                        .lastName(studentResponse.getLastName())
+                        .build()).toList();
+    }
+
     @Override
     public void submitPractices(String channelId) {
 
@@ -228,7 +246,7 @@ public class ChannelServiceImpl implements ChannelService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found"));
 
-        channel.setStatus(ChannelStatus.ENDED);
+        channel.setStatus(ChannelStatus.DELETED);
 //        channel.setEndedAt(System.currentTimeMillis());
 
         channelRepository.save(channel);
