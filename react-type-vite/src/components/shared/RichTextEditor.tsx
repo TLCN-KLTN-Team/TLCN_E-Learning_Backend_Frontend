@@ -42,7 +42,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   return (
     <div className={className}>
       <Editor
-        apiKey='vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx'
+        apiKey={import.meta.env.VITE_API_KEY_TINY}
         value={value}
         onInit={(_evt, editor) => {
           editorRef.current = editor as any;

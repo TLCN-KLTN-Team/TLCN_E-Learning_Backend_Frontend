@@ -877,7 +877,7 @@ const CoursePackagingPage = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Mô Tả Chi Tiết *</label>
                 <Editor
-                  apiKey="vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx"
+                  apiKey={import.meta.env.VITE_API_KEY_TINY}
                   value={formData.description}
                   disabled={!canEdit}
                   init={{
@@ -907,7 +907,7 @@ const CoursePackagingPage = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Giới Thiệu Khóa Học *</label>
                 <Editor
-                  apiKey="vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx"
+                  apiKey={import.meta.env.VITE_API_KEY_TINY}
                   value={formData.courseIntroduction}
                   disabled={!canEdit}
                   init={{
@@ -936,7 +936,7 @@ const CoursePackagingPage = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Thành Tựu Học Viên</label>
                 <Editor
-                  apiKey="vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx"
+                  apiKey={import.meta.env.VITE_API_KEY_TINY}
                   value={formData.learnerAchievements}
                   disabled={!canEdit}
                   init={{
@@ -965,7 +965,7 @@ const CoursePackagingPage = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Đối Tượng Học Viên</label>
                 <Editor
-                  apiKey="vbdp60mr4tyesi82e2cxvk31l1z7s168te0icenwkbr97ybx"
+                  apiKey={import.meta.env.VITE_API_KEY_TINY}
                   value={formData.courseLearner}
                   disabled={!canEdit}
                   init={{
