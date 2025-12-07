@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, Play, FileText, Download, Loader2, AlertCircle, Calendar, Clock } from "lucide-react";
 import type { LessonResponse } from "@/services/api/response/lessonResponse";
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 interface LessonDetailModalProps {
   isOpen: boolean;
@@ -217,10 +218,10 @@ const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }:
           {lesson.content && (
             <div className="mb-6">
               <h3 className="font-semibold mb-3">Nội dung bài học</h3>
-              <div className="bg-gray-50 border rounded-lg p-4">
-                <div
-                  className="prose max-w-none text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: lesson.content }}
+              <div className="bg-gray-50 border rounded-lg p-6">
+                <MarkdownRenderer 
+                  content={lesson.content} 
+                  className="text-gray-700"
                 />
               </div>
             </div>

@@ -33,6 +33,50 @@ export interface PublishedCourseDetailResponse {
   category: string;
   isHandsOn: boolean;
   purchaserStatus: boolean;
+  courseVideo?: string;  // Video preview URL from published_course
+  sections?: PublishedSectionResponse[];  // Published sections
+  courseTarget?: string[];  // Learning objectives list
+}
+
+export interface PublishedSectionResponse {
+  id: number;
+  title: string;
+  description?: string;
+  orderIndex: number;
+  isPublished: boolean;
+  lessons: PublishedLessonResponse[];
+  quizzes: PublishedQuizResponse[];
+  assignments: PublishedAssignmentResponse[];
+}
+
+export interface PublishedLessonResponse {
+  id: number;
+  title: string;
+  description?: string;
+  videoUrl?: string;
+  duration?: string;
+  numberItem: number;
+  isPublished: boolean;
+  isFreeLesson: boolean;
+}
+
+export interface PublishedQuizResponse {
+  id: number;
+  title: string;
+  description?: string;
+  numberItem: number;
+  isPublished: boolean;
+  questionCount?: number;
+  duration?: number;
+}
+
+export interface PublishedAssignmentResponse {
+  id: number;
+  title: string;
+  description?: string;
+  numberItem: number;
+  isPublished: boolean;
+  dueDate?: Date;
 }
 
 export interface Course {

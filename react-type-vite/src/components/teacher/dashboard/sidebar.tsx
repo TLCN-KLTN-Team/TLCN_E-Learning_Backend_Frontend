@@ -32,7 +32,7 @@ const menuItems = [
     icon: HelpCircle,
     path: "/teacher/public-courses",
   },
-  { name: "Earnings", icon: TrendingUp, path: "/teacher/earnings" },
+  { name: "Theo dõi doanh thu", icon: TrendingUp, path: "/teacher/revenue" },
   { name: "Students", icon: Users, path: "/teacher/students" },
   { name: "Orders", icon: FolderCheck, path: "/teacher/orders" },
   { name: "Reviews", icon: Star, path: "/teacher/reviews" },

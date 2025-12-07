@@ -33,6 +33,7 @@ import AssignmentDetailModal from "@/components/student/course/AssignmentDetailM
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
 import progressApi from "@/services/api/student/progressApi";
 import { fixCloudinaryVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl } from "@/utils/videoUrlHelper";
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 const CourseDetail = () => {
   const [courseClass, setCourseClass] = useState<CourseClassResponse>();
@@ -622,10 +623,9 @@ const CourseDetail = () => {
                                                         <FileText className="w-5 h-5 text-blue-500" />
                                                         Nội dung bài học
                                                       </h4>
-                                                      <div 
-                                                        className="prose prose-sm max-w-none bg-gray-50 p-4 rounded-lg"
-                                                        dangerouslySetInnerHTML={{ __html: lesson.content }}
-                                                      />
+                                                      <div className="bg-gray-50 p-4 rounded-lg">
+                                                        <MarkdownRenderer content={lesson.content} />
+                                                      </div>
                                                     </div>
                                                   )}
 

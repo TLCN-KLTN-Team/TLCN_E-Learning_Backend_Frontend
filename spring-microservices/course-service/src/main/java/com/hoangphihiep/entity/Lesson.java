@@ -36,6 +36,7 @@ public class Lesson implements Serializable {
     @Column(name = "description", length = 1000)
     private String description;
 
+    @Column(name = "content", columnDefinition = "LONGTEXT")
     private String content;
 
     @ElementCollection

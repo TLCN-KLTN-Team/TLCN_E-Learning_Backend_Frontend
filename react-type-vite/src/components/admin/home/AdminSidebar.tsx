@@ -92,7 +92,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       id: "earnings",
       label: "Doanh thu",
       icon: DollarSign,
-      path: "/admin/earnings",
+      path: "/admin/revenue",
     },
   ];
 

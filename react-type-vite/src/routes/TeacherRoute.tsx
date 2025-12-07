@@ -10,6 +10,7 @@ import PublicCoursesPage from "@/pages/teacher/public/PublicCoursesPage"
 import CourseStudentsPage from "@/pages/teacher/public/CourseUsersPage"
 import StudentQuizzesPage from "@/pages/teacher/public/UserQuizzesPage"
 import StudentAssignmentsPage from "@/pages/teacher/public/UserAssignmentsPage"
+import TeacherRevenuePage from "@/pages/teacher/revenue/TeacherRevenuePage"
 
 // Teacher routes - protected routes for teacher role
 const TeacherRoutes = [
@@ -27,6 +28,9 @@ const TeacherRoutes = [
         <Route key="teacher-public-course-students" path="/teacher/public-courses/:courseId/students" element={<CourseStudentsPage />} />
         <Route key="teacher-student-quizzes" path="/teacher/public-courses/:courseId/students/:studentId/quizzes" element={<StudentQuizzesPage />} />
         <Route key="teacher-student-assignments" path="/teacher/public-courses/:courseId/students/:studentId/assignments" element={<StudentAssignmentsPage />} />
+        
+        {/* Revenue Route */}
+        <Route key="teacher-revenue" path="/teacher/revenue" element={<TeacherRevenuePage />} />
         
         {/* Thêm các teacher routes khác ở đây */}
         {/* 

@@ -1,8 +1,12 @@
 package com.hoangphihiep.service;
 
+import com.hoangphihiep.dto.response.AdminRevenueResponse;
+import com.hoangphihiep.dto.response.SystemRevenueResponse;
+import com.hoangphihiep.dto.response.TeacherRevenueResponse;
 import com.hoangphihiep.entity.*;
 import com.hoangphihiep.repository.PayoutOrderItemRepository;
 import com.hoangphihiep.repository.RevenueShareConfigRepository;
+import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.utils.PayoutOrderItemStatus;
 import com.hoangphihiep.utils.RecipientType;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,8 @@ public class PayoutOrderItemService {
     
     private final PayoutOrderItemRepository payoutOrderItemRepository;
     private final RevenueShareConfigRepository revenueShareConfigRepository;
+    private final RevenueService revenueService;
+    private final TeacherRepository teacherRepository;
     
     /**
      * Tính toán và tạo PayoutOrderItem cho tất cả recipients (Teacher, Admin, System)
@@ -92,15 +98,12 @@ public class PayoutOrderItemService {
      */
     private String determineRecipientId(RecipientType recipientType, PublishedCourse course) {
         return switch (recipientType) {
-            case TEACHER -> course.getCourse().getIdTeacher(); // Teacher của course
+            case TEACHER -> teacherRepository.getTeacherByTeacherId(course.getCourse().getIdTeacher()).getResult().getId();
             case ADMIN -> getEducationalUnitAdminId(course); // Admin của educational unit
             case SUPER_ADMIN -> "SYSTEM"; // System revenue
         };
     }
-    
-    /**
-     * Lấy admin ID của educational unit từ course
-     */
+
     private String getEducationalUnitAdminId(PublishedCourse course) {
         // Giả sử educational unit có admin ID
         // Có thể cần điều chỉnh dựa trên cấu trúc entity thực tế
@@ -109,11 +112,61 @@ public class PayoutOrderItemService {
         }
         return null;
     }
-    
-    /**
-     * Get all payout items for an order item
-     */
+
     public List<PayoutOrderItem> getPayoutItemsByOrderItem(Integer orderItemId) {
         return payoutOrderItemRepository.findByOrderItemId(orderItemId);
+    }
+    
+    // ========== Revenue API Methods ==========
+
+    public TeacherRevenueResponse getTeacherRevenue() {
+        return revenueService.getTeacherRevenue();
+    }
+    
+    public TeacherRevenueResponse getTeacherRevenueByRange(String startDate, String endDate) {
+        return revenueService.getTeacherRevenueByRange(startDate, endDate);
+    }
+    
+    /**
+     * Get admin revenue statistics
+     */
+    public AdminRevenueResponse getAdminRevenue() {
+        return revenueService.getAdminRevenue();
+    }
+    
+    public AdminRevenueResponse getAdminRevenueByRange(String startDate, String endDate) {
+        return revenueService.getAdminRevenueByRange(startDate, endDate);
+    }
+    
+    /**
+     * Get system revenue statistics
+     */
+    public SystemRevenueResponse getSystemRevenue() {
+        return revenueService.getSystemRevenue();
+    }
+    
+    public SystemRevenueResponse getSystemRevenueByRange(String startDate, String endDate) {
+        return revenueService.getSystemRevenueByRange(startDate, endDate);
+    }
+    
+    /**
+     * Get all teachers revenue (for system admin)
+     */
+    public List<TeacherRevenueResponse> getAllTeachersRevenue() {
+        return revenueService.getAllTeachersRevenue();
+    }
+    
+    /**
+     * Get all teachers revenue by date range (for system admin)
+     */
+    public List<TeacherRevenueResponse> getAllTeachersRevenueByRange(String startDate, String endDate) {
+        return revenueService.getAllTeachersRevenueByRange(startDate, endDate);
+    }
+    
+    /**
+     * Get all admins revenue (for system admin)
+     */
+    public List<AdminRevenueResponse> getAllAdminsRevenue() {
+        return revenueService.getAllAdminsRevenue();
     }
 }
