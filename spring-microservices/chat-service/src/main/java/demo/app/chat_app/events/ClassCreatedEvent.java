@@ -14,6 +14,7 @@ public class ClassCreatedEvent {
     private Integer courseId;
     private Integer classId;
     private String className;
+    private String classCode;
     private String description;
     private boolean isPrivate;
     private String createdAt;

@@ -4,7 +4,13 @@ import lombok.Getter;
 
 @Getter
 public enum ChannelStatus {
-    ACTIVE,     // Đang hoạt động
-    ENDED,      // Kết thúc, chờ giáo viên kiểm tra
-    DELETED     // Đã xoá hẳn
+    ACTIVE("ACTIVE"),     // Đang hoạt động
+    ENDED("ENDED"),      // Kết thúc, chờ giáo viên kiểm tra
+    DELETED("DELETED");     // Đã xoá hẳn
+
+    private final String status;
+
+    ChannelStatus(String status) {
+        this.status = status;
+    }
 }
