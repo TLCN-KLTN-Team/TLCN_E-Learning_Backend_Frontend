@@ -5,6 +5,7 @@ import type {
   ChatMessageRequest,
   ChatMessageResponse,
   CreateChannelRequest,
+  UserResponse,
 } from "@/types/chat.types";
 
 const CHANNEL_API_BASE_URL = "/server/channels";
@@ -49,4 +50,13 @@ export const sendMessage = async (
 
 export const softDeleteChannel = async (channelId: string): Promise<void> => {
   await axiosInstance.delete(`/server/channels/${channelId}/soft-delete`);
+};
+
+export const getMembersInChannel = async (
+  channelId: string
+): Promise<UserResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<UserResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/members/${channelId}`
+  );
+  return response.data.result;
 };
