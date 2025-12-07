@@ -73,6 +73,7 @@ export const convertLessonResponseToRequest = (lesson: LessonResponse): LessonRe
     videoUrl: lesson.videoUrl,
     numberItem: lesson.numberItem,
     isFreeLesson: lesson.isFreeLesson,
+    isPublished: lesson.isPublished,
     createdAt: lesson.createdAt instanceof Date ? lesson.createdAt.toISOString() : lesson.createdAt,
     updateAt: lesson.updateAt instanceof Date ? lesson.updateAt.toISOString() : lesson.updateAt,
   }

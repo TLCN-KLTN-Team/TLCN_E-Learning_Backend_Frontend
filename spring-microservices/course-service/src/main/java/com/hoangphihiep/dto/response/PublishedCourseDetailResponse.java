@@ -40,5 +40,16 @@ public class PublishedCourseDetailResponse {
     String descriptionType;
 
     // reviews
+    
+    // ===== NEW FIELDS =====
+    String courseVideo;
+    List<SectionResponse> sections;
+    String whatYouWillLearn;
+    String targetAudience;
+    List<String> courseTarget;  // Learning objectives list
+    
+    // Aliases for frontend compatibility
+    double rating;  // Same as starNumber
+    int studentCount;  // Same as students
 
 }

@@ -48,7 +48,6 @@ public class OrderService {
                 .build();
 
         for (CreationOrderItemRequest itemRequest : request.getOrderItems()){
-            System.out.println ("các item: " + itemRequest);
             OrderItem item = orderItemService.createOrderItem(itemRequest, order);
             order.getOrderItems().add(item);
         }

@@ -1,12 +1,23 @@
 // Revenue Types and Interfaces
 
-export type TimeRange = "day" | "week" | "month" | "year";
+export type TimeRange = "all" | "today" | "week" | "month" | "year" | "custom" | "select-month" | "select-year";
 
 export interface RevenueTimeFilter {
   range: TimeRange;
   startDate?: string;
   endDate?: string;
 }
+
+export const TIME_RANGE_OPTIONS = [
+  { value: "all" as const, label: "Tất cả" },
+  { value: "today" as const, label: "Hôm nay" },
+  { value: "week" as const, label: "Tuần này" },
+  { value: "month" as const, label: "Tháng này" },
+  { value: "select-month" as const, label: "Chọn tháng" },
+  { value: "year" as const, label: "Năm nay" },
+  { value: "select-year" as const, label: "Chọn năm" },
+  { value: "custom" as const, label: "Tùy chỉnh" },
+];
 
 // System Revenue
 export interface SystemRevenueData {
@@ -56,10 +67,3 @@ export interface CourseRevenueData {
   chartData: { name: string; revenue: number }[];
   topCourses: CourseRevenue[];
 }
-
-export const TIME_RANGE_OPTIONS = [
-  { value: "day", label: "Hôm nay" },
-  { value: "week", label: "Tuần này" },
-  { value: "month", label: "Tháng này" },
-  { value: "year", label: "Năm nay" },
-];

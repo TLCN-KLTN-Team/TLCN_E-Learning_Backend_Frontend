@@ -341,8 +341,30 @@ public class SectionService {
 
         lesson.setNumberItem(request.getNumberItem());
         lesson.setIsFreeLesson(request.getIsFreeLesson());
-        lesson.setIsPublished(request.getIsPublished());
-        lesson.setVideoUrl(request.getVideoUrl());
+        
+        // Xử lý videoUrl: nếu là FILE_INDEX thì upload, ngược lại giữ nguyên URL
+        String videoUrl = request.getVideoUrl();
+        if (videoUrl != null && videoUrl.startsWith("FILE_INDEX:")) {
+            try {
+                int fileIndex = Integer.parseInt(videoUrl.substring("FILE_INDEX:".length()));
+                if (lessonFiles != null && fileIndex < lessonFiles.size()) {
+                    MultipartFile videoFile = lessonFiles.get(fileIndex);
+                    String uploadedUrl = fileHandlerRepository.uploadFile(videoFile).get("url");
+                    lesson.setVideoUrl(uploadedUrl);
+                    log.info("Uploaded video file for lesson: {}", uploadedUrl);
+                } else {
+                    log.warn("Video file index out of bounds: {}", fileIndex);
+                    lesson.setVideoUrl(null);
+                }
+            } catch (NumberFormatException e) {
+                log.error("Invalid FILE_INDEX format for video: {}", videoUrl, e);
+                lesson.setVideoUrl(null);
+            }
+        } else {
+            // Giữ nguyên URL (YouTube, Vimeo, hoặc URL đã upload trước đó)
+            lesson.setVideoUrl(videoUrl);
+        }
+        
         lesson.setUpdateAt(new Date());
     }
 
@@ -373,7 +395,29 @@ public class SectionService {
             lesson.setAttachments(processedAttachments);
         }
 
-        lesson.setVideoUrl(request.getVideoUrl());
+        // Xử lý videoUrl: nếu là FILE_INDEX thì upload, ngược lại giữ nguyên URL
+        String videoUrl = request.getVideoUrl();
+        if (videoUrl != null && videoUrl.startsWith("FILE_INDEX:")) {
+            try {
+                int fileIndex = Integer.parseInt(videoUrl.substring("FILE_INDEX:".length()));
+                if (lessonFiles != null && fileIndex < lessonFiles.size()) {
+                    MultipartFile videoFile = lessonFiles.get(fileIndex);
+                    String uploadedUrl = fileHandlerRepository.uploadFile(videoFile).get("url");
+                    lesson.setVideoUrl(uploadedUrl);
+                    log.info("Uploaded video file for new lesson: {}", uploadedUrl);
+                } else {
+                    log.warn("Video file index out of bounds: {}", fileIndex);
+                    lesson.setVideoUrl(null);
+                }
+            } catch (NumberFormatException e) {
+                log.error("Invalid FILE_INDEX format for video: {}", videoUrl, e);
+                lesson.setVideoUrl(null);
+            }
+        } else {
+            // Giữ nguyên URL (YouTube, Vimeo, hoặc URL đã upload trước đó)
+            lesson.setVideoUrl(videoUrl);
+        }
+
         lesson.setNumberItem(request.getNumberItem());
         lesson.setIsFreeLesson(request.getIsFreeLesson());
         lesson.setIsPublished(request.getIsPublished());
