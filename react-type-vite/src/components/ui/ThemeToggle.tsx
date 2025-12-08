@@ -37,7 +37,7 @@ export function ThemeToggle({
       value: "system",
       label: "System",
       icon: <Monitor className="w-4 h-4" />,
-      color: "text-white",
+      color: "text-amber-500",
     },
   ];
 
