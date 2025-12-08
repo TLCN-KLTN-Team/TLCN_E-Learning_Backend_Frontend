@@ -8,6 +8,7 @@ import EducationUnitRegistration from "../pages/student/home/EducationUnitRegist
 import FacebookAuthenticate from "@/pages/auth/FacebookAuthenticate";
 import Courses from "@/pages/user/Courses";
 import CourseDetail from "@/pages/user/course/CourseDetail";
+import DetailEducationalUnit from "@/pages/user/universitry/DetailEducationalUnit";
 import WorkspacePage from "@/pages/workspace/WorkspacePage";
 
 // Public routes - accessible by anonymous users
@@ -42,8 +43,17 @@ const PublicRoutes = [
   />,
 
   // All user accessible routes can be added here
-  <Route path={`/courses`} element={<Courses />} />,
-  <Route path="/courses/course/:courseId" element={<CourseDetail />} />,
+  <Route key="courses" path={`/courses`} element={<Courses />} />,
+  <Route
+    key="course-detail"
+    path="/courses/course/:courseId"
+    element={<CourseDetail />}
+  />,
+  <Route
+    key="educational-unit-detail"
+    path="/educational-unit/:id"
+    element={<DetailEducationalUnit />}
+  />,
 
   <Route key="workspace" path="/workspace" element={<WorkspacePage />} />,
   <Route
