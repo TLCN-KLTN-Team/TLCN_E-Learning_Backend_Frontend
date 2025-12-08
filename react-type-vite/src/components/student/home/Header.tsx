@@ -154,10 +154,10 @@ const Header = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 dark:bg-gray-900 bg-white${
         isScrolled
-          ? "bg-background/95 backdrop-blur-md shadow-bs border-b border-border"
-          : "bg-background/95 backdrop-blur-md lg:bg-transparent lg:backdrop-blur-none"
+          ? "bg-background backdrop-blur-md shadow-bs border-b border-border"
+          : "bg-background border-b border-border/50"
       }`}
     >
       <div className="px-4">
@@ -168,7 +168,7 @@ const Header = () => {
             className="flex items-center max-w-[140px] lg:max-w-[180px] decoration-none no-hover-effect"
           >
             <img
-              src={theme === "light" ? darkLogo : lightLogo}
+              src={theme === "dark" ? lightLogo : darkLogo}
               alt="OpenEdu - E-Learning Platform"
               className="h-6 lg:h-8 w-auto max-w-full object-contain"
             />
