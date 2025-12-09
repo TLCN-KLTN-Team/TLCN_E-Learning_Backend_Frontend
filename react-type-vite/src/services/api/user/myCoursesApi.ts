@@ -1,9 +1,7 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
 
-const API_MY_COURSES_ENDPOINT = "/course-management/enrolled-courses";
-const API_PURCHASED_COURSES_ENDPOINT =
-  "/course-management/published-courses/my-courses";
+const API_USER_COURSE_ENDPOINT = "/course-management/user/published-courses";
 
 export interface EnrolledCourse {
   courseId: number;
@@ -39,14 +37,14 @@ export interface PurchasedCoursesResponse {
 
 const getEnrolledCourses = async (): Promise<EnrolledCoursesResponse> => {
   const response = await axiosInstance.get<EnrolledCoursesResponse>(
-    `${API_MY_COURSES_ENDPOINT}`
+    `${API_USER_COURSE_ENDPOINT}/enrolled`
   );
   return response.data;
 };
 
 const getCourseProgress = async (courseId: number): Promise<number> => {
   const response = await axiosInstance.get<{ progress: number }>(
-    `${API_MY_COURSES_ENDPOINT}/${courseId}/progress`
+    `${API_USER_COURSE_ENDPOINT}/${courseId}/progress`
   );
   return response.data.progress;
 };
@@ -56,7 +54,7 @@ const updateCourseProgress = async (
   lessonId: number,
   completed: boolean
 ): Promise<void> => {
-  await axiosInstance.post(`${API_MY_COURSES_ENDPOINT}/${courseId}/progress`, {
+  await axiosInstance.post(`${API_USER_COURSE_ENDPOINT}/${courseId}/progress`, {
     lessonId,
     completed,
   });
@@ -64,7 +62,7 @@ const updateCourseProgress = async (
 
 const getPurchasedCourses = async (): Promise<PurchasedCourse[]> => {
   const response = await axiosInstance.get<ApiResponse<PurchasedCourse[]>>(
-    API_PURCHASED_COURSES_ENDPOINT
+    `${API_USER_COURSE_ENDPOINT}/purchased`
   );
   return response.data.result;
 };

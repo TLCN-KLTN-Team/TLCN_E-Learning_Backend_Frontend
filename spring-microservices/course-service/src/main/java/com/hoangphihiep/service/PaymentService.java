@@ -45,7 +45,7 @@ public class PaymentService {
     // Tạo URL thanh toán VNPay khi user nhấn "Process Payment" on frontend
     public String createVNPayPaymentUrl(PaymentRequest request, HttpServletRequest httpRequest) throws Exception {
         BigDecimal amount = request.getAmount()
-                .multiply(BigDecimal.valueOf(1000))
+                .multiply(BigDecimal.valueOf(100))
                 .setScale(0, RoundingMode.DOWN);; // VNPay yêu cầu số tiền nhân 100
         log.info("vnp_Amount sent to VNPay = {}",amount);
         String orderId = UUID.randomUUID().toString();
@@ -211,17 +211,29 @@ public class PaymentService {
     public OrderPreviewResponse getOrderPreview(List<Integer> courseIds) {
         List<PublishedCourse> courses = publishedCourseRepository.findAllById(courseIds);
 
+        BigDecimal originalPrice = courses.stream()
+                .map(course -> course.getCoursePrice()
+                        .multiply(BigDecimal.valueOf(1.5))
+                        .add(course.getCoursePrice())
+                )
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         BigDecimal totalAmount = courses.stream()
                 .map(PublishedCourse::getCoursePrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalDiscountedAmount = courses.stream()
+                .map(course -> course.getCoursePrice().multiply(BigDecimal.valueOf(1.5)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<OrderPreviewResponse.CourseItem> items = courses.stream()
                         .map(course -> OrderPreviewResponse.CourseItem.builder()
                                 .id(course.getId())
-                                .name(course.getCourseName())
+                                .courseName(course.getCourseName()!=null ? course.getCourseName():course.getCourse().getCourseName())
                                 .price(currencyUtils.formatCurrency(course.getCoursePrice()))
+                                .amount(course.getCoursePrice())
                                 .discountedPrice(currencyUtils.formatCurrency(
-                                        course.getCoursePrice().multiply(BigDecimal.valueOf(2.5))
+                                        course.getCoursePrice().multiply(BigDecimal.valueOf(1.5))
                                 ))
                                 .imageUrl(course.getCourseImage())
                                 .build()
@@ -230,8 +242,10 @@ public class PaymentService {
 
         return OrderPreviewResponse.builder()
                 .items(items)
-                .amount(currencyUtils.formatCurrency(totalAmount))
-                .discountedPrice(currencyUtils.formatCurrency(totalAmount.multiply(BigDecimal.valueOf(1.5))))
+                .originalPrice(currencyUtils.formatCurrency(originalPrice))
+                .totalPrice(currencyUtils.formatCurrency(totalAmount))
+                .amount(totalAmount)
+                .discountedPrice(currencyUtils.formatCurrency(totalDiscountedAmount))
                 .build();
 
     }

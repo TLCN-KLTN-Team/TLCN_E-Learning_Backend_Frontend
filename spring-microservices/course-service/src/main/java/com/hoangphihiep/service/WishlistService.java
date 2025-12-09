@@ -120,4 +120,12 @@ public class WishlistService {
         courses.forEach(course -> this.removeFromWishlist(course.getId()));
     }
 
+    public void clearWishlist() {
+        FavoriteCourse favoriteCourse = this.getEntity();
+        if (!favoriteCourse.getCourses().isEmpty()) {
+            favoriteCourse.removeAllCourses();
+            favoriteCourseRepository.save(favoriteCourse);
+        }
+    }
+
 }

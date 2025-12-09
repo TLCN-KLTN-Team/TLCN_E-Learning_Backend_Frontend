@@ -3,6 +3,7 @@ package com.hoangphihiep.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -12,7 +13,9 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderPreviewResponse {
     List<CourseItem> items;
-    String amount;
+    String originalPrice;
+    String totalPrice;
+    BigDecimal amount;
     String discountedPrice;
 
     @Data
@@ -20,8 +23,9 @@ public class OrderPreviewResponse {
     @Builder
     public static class CourseItem {
         private Integer id;
-        private String name;
+        private String courseName;
         private String price;
+        private BigDecimal amount;
         private String discountedPrice;
         private String imageUrl;
     }

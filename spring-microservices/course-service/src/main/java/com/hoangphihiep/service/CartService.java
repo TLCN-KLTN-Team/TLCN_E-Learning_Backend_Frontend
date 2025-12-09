@@ -99,6 +99,15 @@ public class CartService {
         cartRepository.save(cart);
     }
 
+    public void clearCart() {
+        Cart cart = this.getEntity();
+        if (!cart.getCourses().isEmpty()) {
+            cart.removeAllCourses();
+            cartRepository.save(cart);
+        }
+
+    }
+
     public CartResponse getCart(){
         Cart cart = this.getEntity();
         FavoriteCourse favoriteCourse = favoriteCourseRepository.findByUserId(JwtUtils.getCurrentUserId())

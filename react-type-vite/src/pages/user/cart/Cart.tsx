@@ -84,7 +84,7 @@ const Cart = () => {
 
     const courseIds = cartData.cartCourses.map((course) => course.courseId);
     // Navigate to payment page with cart items
-    navigate("/payment/checkout/cart", {
+    navigate("/payment/checkout/express/course", {
       state: {
         courseIds: courseIds,
       },

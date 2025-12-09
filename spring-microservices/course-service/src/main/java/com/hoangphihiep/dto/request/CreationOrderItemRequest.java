@@ -3,6 +3,8 @@ package com.hoangphihiep.dto.request;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -10,5 +12,5 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreationOrderItemRequest {
     Integer publishedCourseId;
-    double finishedFee;
+    BigDecimal finishedFee;
 }

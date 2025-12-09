@@ -62,4 +62,8 @@ public class FavoriteCourse implements Serializable {
             course.getFavoriteCourse().remove(this);
         }
     }
+
+    public void removeAllCourses() {
+        this.courses.clear();
+    }
 }
