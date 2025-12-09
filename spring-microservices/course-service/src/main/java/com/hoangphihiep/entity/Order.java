@@ -58,7 +58,7 @@ public class Order implements Serializable {
 
     public void calculateAmount() {
         this.amount = orderItems.stream()
-                .map(item -> BigDecimal.valueOf(item.getFinishedFee()))
+                .map(OrderItem::getFinishedFee)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 

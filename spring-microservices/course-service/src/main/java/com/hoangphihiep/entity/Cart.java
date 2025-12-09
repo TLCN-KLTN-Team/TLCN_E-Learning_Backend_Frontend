@@ -64,4 +64,8 @@ public class Cart implements Serializable {
             course.getCart().remove(this);  // Đồng bộ ngược lại
         }
     }
+
+    public void removeAllCourses() {
+        this.courses.clear();
+    }
 }

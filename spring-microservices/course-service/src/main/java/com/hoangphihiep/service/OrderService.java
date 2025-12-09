@@ -35,6 +35,8 @@ public class OrderService {
     private final OrderItemMapper orderItemMapper;
     private final OrderMapper orderMapper;
     private final PayoutOrderItemService payoutOrderItemService;
+    private final CartService cartService;
+    private final WishlistService wishlistService;
 
     //
     @Transactional
@@ -54,6 +56,10 @@ public class OrderService {
         }
 
         order.calculateAmount();
+
+        // remove from cart and wishlist
+        cartService.clearCart();
+        wishlistService.clearWishlist();
 
         // 4. Lưu (cascade sẽ tự động lưu OrderItems)
         orderRepository.save(order);

@@ -14,12 +14,8 @@ const UserRoutes = [
   <Route key={"payment"} element={<ProtectedRoute />}>
     <Route key={"user-protected-route"} element={<RoleProtectedRoute />}>
       {/* Add user-specific routes here */}
-      <Route
-        path="/payment/checkout/express/course/:courseId"
-        element={<Payment />}
-      />
+      <Route path="/payment/checkout/express/course" element={<Payment />} />
       ,
-      <Route path="/payment/checkout/cart" element={<Payment />} />,
       <Route
         path="/payment/checkout/express/vnpay/return"
         element={<VNPayReturn />}

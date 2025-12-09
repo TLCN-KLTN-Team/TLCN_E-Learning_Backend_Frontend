@@ -2,24 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, Clock, BookOpen, PlayCircle, CheckCircle } from "lucide-react";
+import { BookOpen, PlayCircle, CheckCircle } from "lucide-react";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 import MyCoursesService, {
   type PurchasedCourse,
 } from "@/services/api/user/myCoursesApi";
 
-interface DisplayCourse extends PurchasedCourse {
-  rating?: number;
-  duration?: number;
-  totalLessons?: number;
-  completedLessons?: number;
-  lastAccessed?: string;
-}
-
 const MyCourses: React.FC = () => {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState<DisplayCourse[]>([]);
+  const [courses, setCourses] = useState<PurchasedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "all" | "inProgress" | "completed"
@@ -129,7 +121,11 @@ const MyCourses: React.FC = () => {
                 }`}
               >
                 Đã hoàn thành (
-                {(courses || []).filter((c) => c.progressPercentage === 100).length})
+                {
+                  (courses || []).filter((c) => c.progressPercentage === 100)
+                    .length
+                }
+                )
               </button>
             </nav>
           </div>
@@ -164,7 +160,7 @@ const MyCourses: React.FC = () => {
                   }
                 >
                   {/* Course Thumbnail */}
-                  <div className="relative h-40 bg-gradient-to-br from-blue-500 to-purple-600">
+                  <div className="relative h-48 bg-gradient-to-br from-blue-500 to-purple-600">
                     {course.thumbnailUrl ? (
                       <img
                         src={course.thumbnailUrl}
@@ -186,30 +182,12 @@ const MyCourses: React.FC = () => {
 
                   {/* Course Info */}
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-2 min-h-[3.5rem]">
                       {course.publishedCourseName}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       {course.authorName}
                     </p>
-
-                    {/* Stats */}
-                    {(course.rating || course.duration) && (
-                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        {course.rating && (
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                            <span>{course.rating.toFixed(1)}</span>
-                          </div>
-                        )}
-                        {course.duration && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            <span>{course.duration}h</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                     {/* Progress */}
                     <div className="mb-3">
@@ -228,13 +206,6 @@ const MyCourses: React.FC = () => {
                         ></div>
                       </div>
                     </div>
-
-                    {/* Last Accessed */}
-                    {course.lastAccessed && (
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mb-3">
-                        Lần cuối truy cập: {course.lastAccessed}
-                      </p>
-                    )}
 
                     {/* Continue Button */}
                     <Button

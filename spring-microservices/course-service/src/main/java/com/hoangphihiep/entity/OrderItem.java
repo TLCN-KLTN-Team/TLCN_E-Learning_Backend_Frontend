@@ -2,6 +2,7 @@ package com.hoangphihiep.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class OrderItem implements Serializable {
     private PublishedCourse course;
 
     @Column(name = "finished_fee")
-    private double finishedFee;
+    private BigDecimal finishedFee;
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)

@@ -30,16 +30,19 @@ export interface OrderPreviewRequest {
 
 export interface OrderPreviewResponse {
   items: CourseItem[];
-  amount: string;
+  originalPrice: string;
+  totalPrice: string;
   discountedPrice: string;
+  amount: number;
 }
 
 export interface CourseItem {
-  id?: number;
-  name: string;
+  id: number;
+  courseName: string;
   price: string;
-  discountedPrice?: string;
-  imageUrl?: string;
+  amount: number;
+  discountedPrice: string;
+  imageUrl: string;
 }
 
 export const getOrderPreview = async (

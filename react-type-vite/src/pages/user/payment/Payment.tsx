@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle,
@@ -19,27 +19,18 @@ import {
 import Header from "../../../components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 
+import vnpayLogo from "@/assets/payment/vnpay.svg";
+import paypalLogo from "@/assets/payment/paypal.svg";
+
 import PaymentService, {
   type OrderPreviewResponse,
 } from "@/services/api/user/payment.api";
 
-interface CheckoutItem {
-  courseId: number;
-  courseName: string;
-  authorName: string;
-  price: number;
-  originalPrice?: number;
-  thumbnailUrl?: string;
-}
-
 const Payment: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { courseId } = useParams<{ courseId: string }>();
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedPayment, setSelectedPayment] = useState("vnpay");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
   const [orderPreview, setOrderPreview] = useState<OrderPreviewResponse | null>(
     null
   );
@@ -48,35 +39,27 @@ const Payment: React.FC = () => {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   const handleCompletePayment = async () => {
-    if (!selectedCountry || !acceptedTerms) {
+    if (!selectedCountry) {
       alert("Vui lòng hoàn thành tất cả các trường và chấp nhận điều khoản");
       return;
     }
 
-    if (checkoutItems.length === 0) {
+    if (!orderPreview || orderPreview.items.length === 0) {
       alert("Không có khóa học nào để thanh toán.");
       return;
     }
 
-    // Show payment processing dialog
     setShowPaymentDialog(true);
 
     try {
-      // Calculate total amount from all items
-      const totalAmount = checkoutItems.reduce(
-        (sum, item) => sum + item.price,
-        0
-      );
-
-      // Create order items for payment
-      const orderItems = checkoutItems.map((item) => ({
-        publishedCourseId: item.courseId,
-        finishedFee: item.price,
+      // Create order items from orderPreview.items
+      const orderItems = orderPreview.items.map((item) => ({
+        publishedCourseId: item.id,
+        finishedFee: item.amount,
       }));
 
-      // Create payment with actual course data
       const paymentData = {
-        amount: Math.round(totalAmount * 100), // Convert to cents/smallest currency unit
+        amount: orderPreview.amount,
         currency: selectedCountry,
         paymentType: selectedPayment,
         orderItems: orderItems,
@@ -106,46 +89,12 @@ const Payment: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        // Get courseIds from location state
         const courseIds = location.state?.courseIds as number[] | undefined;
 
         if (courseIds && courseIds.length > 0) {
-          // Call getOrderPreview API
           const preview = await PaymentService.getOrderPreview({ courseIds });
           setOrderPreview(preview);
           console.log("Order preview data:", preview);
-
-          // Map preview items to checkout items
-          const items: CheckoutItem[] = preview.items.map((item) => ({
-            courseId: item.id || 0,
-            courseName: item.name,
-            authorName: "", // Preview doesn't include author name
-            price: parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0,
-            originalPrice: item.discountedPrice
-              ? parseFloat(item.discountedPrice.replace(/[^0-9.]/g, ""))
-              : undefined,
-            thumbnailUrl: item.imageUrl,
-          }));
-          setCheckoutItems(items);
-          setIsLoading(false);
-        } else if (courseId) {
-          // Single course checkout - also use preview API
-          const preview = await PaymentService.getOrderPreview({
-            courseIds: [parseInt(courseId)],
-          });
-          setOrderPreview(preview);
-
-          const items: CheckoutItem[] = preview.items.map((item) => ({
-            courseId: parseInt(courseId),
-            courseName: item.name,
-            authorName: "",
-            price: parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0,
-            originalPrice: item.discountedPrice
-              ? parseFloat(item.discountedPrice.replace(/[^0-9.]/g, ""))
-              : undefined,
-            thumbnailUrl: item.imageUrl,
-          }));
-          setCheckoutItems(items);
           setIsLoading(false);
         } else {
           setError(
@@ -161,7 +110,7 @@ const Payment: React.FC = () => {
     };
 
     loadCheckoutData();
-  }, [courseId, location.state]);
+  }, [location.state]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -214,247 +163,185 @@ const Payment: React.FC = () => {
           )}
 
           {/* Payment Form - Only show when data is loaded */}
-          {!isLoading && !error && checkoutItems.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left Column - Payment Form */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Country Selection */}
-                <Card className="p-6">
-                  <h2 className="text-xl font-semibold mb-2">Country</h2>
-                  <p className="text-gray-600 mb-4">
-                    Select your country for billing purposes
-                  </p>
+          {!isLoading &&
+            !error &&
+            orderPreview &&
+            orderPreview.items.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column - Payment Form */}
+                <div className="lg:col-span-2 space-y-2">
+                  {/* Country Selection */}
+                  <Card className="p-4">
+                    <h2 className="text-xl font-semibold">Quốc gia</h2>
+                    <p className="text-gray-600">
+                      Chọn quốc gia của bạn để phục vụ mục đích thanh toán
+                    </p>
 
-                  <select
-                    value={selectedCountry}
-                    onChange={(e) => setSelectedCountry(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">Select your country</option>
-                    <option value="vn">Vietnam</option>
-                    <option value="us">United States</option>
-                    <option value="uk">United Kingdom</option>
-                    <option value="jp">Japan</option>
-                    <option value="kr">South Korea</option>
-                  </select>
-                </Card>
-
-                {/* Payment Method */}
-                <Card className="p-6">
-                  <h2 className="text-xl font-semibold mb-2">Payment Method</h2>
-                  <p className="text-gray-600 mb-6">
-                    Choose your preferred payment method
-                  </p>
-
-                  <div className="space-y-4">
-                    {/* VNPay Option */}
-                    <div className="border rounded-lg p-4">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="payment"
-                          value="vnpay"
-                          checked={selectedPayment === "vnpay"}
-                          onChange={(e) => setSelectedPayment(e.target.value)}
-                          className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
-                        />
-                        <div className="ml-3 flex items-center">
-                          <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center mr-3">
-                            <span className="text-blue-600 font-bold text-sm">
-                              VP
-                            </span>
-                          </div>
-                          <div>
-                            <div className="font-medium">VNPay</div>
-                            <div className="text-sm text-gray-500">
-                              Local Vietnamese payment gateway
-                            </div>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-
-                    {/* PayPal Option */}
-                    <div className="border rounded-lg p-4">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="payment"
-                          value="paypal"
-                          checked={selectedPayment === "paypal"}
-                          onChange={(e) => setSelectedPayment(e.target.value)}
-                          className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
-                        />
-                        <div className="ml-3 flex items-center">
-                          <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center mr-3">
-                            <span className="text-blue-600 font-bold text-sm">
-                              PP
-                            </span>
-                          </div>
-                          <div>
-                            <div className="font-medium">PayPal</div>
-                            <div className="text-sm text-gray-500">
-                              International payment platform
-                            </div>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Order Information */}
-                <Card className="p-6">
-                  <h2 className="text-xl font-semibold mb-6">
-                    Thông tin đơn hàng
-                  </h2>
-
-                  {/* List of items */}
-                  <div className="space-y-4 mb-6">
-                    {checkoutItems.map((item) => (
-                      <div
-                        key={item.courseId}
-                        className="flex items-start gap-4 pb-4 border-b last:border-b-0"
-                      >
-                        {item.thumbnailUrl ? (
-                          <img
-                            src={item.thumbnailUrl}
-                            alt={item.courseName}
-                            className="w-20 h-14 object-cover rounded"
-                          />
-                        ) : (
-                          <div className="w-20 h-14 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
-                            <ShoppingCart className="w-6 h-6 text-gray-400" />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">
-                            {item.courseName}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {item.authorName}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-gray-900">
-                            {new Intl.NumberFormat("vi-VN").format(item.price)}
-                            {"  "}₫
-                          </div>
-                          {item.originalPrice &&
-                            item.originalPrice > item.price && (
-                              <div className="text-sm text-gray-400 line-through">
-                                {new Intl.NumberFormat("vi-VN").format(
-                                  item.originalPrice
-                                )}{" "}
-                                ₫
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Pricing Summary */}
-                  <div className="space-y-3 border-t pt-4">
-                    <div className="flex justify-between">
-                      <span>Tổng giá gốc:</span>
-                      <span>{orderPreview?.amount || "0 ₫"}</span>
-                    </div>
-                    {orderPreview?.discountedPrice &&
-                      orderPreview.discountedPrice !== "0 ₫" && (
-                        <div className="flex justify-between text-green-600">
-                          <span>Giảm giá:</span>
-                          <span>-{orderPreview.discountedPrice}</span>
-                        </div>
+                    <select
+                      value={selectedCountry}
+                      onChange={(e) => setSelectedCountry(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Select your country</option>
+                      {selectedPayment === "vnpay" && (
+                        <option value="vn">Vietnam</option>
                       )}
-                    <div className="flex justify-between text-xl font-bold border-t pt-3">
-                      <span>Tổng cộng:</span>
-                      <span className="text-blue-600">
-                        {orderPreview?.amount || "0 ₫"}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-              </div>
+                      {selectedPayment === "paypal" && (
+                        <>
+                          <option value="USD">United States</option>
+                          <option value="EUR">Eurozone</option>
+                          <option value="GBP">United Kingdom</option>
+                          <option value="JPY">Japan</option>
+                          <option value="KRW">South Korea</option>
+                        </>
+                      )}
+                    </select>
+                  </Card>
 
-              {/* Right Column - Order Summary (Sticky) */}
-              <div className="lg:col-span-1">
-                <div className="sticky top-24">
-                  <Card className="p-6">
-                    <h2 className="text-xl font-semibold mb-6">
-                      Tóm tắt đơn hàng
+                  {/* Payment Method */}
+                  <Card className="p-4">
+                    <h2 className="text-xl font-semibold">
+                      Phương thức thanh toán
+                    </h2>
+                    <p className="text-gray-600">Chọn phương thức thanh toán</p>
+
+                    <div className="space-y-2">
+                      {/* VNPay Option */}
+                      <div className="border rounded-lg p-4">
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name="payment"
+                            value="vnpay"
+                            checked={selectedPayment === "vnpay"}
+                            onChange={(e) => setSelectedPayment(e.target.value)}
+                            className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                          />
+                          <div className="ml-3 flex items-center">
+                            <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center mr-3">
+                              <img src={vnpayLogo} alt="VNPay" />
+                            </div>
+                            <div>
+                              <div className="font-medium">VNPay</div>
+                              <div className="text-sm text-gray-500">
+                                Cổng thanh toán phổ biến tại Việt Nam
+                              </div>
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+
+                      {/* PayPal Option */}
+                      <div className="border rounded-lg p-2">
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name="payment"
+                            value="paypal"
+                            checked={selectedPayment === "paypal"}
+                            onChange={(e) => setSelectedPayment(e.target.value)}
+                            className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                          />
+                          <div className="ml-3 flex items-center">
+                            <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center mr-3">
+                              <img src={paypalLogo} alt="PayPal" />
+                            </div>
+                            <div>
+                              <div className="font-medium">PayPal</div>
+                              <div className="text-sm text-gray-500">
+                                Thanh toán quốc tế an toàn và nhanh chóng
+                              </div>
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Order Information */}
+                  <Card className="p-4">
+                    <h2 className="text-xl font-semibold">
+                      Thông tin đơn hàng
                     </h2>
 
-                    <div className="mb-4">
-                      <span className="text-sm text-gray-600">
-                        {checkoutItems.length === 1
-                          ? "Khóa học:"
-                          : "Số khóa học:"}
-                      </span>
-                      <span className="font-medium ml-2">
-                        {checkoutItems.length === 1
-                          ? checkoutItems[0].courseName
-                          : `${checkoutItems.length} khóa học`}
-                      </span>
+                    {/* List of items */}
+                    <div className="space-y-1">
+                      {orderPreview.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-start gap-2 border-b last:border-b-0"
+                        >
+                          <img
+                            src={item.imageUrl}
+                            alt={item.courseName}
+                            className="w-20 h-14 object-cover rounded"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                              e.currentTarget.nextElementSibling?.classList.remove(
+                                "hidden"
+                              );
+                            }}
+                          />
+                          <div className="w-20 h-14 bg-gray-200 dark:bg-gray-700 rounded items-center justify-center hidden">
+                            <ShoppingCart className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900">
+                              {item.courseName}
+                            </h3>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-gray-900">
+                              {item.price}
+                            </div>
+                            <div className="text-sm text-gray-400 line-through">
+                              {item.discountedPrice}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Right Column - Order Summary (Sticky) */}
+                <div className="lg:col-span-1">
+                  <Card className="p-6">
+                    <h2 className="text-2xl font-bold">Tóm tắt đơn đặt hàng</h2>
+
+                    {/* Giá gốc */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Giá gốc:</span>
+                      <span className="">{orderPreview.originalPrice}</span>
                     </div>
 
-                    <div className="mb-6">
-                      <span className="text-sm text-gray-600">Tổng tiền: </span>
+                    {/* Chiết khấu */}
+                    <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                      <span className="text-gray-600">
+                        Chiết khấu (Giảm giá):
+                      </span>
+                      <span className="">{orderPreview.discountedPrice}</span>
+                    </div>
+
+                    {/* Tổng tiền */}
+                    <div className="flex justify-between items-center mb-6">
+                      <span className="font-bold text-xl">
+                        Tổng tiền ({orderPreview.items.length} khóa học):
+                      </span>
                       <span className="text-2xl font-bold">
-                        {orderPreview?.amount || "0 ₫"}
+                        {orderPreview.totalPrice}
                       </span>
                     </div>
 
-                    {/* What you'll get */}
-                    <div className="mb-6">
-                      <h3 className="font-medium mb-3">What you'll get:</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Lifetime access to course materials</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Certificate of completion</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Access to course community</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>30-day money-back guarantee</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Terms & Conditions */}
-                    <div className="mb-6">
-                      <h3 className="font-medium mb-3">Terms & Conditions</h3>
-                      <div className="text-sm text-gray-600 space-y-2">
-                        <p>
-                          By completing this purchase, you agree to our Terms of
-                          Service and Privacy Policy.
-                        </p>
-                        <p>
-                          All payments are processed securely. Your personal
-                          information is encrypted and protected.
-                        </p>
-                        <p>
-                          If you're not satisfied with your purchase, you can
-                          request a full refund within 30 days.
-                        </p>
-                      </div>
-
-                      <label className="flex items-start gap-3 mt-4 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={acceptedTerms}
-                          onChange={(e) => setAcceptedTerms(e.target.checked)}
-                          className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 mt-0.5"
-                        />
-                        <span className="text-sm">
-                          I agree to the terms and conditions
+                    {/* Terms notice */}
+                    <div className="mb-4">
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <span className="text-sm text-gray-600">
+                          Bằng việc hoàn tất giao dịch mua, bạn đồng ý với các{" "}
+                          <a href="#" className="text-blue-600 hover:underline">
+                            Điều khoản dịch vụ này
+                          </a>
+                          .
                         </span>
                       </label>
                     </div>
@@ -462,16 +349,25 @@ const Payment: React.FC = () => {
                     {/* Complete Purchase Button */}
                     <Button
                       onClick={handleCompletePayment}
-                      disabled={!selectedCountry || !acceptedTerms}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
                     >
-                      Hoàn tất thanh toán
+                      Tiếp tục
                     </Button>
+
+                    {/* Money back guarantee */}
+                    <div className="text-center pt-4 border-t border-gray-200">
+                      <h3 className="font-semibold mb-2">
+                        Đảm bảo hoàn tiền trong 30 ngày
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Bạn không hài lòng? Nhận lại toàn bộ tiền hoàn lại trong
+                        vòng 30 ngày. Đơn giản và dễ hiểu!
+                      </p>
+                    </div>
                   </Card>
                 </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       </main>
 
@@ -492,41 +388,29 @@ const Payment: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center py-6 space-y-4 bg-white dark:bg-gray-800">
-            {/* Loading Spinner */}
+            {/* Payment Method Logo */}
             <div className="relative">
-              <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />
+              <div className="w-24 h-24 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                <img
+                  src={selectedPayment === "vnpay" ? vnpayLogo : paypalLogo}
+                  alt={selectedPayment === "vnpay" ? "VNPay" : "PayPal"}
+                  className="w-16 h-16 object-contain"
+                />
+              </div>
+              <div className="absolute -bottom-2 -right-2">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
             </div>
 
             {/* Payment Method Info */}
             <div className="text-center space-y-2">
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Đang chuyển hướng đến cổng thanh toán
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                Đang chuyển hướng đến{" "}
+                {selectedPayment === "vnpay" ? "VNPay" : "PayPal"}
               </p>
-              <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
-                {selectedPayment === "vnpay" ? (
-                  <>
-                    <div className="w-8 h-8 bg-blue-200 dark:bg-blue-700 rounded flex items-center justify-center">
-                      <span className="text-blue-600 dark:text-blue-200 font-bold text-xs">
-                        VP
-                      </span>
-                    </div>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">
-                      VNPay
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-8 h-8 bg-blue-200 dark:bg-blue-700 rounded flex items-center justify-center">
-                      <span className="text-blue-600 dark:text-blue-200 font-bold text-xs">
-                        PP
-                      </span>
-                    </div>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">
-                      PayPal
-                    </span>
-                  </>
-                )}
-              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Vui lòng đợi trong giây lát...
+              </p>
             </div>
 
             {/* Amount */}
@@ -535,7 +419,7 @@ const Payment: React.FC = () => {
                 Tổng thanh toán
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {checkoutItems.reduce((sum, item) => sum + item.price, 0)} ₫
+                {orderPreview?.amount || "0 ₫"}
               </p>
             </div>
 

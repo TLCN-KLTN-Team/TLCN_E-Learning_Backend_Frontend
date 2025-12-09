@@ -24,12 +24,16 @@ public class PublicCourseController {
 
     // some apis get data here
     // get courses suggest for user
-
+    public ApiResponse<?> getPublishCoursesByNumberOfPurchase(){
+        return null;
+    }
     // get courses by favorite based on user behavior
+    // we need to integrated ai
 
     // get educational units which joined our system
 
     // get positive review from user
+
 
     @GetMapping("/{courseId}")
     public ApiResponse<?> getPublishedCourseById(@PathVariable Integer courseId) {
