@@ -48,6 +48,11 @@ public class UserPublishedCourseService {
                 .toList();
     }
 
+    public List<HomeCourseResponse> getSuggestCourses() {
+        List<PublishedCourse> courses = publishedCourseRepository.findAll();
+        return null;
+    }
+
     public List<PublishedCourseProgressResponse> getMyPublishedCourse() {
         List<Order> ordersOfUser = orderService.getOrdersByUserId();
         List<Integer> orderIds = ordersOfUser.stream()
@@ -67,8 +72,9 @@ public class UserPublishedCourseService {
                 .map(pc -> PublishedCourseProgressResponse.builder()
                         .publishedCourseId(pc.getId())
                         .publishedCourseName(pc.getCourse().getCourseName())
-                        .authorName(pc.getAuthorName()) // Placeholder for author name
+                        .authorName(pc.getAuthorName()!=null ? pc.getAuthorName() : "Author Name") // Placeholder for author name
                         .progressPercentage(0) // Placeholder for progress
+                        .thumbnailUrl(pc.getCourseImage())
                         .build())
                 .toList();
 
