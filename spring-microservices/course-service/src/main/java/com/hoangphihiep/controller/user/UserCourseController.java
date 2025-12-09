@@ -37,7 +37,7 @@ public class UserCourseController {
     }
 
     // get bought courses
-    @GetMapping("/my-courses")
+    @GetMapping("/purchased")
     public ApiResponse<?> getBoughtCourses() {
         var response = publishedCourseService.getMyPublishedCourse();
         return ApiResponse.success(

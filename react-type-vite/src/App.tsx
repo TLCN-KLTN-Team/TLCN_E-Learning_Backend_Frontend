@@ -1,7 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "./context/theme-context";
 import AuthProvider from "./context/auth-context";
-import ScrollProgressBar from "./components/ui/ScrollProgressBar";
 import { Toaster } from "@/components/ui/toaster.tsx";
 import NotFound from "./pages/NotFound";
 import PublicRoutes from "./routes/PublicRoute";
@@ -16,7 +15,6 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system">
       <AuthProvider>
-        <ScrollProgressBar />
         <Routes>
           {/* A more descriptive route */}
           {/* Public routes - which accessible by anonymous users*/}

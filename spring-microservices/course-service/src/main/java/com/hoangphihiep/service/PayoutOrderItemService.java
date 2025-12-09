@@ -40,7 +40,7 @@ public class PayoutOrderItemService {
         
         // Get course and related entities
         PublishedCourse course = orderItem.getCourse();
-        BigDecimal totalAmount = BigDecimal.valueOf(orderItem.getFinishedFee());
+        BigDecimal totalAmount = orderItem.getFinishedFee();
         
         // Get all active revenue share configs
         List<RevenueShareConfig> activeConfigs = revenueShareConfigRepository.findByIsActiveTrue();
