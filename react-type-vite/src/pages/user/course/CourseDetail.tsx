@@ -8,6 +8,7 @@ import type { PublishedCourseDetailResponse } from "../../../types/course.types"
 import PublishedCourseService from "@/services/api/anonymous/course.api";
 import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
+import { decodeHTMLEntities } from "@/utils/htmlCleaner";
 
 import CartService from "@/services/api/user/cart.api";
 import WishlistService from "@/services/api/user/wishlist.api";
@@ -195,9 +196,10 @@ const CourseDetail: React.FC = () => {
           </h1>
 
           {/* Course Subtitle */}
-          <p className="text-lg text-gray-300 mb-4 max-w-3xl">
-            {course.description}
-          </p>
+          <div 
+            className="text-lg text-gray-300 mb-4 max-w-3xl"
+            dangerouslySetInnerHTML={{ __html: decodeHTMLEntities(course.courseIntroduction || "") }}
+          />
 
           {/* Course Stats */}
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300 mb-4">
@@ -254,7 +256,7 @@ const CourseDetail: React.FC = () => {
           <div className="lg:col-span-2 space-y-8">
             {/* What you'll learn */}
             <Card className="p-6 border border-gray-200">
-              <h2 className="text-2xl font-bold mb-6">What you'll learn</h2>
+              <h2 className="text-2xl font-bold mb-6">Mục tiêu khóa học</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {course.courseTarget && course.courseTarget.length > 0 ? (
                   course.courseTarget.map((item, index) => (
@@ -273,18 +275,10 @@ const CourseDetail: React.FC = () => {
 
             {/* Course Content */}
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Course content</h2>
+              <h2 className="text-2xl font-bold">Nội dung khóa học</h2>
               <p className="text-sm text-gray-600">
-                {course.sections?.length || 0} sections •{" "}
-                {course.sections?.reduce(
-                  (total, s) =>
-                    total +
-                    (s.lessons?.length || 0) +
-                    (s.quizzes?.length || 0) +
-                    (s.assignments?.length || 0),
-                  0
-                ) || 0}{" "}
-                lectures
+                {course.sections?.length || 0} phần học •{" "}
+                {course.sections?.reduce((total, s) => total + (s.lessons?.length || 0) + (s.quizzes?.length || 0) + (s.assignments?.length || 0), 0) || 0} nội dung
               </p>
 
               {course.sections && course.sections.length > 0 ? (
@@ -294,7 +288,7 @@ const CourseDetail: React.FC = () => {
                     className="text-blue-600 p-0 h-auto font-normal mb-2"
                     onClick={expandAllSections}
                   >
-                    Expand all sections
+                    Mở rộng tất cả các phần học
                   </Button>
 
                   {course.sections
@@ -483,140 +477,231 @@ const CourseDetail: React.FC = () => {
 
             {/* Requirements */}
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Requirements</h2>
-              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  While it's ideal if you can code in Python and have some
-                  experience working with LLMs, this course is designed for a
-                  very wide audience, regardless of background. I've included a
-                  whole folder of self-study labs that cover foundational
-                  technical and programming skills. If you're new to coding,
-                  there's only one requirement: plenty of patience!
-                </li>
-                <li>
-                  The course runs best if you have a small budget for APIs, but
-                  it's totally your choice. You can complete the entire course
-                  with no API spend. If you do wish to use frontier models, the
-                  typical spend would be under $5. You can choose to access more
-                  capabilities if you're comfortable spending a little more.
-                </li>
-              </ul>
+              <h2 className="text-2xl font-bold">Thành tích đạt được</h2>
+              <div 
+                className="text-sm text-gray-700 space-y-2"
+                dangerouslySetInnerHTML={{ __html: decodeHTMLEntities(course.learnerAchievements || "") }}
+              />
             </div>
 
             {/* Description */}
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Description</h2>
-              <div className="text-sm text-gray-700 space-y-3">
-                <p>
-                  2025 is the year that Agents enter the workforce. This is
-                  nothing short of a watershed moment for Artificial
-                  Intelligence. It has never been more important to be an expert
-                  with Agentic AI. And that is precisely the goal of this
-                  course: to equip you with the skills and expertise to design,
-                  build and deploy Autonomous AI Agents, opening up new career
-                  and commercial opportunities.
-                </p>
-                <p>
-                  This is an intensive 6-week program to master Agentic AI. We
-                  start by building foundational expertise, connecting LLMs
-                  using proven design patterns. Then, each week, we upskill with
-                  new frameworks: OpenAI Agents SDK, CrewAI, LangGraph and
-                  Autogen. The course culminates with a full week on the
-                  remarkable opportunities opened up by MCP.
-                </p>
-                <Button
-                  variant="link"
-                  className="text-blue-600 p-0 h-auto font-normal"
-                >
-                  Show more ▼
-                </Button>
-              </div>
+              <h2 className="text-2xl font-bold">Mô tả khóa học</h2>
+              <div 
+                className="text-sm text-gray-700 space-y-3"
+                dangerouslySetInnerHTML={{ __html: decodeHTMLEntities(course.description || "") }}
+              />
             </div>
 
             {/* Target Audience */}
-            <Card className="p-6 border border-gray-200">
-              <h2 className="text-2xl font-bold mb-6">Target Audience</h2>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
-                <span className="text-gray-700">{course.targetAudience}</span>
-              </div>
-            </Card>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Đối tượng tham gia</h2>
+              <div 
+                className="text-sm text-gray-700"
+                dangerouslySetInnerHTML={{ __html: decodeHTMLEntities(course.courseLearner || "") }}
+              />
+            </div>
 
             {/* Instructor */}
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-6">Instructor</h2>
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                  <User className="w-8 h-8 text-gray-500" />
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold">Giảng viên</h2>
+              
+              <div className="space-y-4">
+                {/* Instructor Name Link */}
+                <a href="#" className="text-purple-600 font-semibold text-lg hover:underline">
+                  {course.instructorInfo?.instructorName || course.authorName || "Jobskillshare Community"}
+                </a>
+                <p className="text-gray-600 text-sm">
+                  {course.instructorInfo?.instructorTagline || "Learn IT, Practice IT, Do IT"}
+                </p>
+
+                {/* Instructor Avatar and Stats */}
+                <div className="flex gap-6">
+                  {/* Avatar */}
+                  <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {course.instructorInfo?.instructorAvatar ? (
+                      <img 
+                        src={course.instructorInfo.instructorAvatar} 
+                        alt={course.instructorInfo.instructorName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-4xl font-bold text-gray-700">
+                        {course.instructorInfo?.instructorName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'JSS'}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="flex-1 space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4" />
+                      <span className="font-medium">
+                        {course.instructorInfo?.instructorRating?.toFixed(1) || '0.0'} Instructor Rating
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                      </svg>
+                      <span className="font-medium">
+                        {course.instructorInfo?.totalReviews?.toLocaleString() || '0'} Reviews
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      <span className="font-medium">
+                        {course.instructorInfo?.totalStudents?.toLocaleString() || '0'} Students
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">
+                        {course.instructorInfo?.totalCourses || '0'} Courses
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">
-                    {course.authorName}
-                  </h3>
-                  <p className="text-gray-600">
-                    Expert instructor with years of experience in{" "}
-                    {course.category}.
-                  </p>
-                </div>
+
+                {/* Instructor Bio */}
+                {course.instructorInfo?.instructorBio && (
+                  <div className="text-sm text-gray-700 space-y-3">
+                    <p>{course.instructorInfo.instructorBio}</p>
+                  </div>
+                )}
+                
+                {/* Social URL Link */}
+                {course.instructorInfo?.socialUrl && (
+                  <div className="pt-2">
+                    <a 
+                      href={course.instructorInfo.socialUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-purple-600 hover:underline text-sm font-medium"
+                    >
+                      Visit Instructor Website →
+                    </a>
+                  </div>
+                )}
               </div>
-            </Card>
+            </div>
 
             {/* Student Reviews */}
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-6">Student reviews</h2>
+            <div className="space-y-6">
+              {/* Header with rating */}
+              <div className="flex items-center gap-4">
+                <Star className="w-8 h-8 text-yellow-400 fill-current" />
+                <div>
+                  <h2 className="tex
+                  t-2xl font-bold">
+                    {course.rating} xếp hạng khóa học
+                  </h2>
+                  <p className="text-gray-600">5K ratings</p>
+                </div>
+              </div>
+
+              {/* Reviews List */}
               <div className="space-y-6">
-                {/* Mock reviews data */}
                 {[
                   {
                     id: "1",
-                    studentName: "John Doe",
+                    initial: "DT",
+                    studentName: "DATTA T.",
                     rating: 5,
                     comment:
-                      "Excellent course! Very comprehensive and well-explained.",
-                    date: "2 weeks ago",
+                      "this is one of the best course out there thank you Daqche IT and i am saying you are the best teacher for people must purchase this course it covers all the things which needs for",
+                    date: "a week ago",
                   },
                   {
                     id: "2",
-                    studentName: "Jane Smith",
+                    initial: "HR",
+                    studentName: "Hareesh R.",
                     rating: 4,
                     comment:
-                      "Great content and practical examples. Highly recommended!",
-                    date: "1 month ago",
+                      "Good teaching and give a good resources to learn from basics",
+                    date: "a week ago",
                   },
                   {
                     id: "3",
-                    studentName: "Mike Johnson",
-                    rating: 5,
+                    initial: "BM",
+                    studentName: "Bradley M.",
+                    rating: 4,
                     comment:
-                      "Perfect for beginners. The instructor explains everything clearly.",
+                      "Course was a good overview of a VARIETY of topics, some of which I had not worked with so it was gratifying to get some new information. Appreciated the concise format allowing us to",
+                    date: "3 weeks ago",
+                  },
+                  {
+                    id: "4",
+                    initial: "AS",
+                    studentName: "Ashley S.",
+                    rating: 3,
+                    comment:
+                      "Annoying audio volume fluctuations throughoutEXTREME perspective - it would have been better if it had gone through the content first even from the live classes only",
                     date: "2 months ago",
                   },
                 ].map((review) => (
-                  <div
-                    key={review.id}
-                    className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="w-5 h-5 text-gray-500" />
+                  <div key={review.id} className="space-y-3">
+                    <div className="flex gap-4">
+                      {/* Avatar */}
+                      <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-sm font-bold">{review.initial}</span>
                       </div>
+                      
+                      {/* Review Content */}
                       <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">{review.studentName}</h4>
-                          <span className="text-sm text-gray-500">
-                            {review.date}
-                          </span>
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-bold text-sm">{review.studentName}</h4>
+                          <button className="text-gray-400 hover:text-gray-600">
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                            </svg>
+                          </button>
                         </div>
+                        
+                        {/* Rating and Date */}
                         <div className="flex items-center gap-2 mb-2">
-                          {renderStars(review.rating)}
+                          <div className="flex items-center">
+                            {renderStars(review.rating)}
+                          </div>
+                          <span className="text-xs text-gray-500">{review.date}</span>
                         </div>
-                        <p className="text-gray-700">{review.comment}</p>
+                        
+                        {/* Comment */}
+                        <p className="text-sm text-gray-700 mb-3">{review.comment}</p>
+                        
+                        {/* Show more button */}
+                        <button className="text-sm font-semibold text-gray-700 hover:text-gray-900 mb-3">
+                          Show more
+                        </button>
+                        
+                        {/* Helpful buttons */}
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-gray-600">Helpful?</span>
+                          <button className="flex items-center gap-1 hover:text-purple-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                            </svg>
+                          </button>
+                          <button className="flex items-center gap-1 hover:text-purple-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </Card>
+              
+              {/* Show all reviews button */}
+              <Button variant="outline" className="w-auto border-gray-900 font-semibold">
+                Show all reviews
+              </Button>
+            </div>
           </div>
 
           {/* Right Sidebar - Course Card */}

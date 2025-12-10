@@ -46,7 +46,10 @@ public class PublishedCourseDetailResponse {
     List<SectionResponse> sections;
     String whatYouWillLearn;
     String targetAudience;
+    String learnerAchievements;  // HTML content for Requirements section
+    String courseLearner;  // HTML content for Target Audience section
     List<String> courseTarget;  // Learning objectives list
+    InstructorInfoResponse instructorInfo;  // Instructor detailed information
     
     // Aliases for frontend compatibility
     double rating;  // Same as starNumber
