@@ -23,5 +23,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     @Query("SELECT o FROM Order o WHERE o.orderDate BETWEEN :startDate AND :endDate")
     List<Order> findByOrderDateBetween(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+    
+    // Count unique students (users) who purchased courses by a specific teacher
+    @Query("SELECT COUNT(DISTINCT o.idUser) FROM Order o JOIN o.orderItems oi WHERE oi.course.course.idTeacher = :teacherId")
+    Long countUniqueStudentsByTeacherId(@Param("teacherId") String teacherId);
 
 }

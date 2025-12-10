@@ -18,9 +18,25 @@ export interface CompletionSuggestionResponse {
   titleSuggestions: string[];
 }
 
+export interface InstructorInfo {
+  instructorId: string;
+  instructorName: string;
+  instructorAvatar: string | null;
+  instructorTagline: string;
+  instructorBio: string;
+  socialUrl: string;
+  instructorRating: number;
+  totalReviews: number;
+  totalStudents: number;
+  totalCourses: number;
+}
+
 export interface PublishedCourseDetailResponse {
   courseName: string;
   description: string;
+  courseIntroduction: string;  // Subtitle under course title
+  learnerAchievements: string;  // Requirements section (HTML from TinyMCE)
+  courseLearner: string;  // Target Audience section (HTML from TinyMCE)
   whatYouWillLearn: string;
   targetAudience: string;
   rating: number;
@@ -36,6 +52,7 @@ export interface PublishedCourseDetailResponse {
   courseVideo?: string;  // Video preview URL from published_course
   sections?: PublishedSectionResponse[];  // Published sections
   courseTarget?: string[];  // Learning objectives list
+  instructorInfo?: InstructorInfo;  // Instructor detailed information
 }
 
 export interface PublishedSectionResponse {

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -45,6 +46,14 @@ public interface PublishedCourseRepository extends JpaRepository<PublishedCourse
 
     @Query("SELECT pc FROM PublishedCourse pc WHERE pc.status = 2") // 2 = Approved
     Page<PublishedCourse> findAllApproved(Pageable pageable);
+    
+    // Count approved courses by teacher
+    @Query("SELECT COUNT(pc) FROM PublishedCourse pc WHERE pc.course.idTeacher = :teacherId AND pc.status = 2")
+    long countApprovedCoursesByTeacherId(@Param("teacherId") String teacherId);
+    
+    // Get all approved courses by teacher for statistics
+    @Query("SELECT pc FROM PublishedCourse pc WHERE pc.course.idTeacher = :teacherId AND pc.status = 2")
+    List<PublishedCourse> findApprovedCoursesByTeacherId(@Param("teacherId") String teacherId);
 
     @Query("SELECT pc FROM PublishedCourse pc " +
             "WHERE pc.status = 2 " +

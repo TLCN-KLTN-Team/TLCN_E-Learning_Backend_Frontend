@@ -7,7 +7,9 @@ import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.OrderMapper;
+import com.hoangphihiep.repository.OrderRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
+import com.hoangphihiep.repository.ReviewRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
 import com.hoangphihiep.utils.CurrencyUtils;
@@ -35,6 +37,8 @@ public class UserPublishedCourseService {
     private final OrderService orderService;
     private final OrderItemService orderItemService;
     private final OrderMapper orderMapper;
+    private final ReviewRepository reviewRepository;
+    private final OrderRepository orderRepository;
 
     public List<OrderResponse> getPendingOrders() {
         String userId = JwtUtils.getCurrentUserId();
@@ -118,11 +122,15 @@ public class UserPublishedCourseService {
 
         try {
             var teacher = teacherApi.getTeacherByTeacherId(publishedCourse.getCourse().getIdTeacher()).getResult();
+            String teacherId = publishedCourse.getCourse().getIdTeacher();
 
             CourseType courseType = publishedCourse.getCourseType();
             
             // Build sections with published content
             List<SectionResponse> sections = buildPublishedSections(publishedCourse.getCourse());
+            
+            // Build instructor info with statistics
+            InstructorInfoResponse instructorInfo = buildInstructorInfo(teacher, teacherId);
 
             PublishedCourseDetailResponse response = PublishedCourseDetailResponse.builder()
                     .courseName(publishedCourse.getCourseName())
@@ -148,7 +156,10 @@ public class UserPublishedCourseService {
                     .sections(sections)
                     .whatYouWillLearn(publishedCourse.getLearnerAchievements())
                     .targetAudience(publishedCourse.getCourseLearner())
+                    .learnerAchievements(publishedCourse.getLearnerAchievements())
+                    .courseLearner(publishedCourse.getCourseLearner())
                     .courseTarget(publishedCourse.getCourseTarget())
+                    .instructorInfo(instructorInfo)
                     .rating(4.5)  // Alias for starNumber
                     .studentCount(3500)  // Alias for students
                     
@@ -158,6 +169,27 @@ public class UserPublishedCourseService {
         } catch (AppException e) {
             throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
         }
+    }
+    
+    private InstructorInfoResponse buildInstructorInfo(TeacherResponse teacher, String teacherId) {
+        // Count statistics for the instructor
+        long totalCourses = publishedCourseRepository.countApprovedCoursesByTeacherId(teacherId);
+        long totalReviews = reviewRepository.countReviewsByTeacherId(teacherId);
+        Double avgRating = reviewRepository.getAverageRatingByTeacherId(teacherId);
+        long totalStudents = orderRepository.countUniqueStudentsByTeacherId(teacherId);
+        
+        return InstructorInfoResponse.builder()
+                .instructorId(teacher.getTeacherId())
+                .instructorName(teacher.getFirstName() + teacher.getLastName())
+                .instructorAvatar(null)  // Will be updated when avatar field is added
+                .instructorTagline("Learn IT, Practice IT, Do IT")  // Default tagline, can be from DB
+                .instructorBio(teacher.getDescription())
+                .socialUrl(teacher.getSocialUrl())
+                .instructorRating(avgRating != null ? avgRating : 0.0)
+                .totalReviews((int) totalReviews)
+                .totalStudents((int) totalStudents)
+                .totalCourses((int) totalCourses)
+                .build();
     }
     
     private List<SectionResponse> buildPublishedSections(com.hoangphihiep.entity.Course course) {

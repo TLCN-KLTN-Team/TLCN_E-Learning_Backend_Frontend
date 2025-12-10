@@ -27,4 +27,12 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     Long countByCourseIdAndRating(@Param("courseId") Integer courseId, @Param("rating") Integer rating);
 
     Long countByCourseId(Integer courseId);
+    
+    // Count all reviews for courses by teacher
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.course.course.idTeacher = :teacherId AND r.course.status = 2")
+    Long countReviewsByTeacherId(@Param("teacherId") String teacherId);
+    
+    // Get average rating for all courses by teacher
+    @Query("SELECT AVG(r.rate) FROM Review r WHERE r.course.course.idTeacher = :teacherId AND r.course.status = 2")
+    Double getAverageRatingByTeacherId(@Param("teacherId") String teacherId);
 }
