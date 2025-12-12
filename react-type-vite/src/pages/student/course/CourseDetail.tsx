@@ -32,7 +32,11 @@ import QuizDetailModal from "@/components/student/course/QuizDetailModal";
 import AssignmentDetailModal from "@/components/student/course/AssignmentDetailModal";
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
 import progressApi from "@/services/api/student/progressApi";
-import { fixCloudinaryVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl } from "@/utils/videoUrlHelper";
+import {
+  fixCloudinaryVideoUrl,
+  isYouTubeUrl,
+  getYouTubeEmbedUrl,
+} from "@/utils/videoUrlHelper";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 const CourseDetail = () => {
@@ -41,24 +45,33 @@ const CourseDetail = () => {
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [sectionsError, setSectionsError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("content");
-  
+
   // Progress states
-  const [progressStats, setProgressStats] = useState<ProgressStatsResponse | null>(null);
-  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
-  const [isMarkingComplete, setIsMarkingComplete] = useState<Set<number>>(new Set());
-  
+  const [progressStats, setProgressStats] =
+    useState<ProgressStatsResponse | null>(null);
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
+    new Set()
+  );
+  const [isMarkingComplete, setIsMarkingComplete] = useState<Set<number>>(
+    new Set()
+  );
+
   // Quiz modal state
   const [selectedQuizId, setSelectedQuizId] = useState<number | null>(null);
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
-  
+
   // Assignment modal state
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<
+    number | null
+  >(null);
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
-  
+
   // Lesson detail state
   const [expandedLessonId, setExpandedLessonId] = useState<number | null>(null);
-  
-  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
+
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(
+    new Set()
+  );
   const { id } = useParams<{ id: string }>();
 
   const toggleSection = (sectionId: number) => {
@@ -74,23 +87,23 @@ const CourseDetail = () => {
   };
 
   const toggleLessonDetail = (lessonId: number) => {
-    setExpandedLessonId(prev => prev === lessonId ? null : lessonId);
+    setExpandedLessonId((prev) => (prev === lessonId ? null : lessonId));
   };
 
   // Fetch progress stats
   const fetchProgressStats = async () => {
     if (!id) return;
-    
+
     try {
       const stats = await progressApi.getClassProgress(Number(id));
       setProgressStats(stats);
-      
+
       // Fetch completed lessons
       const detail = await progressApi.getCourseProgressDetail(Number(id));
       const completedLessonIds = new Set(
         detail?.courseProgress?.lessonProgresses
-          ?.filter(lp => lp.isCompleted)
-          ?.map(lp => lp.lessonId) || []
+          ?.filter((lp) => lp.isCompleted)
+          ?.map((lp) => lp.lessonId) || []
       );
       setCompletedLessons(completedLessonIds);
     } catch (error) {
@@ -101,27 +114,27 @@ const CourseDetail = () => {
   // Mark lesson as complete
   const handleMarkLessonComplete = async (lessonId: number) => {
     if (!id || completedLessons.has(lessonId)) return;
-    
-    setIsMarkingComplete(prev => new Set(prev).add(lessonId));
-    
+
+    setIsMarkingComplete((prev) => new Set(prev).add(lessonId));
+
     try {
       await progressApi.markLessonComplete({
         lessonId,
         classId: Number(id),
       });
-      
+
       // Update local state
-      setCompletedLessons(prev => new Set(prev).add(lessonId));
-      
+      setCompletedLessons((prev) => new Set(prev).add(lessonId));
+
       // Refresh progress stats
       await fetchProgressStats();
-      
+
       console.log("Lesson marked as complete!");
     } catch (error) {
       console.error("Error marking lesson complete:", error);
       alert("Không thể đánh dấu bài học đã hoàn thành. Vui lòng thử lại.");
     } finally {
-      setIsMarkingComplete(prev => {
+      setIsMarkingComplete((prev) => {
         const newSet = new Set(prev);
         newSet.delete(lessonId);
         return newSet;
@@ -151,9 +164,10 @@ const CourseDetail = () => {
       try {
         setIsLoadingSections(true);
         setSectionsError(null);
-        
-        const filteredSections = await courseEnrollmentApi.getEnrolledCourseContents(Number(id));
-        
+
+        const filteredSections =
+          await courseEnrollmentApi.getEnrolledCourseContents(Number(id));
+
         setSections(filteredSections);
 
         if (filteredSections.length > 0) {
@@ -187,7 +201,7 @@ const CourseDetail = () => {
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6">
           <Link
-            to="/student/e-learning"
+            to="/student/dashboard"
             className="flex items-center text-blue-600 hover:text-blue-800"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
@@ -227,7 +241,9 @@ const CourseDetail = () => {
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-1">
                     <Users className="w-4 h-4 mr-1" />
-                    <span className="font-semibold">{courseClass?.currentStudents || ""}</span>
+                    <span className="font-semibold">
+                      {courseClass?.currentStudents || ""}
+                    </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
                     Học viên
@@ -238,7 +254,9 @@ const CourseDetail = () => {
                   <div className="flex items-center justify-center mb-1">
                     <Clock className="w-4 h-4 mr-1" />
                     <span className="font-semibold">
-                      {courseClass?.startDate ? new Date(courseClass?.startDate).toLocaleDateString() : ""}
+                      {courseClass?.startDate
+                        ? new Date(courseClass?.startDate).toLocaleDateString()
+                        : ""}
                     </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
@@ -250,7 +268,9 @@ const CourseDetail = () => {
                   <div className="flex items-center justify-center mb-1">
                     <Clock className="w-4 h-4 mr-1" />
                     <span className="font-semibold">
-                      {courseClass?.endDate ? new Date(courseClass?.endDate).toLocaleDateString() : ""}
+                      {courseClass?.endDate
+                        ? new Date(courseClass?.endDate).toLocaleDateString()
+                        : ""}
                     </span>
                   </div>
                   <span className="text-sm student-dashboard-text-muted">
@@ -276,7 +296,9 @@ const CourseDetail = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium">Tiến độ học tập</span>
                   <span className="text-sm student-dashboard-progress-text">
-                    {progressStats ? `${progressStats.overallProgress.toFixed(1)}%` : "0%"}
+                    {progressStats
+                      ? `${progressStats.overallProgress.toFixed(1)}%`
+                      : "0%"}
                   </span>
                 </div>
                 <div className="w-full student-dashboard-progress-bg rounded-full h-3">
@@ -287,21 +309,30 @@ const CourseDetail = () => {
                     }}
                   ></div>
                 </div>
-                
+
                 {/* Progress Details */}
                 {progressStats && (
                   <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-gray-600">
                     <div className="flex items-center gap-1">
                       <BookOpen className="w-3 h-3" />
-                      <span>{progressStats.completedLessons}/{progressStats.totalLessons} bài học</span>
+                      <span>
+                        {progressStats.completedLessons}/
+                        {progressStats.totalLessons} bài học
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FileText className="w-3 h-3" />
-                      <span>{progressStats.completedQuizzes}/{progressStats.totalQuizzes} quiz</span>
+                      <span>
+                        {progressStats.completedQuizzes}/
+                        {progressStats.totalQuizzes} quiz
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FileText className="w-3 h-3" />
-                      <span>{progressStats.completedAssignments}/{progressStats.totalAssignments} bài tập</span>
+                      <span>
+                        {progressStats.completedAssignments}/
+                        {progressStats.totalAssignments} bài tập
+                      </span>
                     </div>
                   </div>
                 )}
@@ -341,7 +372,9 @@ const CourseDetail = () => {
                 <div className="student-dashboard-course-card p-8">
                   <div className="flex flex-col items-center justify-center">
                     <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                    <p className="text-gray-600">Đang tải nội dung khóa học...</p>
+                    <p className="text-gray-600">
+                      Đang tải nội dung khóa học...
+                    </p>
                   </div>
                 </div>
               )}
@@ -365,13 +398,25 @@ const CourseDetail = () => {
                   {sections
                     .sort((a, b) => a.orderIndex - b.orderIndex)
                     .map((section) => {
-                      const lessonsArray = section.lessons ? Array.from(section.lessons) : [];
-                      const quizzesArray = section.quizs ? Array.from(section.quizs) : [];
-                      const assignmentsArray = section.assignments ? Array.from(section.assignments) : [];
-                      
-                      const sortedLessons = lessonsArray.sort((a, b) => a.numberItem - b.numberItem);
-                      const sortedQuizzes = quizzesArray.sort((a, b) => a.numberItem - b.numberItem);
-                      const sortedAssignments = assignmentsArray.sort((a, b) => a.numberItem - b.numberItem);
+                      const lessonsArray = section.lessons
+                        ? Array.from(section.lessons)
+                        : [];
+                      const quizzesArray = section.quizs
+                        ? Array.from(section.quizs)
+                        : [];
+                      const assignmentsArray = section.assignments
+                        ? Array.from(section.assignments)
+                        : [];
+
+                      const sortedLessons = lessonsArray.sort(
+                        (a, b) => a.numberItem - b.numberItem
+                      );
+                      const sortedQuizzes = quizzesArray.sort(
+                        (a, b) => a.numberItem - b.numberItem
+                      );
+                      const sortedAssignments = assignmentsArray.sort(
+                        (a, b) => a.numberItem - b.numberItem
+                      );
 
                       return (
                         <div
@@ -393,15 +438,19 @@ const CourseDetail = () => {
                                   <h3 className="text-lg font-semibold student-dashboard-course-title">
                                     {section.orderIndex}. {section.title}
                                   </h3>
-                                  {section.description && !expandedSections.has(section.id) && (
-                                    <p className="text-sm text-gray-500 mt-1">
-                                      {section.description}
-                                    </p>
-                                  )}
+                                  {section.description &&
+                                    !expandedSections.has(section.id) && (
+                                      <p className="text-sm text-gray-500 mt-1">
+                                        {section.description}
+                                      </p>
+                                    )}
                                 </div>
                               </div>
                               <div className="text-sm student-dashboard-text-muted">
-                                {lessonsArray.length + quizzesArray.length + assignmentsArray.length} nội dung
+                                {lessonsArray.length +
+                                  quizzesArray.length +
+                                  assignmentsArray.length}{" "}
+                                nội dung
                               </div>
                             </button>
 
@@ -409,7 +458,9 @@ const CourseDetail = () => {
                               <div className="mt-4 pl-4 space-y-4">
                                 {section.description && (
                                   <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-                                    <p className="text-sm text-gray-700">{section.description}</p>
+                                    <p className="text-sm text-gray-700">
+                                      {section.description}
+                                    </p>
                                   </div>
                                 )}
 
@@ -421,30 +472,49 @@ const CourseDetail = () => {
                                     </h4>
                                     <div className="space-y-2">
                                       {sortedLessons.map((lesson) => {
-                                        const isCompleted = completedLessons.has(lesson.id);
-                                        const isMarking = isMarkingComplete.has(lesson.id);
-                                        
+                                        const isCompleted =
+                                          completedLessons.has(lesson.id);
+                                        const isMarking = isMarkingComplete.has(
+                                          lesson.id
+                                        );
+
                                         return (
-                                          <div key={lesson.id} className="space-y-2">
+                                          <div
+                                            key={lesson.id}
+                                            className="space-y-2"
+                                          >
                                             {/* Lesson Header */}
                                             <div
                                               className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
                                                 expandedLessonId === lesson.id
-                                                  ? 'bg-blue-100 border-blue-400 shadow-md'
-                                                  : 'hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm'
-                                              } ${isCompleted ? 'border-green-400 bg-green-50' : ''}`}
+                                                  ? "bg-blue-100 border-blue-400 shadow-md"
+                                                  : "hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm"
+                                              } ${
+                                                isCompleted
+                                                  ? "border-green-400 bg-green-50"
+                                                  : ""
+                                              }`}
                                             >
                                               <div className="flex-shrink-0">
                                                 {isCompleted ? (
                                                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                                                 ) : (
-                                                  <Circle className={`w-5 h-5 ${expandedLessonId === lesson.id ? 'text-blue-600' : 'text-gray-400'}`} />
+                                                  <Circle
+                                                    className={`w-5 h-5 ${
+                                                      expandedLessonId ===
+                                                      lesson.id
+                                                        ? "text-blue-600"
+                                                        : "text-gray-400"
+                                                    }`}
+                                                  />
                                                 )}
                                               </div>
 
-                                              <div 
+                                              <div
                                                 className="flex-shrink-0 text-blue-600 cursor-pointer"
-                                                onClick={() => toggleLessonDetail(lesson.id)}
+                                                onClick={() =>
+                                                  toggleLessonDetail(lesson.id)
+                                                }
                                               >
                                                 {lesson.videoUrl ? (
                                                   <Play className="w-4 h-4" />
@@ -453,25 +523,31 @@ const CourseDetail = () => {
                                                 )}
                                               </div>
 
-                                              <div 
+                                              <div
                                                 className="flex-1 min-w-0 space-y-1 cursor-pointer"
-                                                onClick={() => toggleLessonDetail(lesson.id)}
+                                                onClick={() =>
+                                                  toggleLessonDetail(lesson.id)
+                                                }
                                               >
                                                 <h5 className="font-medium text-gray-700">
-                                                  #{lesson.numberItem} {lesson.title}
+                                                  #{lesson.numberItem}{" "}
+                                                  {lesson.title}
                                                 </h5>
                                                 {lesson.videoUrl && (
                                                   <div className="flex items-center gap-2">
                                                     <Play className="w-3 h-3 text-red-500" />
-                                                    <span className="text-xs text-gray-500">Video bài học</span>
+                                                    <span className="text-xs text-gray-500">
+                                                      Video bài học
+                                                    </span>
                                                   </div>
                                                 )}
 
-                                                {lesson.description && !expandedLessonId && (
-                                                  <p className="text-sm student-dashboard-text-muted mt-1 line-clamp-2">
-                                                    {lesson.description}
-                                                  </p>
-                                                )}
+                                                {lesson.description &&
+                                                  !expandedLessonId && (
+                                                    <p className="text-sm student-dashboard-text-muted mt-1 line-clamp-2">
+                                                      {lesson.description}
+                                                    </p>
+                                                  )}
                                               </div>
 
                                               <div className="flex items-center gap-2">
@@ -479,7 +555,9 @@ const CourseDetail = () => {
                                                   <button
                                                     onClick={(e) => {
                                                       e.stopPropagation();
-                                                      handleMarkLessonComplete(lesson.id);
+                                                      handleMarkLessonComplete(
+                                                        lesson.id
+                                                      );
                                                     }}
                                                     disabled={isMarking}
                                                     className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm rounded flex items-center gap-1 transition-colors"
@@ -497,19 +575,24 @@ const CourseDetail = () => {
                                                     )}
                                                   </button>
                                                 )}
-                                                
+
                                                 {isCompleted && (
                                                   <span className="px-3 py-1.5 bg-green-100 text-green-700 text-sm rounded flex items-center gap-1">
                                                     <CheckCircle2 className="w-3 h-3" />
                                                     Đã hoàn thành
                                                   </span>
                                                 )}
-                                                
-                                                <div 
+
+                                                <div
                                                   className="flex-shrink-0 cursor-pointer"
-                                                  onClick={() => toggleLessonDetail(lesson.id)}
+                                                  onClick={() =>
+                                                    toggleLessonDetail(
+                                                      lesson.id
+                                                    )
+                                                  }
                                                 >
-                                                  {expandedLessonId === lesson.id ? (
+                                                  {expandedLessonId ===
+                                                  lesson.id ? (
                                                     <ChevronDown className="w-5 h-5 text-blue-600" />
                                                   ) : (
                                                     <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -531,11 +614,16 @@ const CourseDetail = () => {
                                                       <div className="flex items-center gap-4 text-sm text-gray-600">
                                                         <span className="flex items-center gap-1">
                                                           <BookOpen className="w-4 h-4" />
-                                                          Bài học #{lesson.numberItem}
+                                                          Bài học #
+                                                          {lesson.numberItem}
                                                         </span>
                                                         <span className="flex items-center gap-1">
                                                           <Clock className="w-4 h-4" />
-                                                          {new Date(lesson.createdAt).toLocaleDateString('vi-VN')}
+                                                          {new Date(
+                                                            lesson.createdAt
+                                                          ).toLocaleDateString(
+                                                            "vi-VN"
+                                                          )}
                                                         </span>
                                                         {isCompleted && (
                                                           <span className="flex items-center gap-1 text-green-600 font-medium">
@@ -548,7 +636,9 @@ const CourseDetail = () => {
                                                     <button
                                                       onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setExpandedLessonId(null);
+                                                        setExpandedLessonId(
+                                                          null
+                                                        );
                                                       }}
                                                       className="text-gray-400 hover:text-gray-600"
                                                     >
@@ -559,7 +649,9 @@ const CourseDetail = () => {
                                                   {/* Description */}
                                                   {lesson.description && (
                                                     <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                                                      <p className="text-sm text-gray-700">{lesson.description}</p>
+                                                      <p className="text-sm text-gray-700">
+                                                        {lesson.description}
+                                                      </p>
                                                     </div>
                                                   )}
 
@@ -571,48 +663,78 @@ const CourseDetail = () => {
                                                         Video bài học
                                                       </h4>
                                                       <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                                                        {isYouTubeUrl(lesson.videoUrl) ? (
+                                                        {isYouTubeUrl(
+                                                          lesson.videoUrl
+                                                        ) ? (
                                                           // YouTube iframe
                                                           <iframe
-                                                            src={getYouTubeEmbedUrl(lesson.videoUrl) || ''}
+                                                            src={
+                                                              getYouTubeEmbedUrl(
+                                                                lesson.videoUrl
+                                                              ) || ""
+                                                            }
                                                             className="w-full h-full"
                                                             frameBorder="0"
                                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                             allowFullScreen
                                                             title={lesson.title}
                                                             onLoad={() => {
-                                                              console.log('✅ YouTube iframe loaded successfully!');
+                                                              console.log(
+                                                                "✅ YouTube iframe loaded successfully!"
+                                                              );
                                                             }}
                                                             onError={(e) => {
-                                                              console.error('❌ YouTube iframe load error:', e);
+                                                              console.error(
+                                                                "❌ YouTube iframe load error:",
+                                                                e
+                                                              );
                                                             }}
                                                           />
                                                         ) : (
                                                           // Regular video file (Cloudinary, direct URL, etc.)
                                                           <video
-                                                            src={fixCloudinaryVideoUrl(lesson.videoUrl)}
+                                                            src={fixCloudinaryVideoUrl(
+                                                              lesson.videoUrl
+                                                            )}
                                                             controls
                                                             controlsList="nodownload"
                                                             className="w-full h-full"
                                                             onError={(e) => {
-                                                              console.error('❌ Video load error:', e);
-                                                              console.error('Video src:', (e.target as HTMLVideoElement).src);
-                                                              const videoElement = e.target as HTMLVideoElement;
-                                                              console.error('Error details:', {
-                                                                error: videoElement.error,
-                                                                networkState: videoElement.networkState,
-                                                                readyState: videoElement.readyState,
-                                                              });
+                                                              console.error(
+                                                                "❌ Video load error:",
+                                                                e
+                                                              );
+                                                              console.error(
+                                                                "Video src:",
+                                                                (
+                                                                  e.target as HTMLVideoElement
+                                                                ).src
+                                                              );
+                                                              const videoElement =
+                                                                e.target as HTMLVideoElement;
+                                                              console.error(
+                                                                "Error details:",
+                                                                {
+                                                                  error:
+                                                                    videoElement.error,
+                                                                  networkState:
+                                                                    videoElement.networkState,
+                                                                  readyState:
+                                                                    videoElement.readyState,
+                                                                }
+                                                              );
                                                             }}
                                                             onLoadedMetadata={() => {
-                                                              console.log('✅ Video loaded successfully!');
+                                                              console.log(
+                                                                "✅ Video loaded successfully!"
+                                                              );
                                                             }}
                                                           >
-                                                            Trình duyệt của bạn không hỗ trợ video.
+                                                            Trình duyệt của bạn
+                                                            không hỗ trợ video.
                                                           </video>
                                                         )}
                                                       </div>
-                                                      
                                                     </div>
                                                   )}
 
@@ -624,41 +746,65 @@ const CourseDetail = () => {
                                                         Nội dung bài học
                                                       </h4>
                                                       <div className="bg-gray-50 p-4 rounded-lg">
-                                                        <MarkdownRenderer content={lesson.content} />
+                                                        <MarkdownRenderer
+                                                          content={
+                                                            lesson.content
+                                                          }
+                                                        />
                                                       </div>
                                                     </div>
                                                   )}
 
                                                   {/* Attachments */}
-                                                  {lesson.attachments && lesson.attachments.length > 0 && (
-                                                    <div className="space-y-2">
-                                                      <h4 className="font-semibold text-gray-700 flex items-center gap-2">
-                                                        <Download className="w-5 h-5 text-green-500" />
-                                                        Tài liệu đính kèm ({lesson.attachments.length})
-                                                      </h4>
+                                                  {lesson.attachments &&
+                                                    lesson.attachments.length >
+                                                      0 && (
                                                       <div className="space-y-2">
-                                                        {lesson.attachments.map((attachment, index) => (
-                                                          <a
-                                                            key={index}
-                                                            href={attachment}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
-                                                          >
-                                                            <FileText className="w-5 h-5 text-gray-600" />
-                                                            <span className="flex-1 text-sm text-gray-700">
-                                                              Tài liệu {index + 1}
-                                                            </span>
-                                                            <ExternalLink className="w-4 h-4 text-gray-400" />
-                                                          </a>
-                                                        ))}
+                                                        <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                                                          <Download className="w-5 h-5 text-green-500" />
+                                                          Tài liệu đính kèm (
+                                                          {
+                                                            lesson.attachments
+                                                              .length
+                                                          }
+                                                          )
+                                                        </h4>
+                                                        <div className="space-y-2">
+                                                          {lesson.attachments.map(
+                                                            (
+                                                              attachment,
+                                                              index
+                                                            ) => (
+                                                              <a
+                                                                key={index}
+                                                                href={
+                                                                  attachment
+                                                                }
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                                                              >
+                                                                <FileText className="w-5 h-5 text-gray-600" />
+                                                                <span className="flex-1 text-sm text-gray-700">
+                                                                  Tài liệu{" "}
+                                                                  {index + 1}
+                                                                </span>
+                                                                <ExternalLink className="w-4 h-4 text-gray-400" />
+                                                              </a>
+                                                            )
+                                                          )}
+                                                        </div>
                                                       </div>
-                                                    </div>
-                                                  )}
+                                                    )}
 
                                                   {/* Section Info */}
                                                   <div className="pt-4 border-t text-sm text-gray-500">
-                                                    <p>Thuộc chương: <span className="font-medium text-gray-700">{lesson.sectionName}</span></p>
+                                                    <p>
+                                                      Thuộc chương:{" "}
+                                                      <span className="font-medium text-gray-700">
+                                                        {lesson.sectionName}
+                                                      </span>
+                                                    </p>
                                                   </div>
                                                 </div>
                                               </div>
@@ -678,15 +824,16 @@ const CourseDetail = () => {
                                     </h4>
                                     <div className="space-y-2">
                                       {sortedQuizzes.map((quiz) => {
-                                        const isCompleted = quiz.attemptsCount > 0;
-                                        
+                                        const isCompleted =
+                                          quiz.attemptsCount > 0;
+
                                         return (
                                           <div
                                             key={quiz.id}
                                             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
-                                              isCompleted 
-                                                ? 'border-green-400 bg-green-50' 
-                                                : 'border-purple-200 bg-purple-50 hover:bg-purple-100'
+                                              isCompleted
+                                                ? "border-green-400 bg-green-50"
+                                                : "border-purple-200 bg-purple-50 hover:bg-purple-100"
                                             }`}
                                           >
                                             <div className="flex-shrink-0">
@@ -704,8 +851,11 @@ const CourseDetail = () => {
                                                 #{quiz.numberItem} {quiz.title}
                                               </h5>
                                               <p className="text-sm text-gray-500">
-                                                {quiz.duration} phút • {quiz.attemptLimit} lần làm • Điểm đạt: {quiz.passingScore}%
-                                                {isCompleted && ` • Đã làm ${quiz.attemptsCount} lần`}
+                                                {quiz.duration} phút •{" "}
+                                                {quiz.attemptLimit} lần làm •
+                                                Điểm đạt: {quiz.passingScore}%
+                                                {isCompleted &&
+                                                  ` • Đã làm ${quiz.attemptsCount} lần`}
                                               </p>
                                             </div>
                                             {isCompleted ? (
@@ -714,7 +864,7 @@ const CourseDetail = () => {
                                                 Đã nộp
                                               </span>
                                             ) : (
-                                              <button 
+                                              <button
                                                 className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
                                                 onClick={() => {
                                                   setSelectedQuizId(quiz.id);
@@ -739,15 +889,17 @@ const CourseDetail = () => {
                                     </h4>
                                     <div className="space-y-2">
                                       {sortedAssignments.map((assignment) => {
-                                        const isCompleted = (assignment.submissionsCount || 0) > 0;
-                                        
+                                        const isCompleted =
+                                          (assignment.submissionsCount || 0) >
+                                          0;
+
                                         return (
                                           <div
                                             key={assignment.id}
                                             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
                                               isCompleted
-                                                ? 'border-green-400 bg-green-50'
-                                                : 'border-orange-200 bg-orange-50 hover:bg-orange-100'
+                                                ? "border-green-400 bg-green-50"
+                                                : "border-orange-200 bg-orange-50 hover:bg-orange-100"
                                             }`}
                                           >
                                             <div className="flex-shrink-0">
@@ -762,11 +914,17 @@ const CourseDetail = () => {
                                             </div>
                                             <div className="flex-1">
                                               <h5 className="font-medium text-gray-700">
-                                                #{assignment.numberItem} {assignment.title}
+                                                #{assignment.numberItem}{" "}
+                                                {assignment.title}
                                               </h5>
                                               <p className="text-sm text-gray-500">
-                                                Hạn: {new Date(assignment.deadline).toLocaleDateString("vi-VN")} • 
-                                                {assignment.submissionType}
+                                                Hạn:{" "}
+                                                {new Date(
+                                                  assignment.deadline
+                                                ).toLocaleDateString(
+                                                  "vi-VN"
+                                                )}{" "}
+                                                •{assignment.submissionType}
                                                 {isCompleted && ` • Đã nộp`}
                                               </p>
                                             </div>
@@ -776,12 +934,16 @@ const CourseDetail = () => {
                                                 Đã nộp
                                               </span>
                                             ) : (
-                                              <button 
+                                              <button
                                                 className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
                                                 onClick={(e) => {
                                                   e.stopPropagation();
-                                                  setSelectedAssignmentId(assignment.id);
-                                                  setIsAssignmentModalOpen(true);
+                                                  setSelectedAssignmentId(
+                                                    assignment.id
+                                                  );
+                                                  setIsAssignmentModalOpen(
+                                                    true
+                                                  );
                                                 }}
                                               >
                                                 Nộp bài
@@ -803,16 +965,19 @@ const CourseDetail = () => {
               )}
 
               {/* Empty State */}
-              {!isLoadingSections && !sectionsError && sections.length === 0 && (
-                <div className="student-dashboard-course-card p-6">
-                  <p className="text-center student-dashboard-text-muted">
-                    Chưa có nội dung khóa học nào được công bố cho lớp của bạn.
-                  </p>
-                </div>
-              )}
+              {!isLoadingSections &&
+                !sectionsError &&
+                sections.length === 0 && (
+                  <div className="student-dashboard-course-card p-6">
+                    <p className="text-center student-dashboard-text-muted">
+                      Chưa có nội dung khóa học nào được công bố cho lớp của
+                      bạn.
+                    </p>
+                  </div>
+                )}
             </div>
           )}
-          
+
           {activeTab === "score_feedback" && (
             <div className="space-y-6">
               {/* Rating Summary */}

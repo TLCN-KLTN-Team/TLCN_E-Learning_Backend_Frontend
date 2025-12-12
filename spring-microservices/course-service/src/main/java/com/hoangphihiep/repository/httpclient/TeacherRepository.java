@@ -8,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @FeignClient(
         name = "identity-service",
         url = "${app.services.identity}",
@@ -26,6 +28,10 @@ public interface TeacherRepository {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search);
+
+    @GetMapping("/teachers/educational-units/{educationalUnitId}")
+    ApiResponse<List<TeacherResponse>> getTeachersByEducationalUnitNoPage(
+            @PathVariable int educationalUnitId);
 
     @PutMapping("/teachers/{id}")
     ApiResponse<TeacherResponse> updateTeacher(@PathVariable String id, @RequestBody TeacherRequest request);

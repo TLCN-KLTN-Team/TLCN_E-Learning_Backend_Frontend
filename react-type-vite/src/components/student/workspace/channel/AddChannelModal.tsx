@@ -12,7 +12,7 @@ import {
   Megaphone,
   FileText,
 } from "lucide-react";
-import { getUsersByKeyword } from "@/services/api/workspaceApi";
+import { getUsersByKeyword } from "@/services/api/workspace/workspace.api";
 import { toast } from "react-toastify";
 import type {
   ChannelResponse,

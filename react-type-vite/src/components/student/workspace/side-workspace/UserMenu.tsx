@@ -57,7 +57,7 @@ const UserMenu = ({ className = "" }: UserMenuProps) => {
           </div>
           <button
             className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors text-sm"
-            onClick={() => (window.location.href = "/")}
+            onClick={() => (window.location.href = "/student/dashboard")}
           >
             <svg
               className="w-4 h-4 inline mr-2"
@@ -66,7 +66,7 @@ const UserMenu = ({ className = "" }: UserMenuProps) => {
             >
               <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
             </svg>
-            Về trang chủ
+            Về trang học tập
           </button>
           <button
             className="w-full text-left px-4 py-2 text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors text-sm"

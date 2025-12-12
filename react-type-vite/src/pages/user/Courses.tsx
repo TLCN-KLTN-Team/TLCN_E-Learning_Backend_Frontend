@@ -350,7 +350,7 @@ const Course: React.FC = () => {
           </div>
           <Button
             className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => navigate(`/courses/course/${course.id}`)}
+            onClick={() => navigate(`/courses/${course.id}`)}
           >
             View Details
           </Button>

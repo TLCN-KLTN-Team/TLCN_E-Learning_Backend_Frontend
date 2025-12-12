@@ -100,12 +100,17 @@ const WorkspacePageContent = () => {
     if (selectedWorkspace) {
       if (selectedChannel) {
         // Navigate to workspace with channel
-        navigate(`/workspace/${selectedWorkspace.id}/${selectedChannel.id}`, {
-          replace: true,
-        });
+        navigate(
+          `/student/workspaces/${selectedWorkspace.id}/${selectedChannel.id}`,
+          {
+            replace: true,
+          }
+        );
       } else {
         // Navigate to workspace only
-        navigate(`/workspace/${selectedWorkspace.id}`, { replace: true });
+        navigate(`/student/workspaces/${selectedWorkspace.id}`, {
+          replace: true,
+        });
       }
     }
   }, [selectedWorkspace, selectedChannel, navigate]);

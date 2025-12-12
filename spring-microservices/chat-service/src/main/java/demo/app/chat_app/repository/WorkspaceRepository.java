@@ -57,4 +57,5 @@ public interface WorkspaceRepository extends MongoRepository<Workspace, String> 
 
     @Query("{ 'participants': ?0 }")
     Page<Workspace> findByParticipants(String participantId, Pageable pageable);
+
 }

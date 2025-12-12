@@ -35,6 +35,9 @@ public class SecurityConfig {
             "/api/otp/send",
             "/api/course/**",
             "/published-courses/**",
+            "/anonymous/home/educational-units",
+            "/anonymous/home/educational-units/**",
+            "/anonymous/home/courses/**",
     };
 
     private static final String[] SWAGGER_ENDPOINTS = {

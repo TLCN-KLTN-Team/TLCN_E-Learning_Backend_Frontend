@@ -143,6 +143,13 @@ public class ReviewService {
         log.info("Review {} deleted successfully by user {}", reviewId, userId);
     }
 
+    public double calculateAverageRatingForCourse(Integer courseId) {
+        log.info("Calculating average rating for course: {}", courseId);
+
+        Double averageRating = reviewRepository.getAverageRatingByCourseId(courseId);
+        return averageRating != null ? averageRating : 0.0;
+    }
+
     public ReviewResponse getUserReviewForCourse(Integer courseId) {
         log.info("Getting user review for course: {}", courseId);
         

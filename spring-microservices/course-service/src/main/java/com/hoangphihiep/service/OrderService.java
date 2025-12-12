@@ -141,4 +141,13 @@ public class OrderService {
                 .anyMatch(item -> item.getCourse().getId().equals(publishedCourseId));
     }
 
+    public int countNumberOfPurchasePerCourse(Integer publishedCourseId) {
+        List<OrderItem> orderItems = orderItemRepository.findByCourseId(publishedCourseId);
+        if (orderItems == null || orderItems.isEmpty()) {
+            return 0;
+        }
+
+        return orderItems.size();
+    }
+
 }
