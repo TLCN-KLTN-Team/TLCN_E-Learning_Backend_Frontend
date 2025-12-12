@@ -3,6 +3,7 @@ package com.hoangphihiep.service;
 import com.hoangphihiep.dto.request.EducationalUnitRegistrationRequest;
 import com.hoangphihiep.dto.request.UserRequest;
 import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.entity.Department;
 import com.hoangphihiep.entity.EducationalUnit;
 import com.hoangphihiep.entity.SubscriptionPlan;
 import com.hoangphihiep.exception.AppException;
@@ -11,8 +12,10 @@ import com.hoangphihiep.mapper.EducationalUnitMapper;
 import com.hoangphihiep.repository.EducationalUnitRepository;
 import com.hoangphihiep.repository.SubscriptionPlanRepository;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
+import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.repository.httpclient.UserInfoApi;
 import com.hoangphihiep.repository.httpclient.UserRepository;
+import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.EducationalUnitStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,10 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -40,8 +40,84 @@ public class EducationalUnitService {
     private final EducationalUnitMapper educationalUnitMapper;
     private final UserInfoApi userInfoApi;
     private final EmailService emailService;
+    private final TeacherRepository teacherRepository;
+    private final CurrencyUtils currencyUtils;
 
-    public PaginatedResponse<EducationalUnitResponse> getAllEducationalUnits(int page, int size){
+    public List<EducationalUnitCardResponse> getAllEducationalUnits() {
+        List<EducationalUnit> educationalUnits = educationalUnitRepository.findAll();
+        return educationalUnits.stream()
+                .map(educationalUnit -> {
+                    List<String> departments = educationalUnit.getDepartments().stream()
+                            .map(Department::getName)
+                            .toList();
+                    EducationalUnitCardResponse educationalUnitCardResponse = EducationalUnitCardResponse.builder()
+                            .id(educationalUnit.getId())
+                            .name(educationalUnit.getName())
+                            .address(educationalUnit.getAddress())
+                            .logo(educationalUnit.getLogo())
+                            .establishedYear(educationalUnit.getEstablishedYear())
+                            .departments(departments)
+                            .type(educationalUnit.getType())
+                            .build();
+                    return educationalUnitCardResponse;
+                }).toList();
+    }
+
+    public EducationalUnitDetailResponse getEducationalUnitById(Integer id) {
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(id).orElseThrow(
+                () -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND)
+        );
+
+        List<TeacherResponse> teachers = new ArrayList<>();
+        try {
+            teachers = teacherRepository
+                    .getTeachersByEducationalUnitNoPage(id).getResult();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new AppException(ErrorCode.FEIGN_CLIENT_ERROR);
+        }
+
+        return EducationalUnitDetailResponse.builder()
+                .id(educationalUnit.getId())
+                .name(educationalUnit.getName())
+                .address(educationalUnit.getAddress())
+                .logo(educationalUnit.getLogo())
+                .establishedYear(educationalUnit.getEstablishedYear())
+                .phone(educationalUnit.getPhone())
+                .email(educationalUnit.getEmail())
+                .website(educationalUnit.getWebsite())
+                .description(educationalUnit.getDescription())
+                .establishedYear(educationalUnit.getEstablishedYear())
+                .totalStudents(1000)
+                .teachers(teachers.stream()
+                        .map(teacher -> EducationalUnitDetailResponse.Teacher.builder()
+                                .id(teacher.getId())
+                                .name(teacher.getLastName() + " " + teacher.getFirstName())
+                                .avatarUrl(teacher.getAvatarUrl())
+                                .departmentName(teacher.getDepartment().getName())
+                                .build())
+                        .toList()
+                )
+                .courses(educationalUnit.getCourses().stream()
+                        .map(course -> {
+                            EducationalUnitDetailResponse.Course internalCourse =
+                                    EducationalUnitDetailResponse.Course.builder()
+                                            .id(course.getId())
+                                            .name(course.getCourseName())
+                                            .description(course.getDescription())
+                                            .coverImageUrl(course.getPublishedCourse().getCourseImage())
+                                            .price(currencyUtils.formatCurrency(course.getPublishedCourse().getCoursePrice()))
+                                            .duration(50)
+                                            .numberOfStudents(500)
+                                            .averageRating(5)
+                                            .build();
+                            return internalCourse;
+                        }).toList()
+                )
+                .build();
+    }
+
+    public PaginatedResponse<EducationalUnitResponse> getAllEducationalUnitsAtSuperAdmin(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
         Page<EducationalUnit> educationalUnits = educationalUnitRepository.findAll(pageable);
         List<EducationalUnitResponse> educationalUnitResponses =

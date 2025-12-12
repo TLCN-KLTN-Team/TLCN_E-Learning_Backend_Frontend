@@ -1,18 +1,25 @@
 import { useState } from "react";
-import type { Course } from "./types";
+import { useNavigate } from "react-router-dom";
+import type { PublishedCourseCardResponse } from "@/types/course.types";
 import DefaultThumbnail from "@/components/shared/DefaultThumbnail";
 import { useTheme } from "@/context/theme-context";
 
-const CourseDetail = ({ course }: { course: Course }) => {
+const CourseDetail = ({ course }: { course: PublishedCourseCardResponse }) => {
   const [imageError, setImageError] = useState(false);
   const { theme } = useTheme();
+  const navigate = useNavigate();
 
   const handleImageError = () => {
     setImageError(true);
   };
 
+  const handleCourseClick = () => {
+    navigate(`/courses/${course.id}`);
+  };
+
   return (
     <div
+      onClick={handleCourseClick}
       className={`flex-none w-64 lg:w-72 ${
         theme === "dark" ? "bg-gray-800" : "bg-white"
       } rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border ${
@@ -22,31 +29,31 @@ const CourseDetail = ({ course }: { course: Course }) => {
       }`}
     >
       {/* Thumbnail Section */}
-      <div className="relative aspect-video">
-        {!imageError && course.image ? (
+      <div className="relative w-full h-40 overflow-hidden">
+        {!imageError && course.thumbnailUrl ? (
           <img
-            src={course.image}
-            alt={course.title}
-            className="w-full h-full object-cover"
+            src={course.thumbnailUrl}
+            alt={course.courseName}
+            className="w-full h-full object-cover object-center"
             onError={handleImageError}
             loading="lazy"
           />
         ) : (
-          <DefaultThumbnail title={course.title} className="w-full h-full" />
+          <DefaultThumbnail
+            title={course.courseName}
+            className="w-full h-full"
+          />
         )}
 
         {/* Badge */}
-        {course.badge && (
-          <div
-            className={`absolute top-3 left-3 px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${
-              course.isBestSeller
-                ? "bg-orange-500 text-white"
-                : course.isPopular
-                ? "bg-emerald-500 text-white"
-                : "bg-blue-500 text-white"
-            }`}
-          >
-            {course.badge}
+        {course.isHandsOn && (
+          <div className="absolute top-3 left-3 px-3 py-1 text-xs font-semibold rounded-full shadow-sm bg-blue-500 text-white">
+            Thực hành
+          </div>
+        )}
+        {course.studentCount > 1000 && (
+          <div className="absolute top-3 right-3 px-3 py-1 text-xs font-semibold rounded-full shadow-sm bg-orange-500 text-white">
+            Bán chạy
           </div>
         )}
       </div>
@@ -59,7 +66,7 @@ const CourseDetail = ({ course }: { course: Course }) => {
             theme === "dark" ? "text-white" : "text-gray-900"
           }`}
         >
-          {course.title}
+          {course.courseName}
         </h3>
 
         {/* Instructor */}
@@ -68,7 +75,7 @@ const CourseDetail = ({ course }: { course: Course }) => {
             theme === "dark" ? "text-gray-300" : "text-gray-600"
           }`}
         >
-          {course.instructor}
+          {course.authorName}
         </p>
 
         {/* Rating Section */}
@@ -107,17 +114,8 @@ const CourseDetail = ({ course }: { course: Course }) => {
               theme === "dark" ? "text-white" : "text-gray-900"
             }`}
           >
-            {course.price.toLocaleString("vi-VN")}₫
+            {course.coursePrice}
           </span>
-          {course.originalPrice && (
-            <span
-              className={`text-sm line-through ${
-                theme === "dark" ? "text-gray-400" : "text-gray-500"
-              }`}
-            >
-              {course.originalPrice.toLocaleString("vi-VN")}₫
-            </span>
-          )}
         </div>
       </div>
     </div>

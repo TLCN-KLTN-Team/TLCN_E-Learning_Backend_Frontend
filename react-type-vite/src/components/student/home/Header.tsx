@@ -58,7 +58,7 @@ const Header = () => {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [user]);
+  }, []);
 
   // Handle scroll effect
   useEffect(() => {
@@ -70,7 +70,7 @@ const Header = () => {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [isProfileOpen]);
+  }, []);
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();

@@ -65,6 +65,29 @@ public class JwtUtils {
         }
     }
 
+    public String generateServiceToken(String serviceName, Instant expiry) {
+        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .subject(serviceName)
+                .issueTime(Date.from(Instant.now()))
+                .expirationTime(Date.from(expiry))
+                .issuer("devzeus.com")
+                .claim("token_type", serviceName)
+                .build();
+        Payload payload = new Payload(claimsSet.toJSONObject());
+
+        JWSObject jwsObject = new JWSObject(header, payload);
+        try {
+            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            return jwsObject.serialize();
+        } catch (KeyLengthException e) {
+            throw new RuntimeException(e);
+        } catch (JOSEException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public boolean verifyToken(String token) throws JOSEException, ParseException {
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);
@@ -74,8 +97,20 @@ public class JwtUtils {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
 
-        // Check if token is refresh token
+        // Check token type - support both user tokens and service tokens
         String tokenType = signedJWT.getJWTClaimsSet().getStringClaim("token_type");
+        String type = signedJWT.getJWTClaimsSet().getStringClaim("type");
+        
+        // If it's a service token, only verify signature and expiration
+        if ("service-token".equals(type)) {
+            Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+            if (expiryTime.before(new Date())) {
+                return false;
+            }
+            return true;
+        }
+        
+        // For user tokens, check token_type
         if (!"refresh".equals(tokenType) && !"access".equals(tokenType)) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
@@ -92,5 +127,11 @@ public class JwtUtils {
         }
 
         return true;
+    }
+    
+    public boolean isServiceToken(String token) throws ParseException {
+        SignedJWT signedJWT = SignedJWT.parse(token);
+        String type = signedJWT.getJWTClaimsSet().getStringClaim("type");
+        return "service-token".equals(type);
     }
 }

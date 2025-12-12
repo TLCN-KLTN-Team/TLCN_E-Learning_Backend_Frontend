@@ -4,6 +4,7 @@ import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.service.EducationalUnitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,12 +14,13 @@ public class EducationUnitManagementController {
     private final EducationalUnitService educationalUnitService;
 
     @GetMapping("/get-all")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<?> getAllEducationalUnits(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
     ) {
 
-        var response = educationalUnitService.getAllEducationalUnits(page,size);
+        var response = educationalUnitService.getAllEducationalUnitsAtSuperAdmin(page,size);
         return ApiResponse.success(
                 response,
                 "Lấy danh sách đơn vị đào tạo thành công"
@@ -26,6 +28,7 @@ public class EducationUnitManagementController {
     }
 
     @PutMapping("/approve/{unitId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<Void> approveEducationalUnit(@PathVariable Integer unitId) {
         educationalUnitService.approveEducationalUnit(unitId);
 
@@ -35,6 +38,7 @@ public class EducationUnitManagementController {
     }
 
     @PutMapping(value = "/reject/{unitId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<Void> rejectEducationalUnit(@PathVariable Integer unitId,
                                                    @RequestPart("reason") String reason
                                                    ) {
@@ -46,6 +50,7 @@ public class EducationUnitManagementController {
     }
 
     @PutMapping(value = "/change-status/{unitId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<Void> changeEducationalUnitStatus(
             @PathVariable Integer unitId,
             @RequestParam("status") String status,
@@ -67,6 +72,7 @@ public class EducationUnitManagementController {
     }
 
     @PostMapping(value ="/send-feedback/{unitId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<Void> sendFeedbackToEducationalUnit(
             @PathVariable Integer unitId,
             @RequestPart("feedback") String feedback

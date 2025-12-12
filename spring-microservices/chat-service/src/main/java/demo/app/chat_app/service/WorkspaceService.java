@@ -15,4 +15,6 @@ public interface WorkspaceService {
     void deleteWorkspace(String id);
     PageResponse<WorkspaceResponse> getWorkspaces(int page, int size);
     WorkspaceResponse getWorkspaceById(String id);
+
+    List<WorkspaceResponse> getWorkspacesByUser(int page, int size);
 }

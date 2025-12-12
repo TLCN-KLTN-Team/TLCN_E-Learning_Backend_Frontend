@@ -1,6 +1,6 @@
 import { getAvartarFromName } from "@/utils/callApiUtils";
 import { Bell, ChevronDown, MessageCircleMore } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import uteLogoDark from "../../../assets/images/logo/ute-logo.jpg";
 import { useState } from "react";
@@ -15,6 +15,7 @@ const Header = () => {
   const [isShowProfile, setIsShowProfile] = useState(false);
   const [isShowNotifications, setIsShowNotifications] = useState(false);
   const { logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="student-dashboard-header">
@@ -23,7 +24,7 @@ const Header = () => {
           {/* Logo */}
           <NavLink
             className="flex items-center h-8 w-10"
-            to="/student/e-learning"
+            to="/student/dashboard"
           >
             <img src={uteLogoDark} alt="" />
           </NavLink>
@@ -38,7 +39,7 @@ const Header = () => {
             </Link>
             <span className="student-dashboard-nav-active px-3 py-2 text-md font-bold">
               <Link
-                to="/student/e-learning"
+                to="/student/dashboard"
                 className="student-dashboard-nav-link px-3 py-2 text-md font-bold"
               >
                 Khóa học của tôi
@@ -52,7 +53,12 @@ const Header = () => {
               <Bell className="w-5 h-5" />
               {/* Notification Dropdown */}
             </button>
-            <button className="student-dashboard-icon-btn">
+            <button
+              className="student-dashboard-icon-btn"
+              onClick={() => {
+                navigate("/student/workspaces");
+              }}
+            >
               <MessageCircleMore className="w-5 h-5" />
             </button>
             <div className="flex items-center relative">

@@ -14,6 +14,23 @@ export interface PublishedCourseResponse {
   level: string;
 }
 
+// Home Page API Response Type for Course Cards
+export interface PublishedCourseCardResponse {
+  id: number;
+  courseName: string;
+  authorName: string;
+  coursePrice: string;
+  rating: number;
+  reviewCount: number;
+  studentCount: number;
+  category: string;
+  thumbnailUrl: string;
+  isHandsOn: boolean;
+  duration: number;
+  level: string;
+  status: string;
+}
+
 export interface CompletionSuggestionResponse {
   titleSuggestions: string[];
 }
@@ -34,9 +51,9 @@ export interface InstructorInfo {
 export interface PublishedCourseDetailResponse {
   courseName: string;
   description: string;
-  courseIntroduction: string;  // Subtitle under course title
-  learnerAchievements: string;  // Requirements section (HTML from TinyMCE)
-  courseLearner: string;  // Target Audience section (HTML from TinyMCE)
+  courseIntroduction: string; // Subtitle under course title
+  learnerAchievements: string; // Requirements section (HTML from TinyMCE)
+  courseLearner: string; // Target Audience section (HTML from TinyMCE)
   whatYouWillLearn: string;
   targetAudience: string;
   rating: number;
@@ -49,10 +66,10 @@ export interface PublishedCourseDetailResponse {
   category: string;
   isHandsOn: boolean;
   purchaserStatus: boolean;
-  courseVideo?: string;  // Video preview URL from published_course
-  sections?: PublishedSectionResponse[];  // Published sections
-  courseTarget?: string[];  // Learning objectives list
-  instructorInfo?: InstructorInfo;  // Instructor detailed information
+  courseVideo?: string; // Video preview URL from published_course
+  sections?: PublishedSectionResponse[]; // Published sections
+  courseTarget?: string[]; // Learning objectives list
+  instructorInfo?: InstructorInfo; // Instructor detailed information
 }
 
 export interface PublishedSectionResponse {

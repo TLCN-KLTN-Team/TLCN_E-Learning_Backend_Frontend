@@ -196,9 +196,11 @@ const CourseDetail: React.FC = () => {
           </h1>
 
           {/* Course Subtitle */}
-          <div 
+          <div
             className="text-lg text-gray-300 mb-4 max-w-3xl"
-            dangerouslySetInnerHTML={{ __html: decodeHTMLEntities(course.courseIntroduction || "") }}
+            dangerouslySetInnerHTML={{
+              __html: decodeHTMLEntities(course.courseIntroduction || ""),
+            }}
           />
 
           {/* Course Stats */}
@@ -278,7 +280,15 @@ const CourseDetail: React.FC = () => {
               <h2 className="text-2xl font-bold">Nội dung khóa học</h2>
               <p className="text-sm text-gray-600">
                 {course.sections?.length || 0} phần học •{" "}
-                {course.sections?.reduce((total, s) => total + (s.lessons?.length || 0) + (s.quizzes?.length || 0) + (s.assignments?.length || 0), 0) || 0} nội dung
+                {course.sections?.reduce(
+                  (total, s) =>
+                    total +
+                    (s.lessons?.length || 0) +
+                    (s.quizzes?.length || 0) +
+                    (s.assignments?.length || 0),
+                  0
+                ) || 0}{" "}
+                nội dung
               </p>
 
               {course.sections && course.sections.length > 0 ? (
@@ -478,41 +488,53 @@ const CourseDetail: React.FC = () => {
             {/* Requirements */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Thành tích đạt được</h2>
-              <div 
+              <div
                 className="text-sm text-gray-700 space-y-2"
-                dangerouslySetInnerHTML={{ __html: decodeHTMLEntities(course.learnerAchievements || "") }}
+                dangerouslySetInnerHTML={{
+                  __html: decodeHTMLEntities(course.learnerAchievements || ""),
+                }}
               />
             </div>
 
             {/* Description */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Mô tả khóa học</h2>
-              <div 
+              <div
                 className="text-sm text-gray-700 space-y-3"
-                dangerouslySetInnerHTML={{ __html: decodeHTMLEntities(course.description || "") }}
+                dangerouslySetInnerHTML={{
+                  __html: decodeHTMLEntities(course.description || ""),
+                }}
               />
             </div>
 
             {/* Target Audience */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Đối tượng tham gia</h2>
-              <div 
+              <div
                 className="text-sm text-gray-700"
-                dangerouslySetInnerHTML={{ __html: decodeHTMLEntities(course.courseLearner || "") }}
+                dangerouslySetInnerHTML={{
+                  __html: decodeHTMLEntities(course.courseLearner || ""),
+                }}
               />
             </div>
 
             {/* Instructor */}
             <div className="space-y-6">
               <h2 className="text-2xl font-bold">Giảng viên</h2>
-              
+
               <div className="space-y-4">
                 {/* Instructor Name Link */}
-                <a href="#" className="text-purple-600 font-semibold text-lg hover:underline">
-                  {course.instructorInfo?.instructorName || course.authorName || "Jobskillshare Community"}
+                <a
+                  href="#"
+                  className="text-purple-600 font-semibold text-lg hover:underline"
+                >
+                  {course.instructorInfo?.instructorName ||
+                    course.authorName ||
+                    "Jobskillshare Community"}
                 </a>
                 <p className="text-gray-600 text-sm">
-                  {course.instructorInfo?.instructorTagline || "Learn IT, Practice IT, Do IT"}
+                  {course.instructorInfo?.instructorTagline ||
+                    "Learn IT, Practice IT, Do IT"}
                 </p>
 
                 {/* Instructor Avatar and Stats */}
@@ -520,47 +542,82 @@ const CourseDetail: React.FC = () => {
                   {/* Avatar */}
                   <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {course.instructorInfo?.instructorAvatar ? (
-                      <img 
-                        src={course.instructorInfo.instructorAvatar} 
+                      <img
+                        src={course.instructorInfo.instructorAvatar}
                         alt={course.instructorInfo.instructorName}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <span className="text-4xl font-bold text-gray-700">
-                        {course.instructorInfo?.instructorName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'JSS'}
+                        {course.instructorInfo?.instructorName
+                          ?.split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .slice(0, 2) || "JSS"}
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Stats */}
                   <div className="flex-1 space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <Star className="w-4 h-4" />
                       <span className="font-medium">
-                        {course.instructorInfo?.instructorRating?.toFixed(1) || '0.0'} Instructor Rating
+                        {course.instructorInfo?.instructorRating?.toFixed(1) ||
+                          "0.0"}{" "}
+                        Instructor Rating
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                        />
                       </svg>
                       <span className="font-medium">
-                        {course.instructorInfo?.totalReviews?.toLocaleString() || '0'} Reviews
+                        {course.instructorInfo?.totalReviews?.toLocaleString() ||
+                          "0"}{" "}
+                        Reviews
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4" />
                       <span className="font-medium">
-                        {course.instructorInfo?.totalStudents?.toLocaleString() || '0'} Students
+                        {course.instructorInfo?.totalStudents?.toLocaleString() ||
+                          "0"}{" "}
+                        Students
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                       <span className="font-medium">
-                        {course.instructorInfo?.totalCourses || '0'} Courses
+                        {course.instructorInfo?.totalCourses || "0"} Courses
                       </span>
                     </div>
                   </div>
@@ -572,13 +629,13 @@ const CourseDetail: React.FC = () => {
                     <p>{course.instructorInfo.instructorBio}</p>
                   </div>
                 )}
-                
+
                 {/* Social URL Link */}
                 {course.instructorInfo?.socialUrl && (
                   <div className="pt-2">
-                    <a 
-                      href={course.instructorInfo.socialUrl} 
-                      target="_blank" 
+                    <a
+                      href={course.instructorInfo.socialUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-purple-600 hover:underline text-sm font-medium"
                     >
@@ -595,8 +652,10 @@ const CourseDetail: React.FC = () => {
               <div className="flex items-center gap-4">
                 <Star className="w-8 h-8 text-yellow-400 fill-current" />
                 <div>
-                  <h2 className="tex
-                  t-2xl font-bold">
+                  <h2
+                    className="tex
+                  t-2xl font-bold"
+                  >
                     {course.rating} xếp hạng khóa học
                   </h2>
                   <p className="text-gray-600">5K ratings</p>
@@ -647,47 +706,79 @@ const CourseDetail: React.FC = () => {
                     <div className="flex gap-4">
                       {/* Avatar */}
                       <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-sm font-bold">{review.initial}</span>
+                        <span className="text-white text-sm font-bold">
+                          {review.initial}
+                        </span>
                       </div>
-                      
+
                       {/* Review Content */}
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-sm">{review.studentName}</h4>
+                          <h4 className="font-bold text-sm">
+                            {review.studentName}
+                          </h4>
                           <button className="text-gray-400 hover:text-gray-600">
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <svg
+                              className="w-5 h-5"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
                               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                             </svg>
                           </button>
                         </div>
-                        
+
                         {/* Rating and Date */}
                         <div className="flex items-center gap-2 mb-2">
                           <div className="flex items-center">
                             {renderStars(review.rating)}
                           </div>
-                          <span className="text-xs text-gray-500">{review.date}</span>
+                          <span className="text-xs text-gray-500">
+                            {review.date}
+                          </span>
                         </div>
-                        
+
                         {/* Comment */}
-                        <p className="text-sm text-gray-700 mb-3">{review.comment}</p>
-                        
+                        <p className="text-sm text-gray-700 mb-3">
+                          {review.comment}
+                        </p>
+
                         {/* Show more button */}
                         <button className="text-sm font-semibold text-gray-700 hover:text-gray-900 mb-3">
                           Show more
                         </button>
-                        
+
                         {/* Helpful buttons */}
                         <div className="flex items-center gap-4 text-sm">
                           <span className="text-gray-600">Helpful?</span>
                           <button className="flex items-center gap-1 hover:text-purple-600">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                              />
                             </svg>
                           </button>
                           <button className="flex items-center gap-1 hover:text-purple-600">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+                              />
                             </svg>
                           </button>
                         </div>
@@ -696,9 +787,12 @@ const CourseDetail: React.FC = () => {
                   </div>
                 ))}
               </div>
-              
+
               {/* Show all reviews button */}
-              <Button variant="outline" className="w-auto border-gray-900 font-semibold">
+              <Button
+                variant="outline"
+                className="w-auto border-gray-900 font-semibold"
+              >
                 Show all reviews
               </Button>
             </div>
@@ -790,13 +884,15 @@ const CourseDetail: React.FC = () => {
                   )}
 
                   {/* Buy Now Button */}
-                  <Button
-                    variant="outline"
-                    className="w-full border-2 border-gray-900 hover:bg-gray-50 py-6 text-lg font-semibold"
-                    onClick={handleEnrollNow}
-                  >
-                    Buy now
-                  </Button>
+                  {!course.purchaserStatus ? (
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 border-gray-900 hover:bg-gray-50 py-6 text-lg font-semibold"
+                      onClick={handleEnrollNow}
+                    >
+                      Mua ngay
+                    </Button>
+                  ) : null}
 
                   {/* 30-Day Money-Back Guarantee */}
                   <p className="text-center text-xs text-gray-600">

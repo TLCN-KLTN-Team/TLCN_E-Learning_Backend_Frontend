@@ -7,6 +7,14 @@ import BackToTop from "../../../components/ui/BackToTop";
 import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
 import EducationalUnitLinked from "@/components/student/home/EducationalUnitLinked";
+import { useState, useEffect } from "react";
+import {
+  getAllEducationalUnits,
+  getCoursesByRating,
+  getBestSellerCourses,
+} from "@/services/api/anonymous/home.api";
+import type { EducationalUnitCardResponse } from "@/types/educational-unit.types";
+import type { PublishedCourseCardResponse } from "@/types/course.types";
 
 // Import animated components
 import {
@@ -36,35 +44,46 @@ import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const navigate = useNavigate();
-  // const subjects = [
-  //   {
-  //     id: "it",
-  //     name: "Công nghệ thông tin",
-  //     image: "/src/assets/images/courses/01.jpg",
-  //     icon: "/src/assets/images/client/angular.svg",
-  //     description:
-  //       "Khám phá thế giới công nghệ với các khóa học lập trình, phát triển web, mobile app và nhiều hơn nữa.",
-  //     courseCount: 25,
-  //   },
-  //   {
-  //     id: "business",
-  //     name: "Kinh doanh",
-  //     image: "/src/assets/images/courses/02.jpg",
-  //     icon: "/src/assets/images/client/graduated.svg",
-  //     description:
-  //       "Phát triển kỹ năng kinh doanh, quản lý và khởi nghiệp với các chuyên gia hàng đầu.",
-  //     courseCount: 18,
-  //   },
-  //   {
-  //     id: "design",
-  //     name: "Thiết kế",
-  //     image: "/src/assets/images/courses/03.jpg",
-  //     icon: "/src/assets/images/client/figma.svg",
-  //     description:
-  //       "Học thiết kế đồ họa, UI/UX và các công cụ thiết kế chuyên nghiệp.",
-  //     courseCount: 12,
-  //   },
-  // ];
+
+  // State for API data
+  const [educationalUnits, setEducationalUnits] = useState<
+    EducationalUnitCardResponse[]
+  >([]);
+  const [topRatedCourses, setTopRatedCourses] = useState<
+    PublishedCourseCardResponse[]
+  >([]);
+  const [bestSellerCourses, setBestSellerCourses] = useState<
+    PublishedCourseCardResponse[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        setLoading(true);
+        const [units, ratedCourses, sellerCourses] = await Promise.all([
+          getAllEducationalUnits(),
+          getCoursesByRating(),
+          getBestSellerCourses(),
+        ]);
+
+        console.log("Educational Units:", units);
+        console.log("Top Rated Courses:", ratedCourses);
+        console.log("Best Seller Courses:", sellerCourses);
+
+        setEducationalUnits(units);
+        setTopRatedCourses(ratedCourses);
+        setBestSellerCourses(sellerCourses);
+      } catch (error) {
+        console.error("Error fetching home data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHomeData();
+  }, []);
 
   const testimonials = [
     {
@@ -231,14 +250,18 @@ const Home = () => {
           {/* Sestion suggest */}
           <div className="space-y-12 mb-12">
             <SubjectsSection
-              title="Lĩnh vực bạn sẽ học tiếp theo"
-              subtitle="Được đề xuất cho bạn"
+              title="Khóa học được đánh giá cao nhất"
+              subtitle="Được đề xuất dựa trên đánh giá của học viên"
+              courses={topRatedCourses}
+              loading={loading}
             />
 
-            {/* Base on favories course types */}
+            {/* Base on best seller */}
             <SubjectsSection
-              title="Phổ biến theo lĩnh vực bạn yêu thích"
-              subtitle="Được truyền cảm hứng từ những gì bạn đã học"
+              title="Khóa học bán chạy nhất"
+              subtitle="Top khóa học được mua nhiều nhất"
+              courses={bestSellerCourses}
+              loading={loading}
             />
           </div>
         </AnimatedSection>
@@ -309,7 +332,10 @@ const Home = () => {
 
         {/* Educational Unit Linked Section */}
         <AnimatedSection>
-          <EducationalUnitLinked />
+          <EducationalUnitLinked
+            educationalUnits={educationalUnits}
+            loading={loading}
+          />
         </AnimatedSection>
 
         {/* Testimonials Section */}

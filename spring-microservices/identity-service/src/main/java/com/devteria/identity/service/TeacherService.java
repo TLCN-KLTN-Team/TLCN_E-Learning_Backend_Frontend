@@ -1,6 +1,7 @@
 package com.devteria.identity.service;
 
 import java.util.HashSet;
+import java.util.List;
 
 import com.devteria.identity.dto.response.StudentResponse;
 import com.devteria.identity.entity.AccountStatus;
@@ -160,6 +161,11 @@ public class TeacherService {
         Page<Teacher> teachers =
                 teacherRepository.findTeachersWithFilters(teacherId, departmentId, educationalUnitId, pageable);
         return teachers.map(teacherMapper::toTeacherResponse);
+    }
+
+    public List<TeacherResponse> getTeachersByEducationalUnitId(int educationalUnitId) {
+        List<Teacher> teachers = teacherRepository.findByIdEducational(educationalUnitId);
+        return teacherMapper.toTeacherResponseList(teachers);
     }
 
     // Thêm method mới cho admin
