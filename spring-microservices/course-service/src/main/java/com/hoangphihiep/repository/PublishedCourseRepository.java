@@ -44,6 +44,13 @@ public interface PublishedCourseRepository extends JpaRepository<PublishedCourse
             @Param("status") Integer status,
             Pageable pageable);
 
+    @Query("SELECT pc FROM PublishedCourse pc " +
+            "LEFT JOIN pc.orderItems oi " +
+            "GROUP BY pc.id " +
+            "ORDER BY COUNT(oi) DESC")
+    List<PublishedCourse> findTopBestSellingCourses(Pageable pageable);
+
+
     @Query("SELECT pc FROM PublishedCourse pc WHERE pc.status = 2") // 2 = Approved
     Page<PublishedCourse> findAllApproved(Pageable pageable);
     

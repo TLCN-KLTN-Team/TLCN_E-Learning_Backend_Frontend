@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/workspaces")
 @RequiredArgsConstructor
@@ -33,6 +35,14 @@ public class WorkspaceController {
                 .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/user")
+    public ApiResponse<List<WorkspaceResponse>> getWorkspacesByUser(@RequestParam(value = "page", defaultValue = "0") int page,
+                                                                    @RequestParam(value = "size", defaultValue = "6") int size) {
+        return ApiResponse.<List<WorkspaceResponse>>builder()
+                .result(workspaceService.getWorkspacesByUser(page, size))
+                .build();
     }
 
     @PostMapping("/create")

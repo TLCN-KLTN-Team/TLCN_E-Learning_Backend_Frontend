@@ -48,7 +48,10 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             List.of(
                     "/course-management/educational-unit/register",
                     "/course-management/api/otp/send",
-                    "/course-management/published-courses/.*"
+                    "/course-management/published-courses/.*",
+                    "/course-management/anonymous/home/educational-units",
+                    "/course-management/anonymous/home/educational-units/.*",
+                    "/course-management/anonymous/home/courses/.*"
             )
     );
 

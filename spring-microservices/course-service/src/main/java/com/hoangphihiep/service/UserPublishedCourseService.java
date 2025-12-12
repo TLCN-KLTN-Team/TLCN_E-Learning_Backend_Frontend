@@ -39,6 +39,7 @@ public class UserPublishedCourseService {
     private final OrderMapper orderMapper;
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
+    private final ReviewService reviewService;
 
     public List<OrderResponse> getPendingOrders() {
         String userId = JwtUtils.getCurrentUserId();
@@ -52,10 +53,44 @@ public class UserPublishedCourseService {
                 .toList();
     }
 
-    public List<HomeCourseResponse> getSuggestCourses() {
+    public List<PublishedCourseCardResponse> getCoursesByRating() {
         List<PublishedCourse> courses = publishedCourseRepository.findAll();
-        return null;
+        return courses.stream()
+                .filter(course -> reviewService.calculateAverageRatingForCourse(course.getId()) > 4.5)
+                .map(course -> PublishedCourseCardResponse.builder()
+                        .id(course.getId())
+                        .courseName(course.getCourse().getCourseName())
+                        .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .authorName(course.getAuthorName())
+                        .thumbnailUrl(course.getCourseImage())
+                        .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
+                        .reviewCount(course.getReview().size())
+                        .studentCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
+                        .category(course.getCourseType().getCourseTypeName())
+                        .build())
+                .toList();
     }
+
+    public List<PublishedCourseCardResponse> getTop12BestSellingCourses() {
+        Pageable limit = PageRequest.of(0, 12);
+
+        List<PublishedCourse> courses = publishedCourseRepository.findTopBestSellingCourses(limit);
+
+        return courses.stream()
+                .map(course -> PublishedCourseCardResponse.builder()
+                        .id(course.getId())
+                        .courseName(course.getCourse().getCourseName())
+                        .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .authorName(course.getAuthorName())
+                        .thumbnailUrl(course.getCourseImage())
+                        .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
+                        .reviewCount(course.getReview().size())
+                        .studentCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
+                        .category(course.getCourseType().getCourseTypeName())
+                        .build())
+                .toList();
+    }
+
 
     public List<PublishedCourseProgressResponse> getMyPublishedCourse() {
         List<Order> ordersOfUser = orderService.getOrdersByUserId();

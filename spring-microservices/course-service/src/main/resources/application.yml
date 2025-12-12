@@ -51,12 +51,15 @@ spring:
   elasticsearch:
     uris: http://localhost:9200
 
-
 # JWT Configuration
 jwt:
   signerKey: ${JWT_SIGNER_KEY}
   valid-duration: 36000
   refreshable-duration: 36000
+
+# Service Configuration for Service-to-Service Authentication
+service:
+  id: course-service
 
 # SendGrid Configuration
 sendgrid:

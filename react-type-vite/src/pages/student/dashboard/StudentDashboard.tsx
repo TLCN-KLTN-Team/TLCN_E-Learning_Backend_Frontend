@@ -7,68 +7,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import { toast } from "react-toastify";
 import type { EnrolledCoursesResponse } from "@/services/api/student/courseEnrollmentApi";
-import { getCatalogEnrolledCourses } from "@/services/api/student/courseEnrollmentApi"
-
-interface Course {
-  id: number;
-  title: string;
-  subtitle: string;
-  image: string;
-  progress: number | null;
-  category: string;
-}
-
-// Mock data cho courses
-const mockCourses: Course[] = [
-  {
-    id: 1,
-    title: "Bao mat web_ Nhom 01CLC",
-    subtitle: "2025-2026 HỌC KỲ 1 - ĐẠI HỌC CHÍNH QUY",
-    image: "/src/assets/images/courses/4by3/01.jpg",
-    progress: null,
-    category: "Web Security",
-  },
-  {
-    id: 2,
-    title: "Cac cong nghe phan mem moi_ Nhom 01CLC",
-    subtitle: "2024-2025 HỌC KỲ 3",
-    image: "/src/assets/images/courses/4by3/02.jpg",
-    progress: null,
-    category: "Software Engineering",
-  },
-  {
-    id: 3,
-    title: "Chuyen de Doanh nghiep_ Nhom 02CLC",
-    subtitle: "2025-2026 HỌC KỲ 1 - ĐẠI HỌC CHÍNH QUY",
-    image: "/src/assets/images/courses/4by3/03.jpg",
-    progress: null,
-    category: "Business",
-  },
-  {
-    id: 4,
-    title: 'Cuoc thi Trac nghiem truc tuyen "Ty hao Viet Nam"',
-    subtitle: "NGOẠI KHOA",
-    image: "/src/assets/images/courses/4by3/04.jpg",
-    progress: 0,
-    category: "Contest",
-  },
-  {
-    id: 5,
-    title: "Kiem thu phan mem_ Nhom 04CLC",
-    subtitle: "2025-2026 HỌC KỲ 1 - ĐẠI HỌC CHÍNH QUY",
-    image: "/src/assets/images/courses/4by3/05.jpg",
-    progress: 50,
-    category: "Testing",
-  },
-  {
-    id: 6,
-    title: "Thuc tap tot nghiep_ Nhom 44CLC",
-    subtitle: "2025-2026 HỌC KỲ 1 - ĐẠI HỌC CHÍNH QUY",
-    image: "/src/assets/images/courses/4by3/06.jpg",
-    progress: null,
-    category: "Internship",
-  },
-];
+import { getCatalogEnrolledCourses } from "@/services/api/student/courseEnrollmentApi";
 
 export const StudentDashboard = () => {
   const [courses, setCourses] = useState<EnrolledCoursesResponse[]>([]);

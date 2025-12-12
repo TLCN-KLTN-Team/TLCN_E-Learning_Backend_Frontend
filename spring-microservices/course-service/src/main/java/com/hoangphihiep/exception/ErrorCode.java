@@ -10,6 +10,7 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION("SYS_9999", "Lỗi không xác định", HttpStatus.INTERNAL_SERVER_ERROR),
     JSON_PROCESSING_ERROR("SYS_9998", "Lỗi xử lý JSON", HttpStatus.INTERNAL_SERVER_ERROR),
     KAFKA_PUBLISH_FAILED("SYS_9997", "Lỗi khi xuất bản sự kiện Kafka", HttpStatus.INTERNAL_SERVER_ERROR),
+    FEIGN_CLIENT_ERROR("SYS_9996", "Lỗi Feign Client", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_REQUEST("SYS_1001", "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
 
     // Authentication & Authorization errors (AUTH_xxxx)

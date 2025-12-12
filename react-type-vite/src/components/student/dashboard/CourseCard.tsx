@@ -41,7 +41,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
       </Link>
 
       <div className="p-4">
-        <Link to={`/student/course/${course.courseId}`}>
+        <Link to={`/student/dashboard/course/classes/${course.classId}`}>
           <h3 className="font-semibold text-lg student-dashboard-course-title mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors">
             {course.courseName}
           </h3>

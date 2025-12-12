@@ -15,6 +15,7 @@ import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.WorkspaceService;
+import demo.app.chat_app.utils.JwtUtils;
 import feign.FeignException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -192,6 +193,16 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
         return workspaceMapper.toResponse(workspace);
+    }
+
+    @Override
+    public List<WorkspaceResponse> getWorkspacesByUser(int page, int size) {
+        String userId = JwtUtils.getUserId();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Workspace> workspaces = workspaceRepository.findByParticipants(userId, pageable);
+
+        return List.of();
     }
 
 

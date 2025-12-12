@@ -13,7 +13,7 @@ public class PublishedCourseCardResponse {
     String courseName;
     String authorName;
     String coursePrice;
-    int rating;
+    double rating;
     int reviewCount;
     int studentCount;
     String category;

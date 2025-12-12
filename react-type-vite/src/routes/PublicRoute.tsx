@@ -9,7 +9,6 @@ import FacebookAuthenticate from "@/pages/auth/FacebookAuthenticate";
 import Courses from "@/pages/user/Courses";
 import CourseDetail from "@/pages/user/course/CourseDetail";
 import DetailEducationalUnit from "@/pages/user/universitry/DetailEducationalUnit";
-import WorkspacePage from "@/pages/workspace/WorkspacePage";
 
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
@@ -46,25 +45,13 @@ const PublicRoutes = [
   <Route key="courses" path={`/courses`} element={<Courses />} />,
   <Route
     key="course-detail"
-    path="/courses/course/:courseId"
+    path="/courses/:courseId"
     element={<CourseDetail />}
   />,
   <Route
     key="educational-unit-detail"
-    path="/educational-unit/:id"
+    path="/educational-units/:id"
     element={<DetailEducationalUnit />}
-  />,
-
-  <Route key="workspace" path="/workspace" element={<WorkspacePage />} />,
-  <Route
-    key="workspace-with-params"
-    path="/workspace/:workspaceId"
-    element={<WorkspacePage />}
-  />,
-  <Route
-    key="workspace-with-channel"
-    path="/workspace/:workspaceId/:channelId"
-    element={<WorkspacePage />}
   />,
 ];
 

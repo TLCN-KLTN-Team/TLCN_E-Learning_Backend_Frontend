@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/teachers")
 @RequiredArgsConstructor
@@ -105,6 +107,15 @@ public class TeacherController {
 
         return ApiResponse.<Page<TeacherResponse>>builder()
                 .result(teacherService.getTeachersByEducationalUnit(educationalUnitId, search, pageable))
+                .build();
+    }
+
+    @GetMapping("/educational-units/{educationalUnitId}")
+    public ApiResponse<List<TeacherResponse>> getTeachersByEducationalUnitNoPage(
+            @PathVariable int educationalUnitId) {
+
+        return ApiResponse.<List<TeacherResponse>>builder()
+                .result(teacherService.getTeachersByEducationalUnitId(educationalUnitId))
                 .build();
     }
 

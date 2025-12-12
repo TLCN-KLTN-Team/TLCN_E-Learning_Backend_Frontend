@@ -36,6 +36,9 @@ public class JwtService {
     @Value("${jwt.valid-duration:3600}")
     private long validDuration;
 
+    @Value("${service.id:course-service}")
+    private String serviceId;
+
     // Cache để lưu token, tránh generate liên tục
     private final ConcurrentMap<String, TokenInfo> tokenCache = new ConcurrentHashMap<>();
 
@@ -54,7 +57,7 @@ public class JwtService {
     }
 
     public String generateServiceToken() {
-        String cacheKey = "course-management-service";
+        String cacheKey = serviceId;
         TokenInfo cachedToken = tokenCache.get(cacheKey);
 
         // Return cached token if still valid
@@ -69,13 +72,12 @@ public class JwtService {
             Instant expiration = now.plus(validDuration, ChronoUnit.SECONDS);
 
             JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                    .subject("course-management-service")
-                    .issuer("devteria.com") // Match identity-service issuer
+                    .subject(serviceId)
+                    .issuer(serviceId) // Service identifier as issuer
                     .issueTime(new Date())
                     .expirationTime(Date.from(expiration))
                     .jwtID(UUID.randomUUID().toString())
-                    .claim("token_type", "access")
-                    .claim("scope", "ROLE_ADMIN") // Make sure this matches identity service expectations
+                    .claim("type", "service-token") // Service token type
                     .build();
 
             Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -88,7 +90,7 @@ public class JwtService {
             // Cache the token
             tokenCache.put(cacheKey, new TokenInfo(token, expiration));
 
-            log.debug("Generated and cached new service token for course-management");
+            log.debug("Generated and cached new service token for {}", serviceId);
             return token;
 
         } catch (JOSEException e) {
