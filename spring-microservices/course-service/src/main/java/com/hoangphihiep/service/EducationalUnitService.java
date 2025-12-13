@@ -4,15 +4,17 @@ import com.hoangphihiep.dto.request.EducationalUnitRegistrationRequest;
 import com.hoangphihiep.dto.request.UserRequest;
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.Department;
+import com.hoangphihiep.entity.Course;
+import com.hoangphihiep.entity.CourseProgress;
 import com.hoangphihiep.entity.EducationalUnit;
 import com.hoangphihiep.entity.SubscriptionPlan;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.EducationalUnitMapper;
-import com.hoangphihiep.repository.EducationalUnitRepository;
-import com.hoangphihiep.repository.SubscriptionPlanRepository;
+import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
+import com.hoangphihiep.repository.httpclient.StudentRepository;
 import com.hoangphihiep.repository.httpclient.UserInfoApi;
 import com.hoangphihiep.repository.httpclient.UserRepository;
 import com.hoangphihiep.utils.CurrencyUtils;
@@ -38,6 +40,10 @@ public class EducationalUnitService {
     private final FileHandlerRepository fileHandlerRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final EducationalUnitMapper educationalUnitMapper;
+    private final CourseRepository courseRepository;
+    private final DepartmentRepository departmentRepository;
+    private final StudentRepository studentRepository;
+    private final CourseProgressRepository courseProgressRepository;
     private final UserInfoApi userInfoApi;
     private final EmailService emailService;
     private final TeacherRepository teacherRepository;
@@ -160,6 +166,23 @@ public class EducationalUnitService {
 
             EducationalUnit edu = educationalUnit.get();
 
+            long totalCourses = courseRepository.countByEducationalUnitId(edu.getId());
+            long totalDepartments = departmentRepository.countByEducationalUnitId(edu.getId());
+
+            long totalTeachers = 0L;
+            long totalStudents = 0L;
+            try {
+                totalTeachers = userInfoApi.countTeachersByEducationalUnit(edu.getId()).getResult();
+            } catch (Exception ex) {
+                log.warn("Failed to fetch teacher count for eduId {}: {}", edu.getId(), ex.getMessage());
+            }
+            try {
+                totalStudents = userInfoApi.countStudentsByEducationalUnit(edu.getId()).getResult();
+                System.out.println ("Tổng sinh viên trong đơn vị đào tạo 1: " + totalStudents);
+            } catch (Exception ex) {
+                log.warn("Failed to fetch student count for eduId {}: {}", edu.getId(), ex.getMessage());
+            }
+
             return EducationalUnitResponse.builder()
                     .id(edu.getId())
                     .name(edu.getName())
@@ -175,6 +198,10 @@ public class EducationalUnitService {
                     .subscriptionStartDate(edu.getSubscriptionStartDate())
                     .subscriptionEndDate(edu.getSubscriptionEndDate())
                     .createdAt(edu.getCreatedAt())
+                    .totalCourses((int) totalCourses)
+                    .totalDepartments((int) totalDepartments)
+                    .totalTeachers((int) totalTeachers)
+                    .totalStudents((int) totalStudents)
                     .representativeName(userInfo.getFirstName() + " " + userInfo.getLastName())
                     .representativeEmail(userInfo.getEmail())
                     .representativePhone(userInfo.getPhoneNumber())
@@ -183,6 +210,92 @@ public class EducationalUnitService {
         } catch (Exception e) {
             log.error("Error occurred while checking institution for admin: {}", adminId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+    
+    public Double getAverageInternalStudentRatio(String adminId) {
+        try {
+            Optional<EducationalUnit> educationalUnit = educationalUnitRepository.findByIdAdmin(adminId);
+            if (educationalUnit.isEmpty()) {
+                log.warn("No educational unit found for admin: {}", adminId);
+                return 0.0;
+            }
+            
+            Integer eduId = educationalUnit.get().getId();
+            log.info("Calculating internal student ratio for educational unit ID: {}", eduId);
+            
+            // Get all courses for this educational unit
+            List<Course> courses = courseRepository.findByEducationalUnitId(eduId);
+            log.info("Found {} courses for educational unit {}", courses.size(), eduId);
+            
+            if (courses.isEmpty()) {
+                log.info("No courses found for educational unit {}, returning 0.0", eduId);
+                return 0.0;
+            }
+            
+            double totalRatios = 0.0;
+            int courseCount = 0;
+            
+            // For each course, calculate the ratio of internal students
+            for (Course course : courses) {
+                // Get all enrollments for this course with active progress
+                List<CourseProgress> courseProgresses = courseProgressRepository.findByCourseId(course.getId());
+                
+                if (courseProgresses.isEmpty()) {
+                    log.debug("No active progress records for course {}", course.getId());
+                    continue;
+                }
+                
+                // Filter only those with progress > 0
+                List<CourseProgress> activeProgresses = courseProgresses.stream()
+                        .filter(cp -> cp.getProgressPercentage() > 0)
+                        .toList();
+                
+                if (activeProgresses.isEmpty()) {
+                    log.debug("No active progress (>0%) for course {}", course.getId());
+                    continue;
+                }
+
+
+                long totalStudents = userInfoApi.countStudentsByEducationalUnit(eduId).getResult();
+                System.out.println ("id của edu: " + eduId);
+                System.out.println ("Tổng sinh viên trong đơn vị đào tạo: " + totalStudents);
+                int internalStudents = 0;
+                
+                // Check each student to see if they belong to the same educational unit
+                for (CourseProgress progress : activeProgresses) {
+                    try {
+                        StudentResponse student = studentRepository.getStudentById(progress.getIdUser()).getResult();
+
+                        Integer eduUnitId = Integer.parseInt(student.getEducationalUnitId());
+
+                        if (eduUnitId.equals(eduId)) {
+                            internalStudents++;
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to get educational unit for student {}: {}", progress.getIdUser(), e.getMessage());
+                    }
+                }
+                
+                double courseRatio = (double) internalStudents / totalStudents;
+                log.debug("Course {}: {}/{} internal students = {}", course.getId(), internalStudents, totalStudents, courseRatio);
+                
+                totalRatios += courseRatio;
+                courseCount++;
+            }
+            
+            if (courseCount == 0) {
+                log.info("No courses with active student progress found for educational unit {}, returning 0.0", eduId);
+                return 0.0;
+            }
+            
+            Double averageRatio = totalRatios / courseCount;
+            log.info("Internal student ratio for educational unit {}: {}", eduId, averageRatio);
+            
+            return averageRatio;
+        } catch (Exception e) {
+            log.error("Error calculating average internal student ratio for admin {}: {}", adminId, e.getMessage(), e);
+            return 0.0;
         }
     }
 

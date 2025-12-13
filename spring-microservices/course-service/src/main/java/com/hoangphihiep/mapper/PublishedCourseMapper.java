@@ -77,6 +77,8 @@ public class PublishedCourseMapper {
         return PublishedCourseResponse.builder()
                 .id(publishedCourse.getId())
                 .course(courseResponse)
+                .courseName(publishedCourse.getCourseName())
+                .authorName(publishedCourse.getAuthorName())
                 .courseType(courseTypeMapper.toCourseTypeResponse(publishedCourse.getCourseType()))
                 .description(publishedCourse.getDescription())
                 .courseIntroduction(publishedCourse.getCourseIntroduction())

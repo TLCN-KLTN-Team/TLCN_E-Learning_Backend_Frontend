@@ -46,11 +46,14 @@ public interface StudentRepository extends JpaRepository<Student, String> {
             + "LOWER(s.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR "
             + "LOWER(s.className) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Student> findByEducationalUnitWithSearch(
-            @Param("institutionId") int educationalUnitId, @Param("search") String search, Pageable pageable);
+            @Param("educationalUnitId") int educationalUnitId, @Param("search") String search, Pageable pageable);
 
     List<Student> findByIdEducational(int educationalUnitId);
 
     List<Student> findByStudentIdIn(List<String> studentIds);
 
     List<Student> findByIdIn(Collection<String> ids);
+    
+    @Query("SELECT COUNT(s) FROM Student s WHERE s.idEducational = :educationalUnitId")
+    long countByIdEducational(@Param("educationalUnitId") Integer educationalUnitId);
 }

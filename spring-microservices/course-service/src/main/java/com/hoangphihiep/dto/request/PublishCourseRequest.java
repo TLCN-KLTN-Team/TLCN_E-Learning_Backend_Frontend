@@ -21,7 +21,7 @@ public class PublishCourseRequest {
 
     @NotNull(message = "Course type ID is required")
     private Integer courseTypeId;
-
+    private String courseName;
     private String description;
     private String courseIntroduction;
     private String courseImage;

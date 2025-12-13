@@ -207,7 +207,6 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
         // Convert hits to response objects
         List<OrderItem> orderItems = orderItemRepository.findAll();
         List<PublishedCourseCardResponse> result = publishedCourses.stream()
-                .filter(course -> !orderItems.contains(course))
                 .map(this::convertToCardResponse)
                 .toList();
 

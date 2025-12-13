@@ -36,6 +36,7 @@ const CourseListPage: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(
     null
   );
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
   const [currentEducationalUnit, setCurrentEducationalUnit] =
@@ -79,13 +80,13 @@ const CourseListPage: React.FC = () => {
     initializeEducationalUnit();
   }, []);
 
-  const loadCourses = async () => {
+  const loadCourses = async (search?: string) => {
     if (!educationalUnitId) return;
 
     try {
       setLoading(true);
       const response: PaginatedResponse<CourseResponse> =
-        await courseApi.getCourses(educationalUnitId, currentPage, pageSize);
+        await courseApi.getCourses(educationalUnitId, currentPage, pageSize, search);
 
       const coursesData = response.content || [];
       setCourses(coursesData);
@@ -152,6 +153,18 @@ const CourseListPage: React.FC = () => {
       loadCourses();
     }
   }, [educationalUnitId, currentPage, pageSize]);
+
+  // Handle search with debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (educationalUnitId) {
+        setCurrentPage(0);
+        loadCourses(searchTerm);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
 
   const handleSuccess = () => {
     loadCourses();
@@ -306,6 +319,42 @@ const CourseListPage: React.FC = () => {
           <BookOpen className="mr-2" size={18} />
           Tạo Khóa học Mới
         </Button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Tìm kiếm khóa học theo tên, mô tả, giáo viên..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            {searchTerm ? (
+              <X
+                className="cursor-pointer hover:text-gray-600"
+                size={20}
+                onClick={() => setSearchTerm("")}
+              />
+            ) : (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Statistics Cards */}

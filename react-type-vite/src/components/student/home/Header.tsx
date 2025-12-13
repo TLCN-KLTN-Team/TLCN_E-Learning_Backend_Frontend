@@ -35,7 +35,11 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-const Header = () => {
+interface HeaderProps {
+  variant?: 'default' | 'course-detail';
+}
+
+const Header = ({ variant = 'default' }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -154,8 +158,10 @@ const Header = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 bg-white${
-        isScrolled
+      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
+        variant === 'course-detail'
+          ? 'bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800'
+          : isScrolled
           ? "bg-background backdrop-blur-md shadow-bs border-b border-border"
           : "bg-background border-b border-border/50"
       }`}

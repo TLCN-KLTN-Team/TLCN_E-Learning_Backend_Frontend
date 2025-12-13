@@ -26,11 +26,14 @@ export const createTeacher = async (
 export const getTeachers = async (
   educationalUnitId: number,
   page: number = 0,
-  size: number = 20
+  size: number = 20,
+  search?: string
 ): Promise<PaginatedResponse<TeacherResponse>> => {
-  const response = await axiosInstance.get<ApiResponse<PaginatedResponse<TeacherResponse>>>(
-    `/course-management/admin/educationalUnit/${educationalUnitId}/teachers?page=${page}&size=${size}`
-  );
+  let url = `/course-management/admin/educationalUnit/${educationalUnitId}/teachers?page=${page}&size=${size}`;
+  if (search && search.trim()) {
+    url += `&search=${encodeURIComponent(search.trim())}`;
+  }
+  const response = await axiosInstance.get<ApiResponse<PaginatedResponse<TeacherResponse>>>(url);
   console.log("📌 Backend trả về:", response.data);
   console.log("📌 result:", response.data.result);
   return response.data.result;

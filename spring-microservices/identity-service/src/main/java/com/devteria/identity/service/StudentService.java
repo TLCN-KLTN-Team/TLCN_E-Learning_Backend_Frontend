@@ -45,6 +45,16 @@ public class StudentService {
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
 
+    public long countByEducationalUnit(Integer educationalUnitId) {
+        return studentRepository.countByIdEducational(educationalUnitId);
+    }
+    
+    public Integer getStudentEducationalUnit(String studentId) {
+        var student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return student.getIdEducational();
+    }
+
     @Transactional
     public StudentResponse createStudent(StudentRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {

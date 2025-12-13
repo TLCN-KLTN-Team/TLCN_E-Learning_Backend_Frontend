@@ -33,11 +33,14 @@ public interface TeacherRepository extends JpaRepository<Teacher, String> {
     // Thêm methods mới cho admin
     Page<Teacher> findByIdEducational(int educationalUnitId, Pageable pageable);
 
-    @Query("SELECT t FROM Teacher t WHERE t.idEducational = :institutionId AND "
+    @Query("SELECT t FROM Teacher t WHERE t.idEducational = :educationalUnitId AND "
             + "(:search IS NULL OR :search = '' OR "
             + "LOWER(t.teacherId) LIKE LOWER(CONCAT('%', :search, '%')) OR "
             + "LOWER(t.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR "
             + "LOWER(t.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Teacher> findByInstitutionWithSearch(
-            @Param("institutionId") int institutionId, @Param("search") String search, Pageable pageable);
+            @Param("educationalUnitId") int educationalUnitId, @Param("search") String search, Pageable pageable);
+    
+    @Query("SELECT COUNT(t) FROM Teacher t WHERE t.idEducational = :educationalUnitId")
+    long countByIdEducational(@Param("educationalUnitId") Integer educationalUnitId);
 }

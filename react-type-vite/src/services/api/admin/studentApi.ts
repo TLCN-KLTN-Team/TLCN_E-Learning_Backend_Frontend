@@ -18,11 +18,14 @@ export const createStudent = async (
 export const getStudents = async (
   educationalUnitId: number,
   page: number = 0,
-  size: number = 20
+  size: number = 20,
+  search?: string
 ): Promise<PaginatedResponse<StudentResponse>> => {
-  const response = await axiosInstance.get<ApiResponse<PaginatedResponse<StudentResponse>>>(
-    `/course-management/admin/educationalUnit/${educationalUnitId}/students?page=${page}&size=${size}`
-  );
+  let url = `/course-management/admin/educationalUnit/${educationalUnitId}/students?page=${page}&size=${size}`;
+  if (search && search.trim()) {
+    url += `&search=${encodeURIComponent(search.trim())}`;
+  }
+  const response = await axiosInstance.get<ApiResponse<PaginatedResponse<StudentResponse>>>(url);
   return response.data.result;
 };
 
