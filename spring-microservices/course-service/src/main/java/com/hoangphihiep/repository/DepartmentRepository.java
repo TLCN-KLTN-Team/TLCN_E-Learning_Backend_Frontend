@@ -29,4 +29,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Integer>
 
     @Query("SELECT COUNT(d) > 0 FROM Department d WHERE LOWER(d.name) = LOWER(:name) AND d.educationalUnit.id = :institutionId")
     boolean existsByNameAndEducationalUnit(@Param("name") String name, @Param("institutionId") int institutionId);
+    
+    @Query("SELECT COUNT(d) FROM Department d WHERE d.educationalUnit.id = :educationalUnitId")
+    long countByEducationalUnitId(@Param("educationalUnitId") Integer educationalUnitId);
 }

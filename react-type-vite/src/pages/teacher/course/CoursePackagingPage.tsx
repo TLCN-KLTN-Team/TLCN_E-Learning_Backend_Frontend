@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, ArrowRight, CheckCircle2, Package, AlertCircle, CheckCircle, Eye, EyeOff, Loader2, Lock, Upload, X } from "lucide-react"
 import { Editor } from "@tinymce/tinymce-react"
-import type { Editor as TinyMCEEditor } from "tinymce"
 import type { ContentPublishStatusResponse } from "@/services/api/response/contentPublishStatusResponse"
 import type { SectionResponse } from "@/services/api/response/sectionResponse"
 import type { CourseCategoryResponse } from "@/services/api/response/courseTypeResponse"
@@ -16,6 +15,7 @@ import type { QuizResponse } from "@/services/api/response/quizResponse"
 import type { AssignmentResponse } from "@/services/api/response/assignmentResponse"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer"
 
 interface ConvertedSectionData {
   id: number
@@ -60,6 +60,7 @@ const CoursePackagingPage = () => {
   const [formData, setFormData] = useState<PublishCourseRequest>({
     courseId: courseId,
     courseTypeId: 1,
+    courseName: "",
     coursePrice: 0,
     description: "",
     courseIntroduction: "",
@@ -114,6 +115,7 @@ const CoursePackagingPage = () => {
           setFormData({
             courseId: publishedData.course.id,
             courseTypeId: publishedData.courseType.id,
+            courseName: publishedData.courseName || publishedData.course.courseName || "",
             coursePrice: publishedData.coursePrice,
             description: publishedData.description || "",
             courseIntroduction: publishedData.courseIntroduction || "",
@@ -370,6 +372,11 @@ const CoursePackagingPage = () => {
   }
 
   const handleSubmit = async () => {
+    if (!formData.courseName?.trim()) {
+      showNotification("error", "Thiếu thông tin", "Vui lòng nhập tên khóa học")
+      setActiveStep("details")
+      return
+    }
     if (!formData.description?.trim()) {
       showNotification("error", "Thiếu thông tin", "Vui lòng nhập mô tả khóa học")
       setActiveStep("details")
@@ -835,6 +842,23 @@ const CoursePackagingPage = () => {
             <h2 className="text-xl font-semibold mb-6">Thông Tin Chi Tiết Khóa Học</h2>
 
             <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-2">Tên Khóa Học *</label>
+                <Input
+                  type="text"
+                  className="w-full p-2 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  value={formData.courseName}
+                  disabled={!canEdit}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      courseName: e.target.value,
+                    }))
+                  }
+                  placeholder="Nhập tên khóa học..."
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Loại Khóa Học *</label>
@@ -1186,6 +1210,12 @@ const CoursePackagingPage = () => {
                 <h3 className="font-medium mb-4">Tóm Tắt</h3>
                 <dl className="space-y-2">
                   <div className="flex">
+                    <dt className="w-1/3 text-gray-600">Tên khóa học:</dt>
+                    <dd className="flex-1 font-medium">
+                      {formData.courseName || "Chưa nhập"}
+                    </dd>
+                  </div>
+                  <div className="flex">
                     <dt className="w-1/3 text-gray-600">Nội dung xuất bản:</dt>
                     <dd className="flex-1 font-medium">
                       {publishStatus.publishPercentage.toFixed(1)}%
@@ -1267,7 +1297,7 @@ const CoursePackagingPage = () => {
                     <div>
                       <div className="text-sm font-medium text-gray-600">Mô tả:</div>
                       <div className="text-sm mt-1 line-clamp-3">
-                        {formData.description}
+                        <MarkdownRenderer content={formData.description} />
                       </div>
                     </div>
                   )}
@@ -1275,7 +1305,7 @@ const CoursePackagingPage = () => {
                     <div>
                       <div className="text-sm font-medium text-gray-600">Giới thiệu:</div>
                       <div className="text-sm mt-1 line-clamp-2">
-                        {formData.courseIntroduction}
+                        <MarkdownRenderer content={formData.courseIntroduction} />
                       </div>
                     </div>
                   )}
@@ -1302,7 +1332,8 @@ const CoursePackagingPage = () => {
                 </div>
               </div>
 
-              {(!formData.description?.trim() ||
+              {(!formData.courseName?.trim() ||
+                !formData.description?.trim() ||
                 !formData.courseIntroduction?.trim() ||
                 publishStatus.publishedSections === 0) && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -1311,6 +1342,9 @@ const CoursePackagingPage = () => {
                     <div>
                       <h4 className="font-medium text-yellow-800">Cần hoàn thiện thêm:</h4>
                       <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                        {!formData.courseName?.trim() && (
+                          <li>• Chưa nhập tên khóa học</li>
+                        )}
                         {!formData.description?.trim() && (
                           <li>• Chưa có mô tả chi tiết khóa học</li>
                         )}
@@ -1339,6 +1373,7 @@ const CoursePackagingPage = () => {
                 onClick={handleSubmit}
                 disabled={
                   loading ||
+                  !formData.courseName?.trim() ||
                   !formData.description?.trim() ||
                   !formData.courseIntroduction?.trim() ||
                   publishStatus.publishedSections === 0 ||

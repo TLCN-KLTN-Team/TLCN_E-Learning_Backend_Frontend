@@ -2,12 +2,14 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.PublishCourseRequest;
 import com.hoangphihiep.dto.response.PublishedCourseResponse;
+import com.hoangphihiep.dto.response.TeacherResponse;
 import com.hoangphihiep.entity.*;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.PublishedCourseMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
+import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
 import com.hoangphihiep.utils.ElasticSearchIndexInitializer;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class PublishedCourseTeacherService {
     private final PublishedCourseMapper publishedCourseMapper;
     private final FileHandlerRepository fileHandlerRepository;
     private final ElasticSearchIndexInitializer elasticSearchIndexInitializer;
+    private final TeacherRepository teacherRepository;
 
     public Page<PublishedCourseResponse> getPublishedCoursesForAdmin(
             Integer educationalUnitId, Integer status, int page, int size) {
@@ -288,6 +291,13 @@ public class PublishedCourseTeacherService {
         publishedCourse.setCourse(course);
         publishedCourse.setCourseType(courseType);
         publishedCourse.setCoursePrice(request.getCoursePrice());
+        
+        // Auto-populate courseName and authorName from Course entity
+        publishedCourse.setCourseName(request.getCourseName() != null ? request.getCourseName() : course.getCourseName());
+
+        TeacherResponse teacher = teacherRepository.getTeacherByTeacherId(course.getIdTeacher()).getResult();
+        publishedCourse.setAuthorName(teacher.getUsername());
+        
         publishedCourse.setStatus(0); // Draft
         publishedCourse.setCreatedAt(new Date());
         publishedCourse.setUpdatedAt(new Date());
@@ -298,6 +308,12 @@ public class PublishedCourseTeacherService {
                                        Course course, CourseType courseType) {
         publishedCourse.setCourseType(courseType);
         publishedCourse.setCoursePrice(request.getCoursePrice());
+        
+        // Update courseName and authorName
+        publishedCourse.setCourseName(request.getCourseName() != null ? request.getCourseName() : course.getCourseName());
+        TeacherResponse teacher = teacherRepository.getTeacherByTeacherId(course.getIdTeacher()).getResult();
+        publishedCourse.setAuthorName(teacher.getUsername());
+        
         publishedCourse.setUpdatedAt(new Date());
         // Chỉ reset về Draft nếu đang ở trạng thái Draft hoặc Rejected
         // Nếu đã Approved (status=2), giữ nguyên trạng thái

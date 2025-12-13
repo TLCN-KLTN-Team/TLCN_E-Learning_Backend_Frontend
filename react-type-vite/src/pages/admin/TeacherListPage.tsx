@@ -87,7 +87,7 @@ const TeacherListPage: React.FC = () => {
     try {
       setLoading(true);
       const response: PaginatedResponse<TeacherResponse> =
-        await teacherApi.getTeachers(educationalUnitId, page, size);
+        await teacherApi.getTeachers(educationalUnitId, page, size, search);
       setTeachers(response.content || []);
       setTotalElements(response.totalElements || 0);
       setTotalPages(response.totalPages || 0);

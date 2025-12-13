@@ -22,6 +22,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../../../styles/admin.css";
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/open-edu-light.png';
 
 interface AdminSidebarProps {
   isSidebarOpen: boolean;
@@ -235,16 +236,19 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {/* Header with Close Button */}
             <div className="mb-8">
               <div className="flex items-center justify-between">
-                <Link to="/admin" className="no-transition flex items-center">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center mr-3">
-                      <span className="text-white font-bold text-sm">e</span>
-                    </div>
-                    <span className="text-xl font-bold text-white">
-                      OpenEdu
-                    </span>
-                  </div>
-                </Link>
+                <div className="flex items-center justify-between h-16 lg:h-20">
+                  {/* Logo */}
+                  <Link
+                    to="/"
+                    className="flex items-center max-w-[140px] lg:max-w-[180px] decoration-none no-hover-effect"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <img
+                      src={logo}
+                      alt="OpenEdu - E-Learning Platform"
+                      className="h-6 lg:h-8 w-auto max-w-full object-contain"
+                    />
+                  </Link>
                 {/* Mobile Close Button */}
                 <Button
                   onClick={() => setIsSidebarOpen(false)}
@@ -301,6 +305,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               </div>
             </div>
           </div>
+        </div>
+        {/* Ensure all containers are closed before ending nav */}
         </div>
       </nav>
     </>

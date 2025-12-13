@@ -42,6 +42,10 @@ public class TeacherService {
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
 
+    public long countByEducationalUnit(Integer educationalUnitId) {
+        return teacherRepository.countByIdEducational(educationalUnitId);
+    }
+
     @Transactional
     public TeacherResponse createTeacher(TeacherRequest request) {
 

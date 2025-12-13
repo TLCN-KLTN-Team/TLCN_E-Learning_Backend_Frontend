@@ -111,4 +111,19 @@ public class StudentController {
                 .result(studentService.getAllStudentsByEducationalUnit(educationalUnitId))
                 .build();
     }
+
+        @GetMapping("/count-by-educational-unit/{educationalUnitId}")
+        public ApiResponse<Long> countStudentsByEducationalUnit(@PathVariable Integer educationalUnitId) {
+                return ApiResponse.<Long>builder()
+                                .result(studentService.countByEducationalUnit(educationalUnitId))
+                                .build();
+        }
+    
+    @GetMapping("/{studentId}/educational-unit")
+    public ApiResponse<Integer> getStudentEducationalUnit(@PathVariable String studentId) {
+        log.info("Fetching educational unit for student: {}", studentId);
+        return ApiResponse.<Integer>builder()
+                .result(studentService.getStudentEducationalUnit(studentId))
+                .build();
+    }
 }
