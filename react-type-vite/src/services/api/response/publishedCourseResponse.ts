@@ -6,6 +6,8 @@ import type { SectionResponse } from './sectionResponse';
 export interface PublishedCourseResponse {
   id: number;
   course: CourseResponse;
+  courseName: string;
+  authorName: string;
   courseType: CourseCategoryResponse;
   description: string;
   courseIntroduction: string;

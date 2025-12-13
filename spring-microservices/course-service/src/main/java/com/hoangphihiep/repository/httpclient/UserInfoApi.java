@@ -13,4 +13,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface UserInfoApi {
     @GetMapping("/users/{userId}")
     ApiResponse<UserResponse> getUserInfo(@PathVariable String userId);
+    
+    @GetMapping("/teachers/count-by-educational-unit/{educationalUnitId}")
+    ApiResponse<Long> countTeachersByEducationalUnit(@PathVariable Integer educationalUnitId);
+    
+    @GetMapping("/students/count-by-educational-unit/{educationalUnitId}")
+    ApiResponse<Long> countStudentsByEducationalUnit(@PathVariable Integer educationalUnitId);
+    
+    @GetMapping("/students/{studentId}/educational-unit")
+    ApiResponse<Integer> getStudentEducationalUnit(@PathVariable String studentId);
 }

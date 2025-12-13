@@ -16,7 +16,9 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
 
     @Query("SELECT c FROM Course c WHERE c.educationalUnit.id = :educationalUnitId AND " +
             "(:search IS NULL OR :search = '' OR " +
-            "LOWER(c.courseName) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "LOWER(c.courseName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(c.description) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(c.idTeacher) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Course> findByEducationalUnitWithSearch(@Param("educationalUnitId") int educationalUnitId, @Param("search") String search, Pageable pageable);
 
     List<Course> findByIdTeacher(String teacherId);
@@ -37,4 +39,10 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
             "c.publishedCourse.coursePrice > :price")
     List<Course> findByIdTeacherAndPriceGreaterThan(@Param("teacherId") String teacherId, 
                                                      @Param("price") Double price);
+    
+    @Query("SELECT COUNT(c) FROM Course c WHERE c.educationalUnit.id = :educationalUnitId")
+    long countByEducationalUnitId(@Param("educationalUnitId") Integer educationalUnitId);
+    
+    @Query("SELECT c FROM Course c WHERE c.educationalUnit.id = :educationalUnitId")
+    List<Course> findByEducationalUnitId(@Param("educationalUnitId") Integer educationalUnitId);
 }

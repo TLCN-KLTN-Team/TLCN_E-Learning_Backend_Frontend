@@ -133,4 +133,12 @@ public class TeacherController {
                 .result(teacherService.getTeacherByUserId(userId))
                 .build();
     }
+    
+    @GetMapping("/count-by-educational-unit/{educationalUnitId}")
+    public ApiResponse<Long> countTeachersByEducationalUnit(@PathVariable Integer educationalUnitId) {
+        log.info("Counting teachers for educational unit: {}", educationalUnitId);
+        return ApiResponse.<Long>builder()
+                .result(teacherService.countByEducationalUnit(educationalUnitId))
+                .build();
+    }
 }

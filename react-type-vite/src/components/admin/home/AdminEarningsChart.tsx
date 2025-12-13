@@ -1,10 +1,33 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import educationUnitApi from "../../../services/api/admin/educationUnitApi"
 
 const AdminEarningsChart: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [internalStudentRatio, setInternalStudentRatio] = useState<number>(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchInternalStudentRatio = async () => {
+      try {
+        setLoading(true)
+        console.log("Fetching internal student ratio...")
+        const ratio = await educationUnitApi.getInternalStudentRatio()
+        console.log("Tỉ lệ học của sinh viên trong đơn vị đào tạo:", ratio)
+        setInternalStudentRatio(ratio)
+      } catch (error) {
+        console.error("Failed to fetch internal student ratio:", error)
+        console.error("Error details:", error instanceof Error ? error.message : JSON.stringify(error))
+        setInternalStudentRatio(0)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchInternalStudentRatio()
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -13,123 +36,122 @@ const AdminEarningsChart: React.FC = () => {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Set canvas size
+    // Retina scale
     canvas.width = canvas.offsetWidth * 2
     canvas.height = canvas.offsetHeight * 2
     ctx.scale(2, 2)
 
-    const data = [
-      { month: "Feb", value: 2909, x: 0 },
-      { month: "Mar", value: 1269, x: 1 },
-      { month: "Apr", value: 950, x: 2 },
-      { month: "May", value: 1563, x: 3 },
-      { month: "Jun", value: 1825, x: 4 },
-      { month: "Jul", value: 2526, x: 5 },
-      { month: "Aug", value: 2010, x: 6 },
-      { month: "Sep", value: 3260, x: 7 },
-      { month: "Oct", value: 3005, x: 8 },
-      { month: "Nov", value: 3680, x: 9 },
-      { month: "Dec", value: 4039, x: 10 },
-    ]
-
     const width = canvas.offsetWidth
     const height = canvas.offsetHeight
-    const padding = 60
-    const chartWidth = width - 2 * padding
-    const chartHeight = height - 2 * padding
 
-    // Clear canvas
+    // Clear
     ctx.clearRect(0, 0, width, height)
 
-    ctx.strokeStyle = "#e9ecef"
-    ctx.lineWidth = 1
-    for (let i = 0; i <= 8; i++) {
-      const y = padding + (i * chartHeight) / 8
-      ctx.beginPath()
-      ctx.moveTo(padding, y)
-      ctx.lineTo(width - padding, y)
-      ctx.stroke()
-    }
+    // Donut chart dimensions
+    const cx = width / 2
+    const cy = height / 2
+    const radius = Math.min(width, height) / 3
+    const innerRadius = radius * 0.62
 
-    ctx.fillStyle = "#6c757d"
-    ctx.font = "11px Arial"
-    ctx.textAlign = "right"
-    for (let i = 0; i <= 8; i++) {
-      const value = 4500 - i * 500 // From 4500 to 0
-      const y = padding + (i * chartHeight) / 8 + 4
-      ctx.fillText(value.toString(), padding - 10, y)
-    }
+    // Values
+    const internalPct = Math.max(0, Math.min(1, internalStudentRatio))
+    const externalPct = 1 - internalPct
 
-    const points = data.map((point, index) => ({
-      x: padding + (index * chartWidth) / (data.length - 1),
-      y: padding + chartHeight - (point.value / 4500) * chartHeight,
-      value: point.value,
-      month: point.month,
-    }))
+    // Colors
+    const internalColor = "#066ac9"
+    const externalColor = "#e9ecef"
 
-    ctx.fillStyle = "rgba(6, 106, 201, 0.15)"
+    // Draw external ring (background)
     ctx.beginPath()
-    ctx.moveTo(points[0].x, height - padding)
-    points.forEach((point) => {
-      ctx.lineTo(point.x, point.y)
-    })
-    ctx.lineTo(points[points.length - 1].x, height - padding)
-    ctx.closePath()
-    ctx.fill()
-
-    ctx.strokeStyle = "#066ac9"
-    ctx.lineWidth = 3
-    ctx.lineCap = "round"
-    ctx.lineJoin = "round"
-    ctx.beginPath()
-    points.forEach((point, index) => {
-      if (index === 0) {
-        ctx.moveTo(point.x, point.y)
-      } else {
-        ctx.lineTo(point.x, point.y)
-      }
-    })
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+    ctx.strokeStyle = externalColor
+    ctx.lineWidth = radius - innerRadius
     ctx.stroke()
 
-    points.forEach((point) => {
-      // Draw circle
-      ctx.fillStyle = "#066ac9"
-      ctx.beginPath()
-      ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI)
-      ctx.fill()
+    // Draw internal arc
+    const startAngle = -Math.PI / 2
+    const endAngle = startAngle + Math.PI * 2 * internalPct
+    ctx.beginPath()
+    ctx.arc(cx, cy, radius, startAngle, endAngle)
+    ctx.strokeStyle = internalColor
+    ctx.lineCap = "round"
+    ctx.lineWidth = radius - innerRadius
+    ctx.stroke()
 
-      // Draw white border around circle
-      ctx.strokeStyle = "#ffffff"
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI)
-      ctx.stroke()
-
-      // Draw value label above point
-      ctx.fillStyle = "#066ac9"
-      ctx.font = "bold 11px Arial"
-      ctx.textAlign = "center"
-      ctx.fillText(point.value.toString(), point.x, point.y - 12)
-    })
+    // Middle text
+    ctx.fillStyle = internalColor
+    ctx.font = "bold 22px Arial"
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
+    ctx.fillText(`${(internalPct * 100).toFixed(2)}%`, cx, cy - 6)
 
     ctx.fillStyle = "#6c757d"
-    ctx.font = "11px Arial"
-    ctx.textAlign = "center"
-    points.forEach((point) => {
-      ctx.fillText(point.month, point.x, height - padding + 20)
-    })
-  }, [])
+    ctx.font = "12px Arial"
+    ctx.fillText("Hoàn thành", cx, cy + 16)
+
+    // Legend
+    const legendX = cx
+    const legendY = cy + radius + 28
+    const gap = 110
+
+    // Internal legend
+    ctx.fillStyle = internalColor
+    ctx.fillRect(legendX - gap, legendY - 8, 14, 14)
+    ctx.fillStyle = "#334155"
+    ctx.font = "12px Arial"
+    ctx.textAlign = "left"
+    ctx.fillText(`Hoàn thành ${(internalPct * 100).toFixed(1)}%`, legendX - gap + 20, legendY + 3)
+
+    // External legend
+    ctx.fillStyle = externalColor
+    ctx.fillRect(legendX + 10, legendY - 8, 14, 14)
+    ctx.fillStyle = "#334155"
+    ctx.fillText(`Chưa hoàn thành ${(externalPct * 100).toFixed(1)}%`, legendX + 30, legendY + 3)
+  }, [internalStudentRatio])
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border h-full">
-      {/* Card header */}
-      <div className="p-4 border-b">
-        <h5 className="text-lg font-semibold text-gray-900 m-0">Earnings</h5>
+    <div className="space-y-4">
+      {/* Internal Student Ratio Card */}
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-4 border-b">
+          <h5 className="text-lg font-semibold text-gray-900 m-0">Tỉ lệ học của sinh viên trong đơn vị đào tạo</h5>
+        </div>
+        <div className="p-4">
+          {loading ? (
+            <div className="flex items-center justify-center h-20">
+              <span className="text-gray-600">Loading...</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm mb-2">
+                  Tỉ lệ trung bình sinh viên thuộc đơn vị đang học các khóa của đơn vị
+                </p>
+                <p className="text-gray-600 text-xs">
+                  (Tỉ lệ những học viên có cùng đơn vị đào tạo học khóa của đơn vị đó)
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-4xl font-bold text-blue-600">
+                  {(internalStudentRatio * 100).toFixed(2)}%
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Card body */}
-      <div className="p-4">
-        <canvas ref={canvasRef} className="w-full h-80" style={{ maxHeight: "320px" }} />
+      {/* Internal Ratio Breakdown */}
+      <div className="bg-white rounded-lg shadow-sm border h-full">
+        {/* Card header */}
+        <div className="p-4 border-b">
+          <h5 className="text-lg font-semibold text-gray-900 m-0">Phân tích tỉ lệ hoàn thành</h5>
+        </div>
+
+        {/* Card body */}
+        <div className="p-4">
+          <canvas ref={canvasRef} className="w-full h-80" style={{ maxHeight: "320px" }} />
+        </div>
       </div>
     </div>
   )

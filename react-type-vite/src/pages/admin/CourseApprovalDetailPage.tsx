@@ -16,6 +16,7 @@ import {
 import * as adminPublishedCourseApi from "@/services/api/admin/adminPublishedCourseApi";
 import type { PublishedCourseResponse } from "@/services/api/response/publishedCourseResponse";
 import ReadOnlySectionView from "@/components/admin/course/ReadOnlySectionView";
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 const CourseApprovalDetailPage = () => {
   const { publishedCourseId } = useParams<{ publishedCourseId: string }>();
@@ -188,7 +189,7 @@ const CourseApprovalDetailPage = () => {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {course.course.courseName}
+                {course.courseName}
               </h1>
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span className="flex items-center gap-1">
@@ -258,7 +259,7 @@ const CourseApprovalDetailPage = () => {
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Mô tả:</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.description}
+                    <MarkdownRenderer content={course.description} />
                   </p>
                 </div>
               )}
@@ -268,7 +269,7 @@ const CourseApprovalDetailPage = () => {
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Giới thiệu:</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.courseIntroduction}
+                    <MarkdownRenderer content={course.courseIntroduction} />
                   </p>
                 </div>
               )}
@@ -280,7 +281,7 @@ const CourseApprovalDetailPage = () => {
                     Thành tựu học viên:
                   </h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.learnerAchievements}
+                    <MarkdownRenderer content={course.learnerAchievements} />
                   </p>
                 </div>
               )}
@@ -292,7 +293,7 @@ const CourseApprovalDetailPage = () => {
                     Đối tượng học viên:
                   </h3>
                   <p className="text-gray-600 text-sm leading-relaxed">
-                    {course.courseLearner}
+                    <MarkdownRenderer content={course.courseLearner} />
                   </p>
                 </div>
               )}

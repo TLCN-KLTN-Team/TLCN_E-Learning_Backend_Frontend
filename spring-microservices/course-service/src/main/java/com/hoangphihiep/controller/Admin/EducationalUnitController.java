@@ -38,6 +38,15 @@ public class EducationalUnitController {
                 .result(institution)
                 .build();
     }
+    
+    @GetMapping("/internal-student-ratio")
+    public ApiResponse<Double> getInternalStudentRatio() {
+        String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
+        Double ratio = educationalUnitService.getAverageInternalStudentRatio(currentAdminId);
+        return ApiResponse.<Double>builder()
+                .result(ratio != null ? ratio : 0.0)
+                .build();
+    }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<EducationUnitRegistrationResponse>> registerEducationUnit(

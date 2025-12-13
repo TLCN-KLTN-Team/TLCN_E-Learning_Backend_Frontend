@@ -1,9 +1,54 @@
-import type React from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Star, Users, BookOpen, CheckCircle } from "lucide-react";
+import type React from "react"
+import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Star, Users, BookOpen, CheckCircle } from "lucide-react"
+import { useAuth } from "../../../context/auth-context/useAuth"
+import { getTeacherByUserId } from "../../../services/api/teacher/teacherApi"
+import { getTeacherStatistics } from "../../../services/api/teacher/teacherStatisticsApi"
+import type { TeacherResponse } from "../../../services/api/response/teacherResponse"
+import type { TeacherPublicStatisticsResponse } from "../../../services/api/teacher/teacherStatisticsApi"
 
 const ProfileBanner: React.FC = () => {
+  const { user } = useAuth()
+  const [teacher, setTeacher] = useState<TeacherResponse | null>(null)
+  const [stats, setStats] = useState<TeacherPublicStatisticsResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user?.id) {
+        console.log("No user id found")
+        return
+      }
+
+      try {
+        console.log("Loading teacher data for user:", user.id)
+        // Load teacher info
+        const teacherData = await getTeacherByUserId(user.id)
+        console.log("Teacher data:", teacherData)
+        setTeacher(teacherData)
+
+        // Load statistics
+        console.log("Loading statistics for teacherId:", teacherData.teacherId)
+        const statsData = await getTeacherStatistics(teacherData.teacherId)
+        console.log("Stats data:", statsData)
+        setStats(statsData)
+      } catch (error) {
+        console.error("Error loading teacher data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [user?.id])
+
+  const teacherName = teacher ? `${teacher.firstName} ${teacher.lastName}` : "Teacher"
+  const totalStudents = stats?.totalStudents ?? 0
+  const totalCourses = stats?.totalCourses ?? 0
+  const avgRating = stats?.averageCourseRating ?? 0
+
   return (
     <section className="pt-0">
       {/* Main banner background image */}
@@ -40,42 +85,35 @@ const ProfileBanner: React.FC = () => {
                   <div className="relative -mt-3">
                     <img
                       className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
-                      src="/src/assets/images/avatar/01.jpg?height=96&width=96"
+                      src={user?.avatarUrl || "/placeholder.svg"}
                       alt="Teacher Profile"
                     />
                   </div>
                   {/* Profile info */}
                   <div className="mt-4">
                     <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2 mb-1 text-gray-800">
-                      Lori Stevens
+                      {loading ? "Loading..." : teacherName}
                       <CheckCircle className="w-5 h-5 text-[#066ac9]" />
                     </h1>
-                    <ul className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-                      <li className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-[#f7c32e]" />
-                        <span className="font-light">4.5/5.0</span>
-                      </li>
-                      <li className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-[#fd7e14]" />
-                        <span className="font-light">
-                          12k Enrolled Students
-                        </span>
-                      </li>
-                      <li className="flex items-center gap-1">
-                        <BookOpen className="w-4 h-4 text-[#6f42c1]" />
-                        <span className="font-light">25 Courses</span>
-                      </li>
-                    </ul>
+                    {!loading && (
+                      <ul className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <li className="flex items-center gap-1">
+                          <Star className="w-4 h-4 text-[#f7c32e]" />
+                          <span className="font-light">{avgRating.toFixed(1)}/5.0</span>
+                        </li>
+                        <li className="flex items-center gap-1">
+                          <Users className="w-4 h-4 text-[#fd7e14]" />
+                          <span className="font-light">
+                            {totalStudents > 1000 ? (totalStudents / 1000).toFixed(1) + "k" : totalStudents} Enrolled Students
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-1">
+                          <BookOpen className="w-4 h-4 text-[#6f42c1]" />
+                          <span className="font-light">{totalCourses} Courses</span>
+                        </li>
+                      </ul>
+                    )}
                   </div>
-                </div>
-                {/* Button */}
-                <div className="flex items-center mt-2 md:mt-0">
-                  <Button
-                    asChild
-                    className="bg-[#0cbc87] hover:bg-[#08845f] text-white transition-all duration-300 hover:-translate-y-0.5 shadow-md"
-                  >
-                    <Link to="/teacher/create-course">Create a course</Link>
-                  </Button>
                 </div>
               </div>
             </div>
@@ -100,7 +138,7 @@ const ProfileBanner: React.FC = () => {
         </div>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default ProfileBanner;
+export default ProfileBanner

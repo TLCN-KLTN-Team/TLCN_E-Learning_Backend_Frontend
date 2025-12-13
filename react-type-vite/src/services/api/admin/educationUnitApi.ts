@@ -11,6 +11,14 @@ const getMyEducationalUnit = async (): Promise<EducationalUnitResponse> => {
   return response.data.result;
 };
 
+const getInternalStudentRatio = async (): Promise<number> => {
+  const response = await axiosInstance.get<ApiResponse<number>>(
+    `${PREFIX}/internal-student-ratio`
+  );
+  return response.data.result || 0;
+};
+
 export default {
   getMyEducationalUnit,
+  getInternalStudentRatio,
 };

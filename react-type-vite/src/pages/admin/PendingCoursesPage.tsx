@@ -17,6 +17,7 @@ import * as adminPublishedCourseApi from "@/services/api/admin/adminPublishedCou
 import type { PublishedCourseResponse } from "@/services/api/response/publishedCourseResponse";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 const PendingCoursesPage = () => {
   const navigate = useNavigate();
@@ -277,7 +278,7 @@ const PendingCoursesPage = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-xl font-semibold text-gray-900">
-                          {course.course.courseName}
+                          {course.courseName}
                         </h3>
                         {getStatusBadge(course.status)}
                       </div>
@@ -321,7 +322,7 @@ const PendingCoursesPage = () => {
                   {/* Description */}
                   {course.description && (
                     <p className="text-sm text-gray-700 mb-4 line-clamp-2">
-                      {course.description}
+                      <MarkdownRenderer content={course.description} />
                     </p>
                   )}
 
@@ -330,9 +331,7 @@ const PendingCoursesPage = () => {
                     <div className="text-sm text-gray-600">
                       Giảng viên:{" "}
                       <span className="font-medium">
-                        {course.course.teacher
-                          ? `${course.course.teacher.firstName} ${course.course.teacher.lastName}`
-                          : course.course.idTeacher}
+                        {course.authorName}
                       </span>
                     </div>
                     <button

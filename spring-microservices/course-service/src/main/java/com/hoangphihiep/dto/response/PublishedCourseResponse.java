@@ -21,6 +21,10 @@ public class PublishedCourseResponse {
 
     private CourseTypeResponse courseType;
 
+    private String courseName;
+
+    private String authorName;
+
     private String description;
 
     private String courseIntroduction;

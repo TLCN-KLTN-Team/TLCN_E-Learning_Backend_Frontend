@@ -11,6 +11,7 @@ export interface CourseDetailRequest {
 export interface PublishCourseRequest {
   courseId: number;
   courseTypeId: number;
+  courseName: string;
   description: string;
   courseIntroduction: string;
   courseImage: string;

@@ -9,6 +9,8 @@ import PublishedCourseService from "@/services/api/anonymous/course.api";
 import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
 import { decodeHTMLEntities } from "@/utils/htmlCleaner";
+import reviewApi from "@/services/api/user/reviewApi";
+import type { ReviewResponse, ReviewStatsResponse } from "@/services/api/response/reviewResponse";
 
 import CartService from "@/services/api/user/cart.api";
 import WishlistService from "@/services/api/user/wishlist.api";
@@ -29,6 +31,8 @@ const CourseDetail: React.FC = () => {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );
+  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
+  const [reviewStats, setReviewStats] = useState<ReviewStatsResponse | null>(null);
 
   const toggleSection = (sectionId: number) => {
     setExpandedSections((prev) => {
@@ -58,6 +62,14 @@ const CourseDetail: React.FC = () => {
             await PublishedCourseService.getPublishedCourseDetails(courseId);
           setCourse(courseData);
           console.log("Course Data:", courseData);
+
+          // Fetch reviews and stats
+          const [reviewsData, statsData] = await Promise.all([
+            reviewApi.getCourseReviews(Number(courseId)),
+            reviewApi.getCourseReviewStats(Number(courseId))
+          ]);
+          setReviews(reviewsData);
+          setReviewStats(statsData);
 
           // call if user signed in
           if (user) {
@@ -170,21 +182,21 @@ const CourseDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Site Header */}
-      <Header />
+      <Header variant="course-detail" />
 
       {/* Course Header Section - Dark Background like Udemy */}
-      <div className="bg-gray-900 pt-20">
+      <div className="bg-[#1c1d1f] pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-blue-400 mb-4">
             <span className="hover:text-blue-300 cursor-pointer">
               Development
             </span>
-            <span className="text-gray-500">›</span>
+            <span className="text-gray-400">›</span>
             <span className="hover:text-blue-300 cursor-pointer">
               Data Science
             </span>
-            <span className="text-gray-500">›</span>
+            <span className="text-gray-400">›</span>
             <span className="hover:text-blue-300 cursor-pointer">
               {course.category}
             </span>
@@ -524,13 +536,8 @@ const CourseDetail: React.FC = () => {
 
               <div className="space-y-4">
                 {/* Instructor Name Link */}
-                <a
-                  href="#"
-                  className="text-purple-600 font-semibold text-lg hover:underline"
-                >
-                  {course.instructorInfo?.instructorName ||
-                    course.authorName ||
-                    "Jobskillshare Community"}
+                <a href="#" className="text-purple-600 font-semibold text-lg hover:underline">
+                  {course.authorName || "Jobskillshare Community"}
                 </a>
                 <p className="text-gray-600 text-sm">
                   {course.instructorInfo?.instructorTagline ||
@@ -652,149 +659,102 @@ const CourseDetail: React.FC = () => {
               <div className="flex items-center gap-4">
                 <Star className="w-8 h-8 text-yellow-400 fill-current" />
                 <div>
-                  <h2
-                    className="tex
-                  t-2xl font-bold"
-                  >
-                    {course.rating} xếp hạng khóa học
+                  <h2 className="text-2xl font-bold">
+                    {reviewStats?.averageRating?.toFixed(1) || course.rating} xếp hạng khóa học
                   </h2>
-                  <p className="text-gray-600">5K ratings</p>
+                  <p className="text-gray-600">{reviewStats?.totalReviews || 0} đánh giá</p>
                 </div>
               </div>
 
               {/* Reviews List */}
-              <div className="space-y-6">
-                {[
-                  {
-                    id: "1",
-                    initial: "DT",
-                    studentName: "DATTA T.",
-                    rating: 5,
-                    comment:
-                      "this is one of the best course out there thank you Daqche IT and i am saying you are the best teacher for people must purchase this course it covers all the things which needs for",
-                    date: "a week ago",
-                  },
-                  {
-                    id: "2",
-                    initial: "HR",
-                    studentName: "Hareesh R.",
-                    rating: 4,
-                    comment:
-                      "Good teaching and give a good resources to learn from basics",
-                    date: "a week ago",
-                  },
-                  {
-                    id: "3",
-                    initial: "BM",
-                    studentName: "Bradley M.",
-                    rating: 4,
-                    comment:
-                      "Course was a good overview of a VARIETY of topics, some of which I had not worked with so it was gratifying to get some new information. Appreciated the concise format allowing us to",
-                    date: "3 weeks ago",
-                  },
-                  {
-                    id: "4",
-                    initial: "AS",
-                    studentName: "Ashley S.",
-                    rating: 3,
-                    comment:
-                      "Annoying audio volume fluctuations throughoutEXTREME perspective - it would have been better if it had gone through the content first even from the live classes only",
-                    date: "2 months ago",
-                  },
-                ].map((review) => (
-                  <div key={review.id} className="space-y-3">
-                    <div className="flex gap-4">
-                      {/* Avatar */}
-                      <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-sm font-bold">
-                          {review.initial}
-                        </span>
-                      </div>
+              {reviews.length > 0 ? (
+                <div className="space-y-6">
+                  {reviews.slice(0, 4).map((review) => {
+                    // Get initials from reviewer name
+                    const initials = review.createdByName
+                      ?.split(' ')
+                      .map(n => n[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2) || 'U';
+                    
+                    // Format date
+                    const reviewDate = new Date(review.createdAt);
+                    const now = new Date();
+                    const diffTime = Math.abs(now.getTime() - reviewDate.getTime());
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let timeAgo = '';
+                    if (diffDays < 7) {
+                      timeAgo = `${diffDays} ngày trước`;
+                    } else if (diffDays < 30) {
+                      timeAgo = `${Math.floor(diffDays / 7)} tuần trước`;
+                    } else if (diffDays < 365) {
+                      timeAgo = `${Math.floor(diffDays / 30)} tháng trước`;
+                    } else {
+                      timeAgo = `${Math.floor(diffDays / 365)} năm trước`;
+                    }
 
-                      {/* Review Content */}
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-sm">
-                            {review.studentName}
-                          </h4>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <svg
-                              className="w-5 h-5"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        {/* Rating and Date */}
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex items-center">
-                            {renderStars(review.rating)}
+                    return (
+                      <div key={review.id} className="space-y-3">
+                        <div className="flex gap-4">
+                          {/* Avatar */}
+                          <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-sm font-bold">{initials}</span>
                           </div>
-                          <span className="text-xs text-gray-500">
-                            {review.date}
-                          </span>
-                        </div>
-
-                        {/* Comment */}
-                        <p className="text-sm text-gray-700 mb-3">
-                          {review.comment}
-                        </p>
-
-                        {/* Show more button */}
-                        <button className="text-sm font-semibold text-gray-700 hover:text-gray-900 mb-3">
-                          Show more
-                        </button>
-
-                        {/* Helpful buttons */}
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className="text-gray-600">Helpful?</span>
-                          <button className="flex items-center gap-1 hover:text-purple-600">
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-                              />
-                            </svg>
-                          </button>
-                          <button className="flex items-center gap-1 hover:text-purple-600">
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
-                              />
-                            </svg>
-                          </button>
+                          
+                          {/* Review Content */}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className="font-bold text-sm">{review.createdByName}</h4>
+                              <button className="text-gray-400 hover:text-gray-600">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                </svg>
+                              </button>
+                            </div>
+                            
+                            {/* Rating and Date */}
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="flex items-center">
+                                {renderStars(review.rate)}
+                              </div>
+                              <span className="text-xs text-gray-500">{timeAgo}</span>
+                            </div>
+                            
+                            {/* Comment */}
+                            <p className="text-sm text-gray-700 mb-3">{review.content}</p>
+                            
+                            {/* Helpful buttons */}
+                            <div className="flex items-center gap-4 text-sm">
+                              <span className="text-gray-600">Hữu ích?</span>
+                              <button className="flex items-center gap-1 hover:text-purple-600">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                </svg>
+                              </button>
+                              <button className="flex items-center gap-1 hover:text-purple-600">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">Chưa có đánh giá nào cho khóa học này.</p>
+              )}
+              
               {/* Show all reviews button */}
-              <Button
-                variant="outline"
-                className="w-auto border-gray-900 font-semibold"
-              >
-                Show all reviews
-              </Button>
+              {reviews.length > 4 && (
+                <Button variant="outline" className="w-auto border-gray-900 font-semibold">
+                  Xem tất cả {reviews.length} đánh giá
+                </Button>
+              )}
             </div>
           </div>
 
