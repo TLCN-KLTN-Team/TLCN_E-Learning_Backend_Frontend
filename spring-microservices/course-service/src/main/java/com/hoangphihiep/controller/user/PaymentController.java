@@ -64,7 +64,7 @@ public class PaymentController {
 
     @PostMapping("/preview")
     public ApiResponse<?> previewPayment(@RequestBody OrderPreviewRequest request) {
-        var response = paymentService.getOrderPreview(request.getCourseIds());
+        var response = paymentService.getOrderPreview(request);
         return ApiResponse.success(
                 response,
                 "Preview order successfully"

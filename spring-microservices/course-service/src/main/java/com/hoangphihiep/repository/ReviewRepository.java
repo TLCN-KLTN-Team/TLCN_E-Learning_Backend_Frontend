@@ -35,4 +35,11 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     // Get average rating for all courses by teacher
     @Query("SELECT AVG(r.rate) FROM Review r WHERE r.course.course.idTeacher = :teacherId AND r.course.status = 2")
     Double getAverageRatingByTeacherId(@Param("teacherId") String teacherId);
+
+    @Query("""
+        SELECT r FROM Review r
+        WHERE r.rate >= 4 and LENGTH(r.content) >= 5
+        ORDER BY r.rate DESC, LENGTH(r.content) DESC , r.createdAt DESC
+    """)
+    List<Review> findTop5ByOrderByRateDescCreatedAtDesc(Pageable pageable);
 }

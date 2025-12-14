@@ -2,6 +2,7 @@ package com.hoangphihiep.controller;
 
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.service.EducationalUnitService;
+import com.hoangphihiep.service.ReviewService;
 import com.hoangphihiep.service.UserPublishedCourseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class HomeController {
     private final EducationalUnitService educationalUnitService;
     private final UserPublishedCourseService userPublishedCourseService;
+    private final ReviewService reviewService;
 
     @GetMapping("/educational-units")
     public ApiResponse<?> getAllEducationalUnits() {
@@ -45,6 +47,14 @@ public class HomeController {
         return ApiResponse.success(
                 userPublishedCourseService.getTop12BestSellingCourses(),
                 "Lay danh sach khoa hoc theo top best seller thanh cong"
+        );
+    }
+
+    @GetMapping("/reviews/top5")
+    public ApiResponse<?> getTop5Reviews(){
+        return ApiResponse.success(
+                reviewService.getTop5Reviews(),
+                "Lay danh sach 5 review tot nhat thanh cong"
         );
     }
 

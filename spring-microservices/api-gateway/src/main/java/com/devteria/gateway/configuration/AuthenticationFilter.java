@@ -52,8 +52,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                     "/course-management/anonymous/home/educational-units",
                     "/course-management/anonymous/home/educational-units/.*",
                     "/course-management/anonymous/home/courses/.*",
+<<<<<<< HEAD
                     "/course-management/anonymous/reviews/.*",
                     "/course-management/anonymous/teachers/.*"
+=======
+                    "/course-management/anonymous/home/reviews/.*"
+>>>>>>> 3ac5cc4 ((payment and order): Fix logic exchange currency while payment. Some change for anonymous role)
             )
     );
 
