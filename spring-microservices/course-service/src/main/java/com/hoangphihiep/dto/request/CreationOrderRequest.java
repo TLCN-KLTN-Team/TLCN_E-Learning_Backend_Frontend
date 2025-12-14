@@ -14,5 +14,6 @@ import java.util.Set;
 public class CreationOrderRequest {
     String orderId;
     Date createTime;
+    String currency;
     Set<CreationOrderItemRequest> orderItems;
 }

@@ -41,6 +41,8 @@ public class Order implements Serializable {
     @Builder.Default
     private BigDecimal amount = BigDecimal.ZERO;
 
+    private String paymentCurrency;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<OrderItem> orderItems = new HashSet<>();

@@ -91,7 +91,10 @@ const Payment: React.FC = () => {
         const courseIds = location.state?.courseIds as number[] | undefined;
 
         if (courseIds && courseIds.length > 0) {
-          const preview = await PaymentService.getOrderPreview({ courseIds });
+          const preview = await PaymentService.getOrderPreview({
+            courseIds,
+            currency: "VND",
+          });
           setOrderPreview(preview);
           console.log("Order preview data:", preview);
           setIsLoading(false);

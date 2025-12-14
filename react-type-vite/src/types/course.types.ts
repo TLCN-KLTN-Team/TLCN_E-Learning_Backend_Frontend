@@ -48,6 +48,13 @@ export interface TeacherInfo {
   totalCourses: number;
 }
 
+export interface ReviewCardResponse {
+  rate: number;
+  content: string;
+  createdByName: string;
+  createdByAvatar: string;
+}
+
 export interface PublishedCourseDetailResponse {
   courseName: string;
   description: string;

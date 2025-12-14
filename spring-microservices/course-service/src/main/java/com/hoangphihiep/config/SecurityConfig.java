@@ -38,8 +38,13 @@ public class SecurityConfig {
             "/anonymous/home/educational-units",
             "/anonymous/home/educational-units/**",
             "/anonymous/home/courses/**",
+<<<<<<< HEAD
             "/anonymous/reviews/**",
             "/anonymous/teachers/**",
+=======
+            "/anonymous/home/reviews/**",
+
+>>>>>>> 3ac5cc4 ((payment and order): Fix logic exchange currency while payment. Some change for anonymous role)
     };
 
     private static final String[] SWAGGER_ENDPOINTS = {
