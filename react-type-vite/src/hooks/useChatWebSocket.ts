@@ -136,7 +136,7 @@ export const useChatWebSocket = () => {
             console.log("Received public message:", chatMessage);
 
             // Set 'me' property based on current user
-            chatMessage.me = user?.id === chatMessage.sender.userId;
+            chatMessage.me = user?.id === chatMessage.sender.id;
 
             // Filter messages by channelId if needed
             if (chatMessage.channelId === channelId) {
@@ -177,7 +177,7 @@ export const useChatWebSocket = () => {
           console.log("Received direct message:", chatMessage);
 
           // Set 'me' property based on current user
-          chatMessage.me = user?.id === chatMessage.sender.userId;
+          chatMessage.me = user?.id === chatMessage.sender.id;
 
           setMessages((prev) => {
             const exists = prev.some((msg) => msg.id === chatMessage.id);
@@ -265,7 +265,7 @@ export const useChatWebSocket = () => {
                 .filter((msg) => msg.channelId === channelId)
                 .map((msg) => ({
                   ...msg,
-                  me: user?.id === msg.sender.userId,
+                  me: user?.id === msg.sender.id,
                 }));
 
               // Avoid duplicates

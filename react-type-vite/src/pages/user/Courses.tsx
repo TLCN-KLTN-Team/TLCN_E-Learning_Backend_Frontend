@@ -41,7 +41,7 @@ const Course: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(true);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories] = useState<string[]>([]);
 
   // Auto-completion state
   const [suggestions, setSuggestions] = useState<string[]>([]);

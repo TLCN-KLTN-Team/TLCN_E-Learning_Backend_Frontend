@@ -5,7 +5,7 @@ import type { ApiResponse } from "../response/apiResponse";
 const reviewApi = {
   // Get all reviews for a course
   getCourseReviews: async (courseId: number): Promise<ReviewResponse[]> => {
-    const url = `/course-management/user/reviews/course/${courseId}`;
+    const url = `/course-management/anonymous/reviews/course/${courseId}`;
     const response = await axiosInstance.get<ApiResponse<ReviewResponse[]>>(url);
     console.log("👉 Review API response:", response.data);         // In toàn bộ API
     console.log("👉 Review list:", response.data.result);           // In danh sách review
@@ -14,7 +14,7 @@ const reviewApi = {
 
   // Get review statistics for a course
   getCourseReviewStats: async (courseId: number): Promise<ReviewStatsResponse> => {
-    const url = `/course-management/user/reviews/course/${courseId}/stats`;
+    const url = `/course-management/anonymous/reviews/course/${courseId}/stats`;
     const response = await axiosInstance.get<ApiResponse<ReviewStatsResponse>>(url);
     return response.data.result;
   },

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { TrendingUp, Users, BookOpen, Wallet } from "lucide-react"
 import { useAuth } from "../../../context/auth-context/useAuth"
 import { getTeacherByUserId } from "../../../services/api/teacher/teacherApi"
@@ -10,43 +10,39 @@ import { getTeacherStatistics } from "../../../services/api/teacher/teacherStati
 import type { TeacherRevenueResponse } from "../../../services/api/teacher/revenueApi"
 import type { TeacherPublicStatisticsResponse } from "../../../services/api/teacher/teacherStatisticsApi"
 
-const useCounterAnimation = (end: number, duration = 2000) => {
-  const countRef = useRef<HTMLHeadingElement>(null)
+// const useCounterAnimation = (end: number, duration = 2000) => {
+//   const countRef = useRef<HTMLHeadingElement>(null)
 
-  useEffect(() => {
-    const element = countRef.current
-    if (!element) return
+//   useEffect(() => {
+//     const element = countRef.current
+//     if (!element) return
 
-    let startTime: number
-    const startValue = 0
+//     let startTime: number
+//     const startValue = 0
 
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime
-      const progress = Math.min((currentTime - startTime) / duration, 1)
+//     const animate = (currentTime: number) => {
+//       if (!startTime) startTime = currentTime
+//       const progress = Math.min((currentTime - startTime) / duration, 1)
 
-      const currentValue = Math.floor(progress * (end - startValue) + startValue)
-      element.textContent = currentValue.toString()
+//       const currentValue = Math.floor(progress * (end - startValue) + startValue)
+//       element.textContent = currentValue.toString()
 
-      if (progress < 1) {
-        requestAnimationFrame(animate)
-      }
-    }
+//       if (progress < 1) {
+//         requestAnimationFrame(animate)
+//       }
+//     }
 
-    requestAnimationFrame(animate)
-  }, [end, duration])
+//     requestAnimationFrame(animate)
+//   }, [end, duration])
 
-  return countRef
-}
+//   return countRef
+// }
 
 const StatsCards: React.FC = () => {
   const { user } = useAuth()
   const [revenue, setRevenue] = useState<TeacherRevenueResponse | null>(null)
   const [stats, setStats] = useState<TeacherPublicStatisticsResponse | null>(null)
   const [loading, setLoading] = useState(true)
-
-  const coursesRef = useCounterAnimation(stats?.totalCourses ?? 0, 2000)
-  const studentsRef = useCounterAnimation(stats?.totalStudents ?? 0, 2200)
-  const revenueRef = useCounterAnimation(Math.round((revenue?.totalRevenue ?? 0) / 1000), 2400)
 
   useEffect(() => {
     const loadData = async () => {

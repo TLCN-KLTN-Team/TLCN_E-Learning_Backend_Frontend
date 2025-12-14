@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, User, UserCheck, UserX, ChevronDown, Search, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import * as teacherApi from "@/services/api/admin/teacherApi";
 import * as courseApi from "@/services/api/admin/courseApi";
 import { toast } from "react-toastify";

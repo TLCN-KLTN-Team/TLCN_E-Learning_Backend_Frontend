@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState} from "react";
 import { X, User, Mail, Phone, MapPin, Calendar, Save } from "lucide-react";
 import type { UserResponse } from "@/services/api/response/userResponse";
 import { getUserFullName } from "../data/AccountData";
@@ -18,8 +18,8 @@ const EditAccountModal: React.FC<EditAccountModalProps> = ({
     firstName: account.firstName || "",
     lastName: account.lastName || "",
     email: account.email || "",
-    phoneNumber: account.phoneNumber || "",
-    address: account.address || "",
+    phoneNumber:"",
+    address: "",
     dob: account.dob || "",
   });
 

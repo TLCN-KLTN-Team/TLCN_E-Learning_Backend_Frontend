@@ -152,7 +152,7 @@ public class PaymentService {
             // Setup amount
             AmountWithBreakdown amountWithBreakdown = new AmountWithBreakdown()
                     .currencyCode(paymentRequest.getCurrency())
-                    .value(String.format("%.2f",paymentRequest.getAmount()));
+                    .value(String.format(Locale.US,"%.2f",paymentRequest.getAmount()));
 
             // Purchase unit
             PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest()

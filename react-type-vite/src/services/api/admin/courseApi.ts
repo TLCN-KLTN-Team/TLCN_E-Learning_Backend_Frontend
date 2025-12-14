@@ -38,7 +38,6 @@ export const getCourses = async (
     last: result.last,
     hasNext: result.number < result.totalPages - 1,
     hasPrevious: result.number > 0,
-    number: result.number,
   };
 };
 

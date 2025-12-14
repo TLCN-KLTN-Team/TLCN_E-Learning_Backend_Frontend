@@ -38,7 +38,7 @@ const TeacherListPage: React.FC = () => {
   const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
   const [currentEducationalUnit, setCurrentEducationalUnit] =
     useState<EducationalUnitResponse | null>(null);
-  const [educationalUnitId, setEducationalUnitId] = useState<string | null>(
+  const [educationalUnitId, setEducationalUnitId] = useState<number | null>(
     null
   );
 

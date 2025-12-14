@@ -11,7 +11,7 @@ interface LessonDetailModalProps {
 }
 
 const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }: LessonDetailModalProps) => {
-  const [lesson, setLesson] = useState<LessonResponse | null>(initialLesson || null);
+  const [lesson] = useState<LessonResponse | null>(initialLesson || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

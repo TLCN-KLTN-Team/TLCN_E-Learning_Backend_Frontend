@@ -97,8 +97,13 @@ export const convertQuizResponseToRequest = (quiz: QuizResponse): QuizRequest =>
     numberItem: quiz.numberItem,
     showResults: quiz.showResults,
     isPublished: quiz.isPublished,
-    startTime: quiz.startTime instanceof Date ? quiz.startTime.toISOString() : (quiz.startTime as any) ?? undefined,
-    endTime: quiz.endTime instanceof Date ? quiz.endTime.toISOString() : (quiz.endTime as any) ?? undefined,
+    startTime: quiz.startTime
+  ? new Date(quiz.startTime).toISOString()
+  : undefined,
+
+endTime: quiz.endTime
+  ? new Date(quiz.endTime).toISOString()
+  : undefined,
     questions: questionsArray,
     createdAt: quiz.createdAt instanceof Date ? quiz.createdAt.toISOString() : quiz.createdAt,
     updateAt: quiz.updateAt instanceof Date ? quiz.updateAt.toISOString() : quiz.updateAt,

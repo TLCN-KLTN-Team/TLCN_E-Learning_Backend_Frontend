@@ -120,7 +120,6 @@ public class CourseService {
         try {
             Course course = new Course();
             course.setCourseName(request.getCourseName());
-            course.setIdTeacher(request.getIdTeacher());
             course.setEducationalUnit(educationalUnit);
             course.setCreatedAt(new Date());
             course.setUpdatedAt(new Date());

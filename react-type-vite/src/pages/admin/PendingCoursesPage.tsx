@@ -27,9 +27,9 @@ const PendingCoursesPage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [selectedTab, setSelectedTab] = useState<"pending" | "all">("pending");
-  const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
-  const [currentEducationalUnit, setCurrentEducationalUnit] =
-    useState<EducationalUnitResponse | null>(null);
+  const [, setEducationalUnitLoading] = useState(false);
+  const [, setCurrentEducationalUnit] =
+  useState<EducationalUnitResponse | null>(null);
   const [educationalUnitId, setEducationalUnitId] = useState<number | null>(
     null
   );
