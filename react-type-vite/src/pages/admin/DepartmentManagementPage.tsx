@@ -43,9 +43,6 @@ const DepartmentManagementPage: React.FC = () => {
     useState<DepartmentResponse | null>(null);
 
   // Detail modal state
-  const [selectedDepartment, setSelectedDepartment] =
-    useState<DepartmentResponse | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Initialize educationalUnit
   useEffect(() => {
@@ -150,11 +147,6 @@ const DepartmentManagementPage: React.FC = () => {
   const handleCloseModal = () => {
     setShowDepartmentModal(false);
     setEditingDepartment(null);
-  };
-
-  const handleViewDetails = (department: DepartmentResponse) => {
-    setSelectedDepartment(department);
-    setShowDetailModal(true);
   };
 
   // Pagination handlers

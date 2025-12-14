@@ -4,7 +4,6 @@ import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { ArrowUp, ArrowDown } from "lucide-react"
 import { useAuth } from "../../../context/auth-context/useAuth"
-import { getTeacherByUserId } from "../../../services/api/teacher/teacherApi"
 import { getTeacherRevenue } from "../../../services/api/teacher/revenueApi"
 import type { TeacherRevenueResponse } from "../../../services/api/teacher/revenueApi"
 
@@ -19,7 +18,6 @@ const EarningsChart: React.FC = () => {
       if (!user?.id) return
 
       try {
-        const teacherData = await getTeacherByUserId(user.id)
         const revenueData = await getTeacherRevenue()
         setRevenue(revenueData)
       } catch (error) {

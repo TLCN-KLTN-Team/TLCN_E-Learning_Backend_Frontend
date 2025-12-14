@@ -1,9 +1,12 @@
-export enum AccountStatus {
-  PENDING_VERIFICATION = "PENDING_VERIFICATION",
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-  BANNED = "BANNED",
-}
+export const AccountStatus = {
+  PENDING_VERIFICATION: "PENDING_VERIFICATION",
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+  BANNED: "BANNED",
+} as const;
+
+export type AccountStatus =
+  typeof AccountStatus[keyof typeof AccountStatus];
 
 export const ACCOUNT_STATUS_LABELS: Record<AccountStatus, string> = {
   [AccountStatus.PENDING_VERIFICATION]: "Chờ xác thực",

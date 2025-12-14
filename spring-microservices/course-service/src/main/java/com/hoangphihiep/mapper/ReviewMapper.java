@@ -19,11 +19,13 @@ public class ReviewMapper {
     
     public ReviewResponse toReviewResponse(Review review) {
         String userName = review.getCreatedById();
+        String userAvatar = null;
 
         try {
             UserResponse userResponse = userInfoApi.getUserInfo(review.getCreatedById()).getResult();
             if (userResponse != null) {
                 userName = userResponse.getUsername();
+                userAvatar = userResponse.getAvatarUrl();
                 System.out.println("tên của user: " + userName);
             }
         } catch (Exception e) {
@@ -38,6 +40,7 @@ public class ReviewMapper {
                 .courseName(review.getCourse().getCourseName())
                 .createdById(review.getCreatedById())
                 .createdByName(userName)
+            .createdByAvatar(userAvatar)
                 .createdAt(review.getCreatedAt())
                 .build();
     }

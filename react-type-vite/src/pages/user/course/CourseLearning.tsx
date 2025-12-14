@@ -1214,7 +1214,11 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
       {/* Course Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">{course.courseName}</h1>
-        <p className="text-xl text-gray-600 leading-relaxed">{course.description}</p>
+        {course.description && (
+          <div className="text-xl text-gray-600 leading-relaxed">
+            <MarkdownRenderer content={course.description} />
+          </div>
+        )}
       </div>
 
       {/* Course Stats */}
@@ -1257,7 +1261,7 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Bạn sẽ học được gì</h2>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{course.whatYouWillLearn}</p>
+            <MarkdownRenderer content={course.whatYouWillLearn} />
           </div>
         </div>
       )}
@@ -1267,7 +1271,7 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Yêu cầu</h2>
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{course.requirements}</p>
+            <MarkdownRenderer content={course.requirements} />
           </div>
         </div>
       )}
@@ -1277,12 +1281,12 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Khóa học này dành cho ai</h2>
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{course.targetAudience}</p>
+            <MarkdownRenderer content={course.targetAudience} />
           </div>
         </div>
       )}
 
-      {/* Instructor Info */}
+        {/* Teacher Info */}
       {course.instructorName && (
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6">
           <h2 className="text-2xl font-bold mb-4">Giảng viên</h2>
@@ -1365,7 +1369,7 @@ const AnnouncementsTab: React.FC = () => {
     <div className="text-center py-12">
       <h2 className="text-2xl font-bold mb-4">No announcements posted yet</h2>
       <p className="text-gray-600 max-w-2xl mx-auto">
-        The instructor hasn't added any announcements to this course yet. Announcements are used to inform you of updates or additions to the course.
+        The teacher hasn't added any announcements to this course yet. Announcements are used to inform you of updates or additions to the course.
       </p>
     </div>
   )
@@ -1941,7 +1945,6 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
           </div>
         </div>
       )}
-
       {/* Video Info */}
       {lesson.videoUrl && (
         <div className="mb-8 bg-gray-50 border rounded-lg p-6">

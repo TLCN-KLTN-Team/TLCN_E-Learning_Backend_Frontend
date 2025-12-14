@@ -19,7 +19,7 @@ interface DiscussionSectionProps {
   itemTitle: string;
 }
 
-const DiscussionSection = ({ itemType, itemId, itemTitle }: DiscussionSectionProps) => {
+const DiscussionSection = ({ itemType, itemId}: DiscussionSectionProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);

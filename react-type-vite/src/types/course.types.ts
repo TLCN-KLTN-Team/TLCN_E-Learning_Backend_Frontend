@@ -35,7 +35,7 @@ export interface CompletionSuggestionResponse {
   titleSuggestions: string[];
 }
 
-export interface InstructorInfo {
+export interface TeacherInfo {
   instructorId: string;
   instructorName: string;
   instructorAvatar: string | null;
@@ -59,6 +59,7 @@ export interface PublishedCourseDetailResponse {
   rating: number;
   studentCount: number;
   duration: number;
+  lastUpdated?: string;
   authorName: string;
   thumbnailUrl: string;
   coursePrice: string;
@@ -69,7 +70,7 @@ export interface PublishedCourseDetailResponse {
   courseVideo?: string; // Video preview URL from published_course
   sections?: PublishedSectionResponse[]; // Published sections
   courseTarget?: string[]; // Learning objectives list
-  instructorInfo?: InstructorInfo; // Instructor detailed information
+  teacherInfo?: TeacherInfo; // Teacher detailed information
 }
 
 export interface PublishedSectionResponse {

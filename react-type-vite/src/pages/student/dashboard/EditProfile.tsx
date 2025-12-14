@@ -12,7 +12,7 @@ import EnrolledClassCourses from "@/components/shared/profile/EnrolledClassCoure
 
 const EditProfile = () => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const handleSaveProfile = async () => {};
 
@@ -38,7 +38,7 @@ const EditProfile = () => {
 
         <div className="grid grid-cols-2 space-x-2 bg-white border rounded-lg shadow-md mt-8">
           <PaymentHistory payments={[]} />
-          <ChangePassword onChangePassword={() => {}} isLoading={isLoading} />
+          <ChangePassword isLoading={isLoading} />
         </div>
       </div>
     </div>

@@ -14,7 +14,7 @@ import { clearAutoSave, saveToLocalStorage } from "@/utils/autoSaveUtils"
 
 interface CourseBuilderProps {
   courseId: string
-  educationalUnitId: string
+  educationalUnitId: number
   sections: SectionResponse[]
   onSectionsChange: (sections: SectionResponse[]) => void
   onBack: () => void
@@ -169,9 +169,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections,educat
 
   // Sort sections by orderIndex
   const sortedSections = [...sections].sort((a, b) => a.orderIndex - b.orderIndex)
-
-  // Calculate statistics
-  const publishedSections = sections.filter((s) => s.isPublished).length
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Star, Users, Clock, CheckCircle, User, Heart } from "lucide-react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Star, Users, Clock, CheckCircle} from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import { LoadingDots } from "../../../components/ui/LoadingDots";
@@ -25,9 +25,8 @@ const CourseDetail: React.FC = () => {
     null
   );
   const [loading, setLoading] = useState(true);
-  const [isInWishlist, setIsInWishlist] = useState(false);
+  //const [ setIsInWishlist] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
-  const [hoursLeft] = useState(5);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );
@@ -73,13 +72,13 @@ const CourseDetail: React.FC = () => {
 
           // call if user signed in
           if (user) {
-            const [inCart, inWishlist] = await Promise.all([
+            const [inCart] = await Promise.all([
               CartService.checkPublishedCourseInCart(Number(courseId)),
               WishlistService.checkPublishedCourseInWishlist(Number(courseId)),
             ]);
 
             setIsInCart(inCart);
-            setIsInWishlist(inWishlist);
+            // setIsInWishlist(inWishlist);
           }
         }
       } catch (error) {
@@ -119,24 +118,24 @@ const CourseDetail: React.FC = () => {
     navigate(`/course/${courseId}/learn`);
   };
 
-  const handleAddToWishlist = async () => {
-    try {
-      if (isInWishlist) {
-        // Remove from wishlist
-        await WishlistService.removeFromWishlist(Number(courseId));
-        setIsInWishlist(false);
-        toast.success("Đã xóa khỏi danh sách yêu thích!");
-      } else {
-        // Add to wishlist
-        await WishlistService.addToWishlist(Number(courseId));
-        setIsInWishlist(true);
-        toast.success("Đã thêm vào danh sách yêu thích!");
-      }
-    } catch (error) {
-      console.error("Error toggling wishlist:", error);
-      toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
-    }
-  };
+  // const handleAddToWishlist = async () => {
+  //   try {
+  //     if (isInWishlist) {
+  //       // Remove from wishlist
+  //       await WishlistService.removeFromWishlist(Number(courseId));
+  //       setIsInWishlist(false);
+  //       toast.success("Đã xóa khỏi danh sách yêu thích!");
+  //     } else {
+  //       // Add to wishlist
+  //       await WishlistService.addToWishlist(Number(courseId));
+  //       setIsInWishlist(true);
+  //       toast.success("Đã thêm vào danh sách yêu thích!");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error toggling wishlist:", error);
+  //     toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
+  //   }
+  // };
 
   const handleCartAction = async () => {
     try {
@@ -221,45 +220,42 @@ const CourseDetail: React.FC = () => {
               Bestseller
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-yellow-400 font-bold">{course.rating}</span>
+              <span className="text-yellow-400 font-bold">{course.rating.toFixed(1)}</span>
               <div className="flex items-center">
                 {renderStars(course.rating)}
               </div>
-              <span className="font-medium">{course.rating}</span>
-              <span className="text-gray-500">(0 reviews)</span>
+              <span className="text-gray-500">({reviewStats?.totalReviews} reviews)</span>
             </div>
 
-            {/* <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-            </div>
-
-              <span>{course.studentCount.toLocaleString()} students</span>
-            </div> */}
+            
 
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               <span>{course.duration}</span>
             </div>
-            <span>167,760 students</span>
+            <span>{(course.studentCount)?.toLocaleString()} students</span>
           </div>
 
           {/* Creator and Updated Info */}
           <div className="flex items-center gap-4 text-sm text-gray-300">
             <span>
               Created by{" "}
-              <span className="text-blue-400 underline">
-                {course.authorName}
-              </span>
+              {course.teacherInfo?.instructorId ? (
+                <Link
+                  to={`/teacher/${course.teacherInfo.instructorId}`}
+                  className="relative z-10 text-blue-400 underline hover:text-blue-300 transition-colors"
+                >
+                  {course.authorName}
+                </Link>
+              ) : (
+                <span className="text-blue-400 underline">{course.authorName}</span>
+              )}
             </span>
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              <span>Last updated 11/2025</span>
+              <span>Last updated {course.lastUpdated}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span>🌐</span>
-              <span>English [Auto], Arabic [Auto], +20 more</span>
-            </div>
-          </div>
+        </div>
         </div>
       </div>
 
@@ -530,33 +526,40 @@ const CourseDetail: React.FC = () => {
               />
             </div>
 
-            {/* Instructor */}
+            {/* Teacher */}
             <div className="space-y-6">
               <h2 className="text-2xl font-bold">Giảng viên</h2>
 
               <div className="space-y-4">
-                {/* Instructor Name Link */}
-                <a href="#" className="text-purple-600 font-semibold text-lg hover:underline">
+                {/* Teacher Name Link */}
+                <button
+                  onClick={() => {
+                    if (course.teacherInfo?.instructorId) {
+                      navigate(`/teacher/${course.teacherInfo.instructorId}`);
+                    }
+                  }}
+                  className="text-purple-600 font-semibold text-lg hover:underline text-left"
+                >
                   {course.authorName || "Jobskillshare Community"}
-                </a>
+                </button>
                 <p className="text-gray-600 text-sm">
-                  {course.instructorInfo?.instructorTagline ||
+                  {course.teacherInfo?.instructorTagline ||
                     "Learn IT, Practice IT, Do IT"}
                 </p>
 
-                {/* Instructor Avatar and Stats */}
+                {/* Teacher Avatar and Stats */}
                 <div className="flex gap-6">
                   {/* Avatar */}
                   <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {course.instructorInfo?.instructorAvatar ? (
+                    {course.teacherInfo?.instructorAvatar ? (
                       <img
-                        src={course.instructorInfo.instructorAvatar}
-                        alt={course.instructorInfo.instructorName}
+                        src={course.teacherInfo.instructorAvatar}
+                        alt={course.teacherInfo.instructorName}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <span className="text-4xl font-bold text-gray-700">
-                        {course.instructorInfo?.instructorName
+                        {course.teacherInfo?.instructorName
                           ?.split(" ")
                           .map((n) => n[0])
                           .join("")
@@ -570,9 +573,9 @@ const CourseDetail: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Star className="w-4 h-4" />
                       <span className="font-medium">
-                        {course.instructorInfo?.instructorRating?.toFixed(1) ||
+                        {course.teacherInfo?.instructorRating?.toFixed(1) ||
                           "0.0"}{" "}
-                        Instructor Rating
+                        Teacher Rating
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -590,7 +593,7 @@ const CourseDetail: React.FC = () => {
                         />
                       </svg>
                       <span className="font-medium">
-                        {course.instructorInfo?.totalReviews?.toLocaleString() ||
+                        {course.teacherInfo?.totalReviews?.toLocaleString() ||
                           "0"}{" "}
                         Reviews
                       </span>
@@ -598,7 +601,7 @@ const CourseDetail: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4" />
                       <span className="font-medium">
-                        {course.instructorInfo?.totalStudents?.toLocaleString() ||
+                        {course.teacherInfo?.totalStudents?.toLocaleString() ||
                           "0"}{" "}
                         Students
                       </span>
@@ -624,29 +627,29 @@ const CourseDetail: React.FC = () => {
                         />
                       </svg>
                       <span className="font-medium">
-                        {course.instructorInfo?.totalCourses || "0"} Courses
+                        {course.teacherInfo?.totalCourses || "0"} Courses
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Instructor Bio */}
-                {course.instructorInfo?.instructorBio && (
+                {/* Teacher Bio */}
+                {course.teacherInfo?.instructorBio && (
                   <div className="text-sm text-gray-700 space-y-3">
-                    <p>{course.instructorInfo.instructorBio}</p>
+                    <p>{course.teacherInfo.instructorBio}</p>
                   </div>
                 )}
 
                 {/* Social URL Link */}
-                {course.instructorInfo?.socialUrl && (
+                {course.teacherInfo?.socialUrl && (
                   <div className="pt-2">
                     <a
-                      href={course.instructorInfo.socialUrl}
+                      href={course.teacherInfo.socialUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-purple-600 hover:underline text-sm font-medium"
                     >
-                      Visit Instructor Website →
+                      Visit Teacher Website →
                     </a>
                   </div>
                 )}
@@ -699,8 +702,16 @@ const CourseDetail: React.FC = () => {
                       <div key={review.id} className="space-y-3">
                         <div className="flex gap-4">
                           {/* Avatar */}
-                          <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-white text-sm font-bold">{initials}</span>
+                          <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {review.createdByAvatar ? (
+                              <img
+                                src={review.createdByAvatar}
+                                alt={review.createdByName || "Reviewer"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-white text-sm font-bold">{initials}</span>
+                            )}
                           </div>
                           
                           {/* Review Content */}
@@ -764,7 +775,6 @@ const CourseDetail: React.FC = () => {
               {/* Video Preview */}
               <div className="relative group cursor-pointer">
                 {course.courseVideo ? (
-                  /* Real video player */
                   <video
                     className="w-full h-52 object-cover"
                     poster={course.thumbnailUrl}
@@ -775,7 +785,6 @@ const CourseDetail: React.FC = () => {
                     Your browser does not support the video tag.
                   </video>
                 ) : (
-                  /* Fallback to thumbnail with play button */
                   <>
                     <img
                       src={course.thumbnailUrl}
@@ -796,34 +805,15 @@ const CourseDetail: React.FC = () => {
 
               {/* Pricing Section */}
               <div className="p-6">
-                <div className="mb-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-3xl font-bold text-gray-900">
-                      {course.coursePrice}
-                    </span>
-                    <span className="text-lg text-gray-400 line-through">
-                      {(() => {
-                        // Extract number from formatted price string (e.g., "₫1,000,000" -> 1000000)
-                        const priceNumber = parseFloat(
-                          course.coursePrice.replace(/[^0-9.]/g, "")
-                        );
-                        if (!isNaN(priceNumber)) {
-                          return `₫${(priceNumber * 1.32).toLocaleString(
-                            "vi-VN"
-                          )}`;
-                        }
-                        return course.coursePrice;
-                      })()}
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      24% off
-                    </span>
+                {!course.purchaserStatus && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-3xl font-bold text-gray-900">
+                        {course.coursePrice}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
-                    <Clock className="w-4 h-4" />
-                    <span>{hoursLeft} hours left at this price!</span>
-                  </div>
-                </div>
+                )}
 
                 <div className="space-y-3 mb-6 w-full">
                   {/* Main Action Button */}
@@ -832,7 +822,7 @@ const CourseDetail: React.FC = () => {
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg font-semibold"
                       onClick={handleCartAction}
                     >
-                      {isInCart ? "To cart" : "Add to cart"}
+                      {isInCart ? "Tới giỏ hàng" : "Thêm vào giỏ hàng"}
                     </Button>
                   ) : (
                     <Button
@@ -856,68 +846,9 @@ const CourseDetail: React.FC = () => {
 
                   {/* 30-Day Money-Back Guarantee */}
                   <p className="text-center text-xs text-gray-600">
-                    30-Day Money-Back Guarantee
+                    7 ngày hoàn tiền 
                   </p>
                 </div>
-
-                {/* Share and Coupon */}
-                <div className="mb-6 flex items-center">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <button className="text-sm font-medium hover:text-blue-600">
-                        Share
-                      </button>
-                      <button className="text-sm font-medium hover:text-blue-600">
-                        Gift this course
-                      </button>
-                      <button className="text-sm font-medium hover:text-blue-600">
-                        Apply Coupon
-                      </button>
-                    </div>
-                    {!course.purchaserStatus && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-gray-100"
-                        onClick={handleAddToWishlist}
-                      >
-                        <Heart
-                          className={`w-6 h-6 ${
-                            isInWishlist
-                              ? "fill-red-600 text-red-600"
-                              : "text-gray-900"
-                          }`}
-                        />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Subscription Promo */}
-                <div className="border-t pt-4">
-                  <p className="text-xs font-bold mb-2">
-                    Subscribe to Udemy's top courses
-                  </p>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Get this course, plus 26,000+ of our top-rated courses, with
-                    Personal Plan.{" "}
-                    <a href="#" className="text-blue-600 underline">
-                      Learn more
-                    </a>
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="w-full border-gray-900 hover:bg-gray-50 font-semibold"
-                  >
-                    Start subscription
-                  </Button>
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Starting at ₫280,000 per month
-                    <br />
-                    Cancel anytime
-                  </p>
-                </div>
-
                 {/* Course Info */}
                 <div className="space-y-3 text-sm pt-6 border-t mt-6">
                   <h3 className="font-bold text-base mb-4">

@@ -1,7 +1,5 @@
 import type React from "react"
 import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
 import { Star, Users, BookOpen, CheckCircle } from "lucide-react"
 import { useAuth } from "../../../context/auth-context/useAuth"
 import { getTeacherByUserId } from "../../../services/api/teacher/teacherApi"

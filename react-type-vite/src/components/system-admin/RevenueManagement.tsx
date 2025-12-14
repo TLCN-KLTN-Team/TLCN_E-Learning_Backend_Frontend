@@ -4,7 +4,6 @@ import {
   DollarSign,
   TrendingUp,
   Users,
-  BookOpen,
   ShoppingCart,
   Loader2,
 } from "lucide-react";

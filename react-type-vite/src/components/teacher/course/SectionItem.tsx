@@ -30,7 +30,7 @@ interface SectionItemProps {
   section: SectionResponse
   index: number
   courseId: string
-  educationalUnitId: string
+  educationalUnitId: number
   onUpdate: (section: SectionResponse) => void
   onDelete: (sectionId: number) => void
   onReorder: (fromIndex: number, toIndex: number) => void

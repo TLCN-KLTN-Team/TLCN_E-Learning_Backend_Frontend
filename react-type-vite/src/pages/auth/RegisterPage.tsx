@@ -47,7 +47,7 @@ const RegisterPage = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<FormErrors>({} as FormErrors);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [currentStep, setCurrentStep] = useState<string>("register");
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
@@ -166,7 +166,7 @@ const RegisterPage = () => {
     e.preventDefault();
 
     // Validate all fields
-    const newErrors: FormErrors = {};
+    const newErrors: FormErrors = { } as FormErrors;
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key as keyof RegisterData]);
       if (error) {

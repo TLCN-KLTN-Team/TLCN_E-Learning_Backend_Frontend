@@ -14,8 +14,8 @@ export const StudentDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("course_name");
   const [filterBy, setFilterBy] = useState("all");
-  const [pageNumber, setPageNumber] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageNumber] = useState(0);
+  const [pageSize] = useState(10);
 
   // Filter courses based on search and filter
   const filteredCourses = courses.filter((course: EnrolledCoursesResponse) => {

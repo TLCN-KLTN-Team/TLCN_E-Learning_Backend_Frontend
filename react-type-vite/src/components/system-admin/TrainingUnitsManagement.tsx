@@ -4,7 +4,6 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { LoadingDots } from "../ui/LoadingDots";
 
-import TraningUnitItem from "./item/TraningUnitItem";
 import SubmissionModal from "./modals/SubmissionModal";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import { toast } from "react-toastify";
@@ -15,7 +14,7 @@ import type { PaginationState } from "@/utils/paginationUtils";
 import EducationalUnitService from "@/services/api/superadmin/educationalUnit.api";
 
 const TrainingUnitsManagement: React.FC = () => {
-  const [units, setUnits] = useState<EducationalUnitResponse[]>([]);
+  // const [setUnits] = useState<EducationalUnitResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Pagination state using paginationUtils
@@ -42,21 +41,21 @@ const TrainingUnitsManagement: React.FC = () => {
   // Get pagination display text
   const paginationText = paginationUtils.getPaginationText(paginationState);
 
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [selectedUnitData, setSelectedUnitData] =
+  // const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [selectedUnitData] =
     useState<EducationalUnitResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [modalRef, setModalRef] = useState<HTMLDivElement | null>(null);
 
-  const handleShowDetails = (unitId: number) => {
-    const unitData = units.find((unit) => unit.id === unitId) || null;
-    setSelectedUnitData(unitData);
-    setShowDetailModal(true);
-  };
+  // const handleShowDetails = (unitId: number) => {
+  //   const unitData = units.find((unit) => unit.id === unitId) || null;
+  //   setSelectedUnitData(unitData);
+  //   setShowDetailModal(true);
+  // };
 
-  const handleDropdownToggle = (unitId: string | null) => {
-    setOpenDropdown(unitId);
-  };
+  // const handleDropdownToggle = (unitId: string | null) => {
+  //   setOpenDropdown(unitId);
+  // };
 
   // Fetch units data
   useEffect(() => {
@@ -64,7 +63,7 @@ const TrainingUnitsManagement: React.FC = () => {
       setIsLoading(true);
       try {
         const data = await EducationalUnitService.getAllEducationalUnits();
-        setUnits(data.content);
+        // setUnits(data.content);
         console.log(data);
 
         // Update pagination state using paginationUtils
@@ -140,17 +139,17 @@ const TrainingUnitsManagement: React.FC = () => {
                 <th className={headerStyles}>Thao tác</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            {/* <tbody className="bg-white divide-y divide-gray-200">
               {units.map((unit) => (
-                <TraningUnitItem
-                  key={unit.id}
-                  unit={unit}
-                  onRowClick={handleShowDetails}
-                  openDropdown={openDropdown}
-                  onDropdownToggle={handleDropdownToggle}
-                />
+                // <TraningUnitItem
+                //   key={unit.id}
+                //   unit={unit}
+                //   // onRowClick={handleShowDetails}
+                //   openDropdown={openDropdown}
+                //   onDropdownToggle={handleDropdownToggle}
+                // />
               ))}
-            </tbody>
+            </tbody> */}
           </table>
         </div>
 

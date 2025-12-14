@@ -15,7 +15,7 @@ interface AssignmentVisibilityModalProps {
   assignmentId: number
   assignmentTitle: string
   courseId: number
-  educationalUnitId: string
+  educationalUnitId: number
 }
 
 const AssignmentVisibilityModal: React.FC<AssignmentVisibilityModalProps> = ({
@@ -45,7 +45,7 @@ const AssignmentVisibilityModal: React.FC<AssignmentVisibilityModalProps> = ({
     setError(null)
     try {
       // Validate educationalUnitId
-      if (!educationalUnitId || educationalUnitId === 'undefined') {
+      if (!educationalUnitId) {
         setError("Thiếu thông tin đơn vị giáo dục. Vui lòng thử lại.")
         setIsLoading(false)
         return

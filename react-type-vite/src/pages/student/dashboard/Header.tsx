@@ -1,4 +1,4 @@
-import { getAvartarFromName } from "@/utils/callApiUtils";
+import {getAvartarFromName} from "@/utils/callApiUtils";
 import { Bell, ChevronDown, MessageCircleMore } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
@@ -13,7 +13,6 @@ const profileMenu = [
 
 const Header = () => {
   const [isShowProfile, setIsShowProfile] = useState(false);
-  const [isShowNotifications, setIsShowNotifications] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -53,14 +52,14 @@ const Header = () => {
               <Bell className="w-5 h-5" />
               {/* Notification Dropdown */}
             </button>
-            <button
+            <span
               className="student-dashboard-icon-btn"
               onClick={() => {
                 navigate("/student/workspaces");
               }}
             >
               <MessageCircleMore className="w-5 h-5" />
-            </button>
+            </span>
             <div className="flex items-center relative">
               <button
                 className="w-8 h-8 rounded-full bg-bs-primary text-white flex items-center justify-center font-medium text-sm"
@@ -70,9 +69,9 @@ const Header = () => {
                   <img src={getAvartarFromName("Tran Trung")} alt="avatar" />
                 </span>
               </button>
-              <button className="student-dashboard-icon-btn">
+              <span className="student-dashboard-icon-btn">
                 <ChevronDown className="w-5 h-5 font-bold" />
-              </button>
+              </span>
 
               {/* Profile Dropdown */}
               {isShowProfile && (

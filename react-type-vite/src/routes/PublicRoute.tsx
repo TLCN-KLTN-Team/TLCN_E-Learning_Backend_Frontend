@@ -8,6 +8,7 @@ import EducationUnitRegistration from "../pages/student/home/EducationUnitRegist
 import FacebookAuthenticate from "@/pages/auth/FacebookAuthenticate";
 import Courses from "@/pages/user/Courses";
 import CourseDetail from "@/pages/user/course/CourseDetail";
+import TeacherDetail from "@/pages/user/course/TeacherDetail";
 import DetailEducationalUnit from "@/pages/user/universitry/DetailEducationalUnit";
 
 // Public routes - accessible by anonymous users
@@ -47,6 +48,16 @@ const PublicRoutes = [
     key="course-detail"
     path="/courses/:courseId"
     element={<CourseDetail />}
+  />,
+  <Route
+    key="course-detail-alt"
+    path="/course/:courseId"
+    element={<CourseDetail />}
+  />,
+  <Route
+    key="teacher-detail"
+    path="/teacher/:teacherId"
+    element={<TeacherDetail />}
   />,
   <Route
     key="educational-unit-detail"

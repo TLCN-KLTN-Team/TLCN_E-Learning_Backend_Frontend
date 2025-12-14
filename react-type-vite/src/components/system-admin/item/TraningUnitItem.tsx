@@ -11,17 +11,13 @@ interface TraningUnitItemProps {
 
 const TraningUnitItem = ({
   unit,
-  onRowClick,
-  openDropdown,
-  onDropdownToggle,
 }: TraningUnitItemProps) => {
   const handleRowClick = () => {
-    onRowClick(unit.id);
+   
   };
 
   const handleDropdownToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDropdownToggle(openDropdown === unit.id ? null : unit.id);
   };
 
   return (

@@ -9,7 +9,7 @@ import { CoursesSection } from "@/components/university/CoursesSection";
 import { getEducationalUnitById } from "@/services/api/anonymous/home.api";
 import type {
   EducationalUnit,
-  Instructor,
+  Teacher,
   UnitCourse,
   EducationalUnitDetailResponse,
 } from "@/types/educational-unit.types";
@@ -19,8 +19,8 @@ import logo from "@/assets/university-hero.jpg";
 const DetailEducationalUnit = () => {
   const { id } = useParams<{ id: string }>();
   const [unit, setUnit] = useState<EducationalUnit | null>(null);
-  const [instructors, setInstructors] = useState<Instructor[]>([]);
-  const [courses, setCourses] = useState<UnitCourse[]>([]);
+  const [instructors, setInstructors] = useState<Teacher[]>([]);
+  const [courses] = useState<UnitCourse[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch data from API
@@ -52,7 +52,7 @@ const DetailEducationalUnit = () => {
         };
 
         // Transform teachers
-        const transformedInstructors: Instructor[] = data.teachers.map(
+        const transformedInstructors: Teacher[] = data.teachers.map(
           (teacher) => ({
             id: teacher.id,
             name: teacher.name,
@@ -65,24 +65,24 @@ const DetailEducationalUnit = () => {
         );
 
         // Transform courses
-        const transformedCourses: UnitCourse[] = data.courses.map((course) => ({
-          id: course.id.toString(),
-          title: course.name,
-          description: course.description || "Chưa có mô tả",
-          duration: `${course.duration} giờ`,
-          price: Number.parseFloat(course.price.replace(/[^0-9]/g, "")) || 0,
-          instructor: course.departmentName || "Chưa xác định",
-          thumbnail:
-            course.coverImageUrl || "https://via.placeholder.com/300x200",
-          enrollmentCount: course.numberOfStudents,
-          rating: course.averageRating,
-          category: course.departmentName || "Chưa phân loại",
-          level: "Trung cấp",
-        }));
+        // const transformedCourses: UnitCourse[] = data.courses.map((course) => ({
+        //   id: course.id.toString(),
+        //   title: course.name,
+        //   description: course.description || "Chưa có mô tả",
+        //   duration: `${course.duration} giờ`,
+        //   price: Number.parseFloat(course.price.replace(/[^0-9]/g, "")) || 0,
+        //   instructor: course.departmentName || "Chưa xác định",
+        //   thumbnail:
+        //     course.coverImageUrl || "https://via.placeholder.com/300x200",
+        //   enrollmentCount: course.numberOfStudents,
+        //   rating: course.averageRating,
+        //   category: course.departmentName || "Chưa phân loại",
+        //   level: "Trung cấp",
+        // }));
 
         setUnit(transformedUnit);
         setInstructors(transformedInstructors);
-        setCourses(transformedCourses);
+        // setCourses(transformedCourses);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {

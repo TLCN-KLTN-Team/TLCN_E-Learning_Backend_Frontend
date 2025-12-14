@@ -167,12 +167,21 @@ public class UserPublishedCourseService {
             // Build instructor info with statistics
             InstructorInfoResponse instructorInfo = buildInstructorInfo(teacher, teacherId);
 
+            // Real stats
+            double avgRating = reviewService.calculateAverageRatingForCourse(publishedCourse.getId());
+            long totalReviews = reviewRepository.countByCourseId(publishedCourse.getId());
+            long totalStudents = orderService.countNumberOfPurchasePerCourse(publishedCourse.getId());
+
+            String lastUpdated = publishedCourse.getUpdatedAt() != null
+                    ? new java.text.SimpleDateFormat("MM/yyyy").format(publishedCourse.getUpdatedAt())
+                    : "N/A";
+
             PublishedCourseDetailResponse response = PublishedCourseDetailResponse.builder()
                     .courseName(publishedCourse.getCourseName())
                     .description(publishedCourse.getDescription())
-                    .starNumber(4.5)
-                    .reviews(1200)
-                    .students(3500)
+                    .starNumber(avgRating)
+                    .reviews((int) totalReviews)
+                    .students((int) totalStudents)
                     .duration(3.5)
                     .authorName(publishedCourse.getAuthorName())
                     .coursePrice(currencyUtils.formatCurrency(publishedCourse.getCoursePrice()))
@@ -195,8 +204,10 @@ public class UserPublishedCourseService {
                     .courseLearner(publishedCourse.getCourseLearner())
                     .courseTarget(publishedCourse.getCourseTarget())
                     .instructorInfo(instructorInfo)
-                    .rating(4.5)  // Alias for starNumber
-                    .studentCount(3500)  // Alias for students
+                    .teacherInfo(instructorInfo)  // Alias for frontend compatibility
+                    .rating(avgRating)  // Alias for starNumber
+                    .studentCount((int) totalStudents)  // Alias for students
+                    .lastUpdated(lastUpdated)
                     
                     .build();
 
@@ -213,10 +224,27 @@ public class UserPublishedCourseService {
         Double avgRating = reviewRepository.getAverageRatingByTeacherId(teacherId);
         long totalStudents = orderRepository.countUniqueStudentsByTeacherId(teacherId);
         
+        // Combine first and last name with space
+        String fullName = (teacher.getFirstName() != null ? teacher.getFirstName() : "") + 
+                         (teacher.getLastName() != null ? " " + teacher.getLastName() : "");
+        fullName = fullName.trim();
+        
+        // Use provided avatar or generate default avatar from name
+        String avatarUrl = teacher.getAvatarUrl();
+        if (avatarUrl == null || avatarUrl.isEmpty()) {
+            // Generate default avatar using UI Avatars service with teacher's name
+            String nameParam = fullName.replace(" ", "+");
+            avatarUrl = "https://ui-avatars.com/api/?name=" + nameParam + "&background=random&color=fff&bold=true&size=200";
+        }
+        
+        System.out.println("Teacher ID: " + teacher.getTeacherId());
+        System.out.println("Avatar URL: " + avatarUrl);
+        System.out.println("Full Name: " + fullName);
+        
         return InstructorInfoResponse.builder()
                 .instructorId(teacher.getTeacherId())
-                .instructorName(teacher.getFirstName() + teacher.getLastName())
-                .instructorAvatar(null)  // Will be updated when avatar field is added
+                .instructorName(fullName)
+                .instructorAvatar(avatarUrl)
                 .instructorTagline("Learn IT, Practice IT, Do IT")  // Default tagline, can be from DB
                 .instructorBio(teacher.getDescription())
                 .socialUrl(teacher.getSocialUrl())

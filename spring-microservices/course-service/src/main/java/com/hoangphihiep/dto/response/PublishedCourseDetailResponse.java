@@ -27,6 +27,7 @@ public class PublishedCourseDetailResponse {
     String level;
     String category;
     boolean isHandsOn;
+    String lastUpdated;
 
     // contents
     List<PublishedCourseContentResponse> contents;
@@ -50,6 +51,7 @@ public class PublishedCourseDetailResponse {
     String courseLearner;  // HTML content for Target Audience section
     List<String> courseTarget;  // Learning objectives list
     InstructorInfoResponse instructorInfo;  // Instructor detailed information
+    InstructorInfoResponse teacherInfo;  // Teacher detailed information (alias for frontend)
     
     // Aliases for frontend compatibility
     double rating;  // Same as starNumber

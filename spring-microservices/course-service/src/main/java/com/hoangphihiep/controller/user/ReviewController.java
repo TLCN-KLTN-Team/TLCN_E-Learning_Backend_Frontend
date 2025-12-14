@@ -21,7 +21,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class ReviewController {
-    ReviewService reviewService;
+    final ReviewService reviewService;
 
     @GetMapping("/course/{courseId}")
     public ApiResponse<List<ReviewResponse>> getCourseReviews(@PathVariable Integer courseId) {

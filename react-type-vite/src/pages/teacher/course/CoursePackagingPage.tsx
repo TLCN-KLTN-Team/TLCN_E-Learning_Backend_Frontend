@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, ArrowRight, CheckCircle2, Package, AlertCircle, CheckCircle, Eye, EyeOff, Loader2, Lock, Upload, X } from "lucide-react"
 import { Editor } from "@tinymce/tinymce-react"

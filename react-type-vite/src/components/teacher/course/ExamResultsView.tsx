@@ -12,7 +12,7 @@ interface ExamResultsViewProps {
   courseId: number;
 }
 
-const ExamResultsView: React.FC<ExamResultsViewProps> = ({ courseId }) => {
+const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
   const { selectedClass } = useSelectedClass();
   const [results, setResults] = useState<QuizResultResponse[]>([]);
   const [statistics, setStatistics] = useState<QuizStatisticsResponse | null>(null);
