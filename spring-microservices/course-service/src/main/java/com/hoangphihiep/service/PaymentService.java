@@ -3,6 +3,7 @@ package com.hoangphihiep.service;
 import com.hoangphihiep.config.PaypalConfig;
 import com.hoangphihiep.config.VNPayConfig;
 import com.hoangphihiep.dto.request.CreationOrderRequest;
+import com.hoangphihiep.dto.request.OrderPreviewRequest;
 import com.hoangphihiep.dto.request.PaymentRequest;
 import com.hoangphihiep.dto.response.OrderPreviewResponse;
 import com.hoangphihiep.dto.response.PaypalOrderResponse;
@@ -12,6 +13,8 @@ import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.utils.CurrencyUtils;
+import com.hoangphihiep.utils.PayPalCurrency;
+import com.hoangphihiep.utils.PaypalAmountInfo;
 import com.hoangphihiep.utils.VNPayUtils;
 import com.paypal.core.PayPalHttpClient;
 import com.paypal.http.HttpResponse;
@@ -41,6 +44,7 @@ public class PaymentService {
     private final OrderService orderService;
     private final PublishedCourseRepository publishedCourseRepository;
     private final CurrencyUtils currencyUtils;
+    private final ExchangeRateService exchangeRateService;
 
     // Tạo URL thanh toán VNPay khi user nhấn "Process Payment" on frontend
     public String createVNPayPaymentUrl(PaymentRequest request, HttpServletRequest httpRequest) throws Exception {
@@ -76,6 +80,7 @@ public class PaymentService {
                 .orderId(orderId)
                 .createTime(new Date(System.currentTimeMillis()))
                 .orderItems(request.getOrderItems())
+                .currency("VND")
                 .build();
 
         System.out.println ("Các item 1: " + request.getOrderItems());
@@ -129,9 +134,11 @@ public class PaymentService {
         if ("00".equals(fields.get("vnp_ResponseCode"))) {
             // create order and save to database if needed
             String orderId = fields.get("vnp_TxnRef");
-            orderService.updateSuccessOrder(orderId);
+            var order = orderService.updateSuccessOrder(orderId);
             return VNPayReturnResponse.builder()
                     .success(true)
+                    .amount(currencyUtils.formatCurrency(order.getAmount()))
+                    .currency(order.getPaymentCurrency())
                     .message("OK")
                     .build();
         } else {
@@ -150,9 +157,16 @@ public class PaymentService {
             orderRequest.checkoutPaymentIntent("CAPTURE");
 
             // Setup amount
+            PaypalAmountInfo amountInfo = preparePayPalAmount(paymentRequest);
+
             AmountWithBreakdown amountWithBreakdown = new AmountWithBreakdown()
+<<<<<<< HEAD
                     .currencyCode(paymentRequest.getCurrency())
                     .value(String.format(Locale.US,"%.2f",paymentRequest.getAmount()));
+=======
+                    .currencyCode(amountInfo.getCurrencyCode())
+                    .value(amountInfo.getValue());
+>>>>>>> 3ac5cc4 ((payment and order): Fix logic exchange currency while payment. Some change for anonymous role)
 
             // Purchase unit
             PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest()
@@ -177,6 +191,14 @@ public class PaymentService {
             // Lấy approval link
             for (LinkDescription link : order.links()) {
                 if ("approve".equals(link.rel())) {
+                    // create order with status PENDING
+                    CreationOrderRequest orderCreationRequest = CreationOrderRequest.builder()
+                            .orderId(order.id())
+                            .createTime(new Date(System.currentTimeMillis()))
+                            .orderItems(paymentRequest.getOrderItems())
+                            .currency(amountInfo.getCurrencyCode())
+                            .build();
+                    orderService.createOrder(orderCreationRequest);
                     return link.href();
                 }
             }
@@ -197,19 +219,56 @@ public class PaymentService {
             Order order = response.result();
 
             // Cập nhật trạng thái đơn hàng trong hệ thống
-            orderService.updateSuccessOrder(orderId);
+            var dbOrder = orderService.updateSuccessOrder(orderId);
+
+            PaypalAmountInfo amountInfo = preparePayPalAmount(
+                    PaymentRequest.builder()
+                            .amount(dbOrder.getAmount())
+                            .currency(dbOrder.getPaymentCurrency())
+                            .build()
+            );
 
             return PaypalOrderResponse.builder()
                     .status(order.status())
                     .orderId(orderId)
+                    .amount(amountInfo.getValue())
+                    .currency(dbOrder.getPaymentCurrency())
                     .build();
         } catch (IOException e) {
             throw new AppException(ErrorCode.PAYPAL_CAPTURE_PAYMENT_FAILED);
         }
     }
 
-    public OrderPreviewResponse getOrderPreview(List<Integer> courseIds) {
-        List<PublishedCourse> courses = publishedCourseRepository.findAllById(courseIds);
+    private PaypalAmountInfo preparePayPalAmount(PaymentRequest paymentRequest) {
+        // Validate currency
+        PayPalCurrency targetCurrency = PayPalCurrency.fromCode(paymentRequest.getCurrency());
+
+        // Số tiền gốc (VND)
+        BigDecimal amountVND = paymentRequest.getAmount();
+
+        // Convert sang tiền tệ đích
+        BigDecimal convertedAmount = exchangeRateService.convertFromVND(amountVND, targetCurrency);
+
+        // Format theo số chữ số thập phân của tiền tệ
+        String formattedValue = currencyUtils.formatAmount(convertedAmount, targetCurrency);
+
+        // Lấy tỉ giá để log/tracking
+        BigDecimal exchangeRate = exchangeRateService.getAllRates().get(targetCurrency.getCode());
+
+        return new PaypalAmountInfo(
+                targetCurrency.getCode(),
+                formattedValue,
+                amountVND,
+                exchangeRate
+        );
+    }
+
+    public OrderPreviewResponse getOrderPreview(OrderPreviewRequest request) {
+        List<PublishedCourse> courses = publishedCourseRepository.findAllById(request.getCourseIds());
+
+        // get price follow currency
+        PayPalCurrency targetCurrency = PayPalCurrency.fromCode(request.getCurrency());
+        BigDecimal exchangeRate = exchangeRateService.getAllRates().get(targetCurrency.getCode());
 
         BigDecimal originalPrice = courses.stream()
                 .map(course -> course.getCoursePrice()
@@ -227,16 +286,20 @@ public class PaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<OrderPreviewResponse.CourseItem> items = courses.stream()
-                        .map(course -> OrderPreviewResponse.CourseItem.builder()
+                        .map(course -> {
+                                    BigDecimal convertedAmount = exchangeRateService.convertFromVND(course.getCoursePrice(), targetCurrency);
+                                    OrderPreviewResponse.CourseItem item = OrderPreviewResponse.CourseItem.builder()
                                 .id(course.getId())
                                 .courseName(course.getCourseName()!=null ? course.getCourseName():course.getCourse().getCourseName())
-                                .price(currencyUtils.formatCurrency(course.getCoursePrice()))
+                                .price("VND".equals(request.getCurrency()) ? currencyUtils.formatCurrency(course.getCoursePrice()) : convertedAmount.toString())
                                 .amount(course.getCoursePrice())
                                 .discountedPrice(currencyUtils.formatCurrency(
                                         course.getCoursePrice().multiply(BigDecimal.valueOf(1.5))
                                 ))
                                 .imageUrl(course.getCourseImage())
-                                .build()
+                                .build();
+                            return item;
+                        }
                         ).toList();
 
 

@@ -150,7 +150,7 @@ const MyCourses: React.FC = () => {
               </Button>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredCourses.map((course) => (
                 <Card
                   key={course.publishedCourseId}
@@ -160,7 +160,7 @@ const MyCourses: React.FC = () => {
                   }
                 >
                   {/* Course Thumbnail */}
-                  <div className="relative h-48 bg-gradient-to-br from-blue-500 to-purple-600">
+                  <div className="relative h-40 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
                     {course.thumbnailUrl ? (
                       <img
                         src={course.thumbnailUrl}
@@ -182,7 +182,7 @@ const MyCourses: React.FC = () => {
 
                   {/* Course Info */}
                   <div className="p-4">
-                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-2 min-h-[3.5rem]">
+                    <h3 className="font-semibold text-lg text-gray-900 line-clamp-2 min-h-[3.5rem]">
                       {course.publishedCourseName}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -199,7 +199,7 @@ const MyCourses: React.FC = () => {
                           {course.progressPercentage}%
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full transition-all"
                           style={{ width: `${course.progressPercentage}%` }}

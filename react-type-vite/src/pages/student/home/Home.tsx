@@ -12,9 +12,14 @@ import {
   getAllEducationalUnits,
   getCoursesByRating,
   getBestSellerCourses,
+  getTop5Reviews,
 } from "@/services/api/anonymous/home.api";
 import type { EducationalUnitCardResponse } from "@/types/educational-unit.types";
-import type { PublishedCourseCardResponse } from "@/types/course.types";
+import type {
+  PublishedCourseCardResponse,
+  ReviewCardResponse,
+} from "@/types/course.types";
+import { useToast } from "@/hooks/use-toast";
 
 // Import animated components
 import {
@@ -36,14 +41,11 @@ import element09 from "@/assets/images/element/09.svg";
 import element10 from "@/assets/images/element/10.svg";
 import googlePlayIcon from "@/assets/images/client/google-play.svg";
 import appStoreIcon from "@/assets/images/client/app-store.svg";
-import avatar01 from "@/assets/images/avatar/01.jpg";
-import avatar05 from "@/assets/images/avatar/05.jpg";
-import avatar07 from "@/assets/images/avatar/07.jpg";
-import avatar09 from "@/assets/images/avatar/09.jpg";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // State for API data
   const [educationalUnits, setEducationalUnits] = useState<
@@ -55,62 +57,72 @@ const Home = () => {
   const [bestSellerCourses, setBestSellerCourses] = useState<
     PublishedCourseCardResponse[]
   >([]);
+  const [reviews, setReviews] = useState<ReviewCardResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch data on component mount
   useEffect(() => {
     const fetchHomeData = async () => {
-      try {
-        setLoading(true);
-        const [units, ratedCourses, sellerCourses] = await Promise.all([
-          getAllEducationalUnits(),
-          getCoursesByRating(),
-          getBestSellerCourses(),
-        ]);
+      setLoading(true);
 
-        console.log("Educational Units:", units);
-        console.log("Top Rated Courses:", ratedCourses);
-        console.log("Best Seller Courses:", sellerCourses);
+      const results = await Promise.allSettled([
+        getAllEducationalUnits(),
+        getCoursesByRating(),
+        getBestSellerCourses(),
+        getTop5Reviews(),
+      ]);
 
-        setEducationalUnits(units);
-        setTopRatedCourses(ratedCourses);
-        setBestSellerCourses(sellerCourses);
-      } catch (error) {
-        console.error("Error fetching home data:", error);
-      } finally {
-        setLoading(false);
+      const [unitsResult, ratedResult, sellerResult, reviewsResult] = results;
+
+      if (unitsResult.status === "fulfilled") {
+        setEducationalUnits(unitsResult.value);
       }
+
+      if (ratedResult.status === "fulfilled") {
+        setTopRatedCourses(ratedResult.value);
+      }
+
+      if (sellerResult.status === "fulfilled") {
+        setBestSellerCourses(sellerResult.value);
+      }
+
+      if (reviewsResult.status === "fulfilled") {
+        setReviews(reviewsResult.value);
+      }
+
+      // Optional: log lỗi
+      results.forEach((r, index) => {
+        if (r.status === "rejected") {
+          const errorMessages = [
+            "Không thể tải danh sách đơn vị giáo dục",
+            "Không thể tải khóa học được đánh giá cao",
+            "Không thể tải khóa học bán chạy",
+            "Không thể tải đánh giá từ học viên",
+          ];
+
+          console.error(`API ${index} failed:`, r.reason);
+          toast({
+            title: "Lỗi tải dữ liệu",
+            description:
+              errorMessages[index] || "Đã xảy ra lỗi khi tải dữ liệu",
+            variant: "destructive",
+          });
+        }
+      });
+
+      setLoading(false);
     };
 
     fetchHomeData();
   }, []);
 
-  const testimonials = [
-    {
-      avatar: avatar05,
-      name: "Lori Stevens",
-      content:
-        "Moonlight newspaper up its enjoyment agreeable depending. Timed voice share led him to widen. At weddings believed laughing",
-    },
-    {
-      avatar: avatar07,
-      name: "Billy Vasquez",
-      content:
-        "Its enjoyment Moonlight newspaper up agreeable depending. Timed voice share led him to widen. At weddings believed laughing",
-    },
-    {
-      avatar: avatar09,
-      name: "Carolyn Ortiz",
-      content:
-        "Newspaper up its enjoyment agreeable depending. Timed voice share led him to widen. At weddings believed laughing",
-    },
-    {
-      avatar: avatar01,
-      name: "Carolyn Ortiz",
-      content:
-        "Newspaper up its enjoyment agreeable depending. Timed voice share led him to widen. At weddings believed laughing",
-    },
-  ];
+  // Map reviews to testimonials format for the slider
+  const testimonials = reviews.map((review) => ({
+    avatar: review.createdByAvatar,
+    name: review.createdByName,
+    content: review.content,
+    rating: review.rate,
+  }));
 
   return (
     <div className="min-h-screen bg-background text-foreground homepage-links">

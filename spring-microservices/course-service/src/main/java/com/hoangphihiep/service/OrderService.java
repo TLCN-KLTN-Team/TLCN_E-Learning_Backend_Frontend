@@ -44,6 +44,7 @@ public class OrderService {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         Order order = Order.builder()
                 .orderId(request.getOrderId())
+                .paymentCurrency(request.getCurrency())
                 .orderDate(request.getCreateTime())
                 .orderStatus(OrderStatus.PENDING)
                 .idUser(userId)
@@ -75,7 +76,7 @@ public class OrderService {
      * Đồng thời tính toán và tạo PayoutOrderItem cho revenue share
      */
     @Transactional
-    public void updateSuccessOrder(String orderId){
+    public Order updateSuccessOrder(String orderId){
         log.info("Processing successful payment for order: {}", orderId);
         
         // 1. Find order
@@ -108,10 +109,11 @@ public class OrderService {
         }
         
         // 4. Save all changes
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
         
         log.info("Successfully processed payment for order: {} with {} items", 
                 orderId, order.getOrderItems().size());
+        return savedOrder;
     }
 
     public List<OrderResponse> getHistoryOrders() {
