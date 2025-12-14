@@ -160,13 +160,8 @@ public class PaymentService {
             PaypalAmountInfo amountInfo = preparePayPalAmount(paymentRequest);
 
             AmountWithBreakdown amountWithBreakdown = new AmountWithBreakdown()
-<<<<<<< HEAD
-                    .currencyCode(paymentRequest.getCurrency())
-                    .value(String.format(Locale.US,"%.2f",paymentRequest.getAmount()));
-=======
                     .currencyCode(amountInfo.getCurrencyCode())
                     .value(amountInfo.getValue());
->>>>>>> 3ac5cc4 ((payment and order): Fix logic exchange currency while payment. Some change for anonymous role)
 
             // Purchase unit
             PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest()
