@@ -15,7 +15,7 @@ interface QuizVisibilityModalProps {
   quizId: number
   quizTitle: string
   courseId: number
-  educationalUnitId: string
+  educationalUnitId: number
 }
 
 const QuizVisibilityModal: React.FC<QuizVisibilityModalProps> = ({
@@ -45,7 +45,7 @@ const QuizVisibilityModal: React.FC<QuizVisibilityModalProps> = ({
     setError(null)
     try {
       // Validate educationalUnitId
-      if (!educationalUnitId || educationalUnitId === 'undefined') {
+      if (!educationalUnitId) {
         setError("Thiếu thông tin đơn vị giáo dục. Vui lòng thử lại.")
         setIsLoading(false)
         return

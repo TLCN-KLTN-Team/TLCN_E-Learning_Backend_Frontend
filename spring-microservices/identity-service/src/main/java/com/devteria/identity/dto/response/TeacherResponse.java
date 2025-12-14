@@ -34,4 +34,10 @@ public class TeacherResponse {
     private String bankAccountNumber;
 
     private String accountStatus;
+
+    private String avatarUrl;
+
+    private String phoneNumber;
+
+    private String bio;
 }

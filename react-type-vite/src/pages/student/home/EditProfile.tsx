@@ -6,7 +6,6 @@ import {
   ProfileForm,
 } from "@/components/shared/profile";
 import type {
-  ChangePasswordData,
   PaymentHistoryItem,
 } from "@/types/profile.types";
 import Header from "@/components/student/home/Header";
@@ -75,23 +74,23 @@ const EditProfile = () => {
     }
   };
 
-  const handleChangePassword = async (passwordData: ChangePasswordData) => {
-    setIsLoading(true);
-    try {
-      // TODO: Gọi API để đổi mật khẩu
-      console.log("Changing password:", passwordData);
+  // const handleChangePassword = async (passwordData: ChangePasswordData) => {
+  //   setIsLoading(true);
+  //   try {
+  //     // TODO: Gọi API để đổi mật khẩu
+  //     console.log("Changing password:", passwordData);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+  //     // Simulate API call
+  //     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      alert("Đổi mật khẩu thành công!");
-    } catch (error) {
-      console.error("Error changing password:", error);
-      alert("Có lỗi xảy ra khi đổi mật khẩu!");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     alert("Đổi mật khẩu thành công!");
+  //   } catch (error) {
+  //     console.error("Error changing password:", error);
+  //     alert("Có lỗi xảy ra khi đổi mật khẩu!");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
     document.title = "Chỉnh sửa hồ sơ - E-Learning Platform";
@@ -128,7 +127,6 @@ const EditProfile = () => {
 
           {/* Change Password */}
           <ChangePassword
-            onChangePassword={handleChangePassword}
             isLoading={isLoading}
           />
         </div>

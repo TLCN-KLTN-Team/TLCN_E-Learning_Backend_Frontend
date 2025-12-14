@@ -38,6 +38,8 @@ public class SecurityConfig {
             "/anonymous/home/educational-units",
             "/anonymous/home/educational-units/**",
             "/anonymous/home/courses/**",
+            "/anonymous/reviews/**",
+            "/anonymous/teachers/**",
     };
 
     private static final String[] SWAGGER_ENDPOINTS = {

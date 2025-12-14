@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { User, BookOpen, BarChart3, Clock, Loader2 } from "lucide-react"
+import { User, BookOpen, BarChart3, Loader2 } from "lucide-react"
 import { getStudentDetails } from "@/services/api/teacher/classManagementApi"
 import type { StudentResponse } from "@/services/api/response/studentResponse"
 

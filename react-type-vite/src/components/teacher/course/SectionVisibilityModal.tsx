@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import Modal from "@/components/ui/modal"
-import { Loader2, Eye, EyeOff, AlertCircle, CheckCircle, Users } from "lucide-react"
+import { Loader2, Eye, EyeOff, AlertCircle, CheckCircle} from "lucide-react"
 import { getSectionVisibility, updateSectionVisibility } from "@/services/api/teacher/contentVisibilityApi"
 import { getClassesByCourse } from "@/services/api/admin/classApi"
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
@@ -15,7 +15,7 @@ interface SectionVisibilityModalProps {
   sectionId: number
   sectionTitle: string
   courseId: number
-  educationalUnitId: string
+  educationalUnitId: number
 }
 
 const SectionVisibilityModal: React.FC<SectionVisibilityModalProps> = ({

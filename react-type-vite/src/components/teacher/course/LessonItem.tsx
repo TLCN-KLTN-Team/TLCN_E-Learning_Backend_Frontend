@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { GripVertical, FileVideo, Star, Edit, Trash, Paperclip, Clock, Eye } from "lucide-react"
+import { GripVertical, FileVideo, Edit, Trash, Paperclip, Clock, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { LessonResponse } from "@/services/api/response/lessonResponse"
 import LessonVisibilityModal from "./LessonVisibilityModal"
@@ -12,7 +12,7 @@ interface LessonItemProps {
   lesson: LessonResponse
   index: number
   courseId: string
-  educationalUnitId: string
+  educationalUnitId: number
   onUpdate: (lesson: LessonResponse) => void
   onDelete: (lessonId: number) => void
   onReorder: (fromIndex: number, toIndex: number) => void

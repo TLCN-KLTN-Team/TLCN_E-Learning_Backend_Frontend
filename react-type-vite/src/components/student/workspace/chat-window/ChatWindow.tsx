@@ -5,7 +5,6 @@ import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChannelWorkspace from "../channel/ChannelWorkspace";
 import TimeBasedChannelView from "../channel/TimeBasedChannelView";
-import { ChannelType } from "@/types/chat.types";
 import type {
   ChannelResponse,
   ChatMessageResponse,
@@ -51,16 +50,6 @@ const ChatWindow = ({
     }
 
     // Check if it's one of the time-based channel types
-    const timeBasedTypes = [
-      ChannelType.TEXT,
-      ChannelType.GROUP,
-      ChannelType.ANNOUNCEMENT,
-      ChannelType.POST,
-    ];
-
-    return timeBasedTypes.includes(
-      selectedChannel.channelType || ChannelType.TEXT
-    );
   };
 
   // Handle channel expiration

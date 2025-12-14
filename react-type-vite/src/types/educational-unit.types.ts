@@ -17,7 +17,7 @@ export interface EducationalUnit {
   isFollowing?: boolean;
 }
 
-export interface Instructor {
+export interface Teacher {
   id: string;
   name: string;
   avatar?: string;
@@ -33,7 +33,7 @@ export interface UnitCourse {
   description: string;
   duration: string;
   price: number;
-  instructor: string;
+  teacher: string;
   thumbnail?: string;
   enrollmentCount?: number;
   rating?: number;
@@ -41,7 +41,7 @@ export interface UnitCourse {
   level?: string;
 }
 
-export interface InstructorFilters {
+export interface TeacherFilters {
   searchTerm: string;
   department: string;
 }

@@ -19,6 +19,7 @@ public class UserResponse {
     String phoneNumber;
     String firstName;
     String lastName;
+    String avatarUrl;
     LocalDate dob;
     boolean emailVerified;
     Set<RoleResponse> roles;

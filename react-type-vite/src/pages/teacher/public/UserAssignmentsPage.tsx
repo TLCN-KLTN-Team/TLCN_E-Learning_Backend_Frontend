@@ -25,7 +25,6 @@ const StudentAssignmentsPage: React.FC = () => {
   const navigate = useNavigate()
   const [studentName, setStudentName] = useState<string>("")
   const [assignments, setAssignments] = useState<StudentAssignmentSubmission[]>([])
-  const [loading, setLoading] = useState(true)
   const [gradingAssignment, setGradingAssignment] = useState<number | null>(null)
   const [tempScore, setTempScore] = useState<string>("")
   const [tempFeedback, setTempFeedback] = useState<string>("")
@@ -35,7 +34,6 @@ const StudentAssignmentsPage: React.FC = () => {
       if (!courseId || !studentId) return
 
       try {
-        setLoading(true)
         
         // Load user info first
         try {
@@ -55,8 +53,6 @@ const StudentAssignmentsPage: React.FC = () => {
       } catch (error) {
         console.error("Error loading assignment submissions:", error)
         toast.error("Đã có lỗi khi tải dữ liệu bài tập")
-      } finally {
-        setLoading(false)
       }
     }
 

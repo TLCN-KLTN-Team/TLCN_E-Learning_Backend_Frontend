@@ -22,7 +22,7 @@ import quizApi from "@/services/api/student/quizApi"
 import type { QuizAnswerSubmission } from "@/services/api/request/quizAttemptRequest"
 
 const QuizTakingPage: React.FC = () => {
-  const { quizId, attemptId } = useParams<{ quizId: string; attemptId: string }>()
+  const { quizId} = useParams<{ quizId: string; attemptId: string }>()
   const navigate = useNavigate()
 
   const [quiz, setQuiz] = useState<QuizResponse | null>(null)

@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import Modal from "@/components/ui/modal"
 import type { SectionResponse } from "@/services/api/response/sectionResponse"
 import { Loader2, Save } from "lucide-react"

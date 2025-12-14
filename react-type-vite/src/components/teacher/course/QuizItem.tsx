@@ -25,7 +25,7 @@ interface QuizItemProps {
   quiz: QuizResponse
   index: number
   courseId: string
-  educationalUnitId: string
+  educationalUnitId: number
   onUpdate: (quiz: QuizResponse) => void
   onDelete: (quizId: number) => void
   onReorder: (fromIndex: number, toIndex: number) => void

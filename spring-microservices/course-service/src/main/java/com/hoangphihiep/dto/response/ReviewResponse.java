@@ -18,5 +18,6 @@ public class ReviewResponse {
     String courseName;
     String createdById;
     String createdByName;
+    String createdByAvatar;
     Date createdAt;
 }

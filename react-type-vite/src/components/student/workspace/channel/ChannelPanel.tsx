@@ -65,7 +65,7 @@ const ChannelPanel = ({
       description: channel.description || "",
       workspaceId: selectedWorkspace?.id || "",
       classId: null,
-      memberIds: channel.participants?.map((p) => p.userId) || [],
+      memberIds: channel.participants?.map((p) => p.id) || [],
       isPrivate: channel.isPrivate,
       type: ChannelSettingsType.TEXT,
       status: channel.ended ? ChannelStatus.LOCKED : ChannelStatus.ACTIVE,

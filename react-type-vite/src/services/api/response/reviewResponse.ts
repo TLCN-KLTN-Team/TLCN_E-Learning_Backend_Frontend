@@ -5,6 +5,7 @@ export interface ReviewResponse {
   courseId: number;
   createdById: string;
   createdByName?: string; // If backend returns user name
+  createdByAvatar?: string; // Optional avatar URL for reviewer
   createdAt: string;
 }
 

@@ -269,7 +269,7 @@ const EditCoursePageContent: React.FC = () => {
             {activeTab === "content" && (
               <CourseBuilder
                 courseId={courseId || ""}
-                educationalUnitId={educationalUnitId || ""}
+                educationalUnitId={educationalUnitId ? Number(educationalUnitId) : 0}
                 sections={courseData.sections || []}
                 onSectionsChange={handleSectionsChange}
                 onBack={() => setActiveTab("info")}

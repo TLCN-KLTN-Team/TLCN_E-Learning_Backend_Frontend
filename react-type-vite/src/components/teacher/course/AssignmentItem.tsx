@@ -12,7 +12,6 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
-  EyeOff,
   Paperclip,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,7 +22,7 @@ interface AssignmentItemProps {
   assignment: AssignmentResponse
   index: number
   courseId: string
-  educationalUnitId: string
+  educationalUnitId: number
   onUpdate: (assignment: AssignmentResponse) => void
   onDelete: (assignmentId: number) => void
   onReorder: (fromIndex: number, toIndex: number) => void

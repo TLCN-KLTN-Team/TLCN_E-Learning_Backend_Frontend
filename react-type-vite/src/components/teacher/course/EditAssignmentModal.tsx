@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import Modal from "@/components/ui/modal"
 import FileUpload from "./FileUpload"
 import { Paperclip, Trash, ExternalLink, Loader2, Save } from "lucide-react"
