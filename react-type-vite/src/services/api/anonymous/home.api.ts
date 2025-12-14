@@ -1,4 +1,7 @@
-import type { PublishedCourseCardResponse } from "@/types/course.types";
+import type {
+  PublishedCourseCardResponse,
+  ReviewCardResponse,
+} from "@/types/course.types";
 import type {
   EducationalUnitCardResponse,
   EducationalUnitDetailResponse,
@@ -58,5 +61,16 @@ export const getEducationalUnitById = async (
   const response = await publicAxiosInstance.get<
     ApiResponse<EducationalUnitDetailResponse>
   >(`${HOME_ENDPOINT}/educational-units/${id}`);
+  return response.data.result;
+};
+
+/**
+ * Get top 5 reviews
+ * @returns List of top 5 best reviews
+ */
+export const getTop5Reviews = async (): Promise<ReviewCardResponse[]> => {
+  const response = await publicAxiosInstance.get<
+    ApiResponse<ReviewCardResponse[]>
+  >(`${HOME_ENDPOINT}/reviews/top5`);
   return response.data.result;
 };

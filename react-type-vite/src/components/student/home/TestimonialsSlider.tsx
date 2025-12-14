@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
+import { getAvartarFromName } from "@/utils/callApiUtils";
 
 interface Testimonial {
   avatar: string;
@@ -47,7 +48,10 @@ const TestimonialsSlider = ({ testimonials }: TestimonialsSliderProps) => {
                 <div className="bg-card border rounded-lg p-6 text-center h-full">
                   <div className="w-16 h-16 mx-auto mb-4">
                     <img
-                      src={testimonial.avatar}
+                      src={
+                        testimonial.avatar ||
+                        getAvartarFromName(testimonial.name)
+                      }
                       alt={testimonial.name}
                       className="w-full h-full rounded-full object-cover"
                     />

@@ -193,6 +193,7 @@ public enum ErrorCode {
     // Payment related errors (PAYMENT_xxxx)
     PAYPAL_CREATE_PAYMENT_FAILED("PAYMENT_4001", "Tạo thanh toán PayPal thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
     PAYPAL_CAPTURE_PAYMENT_FAILED("PAYMENT_4002", "Xác nhận thanh toán PayPal thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    UNSUPPORTED_CURRENCY("PAYMENT_4003", "Loại tiền tệ không được hỗ trợ", HttpStatus.BAD_REQUEST),
 
     // Order related errors (ORDER_xxxx)
     ORDER_NOT_FOUND("ORDER_5001", "Order not found", HttpStatus.NOT_FOUND),

@@ -26,6 +26,7 @@ export interface OrderItem {
 
 export interface OrderPreviewRequest {
   courseIds: number[];
+  currency: string;
 }
 
 export interface OrderPreviewResponse {

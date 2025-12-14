@@ -2,17 +2,22 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.ReviewRequest;
 import com.hoangphihiep.dto.request.UpdateReviewRequest;
+import com.hoangphihiep.dto.response.ReviewCardResponse;
 import com.hoangphihiep.dto.response.ReviewResponse;
 import com.hoangphihiep.dto.response.ReviewStatsResponse;
+import com.hoangphihiep.dto.response.UserResponse;
 import com.hoangphihiep.entity.PublishedCourse;
 import com.hoangphihiep.entity.Review;
 import com.hoangphihiep.mapper.ReviewMapper;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.repository.ReviewRepository;
+import com.hoangphihiep.repository.httpclient.UserInfoApi;
+import com.hoangphihiep.repository.httpclient.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +34,7 @@ public class ReviewService {
     ReviewRepository reviewRepository;
     PublishedCourseRepository publishedCourseRepository;
     ReviewMapper reviewMapper;
+    UserInfoApi userInfoApi;
 
     public List<ReviewResponse> getCourseReviews(Integer courseId) {
         log.info("Getting reviews for course: {}", courseId);
@@ -158,6 +164,21 @@ public class ReviewService {
         return reviewRepository.findByCourseIdAndCreatedById(courseId, userId)
                 .map(reviewMapper::toReviewResponse)
                 .orElse(null);
+    }
+
+    public List<ReviewCardResponse> getTop5Reviews() {
+        Pageable pageable = Pageable.ofSize(5);
+        List<Review> top5Reviews = reviewRepository.findTop5ByOrderByRateDescCreatedAtDesc(pageable);
+        return top5Reviews.stream()
+                .map(review -> {
+                    UserResponse userResponse = userInfoApi.getUserInfo(review.getCreatedById()).getResult();
+                    ReviewCardResponse response = new ReviewCardResponse();
+                    response.setRate(review.getRate());
+                    response.setContent(review.getContent());
+                    response.setCreatedByName(userResponse.getLastName() + " " + userResponse.getFirstName());
+                    response.setCreatedByAvatar(userResponse.getAvatarUrl());
+                    return response;
+                }).toList();
     }
 
     private String getCurrentUserId() {
