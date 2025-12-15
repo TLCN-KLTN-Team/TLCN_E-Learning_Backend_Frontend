@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
   Users,
   UserPlus,
-  Trash2,
   BookOpen,
   School,
   TrendingUp,
@@ -189,23 +188,6 @@ const CourseListPage: React.FC = () => {
   const handleManageClasses = (course: CourseResponse) => {
     setSelectedCourse(course);
     setShowClassManagement(true);
-  };
-
-  const handleDeleteCourse = async (courseId: number, courseName: string) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa khóa học "${courseName}"? Điều này sẽ xóa tất cả lớp học và đăng ký liên quan. Hành động này không thể hoàn tác.`
-      )
-    ) {
-      try {
-        await courseApi.deleteCourse(educationalUnitId!, courseId);
-        toast.success("Xóa khóa học thành công!");
-        handleSuccess();
-      } catch (error: any) {
-        console.error("Error deleting course:", error);
-        toast.error(error?.response?.data?.message || "Không thể xóa khóa học");
-      }
-    }
   };
 
   const handlePageChange = (newPage: number) => {
@@ -664,16 +646,6 @@ const CourseListPage: React.FC = () => {
                               <School size={14} className="mr-1" />
                               Lớp
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                handleDeleteCourse(course.id, course.courseName)
-                              }
-                              className="text-red-600 border-red-200 hover:bg-red-50"
-                            >
-                              <Trash2 size={14} />
-                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -688,7 +660,9 @@ const CourseListPage: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-700">Hiển thị</span>
+                  
                   <select
+                    aria-label="Items per page"
                     value={pageSize}
                     onChange={(e) =>
                       handlePageSizeChange(Number(e.target.value))

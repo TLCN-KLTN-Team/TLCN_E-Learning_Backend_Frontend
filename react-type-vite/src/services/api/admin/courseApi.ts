@@ -74,12 +74,3 @@ export const updateCourse = async (
   );
   return response.data.result;
 };
-
-export const deleteCourse = async (
-  educationalUnitId: number,
-  courseId: number
-): Promise<void> => {
-  await axiosInstance.delete(
-    `/course-management/admin/educationalUnit/${educationalUnitId}/courses/${courseId}`
-  );
-};
