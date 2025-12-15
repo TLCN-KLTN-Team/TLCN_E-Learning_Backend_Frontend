@@ -73,15 +73,9 @@ public class CourseService {
 
                 // Fetch teacher info if idTeacher exists
                 if (course.getIdTeacher() != null && !course.getIdTeacher().trim().isEmpty()) {
-                    try {
-                        ApiResponse<TeacherResponse> teacherApiResponse = teacherRepository.getTeacherByTeacherId(course.getIdTeacher());
-                        if (teacherApiResponse != null && teacherApiResponse.getResult() != null) {
-                            courseResponse.setTeacher(teacherApiResponse.getResult());
-                        }
-                    } catch (Exception e) {
-                        log.warn("Could not fetch teacher info for teacherId: {} in course: {}",
-                                course.getIdTeacher(), course.getId(), e);
-                        // teacher sẽ là null
+                    ApiResponse<TeacherResponse> teacherApiResponse = teacherRepository.getTeacherByTeacherId(course.getIdTeacher());
+                    if (teacherApiResponse != null && teacherApiResponse.getResult() != null) {
+                        courseResponse.setTeacher(teacherApiResponse.getResult());
                     }
                 }
 
@@ -147,10 +141,7 @@ public class CourseService {
     public CourseResponse updateCourseForEducationalUnit(int educationalUnitId, int courseId, CourseRequest request) {
 
         validateEducationalUnitAccess(educationalUnitId);
-        validateCourseRequest(request, false); // false vì đây là update
-
-        EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
-                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+        validateCourseRequest(request, false);
 
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
