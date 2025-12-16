@@ -1,3 +1,4 @@
+# api-gateway
 server:
   port: 8888
 
@@ -17,7 +18,7 @@ spring:
 
           routes:
             - id: identity-service
-              uri: http://localhost:8080
+              uri: ${IDENTITY_SERVICE_URI:http://localhost:8080}
               predicates:
                 - Path=${app.api-prefix}/identity/**
               filters:
@@ -31,14 +32,14 @@ spring:
                 - StripPrefix=2
 
             - id: file-handler-service
-              uri: http://localhost:8084
+              uri: ${FILE_SERVICE_URI:http://localhost:8084}
               predicates:
                 - Path=${app.api-prefix}/file-handler/**
               filters:
                 - StripPrefix=2
 
             - id: course-management-service
-              uri: http://localhost:8088
+              uri: ${COURSE_SERVICE_URI:http://localhost:8088}
               predicates:
                 - Path=${app.api-prefix}/course-management/**
               filters:
@@ -46,7 +47,7 @@ spring:
 
             # WebSocket route
             - id: chat-service-websocket
-              uri: ws://localhost:8090
+              uri: ${CHAT_SERVICE_URI:ws://localhost:8090}
               predicates:
                 - Path=${app.api-prefix}/server/ws/**
                 - Header=Upgrade, websocket
@@ -55,7 +56,7 @@ spring:
 
             # SockJS fallback
             - id: chat-service-sockjs
-              uri: http://localhost:8090
+              uri: ${CHAT_SERVICE_URI:http://localhost:8090}
               predicates:
                 - Path=${app.api-prefix}/server/ws/info/**
               filters:
@@ -63,7 +64,7 @@ spring:
 
             # HTTP API for chat
             - id: chat-service-http
-              uri: http://localhost:8090
+              uri: ${CHAT_SERVICE_URI:http://localhost:8090}
               predicates:
                 - Path=${app.api-prefix}/server/**
               filters:
@@ -73,8 +74,17 @@ springdoc:
   swagger-ui:
     urls:
       - name: user-service
-        url: http://localhost:8080/identity/v3/api-docs
+        url: ${IDENTITY_SERVICE_URI:http://localhost:8080}/identity/v3/api-docs
       - name: course-service
-        url: http://localhost:8088/course-management/v3/api-docs
+        url: ${COURSE_SERVICE_URI:http://localhost:8088}/course-management/v3/api-docs
       - name: realtime-service
-        url: http://localhost:8090/server/v3/api-docs
+        url: ${CHAT_SERVICE_URI:http://localhost:8090}/server/v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # hoặc "*" nếu muốn expose tất cả
+  endpoint:
+    health:
+      show-details: always

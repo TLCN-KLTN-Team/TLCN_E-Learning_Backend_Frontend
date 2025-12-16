@@ -1,9 +1,7 @@
 package com.devteria.identity.configuration;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.Duration;
+
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +11,10 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.*;
 
-import java.time.Duration;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Configuration
 @EnableCaching
@@ -50,9 +51,12 @@ public class RedisConfig {
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10))
-                .prefixCacheNameWith("identity-service::") // Thêm tiền tố để tránh trùng tên cache khi dùng chung Redis.
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer)); // Chỉ định cách serialize value của cache.
+                .prefixCacheNameWith(
+                        "identity-service::") // Thêm tiền tố để tránh trùng tên cache khi dùng chung Redis.
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                        serializer)); // Chỉ định cách serialize value của cache.
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
@@ -64,10 +68,7 @@ public class RedisConfig {
         mapper.registerModule(new JavaTimeModule());
         //
         mapper.activateDefaultTyping(
-                LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY
-        );
+                LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
         return mapper;
     }
 }

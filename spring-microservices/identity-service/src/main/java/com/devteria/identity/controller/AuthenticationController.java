@@ -3,17 +3,6 @@ package com.devteria.identity.controller;
 import java.text.ParseException;
 import java.util.Map;
 
-import com.devteria.identity.exception.AppException;
-import com.devteria.identity.exception.ErrorCode;
-import com.devteria.identity.service.RefreshTokenService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.experimental.NonFinal;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.devteria.identity.dto.request.*;
@@ -40,8 +29,8 @@ public class AuthenticationController {
     }
 
     @PostMapping("/outbound/authenticate")
-    ApiResponse<AuthenticationResponse> loginBySocial(@RequestParam("code") String code,
-                                                             @RequestParam("provider") String provider) {
+    ApiResponse<AuthenticationResponse> loginBySocial(
+            @RequestParam("code") String code, @RequestParam("provider") String provider) {
         var result = authenticationService.outboundAuthenticate(code, provider);
         return ApiResponse.<AuthenticationResponse>builder()
                 .message("Authentication successful")
@@ -50,7 +39,8 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    ApiResponse<AuthenticationResponse> loginByUsernameOrEmail(@RequestBody AuthenticationRequest request) throws ParseException, JOSEException {
+    ApiResponse<AuthenticationResponse> loginByUsernameOrEmail(@RequestBody AuthenticationRequest request)
+            throws ParseException, JOSEException {
 
         AuthenticationResponse result = authenticationService.authenticate(request);
 

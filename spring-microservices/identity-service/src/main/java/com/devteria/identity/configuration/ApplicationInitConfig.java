@@ -2,14 +2,14 @@ package com.devteria.identity.configuration;
 
 import java.util.Set;
 
-import com.devteria.identity.entity.AccountStatus;
-import com.devteria.identity.entity.Role;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
 import com.devteria.identity.repository.UserRepository;
 
@@ -54,8 +54,10 @@ public class ApplicationInitConfig {
 
                 userRepository.save(user);
 
-                log.warn("Default SUPER_ADMIN created with email: {}, password: {}",
-                        SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD);
+                log.warn(
+                        "Default SUPER_ADMIN created with email: {}, password: {}",
+                        SUPER_ADMIN_EMAIL,
+                        SUPER_ADMIN_PASSWORD);
             }
 
             log.info("Application initialization completed.");

@@ -6,25 +6,25 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.devteria.identity.dto.response.*;
-import com.devteria.identity.entity.Role;
-import com.devteria.identity.repository.httpclient.FacebookGraphApi;
-import com.devteria.identity.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.RestTemplate;
 
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.*;
+import com.devteria.identity.dto.response.*;
 import com.devteria.identity.entity.InvalidatedToken;
 import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.repository.InvalidatedTokenRepository;
 import com.devteria.identity.repository.UserRepository;
+import com.devteria.identity.repository.httpclient.FacebookGraphApi;
 import com.devteria.identity.repository.httpclient.OutboundAuthenticationClient;
 import com.devteria.identity.repository.httpclient.OutboundUserInfoClient;
+import com.devteria.identity.utils.JwtUtils;
 import com.nimbusds.jose.*;
 
 import lombok.AccessLevel;
@@ -86,7 +86,9 @@ public class AuthenticationService {
     // logic check if exist token. it's used to verify token when access secure API
     public IntrospectResponse introspect(IntrospectRequest request) {
         try {
-            return IntrospectResponse.builder().valid(jwtUtils.verifyToken(request.getToken())).build();
+            return IntrospectResponse.builder()
+                    .valid(jwtUtils.verifyToken(request.getToken()))
+                    .build();
         } catch (JOSEException | ParseException e) {
             throw new RuntimeException(e);
         }
@@ -115,7 +117,7 @@ public class AuthenticationService {
     public AuthenticationResponse outboundAuthenticate(String code, String provider) {
         provider = provider.trim().toLowerCase();
         User user = null;
-        switch (provider){
+        switch (provider) {
             case "google":
                 ExchangeTokenResponse accessToken =
                         outboundAuthenticationClient.exchangeGoogleAccessToken(ExchangeTokenRequest.builder()
@@ -125,8 +127,9 @@ public class AuthenticationService {
                                 .grantType(GRANT_TYPE)
                                 .redirectUri(GOOGLE_CALLBACK_URL)
                                 .build());
-                GoogleUserInfoResponse userInfo = outboundUserInfoClient.getUserInfo("json", accessToken.getAccessToken());
-                                user = userRepository.findByEmail(userInfo.getEmail()).orElseGet(() -> {
+                GoogleUserInfoResponse userInfo =
+                        outboundUserInfoClient.getUserInfo("json", accessToken.getAccessToken());
+                user = userRepository.findByEmail(userInfo.getEmail()).orElseGet(() -> {
                     User newUser = User.builder()
                             .email(userInfo.getEmail())
                             .firstName(userInfo.getGivenName())
@@ -140,16 +143,17 @@ public class AuthenticationService {
                 });
                 break;
             case "facebook":
-                var fbAccessToken =
-                        facebookGraphApi.exchangeToken(ExchangeTokenRequest.builder()
-                                .code(code)
-                                .clientId(FACEBOOK_CLIENT_ID)
-                                .clientSecret(FACEBOOK_CLIENT_SECRET)
-                                .grantType(GRANT_TYPE)
-                                .redirectUri(FACEBOOK_CALLBACK_URL)
-                                .build());
-                String userInfoUrl = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + fbAccessToken.getAccessToken();
-                FacebookUserInfoResponse fbUserInfo = restTemplate.getForObject(userInfoUrl, FacebookUserInfoResponse.class);
+                var fbAccessToken = facebookGraphApi.exchangeToken(ExchangeTokenRequest.builder()
+                        .code(code)
+                        .clientId(FACEBOOK_CLIENT_ID)
+                        .clientSecret(FACEBOOK_CLIENT_SECRET)
+                        .grantType(GRANT_TYPE)
+                        .redirectUri(FACEBOOK_CALLBACK_URL)
+                        .build());
+                String userInfoUrl = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token="
+                        + fbAccessToken.getAccessToken();
+                FacebookUserInfoResponse fbUserInfo =
+                        restTemplate.getForObject(userInfoUrl, FacebookUserInfoResponse.class);
 
                 String username = fbUserInfo.getName();
 
@@ -174,23 +178,21 @@ public class AuthenticationService {
 
     // logic authen & login with username, not social login
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws ParseException, JOSEException {
-        var userByEmail = userRepository.findByEmail(request.getUsername())
-                .orElse(null);
+        var userByEmail = userRepository.findByEmail(request.getUsername()).orElse(null);
 
-        var userByUsername = userRepository.findByUsername(request.getUsername())
-                .orElse(null);
+        var userByUsername =
+                userRepository.findByUsername(request.getUsername()).orElse(null);
 
         User user = userByEmail != null ? userByEmail : userByUsername;
 
-        if (user == null)
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        if (user == null) throw new AppException(ErrorCode.USER_NOT_FOUND);
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
-//        if (!user.isEmailVerified()) {
-//            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
-//        }
+        //        if (!user.isEmailVerified()) {
+        //            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+        //        }
 
         return getAuthorizationData(user);
     }

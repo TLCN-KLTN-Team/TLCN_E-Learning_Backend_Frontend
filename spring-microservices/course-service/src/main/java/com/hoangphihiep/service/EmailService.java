@@ -1,23 +1,23 @@
 package com.hoangphihiep.service;
 
-import com.sendgrid.*;
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Email;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class EmailService {
 
-    @Value("${sendgrid.api.key}")
-    private String sendGridApiKey;
+    private final JavaMailSender mailSender;
 
     @Value("${app.email.from:noreply@yourdomain.com}")
     private String fromEmail;
@@ -44,34 +44,23 @@ public class EmailService {
         try {
             validateEmailInputs(toEmail, firstName, lastName, username, password, accountType);
 
-            Email from = new Email(fromEmail, fromName);
-            Email to = new Email(toEmail);
-            String subject = "Chào mừng! Thông tin tài khoản " + accountType + " của bạn";
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Chào mừng! Thông tin tài khoản " + accountType + " của bạn");
 
             String htmlContent = buildAccountCredentialsEmail(firstName, lastName, username, password, accountType);
-            Content content = new Content("text/html", htmlContent);
+            helper.setText(htmlContent, true);
 
-            Mail mail = new Mail(from, subject, to, content);
+            mailSender.send(message);
 
-            SendGrid sg = new SendGrid(sendGridApiKey);
-            Request request = new Request();
+            log.info("Email sent successfully to {}", toEmail);
 
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
-
-            Response response = sg.api(request);
-
-            log.info("Email sent successfully to {}. Status: {}", toEmail, response.getStatusCode());
-
-            if (response.getStatusCode() >= 400) {
-                log.error("SendGrid error response: {}", response.getBody());
-                throw new RuntimeException("SendGrid returned error status: " + response.getStatusCode());
-            }
-
-        } catch (IOException ex) {
-            log.error("IO error sending email to {}: {}", toEmail, ex.getMessage(), ex);
-            throw new RuntimeException("Failed to send account credentials email due to IO error", ex);
+        } catch (MessagingException | java.io.UnsupportedEncodingException ex) {
+            log.error("Error sending email to {}: {}", toEmail, ex.getMessage(), ex);
+            throw new RuntimeException("Failed to send account credentials email", ex);
         } catch (Exception e) {
             log.error("Unexpected error while preparing email for {}: {}", toEmail, e.getMessage(), e);
             throw new RuntimeException("Failed to prepare account credentials email", e);
@@ -312,31 +301,20 @@ public class EmailService {
 
     public void sendPasswordResetEmail(String toEmail, String firstName, String resetToken) {
         try {
-            Email from = new Email(fromEmail, fromName);
-            Email to = new Email(toEmail);
-            String subject = "Yêu cầu đặt lại mật khẩu";
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Yêu cầu đặt lại mật khẩu");
 
             String htmlContent = buildPasswordResetEmail(firstName, resetToken);
-            Content content = new Content("text/html", htmlContent);
+            helper.setText(htmlContent, true);
 
-            Mail mail = new Mail(from, subject, to, content);
+            mailSender.send(message);
+            log.info("Password reset email sent to {}", toEmail);
 
-            SendGrid sg = new SendGrid(sendGridApiKey);
-            Request request = new Request();
-
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
-
-            Response response = sg.api(request);
-            log.info("Password reset email sent to {}. Status: {}", toEmail, response.getStatusCode());
-
-            if (response.getStatusCode() >= 400) {
-                log.error("SendGrid error response: {}", response.getBody());
-                throw new RuntimeException("SendGrid returned error status: " + response.getStatusCode());
-            }
-
-        } catch (IOException ex) {
+        } catch (MessagingException | java.io.UnsupportedEncodingException ex) {
             log.error("Error sending password reset email to {}: {}", toEmail, ex.getMessage(), ex);
             throw new RuntimeException("Failed to send password reset email", ex);
         } catch (Exception e) {
@@ -428,34 +406,23 @@ public class EmailService {
         try {
             validateOtpInputs(toEmail, otpCode);
 
-            Email from = new Email(fromEmail, fromName);
-            Email to = new Email(toEmail);
-            String subject = "Mã xác thực OTP - Hệ thống Quản lý Giáo dục";
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Mã xác thực OTP - Hệ thống Quản lý Giáo dục");
 
             String htmlContent = buildOtpEmail(otpCode);
-            Content content = new Content("text/html", htmlContent);
+            helper.setText(htmlContent, true);
 
-            Mail mail = new Mail(from, subject, to, content);
+            mailSender.send(message);
 
-            SendGrid sg = new SendGrid(sendGridApiKey);
-            Request request = new Request();
+            log.info("OTP email sent successfully to {}", toEmail);
 
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
-
-            Response response = sg.api(request);
-
-            log.info("OTP email sent successfully to {}. Status: {}", toEmail, response.getStatusCode());
-
-            if (response.getStatusCode() >= 400) {
-                log.error("SendGrid error response: {}", response.getBody());
-                throw new RuntimeException("SendGrid returned error status: " + response.getStatusCode());
-            }
-
-        } catch (IOException ex) {
-            log.error("IO error sending OTP email to {}: {}", toEmail, ex.getMessage(), ex);
-            throw new RuntimeException("Failed to send OTP email due to IO error", ex);
+        } catch (MessagingException | java.io.UnsupportedEncodingException ex) {
+            log.error("Error sending OTP email to {}: {}", toEmail, ex.getMessage(), ex);
+            throw new RuntimeException("Failed to send OTP email", ex);
         } catch (Exception e) {
             log.error("Unexpected error while preparing OTP email for {}: {}", toEmail, e.getMessage(), e);
             throw new RuntimeException("Failed to prepare OTP email", e);
@@ -635,9 +602,12 @@ public class EmailService {
     @Async
     public CompletableFuture<Boolean> sendFeedbackForRegisteredEducationalUnit(String toEmail, String unitName, String feedback){
         try {
-            Email from = new Email(fromEmail, fromName);
-            Email to = new Email(toEmail);
-            String subject = "Phản hồi về đăng ký đơn vị đào tạo";
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Phản hồi về đăng ký đơn vị đào tạo");
 
             String contentStr = """
                 Xin chào,
@@ -653,19 +623,17 @@ public class EmailService {
                 Trân trọng,
                 Đội ngũ Hệ thống Quản lý Giáo dục
                 """.formatted(unitName, feedback);
-            Content content = new Content("text/plain", contentStr);
-            Mail mail = new Mail(from, subject, to, content);
-            SendGrid sg = new SendGrid(sendGridApiKey);
-            Request request = new Request();
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
-            Response response = sg.api(request);
+            helper.setText(contentStr, false);
 
-            return response.getStatusCode()==200 ?
-                    CompletableFuture.completedFuture(true) : CompletableFuture.completedFuture(false);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            mailSender.send(message);
+
+            return CompletableFuture.completedFuture(true);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            log.error("Error sending feedback email: {}", e.getMessage(), e);
+            return CompletableFuture.completedFuture(false);
+        } catch (Exception e) {
+            log.error("Unexpected error sending feedback email: {}", e.getMessage(), e);
+            return CompletableFuture.completedFuture(false);
         }
     }
 }

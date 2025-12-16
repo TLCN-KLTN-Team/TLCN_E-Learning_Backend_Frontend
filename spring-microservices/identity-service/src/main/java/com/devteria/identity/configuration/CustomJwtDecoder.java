@@ -21,27 +21,30 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class CustomJwtDecoder implements JwtDecoder {
-    
+
     @Value("${jwt.signerKey}")
     private String signerKey;
-    
+
     @Override
     public Jwt decode(String token) throws JwtException {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            
+
             // Verify signature
             JWSVerifier verifier = new MACVerifier(signerKey.getBytes());
             if (!signedJWT.verify(verifier)) {
                 throw new JwtException("Invalid token signature");
             }
-            
-            Map<String, Object> claims = new HashMap<>(signedJWT.getJWTClaimsSet().getClaims());
+
+            Map<String, Object> claims =
+                    new HashMap<>(signedJWT.getJWTClaimsSet().getClaims());
             String type = signedJWT.getJWTClaimsSet().getStringClaim("type");
-            
+
             // If it's a service token, add service authorities
             if ("service-token".equals(type)) {
-                log.debug("Processing service token from issuer: {}", signedJWT.getJWTClaimsSet().getIssuer());
+                log.debug(
+                        "Processing service token from issuer: {}",
+                        signedJWT.getJWTClaimsSet().getIssuer());
                 // Grant service tokens full access by adding ADMIN role
                 claims.put("roles", List.of("ADMIN", "SERVICE"));
             }
@@ -59,5 +62,4 @@ public class CustomJwtDecoder implements JwtDecoder {
             throw new JwtException("Token verification failed", e);
         }
     }
-
 }

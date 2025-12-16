@@ -3,8 +3,6 @@ package com.devteria.identity.service;
 import java.util.HashSet;
 import java.util.List;
 
-import com.devteria.identity.entity.AccountStatus;
-import com.devteria.identity.entity.Role;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.TeacherRequest;
 import com.devteria.identity.dto.response.TeacherResponse;
+import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.Teacher;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
@@ -207,17 +207,15 @@ public class TeacherService {
 
     public TeacherResponse getTeacherByUserId(String userId) {
         log.info("Getting teacher by userId: {}", userId);
-        Teacher teacher = teacherRepository
-                .findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
+        Teacher teacher =
+                teacherRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.TEACHER_NOT_FOUND));
         return teacherMapper.toTeacherResponse(teacher);
     }
 
     public TeacherResponse updateAccountStatus(String id, String status) {
         log.info("Updating account status for student ID: {} to {}", id, status);
 
-        Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        Teacher teacher = teacherRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         try {
             AccountStatus accountStatus = AccountStatus.valueOf(status);

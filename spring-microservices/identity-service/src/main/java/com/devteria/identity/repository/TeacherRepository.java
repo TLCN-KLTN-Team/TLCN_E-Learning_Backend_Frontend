@@ -27,7 +27,6 @@ public interface TeacherRepository extends JpaRepository<Teacher, String> {
             @Param("educationalUnitId") String educationalUnitId,
             Pageable pageable);
 
-
     List<Teacher> findByIdEducational(int educationalUnitId);
 
     // Thêm methods mới cho admin
@@ -40,7 +39,7 @@ public interface TeacherRepository extends JpaRepository<Teacher, String> {
             + "LOWER(t.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Teacher> findByInstitutionWithSearch(
             @Param("educationalUnitId") int educationalUnitId, @Param("search") String search, Pageable pageable);
-    
+
     @Query("SELECT COUNT(t) FROM Teacher t WHERE t.idEducational = :educationalUnitId")
     long countByIdEducational(@Param("educationalUnitId") Integer educationalUnitId);
 }

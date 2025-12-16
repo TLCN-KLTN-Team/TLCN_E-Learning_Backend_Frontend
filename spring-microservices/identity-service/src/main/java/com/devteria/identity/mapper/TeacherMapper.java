@@ -15,9 +15,9 @@ public interface TeacherMapper {
 
     @Mapping(source = "idDepartment", target = "departmentId")
     @Mapping(source = "idEducational", target = "educationalUnitId")
-    @Mapping(source = "avatarUrl", target = "avatarUrl")  // Explicit mapping for parent field
-    @Mapping(source = "phoneNumber", target = "phoneNumber")  // Explicit mapping for parent field
-    @Mapping(source = "bio", target = "bio")  // Explicit mapping for parent field
+    @Mapping(source = "avatarUrl", target = "avatarUrl") // Explicit mapping for parent field
+    @Mapping(source = "phoneNumber", target = "phoneNumber") // Explicit mapping for parent field
+    @Mapping(source = "bio", target = "bio") // Explicit mapping for parent field
     TeacherResponse toTeacherResponse(Teacher teacher);
 
     @Mapping(target = "id", ignore = true)

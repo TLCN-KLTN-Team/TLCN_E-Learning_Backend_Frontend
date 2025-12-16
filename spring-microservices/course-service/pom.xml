@@ -71,12 +71,6 @@
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.devteria</groupId>
-            <artifactId>identity-service</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
 		<dependency>
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>
@@ -97,15 +91,8 @@
 			<version>9.37.3</version> <!-- hoặc version mới nhất -->
 		</dependency>
 		<dependency>
-			<groupId>com.sendgrid</groupId>
-			<artifactId>sendgrid-java</artifactId>
-			<version>4.9.3</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.bouncycastle</groupId>
-					<artifactId>bcprov-jdk15on</artifactId>
-				</exclusion>
-			</exclusions>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
 		<!-- Thêm bản an toàn -->
@@ -159,8 +146,44 @@
 			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>1.5.5.Final</version>
+		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<build>
 		<plugins>
