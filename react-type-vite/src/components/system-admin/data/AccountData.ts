@@ -3,7 +3,7 @@ import { Shield, User, GraduationCap, UserStar } from "lucide-react";
 
 // Role Configuration
 export const ROLE_CONFIG = {
-  SYSTEM_ADMIN: {
+  SUPER_ADMIN: {
     label: "Quản trị hệ thống",
     color: "bg-red-100 text-red-800",
     icon: Shield,
@@ -48,6 +48,10 @@ export const STATUS_CONFIG = {
   PENDING: {
     label: "Chờ duyệt",
     color: "bg-yellow-100 text-yellow-800",
+  },
+  SUSPENDED: {
+    label: "Đã đình chỉ",
+    color: "bg-gray-100 text-gray-800",
   },
 } as const;
 

@@ -1,6 +1,7 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.EducationalUnitRegistrationRequest;
+import com.hoangphihiep.dto.request.StatusUpdateRequest;
 import com.hoangphihiep.dto.request.UserRequest;
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.Department;
@@ -52,6 +53,7 @@ public class EducationalUnitService {
     public List<EducationalUnitCardResponse> getAllEducationalUnits() {
         List<EducationalUnit> educationalUnits = educationalUnitRepository.findAll();
         return educationalUnits.stream()
+                .filter(educationalUnit -> educationalUnit.getStatus().equals(EducationalUnitStatus.ACTIVE))
                 .map(educationalUnit -> {
                     List<String> departments = educationalUnit.getDepartments().stream()
                             .map(Department::getName)
@@ -428,7 +430,9 @@ public class EducationalUnitService {
         EducationalUnit entity = educationalUnitRepository.findById(unitId)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
-        CompletableFuture<Boolean> future = emailService.sendFeedbackForRegisteredEducationalUnit(entity.getEmail(), entity.getName(), feedback);
+        UserResponse userInfo = userInfoApi.getUserInfo(entity.getIdAdmin()).getResult();
+
+        CompletableFuture<Boolean> future = emailService.sendFeedbackForRegisteredEducationalUnit(userInfo.getEmail(), entity.getName(), feedback);
         future.whenComplete((emailSent, error) -> {
             if (error != null) {
                 throw new AppException(ErrorCode.EMAIL_SENDING_FAILED);
@@ -438,25 +442,55 @@ public class EducationalUnitService {
         });
     }
 
-    public void suspendEducationalUnit(Integer id, String reason){
-        EducationalUnit educationalUnit = educationalUnitRepository.findById(id)
+    public void sendFeedbackToRepresentative(String email, String name, String feedback) {
+        CompletableFuture<Boolean> future = emailService.sendFeedbackForRegisteredEducationalUnit(email, name, feedback);
+        future.whenComplete((emailSent, error) -> {
+            if (error != null) {
+                throw new AppException(ErrorCode.EMAIL_SENDING_FAILED);
+            } else if (!emailSent) {
+                throw new AppException(ErrorCode.EMAIL_SENDING_FAILED);
+            }
+        });
+    }
+
+    public void suspendEducationalUnit(StatusUpdateRequest request){
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(request.getUnitId())
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
         educationalUnit.setStatus(EducationalUnitStatus.SUSPENDED);
 
         educationalUnitRepository.save(educationalUnit);
 
-        this.sendFeedback(id, "Đơn vị đào tạo của bạn đã bị tạm ngưng hoạt động. Vui lòng liên hệ quản trị hệ thống để biết thêm chi tiết.\n\nLý do: " + reason);
+        this.sendFeedbackToRepresentative(request.getRepresentativeEmail(), request.getUnitName(),
+                "Đơn vị đào tạo của bạn đã bị tạm dừng hoạt động.\n\nLý do: " + request.getReason());
     }
 
-    public void reactivateEducationalUnit(Integer id, String reason){
-        EducationalUnit educationalUnit = educationalUnitRepository.findById(id)
+    public void reactivateEducationalUnit(StatusUpdateRequest request){
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(request.getUnitId())
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
         educationalUnit.setStatus(EducationalUnitStatus.ACTIVE);
 
         educationalUnitRepository.save(educationalUnit);
 
-        this.sendFeedback(id, "Đơn vị đào tạo của bạn đã bị tạm ngưng hoạt động. Vui lòng liên hệ quản trị hệ thống để biết thêm chi tiết.\n\nLý do: " + reason);
+        this.sendFeedbackToRepresentative(request.getRepresentativeEmail(), request.getUnitName(),
+                "Đơn vị đào tạo của bạn đã được kích hoạt lại thành công." +
+                        "\n Việc kích hoạt lại có thể do lý do sau: " + request.getReason());
+    }
+
+    public String updateStatusEducationalUnit(StatusUpdateRequest request) {
+
+        return switch (request.getStatus().toUpperCase()) {
+            case "REACTIVATE" -> {
+                this.reactivateEducationalUnit(request);
+                yield "Kích hoạt lại đơn vị đào tạo thành công";
+            }
+            case "SUSPENDED" -> {
+                this.suspendEducationalUnit(request);
+                yield "Tạm dừng đơn vị đào tạo thành công";
+            }
+            default -> throw new AppException(ErrorCode.INVALID_REQUEST);
+        };
+
     }
 }

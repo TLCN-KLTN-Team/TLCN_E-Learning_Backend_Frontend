@@ -28,9 +28,6 @@ export const doLogin = async (
     ApiResponse<AuthenticationResponse>
   >("/identity/auth/login", request);
 
-  // Debug: Log the response to see what backend returns
-  console.log("Login response:", response.data);
-
   // Lưu tokens vào localStorage (KHÔNG lưu roles vì lấy từ JWT)
   const authData = response.data.result;
   localStorage.setItem("accessToken", authData.accessToken);
@@ -47,9 +44,6 @@ export const doLogin = async (
       authData.refreshExpiryTime.toString()
     );
   }
-
-  // Debug: Verify token is saved
-  console.log("Saved accessToken:", localStorage.getItem("accessToken"));
 
   return authData;
 };
@@ -115,10 +109,9 @@ export const doLogout = async (): Promise<void> => {
 };
 
 export const getMe = async (): Promise<User> => {
-  console.log("Calling getMe API...");
   const response = await axiosInstance.get<ApiResponse<User>>(
     "/identity/users/me"
   );
-  console.log("getMe response:", response.data);
+
   return response.data.result;
 };

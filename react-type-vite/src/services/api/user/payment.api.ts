@@ -31,10 +31,9 @@ export interface OrderPreviewRequest {
 
 export interface OrderPreviewResponse {
   items: CourseItem[];
-  originalPrice: string;
   totalPrice: string;
-  discountedPrice: string;
   amount: number;
+  currency: string;
 }
 
 export interface CourseItem {

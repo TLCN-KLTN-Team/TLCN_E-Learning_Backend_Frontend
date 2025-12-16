@@ -18,5 +18,7 @@ public interface UserMapper {
     UserResponse toUserResponse(User user);
 
     @Mapping(target = "accountStatus", ignore = true)
+    @Mapping(target = "avatarUrl", ignore = true)
+    @Mapping(target = "password", ignore = true)
     User updateUser(@MappingTarget User user, UserUpdateRequest request);
 }

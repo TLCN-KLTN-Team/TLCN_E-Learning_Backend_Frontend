@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { LoadingDots } from "../ui/LoadingDots";
 
 import SubmissionModal from "./modals/SubmissionModal";
+import UpdateUnitStatusModal from "./modals/UpdateUnitStatusModal";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import { toast } from "react-toastify";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -12,10 +13,12 @@ import { paginationUtils } from "@/utils/paginationUtils";
 import type { PaginationState } from "@/utils/paginationUtils";
 
 import EducationalUnitService from "@/services/api/superadmin/educationalUnit.api";
+import TraningUnitItem from "./item/TraningUnitItem";
 
 const TrainingUnitsManagement: React.FC = () => {
   // const [setUnits] = useState<EducationalUnitResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [units, setUnits] = useState<EducationalUnitResponse[]>([]);
 
   // Pagination state using paginationUtils
   const [paginationState, setPaginationState] = useState<PaginationState>(
@@ -41,21 +44,63 @@ const TrainingUnitsManagement: React.FC = () => {
   // Get pagination display text
   const paginationText = paginationUtils.getPaginationText(paginationState);
 
-  // const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [selectedUnitData] =
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [selectedUnitData, setSelectedUnitData] =
     useState<EducationalUnitResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
   const [modalRef, setModalRef] = useState<HTMLDivElement | null>(null);
 
-  // const handleShowDetails = (unitId: number) => {
-  //   const unitData = units.find((unit) => unit.id === unitId) || null;
-  //   setSelectedUnitData(unitData);
-  //   setShowDetailModal(true);
-  // };
+  const handleShowDetails = (unitId: number) => {
+    const unitData = units.find((unit) => unit.id === unitId) || null;
+    setSelectedUnitData(unitData);
+    setShowDetailModal(true);
+  };
 
-  // const handleDropdownToggle = (unitId: string | null) => {
-  //   setOpenDropdown(unitId);
-  // };
+  const handleEditUnit = (unit: EducationalUnitResponse) => {
+    setSelectedUnitData(unit);
+    setShowUpdateStatusModal(true);
+  };
+
+  const handleUpdateStatus = async (newStatus: string, reason: string) => {
+    if (!selectedUnitData) return;
+
+    try {
+      const message = await EducationalUnitService.updateEducationalUnitStatus(
+        selectedUnitData.id,
+        newStatus,
+        reason,
+        selectedUnitData.name,
+        selectedUnitData.representativeEmail || ""
+      );
+
+      console.log("Update status message:", message);
+
+      // Update local state with the new status
+      newStatus = newStatus === "SUSPENDED" ? "SUSPENDED" : "ACTIVE";
+      setUnits((prevUnits) =>
+        prevUnits.map((unit) =>
+          unit.id === selectedUnitData.id
+            ? { ...unit, status: newStatus }
+            : unit
+        )
+      );
+
+      toast.success(message || "Đã cập nhật trạng thái thành công!");
+      setShowUpdateStatusModal(false);
+      setSelectedUnitData(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Lỗi khi cập nhật trạng thái đơn vị đào tạo"
+      );
+    }
+  };
+
+  const handleDropdownToggle = (unitId: string | null) => {
+    setOpenDropdown(unitId);
+  };
 
   // Fetch units data
   useEffect(() => {
@@ -63,7 +108,7 @@ const TrainingUnitsManagement: React.FC = () => {
       setIsLoading(true);
       try {
         const data = await EducationalUnitService.getAllEducationalUnits();
-        // setUnits(data.content);
+        setUnits(data.content);
         console.log(data);
 
         // Update pagination state using paginationUtils
@@ -139,17 +184,18 @@ const TrainingUnitsManagement: React.FC = () => {
                 <th className={headerStyles}>Thao tác</th>
               </tr>
             </thead>
-            {/* <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200">
               {units.map((unit) => (
-                // <TraningUnitItem
-                //   key={unit.id}
-                //   unit={unit}
-                //   // onRowClick={handleShowDetails}
-                //   openDropdown={openDropdown}
-                //   onDropdownToggle={handleDropdownToggle}
-                // />
+                <TraningUnitItem
+                  key={unit.id}
+                  unit={unit}
+                  onRowClick={handleShowDetails}
+                  onEditClick={handleEditUnit}
+                  openDropdown={openDropdown}
+                  onDropdownToggle={handleDropdownToggle}
+                />
               ))}
-            </tbody> */}
+            </tbody>
           </table>
         </div>
 
@@ -232,6 +278,21 @@ const TrainingUnitsManagement: React.FC = () => {
           onClose={() => setShowDetailModal(false)}
         />
       </div>
+
+      {/* Update Status Modal */}
+      {showUpdateStatusModal && selectedUnitData && (
+        <UpdateUnitStatusModal
+          unitName={selectedUnitData.name}
+          currentStatus={selectedUnitData.status}
+          targetStatus={selectedUnitData.status}
+          representativeEmail={selectedUnitData.representativeEmail || ""}
+          onClose={() => {
+            setShowUpdateStatusModal(false);
+            setSelectedUnitData(null);
+          }}
+          onConfirm={handleUpdateStatus}
+        />
+      )}
     </div>
   );
 };

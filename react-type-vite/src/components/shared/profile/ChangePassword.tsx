@@ -13,7 +13,7 @@ interface ChangePasswordProps {
 const ChangePassword = ({ isLoading = false }: ChangePasswordProps) => {
   const { resolvedTheme } = useTheme();
   const [formData, setFormData] = useState<ChangePasswordData>({
-    currentPassword: "",
+    oldPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -60,8 +60,8 @@ const ChangePassword = ({ isLoading = false }: ChangePasswordProps) => {
     // Validate all fields
     const newErrors: Record<string, string> = {};
 
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = "Vui lòng nhập mật khẩu hiện tại";
+    if (!formData.oldPassword) {
+      newErrors.oldPassword = "Vui lòng nhập mật khẩu hiện tại";
     }
 
     if (!formData.newPassword) {
@@ -79,7 +79,7 @@ const ChangePassword = ({ isLoading = false }: ChangePasswordProps) => {
       newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
     }
 
-    if (formData.currentPassword === formData.newPassword) {
+    if (formData.oldPassword === formData.newPassword) {
       newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu hiện tại";
     }
 
@@ -91,7 +91,7 @@ const ChangePassword = ({ isLoading = false }: ChangePasswordProps) => {
 
     try {
       await UserApi.changePassword({
-        currentPassword: formData.currentPassword,
+        oldPassword: formData.oldPassword,
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword,
       });
@@ -99,7 +99,7 @@ const ChangePassword = ({ isLoading = false }: ChangePasswordProps) => {
 
       // Reset form after success
       setFormData({
-        currentPassword: "",
+        oldPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
@@ -146,12 +146,10 @@ const ChangePassword = ({ isLoading = false }: ChangePasswordProps) => {
           <div className="relative">
             <input
               type={showPasswords.current ? "text" : "password"}
-              value={formData.currentPassword}
-              onChange={(e) =>
-                handleInputChange("currentPassword", e.target.value)
-              }
+              value={formData.oldPassword}
+              onChange={(e) => handleInputChange("oldPassword", e.target.value)}
               className={`w-full px-4 py-3 pr-12 border rounded-lg ${
-                errors.currentPassword ? "border-red-500" : resolvedTheme
+                errors.oldPassword ? "border-red-500" : resolvedTheme
               }`}
               placeholder="Nhập mật khẩu hiện tại"
             />
@@ -167,9 +165,9 @@ const ChangePassword = ({ isLoading = false }: ChangePasswordProps) => {
               )}
             </button>
           </div>
-          {errors.currentPassword && (
+          {errors.oldPassword && (
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-              {errors.currentPassword}
+              {errors.oldPassword}
             </p>
           )}
         </div>
