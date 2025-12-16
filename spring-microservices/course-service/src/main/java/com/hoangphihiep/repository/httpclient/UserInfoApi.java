@@ -1,6 +1,6 @@
 package com.hoangphihiep.repository.httpclient;
 
-import com.devteria.identity.configuration.AuthenticationRequestInterceptor;
+import com.hoangphihiep.config.AuthenticationRequestInterceptor;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;

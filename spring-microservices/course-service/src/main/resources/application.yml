@@ -1,3 +1,4 @@
+# course-service
 server:
   port: 8088
   servlet:
@@ -28,7 +29,7 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
   kafka:
     producer:
-      bootstrap-servers: localhost:9092
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
   jackson:
@@ -49,7 +50,22 @@ spring:
       repositories:
         enabled: true
   elasticsearch:
-    uris: http://localhost:9200
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 # JWT Configuration
 jwt:
@@ -61,17 +77,13 @@ jwt:
 service:
   id: course-service
 
-# SendGrid Configuration
-sendgrid:
-  api:
-    key: ${SENDGRID_API_KEY}
-
 app:
   email:
     from: ${APP_EMAIL_FROM}
     from-name: ${APP_EMAIL_FROM_NAME}
   services:
     identity: ${IDENTITY_SERVICE_URL:http://localhost:8080/identity}
+    file: ${FILE_SERVICE_URL:http://localhost:8084/file-handler}
 
 # Logging Configuration
 logging:
@@ -83,7 +95,7 @@ logging:
 openapi:
   services:
     api-docs: api-docs
-    server: http://localhost:8888/api/v1${server.servlet.context-path}
+    server: ${API_GATEWAY_URL:http://localhost:8888}/api/v1${server.servlet.context-path}
     title: Course Management APIs
     version: 1.0.0
     license:
@@ -116,3 +128,15 @@ kafka:
   topic:
     course-events: course-events
     class-events: class-events
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # hoặc * nếu bạn muốn expose hết
+  endpoint:
+    health:
+      show-details: always
+  health:
+    mail:
+      enabled: false  # Tắt mail health check tạm thời

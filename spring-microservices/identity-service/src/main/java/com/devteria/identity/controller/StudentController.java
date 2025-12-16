@@ -3,7 +3,6 @@ package com.devteria.identity.controller;
 import java.util.List;
 import java.util.Map;
 
-import com.devteria.identity.dto.response.UserResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -49,8 +48,7 @@ public class StudentController {
     }
 
     @PostMapping("/users-by-student-ids")
-    public ApiResponse<List<String>> getUsersByStudentIds(
-            @RequestBody Map<String, List<String>> request) {
+    public ApiResponse<List<String>> getUsersByStudentIds(@RequestBody Map<String, List<String>> request) {
         List<String> studentIds = request.get("studentIds");
         log.info("Fetching users for student IDs: {}", studentIds);
         return ApiResponse.<List<String>>builder()
@@ -59,8 +57,7 @@ public class StudentController {
     }
 
     @PostMapping("/students-by-user-ids")
-    public ApiResponse<List<StudentResponse>> getStudentsByUserIds(
-            @RequestBody Map<String, List<String>> request) {
+    public ApiResponse<List<StudentResponse>> getStudentsByUserIds(@RequestBody Map<String, List<String>> request) {
         List<String> studentIds = request.get("userIds");
         return ApiResponse.<List<StudentResponse>>builder()
                 .result(studentService.getStudentsByUserIds(studentIds))
@@ -70,13 +67,12 @@ public class StudentController {
     @GetMapping("/by-user-id/{id}")
     public ApiResponse<StudentResponse> getStudentById(@PathVariable String id) {
         return ApiResponse.<StudentResponse>builder()
-                .result(studentService.getStudentById(id)).build();
+                .result(studentService.getStudentById(id))
+                .build();
     }
 
     @PutMapping("/{id}/status")
-    public ApiResponse<StudentResponse> toggleAccountStatus(
-            @PathVariable String id,
-            @RequestParam String status) {
+    public ApiResponse<StudentResponse> toggleAccountStatus(@PathVariable String id, @RequestParam String status) {
         log.info("Toggling account status for student ID: {} to {}", id, status);
         return ApiResponse.<StudentResponse>builder()
                 .result(studentService.updateAccountStatus(id, status))
@@ -112,13 +108,13 @@ public class StudentController {
                 .build();
     }
 
-        @GetMapping("/count-by-educational-unit/{educationalUnitId}")
-        public ApiResponse<Long> countStudentsByEducationalUnit(@PathVariable Integer educationalUnitId) {
-                return ApiResponse.<Long>builder()
-                                .result(studentService.countByEducationalUnit(educationalUnitId))
-                                .build();
-        }
-    
+    @GetMapping("/count-by-educational-unit/{educationalUnitId}")
+    public ApiResponse<Long> countStudentsByEducationalUnit(@PathVariable Integer educationalUnitId) {
+        return ApiResponse.<Long>builder()
+                .result(studentService.countByEducationalUnit(educationalUnitId))
+                .build();
+    }
+
     @GetMapping("/{studentId}/educational-unit")
     public ApiResponse<Integer> getStudentEducationalUnit(@PathVariable String studentId) {
         log.info("Fetching educational unit for student: {}", studentId);

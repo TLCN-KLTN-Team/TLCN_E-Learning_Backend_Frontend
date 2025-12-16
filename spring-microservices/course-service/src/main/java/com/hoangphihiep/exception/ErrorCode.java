@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatusCode;
 @Getter
 public enum ErrorCode {
     // System Errors (SYS_xxxx)
+
+    SUCCESS("SYS_1000", "Yêu cầu thành công", HttpStatus.OK),
+
     UNCATEGORIZED_EXCEPTION("SYS_9999", "Lỗi không xác định", HttpStatus.INTERNAL_SERVER_ERROR),
     JSON_PROCESSING_ERROR("SYS_9998", "Lỗi xử lý JSON", HttpStatus.INTERNAL_SERVER_ERROR),
     KAFKA_PUBLISH_FAILED("SYS_9997", "Lỗi khi xuất bản sự kiện Kafka", HttpStatus.INTERNAL_SERVER_ERROR),

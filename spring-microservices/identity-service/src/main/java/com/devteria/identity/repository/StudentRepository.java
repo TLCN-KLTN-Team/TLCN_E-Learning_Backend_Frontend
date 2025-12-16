@@ -23,10 +23,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     List<Student> findByStudentIdContainingIgnoreCase(String studentId);
 
     List<Student> findByStudentIdContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-            String studentCode,
-            String firstName,
-            String lastName
-    );
+            String studentCode, String firstName, String lastName);
 
     @Query("SELECT s FROM Student s WHERE " + "(:studentId IS NULL OR s.studentId LIKE %:studentId%) AND "
             + "(:departmentId IS NULL OR s.idDepartment = :departmentId) AND "
@@ -53,7 +50,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     List<Student> findByStudentIdIn(List<String> studentIds);
 
     List<Student> findByIdIn(Collection<String> ids);
-    
+
     @Query("SELECT COUNT(s) FROM Student s WHERE s.idEducational = :educationalUnitId")
     long countByIdEducational(@Param("educationalUnitId") Integer educationalUnitId);
 }

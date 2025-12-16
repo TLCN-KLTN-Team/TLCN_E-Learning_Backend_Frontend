@@ -4,10 +4,6 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.devteria.identity.dto.response.UserChatInfo;
-import com.devteria.identity.entity.Role;
-import com.devteria.identity.entity.Student;
-import com.devteria.identity.repository.StudentRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,12 +21,17 @@ import com.devteria.identity.dto.request.ChangePasswordRequest;
 import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.request.UserUpdateRequest;
 import com.devteria.identity.dto.response.PaginatedResponse;
+import com.devteria.identity.dto.response.UserChatInfo;
 import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.entity.Role;
+import com.devteria.identity.entity.Student;
 import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.UserMapper;
+import com.devteria.identity.repository.RoleRepository;
+import com.devteria.identity.repository.StudentRepository;
 import com.devteria.identity.repository.UserRepository;
 import com.devteria.identity.repository.httpclient.RemoveImageApi;
 import com.devteria.identity.repository.httpclient.UploadImageApi;
@@ -56,18 +57,16 @@ public class UserService {
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void adminVerifyAccount(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         user.setAccountStatus(AccountStatus.ACTIVE);
         user.setEmailVerified(true);
         userRepository.save(user);
     }
 
-    public void verifyAccount(String email, String otpCode){
+    public void verifyAccount(String email, String otpCode) {
         try {
             emailVerificationService.verifyOtp(email, otpCode);
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
             user.setAccountStatus(AccountStatus.ACTIVE);
             user.setEmailVerified(true);
             userRepository.save(user);
@@ -246,7 +245,7 @@ public class UserService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<User> users = userRepository.findByFilters(keyword,role,status,pageable);
+        Page<User> users = userRepository.findByFilters(keyword, role, status, pageable);
         List<UserResponse> userList = users.getContent().stream()
                 .map(user -> {
                     UserResponse res = userMapper.toUserResponse(user);
@@ -257,8 +256,6 @@ public class UserService {
                     return res;
                 })
                 .toList();
-
-
 
         PaginatedResponse<UserResponse> response = PaginatedResponse.<UserResponse>builder()
                 .content(userList)
@@ -274,13 +271,11 @@ public class UserService {
     public List<UserChatInfo> getUserIdsByStudentIds(String keyword) {
         List<Student> users = studentRepository.findByStudentIdContainingIgnoreCase(keyword);
         return users.stream()
-                .map(
-                        user -> UserChatInfo.builder()
-                                .id(user.getId())
-                                .fullName(user.getFirstName() + " " + user.getLastName())
-                                .avatarUrl(user.getAvatarUrl())
-                                .build()
-                )
+                .map(user -> UserChatInfo.builder()
+                        .id(user.getId())
+                        .fullName(user.getFirstName() + " " + user.getLastName())
+                        .avatarUrl(user.getAvatarUrl())
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -288,10 +283,13 @@ public class UserService {
         boolean matchKeyword = true;
         if (keyword != null && !keyword.trim().isEmpty()) {
             String lowerKeyword = keyword.toLowerCase().trim();
-            matchKeyword = (user.getUsername() != null && user.getUsername().toLowerCase().contains(lowerKeyword)) ||
-                    (user.getEmail() != null && user.getEmail().toLowerCase().contains(lowerKeyword)) ||
-                    (user.getFirstName() != null && user.getFirstName().toLowerCase().contains(lowerKeyword)) ||
-                    (user.getLastName() != null && user.getLastName().toLowerCase().contains(lowerKeyword));
+            matchKeyword = (user.getUsername() != null
+                            && user.getUsername().toLowerCase().contains(lowerKeyword))
+                    || (user.getEmail() != null && user.getEmail().toLowerCase().contains(lowerKeyword))
+                    || (user.getFirstName() != null
+                            && user.getFirstName().toLowerCase().contains(lowerKeyword))
+                    || (user.getLastName() != null
+                            && user.getLastName().toLowerCase().contains(lowerKeyword));
         }
         return matchKeyword;
     }

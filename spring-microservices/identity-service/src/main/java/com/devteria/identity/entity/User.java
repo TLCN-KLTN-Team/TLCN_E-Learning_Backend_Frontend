@@ -47,6 +47,7 @@ public class User implements Serializable {
 
     @Enumerated(EnumType.STRING)
     AccountStatus accountStatus;
+
     boolean isEmailVerified;
 
     @Enumerated(EnumType.STRING)

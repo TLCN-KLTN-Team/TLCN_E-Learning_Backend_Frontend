@@ -1,6 +1,7 @@
 package com.devteria.identity.controller;
 
-import com.devteria.identity.dto.response.StudentResponse;
+import java.util.List;
+
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -18,8 +19,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/teachers")
@@ -48,9 +47,7 @@ public class TeacherController {
     }
 
     @PutMapping("/{id}/status")
-    public ApiResponse<TeacherResponse> toggleAccountStatus(
-            @PathVariable String id,
-            @RequestParam String status) {
+    public ApiResponse<TeacherResponse> toggleAccountStatus(@PathVariable String id, @RequestParam String status) {
         log.info("Toggling account status for student ID: {} to {}", id, status);
         return ApiResponse.<TeacherResponse>builder()
                 .result(teacherService.updateAccountStatus(id, status))
@@ -111,8 +108,7 @@ public class TeacherController {
     }
 
     @GetMapping("/educational-units/{educationalUnitId}")
-    public ApiResponse<List<TeacherResponse>> getTeachersByEducationalUnitNoPage(
-            @PathVariable int educationalUnitId) {
+    public ApiResponse<List<TeacherResponse>> getTeachersByEducationalUnitNoPage(@PathVariable int educationalUnitId) {
 
         return ApiResponse.<List<TeacherResponse>>builder()
                 .result(teacherService.getTeachersByEducationalUnitId(educationalUnitId))
@@ -133,7 +129,7 @@ public class TeacherController {
                 .result(teacherService.getTeacherByUserId(userId))
                 .build();
     }
-    
+
     @GetMapping("/count-by-educational-unit/{educationalUnitId}")
     public ApiResponse<Long> countTeachersByEducationalUnit(@PathVariable Integer educationalUnitId) {
         log.info("Counting teachers for educational unit: {}", educationalUnitId);

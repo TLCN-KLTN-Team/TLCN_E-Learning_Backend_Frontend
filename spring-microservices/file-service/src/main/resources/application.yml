@@ -1,3 +1,4 @@
+# file-service
 server:
   port: 8084
   servlet:
@@ -8,7 +9,7 @@ spring:
     name: file-handler-service
   data:
     mongodb:
-      uri: mongodb://root:root@localhost:27017/file-handler-service?authSource=admin
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/file-handler-service}
   servlet:
     multipart:
       max-file-size: 10MB # 10MB = 10 * 1024 * 1024 bytes
@@ -18,3 +19,12 @@ cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
   api-key: ${CLOUDINARY_API_KEY}
   api-secret: ${CLOUDINARY_API_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # hoặc * nếu bạn muốn expose hết
+  endpoint:
+    health:
+      show-details: always
