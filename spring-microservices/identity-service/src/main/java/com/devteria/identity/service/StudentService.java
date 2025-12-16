@@ -4,8 +4,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.entity.Role;
 import com.devteria.identity.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 
@@ -18,12 +18,10 @@ import org.springframework.stereotype.Service;
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.StudentRequest;
 import com.devteria.identity.dto.response.StudentResponse;
-import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.Student;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.StudentMapper;
-import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.StudentRepository;
 import com.devteria.identity.repository.UserRepository;
 
@@ -43,7 +41,6 @@ public class StudentService {
     StudentMapper studentMapper;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
-    RoleRepository roleRepository;
 
     public long countByEducationalUnit(Integer educationalUnitId) {
         return studentRepository.countByIdEducational(educationalUnitId);
@@ -71,9 +68,6 @@ public class StudentService {
             throw new AppException(ErrorCode.STUDENT_ALREADY_EXISTS);
         }
 
-        HashSet<Role> roles = new HashSet<>();
-        roleRepository.findById(PredefinedRole.STUDENT_ROLE).ifPresent(roles::add);
-
         Student student = Student.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -81,7 +75,7 @@ public class StudentService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .dob(request.getDob())
-                .roles(roles)
+                .role(Role.STUDENT)
                 .studentId(request.getStudentId())
                 .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)
                 .idEducational(

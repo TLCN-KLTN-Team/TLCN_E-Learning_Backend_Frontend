@@ -37,6 +37,7 @@
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.12",
     "immer": "^10.1.1",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.534.0",
     "react": "^19.1.0",
     "react-day-picker": "^9.8.1",

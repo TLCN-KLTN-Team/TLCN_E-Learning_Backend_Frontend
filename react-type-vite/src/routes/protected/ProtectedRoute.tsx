@@ -1,14 +1,20 @@
 import { useAuth } from "@/context/auth-context/useAuth";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
+import { getAuthInfo } from "@/utils/auth.utils";
 
-// Cách 1: Sử dụng với Outlet (chuẩn React Router v6)
-const ProtectedRoute = () => {
+interface ProtectedRouteProps {
+  children: ReactNode;
+  allowedRoles?: string[];
+}
+
+const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { checkAuth } = useAuth();
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const isAuthenticated = checkAuth();
+  const auth = getAuthInfo();
 
   useEffect(() => {
     if (!isAuthenticated && !shouldRedirect) {
@@ -27,42 +33,22 @@ const ProtectedRoute = () => {
     }
   }, [isAuthenticated, shouldRedirect]);
 
+  // Kiểm tra authentication
   if (!isAuthenticated) {
     return shouldRedirect ? <Navigate to="/login" replace /> : null;
   }
 
-  return <Outlet />;
-};
+  // Kiểm tra role authorization nếu có allowedRoles
+  if (allowedRoles && allowedRoles.length > 0 && auth) {
+    const hasPermission = allowedRoles.includes(auth.role);
 
-// Cách 2: Wrapper component với children
-interface ProtectedWrapperProps {
-  children: ReactNode;
-}
-
-export const ProtectedWrapper = ({ children }: ProtectedWrapperProps) => {
-  const { checkAuth } = useAuth();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
-  const isAuthenticated = checkAuth();
-
-  useEffect(() => {
-    if (!isAuthenticated && !shouldRedirect) {
-      toast.error("Bạn cần đăng nhập để tiếp tục", {
+    if (!hasPermission) {
+      toast.error("Bạn không có quyền truy cập trang này", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
       });
-      // Delay redirect để user có thể thấy toast
-      setTimeout(() => {
-        setShouldRedirect(true);
-      }, 100);
+      return <Navigate to="/" replace />;
     }
-  }, [isAuthenticated, shouldRedirect]);
-
-  if (!isAuthenticated) {
-    return shouldRedirect ? <Navigate to="/login" replace /> : null;
   }
 
   return <>{children}</>;

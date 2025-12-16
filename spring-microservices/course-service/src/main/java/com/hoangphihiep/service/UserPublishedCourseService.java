@@ -120,30 +120,6 @@ public class UserPublishedCourseService {
         return result;
     }
 
-    public PaginatedResponse<PublishedCourseCardResponse> getPublishedCoursesWithPaging(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PublishedCourse> publishedCourses = publishedCourseRepository.findAll(pageable);
-        List<PublishedCourseCardResponse> courseCardResponses = publishedCourses.stream()
-                .map(publishedCourse -> {
-                    PublishedCourseCardResponse response = PublishedCourseCardResponse.builder()
-                            .id(publishedCourse.getId())
-                            .courseName(publishedCourse.getCourse().getCourseName())
-                            .coursePrice(currencyUtils.formatCurrency(publishedCourse.getCoursePrice()))
-                            .authorName("...") // Placeholder for author name
-                            .build();
-
-                    return response;
-                }).toList();
-
-        return PaginatedResponse.<PublishedCourseCardResponse>builder()
-                .content(courseCardResponses)
-                .size(pageable.getPageSize())
-                .page(pageable.getPageNumber())
-                .totalElements(publishedCourses.getTotalElements())
-                .totalPages(publishedCourses.getTotalPages())
-                .build();
-    }
-
     public PublishedCourseDetailResponse getPublishedCourseDetailById(Integer publishedCourseId){
         PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId).orElseThrow(
                 () -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND)

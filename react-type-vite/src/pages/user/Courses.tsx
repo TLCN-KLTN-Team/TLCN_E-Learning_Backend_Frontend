@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Filter, Star, Users, Clock, RotateCcw, X } from "lucide-react";
+import { Search, Filter, Star, RotateCcw, X } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
 import { Checkbox } from "../../components/ui/checkbox";
 import { LoadingDots } from "../../components/ui/LoadingDots";
 import { Pagination } from "../../components/ui/Pagination";
@@ -12,9 +11,11 @@ import type {
   CompletionSuggestionResponse,
   Filters,
   PublishedCourseResponse,
+  PublishedCourseCardResponse,
 } from "../../types/course.types";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
+import CourseCardComponent from "@/components/student/home/CourseCardComponent";
 
 import { toast } from "react-toastify";
 
@@ -290,74 +291,29 @@ const Course: React.FC = () => {
     ));
   };
 
-  const CourseCard: React.FC<{ course: PublishedCourseResponse }> = ({
-    course,
-  }) => (
-    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-      <div className="relative">
-        <img
-          src={course.thumbnailUrl}
-          alt={course.courseName}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-        {course.isHandsOn && (
-          <Badge className="absolute top-2 right-2 bg-green-500 text-white">
-            Hands-On
-          </Badge>
-        )}
-      </div>
-
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-          {course.courseName}
-        </h3>
-
-        <p className="text-gray-600 text-sm mb-2">{course.authorName}</p>
-
-        <div className="flex items-center gap-2 mb-2">
-          <div className="flex items-center">{renderStars(course.rating)}</div>
-          <span className="text-sm font-medium">{course.rating}</span>
-          <span className="text-gray-500 text-sm">
-            ({course.reviewCount} reviews)
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-          <div className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
-            <span>{course.studentCount.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            <span>{course.duration}</span>
-          </div>
-        </div>
-
-        <Badge variant="outline" className="mb-3">
-          {course.level}
-        </Badge>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-blue-600">
-              {course.coursePrice}
-            </span>
-            {course.coursePrice && (
-              <span className="text-sm text-gray-500 line-through">
-                {course.coursePrice}
-              </span>
-            )}
-          </div>
-          <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => navigate(`/courses/${course.id}`)}
-          >
-            View Details
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
+  // Convert PublishedCourseResponse to PublishedCourseCardResponse
+  const convertToCourseCard = (
+    course: PublishedCourseResponse
+  ): PublishedCourseCardResponse => {
+    return {
+      id: typeof course.id === "string" ? parseInt(course.id) : course.id,
+      courseName: course.courseName,
+      authorName: course.authorName,
+      coursePrice: course.coursePrice,
+      rating: course.rating,
+      reviewCount: course.reviewCount,
+      studentCount: course.studentCount,
+      category: course.category,
+      thumbnailUrl: course.thumbnailUrl,
+      isHandsOn: course.isHandsOn,
+      duration:
+        typeof course.duration === "string"
+          ? parseInt(course.duration) || 0
+          : course.duration,
+      level: course.level,
+      status: "PUBLISHED",
+    };
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -370,9 +326,9 @@ const Course: React.FC = () => {
           <div
             className={`${
               showFilters ? "block" : "hidden"
-            } lg:block w-full lg:w-80 space-y-6`}
+            } lg:block w-full lg:w-64 space-y-6`}
           >
-            <Card className="p-6 custom-scrollbar max-h-[80vh] overflow-y-auto">
+            <Card className="p-4 custom-scrollbar max-h-[80vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Filters</h2>
                 <div className="flex items-center gap-2">
@@ -507,7 +463,7 @@ const Course: React.FC = () => {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 lg:pl-4">
             {/* Search Bar */}
             <div className="mb-8">
               <div className="relative w-full" ref={searchBoxRef}>
@@ -639,14 +595,17 @@ const Course: React.FC = () => {
             {/* Course Grid */}
             {!loading && !error && courses && courses.length > 0 && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                   {courses.map((course, index) => (
                     <div
                       key={course.id}
                       className="animate-fade-in"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
-                      <CourseCard course={course} />
+                      <CourseCardComponent
+                        course={convertToCourseCard(course)}
+                        variant="grid"
+                      />
                     </div>
                   ))}
                 </div>

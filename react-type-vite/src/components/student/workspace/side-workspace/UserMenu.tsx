@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { CornerDownLeft, FileUser } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
-import { getRoles } from "@/utils/localStorageVariables";
+import { hasRole } from "@/utils/roleUtils";
 import { getAvartarFromName } from "@/utils/callApiUtils";
 
 interface UserMenuProps {
@@ -51,8 +51,7 @@ const UserMenu = ({ className = "" }: UserMenuProps) => {
               {user?.firstName} {user?.lastName}
             </div>
             <span className="text-gray-400 text-md flex items-center">
-              <FileUser />{" "}
-              {getRoles().includes("TEACHER") ? "Giảng viên" : "Sinh viên"}
+              <FileUser /> {hasRole("TEACHER") ? "Giảng viên" : "Sinh viên"}
             </span>
           </div>
           <button

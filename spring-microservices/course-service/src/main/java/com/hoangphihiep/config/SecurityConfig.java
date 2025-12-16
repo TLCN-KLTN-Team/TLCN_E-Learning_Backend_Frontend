@@ -62,6 +62,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
+                        .requestMatchers("/course-management/super-admin/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/course-management/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/course-management/teacher/**").hasRole("TEACHER")
+                        .requestMatchers("/course-management/student/**").hasRole("STUDENT")
+                        .requestMatchers("/course-management/user/**").hasAnyRole("USER", "STUDENT", "TEACHER")
+                        .requestMatchers("/course-management/anonymous/**").permitAll()
                         .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 ->
