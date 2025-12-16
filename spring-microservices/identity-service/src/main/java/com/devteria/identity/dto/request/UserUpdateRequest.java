@@ -23,7 +23,6 @@ public class UserUpdateRequest {
     String phoneNumber;
     MultipartFile file;
     String bio;
-    //    Set<String> favoriteCategories;
 
     @DobConstraint(min = 18, message = "INVALID_DOB")
     LocalDate dob;

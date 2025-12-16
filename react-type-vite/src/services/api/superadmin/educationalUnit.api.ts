@@ -66,10 +66,32 @@ export const changeEducationalUnitStatus = async (
   );
 };
 
+const updateEducationalUnitStatus = async (
+  unitId: number,
+  status: string,
+  reason: string,
+  unitName: string,
+  representativeEmail: string
+): Promise<string> => {
+  const response = await axiosInstance.put<ApiResponse<void>>(
+    `${PREFIX}/update-status/${unitId}`,
+    {
+      status,
+      reason,
+      unitId,
+      unitName,
+      representativeEmail,
+    }
+  );
+
+  return response.data.message;
+};
+
 export default {
   getAllEducationalUnits,
   approveEducationalUnit,
   rejectEducationalUnit,
   sendFeedbackToEducationalUnit,
   changeEducationalUnitStatus,
+  updateEducationalUnitStatus,
 };

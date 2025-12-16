@@ -4,20 +4,28 @@ import type { EducationalUnitResponse } from "@/services/api/response/educationa
 
 interface TraningUnitItemProps {
   unit: EducationalUnitResponse;
-  onRowClick: (unitId: string) => void;
+  onRowClick: (unitId: number) => void;
+  onEditClick: (unit: EducationalUnitResponse) => void;
   openDropdown: string | null;
   onDropdownToggle: (unitId: string | null) => void;
 }
 
 const TraningUnitItem = ({
   unit,
+  onRowClick,
+  onEditClick,
 }: TraningUnitItemProps) => {
   const handleRowClick = () => {
-   
+    onRowClick(unit.id);
   };
 
   const handleDropdownToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditClick(unit);
   };
 
   return (
@@ -64,7 +72,7 @@ const TraningUnitItem = ({
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
         <div className="flex space-x-1 md:space-x-2">
           <button
-            onClick={(e) => e.stopPropagation()}
+            onClick={handleEditClick}
             className="text-blue-600 hover:text-blue-900 flex items-center gap-1 p-1"
           >
             <Edit className="w-4 h-4" />
