@@ -15,7 +15,7 @@ if [ -f .env ]; then
 fi
 
 # Config
-DOCKERHUB_USER="${DOCKERHUB_USER:-phihiep92988}"
+DOCKERHUB_USER="${DOCKERHUB_USER:-devzeus}"
 VERSION="${VERSION:-1.0.0}"
 
 SERVICES=("api-gateway" "identity-service" "course-service" "chat-service" "file-service")

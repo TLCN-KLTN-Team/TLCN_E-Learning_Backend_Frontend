@@ -4,7 +4,7 @@ spring:
     name: chat-service
   data:
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://root:root@mongodb:27017/mongo_notification?authSource=admin}
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/mongo_notification?authSource=admin}
       auto-index-creation: true
   kafka:
     consumer:

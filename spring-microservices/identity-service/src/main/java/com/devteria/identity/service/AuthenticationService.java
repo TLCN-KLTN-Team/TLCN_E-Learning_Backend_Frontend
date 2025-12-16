@@ -4,19 +4,16 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import com.devteria.identity.entity.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
-import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.*;
 import com.devteria.identity.dto.response.*;
 import com.devteria.identity.entity.InvalidatedToken;
+import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
@@ -33,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -109,8 +105,7 @@ public class AuthenticationService {
                 user,
                 Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS),
                 user.getRole().getName(),
-                "access"
-        );
+                "access");
     }
     // end refresh token
 
