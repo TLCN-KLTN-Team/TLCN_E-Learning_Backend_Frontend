@@ -145,42 +145,42 @@ public class UserService {
         if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
-        
+
         // Chỉ cập nhật các trường được cung cấp (không null), giữ nguyên thông tin cũ
         if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
             user.setFirstName(request.getFirstName().trim());
         }
-        
+
         if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
             user.setLastName(request.getLastName().trim());
         }
-        
+
         if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
             // Kiểm tra email đã tồn tại cho user khác
-            if (userRepository.existsByEmail(request.getEmail()) && 
-                !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())
+                    && !request.getEmail().equals(user.getEmail())) {
                 throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
             }
             user.setEmail(request.getEmail().trim());
         }
-        
+
         if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
             // Kiểm tra số điện thoại đã tồn tại cho user khác
-            if (userRepository.existsByPhoneNumber(request.getPhoneNumber()) && 
-                !request.getPhoneNumber().equals(user.getPhoneNumber())) {
+            if (userRepository.existsByPhoneNumber(request.getPhoneNumber())
+                    && !request.getPhoneNumber().equals(user.getPhoneNumber())) {
                 throw new AppException(ErrorCode.PHONE_EXISTED);
             }
             user.setPhoneNumber(request.getPhoneNumber().trim());
         }
-        
+
         if (request.getBio() != null) {
             user.setBio(request.getBio().trim());
         }
-        
+
         if (request.getDob() != null) {
             user.setDob(request.getDob());
         }
-        
+
         // Admin có thể thay đổi role
         if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
             try {
@@ -205,24 +205,24 @@ public class UserService {
         if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
             user.setFirstName(request.getFirstName().trim());
         }
-        
+
         if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
             user.setLastName(request.getLastName().trim());
         }
-        
+
         if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
             // Kiểm tra số điện thoại đã tồn tại cho user khác
-            if (userRepository.existsByPhoneNumber(request.getPhoneNumber()) && 
-                !request.getPhoneNumber().equals(user.getPhoneNumber())) {
+            if (userRepository.existsByPhoneNumber(request.getPhoneNumber())
+                    && !request.getPhoneNumber().equals(user.getPhoneNumber())) {
                 throw new AppException(ErrorCode.PHONE_EXISTED);
             }
             user.setPhoneNumber(request.getPhoneNumber().trim());
         }
-        
+
         if (request.getBio() != null) {
             user.setBio(request.getBio().trim());
         }
-        
+
         if (request.getDob() != null) {
             user.setDob(request.getDob());
         }
@@ -317,7 +317,9 @@ public class UserService {
         List<UserResponse> userList = users.getContent().stream()
                 .map(user -> {
                     UserResponse res = userMapper.toUserResponse(user);
-                    String createdAt = user.getCreatedAt() != null ? user.getCreatedAt().toString() : LocalDate.now().toString();
+                    String createdAt = user.getCreatedAt() != null
+                            ? user.getCreatedAt().toString()
+                            : LocalDate.now().toString();
                     res.setRole(user.getRole().getName());
                     res.setCreatedAt(createdAt);
                     res.setAccountStatus(user.getAccountStatus().toString());
