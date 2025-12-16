@@ -3,7 +3,6 @@ package com.devteria.identity.utils;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Date;
-import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -42,7 +41,7 @@ public class JwtUtils {
         return signedJWT.getJWTClaimsSet().getSubject();
     }
 
-    public String generateToken(User user, Instant expiry, String role, String tokenType){
+    public String generateToken(User user, Instant expiry, String role, String tokenType) {
         // A jwt contains three parts: Header, Payload, and Signature
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
