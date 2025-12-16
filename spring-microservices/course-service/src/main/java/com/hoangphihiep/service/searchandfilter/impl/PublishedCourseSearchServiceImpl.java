@@ -20,6 +20,8 @@ import com.hoangphihiep.helper.Indices;
 import com.hoangphihiep.repository.OrderItemRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.repository.elasticsearch.CourseCompletionRepository;
+import com.hoangphihiep.service.OrderService;
+import com.hoangphihiep.service.ReviewService;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
 import com.hoangphihiep.utils.CurrencyUtils;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,8 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
     private final CurrencyUtils currencyUtils;
     private final CourseCompletionRepository courseCompletionRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ReviewService reviewService;
+    private final OrderService orderService;
 
     private PublishedCourseDocument toDocument(PublishedCourse course) {
         return PublishedCourseDocument.builder()
@@ -205,9 +209,18 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
                 .toList();
 
         // Convert hits to response objects
-        List<OrderItem> orderItems = orderItemRepository.findAll();
         List<PublishedCourseCardResponse> result = publishedCourses.stream()
-                .map(this::convertToCardResponse)
+                .map(course -> PublishedCourseCardResponse.builder()
+                        .id(course.getId())
+                        .courseName(course.getCourse().getCourseName())
+                        .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .authorName(course.getAuthorName())
+                        .thumbnailUrl(course.getCourseImage())
+                        .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
+                        .reviewCount(course.getReview().size())
+                        .studentCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
+                        .category(course.getCourseType().getCourseTypeName())
+                        .build())
                 .toList();
 
         return PaginatedResponse.<PublishedCourseCardResponse>builder()
@@ -246,114 +259,5 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
     private boolean validateStringParam(String param) {
         return param != null && !param.isEmpty();
     }
-
-//    @Override
-//    public List<PublishedCourseDocument> searchDSLWithMultiFilter(String keyword,
-//                                                                  BigDecimal minPrice, BigDecimal maxPrice,
-//                                                                  Integer minRating,
-//                                                                  String category, String level,
-//                                                                  String practiceType, String sortBy,
-//                                                                  int page, int size) throws IOException {
-//        BoolQuery.Builder boolQueryBuilder = new BoolQuery.Builder();
-//
-//        // Add must clause for keyword search
-//        if (this.validateStringParam(keyword)) {
-//            Query mustClause = MultiMatchQuery.of(m -> m
-//                    .query(keyword)
-//                    .fields("courseName^3", "description^2")
-//                    .fuzziness("AUTO")
-//            )._toQuery();
-//            boolQueryBuilder.must(mustClause);
-//        }
-//
-//        // Add filter clauses based on provided filters
-//        // category criteria
-//        if (this.validateStringParam(level)) {
-//            Query levelFilter = TermQuery.of(tq -> tq
-//                    .field("level")
-//                    .value(level)
-//            )._toQuery();
-//            boolQueryBuilder.filter(levelFilter);
-//        }
-//        if (this.validateStringParam(category)) {
-//            Query categoryFilter = TermQuery.of(tq -> tq
-//                    .field("category")
-//                    .value(category)
-//            )._toQuery();
-//            boolQueryBuilder.filter(categoryFilter);
-//        }
-//        if (this.validateStringParam(practiceType)) {
-//            Query practiceTypeFilter = TermQuery.of(tq -> tq
-//                    .field("practiceType")
-//                    .value(practiceType)
-//            )._toQuery();
-//            boolQueryBuilder.filter(practiceTypeFilter);
-//        }
-//
-//        // price range criteria
-//        if (minPrice!= null || maxPrice != null) {
-//            Query priceRangeQuery = NumberRangeQuery.of(r -> {
-//                var query = r.field("price");
-//                if (minPrice!= null) {
-//                    query.gte(Double.parseDouble(minPrice.toString()));
-//                }
-//                if (maxPrice!= null) {
-//                    query.gte(Double.parseDouble(maxPrice.toString()));
-//                }
-//                return query;
-//            })._toRangeQuery()._toQuery();
-//            boolQueryBuilder.filter(priceRangeQuery);
-//        }
-//
-//        // build final query
-//        Query finalQuery = boolQueryBuilder.build()._toQuery();
-//        // build sort criteria
-//        List<SortOptions> sortOptions = switch (sortBy) {
-//            case "price_asc" -> List.of(SortOptions.of(s -> s
-//                    .field(f -> f
-//                            .field("price")
-//                            .order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)
-//                    )
-//            ));
-//            case "price_desc" -> List.of(SortOptions.of(s -> s
-//                    .field(f -> f
-//                            .field("price")
-//                            .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
-//                    )
-//            ));
-//            case "rating_desc" -> List.of(SortOptions.of(s -> s
-//                    .field(f -> f
-//                            .field("rating")
-//                            .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
-//                    )
-//            ));
-//            case "students_desc" -> List.of(SortOptions.of(s -> s
-//                    .field(f -> f
-//                            .field("studentsCount")
-//                            .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
-//                    )
-//            ));
-//            default -> List.of(); // no sorting
-//        };
-//
-//        // build search request
-//        SearchRequest request = SearchRequest.of(s -> s
-//                .index(Indices.PUBLISHED_COURSE_INDEX)
-//                .query(finalQuery)
-//                .from(page * size)
-//                .size(size)
-//                .sort(sortOptions)
-//        );
-//
-//        SearchResponse<PublishedCourseDocument> response = elasticsearchClient.search(
-//                request,
-//                PublishedCourseDocument.class
-//        );
-//
-//        return response.hits().hits().stream()
-//                .map(Hit::source)
-//                .toList();
-//    }
-
 
 }

@@ -8,31 +8,87 @@ import Wishlist from "@/pages/user/wishlist/Wishlist";
 import MyCourses from "@/pages/user/personal/MyCourses";
 import CourseLearning from "@/pages/user/course/CourseLearning";
 import UserQuizAttempt from "@/components/user/course/UserQuizAttempt";
-import RoleProtectedRoute from "./protected/RoleProtectedRoute";
 
 const UserRoutes = [
-  <Route key={"payment"} element={<ProtectedRoute />}>
-    <Route key={"user-protected-route"} element={<RoleProtectedRoute />}>
-      {/* Add user-specific routes here */}
-      <Route path="/payment/checkout/express/course" element={<Payment />} />
-      ,
-      <Route
-        path="/payment/checkout/express/vnpay/return"
-        element={<VNPayReturn />}
-      />
-      ,
-      <Route
-        path="/payment/checkout/express/paypal/return"
-        element={<PaypalReturn />}
-      />
-      ,
-      <Route path="/cart" element={<Cart />} />,
-      <Route path="/wishlist" element={<Wishlist />} />,
-      <Route path="/my-courses" element={<MyCourses />} />,
-      <Route path="/course/:courseId/learn" element={<CourseLearning />} />,
-      <Route path="/user/quiz/:quizId" element={<UserQuizAttempt />} />,
-    </Route>
-  </Route>,
+  <Route
+    key="payment"
+    path="/payment/checkout/express/course"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <Payment />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="vnpay-return"
+    path="/payment/checkout/express/vnpay/return"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <VNPayReturn />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="paypal-return"
+    path="/payment/checkout/express/paypal/return"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <PaypalReturn />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="cart"
+    path="/cart"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <Cart />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="wishlist"
+    path="/wishlist"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <Wishlist />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="my-courses"
+    path="/my-courses"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <MyCourses />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="course-learning"
+    path="/course/:courseId/learn"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <CourseLearning />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="user-quiz"
+    path="/user/quiz/:quizId"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <UserQuizAttempt />
+      </ProtectedRoute>
+    }
+  />,
 ];
 
 export default UserRoutes;

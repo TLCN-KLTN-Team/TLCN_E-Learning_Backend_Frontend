@@ -23,6 +23,6 @@ public class UserResponse {
     LocalDate dob;
     String bio;
     //    Set<String> favoriteCategories;
-    Set<String> roles;
+    String role;
     String createdAt;
 }

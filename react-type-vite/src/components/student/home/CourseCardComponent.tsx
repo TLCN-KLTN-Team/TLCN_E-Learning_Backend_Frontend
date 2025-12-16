@@ -4,7 +4,12 @@ import type { PublishedCourseCardResponse } from "@/types/course.types";
 import DefaultThumbnail from "@/components/shared/DefaultThumbnail";
 import { useTheme } from "@/context/theme-context";
 
-const CourseDetail = ({ course }: { course: PublishedCourseCardResponse }) => {
+interface CourseDetailProps {
+  course: PublishedCourseCardResponse;
+  variant?: "carousel" | "grid";
+}
+
+const CourseDetail = ({ course, variant = "carousel" }: CourseDetailProps) => {
   const [imageError, setImageError] = useState(false);
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -17,10 +22,13 @@ const CourseDetail = ({ course }: { course: PublishedCourseCardResponse }) => {
     navigate(`/courses/${course.id}`);
   };
 
+  const widthClass =
+    variant === "carousel" ? "flex-none w-64 lg:w-72" : "w-full";
+
   return (
     <div
       onClick={handleCourseClick}
-      className={`flex-none w-64 lg:w-72 ${
+      className={`${widthClass} ${
         theme === "dark" ? "bg-gray-800" : "bg-white"
       } rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border ${
         theme === "dark"
@@ -34,7 +42,7 @@ const CourseDetail = ({ course }: { course: PublishedCourseCardResponse }) => {
           <img
             src={course.thumbnailUrl}
             alt={course.courseName}
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover"
             onError={handleImageError}
             loading="lazy"
           />
@@ -59,10 +67,10 @@ const CourseDetail = ({ course }: { course: PublishedCourseCardResponse }) => {
       </div>
 
       {/* Content Section */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-2">
         {/* Title */}
         <h3
-          className={`text-base font-semibold leading-snug line-clamp-2 min-h-[3rem] ${
+          className={`text-base font-semibold leading-snug line-clamp-2 min-h-[2rem] ${
             theme === "dark" ? "text-white" : "text-gray-900"
           }`}
         >
@@ -75,7 +83,7 @@ const CourseDetail = ({ course }: { course: PublishedCourseCardResponse }) => {
             theme === "dark" ? "text-gray-300" : "text-gray-600"
           }`}
         >
-          {course.authorName}
+          {course.authorName || "Đang cập nhật"}
         </p>
 
         {/* Rating Section */}

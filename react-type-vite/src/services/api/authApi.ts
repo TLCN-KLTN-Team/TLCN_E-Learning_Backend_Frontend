@@ -31,11 +31,10 @@ export const doLogin = async (
   // Debug: Log the response to see what backend returns
   console.log("Login response:", response.data);
 
-  // Lưu tokens vào localStorage
+  // Lưu tokens vào localStorage (KHÔNG lưu roles vì lấy từ JWT)
   const authData = response.data.result;
   localStorage.setItem("accessToken", authData.accessToken);
   localStorage.setItem("refreshToken", authData.refreshToken);
-  localStorage.setItem("roles", JSON.stringify(authData.roles || []));
 
   // Handle case where expiryTime might be undefined
   if (authData.expiryTime) {
@@ -65,10 +64,9 @@ export const doSocialLogin = async (
 
   const authData = response.data.result;
 
-  // Lưu tokens vào localStorage
+  // Lưu tokens vào localStorage (KHÔNG lưu roles vì lấy từ JWT)
   localStorage.setItem("accessToken", authData.accessToken);
   localStorage.setItem("refreshToken", authData.refreshToken);
-  localStorage.setItem("roles", JSON.stringify(authData.roles || []));
 
   // Handle case where expiryTime might be undefined
   if (authData.expiryTime) {
@@ -111,7 +109,6 @@ export const doLogout = async (): Promise<void> => {
     // Clear tất cả dữ liệu authentication
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    localStorage.removeItem("roles");
     localStorage.removeItem("expiryTime");
     localStorage.removeItem("refreshExpiryTime");
   }

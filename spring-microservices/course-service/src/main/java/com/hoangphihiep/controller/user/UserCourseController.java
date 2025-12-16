@@ -21,21 +21,6 @@ public class UserCourseController {
     private final PublishedCourseSearchService publishedCourseSearchService;
     private final PublishedCourseTeacherService publishedCourseTeacherService;
 
-    // load courses published paging
-    @GetMapping
-    public ApiResponse<PaginatedResponse<?>> getPublishedCourses(@RequestParam(defaultValue = "0") int page,
-                                                    @RequestParam(defaultValue = "10") int size) {
-        PaginatedResponse<PublishedCourseCardResponse> response = publishedCourseService.getPublishedCoursesWithPaging(
-                page,
-                size
-        );
-
-        return ApiResponse.success(
-                response,
-                "Load published courses successfully"
-        );
-    }
-
     // get bought courses
     @GetMapping("/purchased")
     public ApiResponse<?> getBoughtCourses() {

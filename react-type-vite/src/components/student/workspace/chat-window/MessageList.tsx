@@ -1,6 +1,6 @@
 import { Hash, Edit } from "lucide-react";
 
-import { getRoles } from "@/utils/localStorageVariables";
+import { hasRole } from "@/utils/roleUtils";
 import MessageItem from "./MessageItem";
 import { useEffect, useState, useRef } from "react";
 import { getMessagesByChannelId } from "@/services/api/workspace/messageApi";
@@ -270,7 +270,7 @@ const MessageList = ({
           {selectedChannel.description ||
             `This is the start of the #${selectedChannel.channelName} channel.`}
         </p>
-        {getRoles().includes("TEACHER") && (
+        {hasRole("TEACHER") && (
           <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
             <Edit className="w-4 h-4 mr-1" />
             Edit Channel
@@ -297,7 +297,7 @@ const MessageList = ({
             {selectedChannel.description ||
               `This is the start of the #${selectedChannel.channelName} channel.`}
           </p>
-          {getRoles().includes("TEACHER") && (
+          {hasRole("TEACHER") && (
             <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
               <Edit className="w-4 h-4 mr-1" />
               Edit Channel
