@@ -48,6 +48,7 @@ public class EducationalUnitService {
     private final UserInfoApi userInfoApi;
     private final EmailService emailService;
     private final TeacherRepository teacherRepository;
+    private final DepartmentRepository departmentRepo;
     private final CurrencyUtils currencyUtils;
 
     public List<EducationalUnitCardResponse> getAllEducationalUnits() {
@@ -58,7 +59,7 @@ public class EducationalUnitService {
                     List<String> departments = educationalUnit.getDepartments().stream()
                             .map(Department::getName)
                             .toList();
-                    EducationalUnitCardResponse educationalUnitCardResponse = EducationalUnitCardResponse.builder()
+                    return EducationalUnitCardResponse.builder()
                             .id(educationalUnit.getId())
                             .name(educationalUnit.getName())
                             .address(educationalUnit.getAddress())
@@ -67,7 +68,6 @@ public class EducationalUnitService {
                             .departments(departments)
                             .type(educationalUnit.getType())
                             .build();
-                    return educationalUnitCardResponse;
                 }).toList();
     }
 
@@ -76,7 +76,7 @@ public class EducationalUnitService {
                 () -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND)
         );
 
-        List<TeacherResponse> teachers = new ArrayList<>();
+        List<TeacherResponse> teachers;
         try {
             teachers = teacherRepository
                     .getTeachersByEducationalUnitNoPage(id).getResult();
@@ -98,29 +98,29 @@ public class EducationalUnitService {
                 .establishedYear(educationalUnit.getEstablishedYear())
                 .totalStudents(1000)
                 .teachers(teachers.stream()
-                        .map(teacher -> EducationalUnitDetailResponse.Teacher.builder()
-                                .id(teacher.getId())
-                                .name(teacher.getLastName() + " " + teacher.getFirstName())
-                                .avatarUrl(teacher.getAvatarUrl())
-                                .departmentName(teacher.getDepartment().getName())
-                                .build())
-                        .toList()
+                        .map(teacher -> {
+                            Department department = departmentRepo.findById(Integer.parseInt(teacher.getDepartmentId()))
+                                    .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
+                            return EducationalUnitDetailResponse.Teacher.builder()
+                                    .id(teacher.getId())
+                                    .name(teacher.getLastName() + " " + teacher.getFirstName())
+                                    .avatarUrl(teacher.getAvatarUrl())
+                                    .departmentName(department.getName())
+                                    .build();
+                        }).toList()
                 )
                 .courses(educationalUnit.getCourses().stream()
-                        .map(course -> {
-                            EducationalUnitDetailResponse.Course internalCourse =
-                                    EducationalUnitDetailResponse.Course.builder()
-                                            .id(course.getId())
-                                            .name(course.getCourseName())
-                                            .description(course.getDescription())
-                                            .coverImageUrl(course.getPublishedCourse().getCourseImage())
-                                            .price(currencyUtils.formatCurrency(course.getPublishedCourse().getCoursePrice()))
-                                            .duration(50)
-                                            .numberOfStudents(500)
-                                            .averageRating(5)
-                                            .build();
-                            return internalCourse;
-                        }).toList()
+                        .map(course -> EducationalUnitDetailResponse.Course.builder()
+                                .id(course.getId())
+                                .name(course.getCourseName())
+                                .description(course.getDescription())
+                                .coverImageUrl(course.getPublishedCourse() != null ?
+                                        course.getPublishedCourse().getCourseImage() : null)
+                                .price(currencyUtils.formatCurrency(course.getPublishedCourse().getCoursePrice()))
+                                .duration(50)
+                                .numberOfStudents(500)
+                                .averageRating(5)
+                                .build()).toList()
                 )
                 .build();
     }

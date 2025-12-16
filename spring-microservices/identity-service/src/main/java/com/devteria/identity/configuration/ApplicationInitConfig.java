@@ -1,7 +1,5 @@
 package com.devteria.identity.configuration;
 
-import java.util.Set;
-
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -63,5 +61,4 @@ public class ApplicationInitConfig {
             log.info("Application initialization completed.");
         };
     }
-
 }
