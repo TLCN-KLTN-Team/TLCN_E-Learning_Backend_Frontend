@@ -334,22 +334,19 @@ const AccountManagement: React.FC = () => {
                     </div>
                   </td>
                   <td className={CSS_CLASSES.cell}>
-                    <div className="flex flex-wrap gap-1">
-                      {account.roles.map((role, index) => {
-                        const IconComponent = getRoleIcon([role]);
-                        return (
-                          <span
-                            key={index}
-                            className={`${CSS_CLASSES.roleBadge} ${getRoleColor(
-                              [role]
-                            )}`}
-                          >
-                            <IconComponent className="w-4 h-4" />
-                            {getRoleName([role])}
-                          </span>
-                        );
-                      })}
-                    </div>
+                    {account.role && (
+                      <span
+                        className={`${CSS_CLASSES.roleBadge} ${getRoleColor([
+                          account.role,
+                        ])}`}
+                      >
+                        {(() => {
+                          const IconComponent = getRoleIcon([account.role]);
+                          return <IconComponent className="w-4 h-4" />;
+                        })()}
+                        {getRoleName([account.role])}
+                      </span>
+                    )}
                   </td>
                   <td className={`${CSS_CLASSES.cell} text-sm text-gray-900`}>
                     {formatDate(account.dob)}

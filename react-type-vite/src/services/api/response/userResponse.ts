@@ -8,7 +8,7 @@ interface UserResponse {
   lastName: string;
   avatarUrl?: string;
   dob: string;
-  roles: string[];
+  role: string;
   accountStatus: AccountStatus;
 }
 

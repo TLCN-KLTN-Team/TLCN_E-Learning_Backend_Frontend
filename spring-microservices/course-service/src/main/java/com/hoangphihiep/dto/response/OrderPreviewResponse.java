@@ -13,10 +13,9 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderPreviewResponse {
     List<CourseItem> items;
-    String originalPrice;
     String totalPrice;
     BigDecimal amount;
-    String discountedPrice;
+    String currency;
 
     @Data
     @AllArgsConstructor

@@ -39,7 +39,7 @@ public class User implements Serializable {
     @Column(name = "last_name")
     String lastName;
 
-    String dob;
+    LocalDate dob;
 
     String avatarUrl;
     String cloudinaryPublicId;
