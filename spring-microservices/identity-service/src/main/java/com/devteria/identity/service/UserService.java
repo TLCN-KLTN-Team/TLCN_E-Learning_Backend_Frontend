@@ -132,7 +132,7 @@ public class UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         UserResponse response = userMapper.toUserResponse(user);
-        response.setRole(user.getRole().toString());
+        response.setRole(user.getRole().getName());
 
         return response;
     }
@@ -141,23 +141,94 @@ public class UserService {
     public UserResponse updateUser(String userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        userMapper.updateUser(user, request);
-        if (request.getPassword() != null) {
+        // Admin có thể cập nhật mật khẩu (nhưng không khuyến khích, nên dùng reset password)
+        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
+        
+        // Chỉ cập nhật các trường được cung cấp (không null), giữ nguyên thông tin cũ
+        if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
+            user.setFirstName(request.getFirstName().trim());
+        }
+        
+        if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
+            user.setLastName(request.getLastName().trim());
+        }
+        
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            // Kiểm tra email đã tồn tại cho user khác
+            if (userRepository.existsByEmail(request.getEmail()) && 
+                !request.getEmail().equals(user.getEmail())) {
+                throw new AppException(ErrorCode.USER_EMAIL_EXISTED);
+            }
+            user.setEmail(request.getEmail().trim());
+        }
+        
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
+            // Kiểm tra số điện thoại đã tồn tại cho user khác
+            if (userRepository.existsByPhoneNumber(request.getPhoneNumber()) && 
+                !request.getPhoneNumber().equals(user.getPhoneNumber())) {
+                throw new AppException(ErrorCode.PHONE_EXISTED);
+            }
+            user.setPhoneNumber(request.getPhoneNumber().trim());
+        }
+        
+        if (request.getBio() != null) {
+            user.setBio(request.getBio().trim());
+        }
+        
+        if (request.getDob() != null) {
+            user.setDob(request.getDob());
+        }
+        
+        // Admin có thể thay đổi role
+        if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
+            try {
+                Role newRole = Role.valueOf(request.getRole().toUpperCase());
+                user.setRole(newRole);
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrorCode.INVALID_ROLE);
+            }
+        }
 
-        user.setRole(Role.valueOf(request.getRole().toUpperCase()));
-
-        return userMapper.toUserResponse(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+        UserResponse response = userMapper.toUserResponse(savedUser);
+        response.setRole(savedUser.getRole().getName());
+        return response;
     }
 
-    public void updateProfile(UserUpdateRequest request) {
+    public UserResponse updateProfile(UserUpdateRequest request) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        User updatedUser = userMapper.updateUser(user, request);
 
-        // handle file to avatarUrl
-        userRepository.save(updatedUser);
+        // Chỉ cập nhật các trường được cung cấp (không null), giữ nguyên thông tin cũ
+        if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
+            user.setFirstName(request.getFirstName().trim());
+        }
+        
+        if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
+            user.setLastName(request.getLastName().trim());
+        }
+        
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
+            // Kiểm tra số điện thoại đã tồn tại cho user khác
+            if (userRepository.existsByPhoneNumber(request.getPhoneNumber()) && 
+                !request.getPhoneNumber().equals(user.getPhoneNumber())) {
+                throw new AppException(ErrorCode.PHONE_EXISTED);
+            }
+            user.setPhoneNumber(request.getPhoneNumber().trim());
+        }
+        
+        if (request.getBio() != null) {
+            user.setBio(request.getBio().trim());
+        }
+        
+        if (request.getDob() != null) {
+            user.setDob(request.getDob());
+        }
+
+        User savedUser = userRepository.save(user);
+        return userMapper.toUserResponse(savedUser);
     }
 
     public String uploadAvatar(MultipartFile file) {
@@ -198,7 +269,6 @@ public class UserService {
     }
 
     public void changePassword(ChangePasswordRequest request) {
-        log.info("Call to db, not cached");
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
@@ -206,7 +276,7 @@ public class UserService {
             throw new AppException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
         }
 
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.PASSWORD_OLD_INCORRECT);
         }
 

@@ -72,7 +72,6 @@ public class StudentService {
                 .email(request.getEmail())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .dob(request.getDob())
                 .role(Role.STUDENT)
                 .studentId(request.getStudentId())
                 .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)
@@ -161,7 +160,6 @@ public class StudentService {
             existingStudent.setEmail(request.getEmail());
             existingStudent.setFirstName(request.getFirstName());
             existingStudent.setLastName(request.getLastName());
-            existingStudent.setDob(request.getDob());
             existingStudent.setStudentId(request.getStudentId());
             existingStudent.setIdDepartment(
                     request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null);

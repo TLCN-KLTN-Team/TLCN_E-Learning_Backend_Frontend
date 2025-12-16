@@ -15,7 +15,7 @@ export interface ProfileHeaderData {
 
 // Password change types
 export interface ChangePasswordData {
-  currentPassword: string;
+  oldPassword: string;
   newPassword: string;
   confirmPassword: string;
 }

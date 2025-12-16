@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  ArrowLeft,
-  AlertCircle,
-  ShoppingCart,
-  Loader2,
-} from "lucide-react";
+import { ArrowLeft, AlertCircle, ShoppingCart, Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import {
@@ -33,9 +28,23 @@ const Payment: React.FC = () => {
   const [orderPreview, setOrderPreview] = useState<OrderPreviewResponse | null>(
     null
   );
+  const [courseIds, setCourseIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+
+  // Map country code to currency code
+  const getCurrencyCode = (countryCode: string): string => {
+    const currencyMap: Record<string, string> = {
+      vn: "VND",
+      USD: "USD",
+      EUR: "EUR",
+      GBP: "GBP",
+      JPY: "JPY",
+      KRW: "KRW",
+    };
+    return currencyMap[countryCode] || "VND";
+  };
 
   const handleCompletePayment = async () => {
     if (!selectedCountry) {
@@ -91,6 +100,7 @@ const Payment: React.FC = () => {
         const courseIds = location.state?.courseIds as number[] | undefined;
 
         if (courseIds && courseIds.length > 0) {
+          setCourseIds(courseIds);
           const preview = await PaymentService.getOrderPreview({
             courseIds,
             currency: "VND",
@@ -114,6 +124,31 @@ const Payment: React.FC = () => {
     loadCheckoutData();
   }, [location.state]);
 
+  // Reload order preview when currency changes
+  useEffect(() => {
+    const reloadOrderPreview = async () => {
+      if (!selectedCountry || courseIds.length === 0) return;
+
+      try {
+        setIsLoading(true);
+        const currency = getCurrencyCode(selectedCountry);
+        const preview = await PaymentService.getOrderPreview({
+          courseIds,
+          currency,
+        });
+        setOrderPreview(preview);
+        console.log("Order preview reloaded with currency:", currency, preview);
+      } catch (err) {
+        console.error("Error reloading order preview:", err);
+        setError("Đã xảy ra lỗi khi tải lại thông tin. Vui lòng thử lại.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    reloadOrderPreview();
+  }, [selectedCountry]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -131,7 +166,7 @@ const Payment: React.FC = () => {
           </Button>
 
           {/* Page Title */}
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Thanh toán</h1>
 
           {/* Loading State */}
           {isLoading && (
@@ -174,8 +209,8 @@ const Payment: React.FC = () => {
                 <div className="lg:col-span-2 space-y-2">
                   {/* Country Selection */}
                   <Card className="p-4">
-                    <h2 className="text-xl font-semibold">Quốc gia</h2>
-                    <p className="text-gray-600">
+                    <h2 className="text-lg font-semibold mb-1">Quốc gia</h2>
+                    <p className="text-sm text-gray-600 mb-3">
                       Chọn quốc gia của bạn để phục vụ mục đích thanh toán
                     </p>
 
@@ -202,10 +237,12 @@ const Payment: React.FC = () => {
 
                   {/* Payment Method */}
                   <Card className="p-4">
-                    <h2 className="text-xl font-semibold">
+                    <h2 className="text-lg font-semibold mb-1">
                       Phương thức thanh toán
                     </h2>
-                    <p className="text-gray-600">Chọn phương thức thanh toán</p>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Chọn phương thức thanh toán
+                    </p>
 
                     <div className="space-y-2">
                       {/* VNPay Option */}
@@ -262,7 +299,7 @@ const Payment: React.FC = () => {
 
                   {/* Order Information */}
                   <Card className="p-4">
-                    <h2 className="text-xl font-semibold">
+                    <h2 className="text-lg font-semibold mb-3">
                       Thông tin đơn hàng
                     </h2>
 
@@ -288,15 +325,15 @@ const Payment: React.FC = () => {
                             <ShoppingCart className="w-6 h-6 text-gray-400" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">
+                            <h3 className="text-sm font-medium text-gray-900">
                               {item.courseName}
                             </h3>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold text-gray-900">
+                            <div className="text-base font-semibold text-gray-900">
                               {item.price}
                             </div>
-                            <div className="text-sm text-gray-400 line-through">
+                            <div className="text-xs text-gray-400 line-through">
                               {item.discountedPrice}
                             </div>
                           </div>
@@ -309,28 +346,16 @@ const Payment: React.FC = () => {
                 {/* Right Column - Order Summary (Sticky) */}
                 <div className="lg:col-span-1">
                   <Card className="p-6">
-                    <h2 className="text-2xl font-bold">Tóm tắt đơn đặt hàng</h2>
-
-                    {/* Giá gốc */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Giá gốc:</span>
-                      <span className="">{orderPreview.originalPrice}</span>
-                    </div>
-
-                    {/* Chiết khấu */}
-                    <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                      <span className="text-gray-600">
-                        Chiết khấu (Giảm giá):
-                      </span>
-                      <span className="">{orderPreview.discountedPrice}</span>
-                    </div>
+                    <h2 className="text-xl font-bold mb-4">
+                      Tóm tắt đơn đặt hàng
+                    </h2>
 
                     {/* Tổng tiền */}
-                    <div className="flex justify-between items-center mb-6">
-                      <span className="font-bold text-xl">
-                        Tổng tiền ({orderPreview.items.length} khóa học):
+                    <div className="flex flex-col gap-2 mb-6 pb-4 border-b border-gray-200">
+                      <span className="text-sm text-gray-600">
+                        Tổng thanh toán ({orderPreview.items.length} khóa học)
                       </span>
-                      <span className="text-2xl font-bold">
+                      <span className="text-3xl font-bold text-gray-900">
                         {orderPreview.totalPrice}
                       </span>
                     </div>
@@ -358,10 +383,10 @@ const Payment: React.FC = () => {
 
                     {/* Money back guarantee */}
                     <div className="text-center pt-4 border-t border-gray-200">
-                      <h3 className="font-semibold mb-2">
+                      <h3 className="text-sm font-semibold mb-2 text-gray-900">
                         Đảm bảo hoàn tiền trong 30 ngày
                       </h3>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs text-gray-600 leading-relaxed">
                         Bạn không hài lòng? Nhận lại toàn bộ tiền hoàn lại trong
                         vòng 30 ngày. Đơn giản và dễ hiểu!
                       </p>
@@ -406,7 +431,7 @@ const Payment: React.FC = () => {
 
             {/* Payment Method Info */}
             <div className="text-center space-y-2">
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-base font-semibold text-gray-900 dark:text-white">
                 Đang chuyển hướng đến{" "}
                 {selectedPayment === "vnpay" ? "VNPay" : "PayPal"}
               </p>
@@ -417,11 +442,11 @@ const Payment: React.FC = () => {
 
             {/* Amount */}
             <div className="text-center pt-2">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
                 Tổng thanh toán
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {orderPreview?.amount || "0 ₫"}
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                {orderPreview?.totalPrice || "0"}
               </p>
             </div>
 

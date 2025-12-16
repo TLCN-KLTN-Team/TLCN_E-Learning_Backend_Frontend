@@ -65,7 +65,6 @@ public class TeacherService {
                 .email(request.getEmail())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .dob(request.getDob())
                 .role(Role.TEACHER)
                 .teacherId(request.getTeacherId())
                 .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)
@@ -120,7 +119,6 @@ public class TeacherService {
             existingTeacher.setEmail(request.getEmail());
             existingTeacher.setFirstName(request.getFirstName());
             existingTeacher.setLastName(request.getLastName());
-            existingTeacher.setDob(request.getDob());
             existingTeacher.setTeacherId(request.getTeacherId());
             existingTeacher.setIdDepartment(
                     request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null);

@@ -1,6 +1,7 @@
 package com.hoangphihiep.controller.SystemAdmin;
 
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.dto.request.StatusUpdateRequest;
 import com.hoangphihiep.service.EducationalUnitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -27,6 +28,19 @@ public class EducationUnitManagementController {
         );
     }
 
+    @PostMapping(value ="/send-feedback/{unitId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<Void> sendFeedbackToEducationalUnit(
+            @PathVariable Integer unitId,
+            @RequestPart("feedback") String feedback
+    ) {
+        educationalUnitService.sendFeedback(unitId, feedback);
+        return ApiResponse.success(
+                null,
+                "Gửi phản hồi đến đơn vị đào tạo thành công"
+        );
+    }
+
     @PutMapping("/approve/{unitId}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<Void> approveEducationalUnit(@PathVariable Integer unitId) {
@@ -49,39 +63,14 @@ public class EducationUnitManagementController {
                 .build();
     }
 
-    @PutMapping(value = "/change-status/{unitId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ApiResponse<Void> changeEducationalUnitStatus(
-            @PathVariable Integer unitId,
-            @RequestParam("status") String status,
-            @RequestPart("reason") String reason
-    ) {
-        if (status.equals("reactive")) {
-            educationalUnitService.reactivateEducationalUnit(unitId, reason);
-            return ApiResponse.success(
-                    null,
-                    "Kích hoạt lại đơn vị đào tạo thành công"
-            );
-        } else {
-            educationalUnitService.suspendEducationalUnit(unitId, reason);
-            return ApiResponse.success(
-                    null,
-                    "Tạm ngưng đơn vị đào tạo thành công"
-            );
-        }
-    }
-
-    @PostMapping(value ="/send-feedback/{unitId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ApiResponse<Void> sendFeedbackToEducationalUnit(
-            @PathVariable Integer unitId,
-            @RequestPart("feedback") String feedback
-    ) {
-        educationalUnitService.sendFeedback(unitId, feedback);
-        return ApiResponse.success(
-                null,
-                "Gửi phản hồi đến đơn vị đào tạo thành công"
-        );
+    @PutMapping("/update-status/{unitId}")
+    public ApiResponse<?> updateStatusEducationalUnit(@PathVariable Integer unitId,
+                                                      @RequestBody StatusUpdateRequest request) {
+        request.setUnitId(unitId);
+        String res = educationalUnitService.updateStatusEducationalUnit(request);
+        return ApiResponse.builder()
+                .message(res)
+                .build();
     }
 
 }

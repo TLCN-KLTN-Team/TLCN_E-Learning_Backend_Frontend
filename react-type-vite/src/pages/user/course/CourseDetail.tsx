@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Star, Users, Clock, CheckCircle} from "lucide-react";
+import { Star, Users, Clock, CheckCircle } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import { LoadingDots } from "../../../components/ui/LoadingDots";
@@ -10,7 +10,10 @@ import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
 import { decodeHTMLEntities } from "@/utils/htmlCleaner";
 import reviewApi from "@/services/api/user/reviewApi";
-import type { ReviewResponse, ReviewStatsResponse } from "@/services/api/response/reviewResponse";
+import type {
+  ReviewResponse,
+  ReviewStatsResponse,
+} from "@/services/api/response/reviewResponse";
 
 import CartService from "@/services/api/user/cart.api";
 import WishlistService from "@/services/api/user/wishlist.api";
@@ -25,13 +28,15 @@ const CourseDetail: React.FC = () => {
     null
   );
   const [loading, setLoading] = useState(true);
-  //const [ setIsInWishlist] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-  const [reviewStats, setReviewStats] = useState<ReviewStatsResponse | null>(null);
+  const [reviewStats, setReviewStats] = useState<ReviewStatsResponse | null>(
+    null
+  );
 
   const toggleSection = (sectionId: number) => {
     setExpandedSections((prev) => {
@@ -65,20 +70,20 @@ const CourseDetail: React.FC = () => {
           // Fetch reviews and stats
           const [reviewsData, statsData] = await Promise.all([
             reviewApi.getCourseReviews(Number(courseId)),
-            reviewApi.getCourseReviewStats(Number(courseId))
+            reviewApi.getCourseReviewStats(Number(courseId)),
           ]);
           setReviews(reviewsData);
           setReviewStats(statsData);
 
           // call if user signed in
           if (user) {
-            const [inCart] = await Promise.all([
+            const [inCart, inWishlist] = await Promise.all([
               CartService.checkPublishedCourseInCart(Number(courseId)),
               WishlistService.checkPublishedCourseInWishlist(Number(courseId)),
             ]);
 
             setIsInCart(inCart);
-            // setIsInWishlist(inWishlist);
+            setIsInWishlist(inWishlist);
           }
         }
       } catch (error) {
@@ -118,24 +123,24 @@ const CourseDetail: React.FC = () => {
     navigate(`/course/${courseId}/learn`);
   };
 
-  // const handleAddToWishlist = async () => {
-  //   try {
-  //     if (isInWishlist) {
-  //       // Remove from wishlist
-  //       await WishlistService.removeFromWishlist(Number(courseId));
-  //       setIsInWishlist(false);
-  //       toast.success("Đã xóa khỏi danh sách yêu thích!");
-  //     } else {
-  //       // Add to wishlist
-  //       await WishlistService.addToWishlist(Number(courseId));
-  //       setIsInWishlist(true);
-  //       toast.success("Đã thêm vào danh sách yêu thích!");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error toggling wishlist:", error);
-  //     toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
-  //   }
-  // };
+  const handleAddToWishlist = async () => {
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        await WishlistService.removeFromWishlist(Number(courseId));
+        setIsInWishlist(false);
+        toast.success("Đã xóa khỏi danh sách yêu thích!");
+      } else {
+        // Add to wishlist
+        await WishlistService.addToWishlist(Number(courseId));
+        setIsInWishlist(true);
+        toast.success("Đã thêm vào danh sách yêu thích!");
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+      toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
+    }
+  };
 
   const handleCartAction = async () => {
     try {
@@ -220,20 +225,22 @@ const CourseDetail: React.FC = () => {
               Bestseller
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-yellow-400 font-bold">{course.rating.toFixed(1)}</span>
+              <span className="text-yellow-400 font-bold">
+                {course.rating.toFixed(1)}
+              </span>
               <div className="flex items-center">
                 {renderStars(course.rating)}
               </div>
-              <span className="text-gray-500">({reviewStats?.totalReviews} reviews)</span>
+              <span className="text-gray-500">
+                ({reviewStats?.totalReviews} reviews)
+              </span>
             </div>
-
-            
 
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               <span>{course.duration}</span>
             </div>
-            <span>{(course.studentCount)?.toLocaleString()} students</span>
+            <span>{course.studentCount?.toLocaleString()} students</span>
           </div>
 
           {/* Creator and Updated Info */}
@@ -248,14 +255,16 @@ const CourseDetail: React.FC = () => {
                   {course.authorName}
                 </Link>
               ) : (
-                <span className="text-blue-400 underline">{course.authorName}</span>
+                <span className="text-blue-400 underline">
+                  {course.authorName}
+                </span>
               )}
             </span>
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
               <span>Last updated {course.lastUpdated}</span>
             </div>
-        </div>
+          </div>
         </div>
       </div>
 
@@ -663,9 +672,12 @@ const CourseDetail: React.FC = () => {
                 <Star className="w-8 h-8 text-yellow-400 fill-current" />
                 <div>
                   <h2 className="text-2xl font-bold">
-                    {reviewStats?.averageRating?.toFixed(1) || course.rating} xếp hạng khóa học
+                    {reviewStats?.averageRating?.toFixed(1) || course.rating}{" "}
+                    xếp hạng khóa học
                   </h2>
-                  <p className="text-gray-600">{reviewStats?.totalReviews || 0} đánh giá</p>
+                  <p className="text-gray-600">
+                    {reviewStats?.totalReviews || 0} đánh giá
+                  </p>
                 </div>
               </div>
 
@@ -674,20 +686,25 @@ const CourseDetail: React.FC = () => {
                 <div className="space-y-6">
                   {reviews.slice(0, 4).map((review) => {
                     // Get initials from reviewer name
-                    const initials = review.createdByName
-                      ?.split(' ')
-                      .map(n => n[0])
-                      .join('')
-                      .toUpperCase()
-                      .slice(0, 2) || 'U';
-                    
+                    const initials =
+                      review.createdByName
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2) || "U";
+
                     // Format date
                     const reviewDate = new Date(review.createdAt);
                     const now = new Date();
-                    const diffTime = Math.abs(now.getTime() - reviewDate.getTime());
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    let timeAgo = '';
+                    const diffTime = Math.abs(
+                      now.getTime() - reviewDate.getTime()
+                    );
+                    const diffDays = Math.ceil(
+                      diffTime / (1000 * 60 * 60 * 24)
+                    );
+
+                    let timeAgo = "";
                     if (diffDays < 7) {
                       timeAgo = `${diffDays} ngày trước`;
                     } else if (diffDays < 30) {
@@ -710,43 +727,75 @@ const CourseDetail: React.FC = () => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-white text-sm font-bold">{initials}</span>
+                              <span className="text-white text-sm font-bold">
+                                {initials}
+                              </span>
                             )}
                           </div>
-                          
+
                           {/* Review Content */}
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
-                              <h4 className="font-bold text-sm">{review.createdByName}</h4>
+                              <h4 className="font-bold text-sm">
+                                {review.createdByName}
+                              </h4>
                               <button className="text-gray-400 hover:text-gray-600">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <svg
+                                  className="w-5 h-5"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
                                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                                 </svg>
                               </button>
                             </div>
-                            
+
                             {/* Rating and Date */}
                             <div className="flex items-center gap-2 mb-2">
                               <div className="flex items-center">
                                 {renderStars(review.rate)}
                               </div>
-                              <span className="text-xs text-gray-500">{timeAgo}</span>
+                              <span className="text-xs text-gray-500">
+                                {timeAgo}
+                              </span>
                             </div>
-                            
+
                             {/* Comment */}
-                            <p className="text-sm text-gray-700 mb-3">{review.content}</p>
-                            
+                            <p className="text-sm text-gray-700 mb-3">
+                              {review.content}
+                            </p>
+
                             {/* Helpful buttons */}
                             <div className="flex items-center gap-4 text-sm">
                               <span className="text-gray-600">Hữu ích?</span>
                               <button className="flex items-center gap-1 hover:text-purple-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                                  />
                                 </svg>
                               </button>
                               <button className="flex items-center gap-1 hover:text-purple-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+                                  />
                                 </svg>
                               </button>
                             </div>
@@ -757,12 +806,17 @@ const CourseDetail: React.FC = () => {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">Chưa có đánh giá nào cho khóa học này.</p>
+                <p className="text-gray-500 text-center py-8">
+                  Chưa có đánh giá nào cho khóa học này.
+                </p>
               )}
-              
+
               {/* Show all reviews button */}
               {reviews.length > 4 && (
-                <Button variant="outline" className="w-auto border-gray-900 font-semibold">
+                <Button
+                  variant="outline"
+                  className="w-auto border-gray-900 font-semibold"
+                >
                   Xem tất cả {reviews.length} đánh giá
                 </Button>
               )}
@@ -833,20 +887,50 @@ const CourseDetail: React.FC = () => {
                     </Button>
                   )}
 
-                  {/* Buy Now Button */}
+                  {/* Buy Now and Wishlist Buttons */}
                   {!course.purchaserStatus ? (
-                    <Button
-                      variant="outline"
-                      className="w-full border-2 border-gray-900 hover:bg-gray-50 py-6 text-lg font-semibold"
-                      onClick={handleEnrollNow}
-                    >
-                      Mua ngay
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1 border-2 border-gray-900 hover:bg-gray-50 py-6 text-lg font-semibold"
+                        onClick={handleEnrollNow}
+                      >
+                        Mua ngay
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="border-2 border-gray-900 hover:bg-gray-50 py-6 px-4"
+                        onClick={handleAddToWishlist}
+                        title={
+                          isInWishlist
+                            ? "Xóa khỏi yêu thích"
+                            : "Thêm vào yêu thích"
+                        }
+                      >
+                        <svg
+                          className={`w-6 h-6 ${
+                            isInWishlist
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-900"
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          />
+                        </svg>
+                      </Button>
+                    </div>
                   ) : null}
 
                   {/* 30-Day Money-Back Guarantee */}
                   <p className="text-center text-xs text-gray-600">
-                    7 ngày hoàn tiền 
+                    7 ngày hoàn tiền
                   </p>
                 </div>
                 {/* Course Info */}

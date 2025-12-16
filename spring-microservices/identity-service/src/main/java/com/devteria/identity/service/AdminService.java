@@ -51,7 +51,6 @@ public class AdminService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phoneNumber(request.getPhone())
-                .dob(request.getDob())
                 .role(Role.ADMIN)
                 .accountStatus(AccountStatus.INACTIVE)
                 .isEmailVerified(true)

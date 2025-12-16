@@ -1,4 +1,5 @@
 import { jwtDecode } from "jwt-decode";
+import { toast } from "react-toastify";
 
 // Interface cho decoded JWT token
 interface DecodedToken {
@@ -32,10 +33,8 @@ export const getAuthInfo = (): AuthInfo | null => {
     // Lấy role từ scope (thường là ROLE_STUDENT, ROLE_TEACHER, etc.)
     const scope = decoded.scope;
 
-    console.log("Decoded role from token:", scope);
-
     if (!scope) {
-      console.warn("No valid role found in token");
+      toast.error("Token không chứa thông tin vai trò hợp lệ.");
       return null;
     }
 
@@ -46,6 +45,7 @@ export const getAuthInfo = (): AuthInfo | null => {
     };
   } catch (error) {
     console.error("Failed to decode token:", error);
+    toast.error("Token không hợp lệ hoặc đã hết hạn.");
     return null;
   }
 };

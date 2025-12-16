@@ -265,45 +265,37 @@ public class PaymentService {
         PayPalCurrency targetCurrency = PayPalCurrency.fromCode(request.getCurrency());
         BigDecimal exchangeRate = exchangeRateService.getAllRates().get(targetCurrency.getCode());
 
-        BigDecimal originalPrice = courses.stream()
-                .map(course -> course.getCoursePrice()
-                        .multiply(BigDecimal.valueOf(1.5))
-                        .add(course.getCoursePrice())
-                )
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         BigDecimal totalAmount = courses.stream()
                 .map(PublishedCourse::getCoursePrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalDiscountedAmount = courses.stream()
-                .map(course -> course.getCoursePrice().multiply(BigDecimal.valueOf(1.5)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<OrderPreviewResponse.CourseItem> items = courses.stream()
                         .map(course -> {
                                     BigDecimal convertedAmount = exchangeRateService.convertFromVND(course.getCoursePrice(), targetCurrency);
+                                    String formattedPrice = "VND".equals(request.getCurrency()) 
+                                        ? currencyUtils.formatCurrency(course.getCoursePrice()) 
+                                        : currencyUtils.formatAmount(convertedAmount, targetCurrency);
                                     OrderPreviewResponse.CourseItem item = OrderPreviewResponse.CourseItem.builder()
                                 .id(course.getId())
                                 .courseName(course.getCourseName()!=null ? course.getCourseName():course.getCourse().getCourseName())
-                                .price("VND".equals(request.getCurrency()) ? currencyUtils.formatCurrency(course.getCoursePrice()) : convertedAmount.toString())
+                                .price(formattedPrice)
                                 .amount(course.getCoursePrice())
-                                .discountedPrice(currencyUtils.formatCurrency(
-                                        course.getCoursePrice().multiply(BigDecimal.valueOf(1.5))
-                                ))
                                 .imageUrl(course.getCourseImage())
                                 .build();
                             return item;
                         }
                         ).toList();
 
+        BigDecimal convertedTotalAmount = exchangeRateService.convertFromVND(totalAmount, targetCurrency);
+        String formattedTotalPrice = "VND".equals(request.getCurrency()) 
+            ? currencyUtils.formatCurrency(totalAmount) 
+            : currencyUtils.formatAmount(convertedTotalAmount, targetCurrency);
 
         return OrderPreviewResponse.builder()
                 .items(items)
-                .originalPrice(currencyUtils.formatCurrency(originalPrice))
-                .totalPrice(currencyUtils.formatCurrency(totalAmount))
+                .totalPrice(formattedTotalPrice)
                 .amount(totalAmount)
-                .discountedPrice(currencyUtils.formatCurrency(totalDiscountedAmount))
+                .currency(request.getCurrency())
                 .build();
 
     }
