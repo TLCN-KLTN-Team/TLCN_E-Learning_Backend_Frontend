@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.ChangePasswordRequest;
 import com.devteria.identity.dto.request.RegisterRequest;
 import com.devteria.identity.dto.request.UserUpdateRequest;
@@ -30,7 +29,6 @@ import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.UserMapper;
-import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.StudentRepository;
 import com.devteria.identity.repository.UserRepository;
 import com.devteria.identity.repository.httpclient.RemoveImageApi;
