@@ -2,8 +2,6 @@ package com.devteria.identity.entity;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Set;
 
 import jakarta.persistence.*;
 
@@ -51,8 +49,9 @@ public class User implements Serializable {
     AccountStatus accountStatus;
     boolean isEmailVerified;
 
-    @ManyToMany
-    Set<Role> roles;
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    Role role = Role.USER;
 
     LocalDate createdAt;
     LocalDate updatedAt;

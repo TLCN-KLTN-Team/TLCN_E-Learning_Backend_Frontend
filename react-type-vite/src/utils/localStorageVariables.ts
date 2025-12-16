@@ -6,21 +6,18 @@ export const getRefreshToken = () => {
   return localStorage.getItem("refreshToken");
 };
 
+// DEPRECATED: Không sử dụng nữa - Role lấy từ JWT token
+// Giữ lại để tránh break code cũ, nhưng sẽ return null
 export const getRoles = () => {
-  const roles = localStorage.getItem("roles");
-  if (roles) {
-    try {
-      return JSON.parse(roles);
-    } catch (error) {
-      console.error("Error parsing roles:", error);
-      return null;
-    }
-  }
+  console.warn(
+    "getRoles() is deprecated. Use getAuthInfo() from auth.utils.ts instead"
+  );
   return null;
 };
 
 export const clearAuthData = () => {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
-  localStorage.removeItem("roles");
+  localStorage.removeItem("expiryTime");
+  localStorage.removeItem("refreshExpiryTime");
 };

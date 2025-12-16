@@ -7,16 +7,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.devteria.identity.dto.response.*;
+import com.devteria.identity.entity.Role;
 import com.devteria.identity.repository.httpclient.FacebookGraphApi;
-import com.devteria.identity.utils.CookiesUtils;
 import com.devteria.identity.utils.JwtUtils;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -24,7 +18,6 @@ import org.springframework.util.CollectionUtils;
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.*;
 import com.devteria.identity.entity.InvalidatedToken;
-import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
@@ -33,17 +26,12 @@ import com.devteria.identity.repository.UserRepository;
 import com.devteria.identity.repository.httpclient.OutboundAuthenticationClient;
 import com.devteria.identity.repository.httpclient.OutboundUserInfoClient;
 import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jose.crypto.MACVerifier;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -114,11 +102,10 @@ public class AuthenticationService {
         // new access token
         String userId = jwtUtils.extractUserId(refreshToken);
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        Set<String> roles = user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
         return jwtUtils.generateToken(
                 user,
                 Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS),
-                roles,
+                user.getRole().getName(),
                 "access"
         );
     }
@@ -146,8 +133,7 @@ public class AuthenticationService {
                             .lastName(userInfo.getFamilyName())
                             .avatarUrl(userInfo.getPicture())
                             .isEmailVerified(true)
-                            .roles(Collections.singleton(
-                                    Role.builder().name(PredefinedRole.USER_ROLE).build()))
+                            .role(Role.USER)
                             .build();
                     log.info("NEW USER: {}", newUser);
                     return userRepository.save(newUser);
@@ -172,8 +158,7 @@ public class AuthenticationService {
                             .email(username)
                             .firstName(fbUserInfo.getName())
                             .avatarUrl(fbUserInfo.getPicture().getData().getUrl())
-                            .roles(Collections.singleton(
-                                    Role.builder().name(PredefinedRole.USER_ROLE).build()))
+                            .role(Role.USER)
                             .isEmailVerified(true)
                             .build();
                     return userRepository.save(newUser);
@@ -225,18 +210,15 @@ public class AuthenticationService {
         Instant now = Instant.now();
         Instant accessTokenExpiry = now.plus(VALID_DURATION, ChronoUnit.SECONDS);
         Instant refreshTokenExpiry = now.plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS);
-        Set<String> roles = new HashSet<>();
-        if (!CollectionUtils.isEmpty(user.getRoles())) {
-            user.getRoles().forEach(role -> roles.add(role.getName()));
-        }
 
-        String accessToken = jwtUtils.generateToken(user, accessTokenExpiry, roles, "access");
-        String refreshToken = jwtUtils.generateToken(user, refreshTokenExpiry, roles, "refresh");
+        String role = user.getRole().getName();
+
+        String accessToken = jwtUtils.generateToken(user, accessTokenExpiry, role, "access");
+        String refreshToken = jwtUtils.generateToken(user, refreshTokenExpiry, role, "refresh");
 
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .roles(roles)
                 .build();
     }
 

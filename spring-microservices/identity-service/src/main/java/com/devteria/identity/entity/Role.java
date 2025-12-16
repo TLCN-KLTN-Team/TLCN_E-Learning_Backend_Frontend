@@ -1,21 +1,19 @@
 package com.devteria.identity.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import lombok.Getter;
 
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-public class Role {
-    @Id
-    String name;
+public enum Role {
+    USER("USER"),
+    STUDENT("STUDENT"),
+    TEACHER("TEACHER"),
+    ADMIN("ADMIN"),
+    SUPER_ADMIN("SUPER_ADMIN");
 
-    String description;
+    private final String name;
+
+    Role(String name) {
+        this.name = name;
+    }
+
 }

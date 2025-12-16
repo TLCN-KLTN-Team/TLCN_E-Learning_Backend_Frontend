@@ -5,16 +5,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.devteria.identity.dto.response.UserChatInfo;
+import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.Student;
 import com.devteria.identity.repository.StudentRepository;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,19 +27,14 @@ import com.devteria.identity.dto.request.UserUpdateRequest;
 import com.devteria.identity.dto.response.PaginatedResponse;
 import com.devteria.identity.dto.response.UserResponse;
 import com.devteria.identity.entity.AccountStatus;
-import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
-import com.devteria.identity.mapper.ProfileMapper;
 import com.devteria.identity.mapper.UserMapper;
-import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.UserRepository;
-import com.devteria.identity.repository.httpclient.ProfileClient;
 import com.devteria.identity.repository.httpclient.RemoveImageApi;
 import com.devteria.identity.repository.httpclient.UploadImageApi;
 
-import io.micrometer.common.util.StringUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -54,7 +47,6 @@ import lombok.extern.slf4j.Slf4j;
 public class UserService {
     UserRepository userRepository;
     StudentRepository studentRepository;
-    RoleRepository roleRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
     UploadImageApi uploadFileApi;
@@ -118,19 +110,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAccountStatus(AccountStatus.PENDING_VERIFICATION);
         user.setEmailVerified(false);
-        HashSet<Role> roles = new HashSet<>();
-
-        roleRepository.findById(PredefinedRole.USER_ROLE).ifPresent(roles::add);
-
-        Set<String> requestedRoles = request.getRoles();
-        if (requestedRoles != null && !requestedRoles.isEmpty()) {
-            requestedRoles.stream().forEach(role -> {
-                Role existingRole =
-                        roleRepository.findById(role).orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-                roles.add(existingRole);
-            });
-        }
-        user.setRoles(roles);
+        user.setRole(Role.USER);
 
         this.sendEmailVerification(request);
         try {
@@ -155,7 +135,7 @@ public class UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         UserResponse response = userMapper.toUserResponse(user);
-        response.setRoles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
+        response.setRole(user.getRole().toString());
 
         return response;
     }
@@ -169,8 +149,7 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        var roles = roleRepository.findAllById(request.getRoles());
-        user.setRoles(new HashSet<>(roles));
+        user.setRole(Role.valueOf(request.getRole().toUpperCase()));
 
         return userMapper.toUserResponse(userRepository.save(user));
     }
@@ -271,10 +250,8 @@ public class UserService {
         List<UserResponse> userList = users.getContent().stream()
                 .map(user -> {
                     UserResponse res = userMapper.toUserResponse(user);
-                    Set<String> userRoles =
-                            user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
                     String createdAt = user.getCreatedAt() != null ? user.getCreatedAt().toString() : LocalDate.now().toString();
-                    res.setRoles(userRoles);
+                    res.setRole(user.getRole().getName());
                     res.setCreatedAt(createdAt);
                     res.setAccountStatus(user.getAccountStatus().toString());
                     return res;

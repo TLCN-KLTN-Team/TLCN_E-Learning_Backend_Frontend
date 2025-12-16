@@ -7,7 +7,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import GoogleButton from "@/components/shared/button/GoogleButton";
 import FacebookButton from "@/components/shared/button/FacebookButton";
 import { Eye, EyeClosed, LockKeyhole, Mail, Loader2 } from "lucide-react";
-import { getRoles } from "@/utils/localStorageVariables";
+import { getAuthInfo } from "@/utils/auth.utils";
 import { getRoleBasedRedirectPath } from "@/utils/roleUtils";
 import OtpVerification from "@/components/auth/OtpVerification";
 import { emailApi } from "@/services/api/index";
@@ -65,9 +65,11 @@ const LoginPage = () => {
         // Tự động đăng nhập sau khi xác thực thành công
         login(formData.username, formData.password)
           .then(() => {
-            const roles = getRoles();
-            const url = getRoleBasedRedirectPath(roles);
-            navigate(url, { replace: true });
+            const auth = getAuthInfo();
+            if (auth) {
+              const url = getRoleBasedRedirectPath(auth.role);
+              navigate(url, { replace: true });
+            }
             toast.success("Đăng nhập thành công!");
           })
           .catch(() => {
@@ -137,9 +139,11 @@ const LoginPage = () => {
     setIsLoading(true);
     login(formData.username, formData.password)
       .then(() => {
-        const roles = getRoles();
-        const url = getRoleBasedRedirectPath(roles);
-        navigate(url, { replace: true });
+        const auth = getAuthInfo();
+        if (auth) {
+          const url = getRoleBasedRedirectPath(auth.role);
+          navigate(url, { replace: true });
+        }
 
         toast.success("Đăng nhập thành công!");
       })
