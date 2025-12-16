@@ -33,7 +33,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
           console.error("Failed to fetch user data:", error);
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
-          localStorage.removeItem("roles");
           setUser(null);
         } finally {
           setIsLoading(false);
@@ -45,7 +44,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       // Token đã hết hạn, clear localStorage
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      localStorage.removeItem("roles");
       setUser(null);
     }
   }, []);
@@ -73,7 +71,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     // Clear tất cả dữ liệu authentication
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    localStorage.removeItem("roles");
     localStorage.removeItem("expiryTime");
     localStorage.removeItem("refreshExpiryTime");
     sessionStorage.clear(); // Xóa cả sessionStorage để reset first login flag
@@ -106,7 +103,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         // Clear tất cả dữ liệu authentication
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        localStorage.removeItem("roles");
         localStorage.removeItem("expiryTime");
         localStorage.removeItem("refreshExpiryTime");
         setUser(null);

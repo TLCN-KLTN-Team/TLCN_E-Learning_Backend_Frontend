@@ -23,16 +23,32 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByEmail(String email);
 
-    @Query("SELECT u FROM User u WHERE " +
-            "(:keyword IS NULL OR :keyword = '' OR " +
-            "LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
-            "(:role IS NULL OR :role = '' OR EXISTS (SELECT r FROM u.roles r WHERE LOWER(r.name) = LOWER(:role))) AND " +
-            "(:status IS NULL OR :status = '' OR LOWER(CAST(u.accountStatus AS string)) = LOWER(:status))")
-    Page<User> findByFilters(@Param("keyword") String keyword,
-                             @Param("role") String role,
-                             @Param("status") String status,
-                             Pageable pageable);
+    @Query("""
+        SELECT u FROM User u
+        WHERE
+            (
+                :keyword IS NULL OR :keyword = '' OR
+                LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            AND
+            (
+                :role IS NULL OR :role = '' OR
+                LOWER(u.role) = LOWER(:role)
+            )
+            AND
+            (
+                :status IS NULL OR :status = '' OR
+                LOWER(u.accountStatus) = LOWER(:status)
+            )
+    """)
+    Page<User> findByFilters(
+            @Param("keyword") String keyword,
+            @Param("role") String role,
+            @Param("status") String status,
+            Pageable pageable
+    );
+
 }

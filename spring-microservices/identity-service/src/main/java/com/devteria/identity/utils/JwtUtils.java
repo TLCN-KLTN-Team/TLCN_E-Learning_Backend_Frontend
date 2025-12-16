@@ -40,7 +40,7 @@ public class JwtUtils {
         return signedJWT.getJWTClaimsSet().getSubject();
     }
 
-    public String generateToken(User user, Instant expiry, Set<String> roles, String tokenType){
+    public String generateToken(User user, Instant expiry, String role, String tokenType){
         // A jwt contains three parts: Header, Payload, and Signature
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
@@ -50,7 +50,7 @@ public class JwtUtils {
                 .expirationTime(Date.from(expiry))
                 .issuer("devzeus.com")
                 .claim("token_type", tokenType)
-                .claim("roles", roles)
+                .claim("scope", role)
                 .build();
         Payload payload = new Payload(claimsSet.toJSONObject());
 

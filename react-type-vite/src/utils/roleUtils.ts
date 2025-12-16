@@ -1,65 +1,72 @@
-// Utility functions for role-based routing
-export const getRoleBasedRedirectPath = (roles: string[]): string => {
+import { getAuthInfo } from "./auth.utils";
+
+/**
+ * Lấy đường dẫn redirect dựa trên role từ JWT token
+ * @param role - Role từ JWT (SUPER_ADMIN, ADMIN, TEACHER, STUDENT, USER)
+ * @returns Đường dẫn tương ứng với role
+ */
+export const getRoleBasedRedirectPath = (role: string): string => {
   // Ưu tiên role theo thứ tự từ cao xuống thấp
-  if (roles.includes("SUPER_ADMIN")) {
-    return "/system-admin";
-  }
+  const roleRedirectMap: Record<string, string> = {
+    SUPER_ADMIN: "/system-admin",
+    ADMIN: "/admin",
+    TEACHER: "/teacher/home",
+    STUDENT: "/",
+    USER: "/",
+  };
 
-  if (roles.includes("ADMIN")) {
-    return "/admin";
-  }
-
-  if (roles.includes("TEACHER")) {
-    return "/teacher/home";
-  }
-
-  // STUDENT hoặc USER vào trang chính
-  if (roles.includes("STUDENT")) {
-    return "/student/dashboard";
-  }
-
-  // Mặc định về trang chính nếu không có role phù hợp
-  return "/";
+  return roleRedirectMap[role] || "/login";
 };
 
-export const hasRole = (userRoles: string[], requiredRole: string): boolean => {
-  return userRoles.includes(requiredRole);
+/**
+ * Kiểm tra user có role cụ thể không
+ * @param requiredRole - Role cần kiểm tra
+ * @returns true nếu user có role đó
+ */
+export const hasRole = (requiredRole: string): boolean => {
+  const auth = getAuthInfo();
+  if (!auth) return false;
+  return auth.role === requiredRole;
 };
 
-export const hasAnyRole = (
-  userRoles: string[],
-  requiredRoles: string[]
-): boolean => {
-  return requiredRoles.some((role) => userRoles.includes(role));
+/**
+ * Kiểm tra user có bất kỳ role nào trong danh sách không
+ * @param requiredRoles - Danh sách role cần kiểm tra
+ * @returns true nếu user có ít nhất 1 role
+ */
+export const hasAnyRole = (requiredRoles: string[]): boolean => {
+  const auth = getAuthInfo();
+  if (!auth) return false;
+  return requiredRoles.includes(auth.role);
 };
 
-export const canAccessSystemAdmin = (userRoles: string[]): boolean => {
-  return userRoles.includes("SUPER_ADMIN");
+export const canAccessSystemAdmin = (role: string): boolean => {
+  return role === "SUPER_ADMIN";
 };
 
-export const canAccessAdmin = (userRoles: string[]): boolean => {
-  return userRoles.includes("SUPER_ADMIN") || userRoles.includes("ADMIN");
+export const canAccessAdmin = (role: string): boolean => {
+  return role === "SUPER_ADMIN" || role === "ADMIN";
 };
 
-export const canAccessTeacher = (userRoles: string[]): boolean => {
-  return userRoles.includes("SUPER_ADMIN") || userRoles.includes("TEACHER");
+export const canAccessTeacher = (role: string): boolean => {
+  return role === "SUPER_ADMIN" || role === "TEACHER";
 };
 
-export const canAccessStudent = (userRoles: string[]): boolean => {
+export const canAccessStudent = (role: string): boolean => {
   return (
-    userRoles.includes("SUPER_ADMIN") ||
-    userRoles.includes("ADMIN") ||
-    userRoles.includes("STUDENT") ||
-    userRoles.includes("USER")
+    role === "SUPER_ADMIN" ||
+    role === "ADMIN" ||
+    role === "STUDENT" ||
+    role === "USER"
   );
 };
 
-export const canAccessUser = (userRoles: string[]): boolean => {
+export const canAccessUser = (role: string): boolean => {
   return (
-    userRoles.includes("SUPER_ADMIN") ||
-    userRoles.includes("ADMIN") ||
-    userRoles.includes("TEACHER") ||
-    userRoles.includes("STUDENT") ||
-    userRoles.includes("USER")
+    role === "SUPER_ADMIN" ||
+    role === "ADMIN" ||
+    role === "TEACHER" ||
+    role === "STUDENT" ||
+    role === "USER"
   );
 };

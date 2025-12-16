@@ -1,6 +1,6 @@
 import { Plus, MoreHorizontal } from "lucide-react";
 import { getAvartarFromName } from "@/utils/callApiUtils";
-import { getRoles } from "@/utils/localStorageVariables";
+import { hasRole } from "@/utils/roleUtils";
 import type { WorkspaceResponse } from "@/types/chat.types";
 
 interface WorkspaceListProps {
@@ -65,7 +65,7 @@ const WorkspaceList = ({
       )}
 
       {/* Add Workspace Button (only for teachers) */}
-      {getRoles().includes("TEACHER") && (
+      {hasRole("TEACHER") && (
         <div className="w-12 h-12 bg-gray-700 hover:bg-green-600 rounded-2xl hover:rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer group relative">
           <Plus className="w-6 h-6 text-green-400 group-hover:text-white" />
           <div className="absolute left-16 bg-black text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">

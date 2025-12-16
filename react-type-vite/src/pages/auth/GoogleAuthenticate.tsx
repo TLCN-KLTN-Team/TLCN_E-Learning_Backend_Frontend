@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
-import { getRoles } from "@/utils/localStorageVariables";
+import { getAuthInfo } from "@/utils/auth.utils";
 import { getRoleBasedRedirectPath } from "@/utils/roleUtils";
 
 const Authenticate = () => {
@@ -44,9 +44,11 @@ const Authenticate = () => {
         } else {
           socialLogin(code, "google")
             .then(() => {
-              const roles = getRoles();
-              const url = getRoleBasedRedirectPath(roles);
-              navigate(url, { replace: true });
+              const auth = getAuthInfo();
+              if (auth) {
+                const url = getRoleBasedRedirectPath(auth.role);
+                navigate(url, { replace: true });
+              }
               toast.success("Đăng nhập bằng Google thành công!");
             })
             .catch((error) => {

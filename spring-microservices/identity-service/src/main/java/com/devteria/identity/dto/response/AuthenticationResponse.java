@@ -14,5 +14,4 @@ public class AuthenticationResponse {
     String accessToken;
     long expiryTime;
     String refreshToken;
-    Set<String> roles;
 }

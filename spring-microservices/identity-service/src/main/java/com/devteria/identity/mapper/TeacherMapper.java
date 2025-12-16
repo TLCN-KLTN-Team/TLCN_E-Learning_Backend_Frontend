@@ -22,7 +22,6 @@ public interface TeacherMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "password", ignore = true)
-    @Mapping(target = "roles", ignore = true)
     @Mapping(source = "departmentId", target = "idDepartment")
     @Mapping(source = "educationalUnitId", target = "idEducational")
     void updateTeacher(@MappingTarget Teacher teacher, TeacherRequest request);

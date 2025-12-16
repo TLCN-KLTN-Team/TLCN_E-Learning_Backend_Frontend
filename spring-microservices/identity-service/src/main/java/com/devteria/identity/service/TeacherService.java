@@ -3,9 +3,8 @@ package com.devteria.identity.service;
 import java.util.HashSet;
 import java.util.List;
 
-import com.devteria.identity.dto.response.StudentResponse;
 import com.devteria.identity.entity.AccountStatus;
-import com.devteria.identity.entity.Student;
+import com.devteria.identity.entity.Role;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,12 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.TeacherRequest;
 import com.devteria.identity.dto.response.TeacherResponse;
-import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.Teacher;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.TeacherMapper;
-import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.TeacherRepository;
 import com.devteria.identity.repository.UserRepository;
 
@@ -40,7 +37,6 @@ public class TeacherService {
     UserRepository userRepository;
     TeacherMapper teacherMapper;
     PasswordEncoder passwordEncoder;
-    RoleRepository roleRepository;
 
     public long countByEducationalUnit(Integer educationalUnitId) {
         return teacherRepository.countByIdEducational(educationalUnitId);
@@ -63,9 +59,6 @@ public class TeacherService {
             throw new AppException(ErrorCode.TEACHERID_ALREADY_EXISTS);
         }
 
-        HashSet<Role> roles = new HashSet<>();
-        roleRepository.findById(PredefinedRole.TEACHER_ROLE).ifPresent(roles::add);
-
         Teacher teacher = Teacher.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -73,7 +66,7 @@ public class TeacherService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .dob(request.getDob())
-                .roles(roles)
+                .role(Role.TEACHER)
                 .teacherId(request.getTeacherId())
                 .idDepartment(request.getDepartmentId() != null ? Integer.parseInt(request.getDepartmentId()) : null)
                 .idEducational(
