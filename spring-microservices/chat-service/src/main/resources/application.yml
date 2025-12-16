@@ -1,13 +1,14 @@
+# chat-service
 spring:
   application:
     name: chat-service
   data:
     mongodb:
-      uri: mongodb://root:root@mongodb:27017/mongo_notification?authSource=admin
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://root:root@mongodb:27017/mongo_notification?authSource=admin}
       auto-index-creation: true
   kafka:
     consumer:
-      bootstrap-servers: localhost:9092
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
       group-id: myGroup
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -23,7 +24,7 @@ springdoc:
 openapi:
   services:
     api-docs: api-docs
-    server: http://localhost:8888/api/v1${server.servlet.context-path}
+    server: ${API_GATEWAY_URL:http://localhost:8888}/api/v1${server.servlet.context-path}
     title: Chat App APIs
     version: 1.0.0
     license:
@@ -49,9 +50,19 @@ server:
 
 services:
   identity:
-    url: http://localhost:8080/identity
+    url: ${SERVICES_IDENTITY_URL:http://localhost:8080/identity}
 
 kafka:
   topic:
     course-events: course-events
     class-events: class-events
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # hoặc "*" nếu muốn expose tất cả
+  endpoint:
+    health:
+      show-details: always
+

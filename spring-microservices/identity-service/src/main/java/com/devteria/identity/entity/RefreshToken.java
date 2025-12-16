@@ -1,11 +1,11 @@
 package com.devteria.identity.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.UUID;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Data

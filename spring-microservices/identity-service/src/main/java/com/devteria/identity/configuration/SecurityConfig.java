@@ -1,5 +1,7 @@
 package com.devteria.identity.configuration;
 
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,13 +15,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableWebSecurity
@@ -48,7 +48,8 @@ public class SecurityConfig {
         "/v3/api-docs/**", // Swagger API docs
         "/swagger-ui/**", // Swagger UI
         "/swagger-ui.html", // Swagger UI HTML
-        "/webjars/**" // WebJars for Swagger UI
+        "/webjars/**", // WebJars for Swagger UI
+        "/actuator/health" // Health check endpoint for Docker
     };
 
     private final CustomJwtDecoder customJwtDecoder;
@@ -59,13 +60,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .cors(Customizer.withDefaults())
-                .authorizeHttpRequests(request ->
-                    request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                            .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
-                            .requestMatchers(HttpMethod.PUT, PUBLIC_ENDPOINTS).permitAll()
-                            .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
+        httpSecurity.cors(Customizer.withDefaults()).authorizeHttpRequests(request -> request.requestMatchers(
+                        HttpMethod.POST, PUBLIC_ENDPOINTS)
+                .permitAll()
+                .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS)
+                .permitAll()
+                .requestMatchers(HttpMethod.PUT, PUBLIC_ENDPOINTS)
+                .permitAll()
+                .requestMatchers(SWAGGER_ENDPOINTS)
+                .permitAll()
                 .anyRequest()
                 .authenticated());
 

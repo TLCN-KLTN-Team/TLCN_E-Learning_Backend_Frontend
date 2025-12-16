@@ -1,3 +1,4 @@
+# identity-service
 server:
   port: 8080
   servlet:
@@ -7,7 +8,7 @@ server:
 openapi:
   services:
     api-docs: api-docs
-    server: http://localhost:8888/api/v1${server.servlet.context-path}
+    server: ${API_GATEWAY_URL:http://localhost:8888}/api/v1${server.servlet.context-path}
     title: Identity Service APIs
     version: 1.0.0
     license:
@@ -38,7 +39,7 @@ spring:
               - email
               - public_profile
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -51,8 +52,8 @@ spring:
     type: redis
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       password: "${REDIS_PASSWORD}"
       timeout: 6000 # in milliseconds
 
@@ -78,3 +79,18 @@ app:
     profile: "${PROFILE_SERVICE_URL:http://localhost:8081/profile}"
     file: "${FILE_SERVICE_URL:http://localhost:8084/file-handler}"
     course: "${COURSE_MANAGEMENT_URL:http://localhost:8088/course-management}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true  # Quan trọng cho Kubernetes/Docker health checks
+  health:
+    readinessState:
+      enabled: true

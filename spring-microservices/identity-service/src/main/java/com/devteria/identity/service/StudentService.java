@@ -4,9 +4,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.devteria.identity.entity.AccountStatus;
-import com.devteria.identity.entity.Role;
-import com.devteria.identity.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,10 +15,14 @@ import org.springframework.stereotype.Service;
 import com.devteria.identity.constant.PredefinedRole;
 import com.devteria.identity.dto.request.StudentRequest;
 import com.devteria.identity.dto.response.StudentResponse;
+import com.devteria.identity.entity.AccountStatus;
+import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.Student;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
 import com.devteria.identity.mapper.StudentMapper;
+import com.devteria.identity.mapper.UserMapper;
+import com.devteria.identity.repository.RoleRepository;
 import com.devteria.identity.repository.StudentRepository;
 import com.devteria.identity.repository.UserRepository;
 
@@ -45,10 +46,10 @@ public class StudentService {
     public long countByEducationalUnit(Integer educationalUnitId) {
         return studentRepository.countByIdEducational(educationalUnitId);
     }
-    
+
     public Integer getStudentEducationalUnit(String studentId) {
-        var student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        var student =
+                studentRepository.findById(studentId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return student.getIdEducational();
     }
 
@@ -108,9 +109,8 @@ public class StudentService {
 
     public StudentResponse getStudentById(String userId) {
         log.info("Getting student by userId: {}", userId);
-        Student student = studentRepository
-                .findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.STUDENT_NOT_FOUND));
+        Student student =
+                studentRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.STUDENT_NOT_FOUND));
         return studentMapper.toStudentResponse(student);
     }
 
@@ -194,8 +194,7 @@ public class StudentService {
     public StudentResponse updateAccountStatus(String id, String status) {
         log.info("Updating account status for student ID: {} to {}", id, status);
 
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        Student student = studentRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         try {
             AccountStatus accountStatus = AccountStatus.valueOf(status);
@@ -212,15 +211,11 @@ public class StudentService {
 
     public List<String> getUsersByStudentIds(List<String> studentIds) {
         List<Student> students = studentRepository.findByStudentIdIn(studentIds);
-        return students.stream()
-                .map(Student::getId)
-                .collect(Collectors.toList());
+        return students.stream().map(Student::getId).collect(Collectors.toList());
     }
 
     public List<StudentResponse> getStudentsByUserIds(List<String> userIds) {
         List<Student> students = studentRepository.findByIdIn((userIds));
-        return students.stream()
-                .map(studentMapper::toStudentResponse)
-                .collect(Collectors.toList());
+        return students.stream().map(studentMapper::toStudentResponse).collect(Collectors.toList());
     }
 }

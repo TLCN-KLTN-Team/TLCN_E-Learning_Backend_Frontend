@@ -1,5 +1,13 @@
 package com.devteria.identity.utils;
 
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import com.devteria.identity.entity.User;
 import com.devteria.identity.exception.AppException;
 import com.devteria.identity.exception.ErrorCode;
@@ -9,14 +17,8 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.Date;
-import java.util.Set;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -100,7 +102,7 @@ public class JwtUtils {
         // Check token type - support both user tokens and service tokens
         String tokenType = signedJWT.getJWTClaimsSet().getStringClaim("token_type");
         String type = signedJWT.getJWTClaimsSet().getStringClaim("type");
-        
+
         // If it's a service token, only verify signature and expiration
         if ("service-token".equals(type)) {
             Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
@@ -109,14 +111,16 @@ public class JwtUtils {
             }
             return true;
         }
-        
+
         // For user tokens, check token_type
         if (!"refresh".equals(tokenType) && !"access".equals(tokenType)) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
 
         // Check if token is invalidated
-        if ("refresh".equals(tokenType) && invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getSubject())) {
+        if ("refresh".equals(tokenType)
+                && invalidatedTokenRepository.existsById(
+                        signedJWT.getJWTClaimsSet().getSubject())) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
 
@@ -128,7 +132,7 @@ public class JwtUtils {
 
         return true;
     }
-    
+
     public boolean isServiceToken(String token) throws ParseException {
         SignedJWT signedJWT = SignedJWT.parse(token);
         String type = signedJWT.getJWTClaimsSet().getStringClaim("type");
