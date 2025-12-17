@@ -15,6 +15,7 @@ const searchAndFiltersPublishedCourses = async (
   minPrice?: number,
   maxPrice?: number,
   minRating?: number,
+  practiceType?: string,
   levels?: string[],
   categories?: string[],
   sortBy?: string
@@ -43,8 +44,11 @@ const searchAndFiltersPublishedCourses = async (
   if (categories && categories.length > 0) {
     categories.forEach((category) => params.append("categories", category));
   }
+  if (practiceType != undefined) {
+    params.append("practiceType", practiceType);
+  }
   if (sortBy) {
-    params.append("sortBy", sortBy);
+    params.append("sort", sortBy);
   }
 
   const response = await axiosInstance.get<

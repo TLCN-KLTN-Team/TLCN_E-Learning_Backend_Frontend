@@ -128,5 +128,5 @@ export const filterAccountsByRole = (
 ): UserResponse[] => {
   return selectedRole === "all"
     ? accounts
-    : accounts.filter((account) => account.roles.includes(selectedRole));
+    : accounts.filter((account) => account.role.includes(selectedRole));
 };

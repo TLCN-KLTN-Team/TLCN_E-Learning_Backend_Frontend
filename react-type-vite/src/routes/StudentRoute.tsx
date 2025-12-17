@@ -72,7 +72,7 @@ const StudentRoutes = [
     key="workspace"
     path="/student/workspaces"
     element={
-      <ProtectedRoute allowedRoles={["STUDENT"]}>
+      <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
         <WorkspacePage />
       </ProtectedRoute>
     }

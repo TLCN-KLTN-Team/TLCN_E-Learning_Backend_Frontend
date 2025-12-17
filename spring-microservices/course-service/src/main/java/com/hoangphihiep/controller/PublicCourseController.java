@@ -24,9 +24,6 @@ public class PublicCourseController {
 
     // some apis get data here
     // get courses suggest for user
-    public ApiResponse<?> getPublishCoursesByNumberOfPurchase(){
-        return null;
-    }
     // get courses by favorite based on user behavior
     // we need to integrated ai
 
@@ -45,15 +42,15 @@ public class PublicCourseController {
     }
 
     @GetMapping("/search")
-    public ApiResponse<?> searchPublishedCourses(@RequestParam(defaultValue = "0") int page,
+    public ApiResponse<?> searchAndFiltersPublishedCourses(@RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "12") int size,
                                                  @RequestParam(required = false) String keyword,
                                                  @RequestParam(required = false) BigDecimal minPrice, @RequestParam(required = false) BigDecimal maxPrice,
-                                                 @RequestParam(required = false) Integer minRating,
+                                                 @RequestParam(required = false) Double minRating,
                                                  @RequestParam(required = false) List<String> levels,
                                                  @RequestParam(required = false) String practiceType,
                                                  @RequestParam(required = false) List<String> categories,
-                                                 @RequestParam(defaultValue = "relevance") String sortBy
+                                                 @RequestParam(defaultValue = "popular") String sort
     ) throws IOException {
         // builde request
         SearchFiltersRequest request = SearchFiltersRequest.builder()
@@ -62,10 +59,11 @@ public class PublicCourseController {
                 .minPrice(minPrice)
                 .maxPrice(maxPrice)
                 .minRating(minRating)
+                .requiredPractice(practiceType)
                 .levels(levels)
                 .page(page)
                 .size(size)
-                .sortBy(sortBy)
+                .sortBy(sort)
                 .build();
         // extra elastic search when implementing
         //
