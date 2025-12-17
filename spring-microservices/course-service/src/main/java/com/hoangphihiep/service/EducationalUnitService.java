@@ -109,18 +109,21 @@ public class EducationalUnitService {
                                     .build();
                         }).toList()
                 )
-                .courses(educationalUnit.getCourses().stream()
+                .courses(Optional.ofNullable(educationalUnit.getCourses())
+                        .orElse(Collections.emptySet())
+                        .stream()
+                        .filter(course -> course.getPublishedCourse() != null)
                         .map(course -> EducationalUnitDetailResponse.Course.builder()
                                 .id(course.getId())
                                 .name(course.getCourseName())
                                 .description(course.getDescription())
-                                .coverImageUrl(course.getPublishedCourse() != null ?
-                                        course.getPublishedCourse().getCourseImage() : null)
+                                .coverImageUrl(course.getPublishedCourse().getCourseImage())
                                 .price(currencyUtils.formatCurrency(course.getPublishedCourse().getCoursePrice()))
                                 .duration(50)
                                 .numberOfStudents(500)
                                 .averageRating(5)
-                                .build()).toList()
+                                .build())
+                        .toList()
                 )
                 .build();
     }

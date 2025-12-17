@@ -17,7 +17,8 @@ public class SearchFiltersRequest {
     List<String> levels;
     BigDecimal minPrice;
     BigDecimal maxPrice;
-    Integer minRating;
+    Double minRating;
+    String requiredPractice;
     int page;
     int size;
     String sortBy;

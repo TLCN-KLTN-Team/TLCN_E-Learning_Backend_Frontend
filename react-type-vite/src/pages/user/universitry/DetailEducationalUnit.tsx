@@ -7,21 +7,18 @@ import { GeneralInfo } from "@/components/university/GeneralInfo";
 import { LecturersSection } from "@/components/university/LecturersSection";
 import { CoursesSection } from "@/components/university/CoursesSection";
 import { getEducationalUnitById } from "@/services/api/anonymous/home.api";
-import type {
-  EducationalUnit,
-  Teacher,
-  UnitCourse,
-  EducationalUnitDetailResponse,
-} from "@/types/educational-unit.types";
+import type { EducationalUnitDetailResponse } from "@/types/educational-unit.types";
 
 import logo from "@/assets/university-hero.jpg";
 
+const DEFAULT_AVATAR = "https://via.placeholder.com/100";
+const DEFAULT_COURSE_IMAGE = "https://via.placeholder.com/300x200";
+
 const DetailEducationalUnit = () => {
   const { id } = useParams<{ id: string }>();
-  const [unit, setUnit] = useState<EducationalUnit | null>(null);
-  const [instructors, setInstructors] = useState<Teacher[]>([]);
-  const [courses] = useState<UnitCourse[]>([]);
+  const [data, setData] = useState<EducationalUnitDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   // Fetch data from API
   useEffect(() => {
@@ -30,59 +27,8 @@ const DetailEducationalUnit = () => {
 
       setLoading(true);
       try {
-        const data: EducationalUnitDetailResponse =
-          await getEducationalUnitById(Number(id));
-
-        // Transform API response to EducationalUnit
-        const transformedUnit: EducationalUnit = {
-          id: data.id.toString(),
-          name: data.name,
-          logo: data.logo || "https://via.placeholder.com/150",
-          bannerImage: data.logo || "https://via.placeholder.com/1920x400",
-          address: data.address,
-          establishedYear: data.establishedYear,
-          totalStudents: data.totalStudents || 0,
-          description: data.description || "Chưa có mô tả chi tiết.",
-          specializations: [], // API không có field này, để trống
-          trainingPrograms: [], // API không có field này, để trống
-          email: data.email || "",
-          phone: data.phone || "",
-          website: data.website || "",
-          isFollowing: false,
-        };
-
-        // Transform teachers
-        const transformedInstructors: Teacher[] = data.teachers.map(
-          (teacher) => ({
-            id: teacher.id,
-            name: teacher.name,
-            avatar: teacher.avatarUrl || "https://via.placeholder.com/100",
-            department: teacher.departmentName,
-            email: "", // API không có field này
-            title: teacher.academicDegree || "Giảng viên",
-            bio: "",
-          })
-        );
-
-        // Transform courses
-        // const transformedCourses: UnitCourse[] = data.courses.map((course) => ({
-        //   id: course.id.toString(),
-        //   title: course.name,
-        //   description: course.description || "Chưa có mô tả",
-        //   duration: `${course.duration} giờ`,
-        //   price: Number.parseFloat(course.price.replace(/[^0-9]/g, "")) || 0,
-        //   instructor: course.departmentName || "Chưa xác định",
-        //   thumbnail:
-        //     course.coverImageUrl || "https://via.placeholder.com/300x200",
-        //   enrollmentCount: course.numberOfStudents,
-        //   rating: course.averageRating,
-        //   category: course.departmentName || "Chưa phân loại",
-        //   level: "Trung cấp",
-        // }));
-
-        setUnit(transformedUnit);
-        setInstructors(transformedInstructors);
-        // setCourses(transformedCourses);
+        const response = await getEducationalUnitById(Number(id));
+        setData(response);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -94,20 +40,18 @@ const DetailEducationalUnit = () => {
   }, [id]);
 
   const handleFollow = () => {
-    if (unit) {
-      setUnit({ ...unit, isFollowing: !unit.isFollowing });
-    }
+    setIsFollowing(!isFollowing);
   };
 
   const handleVisit = () => {
-    if (unit?.website) {
-      window.open(unit.website, "_blank");
+    if (data?.website) {
+      window.open(data.website, "_blank");
     }
   };
 
   const handleContact = () => {
-    if (unit?.email) {
-      window.location.href = `mailto:${unit.email}`;
+    if (data?.email) {
+      window.location.href = `mailto:${data.email}`;
     }
   };
 
@@ -126,7 +70,7 @@ const DetailEducationalUnit = () => {
     );
   }
 
-  if (!unit) {
+  if (!data) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -140,44 +84,71 @@ const DetailEducationalUnit = () => {
     );
   }
 
+  // Prepare lecturers with default values
+  const lecturers = data.teachers.map((teacher) => ({
+    id: teacher.id,
+    name: teacher.name,
+    avatar: teacher.avatarUrl || DEFAULT_AVATAR,
+    department: teacher.departmentName,
+    email: "",
+    title: teacher.academicDegree || "Giảng viên",
+    bio: "",
+  }));
+
+  // Prepare courses with default values
+  const courses = data.courses.map((course) => ({
+    id: course.id.toString(),
+    title: course.name,
+    description: course.description || "Chưa có mô tả",
+    duration: `${course.duration} giờ`,
+    price: Number.parseFloat(course.price.replace(/[^0-9]/g, "")) || 0,
+    instructor: course.departmentName || "Chưa xác định",
+    thumbnail: course.coverImageUrl || DEFAULT_COURSE_IMAGE,
+    enrollmentCount: course.numberOfStudents,
+    rating: course.averageRating,
+    category: course.departmentName || "Chưa phân loại",
+    level: "Trung cấp",
+  }));
+
   const categories = [
     ...new Set(courses.map((c) => c.category).filter(Boolean)),
   ] as string[];
+
+  const departments = [...new Set(lecturers.map((l) => l.department))];
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       <HeroBanner
-        name={unit.name}
-        address={unit.address}
-        foundedYear={unit.establishedYear}
-        studentCount={unit.totalStudents.toLocaleString("vi-VN")}
+        name={data.name}
+        address={data.address}
+        foundedYear={data.establishedYear}
+        studentCount={data.totalStudents?.toLocaleString("vi-VN") || "0"}
         logoUrl={logo}
         bannerImage={logo}
-        isFollowing={unit.isFollowing}
+        isFollowing={isFollowing}
         onFollow={handleFollow}
         onVisitWebsite={handleVisit}
         onContact={handleContact}
       />
 
-      <GeneralInfo
-        description={unit.description}
-        specializations={unit.specializations}
-        educationLevels={unit.trainingPrograms}
-        contact={{
-          email: unit.email,
-          phone: unit.phone,
-          website: unit.website,
-        }}
-      />
+      <div className="px-4 md:px-6 lg:px-8">
+        <GeneralInfo
+          description={data.description || "Chưa có mô tả chi tiết."}
+          specializations={[]}
+          educationLevels={[]}
+          contact={{
+            email: data.email || "",
+            phone: data.phone || "",
+            website: data.website || "",
+          }}
+        />
 
-      <LecturersSection
-        lecturers={instructors}
-        departments={[...new Set(instructors.map((i) => i.department))]}
-      />
+        <LecturersSection lecturers={lecturers} departments={departments} />
 
-      <CoursesSection courses={courses} categories={categories} />
+        <CoursesSection courses={courses} categories={categories} />
+      </div>
 
       <Footer />
     </div>
