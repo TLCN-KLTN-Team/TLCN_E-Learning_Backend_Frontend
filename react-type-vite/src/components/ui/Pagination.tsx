@@ -51,22 +51,18 @@ export const Pagination: React.FC<PaginationProps> = ({
     return pages;
   };
 
-  if (totalPages <= 1) return null;
-
   return (
     <div className={`flex items-center justify-center gap-2 ${className}`}>
       {/* Previous Button */}
-      <div className={currentPage === 0 ? "cursor-not-allowed" : ""}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 0}
-          className="h-9 w-9 p-0 disabled:opacity-50"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 0}
+        className="h-9 w-9 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
 
       {/* Page Numbers */}
       <div className="flex items-center gap-1">
@@ -93,19 +89,15 @@ export const Pagination: React.FC<PaginationProps> = ({
       </div>
 
       {/* Next Button */}
-      <div
-        className={currentPage === totalPages - 1 ? "cursor-not-allowed" : ""}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages - 1}
+        className="h-9 w-9 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages - 1}
-          className="h-9 w-9 p-0"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+        <ChevronRight className="h-4 w-4" />
+      </Button>
     </div>
   );
 };

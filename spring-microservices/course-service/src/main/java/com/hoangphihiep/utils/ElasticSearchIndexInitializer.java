@@ -28,6 +28,8 @@ public class ElasticSearchIndexInitializer {
     private final ElasticsearchClient elasticsearchClient;
     private final CourseCompletionRepository courseCompletionRepository;
     private final PublishedCourseRepository publishedCourseRepository;
+    private final com.hoangphihiep.service.ReviewService reviewService;
+    private final com.hoangphihiep.service.OrderService orderService;
 
     @PostConstruct
     public void initialize() {
@@ -91,8 +93,12 @@ public class ElasticSearchIndexInitializer {
                 .id(course.getId().toString())
                 .courseName(course.getCourse().getCourseName())
                 .description(course.getCourse().getDescription())
+                .courseIntroduction(course.getCourseIntroduction())
                 .price(course.getCoursePrice())
                 .category(course.getCourseType().getCourseTypeName())
+                .level(null) // TODO: Add level field to PublishedCourse entity if needed
+                .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
+                .studentsCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
                 .build();
     }
 

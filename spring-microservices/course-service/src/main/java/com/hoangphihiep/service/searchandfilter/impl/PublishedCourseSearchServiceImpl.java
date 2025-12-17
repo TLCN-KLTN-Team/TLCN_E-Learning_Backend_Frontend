@@ -53,9 +53,113 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
                 .id(course.getId().toString())
                 .courseName(course.getCourse().getCourseName())
                 .description(course.getCourse().getDescription())
+                .courseIntroduction(course.getCourseIntroduction())
                 .price(course.getCoursePrice())
                 .category(course.getCourseType().getCourseTypeName())
+                .level(null) // TODO: Add level field to PublishedCourse entity if needed
+                .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
+                .studentsCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
                 .build();
+    }
+
+    private boolean validateStringField(String field) {
+        return field != null && !field.trim().isEmpty();
+    }
+
+    private BoolQuery.Builder buildBoolQueryWhenHaveKeywordAndFilters(SearchFiltersRequest request, boolean hasKeyword) {
+        BoolQuery.Builder boolQueryBuilder = QueryBuilders.bool();
+
+        // Add keyword search to must clause if present
+        if (hasKeyword) {
+            Query multiMatchQuery = QueryBuilders
+                    .multiMatch()
+                    .query(request.getKeyword().trim())
+                    .fields("courseName^3", "description^2", "courseIntroduction")
+                    .fuzziness("AUTO")
+                    .prefixLength(2)
+                    .build()._toQuery();
+            boolQueryBuilder.must(multiMatchQuery);
+        }
+
+        // Build category filter
+        if (request.getCategories() != null && !request.getCategories().isEmpty()) {
+            List<FieldValue> categoryValues = request.getCategories().stream()
+                    .map(FieldValue::of)
+                    .collect(Collectors.toList());
+
+            Query categoryFilter = QueryBuilders.terms()
+                    .field("category")
+                    .terms(t -> t.value(categoryValues))
+                    .build()._toQuery();
+            boolQueryBuilder.filter(categoryFilter);
+        }
+
+        // Build price range filter
+        if (request.getMinPrice() != null || request.getMaxPrice() != null) {
+            Query priceRangeFilter = Query.of(q -> q
+                    .range(r -> {
+                        r.field("price");
+                        if (request.getMinPrice() != null) {
+                            r.gte(JsonData.of(request.getMinPrice().doubleValue()));
+                        }
+                        if (request.getMaxPrice() != null) {
+                            r.lte(JsonData.of(request.getMaxPrice().doubleValue()));
+                        }
+                        return r;
+                    })
+            );
+            boolQueryBuilder.filter(priceRangeFilter);
+        }
+
+        // Build level filter
+        if (request.getLevels() != null && !request.getLevels().isEmpty()) {
+            List<FieldValue> levelValues = request.getLevels().stream()
+                    .map(FieldValue::of)
+                    .collect(Collectors.toList());
+
+            Query levelFilter = QueryBuilders.terms()
+                    .field("level")
+                    .terms(t -> t.value(levelValues))
+                    .build()._toQuery();
+            boolQueryBuilder.filter(levelFilter);
+        }
+
+        // Build rating filter
+        if (request.getMinRating() != null) {
+            Query ratingFilter = RangeQuery.of(r -> r
+                            .field("rating")
+                            .gte(JsonData.of(request.getMinRating().doubleValue())))
+                    ._toQuery();
+            boolQueryBuilder.filter(ratingFilter);
+        }
+        return boolQueryBuilder;
+    }
+
+    private List<SortOptions> buildSortOptions(String sortBy) {
+        List<SortOptions> sortOptions = new ArrayList<>();
+        if (sortBy != null && !sortBy.isEmpty()) {
+            switch (sortBy) {
+                case "price_asc" -> sortOptions.add(SortOptions.of(s -> s
+                        .field(f -> f.field("price").order(SortOrder.Asc))
+                ));
+                case "price_desc" -> sortOptions.add(SortOptions.of(s -> s
+                        .field(f -> f.field("price").order(SortOrder.Desc))
+                ));
+                case "rating" -> sortOptions.add(SortOptions.of(s -> s
+                        .field(f -> f.field("rating").order(SortOrder.Desc))
+                ));
+                case "newest" -> sortOptions.add(SortOptions.of(s -> s
+                        .field(f -> f.field("createdAt").order(SortOrder.Desc))
+                ));
+//                case "popular" -> sortOptions.add(SortOptions.of(s -> s
+//                        .field(f -> f.field("").order(SortOrder.Desc))
+//                ));
+                default -> {
+                    // No sorting applied
+                }
+            }
+        }
+        return sortOptions;
     }
 
     @Override
@@ -77,99 +181,23 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
             finalQuery = QueryBuilders
                     .multiMatch()
                     .query(request.getKeyword().trim())
-                    .fields("courseName^2", "description")
+                    .fields("courseName^3", "description^2", "courseIntroduction")
                     .fuzziness("AUTO")
                     .prefixLength(2)
                     .build()._toQuery();
         } else {
             // Build bool query with filters and optional keyword
-            BoolQuery.Builder boolQueryBuilder = QueryBuilders.bool();
-
-            // Add keyword search to must clause if present
-            if (hasKeyword) {
-                Query multiMatchQuery = QueryBuilders
-                        .multiMatch()
-                        .query(request.getKeyword().trim())
-                        .fields("courseName^2", "description")
-                        .fuzziness("AUTO")
-                        .prefixLength(2)
-                        .build()._toQuery();
-                boolQueryBuilder.must(multiMatchQuery);
-            }
-
-            // Build category filter
-            if (request.getCategories() != null && !request.getCategories().isEmpty()) {
-                List<FieldValue> categoryValues = request.getCategories().stream()
-                        .map(FieldValue::of)
-                        .collect(Collectors.toList());
-
-                Query categoryFilter = QueryBuilders.terms()
-                        .field("category")
-                        .terms(t -> t.value(categoryValues))
-                        .build()._toQuery();
-                boolQueryBuilder.filter(categoryFilter);
-            }
-
-            // Build price range filter
-            if (request.getMinPrice() != null || request.getMaxPrice() != null) {
-                Query priceRangeFilter = Query.of(q -> q
-                        .range(r -> {
-                            r.field("price");
-                            if (request.getMinPrice() != null) {
-                                r.gte(JsonData.of(request.getMinPrice().doubleValue()));
-                            }
-                            if (request.getMaxPrice() != null) {
-                                r.lte(JsonData.of(request.getMaxPrice().doubleValue()));
-                            }
-                            return r;
-                        })
-                );
-                boolQueryBuilder.filter(priceRangeFilter);
-            }
-
-            // Build level filter
-            if (request.getLevels() != null && !request.getLevels().isEmpty()) {
-                List<FieldValue> levelValues = request.getLevels().stream()
-                        .map(FieldValue::of)
-                        .collect(Collectors.toList());
-
-                Query levelFilter = QueryBuilders.terms()
-                        .field("level")
-                        .terms(t -> t.value(levelValues))
-                        .build()._toQuery();
-                boolQueryBuilder.filter(levelFilter);
-            }
-
-            // Build rating filter
-            if (request.getMinRating() != null) {
-                Query ratingFilter = RangeQuery.of(r -> r
-                                .field("rating")
-                                .gte(JsonData.of(request.getMinRating().doubleValue())))
-                        ._toQuery();
-                boolQueryBuilder.filter(ratingFilter);
-            }
+            BoolQuery.Builder boolQueryBuilder = this.buildBoolQueryWhenHaveKeywordAndFilters(request, hasKeyword);
 
             finalQuery = boolQueryBuilder.build()._toQuery();
         }
 
         // Build sort options
-        List<SortOptions> sortOptions = new ArrayList<>();
+        List<SortOptions> sortOptions;
         if (request.getSortBy() != null && !request.getSortBy().isEmpty()) {
-            switch (request.getSortBy()) {
-                case "price_asc" -> sortOptions.add(SortOptions.of(s -> s
-                        .field(f -> f.field("price").order(SortOrder.Asc))
-                ));
-                case "price_desc" -> sortOptions.add(SortOptions.of(s -> s
-                        .field(f -> f.field("price").order(SortOrder.Desc))
-                ));
-                case "rating_desc" -> sortOptions.add(SortOptions.of(s -> s
-                        .field(f -> f.field("rating").order(SortOrder.Desc))
-                ));
-                case "students_desc" -> sortOptions.add(SortOptions.of(s -> s
-                        .field(f -> f.field("studentsCount").order(SortOrder.Desc))
-                ));
-                default -> log.warn("Unknown sort option: {}", request.getSortBy());
-            }
+            sortOptions = this.buildSortOptions(request.getSortBy());
+        } else {
+            sortOptions = new ArrayList<>();
         }
 
         // Build search request with pagination
@@ -214,6 +242,7 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
                         .id(course.getId())
                         .courseName(course.getCourse().getCourseName())
                         .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .amountPrice(course.getCoursePrice())
                         .authorName(course.getAuthorName())
                         .thumbnailUrl(course.getCourseImage())
                         .rating(reviewService.calculateAverageRatingForCourse(course.getId()))

@@ -1,12 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  MapPin,
-  Users,
-  Calendar,
-  Heart,
-  ExternalLink,
-  Phone,
-} from "lucide-react";
+import { MapPin, Users, Calendar, Heart, Phone } from "lucide-react";
 
 interface HeroBannerProps {
   name: string;
@@ -30,7 +23,6 @@ export function HeroBanner({
   bannerImage = "https://via.placeholder.com/1920x500",
   isFollowing = false,
   onFollow,
-  onVisitWebsite,
   onContact,
 }: HeroBannerProps) {
   return (
@@ -96,15 +88,6 @@ export function HeroBanner({
                     className={`w-4 h-4 ${isFollowing ? "fill-current" : ""}`}
                   />
                   Theo dõi
-                </Button>
-                <Button
-                  onClick={onVisitWebsite}
-                  variant="outline"
-                  className="gap-2 bg-transparent border-white/30 text-white hover:bg-white/10"
-                  size="lg"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Ghé thăm trang
                 </Button>
                 <Button
                   onClick={onContact}
