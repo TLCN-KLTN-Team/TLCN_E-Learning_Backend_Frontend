@@ -61,20 +61,20 @@ const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
               </h3>
               <p className="text-gray-600">@{account.username}</p>
               <div className="flex flex-wrap gap-1 mt-2">
-                {account.roles.map((role, index) => {
-                  const IconComponent = getRoleIcon([role]);
-                  return (
-                    <span
-                      key={index}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(
-                        [role]
-                      )}`}
-                    >
-                      <IconComponent className="w-3 h-3" />
-                      {getRoleName([role])}
-                    </span>
-                  );
-                })}
+                {account.role &&
+                  (() => {
+                    const IconComponent = getRoleIcon([account.role]);
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(
+                          [account.role]
+                        )}`}
+                      >
+                        <IconComponent className="w-3 h-3" />
+                        {getRoleName([account.role])}
+                      </span>
+                    );
+                  })()}
               </div>
             </div>
           </div>
@@ -168,12 +168,12 @@ const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                   <label className="text-sm font-medium text-gray-700">
                     Quyền truy cập
                   </label>
-                  <div className="mt-1 space-y-1">
-                    {account.roles.map((role, index) => (
-                      <div key={index} className="text-sm text-gray-900">
-                        • {getRoleName([role])}
+                  <div className="mt-1">
+                    {account.role && (
+                      <div className="text-sm text-gray-900">
+                        • {getRoleName([account.role])}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -10,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Mail, User, ExternalLink } from "lucide-react";
+import { Search, Mail, ExternalLink } from "lucide-react";
 
 interface Lecturer {
   id: string;
@@ -25,7 +26,15 @@ interface LecturersSectionProps {
   lecturers: Lecturer[];
   departments: string[];
 }
-
+const getAvatarByName = (name: string): string => {
+  const words = name.trim().split(" ");
+  if (words.length >= 2) {
+    return `${words[0].charAt(0)}${words[words.length - 1].charAt(
+      0
+    )}`.toUpperCase();
+  }
+  return name.charAt(0).toUpperCase();
+};
 export function LecturersSection({
   lecturers,
   departments,
@@ -92,17 +101,12 @@ export function LecturersSection({
               <CardContent className="p-5">
                 <div className="flex flex-col items-center text-center gap-3">
                   {/* Avatar */}
-                  <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-                    {lecturer.avatar ? (
-                      <img
-                        src={lecturer.avatar}
-                        alt={lecturer.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-8 h-8 text-gray-400" />
-                    )}
-                  </div>
+                  <Avatar className="w-16 h-16">
+                    <AvatarImage src={lecturer.avatar} alt={lecturer.name} />
+                    <AvatarFallback className="bg-blue-600 text-white text-lg font-semibold">
+                      {getAvatarByName(lecturer.name)}
+                    </AvatarFallback>
+                  </Avatar>
 
                   {/* Info */}
                   <div className="w-full">

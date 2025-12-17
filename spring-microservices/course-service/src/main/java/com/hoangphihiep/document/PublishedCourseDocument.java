@@ -10,6 +10,7 @@ import org.springframework.data.elasticsearch.annotations.*;
 import org.springframework.data.elasticsearch.core.suggest.Completion;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
@@ -27,6 +28,9 @@ public class PublishedCourseDocument {
     @Field(type = FieldType.Text)
     private String description;
 
+    @Field(type = FieldType.Text)
+    private String courseIntroduction;
+
     @Field(type = FieldType.Keyword) // not analyzed. used for filtering
     private String category;
 
@@ -41,6 +45,9 @@ public class PublishedCourseDocument {
 
     @Field(type = FieldType.Integer)
     private Integer studentsCount;
+
+    @Field(type = FieldType.Date)
+    private LocalDate createdAt;
 
     /**
      * Dùng cho autocomplete tên khóa học

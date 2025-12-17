@@ -4,6 +4,7 @@ export interface PublishedCourseResponse {
   courseName: string;
   authorName: string;
   coursePrice: string;
+  amountPrice: number;
   rating: number;
   reviewCount: number;
   studentCount: number;
@@ -139,12 +140,14 @@ export interface Course {
 }
 
 export interface Filters {
-  priceRange: [number, number];
+  minPrice: number;
+  maxPrice: number;
   minRating: number;
   levels: string[];
-  practiceTypes: string[];
+  practiceType: string;
   categories: string[];
   duration: string[];
+  sort: string;
 }
 
 // --- Course Detail ---

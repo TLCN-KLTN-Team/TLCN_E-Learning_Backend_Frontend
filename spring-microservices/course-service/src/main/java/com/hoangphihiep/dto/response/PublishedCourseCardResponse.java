@@ -3,6 +3,8 @@ package com.hoangphihiep.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -13,6 +15,7 @@ public class PublishedCourseCardResponse {
     String courseName;
     String authorName;
     String coursePrice;
+    BigDecimal amountPrice;
     double rating;
     int reviewCount;
     int studentCount;

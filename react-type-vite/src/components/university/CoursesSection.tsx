@@ -50,6 +50,25 @@ export function CoursesSection({
       return 0;
     });
 
+  // Check if there are no courses at all
+  if (courses.length === 0) {
+    return (
+      <section className="py-10 md:py-16 bg-secondary/20 dark:bg-secondary/10">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
+            Khóa học
+          </h2>
+          <div className="text-center py-16">
+            <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground text-lg">
+              Chưa có khóa học công bố. Theo dõi chúng tôi để nhận khóa học mới.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-10 md:py-16 bg-secondary/20 dark:bg-secondary/10">
       <div className="container mx-auto px-4">
