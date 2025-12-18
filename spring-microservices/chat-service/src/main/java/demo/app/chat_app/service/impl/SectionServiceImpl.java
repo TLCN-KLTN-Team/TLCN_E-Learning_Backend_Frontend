@@ -36,15 +36,18 @@ public class SectionServiceImpl {
     }
 
     public Section createGeneralSection(List<String> members, String workspaceId, String workspaceName) {
-        Channel channel = channelService.createGeneralChannel(members, workspaceName);
-
         Section section = Section.builder()
                 .title("Thông báo chung")
                 .workspaceId(workspaceId)
                 .isPublic(true)
                 .build();
-        section.addChannelId(channel.getId());
-        return sectionRepository.save(section);
+        Section savedSection = sectionRepository.save(section);
+
+        Channel channel = channelService.createGeneralChannel(savedSection.getId(), members, workspaceName);
+
+        savedSection.addChannelId(channel.getId());
+
+        return sectionRepository.save(savedSection);
     }
 
     public void createSectionWhenClassCreated(ClassCreatedEvent event){

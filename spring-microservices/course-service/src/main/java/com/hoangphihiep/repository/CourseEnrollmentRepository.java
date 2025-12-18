@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -91,4 +92,12 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
      */
     @Query("SELECT ce.studentId FROM CourseEnrollment ce WHERE ce.courseClass.id = :classId")
     List<String> findStudentIdsForStatistics(@Param("classId") Integer classId);
+    
+    // Dashboard KPI queries
+    @Query("SELECT COUNT(DISTINCT ce.studentId) FROM CourseEnrollment ce " +
+            "WHERE (:educationType IS NULL OR :educationType = 'ALL' OR ce.course.educationalUnit.type = :educationType) AND " +
+            "ce.enrolledAt >= :startDate AND ce.enrolledAt <= :endDate")
+    Long countDistinctStudentsInPeriod(@Param("educationType") String educationType,
+                                        @Param("startDate") Date startDate,
+                                        @Param("endDate") Date endDate);
 }

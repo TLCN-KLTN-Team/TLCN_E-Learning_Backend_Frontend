@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/system-admin/revenue")
+@RequestMapping("/super-admin/revenue")
 @RequiredArgsConstructor
 public class SystemAdminRevenueController {
     

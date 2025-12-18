@@ -82,7 +82,7 @@ const StudentRoutes = [
     key="workspace-with-params"
     path="/student/workspaces/:workspaceId"
     element={
-      <ProtectedRoute allowedRoles={["STUDENT"]}>
+      <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
         <WorkspacePage />
       </ProtectedRoute>
     }
@@ -92,7 +92,7 @@ const StudentRoutes = [
     key="workspace-with-channel"
     path="/student/workspaces/:workspaceId/:channelId"
     element={
-      <ProtectedRoute allowedRoles={["STUDENT"]}>
+      <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
         <WorkspacePage />
       </ProtectedRoute>
     }

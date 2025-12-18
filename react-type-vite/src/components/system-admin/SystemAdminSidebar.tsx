@@ -54,7 +54,7 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
     },
     {
       id: "revenue",
-      label: "Quản lý doanh thu",
+      label: "Theo dõi doanh thu",
       icon: DollarSign,
       path: "/system-admin/revenue",
     },
