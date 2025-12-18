@@ -13,26 +13,9 @@ import java.util.Optional;
 @Repository
 public interface WorkspaceRepository extends MongoRepository<Workspace, String> {
     
-    // Find workspaces by owner
-    @Query("{ 'ownerId': ?0, 'isActive': true }")
-    Page<Workspace> findByOwnerIdAndIsActive(String ownerId, Pageable pageable);
-    
-    // Find workspaces where user is member
-    @Query("{ 'members.userId': ?0, 'isActive': true }")
-    Page<Workspace> findByMemberUserIdAndIsActive(String userId, Pageable pageable);
-    
-    // Find all workspaces for user (as owner or member)
-    // Find workspaces by course
-    @Query("{ 'courseId': ?0, 'isActive': true }")
-    List<Workspace> findByCourseIdAndIsActive(String courseId);
-    
     // Find workspace by course and owner
     @Query("{ 'courseId': ?0, 'ownerId': ?1, 'isActive': true }")
     Optional<Workspace> findByCourseIdAndOwnerIdAndIsActive(String courseId, String ownerId);
-    
-    // Check if user has access to workspace
-    @Query(value = "{ 'id': ?0, $or: [ { 'ownerId': ?1 }, { 'members.userId': ?1 } ], 'isActive': true }", exists = true)
-    boolean existsByIdAndUserHasAccess(String workspaceId, String userId);
 
     boolean existsByCourseId(Integer courseId);
     

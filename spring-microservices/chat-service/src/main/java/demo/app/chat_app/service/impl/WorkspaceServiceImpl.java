@@ -82,7 +82,6 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         Channel channel = Channel.builder()
                 .channelName("general")
                 .description("This is the start of the #general channel.")
-                .workspaceId(workspace.getId())
                 .createdAt(Instant.now())
                 .build();
         

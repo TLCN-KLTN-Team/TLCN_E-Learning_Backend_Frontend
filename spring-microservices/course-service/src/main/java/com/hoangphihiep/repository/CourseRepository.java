@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -45,4 +46,16 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     
     @Query("SELECT c FROM Course c WHERE c.educationalUnit.id = :educationalUnitId")
     List<Course> findByEducationalUnitId(@Param("educationalUnitId") Integer educationalUnitId);
+    
+    // Dashboard KPI queries
+    @Query("SELECT COUNT(c) FROM Course c WHERE c.publishedCourse IS NOT NULL AND " +
+            "(:educationType IS NULL OR :educationType = 'ALL' OR c.educationalUnit.type = :educationType) AND " +
+            "c.createdAt >= :startDate AND c.createdAt <= :endDate")
+    Long countActiveCoursesInPeriod(@Param("educationType") String educationType,
+                                     @Param("startDate") java.util.Date startDate,
+                                     @Param("endDate") java.util.Date endDate);
+    
+    @Query("SELECT COUNT(c) FROM Course c WHERE c.publishedCourse IS NOT NULL AND " +
+            "(:educationType IS NULL OR :educationType = 'ALL' OR c.educationalUnit.type = :educationType)")
+    Long countTotalActiveCourses(@Param("educationType") String educationType);
 }

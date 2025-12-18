@@ -34,9 +34,10 @@ public class Channel {
     String channelName;
     
     String description; // Description of the channel
-    
+
     @Indexed
-    String workspaceId; // ID of the workspace this channel belongs to
+    String sectionId; // Section the channel belongs to
+    String classId; // Class the channel is associated with
     
     List<String> memberIds; // List of participants in the channel (aka group for team chat)
 

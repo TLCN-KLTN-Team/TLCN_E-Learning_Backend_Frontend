@@ -91,8 +91,9 @@ public class ChannelServiceImpl implements ChannelService {
         workspaceRepository.save(workspace);
     }
 
-    public Channel createGeneralChannel(List<String> members, String workspaceName) {
+    public Channel createGeneralChannel(String sectionId, List<String> members, String workspaceName) {
         Channel channel = Channel.builder()
+                .sectionId(sectionId)
                 .channelName("general")
                 .description(String.format(
                         "Đây là kênh chung của môn học %s.\nMọi thắc mắc, trao đổi liên quan đến môn %s sẽ được thực hiện tại đây.",
@@ -101,6 +102,7 @@ public class ChannelServiceImpl implements ChannelService {
                 .memberIds(members)
                 .createdAt(Instant.now())
                 .build();
+
         return channelRepository.save(channel);
     }
 
@@ -120,9 +122,9 @@ public class ChannelServiceImpl implements ChannelService {
         }
 
         Channel channel = Channel.builder()
+                .sectionId(section.getId())
                 .channelName(request.getChannelName())
                 .description(request.getDescription())
-                .workspaceId(request.getWorkspaceId())
                 .memberIds(request.getMemberIds())
                 .durationMinutes(request.getDurationInMinutes())
                 .createdAt(Instant.now())

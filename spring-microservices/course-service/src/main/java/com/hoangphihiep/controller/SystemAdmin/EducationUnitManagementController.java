@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/system-admin/education-unit-management")
+@RequestMapping("/super-admin/education-unit-management")
 @RequiredArgsConstructor
 public class EducationUnitManagementController {
     private final EducationalUnitService educationalUnitService;
