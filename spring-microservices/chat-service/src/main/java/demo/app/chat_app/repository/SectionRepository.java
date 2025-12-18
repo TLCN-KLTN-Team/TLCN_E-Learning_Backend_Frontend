@@ -12,4 +12,5 @@ public interface SectionRepository extends MongoRepository<Section, String> {
     List<Section> findAllByWorkspaceId(String workspaceId);
 
     Optional<Section> findByClassId(Integer classId);
+
 }

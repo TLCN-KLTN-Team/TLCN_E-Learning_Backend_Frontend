@@ -10,10 +10,7 @@ import demo.app.chat_app.mapper.MessageAttachmentMapper;
 import demo.app.chat_app.model.*;
 import demo.app.chat_app.model.enums.AttachmentType;
 import demo.app.chat_app.model.enums.MessageStatus;
-import demo.app.chat_app.repository.ChannelRepository;
-import demo.app.chat_app.repository.ChatMessageRepository;
-import demo.app.chat_app.repository.MessageAttachmentRepository;
-import demo.app.chat_app.repository.WorkspaceRepository;
+import demo.app.chat_app.repository.*;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.repository.httpclient.ProfileClient;
 import demo.app.chat_app.service.ChatMessageService;
@@ -48,6 +45,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     ChatMessageMapper chatMessageMapper;
     ChannelRepository channelRepository;
     WorkspaceRepository workspaceRepository;
+    SectionRepository sectionRepository;
     GetUserClient getUserClient;
 
     @Override
@@ -112,6 +110,10 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         // For now, get first 50 messages - should be parameterized
         Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.ASC, "createdDate"));
         Page<ChatMessage> messagePage = chatMessageRepository.findByChannelIdAndNotDeleted(channelId, pageable);
+
+        if (messagePage.isEmpty()) {
+            return new ArrayList<>();
+        }
         
         List<ChatMessageResponse> response = messagePage.getContent().stream()
                 .map(this::toChatMessageResponse)
@@ -190,8 +192,11 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     private void checkIsMemberChannel(Channel channel, String userId) {
-        if (channel.isGeneral() && channel.getWorkspaceId() != null) {
-            Workspace workspace = workspaceRepository.findById(channel.getWorkspaceId())
+        if (channel.isGeneral()) {
+            Section section = sectionRepository.findById(channel.getSectionId())
+                    .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
+
+            Workspace workspace = workspaceRepository.findById(section.getWorkspaceId())
                     .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
             if (!workspace.hasParticipant(userId)) {
                 throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
