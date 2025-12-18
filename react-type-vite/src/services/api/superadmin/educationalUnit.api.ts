@@ -2,7 +2,7 @@ import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import type { EducationalUnitResponse } from "../response/educationalUnitResponse";
 
-const PREFIX = "/course-management/system-admin/education-unit-management";
+const PREFIX = "/course-management/super-admin/education-unit-management";
 
 const getAllEducationalUnits = async (): Promise<
   PaginatedResponse<EducationalUnitResponse>

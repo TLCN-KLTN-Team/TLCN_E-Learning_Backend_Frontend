@@ -67,7 +67,7 @@ export interface TeacherRevenueResponse {
  */
 export const getSystemRevenue = async (): Promise<SystemRevenueResponse> => {
   const response = await axiosInstance.get<ApiResponse<SystemRevenueResponse>>(
-    "/course-management/system-admin/revenue"
+    "/course-management/super-admin/revenue"
   );
   return response.data.result;
 };
