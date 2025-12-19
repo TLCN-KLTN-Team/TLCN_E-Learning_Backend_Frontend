@@ -83,7 +83,7 @@ export const getSystemRevenueByDateRange = async (
   endDate: string
 ): Promise<SystemRevenueResponse> => {
   const response = await axiosInstance.get<ApiResponse<SystemRevenueResponse>>(
-    "/course-management/system-admin/revenue/range",
+    "/course-management/super-admin/revenue/range",
     {
       params: { startDate, endDate }
     }
@@ -97,7 +97,7 @@ export const getSystemRevenueByDateRange = async (
  */
 export const getAllTeachersRevenue = async (): Promise<TeacherRevenueResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<TeacherRevenueResponse[]>>(
-    "/course-management/system-admin/revenue/teachers"
+    "/course-management/super-admin/revenue/teachers"
   );
   return response.data.result;
 };
@@ -113,7 +113,7 @@ export const getAllTeachersRevenueByDateRange = async (
   endDate: string
 ): Promise<TeacherRevenueResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<TeacherRevenueResponse[]>>(
-    "/course-management/system-admin/revenue/teachers/range",
+    "/course-management/super-admin/revenue/teachers/range",
     {
       params: { startDate, endDate }
     }

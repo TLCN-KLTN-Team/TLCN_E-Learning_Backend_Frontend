@@ -182,8 +182,15 @@ services:
       DB_USERNAME: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
+
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+
       APP_EMAIL_FROM: ${APP_EMAIL_FROM}
       APP_EMAIL_FROM_NAME: ${APP_EMAIL_FROM_NAME}
+
       IDENTITY_SERVICE_URL: http://identity-service:8080/identity
       FILE_SERVICE_URL: http://file-service:8084/file-handler
       APP_SERVICES_FILE: http://file-service:8084/file-handler
