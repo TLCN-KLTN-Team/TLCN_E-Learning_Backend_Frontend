@@ -62,6 +62,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/course-management/super-admin/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/course-management/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/course-management/teacher/**").hasRole("TEACHER")

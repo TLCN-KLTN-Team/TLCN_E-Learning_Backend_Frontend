@@ -41,7 +41,8 @@ public class SecurityConfig {
         "/forgot-password/resend-otp",
         "/users/registration/send-verification",
         "/users/registration/verify-account",
-        "/users/registration/send-verification"
+        "/users/registration/send-verification",
+        "/actuator/**"
     };
 
     private static final String[] SWAGGER_ENDPOINTS = {
