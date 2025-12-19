@@ -379,7 +379,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-semibold text-lg flex items-center gap-2">
-                  📚 Bài Học
+                  Bài Học
                   <span className="text-sm font-normal text-gray-500">({lessonsArray.length})</span>
                 </h4>
               </div>
@@ -426,7 +426,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
             <div className="pt-4 border-t">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-semibold text-lg flex items-center gap-2">
-                  📝 Bài Kiểm Tra
+                  Bài Kiểm Tra
                   <span className="text-sm font-normal text-gray-500">({quizzesArray.length})</span>
                 </h4>
               </div>
@@ -473,7 +473,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
             <div className="pt-4 border-t">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-semibold text-lg flex items-center gap-2">
-                  📋 Bài Tập
+                  Bài Tập
                   <span className="text-sm font-normal text-gray-500">({assignmentsArray.length})</span>
                 </h4>
               </div>
