@@ -86,7 +86,7 @@ const EducationalUnitLinked = ({
                         </div>
 
                         {/* Title */}
-                        <h5 className="text-lg font-semibold text-foreground mb-4 text-center">
+                        <h5 className="text-lg font-semibold text-foreground mb-4 text-center uppercase">
                           <a
                             href="#"
                             className="hover:text-primary transition-colors"
@@ -125,13 +125,13 @@ const EducationalUnitLinked = ({
                                 .map((dept, index) => (
                                   <span
                                     key={index}
-                                    className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                                    className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 font-medium"
                                   >
                                     {dept}
                                   </span>
                                 ))}
                               {unit.departments.length > 5 && (
-                                <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                                <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 font-medium">
                                   +{unit.departments.length - 5} khác
                                 </span>
                               )}

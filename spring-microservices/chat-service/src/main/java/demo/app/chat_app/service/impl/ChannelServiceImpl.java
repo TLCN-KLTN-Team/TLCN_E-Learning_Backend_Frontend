@@ -59,6 +59,7 @@ public class ChannelServiceImpl implements ChannelService {
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
         Channel channel = Channel.builder()
+                .workspaceId(workspace.getId())
                 .channelName(String.format("%s - %s",event.getClassName(), event.getClassCode()))
                 .description("Đây là kênh chung dành cho lớp " + event.getClassName() +
                         ".\nGhi chú giáo viên: " + event.getDescription())
@@ -72,6 +73,9 @@ public class ChannelServiceImpl implements ChannelService {
 
     public void addParticipantsWhenStudentsEnrolled(EnrollStudentsEvent event) {
         Section section = sectionRepository.findByClassId(event.getClassId())
+                .stream()
+                .filter(Section::isPublic)
+                .findFirst()
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
 
         Workspace workspace = workspaceRepository.findById(section.getWorkspaceId())
@@ -91,15 +95,19 @@ public class ChannelServiceImpl implements ChannelService {
         workspaceRepository.save(workspace);
     }
 
-    public Channel createGeneralChannel(String sectionId, List<String> members, String workspaceName) {
+    public Channel createGeneralChannel(String sectionId, List<String> members, Workspace workspace) {
+        Workspace entity = workspaceRepository.findById(workspace.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
         Channel channel = Channel.builder()
                 .sectionId(sectionId)
+                .workspaceId(entity.getId())
                 .channelName("general")
                 .description(String.format(
                         "Đây là kênh chung của môn học %s.\nMọi thắc mắc, trao đổi liên quan đến môn %s sẽ được thực hiện tại đây.",
-                        workspaceName, workspaceName
+                        entity.getName(), entity.getName()
                 ))
                 .memberIds(members)
+                .isGeneral(true)
                 .createdAt(Instant.now())
                 .build();
 
@@ -122,6 +130,7 @@ public class ChannelServiceImpl implements ChannelService {
         }
 
         Channel channel = Channel.builder()
+                .workspaceId(request.getWorkspaceId())
                 .sectionId(section.getId())
                 .channelName(request.getChannelName())
                 .description(request.getDescription())
@@ -226,16 +235,38 @@ public class ChannelServiceImpl implements ChannelService {
     public List<UserResponse> getMembersInChannel(String channelId) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        Workspace workspace = workspaceRepository.findById(channel.getWorkspaceId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
+
         List<String> memberIds = channel.getMemberIds();
         List<StudentResponse> studentResponses = getStudentClient.getStudentsByUserIds(
                 Map.of("userIds", memberIds)
         ).getResult();
-        return studentResponses.stream()
-                .map(studentResponse -> UserResponse.builder()
-                        .id(studentResponse.getStudentId())
-                        .firstName(studentResponse.getFirstName())
-                        .lastName(studentResponse.getLastName())
-                        .build()).toList();
+
+        try {
+            var ownerInfo = getUserClient.getUser(workspace.getOwnerId()).getResult();
+            studentResponses.add(StudentResponse.builder()
+                    .studentId(ownerInfo.getId())
+                    .firstName(ownerInfo.getFirstName())
+                    .lastName(ownerInfo.getLastName())
+                    .build());
+            var res = studentResponses.stream()
+                    .map(studentResponse -> {
+                        boolean isOwner = workspace.getOwnerId().equals(studentResponse.getStudentId());
+                        return UserResponse.builder()
+                                .id(studentResponse.getStudentId())
+                                .firstName(studentResponse.getFirstName())
+                                .lastName(studentResponse.getLastName())
+                                .avatarUrl(studentResponse.getAvatarUrl())
+                                .isOwner(isOwner)
+                                .build();
+                    }).toList();
+            return res;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.GET_USER_PROFILE_FAILED);
+        }
+
     }
 
     @Override

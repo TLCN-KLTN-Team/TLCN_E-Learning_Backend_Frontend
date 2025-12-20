@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ export function CoursesSection({
   courses,
   categories = [],
 }: CoursesSectionProps) {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
 
@@ -53,7 +55,7 @@ export function CoursesSection({
   // Check if there are no courses at all
   if (courses.length === 0) {
     return (
-      <section className="py-10 md:py-16 bg-secondary/20 dark:bg-secondary/10">
+      <section className="p-10 md:py-16 bg-secondary/20 dark:bg-secondary/10">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
             Khóa học
@@ -70,7 +72,7 @@ export function CoursesSection({
   }
 
   return (
-    <section className="py-10 md:py-16 bg-secondary/20 dark:bg-secondary/10">
+    <section className="p-10 md:py-16 bg-secondary/20 dark:bg-secondary/10">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
@@ -123,7 +125,10 @@ export function CoursesSection({
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row gap-4 p-5 md:p-6">
                   {/* Thumbnail */}
-                  <div className="w-full md:w-48 h-32 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 overflow-hidden">
+                  <div
+                    className="w-full md:w-48 h-32 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => navigate(`/course/${course.id}`)}
+                  >
                     {course.thumbnail ? (
                       <img
                         src={course.thumbnail}
@@ -139,13 +144,16 @@ export function CoursesSection({
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-foreground mb-2">
+                        <h3
+                          className="text-lg font-semibold text-foreground mb-2 cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={() => navigate(`/course/${course.id}`)}
+                        >
                           {course.title}
                         </h3>
                         {course.category && (
                           <Badge
                             variant="secondary"
-                            className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            className="text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
                           >
                             {course.category}
                           </Badge>
@@ -180,7 +188,10 @@ export function CoursesSection({
                       <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
                         {course.price.toLocaleString("vi-VN")} đ
                       </div>
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                        onClick={() => navigate(`/course/${course.id}`)}
+                      >
                         Đăng ký
                         <ArrowRight className="w-4 h-4" />
                       </Button>

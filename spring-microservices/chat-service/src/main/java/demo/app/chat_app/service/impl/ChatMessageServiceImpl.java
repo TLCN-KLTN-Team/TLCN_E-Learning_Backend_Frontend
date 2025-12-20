@@ -192,7 +192,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     private void checkIsMemberChannel(Channel channel, String userId) {
-        if (channel.isGeneral()) {
+        if (!channel.isGeneral()) {
             Section section = sectionRepository.findById(channel.getSectionId())
                     .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
 

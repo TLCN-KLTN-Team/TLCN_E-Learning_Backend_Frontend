@@ -146,6 +146,9 @@ const ChannelPanel = ({
         })
         .catch((error) => {
           console.error("Error refreshing sections:", error);
+          toast.error(
+            "Không thể làm mới danh sách kênh. Vui lòng tải lại trang."
+          );
         });
     }
   };
@@ -175,6 +178,7 @@ const ChannelPanel = ({
       onChannelSelect(channelWithGroups);
     } catch (error) {
       console.error("Error fetching channel details:", error);
+      toast.error("Không thể tải thông tin chi tiết kênh. Vui lòng thử lại.");
       onChannelSelect(channel); // Fallback to basic channel
     }
   };

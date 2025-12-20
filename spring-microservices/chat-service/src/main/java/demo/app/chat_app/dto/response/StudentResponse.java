@@ -21,6 +21,8 @@ public class StudentResponse {
 
     private String lastName;
 
+    private String avatarUrl;
+
     private String dob;
 
     private String studentId;
