@@ -43,6 +43,8 @@ public class CourseEnrollmentService {
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
     private final ClassEventProducer producer;
     private final StudentRepository studentClient;
+    private final CourseProgressRepository courseProgressRepository;
+    private final LessonProgressRepository lessonProgressRepository;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
@@ -64,6 +66,11 @@ public class CourseEnrollmentService {
                         response.setClassId(enrollment.getCourseClass().getId());
                         response.setCourseName(course.getCourseName());
                         response.setEnrollmentDate(enrollment.getEnrolledAt().toString());
+                        
+                        // Calculate progress percentage for this class (same logic as getClassProgressStats)
+                        int progressPercentage = calculateClassProgress(userId, course, Long.valueOf(enrollment.getCourseClass().getId()));
+                        response.setProgressPercentage(progressPercentage);
+                        
                         return response;
                     })
                     .toList();
@@ -81,6 +88,52 @@ public class CourseEnrollmentService {
         catch (Exception e) {
             log.error("Error occurred while fetching enrolled catalog courses", e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    // Helper method to calculate progress for a specific class
+    private int calculateClassProgress(String userId, Course course, Long classId) {
+        try {
+            // Get course progress
+            CourseProgress courseProgress = courseProgressRepository
+                    .findByUserIdAndCourseId(userId, course.getId())
+                    .orElse(null);
+
+            if (courseProgress == null) {
+                return 0;
+            }
+
+            // Get all visible sections for this class
+            List<Section> sections = sectionRepository.findVisibleSectionsByClassId(course.getId(), classId.intValue());
+
+            // Calculate totals
+            int totalLessons = 0;
+            int totalQuizzes = 0;
+            int totalAssignments = 0;
+
+            for (Section section : sections) {
+                totalLessons += section.getLessons().size();
+                totalQuizzes += section.getQuizs().size();
+                totalAssignments += section.getAssignments().size();
+            }
+
+            // Calculate completed
+            int completedLessons = (int) courseProgress.getLessonProgresses().stream()
+                    .filter(lp -> lp.getCompleted())
+                    .count();
+
+            int completedQuizzes = quizAttemptRepository.countDistinctQuizzesByUserAndCourse(userId, course.getId());
+            int completedAssignments = assignmentSubmissionRepository.countDistinctAssignmentsByUserAndCourse(userId, course.getId());
+
+            // Calculate overall progress
+            int totalItems = totalLessons + totalQuizzes + totalAssignments;
+            int completedItems = completedLessons + completedQuizzes + completedAssignments;
+            double overallProgress = totalItems > 0 ? ((double) completedItems / totalItems) * 100 : 0;
+
+            return (int) Math.round(overallProgress);
+        } catch (Exception e) {
+            log.error("Error calculating class progress", e);
+            return 0;
         }
     }
 

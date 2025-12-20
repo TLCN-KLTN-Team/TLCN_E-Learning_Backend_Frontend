@@ -8,8 +8,10 @@ import Footer from "./Footer";
 import { toast } from "react-toastify";
 import type { EnrolledCoursesResponse } from "@/services/api/student/courseEnrollmentApi";
 import { getCatalogEnrolledCourses } from "@/services/api/student/courseEnrollmentApi";
+import { useAuth } from "@/context/auth-context/useAuth";
 
 export const StudentDashboard = () => {
+  const { user } = useAuth();
   const [courses, setCourses] = useState<EnrolledCoursesResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("course_name");
@@ -56,7 +58,7 @@ export const StudentDashboard = () => {
         {/* Welcome Message */}
         <div className="mb-8 student-dashboard-welcome">
           <h1 className="text-2xl font-bold mb-2">
-            Chào mừng quay trở lại, Tran Trung! 👋
+            Chào mừng quay trở lại, {user ? `${user.firstName} ${user.lastName}` : 'Bạn'}! 👋
           </h1>
         </div>
 

@@ -97,14 +97,23 @@ const CourseDetail = () => {
     try {
       const stats = await progressApi.getClassProgress(Number(id));
       setProgressStats(stats);
+      console.log("📊 Progress stats:", stats);
 
       // Fetch completed lessons
       const detail = await progressApi.getCourseProgressDetail(Number(id));
+      console.log("📝 Course progress detail:", detail);
+      console.log("📚 Lesson progresses:", detail?.courseProgress?.lessonProgresses);
+      
       const completedLessonIds = new Set(
         detail?.courseProgress?.lessonProgresses
-          ?.filter((lp) => lp.isCompleted)
-          ?.map((lp) => lp.lessonId) || []
+          ?.filter((lp: any) => {
+            console.log(`Lesson ${lp.lessonId}: completed=${lp.completed}`);
+            return lp.completed === true; // Use 'completed' instead of 'isCompleted'
+          })
+          ?.map((lp: any) => lp.lessonId) || []
       );
+      
+      console.log("✅ Completed lesson IDs:", Array.from(completedLessonIds));
       setCompletedLessons(completedLessonIds);
     } catch (error) {
       console.error("Error fetching progress stats:", error);
@@ -123,16 +132,34 @@ const CourseDetail = () => {
         classId: Number(id),
       });
 
-      // Update local state
-      setCompletedLessons((prev) => new Set(prev).add(lessonId));
-
-      // Refresh progress stats
-      await fetchProgressStats();
+      // Update local state immediately - this ensures UI updates right away
+      setCompletedLessons((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(lessonId);
+        return newSet;
+      });
 
       console.log("Lesson marked as complete!");
+
+      // Refresh progress stats in background (don't affect completedLessons state)
+      setTimeout(async () => {
+        try {
+          const stats = await progressApi.getClassProgress(Number(id));
+          setProgressStats(stats);
+        } catch (error) {
+          console.error("Error refreshing progress stats:", error);
+        }
+      }, 500);
+      
     } catch (error) {
       console.error("Error marking lesson complete:", error);
       alert("Không thể đánh dấu bài học đã hoàn thành. Vui lòng thử lại.");
+      // Revert local state on error
+      setCompletedLessons((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(lessonId);
+        return newSet;
+      });
     } finally {
       setIsMarkingComplete((prev) => {
         const newSet = new Set(prev);
@@ -214,7 +241,7 @@ const CourseDetail = () => {
           <div className="md:flex gap-6">
             <div className="md:w-1/3">
               <img
-                src="/src/assets/images/courses/4by3/05.jpg"
+                src="https://res.cloudinary.com/dm7wobbxu/image/upload/v1766208954/pngtree-people-studying-and-learning-in-room-couch-banner-graphic-vector-png-image_52216108_pigaoq.jpg"
                 alt={courseClass?.courseName || "Course"}
                 className="w-full object-cover rounded-lg"
               />

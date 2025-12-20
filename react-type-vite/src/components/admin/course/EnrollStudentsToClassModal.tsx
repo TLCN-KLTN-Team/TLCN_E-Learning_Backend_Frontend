@@ -187,9 +187,9 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
           onClick={handleBackdropClick}
         ></div>
         
-        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 flex-shrink-0">
             <div className="flex justify-between items-start">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -229,65 +229,62 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
             </div>
           </div>
 
-          {/* Content with Footer structure */}
-          <div className="flex flex-col h-[calc(90vh-140px)]">
-            <div className="flex-1 overflow-hidden">
-              {/* Tabs */}
-              <div className="px-6 pt-6 pb-0">
-                <div className="flex space-x-1 mb-6 bg-gray-100 rounded-xl p-1">
-                  <button
-                    onClick={() => setActiveTab('available')}
-                    className={`flex-1 px-4 lg:px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                      activeTab === 'available'
-                        ? 'bg-white text-purple-600 shadow-sm transform scale-[1.02]'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Users className="inline mr-2" size={16} />
-                    <span className="hidden sm:inline">Sinh Viên Ngoài Lớp</span>
-                    <span className="sm:hidden">Có Sẵn</span>
-                    <span className="ml-1">({availableStudents.length})</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('enrolled')}
-                    className={`flex-1 px-4 lg:px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                      activeTab === 'enrolled'
-                        ? 'bg-white text-purple-600 shadow-sm transform scale-[1.02]'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <UserCheck className="inline mr-2" size={16} />
-                    <span className="hidden sm:inline">Sinh Viên Trong Lớp</span>
-                    <span className="sm:hidden">Đã Đăng Ký</span>
-                    <span className="ml-1">({enrolledStudents.length})</span>
-                  </button>
-                </div>
+          {/* Tabs */}
+          <div className="px-6 pt-6 pb-0 flex-shrink-0">
+              <div className="flex space-x-1 mb-6 bg-gray-100 rounded-xl p-1">
+                <button
+                  onClick={() => setActiveTab('available')}
+                  className={`flex-1 px-4 lg:px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    activeTab === 'available'
+                      ? 'bg-white text-purple-600 shadow-sm transform scale-[1.02]'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Users className="inline mr-2" size={16} />
+                  <span className="hidden sm:inline">Sinh Viên Ngoài Lớp</span>
+                  <span className="sm:hidden">Có Sẵn</span>
+                  <span className="ml-1">({availableStudents.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('enrolled')}
+                  className={`flex-1 px-4 lg:px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    activeTab === 'enrolled'
+                      ? 'bg-white text-purple-600 shadow-sm transform scale-[1.02]'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <UserCheck className="inline mr-2" size={16} />
+                  <span className="hidden sm:inline">Sinh Viên Trong Lớp</span>
+                  <span className="sm:hidden">Đã Đăng Ký</span>
+                  <span className="ml-1">({enrolledStudents.length})</span>
+                </button>
               </div>
+            </div>
 
-              {/* Search Bar */}
-              <div className="px-6 pb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <Input
-                    type="text"
-                    placeholder="Tìm kiếm sinh viên theo tên, mã, khoa hoặc lớp..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 py-2.5 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-lg"
-                  />
+          {/* Search Bar */}
+          <div className="px-6 pb-4 flex-shrink-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Input
+                type="text"
+                placeholder="Tìm kiếm sinh viên theo tên, mã, khoa hoặc lớp..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 py-2.5 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-lg"
+              />
+            </div>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
+            {loadingData ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  <span className="ml-3 text-gray-600 font-medium">Đang tải danh sách sinh viên...</span>
                 </div>
-              </div>
-
-              {/* Scrollable Content */}
-              <div className="px-6 flex-1 overflow-y-auto">
-                {loadingData ? (
-                  <div className="flex items-center justify-center py-16">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                    <span className="ml-3 text-gray-600 font-medium">Đang tải danh sách sinh viên...</span>
-                  </div>
-                ) : activeTab === 'available' ? (
-                  <div className="space-y-4">
-                    {!canEnrollMore && (
+              ) : activeTab === 'available' ? (
+                <div className="space-y-4 pb-4">
+                  {!canEnrollMore && (
                       <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4 mb-4">
                         <div className="flex items-center">
                           <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
@@ -475,12 +472,11 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                     )}
                   </div>
                 )}
-              </div>
-            </div>
+          </div>
 
-            {/* Footer */}
-            <div className="border-t bg-gray-50 px-6 py-4 mt-auto">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          {/* Footer */}
+          <div className="border-t bg-gray-50 px-6 py-4 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 {showEnrollFooter ? (
                   <>
                     <div className="text-sm text-gray-600">
@@ -532,7 +528,6 @@ const EnrollStudentsToClassModal: React.FC<EnrollStudentsToClassModalProps> = ({
                   </div>
                 )}
               </div>
-            </div>
           </div>
         </div>
       </div>
