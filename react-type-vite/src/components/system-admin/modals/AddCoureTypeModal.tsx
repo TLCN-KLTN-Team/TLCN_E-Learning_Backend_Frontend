@@ -167,7 +167,7 @@ const AddCourseTypeModal: React.FC<AddCourseTypeModalProps> = ({
               htmlFor="description"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Mô tả <span className="text-red-500">*</span>
+              Mô tả
             </label>
             <textarea
               id="description"

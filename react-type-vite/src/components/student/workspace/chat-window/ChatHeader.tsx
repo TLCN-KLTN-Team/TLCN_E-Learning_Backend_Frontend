@@ -9,6 +9,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { getMembersInChannel } from "@/services/api/workspace/channel.api";
 
 interface ChatHeaderProps {
@@ -33,6 +34,7 @@ const ChatHeader = ({
         setMemberCount(members.length);
       } catch (error) {
         console.error("Error fetching member count:", error);
+        toast.error("Không thể tải số lượng thành viên.");
         // Fallback to participants length if API fails
         setMemberCount(selectedChannel.participants?.length || 0);
       }

@@ -1,4 +1,5 @@
 import { Hash, Edit } from "lucide-react";
+import { toast } from "react-toastify";
 
 import { hasRole } from "@/utils/roleUtils";
 import MessageItem from "./MessageItem";
@@ -130,17 +131,23 @@ const MessageList = ({
     if (selectedChannel) {
       setLoading(true);
       const fetchMessages = async () => {
-        const messagesData = await getMessagesByChannelId(selectedChannel.id);
-        console.log("Fetched messages:", messagesData);
+        try {
+          const messagesData = await getMessagesByChannelId(selectedChannel.id);
+          console.log("Fetched messages:", messagesData);
 
-        // Set 'me' property for messages from API
-        const messagesWithMe = messagesData.map((msg) => ({
-          ...msg,
-          me: user?.id === msg.sender.id,
-        }));
+          // Set 'me' property for messages from API
+          const messagesWithMe = messagesData.map((msg) => ({
+            ...msg,
+            me: user?.id === msg.sender.id,
+          }));
 
-        setAllMessages(messagesWithMe);
-        setLoading(false);
+          setAllMessages(messagesWithMe);
+          setLoading(false);
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+          toast.error("Không thể tải tin nhắn. Vui lòng thử lại sau.");
+          setLoading(false);
+        }
       };
       fetchMessages();
     }

@@ -32,17 +32,18 @@ public class Channel {
 
     @Indexed
     String channelName;
+    String workspaceId;
     
     String description; // Description of the channel
 
     @Indexed
-    String sectionId; // Section the channel belongs to
-    String classId; // Class the channel is associated with
+    String sectionId;
     
     List<String> memberIds; // List of participants in the channel (aka group for team chat)
 
     boolean isPrivate;
-    boolean isGeneral; // General channel in the workspace
+    @Builder.Default
+    boolean isGeneral = false; // General channel in the workspace
 
     @Builder.Default
     ChannelType type = ChannelType.TEXT;

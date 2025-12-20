@@ -186,7 +186,7 @@ const CourseDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Site Header */}
-      <Header variant="course-detail" />
+      <Header />
 
       {/* Course Header Section - Dark Background like Udemy */}
       <div className="bg-[#1c1d1f] pt-20">

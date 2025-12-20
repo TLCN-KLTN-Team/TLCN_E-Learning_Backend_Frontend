@@ -4,6 +4,7 @@ import AuthProvider from "./context/auth-context";
 import { Toaster } from "@/components/ui/toaster.tsx";
 import NotFound from "./pages/NotFound";
 import PublicRoutes from "./routes/PublicRoute";
+import MainRoutes from "./routes/MainRoute";
 import StudentRoutes from "./routes/StudentRoute";
 import TeacherRoutes from "./routes/TeacherRoute";
 import AdminRoutes from "./routes/AdminRoute";
@@ -61,6 +62,8 @@ function AppContent() {
     <Routes>
       {/* Public routes - accessible by anonymous users */}
       {PublicRoutes}
+      {/* Main Routes - shared routes between multiple roles */}
+      {MainRoutes}
       {/* User Routes */}
       {UserRoutes}
       {/* Student Routes */}

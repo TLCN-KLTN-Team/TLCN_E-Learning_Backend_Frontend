@@ -59,6 +59,7 @@ const AddGroupModal = ({
       return convertedMembers || [];
     } catch (error) {
       console.error("Error searching students:", error);
+      toast.error("Không thể tìm kiếm thành viên. Vui lòng thử lại.");
       setIsSearching(false);
       return [];
     }

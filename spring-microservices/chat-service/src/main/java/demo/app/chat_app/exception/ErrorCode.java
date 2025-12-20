@@ -74,11 +74,15 @@ public enum ErrorCode {
     CLOUDINARY_DELETE_FAILED("FILE_6006", "Không thể xóa file từ Cloudinary", HttpStatus.INTERNAL_SERVER_ERROR),
     ATTACHMENT_NOT_FOUND("FILE_6007", "Không tìm thấy file đính kèm", HttpStatus.NOT_FOUND),
     UPLOAD_IN_PROGRESS("FILE_6008", "Đang tải file lên", HttpStatus.ACCEPTED),
+    FILE_UPLOAD_FAILED("FILE_6009", "Tải file lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Group & Section Errors (CHAT_xxxx)
     UN_EXISTING_GROUP("CHAT_7001", "Không tìm thấy nhóm", HttpStatus.NOT_FOUND),
     SECTION_NOT_EXISTED("CHAT_7002", "Không tìm thấy section", HttpStatus.NOT_FOUND),
-    END_TIME_INVALID("CHAT_7003", "Thời gian kết thúc phải là thời điểm trong tương lai", HttpStatus.BAD_REQUEST);
+    END_TIME_INVALID("CHAT_7003", "Thời gian kết thúc phải là thời điểm trong tương lai", HttpStatus.BAD_REQUEST),
+
+
+    ;
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {
         this.code = code;

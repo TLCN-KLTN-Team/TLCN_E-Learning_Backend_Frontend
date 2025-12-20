@@ -116,7 +116,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
         Workspace savedWorkspace = workspaceRepository.save(workspace);
 
-        Section section = sectionService.createGeneralSection(workspace.getParticipants(), savedWorkspace.getId(), workspace.getName());
+        Section section = sectionService.createGeneralSection(workspace.getParticipants(), savedWorkspace.getId(), savedWorkspace);
         savedWorkspace.addSectionId(section.getId());
         workspaceRepository.save(savedWorkspace);
     }

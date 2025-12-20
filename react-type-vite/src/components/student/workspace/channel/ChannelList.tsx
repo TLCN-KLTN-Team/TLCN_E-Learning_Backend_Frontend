@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChannelResponse, GroupResponse } from "@/types/chat.types";
 import { ChevronDown, ChevronRight, UserPlus, Settings } from "lucide-react";
 import GroupList from "../group/GroupList";
@@ -59,6 +59,10 @@ const ChannelList = ({
     // You can add additional logic here to handle group selection
     // For example, loading group-specific messages or data
   };
+
+  useEffect(() => {
+    console.log("Channels updated, resetting expanded channels", channels);
+  }, [channels]);
 
   return (
     <div className="space-y-2">

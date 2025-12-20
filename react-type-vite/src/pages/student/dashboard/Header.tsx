@@ -1,4 +1,4 @@
-import {getAvartarFromName} from "@/utils/callApiUtils";
+import { getAvartarFromName } from "@/utils/callApiUtils";
 import { Bell, ChevronDown, MessageCircleMore } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
@@ -55,7 +55,7 @@ const Header = () => {
             <span
               className="student-dashboard-icon-btn"
               onClick={() => {
-                navigate("/student/workspaces");
+                navigate("/workspaces");
               }}
             >
               <MessageCircleMore className="w-5 h-5" />

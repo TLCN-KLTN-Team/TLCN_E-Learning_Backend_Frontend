@@ -35,15 +35,16 @@ public class SectionServiceImpl {
                 .toList();
     }
 
-    public Section createGeneralSection(List<String> members, String workspaceId, String workspaceName) {
+    public Section createGeneralSection(List<String> members, String workspaceId, Workspace workspace) {
         Section section = Section.builder()
                 .title("Thông báo chung")
                 .workspaceId(workspaceId)
                 .isPublic(true)
+                .isGeneral(true)
                 .build();
         Section savedSection = sectionRepository.save(section);
 
-        Channel channel = channelService.createGeneralChannel(savedSection.getId(), members, workspaceName);
+        Channel channel = channelService.createGeneralChannel(section.getId(), members, workspace);
 
         savedSection.addChannelId(channel.getId());
 
@@ -60,11 +61,19 @@ public class SectionServiceImpl {
                 .title(event.getClassName())
                 .workspaceId(w.getId())
                 .classId(event.getClassId())
-                .isPublic(false)
+                .isPublic(true)
                 .build();
 
         section.addChannelId(channel.getId());
 
         sectionRepository.save(section);
+    }
+
+    public Section getGeneralSectionByClassId(Integer classId) {
+        return sectionRepository.findByClassId(classId)
+                .stream()
+                .filter(Section::isPublic)
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
     }
 }
