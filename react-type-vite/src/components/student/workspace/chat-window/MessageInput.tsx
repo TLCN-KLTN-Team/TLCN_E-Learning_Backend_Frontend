@@ -9,6 +9,7 @@ import {
   FileText,
   X,
 } from "lucide-react";
+import { toast } from "react-toastify";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
 import type { FileItem } from "@/types/file.types";
 import { uploadMultipleFiles } from "@/services/api/fileUploadApi";
@@ -53,8 +54,10 @@ const MessageInput = ({
     try {
       const uploadAtachmentsResults = await uploadMultipleFiles(formData);
       console.log("✅ File upload completed:", uploadAtachmentsResults);
+      toast.success(`Đã tải lên ${selectedFiles.length} tệp thành công!`);
     } catch (error) {
       console.error("❌ File upload failed:", error);
+      toast.error("Không thể tải lên tệp. Vui lòng thử lại.");
       throw new Error("Failed to upload files: " + error);
     } finally {
       setIsUploading(false);
@@ -67,7 +70,10 @@ const MessageInput = ({
 
     // Validate input
     if (!hasMessage && !hasFiles) return;
-    if (!isConnected) return;
+    if (!isConnected) {
+      toast.warning("Chưa kết nối đến server. Vui lòng đợi...");
+      return;
+    }
 
     try {
       if (hasMessage && hasFiles) {
@@ -90,6 +96,7 @@ const MessageInput = ({
       console.log("✅ Operation completed successfully");
     } catch (error) {
       console.error("❌ Error in handleSendMessage:", error);
+      toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
       // Don't clear inputs if there was an error
     }
   };

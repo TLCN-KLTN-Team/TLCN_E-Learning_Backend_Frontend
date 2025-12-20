@@ -28,6 +28,8 @@ public class Section {
     @Builder.Default
     List<String> channelIds = new ArrayList<>();
 
+    @Builder.Default
+    boolean isGeneral = false;
     boolean isPublic;
 
     @Indexed @Builder.Default

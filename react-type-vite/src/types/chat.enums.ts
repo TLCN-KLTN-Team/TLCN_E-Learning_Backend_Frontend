@@ -2,6 +2,7 @@ export const MessageType = {
   TEXT: "TEXT",
   IMAGE: "IMAGE",
   FILE: "FILE",
+  VIDEO: "VIDEO",
 } as const;
 
 export const AttachmentType = {

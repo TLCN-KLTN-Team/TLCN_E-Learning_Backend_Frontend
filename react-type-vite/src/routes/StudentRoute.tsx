@@ -6,7 +6,6 @@ import StudentEditProfile from "@/pages/student/dashboard/EditProfile";
 import EditProfile from "@/pages/student/home/EditProfile";
 import QuizTakingPage from "@/pages/student/quiz/QuizTakingPage";
 import QuizResultPage from "@/pages/student/quiz/QuizResultPage";
-import WorkspacePage from "@/pages/workspace/WorkspacePage";
 
 // Student routes - protected routes for student role
 const StudentRoutes = [
@@ -64,36 +63,6 @@ const StudentRoutes = [
     element={
       <ProtectedRoute allowedRoles={["STUDENT"]}>
         <QuizResultPage />
-      </ProtectedRoute>
-    }
-  />,
-
-  <Route
-    key="workspace"
-    path="/student/workspaces"
-    element={
-      <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
-        <WorkspacePage />
-      </ProtectedRoute>
-    }
-  />,
-
-  <Route
-    key="workspace-with-params"
-    path="/student/workspaces/:workspaceId"
-    element={
-      <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
-        <WorkspacePage />
-      </ProtectedRoute>
-    }
-  />,
-
-  <Route
-    key="workspace-with-channel"
-    path="/student/workspaces/:workspaceId/:channelId"
-    element={
-      <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
-        <WorkspacePage />
       </ProtectedRoute>
     }
   />,

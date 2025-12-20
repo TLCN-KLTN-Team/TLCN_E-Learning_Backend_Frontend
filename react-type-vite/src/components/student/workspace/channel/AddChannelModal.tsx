@@ -69,6 +69,7 @@ const AddChannelModal = ({
       return users || [];
     } catch (error) {
       console.error("Error searching students:", error);
+      toast.error("Không thể tìm kiếm sinh viên. Vui lòng thử lại.");
       setIsSearching(false);
       return [];
     }

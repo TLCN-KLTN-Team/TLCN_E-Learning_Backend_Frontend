@@ -75,11 +75,9 @@ public class FileUploadService {
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
         String userId = principal.getName(); // Assuming user ID is the principal name
-        log.info("Uploading {} files to channel {} by user {}", files.length, channelId, userId);
 
         // Lấy token từ HTTP request context
         String authToken = getAuthTokenFromContext();
-        log.info("Auth token retrieved for file upload: {}", authToken != null ? "present" : "missing");
 
         // using CompletableFuture to upload files in parallel. return futures object
         List<CompletableFuture<ChatMessageResponse>> futures = Arrays.stream(files)
@@ -116,25 +114,28 @@ public class FileUploadService {
             MessageType messageType = fileUtils.getMessageType(file.getOriginalFilename());
 
             // Upload to cloudinary
-            String fileUrl = cloudinaryService.uploadFile(file, messageType);
+            try {
+                String fileUrl = cloudinaryService.uploadFile(file, messageType);
+                // Create message record
+                ChatMessage chatMessage = ChatMessage.builder()
+                        .messageType(messageType)
+                        .content(file.getOriginalFilename())
+                        .fileUrl(fileUrl)
+                        .channelId(channelId)
+                        .sender(sender)
+                        .createdDate(Instant.now())
+                        .updatedDate(Instant.now())
+                        .build();
 
-            // Create message record
-            ChatMessage chatMessage = ChatMessage.builder()
-                    .messageType(messageType)
-                    .content(file.getOriginalFilename())
-                    .fileUrl(fileUrl)
-                    .channelId(channelId)
-                    .sender(sender)
-                    .createdDate(Instant.now())
-                    .updatedDate(Instant.now())
-                    .build();
+                chatMessage = chatMessageRepository.save(chatMessage);
 
-            chatMessage = chatMessageRepository.save(chatMessage);
-
-            return this.toChatMessageResponse(chatMessage,sender);
+                return this.toChatMessageResponse(chatMessage,sender);
+            } catch (AppException e) {
+                log.error("Error uploading file {}: {}", file.getOriginalFilename(), e.getMessage());
+                throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
+            }
 
         } catch (Exception e) {
-            log.error("Failed to upload file {} for message {}", file.getOriginalFilename(), e);
             throw new AppException(ErrorCode.SEND_MESSAGE_FAILED);
         } finally {
             // Clean up ThreadLocal sau khi xong

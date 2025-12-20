@@ -28,9 +28,7 @@ const TeacherDetail: React.FC = () => {
 
       setLoading(true);
       try {
-        const teacherData = await TeacherApiService.getTeacherDetail(
-          teacherId
-        );
+        const teacherData = await TeacherApiService.getTeacherDetail(teacherId);
         setTeacher(teacherData);
       } catch (error) {
         console.error("Error fetching teacher detail:", error);
@@ -92,10 +90,10 @@ const TeacherDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Site Header */}
-      <Header variant="course-detail" />
+      <Header />
 
       {/* Back Button */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="pt-20 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => navigate(-1)}
@@ -236,23 +234,37 @@ const TeacherDetail: React.FC = () => {
         {/* Department and Educational Unit */}
         {(teacher.department || teacher.educationalUnit) && (
           <div className="bg-white rounded-xl shadow-md p-8 mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Thông tin đơn vị</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Thông tin đơn vị
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {teacher.department && (
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-2">Khoa</h3>
-                  <p className="text-lg font-bold text-gray-900">{teacher.department.name}</p>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-2">
+                    Khoa
+                  </h3>
+                  <p className="text-lg font-bold text-gray-900">
+                    {teacher.department.name}
+                  </p>
                   {teacher.department.description && (
-                    <p className="text-sm text-gray-600 mt-1">{teacher.department.description}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {teacher.department.description}
+                    </p>
                   )}
                 </div>
               )}
               {teacher.educationalUnit && (
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-2">Đơn vị đào tạo</h3>
-                  <p className="text-lg font-bold text-gray-900">{teacher.educationalUnit.name}</p>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-2">
+                    Đơn vị đào tạo
+                  </h3>
+                  <p className="text-lg font-bold text-gray-900">
+                    {teacher.educationalUnit.name}
+                  </p>
                   {teacher.educationalUnit.description && (
-                    <p className="text-sm text-gray-600 mt-1">{teacher.educationalUnit.description}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {teacher.educationalUnit.description}
+                    </p>
                   )}
                 </div>
               )}
@@ -324,7 +336,10 @@ const TeacherDetail: React.FC = () => {
                         <span className="text-xl font-bold text-gray-900">
                           {course.coursePrice}
                         </span>
-                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                        <Button
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
                           Xem khóa học
                         </Button>
                       </div>

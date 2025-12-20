@@ -26,7 +26,7 @@ export function HeroBanner({
   onContact,
 }: HeroBannerProps) {
   return (
-    <section className="relative min-h-[400px] md:min-h-[500px] overflow-hidden mt-20">
+    <section className="px-10 py-6 relative min-h-[400px] md:min-h-[300px] overflow-hidden mt-20">
       {/* Background Image with Blue Overlay */}
       <div className="absolute inset-0">
         <img
