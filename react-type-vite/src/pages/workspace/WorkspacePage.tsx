@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 import { useSafeChatWebSocket } from "@/hooks/useSafeChatWebSocket";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -100,15 +101,12 @@ const WorkspacePageContent = () => {
     if (selectedWorkspace) {
       if (selectedChannel) {
         // Navigate to workspace with channel
-        navigate(
-          `/student/workspaces/${selectedWorkspace.id}/${selectedChannel.id}`,
-          {
-            replace: true,
-          }
-        );
+        navigate(`/workspaces/${selectedWorkspace.id}/${selectedChannel.id}`, {
+          replace: true,
+        });
       } else {
         // Navigate to workspace only
-        navigate(`/student/workspaces/${selectedWorkspace.id}`, {
+        navigate(`/workspaces/${selectedWorkspace.id}`, {
           replace: true,
         });
       }
@@ -137,11 +135,12 @@ const WorkspacePageContent = () => {
     });
 
     if (!selectedChannel) {
+      toast.warning("Vui lòng chọn kênh trước khi gửi tin nhắn.");
       return;
     }
 
     if (!isConnected) {
-      alert("Kết nối real-time bị mất. Vui lòng thử lại sau.");
+      toast.error("Kết nối real-time bị mất. Vui lòng thử lại sau.");
       return;
     }
 
@@ -161,8 +160,8 @@ const WorkspacePageContent = () => {
 
       // Show user-friendly error
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      alert(`Không thể gửi tin nhắn: ${errorMessage}`);
+        error instanceof Error ? error.message : "Lỗi không xác định";
+      toast.error(`Không thể gửi tin nhắn: ${errorMessage}`);
     }
   };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 import { getWorkspaces } from "@/services/api/workspace/workspace.api";
 import {
@@ -26,10 +27,15 @@ export const useWorkspace = () => {
 
   // Load initial workspaces
   useEffect(() => {
-    getWorkspaces(0, pageSize).then((data) => {
-      console.log("Fetched workspaces:", data);
-      setWorkspacesData(data);
-    });
+    getWorkspaces(0, pageSize)
+      .then((data) => {
+        console.log("Fetched workspaces:", data);
+        setWorkspacesData(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching workspaces:", error);
+        toast.error("Không thể tải danh sách workspace. Vui lòng thử lại.");
+      });
   }, []);
 
   // Auto select general channel when workspace changes
@@ -55,6 +61,7 @@ export const useWorkspace = () => {
           }
         } catch (error) {
           console.error("Error auto-selecting channel:", error);
+          toast.error("Không thể tải kênh. Vui lòng thử lại.");
           setSelectedChannel(null);
         }
       };
@@ -76,6 +83,7 @@ export const useWorkspace = () => {
         })
         .catch((error) => {
           console.error("Error loading channel data:", error);
+          toast.error("Không thể tải thông tin kênh. Vui lòng thử lại.");
           setParticipants([]);
         })
         .finally(() => {
@@ -114,6 +122,7 @@ export const useWorkspace = () => {
       })
       .catch((error) => {
         console.error("Error loading more workspaces:", error);
+        toast.error("Không thể tải thêm workspace. Vui lòng thử lại.");
       });
   };
 

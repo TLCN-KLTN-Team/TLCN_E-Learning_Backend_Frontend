@@ -1,6 +1,7 @@
 import type { ChatMessageResponse } from "@/types/chat.types";
 import { useState } from "react";
 import MessageHoverToolbar from "./MessageHoverToolbar";
+import { ExternalLink, X } from "lucide-react";
 
 interface MessageItemProps {
   message: ChatMessageResponse;
@@ -15,6 +16,7 @@ const MessageItem = ({
   showTimestamp = true,
 }: MessageItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [showMediaModal, setShowMediaModal] = useState(false);
 
   const fullName = `${message.sender.firstName || ""} ${
     message.sender.lastName || ""
@@ -122,16 +124,37 @@ const MessageItem = ({
             ) : message.messageType === "IMAGE" && message.fileUrl ? (
               <div className={`${showTimestamp ? "mt-1" : "mt-0"}`}>
                 <div className="relative inline-block">
+                  {/* Image Thumbnail */}
                   <img
                     src={message.fileUrl}
                     alt={message.content || "Image"}
                     className="max-w-sm max-h-64 rounded-lg border border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
                     loading="lazy"
-                    onClick={() => window.open(message.fileUrl!, "_blank")}
-                    title={`Click to view ${
-                      message.content || "image"
-                    } in full size`}
+                    onClick={() => setShowMediaModal(true)}
                   />
+                </div>
+              </div>
+            ) : message.messageType === "VIDEO" && message.fileUrl ? (
+              <div className={`${showTimestamp ? "mt-1" : "mt-0"}`}>
+                <div className="relative inline-block max-w-sm">
+                  {/* Video Thumbnail/Preview */}
+                  <video
+                    src={message.fileUrl}
+                    className="max-w-full max-h-64 rounded-lg border border-gray-600 cursor-pointer"
+                    preload="metadata"
+                    onClick={() => setShowMediaModal(true)}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-16 h-16 bg-black/60 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-8 h-8 text-white ml-1"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : message.messageType === "FILE" && message.fileUrl ? (
@@ -191,6 +214,66 @@ const MessageItem = ({
           )}
         </div>
       </div>
+
+      {/* Media Modal */}
+      {showMediaModal &&
+        (message.messageType === "IMAGE" || message.messageType === "VIDEO") &&
+        message.fileUrl && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowMediaModal(false)}
+          >
+            <div
+              className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowMediaModal(false)}
+                className="absolute top-4 right-4 bg-gray-800/80 hover:bg-gray-700 text-white rounded-full p-2 z-10 transition-colors"
+                title="Đóng"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Open in new tab button */}
+              <button
+                onClick={() => window.open(message.fileUrl!, "_blank")}
+                className="absolute top-4 right-16 bg-gray-800/80 hover:bg-gray-700 text-white rounded-full p-2 z-10 transition-colors"
+                title="Mở trong tab mới"
+              >
+                <ExternalLink className="w-6 h-6" />
+              </button>
+
+              {/* Media content */}
+              <div className="flex items-center justify-center w-full h-full">
+                {message.messageType === "IMAGE" ? (
+                  <img
+                    src={message.fileUrl}
+                    alt={message.content || "Image"}
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : message.messageType === "VIDEO" ? (
+                  <video
+                    src={message.fileUrl}
+                    controls
+                    autoPlay
+                    className="max-w-full max-h-full rounded-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : null}
+              </div>
+
+              {/* Caption if available */}
+              {message.content && (
+                <div className="absolute bottom-4 left-4 right-4 bg-black/60 text-white px-4 py-2 rounded-lg">
+                  <p className="text-sm">{message.content}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
     </div>
   );
 };

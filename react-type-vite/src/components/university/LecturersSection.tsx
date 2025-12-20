@@ -53,7 +53,7 @@ export function LecturersSection({
   });
 
   return (
-    <section className="py-10 md:py-16 bg-background">
+    <section className="p-10 md:py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
@@ -118,7 +118,7 @@ export function LecturersSection({
                     </p>
                     <Badge
                       variant="secondary"
-                      className="text-xs bg-gray-100 dark:bg-gray-800"
+                      className="text-xs bg-blue-50 text-blue-700"
                     >
                       {lecturer.department}
                     </Badge>
@@ -148,6 +148,12 @@ export function LecturersSection({
                     variant="ghost"
                     size="sm"
                     className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto"
+                    onClick={() =>
+                      window.open(
+                        `http://localhost:3000/teacher/${lecturer.id}`,
+                        "_blank"
+                      )
+                    }
                   >
                     <ExternalLink className="w-3.5 h-3.5 mr-1" />
                     Hồ sơ

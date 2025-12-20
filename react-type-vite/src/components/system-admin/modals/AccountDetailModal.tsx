@@ -138,16 +138,6 @@ const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-gray-700">
-                    ID
-                  </label>
-                  <div className="mt-1">
-                    <span className="text-gray-900 font-mono text-sm">
-                      {account.id}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
                     Tên đăng nhập
                   </label>
                   <div className="mt-1">
@@ -169,11 +159,20 @@ const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                     Quyền truy cập
                   </label>
                   <div className="mt-1">
-                    {account.role && (
-                      <div className="text-sm text-gray-900">
-                        • {getRoleName([account.role])}
-                      </div>
-                    )}
+                    {account.role &&
+                      (() => {
+                        const IconComponent = getRoleIcon([account.role]);
+                        return (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(
+                              [account.role]
+                            )}`}
+                          >
+                            <IconComponent className="w-3 h-3" />
+                            {getRoleName([account.role])}
+                          </span>
+                        );
+                      })()}
                   </div>
                 </div>
               </div>
@@ -189,9 +188,9 @@ const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
           >
             Đóng
           </button>
-          <button className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors">
+          {/* <button className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors">
             Chỉnh sửa
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import type { Participant, UserResponse } from "@/types/chat.types";
 import { X, User } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { getMembersInChannel } from "@/services/api/workspace/channel.api";
 
 interface ParticipantsListProps {
@@ -31,7 +32,9 @@ const ParticipantsList = ({
         setMembers(data);
       } catch (err) {
         console.error("Error fetching channel members:", err);
-        setError("Failed to load members");
+        const errorMessage = "Không thể tải danh sách thành viên.";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
