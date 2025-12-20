@@ -60,7 +60,7 @@ public class ProgressService {
 
         // Calculate completed
         int completedLessons = (int) courseProgress.getLessonProgresses().stream()
-                .filter(LessonProgress::isCompleted)
+                .filter(LessonProgress::getCompleted)
                 .count();
 
         int completedQuizzes = quizAttemptRepository.countDistinctQuizzesByUserAndCourse(userId, course.getId());
@@ -95,9 +95,21 @@ public class ProgressService {
                 .findByUserIdAndCourseId(userId, course.getId())
                 .orElseGet(() -> createCourseProgress(userId, course));
 
+        System.out.println("=== CourseProgress ID: " + courseProgress.getId());
+        courseProgress.getLessonProgresses().forEach(lp -> {
+            System.out.println("LessonId=" + lp.getLesson().getId() +
+                    ", isCompleted=" + lp.getCompleted());
+        });
+
         ProgressStatsResponse stats = getClassProgressStats(classId);
 
         CourseProgressResponse courseProgressResponse = courseProgressMapper.toCourseProgressResponse(courseProgress);
+
+        System.out.println("=== CourseProgressResponse ID: " + courseProgressResponse.getId());
+        courseProgressResponse.getLessonProgresses().forEach(lp -> {
+            System.out.println("CourseProgressResponse LessonId=" + lp.getLessonId() +
+                    ", isCompleted=" + lp.isCompleted());
+        });
 
         return CourseProgressDetailResponse.builder()
                 .courseProgress(courseProgressResponse)
@@ -165,7 +177,7 @@ public class ProgressService {
 
         return lessonProgressRepository
                 .findByCourseProgress_IdAndLesson_Id(courseProgress.getId(), lessonId)
-                .map(LessonProgress::isCompleted)
+                .map(LessonProgress::getCompleted)
                 .orElse(false);
     }
 
@@ -193,7 +205,7 @@ public class ProgressService {
         }
 
         int completedLessons = (int) courseProgress.getLessonProgresses().stream()
-                .filter(LessonProgress::isCompleted)
+                .filter(LessonProgress::getCompleted)
                 .count();
 
         int completedQuizzes = quizAttemptRepository

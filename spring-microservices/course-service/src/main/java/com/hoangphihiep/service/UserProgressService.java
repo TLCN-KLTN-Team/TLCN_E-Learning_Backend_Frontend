@@ -69,7 +69,7 @@ public class UserProgressService {
         int completedLessons = (int) lessonProgressRepository
                 .findByUserIdAndCourseId(userId, course.getId())
                 .stream()
-                .filter(LessonProgress::isCompleted)
+                .filter(LessonProgress::getCompleted)
                 .count();
 
         int completedQuizzes = (int) quizAttemptRepository
@@ -189,7 +189,7 @@ public class UserProgressService {
 
         return lessonProgressRepository
                 .findByCourseProgress_IdAndLesson_Id(courseProgress.getId(), lessonId)
-                .map(LessonProgress::isCompleted)
+                .map(LessonProgress::getCompleted)
                 .orElse(false);
     }
 

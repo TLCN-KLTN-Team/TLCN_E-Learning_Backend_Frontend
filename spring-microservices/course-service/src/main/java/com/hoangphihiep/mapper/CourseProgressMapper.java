@@ -16,18 +16,31 @@ public interface CourseProgressMapper {
 
     @Mapping(target = "courseId", source = "course.id")
     @Mapping(target = "lessonProgresses", expression = "java(toLessonProgressResponseList(courseProgress.getLessonProgresses()))")
-    CourseProgressResponse toCourseProgressResponse(CourseProgress courseProgress);
+    CourseProgressResponse  toCourseProgressResponse(CourseProgress courseProgress);
 
-    @Mapping(target = "lessonId", source = "lesson.id")
-    @Mapping(target = "courseProgressId", source = "courseProgress.id")
-    LessonProgressResponse toLessonProgressResponse(LessonProgress lessonProgress);
+    default LessonProgressResponse toLessonProgressResponse(LessonProgress lessonProgress) {
+        if (lessonProgress == null) {
+            return null;
+        }
+
+        return LessonProgressResponse.builder()
+                .id(lessonProgress.getId())
+                .lessonId(lessonProgress.getLesson().getId())
+                .courseProgressId(lessonProgress.getCourseProgress().getId())
+                .isCompleted(lessonProgress.getCompleted()) // SET TRỰC TIẾP
+                .build();
+    }
 
     default List<LessonProgressResponse> toLessonProgressResponseList(Set<LessonProgress> lessonProgresses) {
         if (lessonProgresses == null) {
             return List.of();
         }
         return lessonProgresses.stream()
-                .map(this::toLessonProgressResponse)
+                .map(lp -> {
+                    System.out.println("Mapping lessonId=" + lp.getLesson().getId() +
+                            ", isCompleted=" + lp.getCompleted()); // LOG ĐỂ XEM
+                    return toLessonProgressResponse(lp);
+                })
                 .collect(Collectors.toList());
     }
 }
