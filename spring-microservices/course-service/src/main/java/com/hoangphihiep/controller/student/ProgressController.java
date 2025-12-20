@@ -26,8 +26,14 @@ public class ProgressController {
     @GetMapping("/class/{classId}/detail")
     public ApiResponse<CourseProgressDetailResponse> getCourseProgressDetail(
             @PathVariable Integer classId) {
+        CourseProgressDetailResponse result =
+                progressService.getCourseProgressDetail(classId);
+
+        System.out.println ("CourseProgressDetailResponse for classId {}: {}" +
+                classId + result);
+
         return ApiResponse.<CourseProgressDetailResponse>builder()
-                .result(progressService.getCourseProgressDetail(classId))
+                .result(result)
                 .build();
     }
 

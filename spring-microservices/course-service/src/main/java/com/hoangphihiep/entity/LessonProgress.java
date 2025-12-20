@@ -44,4 +44,8 @@ public class LessonProgress implements Serializable {
     @ManyToOne
     @JoinColumn(name = "course_progress_id", nullable = false)
     private CourseProgress courseProgress;
+
+    public boolean getCompleted() {
+        return isCompleted;
+    }
 }

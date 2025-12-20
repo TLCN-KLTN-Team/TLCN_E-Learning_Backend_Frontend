@@ -2,9 +2,10 @@ import { getAvartarFromName } from "@/utils/callApiUtils";
 import { Bell, ChevronDown, MessageCircleMore } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
-import uteLogoDark from "../../../assets/images/logo/ute-logo.jpg";
+import uteLogoDark from "../../../assets/open-edu-dark.png";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context/useAuth";
+
 
 const profileMenu = [
   { name: "Hồ sơ", href: "/student/edit-profile" },
@@ -22,10 +23,10 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <NavLink
-            className="flex items-center h-8 w-10"
+            className="flex items-center h-20 w-32"
             to="/student/dashboard"
           >
-            <img src={uteLogoDark} alt="" />
+            <img src={uteLogoDark} alt="" className="w-full h-full object-contain" />
           </NavLink>
 
           {/* Navigation */}
