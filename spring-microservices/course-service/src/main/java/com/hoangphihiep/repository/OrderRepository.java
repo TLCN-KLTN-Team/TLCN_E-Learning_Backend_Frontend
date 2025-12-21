@@ -28,4 +28,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query("SELECT COUNT(DISTINCT o.idUser) FROM Order o JOIN o.orderItems oi WHERE oi.course.course.idTeacher = :teacherId")
     Long countUniqueStudentsByTeacherId(@Param("teacherId") String teacherId);
 
+    @Query("SELECT COUNT(DISTINCT o.idUser) FROM Order o JOIN o.orderItems oi WHERE oi.course.course.idTeacher = :teacherId AND oi.course.id = :courseId")
+    Long countUniqueStudentsByTeacherIdAndCoureId(@Param("teacherId") String teacherId, @Param("courseId") Integer courseId);
+
 }

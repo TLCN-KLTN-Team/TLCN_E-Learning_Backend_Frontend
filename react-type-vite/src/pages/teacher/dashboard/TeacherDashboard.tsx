@@ -3,7 +3,6 @@ import ProfileBanner from "../../../components/teacher/dashboard/profile-banner"
 import StatsCards from "../../../components/teacher/dashboard/stats-cards"
 import EarningsChart from "../../../components/teacher/dashboard/earnings-chart"
 import CoursesTable from "../../../components/teacher/dashboard/courses-table"
-import Footer from "../../../components/teacher/dashboard/footer"
 
 const TeacherDashboard: React.FC = () => {
   return (
@@ -18,7 +17,6 @@ const TeacherDashboard: React.FC = () => {
           </div>
         </div>
       </section>
-      <Footer />
     </div>
   )
 }

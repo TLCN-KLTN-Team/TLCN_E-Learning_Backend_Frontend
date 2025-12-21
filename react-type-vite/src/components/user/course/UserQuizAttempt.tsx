@@ -76,10 +76,15 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
   const loadQuizData = async () => {
     try {
       setLoading(true)
+      console.log('🔄 Đang load quiz với ID:', quizId)
       const [quizData, history] = await Promise.all([
         userQuizApi.getQuizDetail(Number(quizId)),
         userQuizApi.getQuizAttemptHistory(Number(quizId))
       ])
+
+      console.log('✅ Quiz data nhận được:', quizData)
+      console.log('📝 Chi tiết questions:', quizData.questions)
+      console.log('📜 Lịch sử attempts:', history)
       setQuiz(quizData)
       setAttemptHistory(history)
       
@@ -105,7 +110,8 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
 
   const handleStartQuiz = async () => {
     if (!quiz) return
-
+    console.log('🎯 Bắt đầu quiz attempt cho quiz ID:', quizId)
+    console.log('📊 Quiz hiện tại:', quiz)
     // Check attempt limit
     if (quiz.attemptLimit > 0 && attemptHistory.length >= quiz.attemptLimit) {
       toast.error(`Bạn đã hết số lần làm bài (${quiz.attemptLimit} lần)`)
@@ -115,6 +121,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
     try {
       setLoading(true)
       const { attemptId } = await userQuizApi.startQuizAttempt(Number(quizId))
+       console.log('✅ Attempt ID nhận được:', attemptId)
       setCurrentAttemptId(attemptId)
       setViewMode('taking')
       setTimeLeft(quiz.duration * 60) // Convert to seconds
@@ -405,6 +412,13 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
   // Taking Quiz View
   if (viewMode === 'taking') {
     const questionsArray = Array.from(quiz.questions).sort((a, b) => a.orderIndex - b.orderIndex)
+
+    console.log('📝 Rendering questions:')
+    console.log('- Tổng số questions:', questionsArray.length)
+    console.log('- Questions array:', questionsArray)
+    console.log('- Current question index:', currentQuestionIndex)
+    console.log('- Current question:', questionsArray[currentQuestionIndex])
+
     const answeredCount = getAnsweredCount()
     const unansweredCount = questionsArray.length - answeredCount
     const currentQuestion = questionsArray[currentQuestionIndex]
@@ -434,8 +448,17 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
     }
 
     const renderQuestion = (question: QuestionResponse, qIndex: number) => {
+      console.log(`🔍 === Render question ${qIndex + 1} ===`)
+      console.log('Question object:', question)
+      console.log('Question.answers type:', typeof question.answers)
+      console.log('Question.answers:', question.answers)
+      console.log('Is array?', Array.isArray(question.answers))
       const answersArray = Array.from(question.answers).sort((a, b) => a.orderIndex - b.orderIndex)
+
+      console.log('answersArray sau khi sort:', answersArray)
+      console.log('answersArray length:', answersArray.length)
       const userAnswer = userAnswers.get(question.id)
+      console.log('User answer hiện tại:', userAnswer)
 
       return (
         <div 
@@ -759,9 +782,11 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                 >
                   Xem lịch sử
                 </Button>
-                <Button 
+               <Button 
                   onClick={() => navigate(-1)}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 py-6 text-base"
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 
+                            hover:from-purple-700 hover:to-indigo-700 
+                            py-6 text-base text-white"
                 >
                   Hoàn thành
                 </Button>

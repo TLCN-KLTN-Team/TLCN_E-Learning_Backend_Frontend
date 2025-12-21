@@ -9,8 +9,7 @@ import com.hoangphihiep.dto.response.EducationalUnitResponse;
 import com.hoangphihiep.entity.Department;
 import com.hoangphihiep.entity.EducationalUnit;
 import com.hoangphihiep.entity.PublishedCourse;
-import com.hoangphihiep.repository.PublishedCourseRepository;
-import com.hoangphihiep.repository.ReviewRepository;
+import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,11 +25,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TeacherPublicService {
     private final TeacherRepository teacherRepository;
-        private final PublishedCourseRepository publishedCourseRepository;
+    private final PublishedCourseRepository publishedCourseRepository;
     private final ReviewRepository reviewRepository;
-        private final com.hoangphihiep.repository.DepartmentRepository departmentRepository;
-        private final com.hoangphihiep.repository.EducationalUnitRepository educationalUnitRepository;
-
+    private final DepartmentRepository departmentRepository;
+    private final EducationalUnitRepository educationalUnitRepository;
+    private final OrderRepository orderRepository;
     /**
      * Get teacher detail by teacher ID
      */
@@ -49,15 +48,8 @@ public class TeacherPublicService {
 
         // Calculate total students (distinct students from all courses)
         // Count enrollments from all courses
-        Integer totalStudents = approvedCourses.stream()
-                .mapToInt(pc -> {
-                    // Count enrollments for this course
-                    if (pc.getCourse() != null && pc.getCourse().getEnrollments() != null) {
-                        return pc.getCourse().getEnrollments().size();
-                    }
-                    return 0;
-                })
-                .sum();
+
+        Long countStudent = orderRepository.countUniqueStudentsByTeacherId(teacherId);
 
         // Calculate average rating from reviews
         Double averageRating = reviewRepository.getAverageRatingByTeacherId(teacherId);
@@ -113,7 +105,7 @@ public class TeacherPublicService {
                 .department(deptResponse)
                 .educationalUnit(eduResponse)
                 .totalPublishedCourses(approvedCourses.size())
-                .totalStudents(totalStudents)
+                .totalStudents(Math.toIntExact(countStudent))
                 .averageRating(averageRating)
                 .build();
     }
@@ -153,6 +145,8 @@ public class TeacherPublicService {
             rating = 0.0;
         }
 
+        Long countStudent = orderRepository.countUniqueStudentsByTeacherIdAndCoureId(publishedCourse.getCourse().getIdTeacher(),publishedCourse.getId());
+
         return TeacherCourseResponse.builder()
                 .id(publishedCourse.getId())
                 .courseName(publishedCourse.getCourseName())
@@ -162,8 +156,7 @@ public class TeacherPublicService {
                 .coursePrice(publishedCourse.getCoursePrice() != null ? 
                         "₫" + publishedCourse.getCoursePrice().toPlainString() : "0")
                 .rating(rating)
-                .enrolledCount(publishedCourse.getCourse() != null && publishedCourse.getCourse().getCurrentStudents() != null ? 
-                        publishedCourse.getCourse().getCurrentStudents() : 0)
+                .enrolledCount(Math.toIntExact(countStudent))
                 .duration("0") // Course entity doesn't have duration field
                 .level("Beginner") // Course entity doesn't have level field - using default
                 .category("Technology") // Course entity doesn't have category field - using default

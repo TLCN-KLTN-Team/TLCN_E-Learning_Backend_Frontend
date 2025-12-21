@@ -47,7 +47,7 @@ public class OrderItemService {
         for (Integer orderId : orderIds) {
             List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
             for (OrderItem item : items) {
-                courseIds.add(item.getCourse().getCourse().getId());
+                courseIds.add(item.getCourse().getId());
             }
         }
         return courseIds;

@@ -256,6 +256,7 @@ const CourseLearning: React.FC = () => {
 
       // Load sections with content
       const sectionsData = await getSectionsByCourseId(Number(courseId))
+      sectionsData.sort((a, b) => a.orderIndex - b.orderIndex)
       setSections(sectionsData)
 
       // Flatten all content items
@@ -521,7 +522,7 @@ const CourseLearning: React.FC = () => {
               size="sm"
               className="text-white hover:bg-gray-800 gap-2"
             >
-              <span className="text-sm">Your progress: {progressStats?.overallProgress || 0}%</span>
+              <span className="text-sm">Your progress: {(progressStats?.overallProgress || 0).toFixed(2)}%</span>
               <ChevronDown className="w-4 h-4" />
             </Button>
             
@@ -535,13 +536,13 @@ const CourseLearning: React.FC = () => {
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600">Tổng quan</span>
-                      <span className="text-sm font-semibold text-blue-600">{progressStats.overallProgress}%</span>
+                      <span className="text-sm font-semibold text-blue-600">{(progressStats.overallProgress).toFixed(2)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
-                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                        style={{ width: `${progressStats.overallProgress}%` }}
-                      />
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                          style={{ width: `${(progressStats.overallProgress).toFixed(2)}%` }}
+                        />
                     </div>
                   </div>
 

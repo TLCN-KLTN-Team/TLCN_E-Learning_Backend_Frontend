@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum RecipientType {
-    TEACHER("Teacher"),
+    TEACHER("TEACHER"),
     ADMIN("ADMIN"),
     SUPER_ADMIN("SUPERADMIN");
 

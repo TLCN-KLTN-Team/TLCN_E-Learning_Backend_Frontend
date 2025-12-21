@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import Footer from "@/components/teacher/dashboard/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -109,7 +108,6 @@ const EditCoursePageContent: React.FC = () => {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     )
   }
@@ -138,7 +136,6 @@ const EditCoursePageContent: React.FC = () => {
             </Card>
           </div>
         </main>
-        <Footer />
       </div>
     )
   }
@@ -300,8 +297,6 @@ const EditCoursePageContent: React.FC = () => {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   )
 }

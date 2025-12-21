@@ -2,6 +2,7 @@ import type { ChatMessageResponse } from "@/types/chat.types";
 import { useState } from "react";
 import MessageHoverToolbar from "./MessageHoverToolbar";
 import { ExternalLink, X } from "lucide-react";
+import { getAvartarFromName } from "@/utils/callApiUtils";
 
 interface MessageItemProps {
   message: ChatMessageResponse;
@@ -22,11 +23,7 @@ const MessageItem = ({
     message.sender.lastName || ""
   }`.trim();
 
-  const avatarUrl =
-    message.sender.avatarUrl ||
-    `https://ui-avatars.com/api/?name=${fullName || "User"}+${
-      message.sender.lastName || ""
-    }&background=3b82f6&color=fff`;
+  const avatarUrl = message.sender.avatarUrl || getAvartarFromName(fullName);
 
   const displayName = `${message.sender.lastName || "Anonymous"} ${
     message.sender.firstName || ""

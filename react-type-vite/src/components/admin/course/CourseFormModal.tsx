@@ -23,7 +23,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
   const [form, setForm] = useState<CourseRequest>({
     courseName: "",
     credits: 3,
-    maxStudents: 30,
+    maxStudents: 0,
     description: "",
     idTeacher: "GV001",
   });
@@ -54,9 +54,6 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     }
     if (!form.credits || form.credits < 1) {
       newErrors.credits = "Số tín chỉ phải ít nhất là 1";
-    }
-    if (!form.maxStudents || form.maxStudents < 1) {
-      newErrors.maxStudents = "Số học sinh tối đa phải ít nhất là 1";
     }
     return newErrors;
   };
@@ -95,7 +92,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       setForm({
         courseName: "",
         credits: 3,
-        maxStudents: 30,
+        maxStudents: 0,
         description: "",
       });
       setErrors({});
@@ -194,8 +191,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                   Chi tiết Khóa học
                 </h3>
 
-                {/* Credits and Max Students Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Credits Row */}
+                <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">
                       <Clock size={14} className="mr-2 text-green-600" />
@@ -220,34 +217,6 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                       <p className="text-red-500 text-xs flex items-center mt-1">
                         <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
                         {errors.credits}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="flex items-center text-sm font-medium text-gray-700">
-                      <Users size={14} className="mr-2 text-green-600" />
-                      Số Học sinh Tối đa
-                      <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <input
-                      name="maxStudents"
-                      type="number"
-                      placeholder="30"
-                      value={form.maxStudents || ""}
-                      onChange={handleChange}
-                      min="1"
-                      max="500"
-                      className={`w-full px-3 py-2 border rounded-lg transition-colors ${
-                        errors.maxStudents
-                          ? "border-red-500 focus:border-red-500"
-                          : "border-gray-300 focus:border-blue-500"
-                      }`}
-                    />
-                    {errors.maxStudents && (
-                      <p className="text-red-500 text-xs flex items-center mt-1">
-                        <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
-                        {errors.maxStudents}
                       </p>
                     )}
                   </div>
