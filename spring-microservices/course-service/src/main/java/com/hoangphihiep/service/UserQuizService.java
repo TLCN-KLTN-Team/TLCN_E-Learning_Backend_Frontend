@@ -37,8 +37,6 @@ public class UserQuizService {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
 
-        verifyUserCourseAccess(quiz.getSection().getCourse().getId(), userId);
-
         return quizMapper.toQuizResponse(quiz);
     }
 
@@ -47,9 +45,6 @@ public class UserQuizService {
 
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
-
-        // Verify access
-        verifyUserCourseAccess(quiz.getSection().getCourse().getId(), userId);
 
         List<QuizAttempt> attempts = quizAttemptRepository
                 .findByQuizIdAndIdUserOrderBySubmittedAtDesc(quizId, userId);
@@ -78,8 +73,6 @@ public class UserQuizService {
 
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
-
-        verifyUserCourseAccess(quiz.getSection().getCourse().getId(), userId);
 
         LocalDateTime now = LocalDateTime.now();
         if (quiz.getStartTime() != null && quiz.getStartTime().isAfter(now)) {
@@ -113,8 +106,6 @@ public class UserQuizService {
 
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
-
-        verifyUserCourseAccess(quiz.getSection().getCourse().getId(), userId);
 
         QuizAttempt attempt = quizAttemptRepository
                 .findTopByQuizIdAndIdUserAndSubmittedAtIsNullOrderByStartedAtDesc(quizId, userId)
@@ -228,15 +219,6 @@ public class UserQuizService {
 
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
-    }
-
-    private void verifyUserCourseAccess(Integer courseId, String userId) {
-        boolean hasPurchased = orderItemRepository
-                .existsByUserIdAndCourseIdAndOrderCompleted(userId, courseId);
-
-        if (!hasPurchased) {
-            throw new AppException(ErrorCode.COURSE_NOT_ENROLLED);
-        }
     }
 
     private QuizAttemptResponse toQuizAttemptResponse(

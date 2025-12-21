@@ -29,8 +29,6 @@ public class CourseRequest {
     @Max(value = 10, message = "Credits cannot exceed 10")
     private Integer credits;
 
-    @Min(value = 1, message = "Max students must be at least 1")
-    @Max(value = 500, message = "Max students cannot exceed 500")
     private Integer maxStudents;
 
     private Date createdAt;

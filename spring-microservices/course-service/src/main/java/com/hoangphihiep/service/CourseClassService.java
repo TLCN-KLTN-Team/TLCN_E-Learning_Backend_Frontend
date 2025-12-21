@@ -58,6 +58,12 @@ public class CourseClassService {
                 .build();
 
         CourseClass savedClass = classRepository.save(courseClass);
+        System.out.println ("Course1: " + course.getMaxStudents());
+        course.setMaxStudents(course.getMaxStudents() + request.getMaxStudents());
+
+        Course course1 = courseRepository.save(course);
+
+        System.out.println ("Course" + course1.getMaxStudents());
 
         // create a new channel for this class in chat service
         ClassCreatedEvent event = ClassCreatedEvent.builder()
@@ -98,6 +104,13 @@ public class CourseClassService {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
+        Course course = courseRepository.findById(courseClass.getCourse().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        course.setMaxStudents(course.getMaxStudents() - courseClass.getMaxStudents() + request.getMaxStudents());
+
+        Course course1 = courseRepository.save(course);
+        System.out.println ("Course3" + course1.getMaxStudents());
         // Check if class code is being changed and if new code already exists
         if (!courseClass.getClassCode().equals(request.getClassCode()) &&
                 classRepository.existsByClassCode(request.getClassCode())) {

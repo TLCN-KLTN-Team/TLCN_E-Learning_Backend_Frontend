@@ -296,7 +296,7 @@ public class PublishedCourseTeacherService {
         publishedCourse.setCourseName(request.getCourseName() != null ? request.getCourseName() : course.getCourseName());
 
         TeacherResponse teacher = teacherRepository.getTeacherByTeacherId(course.getIdTeacher()).getResult();
-        publishedCourse.setAuthorName(teacher.getUsername());
+        publishedCourse.setAuthorName(teacher.getLastName() + " " + teacher.getFirstName());
         
         publishedCourse.setStatus(0); // Draft
         publishedCourse.setCreatedAt(new Date());

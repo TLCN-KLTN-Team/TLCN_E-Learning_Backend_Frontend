@@ -1275,13 +1275,13 @@ const CoursePackagingPage = () => {
                           </div>
                           <div className="ml-6 text-sm text-gray-600">
                             {publishedLessons > 0 && (
-                              <span className="mr-3">📚 {publishedLessons} bài học</span>
+                              <span className="mr-3">{publishedLessons} bài học</span>
                             )}
                             {publishedQuizzes > 0 && (
-                              <span className="mr-3">📝 {publishedQuizzes} bài kiểm tra</span>
+                              <span className="mr-3">{publishedQuizzes} bài kiểm tra</span>
                             )}
                             {publishedAssignments > 0 && (
-                              <span>📋 {publishedAssignments} bài tập</span>
+                              <span>{publishedAssignments} bài tập</span>
                             )}
                           </div>
                         </div>

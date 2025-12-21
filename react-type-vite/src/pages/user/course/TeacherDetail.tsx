@@ -22,6 +22,14 @@ const TeacherDetail: React.FC = () => {
   const [pageSize] = useState(6);
   const [totalPages, setTotalPages] = useState(0);
 
+  // Format price function
+  const formatPrice = (price: string): string => {
+    // Remove currency symbol and decimal part
+    const numericValue = price.replace(/[₫,]/g, '').split('.')[0];
+    // Format with dots as thousands separator
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₫';
+  };
+
   useEffect(() => {
     const fetchTeacherDetail = async () => {
       if (!teacherId) return;
@@ -334,7 +342,7 @@ const TeacherDetail: React.FC = () => {
                       {/* Price */}
                       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                         <span className="text-xl font-bold text-gray-900">
-                          {course.coursePrice}
+                          {formatPrice(course.coursePrice)}
                         </span>
                         <Button
                           size="sm"

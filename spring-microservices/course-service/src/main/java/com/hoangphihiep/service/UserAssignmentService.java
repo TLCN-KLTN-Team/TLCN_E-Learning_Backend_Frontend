@@ -97,7 +97,7 @@ public class UserAssignmentService {
 
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
-
+        System.out.println ("Có vào đây submit: ");
         verifyUserCourseAccess(assignment.getSection().getCourse().getId(), userId);
 
         submissionRepository.findByAssignmentIdAndIdUser(assignmentId, userId)
@@ -241,6 +241,7 @@ public class UserAssignmentService {
     }
 
     private void verifyUserCourseAccess(Integer courseId, String userId) {
+        System.out.println ("id của người dùng 1: " + userId + "id của khóa học 1: " + courseId);
         boolean hasPurchased = orderItemRepository
                 .existsByUserIdAndCourseIdAndOrderCompleted(userId, courseId);
 
