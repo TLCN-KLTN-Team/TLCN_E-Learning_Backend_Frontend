@@ -263,6 +263,8 @@ services:
       SERVICES_IDENTITY_URL: http://identity-service:8080/identity
       API_GATEWAY_URL: http://api-gateway:8888
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      MONGO_DB_USERNAME: ${MONGO_DB_USERNAME}
+      MONGO_DB_PASSWORD: ${MONGO_DB_PASSWORD}
     depends_on:
       mongodb:
         condition: service_healthy

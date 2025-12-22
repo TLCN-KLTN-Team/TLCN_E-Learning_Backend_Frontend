@@ -16,16 +16,9 @@ public class ChatMessageResponse {
     String channelId;
     boolean me;
     String content;
-<<<<<<< HEAD
     UserResponse sender;
     MessageType messageType;
     String fileUrl;
     Instant createdDate;
     boolean uploadedFiles;
-=======
-    Participant sender;
-    Instant createdDate;
-    MessageType messageType;
-    List<AttachmentResponse> attachments;
->>>>>>> df4eb36 (Update send message attached image. Endpoint sendMessage working!)
 }

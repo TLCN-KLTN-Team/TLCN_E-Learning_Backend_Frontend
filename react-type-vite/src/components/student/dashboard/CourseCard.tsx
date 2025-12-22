@@ -1,7 +1,6 @@
 import type { EnrolledCoursesResponse } from "@/services/api/student/courseEnrollmentApi";
 import { MoreVertical } from "lucide-react";
 import { Link } from "react-router-dom";
-import DefaultThumbnail from "@/components/shared/DefaultThumbnail";
 
 interface CourseCardProps {
   course: EnrolledCoursesResponse;
