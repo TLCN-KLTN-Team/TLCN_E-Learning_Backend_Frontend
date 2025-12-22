@@ -445,19 +445,11 @@ const QuizResultPage: React.FC = () => {
         <div className="flex gap-4 justify-center">
           <Button
             variant="outline"
-            onClick={() => navigate("/student/e-learning")}
+            onClick={() => navigate("/student/dashboard")}
           >
             <Home className="h-4 w-4 mr-2" />
             Về trang chủ
           </Button>
-          {quiz.attemptLimit > result.answers.length && (
-            <Button
-              onClick={() => navigate(`/student/quiz/${quizId}`)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Làm lại bài kiểm tra
-            </Button>
-          )}
         </div>
       </div>
     </div>
