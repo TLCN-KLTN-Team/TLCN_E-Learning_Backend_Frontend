@@ -67,6 +67,7 @@ public class ElasticSearchIndexInitializer {
      */
     @Transactional(readOnly = true)
     public void bulkIndexCoursesIfNotExists() throws IOException {
+        if (this.getDocumentCount() > 0) {
             List<PublishedCourse> publishedCourses = publishedCourseRepository.findAll();
             for (PublishedCourse course : publishedCourses) {
                 try {
@@ -75,6 +76,7 @@ public class ElasticSearchIndexInitializer {
                     throw new AppException(ErrorCode.ELASTICSEARCH_OPERATION_FAILED);
                 }
             }
+        }
     }
 
     public void indexCourse(PublishedCourse course) throws IOException {

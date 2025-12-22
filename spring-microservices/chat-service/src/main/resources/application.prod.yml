@@ -4,7 +4,7 @@ spring:
     name: chat-service
   data:
     mongodb:
-      uri: mongodb+srv://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@hackathon.n5sib2v.mongodb.net/workspace_db?retryWrites=true&w=majority&appName=Hackathon
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/workspace_db?authSource=admin}
       auto-index-creation: true
   kafka:
     consumer:

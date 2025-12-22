@@ -1,44 +1,54 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Trash2, AlertCircle, Loader2, Settings, ArrowRight } from 'lucide-react'
-import { useSelectedClass } from "@/context/teacher/SelectedClassContext"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Plus,
+  Search,
+  Trash2,
+  AlertCircle,
+  Loader2,
+  Settings,
+  ArrowRight,
+} from "lucide-react";
+import { useSelectedClass } from "@/context/teacher/SelectedClassContext";
 
 interface ClassWorkspace {
-  id: number
-  classId: string
-  className: string
-  workspaceName: string
-  description: string
-  createdAt: string
-  participantCount: number
-  status: "active" | "inactive"
+  id: number;
+  classId: string;
+  className: string;
+  workspaceName: string;
+  description: string;
+  createdAt: string;
+  participantCount: number;
+  status: "active" | "inactive";
 }
 
 interface ClassWorkspaceManagerProps {
-  courseId: string
+  courseId: string;
 }
 
-const ClassWorkspaceManager: React.FC<ClassWorkspaceManagerProps> = ({ courseId }) => {
-  const { selectedClass } = useSelectedClass()
-  const [workspaces, setWorkspaces] = useState<ClassWorkspace[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [showAddForm, setShowAddForm] = useState(false)
+const ClassWorkspaceManager: React.FC<ClassWorkspaceManagerProps> = ({
+  courseId,
+}) => {
+  const { selectedClass } = useSelectedClass();
+  const [workspaces, setWorkspaces] = useState<ClassWorkspace[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
   const [newWorkspace, setNewWorkspace] = useState({
     workspaceName: "",
     description: "",
-  })
+  });
 
   useEffect(() => {
     if (!selectedClass) {
-      setLoading(false)
-      return
+      setLoading(false);
+      return;
     }
     // TODO: Fetch workspaces từ API với classId
     // const fetchWorkspaces = async () => {
@@ -46,22 +56,27 @@ const ClassWorkspaceManager: React.FC<ClassWorkspaceManagerProps> = ({ courseId 
     //   setWorkspaces(data)
     // }
     // fetchWorkspaces()
-    setLoading(false)
-  }, [courseId, selectedClass])
+    setLoading(false);
+  }, [courseId, selectedClass]);
 
   if (!selectedClass) {
     return (
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold mb-2">Workspace Lớp</h2>
-          <p className="text-gray-600">Quản lý workspace cho lớp học</p>
+          <p className="text-gray-600">
+            Quản lý không gian cho lớp học, hỗ trợ học viên tương tác
+          </p>
         </div>
 
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-gray-400 mb-4" />
             <p className="text-gray-600 mb-2">Vui lòng chọn một lớp học</p>
-            <p className="text-sm text-gray-500 mb-4">Đi tới Quản Lý Lớp Học để chọn một lớp trước khi quản lý workspace.</p>
+            <p className="text-sm text-gray-500 mb-4">
+              Đi tới Quản Lý Lớp Học để chọn một lớp trước khi quản lý
+              workspace.
+            </p>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <ArrowRight className="h-4 w-4" />
               Quản Lý Lớp Học <ArrowRight className="h-4 w-4" /> Chọn Lớp
@@ -69,49 +84,56 @@ const ClassWorkspaceManager: React.FC<ClassWorkspaceManagerProps> = ({ courseId 
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
-  const filteredWorkspaces = workspaces.filter(
-    (ws) =>
-      ws.workspaceName.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const filteredWorkspaces = workspaces.filter((ws) =>
+    ws.workspaceName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleAddWorkspace = async () => {
-    if (!newWorkspace.workspaceName) return
+    if (!newWorkspace.workspaceName) return;
     // TODO: Create workspace via API với classId
     console.log("Creating workspace:", {
       ...newWorkspace,
       classId: selectedClass.id,
-    })
-    setNewWorkspace({ workspaceName: "", description: "" })
-    setShowAddForm(false)
-  }
+    });
+    setNewWorkspace({ workspaceName: "", description: "" });
+    setShowAddForm(false);
+  };
 
   const handleDeleteWorkspace = async (workspaceId: number) => {
     // TODO: Delete workspace via API
-    console.log("Deleting workspace:", workspaceId)
-    setWorkspaces(workspaces.filter((ws) => ws.id !== workspaceId))
-  }
+    console.log("Deleting workspace:", workspaceId);
+    setWorkspaces(workspaces.filter((ws) => ws.id !== workspaceId));
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-2">Workspace Lớp</h2>
-        <p className="text-gray-600">Lớp: <span className="font-semibold text-gray-900">{selectedClass.className}</span></p>
+        <p className="text-gray-600">
+          Lớp:{" "}
+          <span className="font-semibold text-gray-900">
+            {selectedClass.className}
+          </span>
+        </p>
       </div>
 
       {/* Add New Workspace */}
       {!showAddForm ? (
-        <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+        <Button
+          onClick={() => setShowAddForm(true)}
+          className="flex items-center gap-2"
+        >
           <Plus className="h-4 w-4" />
           Tạo Workspace Mới
         </Button>
@@ -119,20 +141,34 @@ const ClassWorkspaceManager: React.FC<ClassWorkspaceManagerProps> = ({ courseId 
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="pt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Tên Workspace</label>
+              <label className="block text-sm font-medium mb-2">
+                Tên Workspace
+              </label>
               <Input
                 placeholder="VD: Workspace Lớp A1"
                 value={newWorkspace.workspaceName}
-                onChange={(e) => setNewWorkspace({ ...newWorkspace, workspaceName: e.target.value })}
+                onChange={(e) =>
+                  setNewWorkspace({
+                    ...newWorkspace,
+                    workspaceName: e.target.value,
+                  })
+                }
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Mô Tả (Tùy Chọn)</label>
+              <label className="block text-sm font-medium mb-2">
+                Mô Tả (Tùy Chọn)
+              </label>
               <textarea
                 placeholder="Nhập mô tả workspace..."
                 value={newWorkspace.description}
-                onChange={(e) => setNewWorkspace({ ...newWorkspace, description: e.target.value })}
+                onChange={(e) =>
+                  setNewWorkspace({
+                    ...newWorkspace,
+                    description: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
               />
@@ -175,9 +211,19 @@ const ClassWorkspaceManager: React.FC<ClassWorkspaceManagerProps> = ({ courseId 
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-lg">{ws.workspaceName}</h3>
-                      <Badge className={ws.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                        {ws.status === "active" ? "Hoạt Động" : "Không Hoạt Động"}
+                      <h3 className="font-semibold text-lg">
+                        {ws.workspaceName}
+                      </h3>
+                      <Badge
+                        className={
+                          ws.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }
+                      >
+                        {ws.status === "active"
+                          ? "Hoạt Động"
+                          : "Không Hoạt Động"}
                       </Badge>
                     </div>
 
@@ -188,11 +234,17 @@ const ClassWorkspaceManager: React.FC<ClassWorkspaceManagerProps> = ({ courseId 
                       </div>
                       <div>
                         <p className="font-medium">Tạo Vào</p>
-                        <p>{new Date(ws.createdAt).toLocaleDateString("vi-VN")}</p>
+                        <p>
+                          {new Date(ws.createdAt).toLocaleDateString("vi-VN")}
+                        </p>
                       </div>
                     </div>
 
-                    {ws.description && <p className="text-sm text-gray-600 mb-3">{ws.description}</p>}
+                    {ws.description && (
+                      <p className="text-sm text-gray-600 mb-3">
+                        {ws.description}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex gap-2">
@@ -215,7 +267,7 @@ const ClassWorkspaceManager: React.FC<ClassWorkspaceManagerProps> = ({ courseId 
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ClassWorkspaceManager
+export default ClassWorkspaceManager;

@@ -45,13 +45,8 @@ const PublicRoutes = [
   // All user accessible routes can be added here
   <Route key="courses" path={`/courses`} element={<Courses />} />,
   <Route
-    key="course-detail"
-    path="/courses/:courseId"
-    element={<CourseDetail />}
-  />,
-  <Route
     key="course-detail-alt"
-    path="/course/:courseId"
+    path="/courses/:courseId"
     element={<CourseDetail />}
   />,
   <Route

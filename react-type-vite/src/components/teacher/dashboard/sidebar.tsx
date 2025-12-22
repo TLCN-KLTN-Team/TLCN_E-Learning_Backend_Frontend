@@ -10,6 +10,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  EarthLock,
 } from "lucide-react";
 import openEduIcon from "@/assets/open-edu-dark.png";
 
@@ -26,6 +27,11 @@ const menuItems = [
     path: "/teacher/public-courses",
   },
   { name: "Theo dõi doanh thu", icon: TrendingUp, path: "/teacher/revenue" },
+  {
+    name: "Không gian lớp học",
+    icon: EarthLock,
+    path: "/workspaces",
+  },
 ];
 
 interface SidebarProps {

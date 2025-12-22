@@ -18,7 +18,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter
 @Setter
-@Table(name="PublishedCourse")
+@Table(name="published_course")
 @NamedQuery(name="PublishedCourse.findAll", query="SELECT p from PublishedCourse p")
 public class PublishedCourse {
 

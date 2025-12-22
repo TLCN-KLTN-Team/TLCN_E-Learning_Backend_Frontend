@@ -427,7 +427,7 @@ db.messages.aggregate([{ $indexStats: {} }]);
 ### 2. Spring Boot Configuration
 
 ```yaml
-# application.yml
+# application.dev.yml
 spring:
   data:
     mongodb:
