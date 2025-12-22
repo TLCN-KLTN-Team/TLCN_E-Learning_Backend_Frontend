@@ -144,7 +144,7 @@ const PublicCoursesPage: React.FC = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Doanh thu ước tính</p>
                   <h3 className="text-2xl font-bold text-card-foreground">
-                    {courses.reduce((sum, course) => sum + ((course.price || 0) * (course.currentStudents || 0)), 0).toLocaleString('vi-VN')}đ
+                    {courses.reduce((sum, course) => sum + ((course.price || 0) * (course.currentStudents || 0) * 0.7), 0).toLocaleString('vi-VN')}đ
                   </h3>
                 </div>
                 <TrendingUp className="w-8 h-8 text-orange-500" />
