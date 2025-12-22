@@ -127,7 +127,7 @@ export function CoursesSection({
                   {/* Thumbnail */}
                   <div
                     className="w-full md:w-48 h-32 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => navigate(`/course/${course.id}`)}
+                    onClick={() => navigate(`/courses/${course.id}`)}
                   >
                     {course.thumbnail ? (
                       <img
@@ -146,7 +146,7 @@ export function CoursesSection({
                       <div className="flex-1">
                         <h3
                           className="text-lg font-semibold text-foreground mb-2 cursor-pointer hover:text-blue-600 transition-colors"
-                          onClick={() => navigate(`/course/${course.id}`)}
+                          onClick={() => navigate(`/courses/${course.id}`)}
                         >
                           {course.title}
                         </h3>
@@ -190,7 +190,7 @@ export function CoursesSection({
                       </div>
                       <Button
                         className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                        onClick={() => navigate(`/course/${course.id}`)}
+                        onClick={() => navigate(`/courses/${course.id}`)}
                       >
                         Đăng ký
                         <ArrowRight className="w-4 h-4" />

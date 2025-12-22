@@ -114,7 +114,7 @@ public class EducationalUnitService {
                         .stream()
                         .filter(course -> course.getPublishedCourse() != null)
                         .map(course -> EducationalUnitDetailResponse.Course.builder()
-                                .id(course.getId())
+                                .id(course.getPublishedCourse().getId())
                                 .name(course.getCourseName())
                                 .description(course.getDescription())
                                 .coverImageUrl(course.getPublishedCourse().getCourseImage())

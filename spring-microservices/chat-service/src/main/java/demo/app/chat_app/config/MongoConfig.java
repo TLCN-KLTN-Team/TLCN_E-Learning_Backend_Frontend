@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 /**
  * MongoDB configuration for custom converters
- * Note: Connection URI is configured via application.yml and environment variables
+ * Note: Connection URI is configured via application.dev.yml and environment variables
  */
 @Configuration
 public class MongoConfig {

@@ -2,9 +2,11 @@ package com.devteria.identity.service;
 
 import java.text.ParseException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import com.devteria.identity.entity.AccountStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -128,11 +130,15 @@ public class AuthenticationService {
                 user = userRepository.findByEmail(userInfo.getEmail()).orElseGet(() -> {
                     User newUser = User.builder()
                             .email(userInfo.getEmail())
-                            .firstName(userInfo.getGivenName())
-                            .lastName(userInfo.getFamilyName())
+                            .username(userInfo.getEmail())
+                            .lastName(userInfo.getGivenName())
+                            .firstName(userInfo.getFamilyName())
                             .avatarUrl(userInfo.getPicture())
                             .isEmailVerified(true)
                             .role(Role.USER)
+                            .accountStatus(AccountStatus.ACTIVE)
+                            .createdAt(LocalDate.now())
+                            .updatedAt(LocalDate.now())
                             .build();
                     log.info("NEW USER: {}", newUser);
                     return userRepository.save(newUser);
@@ -160,6 +166,7 @@ public class AuthenticationService {
                             .avatarUrl(fbUserInfo.getPicture().getData().getUrl())
                             .role(Role.USER)
                             .isEmailVerified(true)
+                            .accountStatus(AccountStatus.ACTIVE)
                             .build();
                     return userRepository.save(newUser);
                 });
