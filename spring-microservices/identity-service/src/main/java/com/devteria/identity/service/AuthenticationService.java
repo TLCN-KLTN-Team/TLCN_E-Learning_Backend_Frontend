@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-import com.devteria.identity.entity.AccountStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.devteria.identity.dto.request.*;
 import com.devteria.identity.dto.response.*;
+import com.devteria.identity.entity.AccountStatus;
 import com.devteria.identity.entity.InvalidatedToken;
 import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
