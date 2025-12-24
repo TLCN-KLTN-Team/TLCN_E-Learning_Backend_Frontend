@@ -1,7 +1,3 @@
-
-# 🎓 NỀN TẢNG HỌC TẬP SỐ KẾT NỐI TRI THỨC VÀ THƯƠNG MẠI HÓA KHÓA HỌC "OPENEDU"
-
-=======
 # 🎓 NỀN TẢNG HỌC TẬP SỐ KẾT NỐI TRI THỨC VÀ THƯƠNG MẠI HÓA KHÓA HỌC "OPENEDU"
 
 Hệ thống nền tảng học tập trực tuyến toàn diện, được xây dựng dựa trên các công nghệ mới và kiến trúc Microservices hiện đại. Mục tiêu là cung cấp nền tảng cho phép học viên tiếp cận với đa dạng khóa học từ nhiều đơn vị giáo dục uy tín, cũng như sử dụng các tính năng có tính tương tác thời gian thực.
@@ -35,7 +31,6 @@ Hệ thống nền tảng học tập trực tuyến toàn diện, được xây
 
 E-Learning Platform là một hệ thống quản lý học tập (LMS - Learning Management System) đầy đủ tính năng, được thiết kế để phục vụ các tổ chức giáo dục, giảng viên, và học viên. Hệ thống cung cấp một nền tảng tích hợp hoàn chỉnh cho việc tạo, quản lý và tiêu thụ nội dung học tập trực tuyến.
 
-=======
 ### 📸 Screenshots
 
 ![Dashboard](/screenshots/image.png)
@@ -44,6 +39,7 @@ E-Learning Platform là một hệ thống quản lý học tập (LMS - Learnin
 ![Dashboard](/screenshots/image-4.png)
 ![Dashboard](/screenshots/image-3.png)
 
+> Chức năng Chat Realtime cho ứng dụng![alt text](/screenshots/chat-interface.png)
 ---
 
 ## 🎯 Tính năng chính
@@ -61,12 +57,6 @@ E-Learning Platform là một hệ thống quản lý học tập (LMS - Learnin
 ---
 
 ## 👥 Đối tượng người dùng
-=======
-- Và nhiều tính năng khác...
-
----
-
-## 👥 Đối tượng người dùng
 
 - **System Admin**: Quản lý toàn bộ hệ thống
 - **University**: Quản lý các tổ chức giáo dục
@@ -74,9 +64,6 @@ E-Learning Platform là một hệ thống quản lý học tập (LMS - Learnin
 - **User**: Người dùng có thể mua và truy cập khóa học
 - **Student**: Học viên theo dõi tiến độ và hoàn thành khóa học
 
----
-
-=======
 ---
 
 ## 🏗️ Kiến trúc hệ thống
@@ -107,9 +94,6 @@ Dự án được chia thành 2 phần chính:
 
 📖 **[Xem chi tiết Backend README](./spring-microservices/README.md)**
 
----
-
-=======
 ---
 
 ## 🚀 Quick Start
@@ -151,8 +135,6 @@ npm run dev
 Truy cập ứng dụng tại: `http://localhost:5173`
 
 ---
-=======
----
 
 ## 🛠️ Tech Stack
 
@@ -164,8 +146,6 @@ Truy cập ứng dụng tại: `http://localhost:5173`
 - TinyMCE, Recharts
 - WebSocket (STOMP.js)
 - Use VSCode with recommended extensions for best experience
-=======
-- Use VSCode with recommended extensions for best experience
 
 ### Backend
 
@@ -174,10 +154,6 @@ Truy cập ứng dụng tại: `http://localhost:5173`
 - MySQL, MongoDB, Redis
 - Kafka, Elasticsearch
 - Docker, Docker Compose
-- Use IntelliJ IDEA with recommended plugins for best experience
-
----
-=======
 - Use IntelliJ IDEA with recommended plugins for best experience
 
 ---
@@ -207,9 +183,6 @@ TLCN_E-Learning/
 
 ---
 
-=======
----
-
 ## 🔐 Bảo mật
 
 - JWT-based authentication
@@ -219,14 +192,6 @@ TLCN_E-Learning/
 - CORS configuration
 - Rate limiting via API Gateway
 
----
-
-## 🤝 Đóng góp
-
-Dự án này là một phần của Đồ án Tốt nghiệp (TLCN+KLTN). Mọi đóng góp và góp ý xin vui lòng liên hệ với team phát triển.
-
----
-=======
 ---
 
 ## 🤝 Đóng góp
@@ -244,13 +209,7 @@ Dự án này là một phần của Đồ án Tốt nghiệp (TLCN+KLTN). Mọi
 ## 📞 Liên hệ
 
 > Liên hệ qua email: [hieu01bdvn@gmail.com]
-=======
----
-
-## 📞 Liên hệ
-
-> Liên hệ qua email: [hieu01bdvn@gmail.com]
 
 ---
 
-**Built with ❤️ by TLCN Team**
+**Built with ❤️ by Hiếu & Hiệp Team**

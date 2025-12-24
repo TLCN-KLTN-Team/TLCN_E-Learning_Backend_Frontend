@@ -4,11 +4,13 @@ import com.paypal.core.PayPalEnvironment;
 import com.paypal.core.PayPalHttpClient;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @Getter
+@ConfigurationProperties(prefix = "paypal")
 public class PaypalConfig {
     @Value("${paypal.client.id}")
     private String clientId;

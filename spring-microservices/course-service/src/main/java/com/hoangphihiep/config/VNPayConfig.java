@@ -2,9 +2,11 @@ package com.hoangphihiep.config;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConfigurationProperties(prefix = "vnpay")
 @Data
 public class VNPayConfig {
     @Value("${vnpay.tmnCode}")

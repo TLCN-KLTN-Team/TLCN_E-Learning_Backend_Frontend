@@ -131,6 +131,7 @@ public class OrderService {
     public boolean checkCoursePurchased(Integer publishedCourseId) {
         List<Order> ordersOfUser = this.getOrdersByUserId();
         List<Integer> orderIds = ordersOfUser.stream()
+                .filter(order -> order.getOrderStatus().equals(OrderStatus.COMPLETED))
                 .map(Order::getId)
                 .toList();
         List<OrderItem> orderItems = new ArrayList<>();
