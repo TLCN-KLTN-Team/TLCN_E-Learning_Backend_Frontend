@@ -77,11 +77,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         return this.toChatMessageResponse(message);
     }
 
-    private boolean isImage(MultipartFile file) {
-        String contentType = file.getContentType();
-        return contentType!=null && contentType.contains("image/");
-    }
-
 //    private boolean isFile(MultipartFile file) {
 //        String contentType = file.getContentType();
 //    }

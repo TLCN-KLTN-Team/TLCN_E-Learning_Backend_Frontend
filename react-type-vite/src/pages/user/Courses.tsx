@@ -20,12 +20,14 @@ import type {
   CompletionSuggestionResponse,
   Filters,
   PublishedCourseResponse,
+  CourseType,
 } from "../../types/course.types";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 import { toast } from "react-toastify";
 
 import PublishedCourseService from "@/services/api/anonymous/course.api";
+import { CourseApiService } from "@/services/api/user/courseApi";
 
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -64,7 +66,7 @@ const Course: React.FC = () => {
     minRating: parseInt(searchParams.get("minRating") || "0"),
     levels: searchParams.getAll("levels"),
     practiceType: searchParams.get("practiceType") || "",
-    categories: searchParams.getAll("categories"),
+    category: searchParams.get("category") || "",
     duration: [],
     sort: "",
   });
@@ -72,6 +74,9 @@ const Course: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState(getInitialSearchTerm);
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const debouncedSearchTerm = useDebounce(searchTerm, 10000000);
+
+  // Course types state
+  const [courseTypes, setCourseTypes] = useState<CourseType[]>([]);
 
   // Pagination and data state
   const [courses, setCourses] = useState<PublishedCourseResponse[]>([]);
@@ -108,9 +113,9 @@ const Course: React.FC = () => {
       params.set("minRating", newFilters.minRating.toString());
     }
     newFilters.levels.forEach((level) => params.append("levels", level));
-    newFilters.categories.forEach((category) =>
-      params.append("categories", category)
-    );
+    if (newFilters.category) {
+      params.set("category", newFilters.category);
+    }
     if (newFilters.practiceType) {
       params.set("practiceType", newFilters.practiceType);
     }
@@ -137,7 +142,7 @@ const Course: React.FC = () => {
           filters.minRating > 0 ? filters.minRating : undefined,
           filters.practiceType || undefined,
           filters.levels.length > 0 ? filters.levels : undefined,
-          filters.categories.length > 0 ? filters.categories : undefined,
+          filters.category || undefined,
           filters.sort || undefined
         );
       console.log("Filters applied:", filters);
@@ -165,14 +170,30 @@ const Course: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // // Load categories on component mount
+  // Load course types on component mount
+  useEffect(() => {
+    const loadCourseTypes = async () => {
+      try {
+        const fetchedCourseTypes = await CourseApiService.getCourseTypes();
+        setCourseTypes(fetchedCourseTypes);
+        console.log("Fetched course types:", fetchedCourseTypes);
+      } catch (error) {
+        console.error("Error fetching course types:", error);
+        setCourseTypes([]);
+      }
+    };
+
+    loadCourseTypes();
+  }, []);
+
+  // // Load category on component mount
   // useEffect(() => {
   //   const loadCategories = async () => {
   //     try {
   //       const fetchedCategories = await CourseApiService.getCategories();
   //       setCategories(fetchedCategories);
   //     } catch (error) {
-  //       console.error("Error fetching categories:", error);
+  //       console.error("Error fetching category:", error);
   //       setCategories([]);
   //     }
   //   };
@@ -231,7 +252,7 @@ const Course: React.FC = () => {
       minRating: 0,
       levels: [],
       practiceType: "",
-      categories: [],
+      category: "",
       duration: [],
       sort: "",
     };
@@ -490,35 +511,20 @@ const Course: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Loại khóa học */}
-                <div className="space-y-3 mb-6">
-                  <h3 className="font-medium">Loại khóa học</h3>
-                  <div className="space-y-2">
-                    {[
-                      "Tất cả ngành",
-                      "Công nghệ thông tin",
-                      "Điện - Điện tử",
-                      "Cơ khí",
-                      "Kinh tế",
-                      "Kiến trúc",
-                    ].map((category) => (
-                      <label
-                        key={category}
-                        className="flex items-center space-x-2 cursor-pointer"
-                      >
+                {/* Lĩnh vực */}
+                {courseTypes.length > 0 && (
+                  <div className="space-y-3 mb-6">
+                    <h3 className="font-medium">Lĩnh vực</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center space-x-2 cursor-pointer">
                         <input
                           type="radio"
-                          name="category"
-                          checked={
-                            category === "Tất cả ngành"
-                              ? filters.categories.length === 0
-                              : filters.categories.includes(category)
-                          }
+                          name="courseType"
+                          checked={!filters.category}
                           onChange={() => {
                             const newFilters = {
                               ...filters,
-                              categories:
-                                category === "Tất cả ngành" ? [] : [category],
+                              category: "",
                             };
                             setFilters(newFilters);
                             updateUrlParams(searchTerm, newFilters, 0);
@@ -526,11 +532,38 @@ const Course: React.FC = () => {
                           }}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-sm">{category}</span>
+                        <span className="text-sm">Tất cả lĩnh vực</span>
                       </label>
-                    ))}
+                      {courseTypes.map((courseType) => (
+                        <label
+                          key={courseType.id}
+                          className="flex items-center space-x-2 cursor-pointer"
+                        >
+                          <input
+                            type="radio"
+                            name="courseType"
+                            checked={
+                              filters.category === courseType.courseTypeName
+                            }
+                            onChange={() => {
+                              const newFilters = {
+                                ...filters,
+                                category: courseType.courseTypeName,
+                              };
+                              setFilters(newFilters);
+                              updateUrlParams(searchTerm, newFilters, 0);
+                              setCurrentPage(0);
+                            }}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-sm">
+                            {courseType.courseTypeName}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Đánh giá */}
                 <div className="space-y-3 mb-6">

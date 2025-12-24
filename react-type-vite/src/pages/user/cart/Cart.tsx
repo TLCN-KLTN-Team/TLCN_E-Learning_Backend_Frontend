@@ -112,7 +112,7 @@ const Cart = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
 
-        <main className="pt-24 pb-12 container">
+        <main className="pt-24 pb-12 px-4 max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
             Giỏ hàng
           </h1>
@@ -122,7 +122,7 @@ const Cart = () => {
             <div className="lg:col-span-2 space-y-8">
               {/* Cart Section */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   {cartData?.cartCourses.length || 0} khóa học trong giỏ hàng
                 </h2>
 
@@ -180,11 +180,8 @@ const Cart = () => {
                               </button>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold text-gray-900 dark:text-white">
+                              <div className="text-lg font-bold text-blue-600">
                                 {course.currentPrice}
-                              </div>
-                              <div className="text-sm text-gray-400 line-through">
-                                {course.originalPrice}
                               </div>
                             </div>
                           </div>
@@ -221,9 +218,9 @@ const Cart = () => {
                             <Heart className="w-8 h-8 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
+                            <span className="font-semibold text-gray-900 mb-1 line-clamp-2">
                               {course.courseName}
-                            </h3>
+                            </span>
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                               Bởi {course.authorName}
                             </p>
@@ -277,11 +274,8 @@ const Cart = () => {
                               </button>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold text-gray-900 dark:text-white">
+                              <div className="text-lg font-bold text-blue-600">
                                 {course.currentPrice}
-                              </div>
-                              <div className="text-sm text-gray-400 line-through">
-                                {course.originalPrice}
                               </div>
                             </div>
                           </div>
@@ -308,24 +302,12 @@ const Cart = () => {
                 </h2>
 
                 <div className="space-y-3 mb-4">
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>Giá gốc:</span>
-                    <span className="font-medium">
-                      {cartData?.originalPrice || "0 ₫"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>Giảm giá:</span>
-                    <span className="font-medium text-red-500">
-                      -{cartData?.discountedPrice || "0 ₫"}
-                    </span>
-                  </div>
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
                     <div className="flex justify-between">
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-semibold text-gray-700 dark:text-gray-200">
                         Tổng:
                       </span>
-                      <span className="text-xl font-bold text-gray-900 dark:text-white">
+                      <span className="text-xl font-bold text-blue-600">
                         {cartData?.amount || "0 ₫"}
                       </span>
                     </div>

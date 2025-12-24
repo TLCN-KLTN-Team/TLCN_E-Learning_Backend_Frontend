@@ -30,6 +30,7 @@ const ParticipantsList = ({
       try {
         const data = await getMembersInChannel(channelId);
         setMembers(data);
+        console.log("Fetched channel members:", data);
       } catch (err) {
         console.error("Error fetching channel members:", err);
         const errorMessage = "Không thể tải danh sách thành viên.";
@@ -106,13 +107,25 @@ const ParticipantsList = ({
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-1">
-                      <span className="text-white text-sm font-medium truncate">
-                        {getFullName(participant)}
-                      </span>
+                      {participant.owner ? (
+                        <span className="text-yellow-400 text-sm font-semibold truncate">
+                          {getFullName(participant)}
+                        </span>
+                      ) : (
+                        <span className="text-white text-sm font-medium truncate">
+                          {getFullName(participant)}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-xs text-gray-400 truncate">
-                      <span>MSSV: {participant.id}</span>
-                    </div>
+                    {participant.owner ? (
+                      <div className="text-xs text-yellow-400/80 truncate">
+                        <span>Giáo viên</span>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-400 truncate">
+                        <span>MSSV: {participant.id}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Online Status - placeholder for future implementation */}

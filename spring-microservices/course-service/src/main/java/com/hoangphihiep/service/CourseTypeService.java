@@ -53,6 +53,18 @@ public class CourseTypeService {
                 .build();
     }
 
+    public List<CourseTypeResponse> getAllCourseTypesNonPaging(){
+        List<CourseType> courseTypes = courseTypeRepository.findAll(Sort.by("courseTypeName").ascending());
+        return courseTypes.stream()
+                .filter(ct -> !ct.isDeleted())
+                .map(ct -> {
+                    CourseTypeResponse response = courseTypeMapper.toCourseTypeResponse(ct);
+                    response.setNumberOfType(ct.getCourses().size());
+                    return response;
+                })
+                .toList();
+    }
+
     // Create new course type
     @Transactional
     public CourseTypeResponse createCourseType(CourseTypeRequest req){

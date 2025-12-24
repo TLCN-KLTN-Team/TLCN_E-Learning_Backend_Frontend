@@ -1,6 +1,7 @@
 import {
   type PublishedCourseDetailResponse,
   type PublishedCourseResponse,
+  type CourseType,
 } from "../../../types/course.types";
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
@@ -46,8 +47,6 @@ export class CourseApiService {
       this.isDataLoaded = false;
     }
   }
-
-  
 
   static async getCourses(
     page: number = 0,
@@ -133,20 +132,6 @@ export class CourseApiService {
       );
     } catch (error) {
       console.error("Error searching courses:", error);
-      return [];
-    }
-  }
-
-  static async getCategories(): Promise<string[]> {
-    try {
-      // Ensure data is loaded first
-      await this.ensureDataLoaded();
-
-      return [
-        ...new Set(this.publishedCourses.map((course) => course.category)),
-      ];
-    } catch (error) {
-      console.error("Error getting categories:", error);
       return [];
     }
   }
@@ -238,5 +223,17 @@ export class CourseApiService {
 
   static getPracticeTypes(): string[] {
     return ["All courses", "Hands-On only", "Theory only"];
+  }
+
+  static async getCourseTypes(): Promise<CourseType[]> {
+    try {
+      const response = await axiosInstance.get<ApiResponse<CourseType[]>>(
+        `${this.USER_COURSE_ENPOINT}/types`
+      );
+      return response.data.result || [];
+    } catch (error) {
+      console.error("Error fetching course types:", error);
+      return [];
+    }
   }
 }

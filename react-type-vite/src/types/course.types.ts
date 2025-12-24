@@ -1,4 +1,9 @@
 // --- Course Types ---
+export interface CourseType {
+  id: number;
+  courseTypeName: string;
+}
+
 export interface PublishedCourseResponse {
   id: string;
   courseName: string;
@@ -145,7 +150,7 @@ export interface Filters {
   minRating: number;
   levels: string[];
   practiceType: string;
-  categories: string[];
+  category?: string;
   duration: string[];
   sort: string;
 }

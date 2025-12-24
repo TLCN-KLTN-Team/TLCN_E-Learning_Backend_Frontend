@@ -26,13 +26,10 @@ public class WebClientConfiguration {
     CorsWebFilter corsWebFilter(){
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-        // ✅ Cấu hình chi tiết (giữ lại phần này)
         corsConfiguration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "https://openedu-six.vercel.app",
-                "https://yourdomain.com",
-                "https://*.yourdomain.com"
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://openedu-six.vercel.app"
         ));
 
         corsConfiguration.setAllowedMethods(Arrays.asList(

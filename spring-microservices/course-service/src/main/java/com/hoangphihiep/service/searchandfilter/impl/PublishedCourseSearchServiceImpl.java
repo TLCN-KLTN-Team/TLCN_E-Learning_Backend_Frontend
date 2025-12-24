@@ -30,6 +30,8 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,8 +59,13 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
                 .price(course.getCoursePrice())
                 .category(course.getCourseType().getCourseTypeName())
                 .level(null) // TODO: Add level field to PublishedCourse entity if needed
+                .instructor(course.getAuthorName())
                 .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
                 .studentsCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
+                .createdAt(course.getCreatedAt() != null ? 
+                        course.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null)
+                .updatedAt(course.getUpdatedAt() != null ? 
+                        course.getUpdatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null)
                 .build();
     }
 
@@ -69,27 +76,90 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
     private BoolQuery.Builder buildBoolQueryWhenHaveKeywordAndFilters(SearchFiltersRequest request, boolean hasKeyword) {
         BoolQuery.Builder boolQueryBuilder = QueryBuilders.bool();
 
-        // Add keyword search to must clause if present
+        // Add keyword search to must clause if present with improved multi-tier matching
         if (hasKeyword) {
-            Query multiMatchQuery = QueryBuilders
-                    .multiMatch()
-                    .query(request.getKeyword().trim())
-                    .fields("courseName^3", "description^2", "courseIntroduction")
-                    .fuzziness("AUTO")
-                    .prefixLength(2)
+            String trimmedKeyword = request.getKeyword().trim();
+            
+            // Tạo DisMax query với nhiều strategies khác nhau
+            BoolQuery.Builder keywordBoolQuery = QueryBuilders.bool();
+            
+            // 1. Exact match với trọng số cao nhất (courseName.keyword)
+            Query exactMatchQuery = QueryBuilders
+                    .term()
+                    .field("courseName.keyword")
+                    .value(trimmedKeyword)
+                    .boost(10.0f) // Trọng số rất cao cho exact match
                     .build()._toQuery();
-            boolQueryBuilder.must(multiMatchQuery);
+            keywordBoolQuery.should(exactMatchQuery);
+            
+            // 2. Phrase match - tìm cụm từ chính xác (courseName, description)
+            Query phraseMatchCourseName = QueryBuilders
+                    .matchPhrase()
+                    .field("courseName")
+                    .query(trimmedKeyword)
+                    .boost(8.0f) // Trọng số cao cho phrase match
+                    .build()._toQuery();
+            keywordBoolQuery.should(phraseMatchCourseName);
+            
+            Query phraseMatchCategory = QueryBuilders
+                    .matchPhrase()
+                    .field("category")
+                    .query(trimmedKeyword)
+                    .boost(7.0f)
+                    .build()._toQuery();
+            keywordBoolQuery.should(phraseMatchCategory);
+            
+            Query phraseMatchDescription = QueryBuilders
+                    .matchPhrase()
+                    .field("description")
+                    .query(trimmedKeyword)
+                    .boost(5.0f)
+                    .build()._toQuery();
+            keywordBoolQuery.should(phraseMatchDescription);
+            
+            // 3. Match query - tìm từng từ riêng lẻ với operator AND
+            Query matchQueryCourseName = QueryBuilders
+                    .match()
+                    .field("courseName")
+                    .query(trimmedKeyword)
+                    .operator(Operator.And) // Phải chứa TẤT CẢ các từ
+                    .boost(6.0f)
+                    .build()._toQuery();
+            keywordBoolQuery.should(matchQueryCourseName);
+            
+            Query matchQueryCategory = QueryBuilders
+                    .match()
+                    .field("category")
+                    .query(trimmedKeyword)
+                    .operator(Operator.And)
+                    .boost(5.0f)
+                    .build()._toQuery();
+            keywordBoolQuery.should(matchQueryCategory);
+            
+            // 4. Multi-match với fuzzy (tìm gần đúng) - trọng số thấp nhất
+            Query fuzzyMultiMatch = QueryBuilders
+                    .multiMatch()
+                    .query(trimmedKeyword)
+                    .fields("courseName^3", "category^2.5", "description^1.5", "courseIntroduction^1", "instructor^2")
+                    .fuzziness("AUTO")
+                    .prefixLength(3) // Tăng prefix length để giảm kết quả không liên quan
+                    .maxExpansions(10) // Giới hạn số expansions
+                    .operator(Operator.Or)
+                    .boost(2.0f) // Trọng số thấp cho fuzzy
+                    .build()._toQuery();
+            keywordBoolQuery.should(fuzzyMultiMatch);
+            
+            // Yêu cầu ít nhất 1 trong các should clause phải match
+            keywordBoolQuery.minimumShouldMatch("1");
+            
+            boolQueryBuilder.must(keywordBoolQuery.build()._toQuery());
         }
 
         // Build category filter
-        if (request.getCategories() != null && !request.getCategories().isEmpty()) {
-            List<FieldValue> categoryValues = request.getCategories().stream()
-                    .map(FieldValue::of)
-                    .collect(Collectors.toList());
-
-            Query categoryFilter = QueryBuilders.terms()
-                    .field("category")
-                    .terms(t -> t.value(categoryValues))
+        if (request.getCategory() != null && !request.getCategory().trim().isEmpty()) {
+            Query categoryFilter = QueryBuilders.term()
+                    .field("category.keyword") // Sử dụng .keyword cho exact filtering
+                    .value(request.getCategory().trim())
                     .build()._toQuery();
             boolQueryBuilder.filter(categoryFilter);
         }
@@ -168,7 +238,7 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
 
         Query finalQuery;
         boolean hasKeyword = request.getKeyword() != null && !request.getKeyword().trim().isEmpty();
-        boolean hasFilters = (request.getCategories() != null && !request.getCategories().isEmpty()) ||
+        boolean hasFilters = (request.getCategory() != null && !request.getCategory().trim().isEmpty()) ||
                 (request.getMinPrice() != null || request.getMaxPrice() != null) ||
                 (request.getLevels() != null && !request.getLevels().isEmpty()) ||
                 (request.getMinRating() != null);
@@ -177,18 +247,59 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
             // No search criteria - return all documents
             finalQuery = QueryBuilders.matchAll().build()._toQuery();
         } else if (hasKeyword && !hasFilters) {
-            // Only keyword search - no need for bool query
-            finalQuery = QueryBuilders
-                    .multiMatch()
-                    .query(request.getKeyword().trim())
-                    .fields("courseName^3", "description^2", "courseIntroduction")
-                    .fuzziness("AUTO")
-                    .prefixLength(2)
+            // Only keyword search - use improved multi-tier search
+            String trimmedKeyword = request.getKeyword().trim();
+            BoolQuery.Builder keywordBoolQuery = QueryBuilders.bool();
+            
+            // 1. Exact match
+            Query exactMatch = QueryBuilders
+                    .term()
+                    .field("courseName.keyword")
+                    .value(trimmedKeyword)
+                    .boost(10.0f)
                     .build()._toQuery();
+            keywordBoolQuery.should(exactMatch);
+            
+            // 2. Phrase matches
+            keywordBoolQuery.should(QueryBuilders
+                    .matchPhrase()
+                    .field("courseName")
+                    .query(trimmedKeyword)
+                    .boost(8.0f)
+                    .build()._toQuery());
+            
+            keywordBoolQuery.should(QueryBuilders
+                    .matchPhrase()
+                    .field("category")
+                    .query(trimmedKeyword)
+                    .boost(7.0f)
+                    .build()._toQuery());
+            
+            // 3. Match with AND operator
+            keywordBoolQuery.should(QueryBuilders
+                    .match()
+                    .field("courseName")
+                    .query(trimmedKeyword)
+                    .operator(Operator.And)
+                    .boost(6.0f)
+                    .build()._toQuery());
+            
+            // 4. Fuzzy multi-match
+            keywordBoolQuery.should(QueryBuilders
+                    .multiMatch()
+                    .query(trimmedKeyword)
+                    .fields("courseName^3", "category^2.5", "description^1.5", "courseIntroduction^1", "instructor^2")
+                    .fuzziness("AUTO")
+                    .prefixLength(3)
+                    .maxExpansions(10)
+                    .boost(2.0f)
+                    .build()._toQuery());
+            
+            keywordBoolQuery.minimumShouldMatch("1");
+            finalQuery = keywordBoolQuery.build()._toQuery();
         } else {
             // Build bool query with filters and optional keyword
             BoolQuery.Builder boolQueryBuilder = this.buildBoolQueryWhenHaveKeywordAndFilters(request, hasKeyword);
-
             finalQuery = boolQueryBuilder.build()._toQuery();
         }
 
@@ -198,6 +309,10 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
             sortOptions = this.buildSortOptions(request.getSortBy());
         } else {
             sortOptions = new ArrayList<>();
+            // Thêm sort mặc định theo relevance score nếu có keyword
+            if (hasKeyword) {
+                sortOptions.add(SortOptions.of(s -> s.score(sc -> sc.order(SortOrder.Desc))));
+            }
         }
 
         // Build search request with pagination
@@ -226,7 +341,8 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
         assert response.hits().total() != null;
         long totalHits = response.hits().total().value();
         int totalPages = (int) Math.ceil((double) totalHits / request.getSize());
-        log.debug("Search completed. Total hits: {}", response.hits().total().value());
+        log.debug("Search completed. Total hits: {}, Max score: {}", totalHits, 
+                response.hits().maxScore());
 
         List<PublishedCourse> publishedCourses = response.hits().hits()
                 .stream()

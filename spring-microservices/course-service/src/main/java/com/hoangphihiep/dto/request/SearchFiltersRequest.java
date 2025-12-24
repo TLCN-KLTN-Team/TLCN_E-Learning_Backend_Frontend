@@ -13,7 +13,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SearchFiltersRequest {
     String keyword;
-    List<String> categories;
+    String category;
     List<String> levels;
     BigDecimal minPrice;
     BigDecimal maxPrice;

@@ -2,6 +2,7 @@ package com.hoangphihiep.controller;
 
 import com.hoangphihiep.dto.request.SearchFiltersRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.service.CourseTypeService;
 import com.hoangphihiep.service.UserPublishedCourseService;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
 import com.hoangphihiep.utils.ElasticSearchIndexInitializer;
@@ -21,6 +22,7 @@ public class PublicCourseController {
     private final UserPublishedCourseService userPublishedCourseService;
     private final PublishedCourseSearchService publishedCourseSearchService;
     private final ElasticSearchIndexInitializer elasticSearchIndexInitializer;
+    private final CourseTypeService courseTypeService;
 
     // some apis get data here
     // get courses suggest for user
@@ -31,6 +33,14 @@ public class PublicCourseController {
 
     // get positive review from user
 
+    @GetMapping("/types")
+    public ApiResponse<?> getCourseTypes() {
+        var response = courseTypeService.getAllCourseTypesNonPaging();
+        return ApiResponse.success(
+                response,
+                "Load course types successfully"
+        );
+    }
 
     @GetMapping("/{courseId}")
     public ApiResponse<?> getPublishedCourseById(@PathVariable Integer courseId) {
@@ -49,13 +59,13 @@ public class PublicCourseController {
                                                  @RequestParam(required = false) Double minRating,
                                                  @RequestParam(required = false) List<String> levels,
                                                  @RequestParam(required = false) String practiceType,
-                                                 @RequestParam(required = false) List<String> categories,
+                                                 @RequestParam(required = false) String category,
                                                  @RequestParam(defaultValue = "popular") String sort
     ) throws IOException {
         // builde request
         SearchFiltersRequest request = SearchFiltersRequest.builder()
                 .keyword(keyword == null ? "" : keyword)
-                .categories(categories)
+                .category(category)
                 .minPrice(minPrice)
                 .maxPrice(maxPrice)
                 .minRating(minRating)
