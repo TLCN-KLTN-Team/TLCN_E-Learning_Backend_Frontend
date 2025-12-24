@@ -90,9 +90,29 @@ public class ChannelServiceImpl implements ChannelService {
 
         generalChannelForSection.addMembers(event.getStudentIds());
 
+        // add into all channels which belong to this general section
+        Section generalSection = sectionRepository.findAll()
+                .stream()
+                .filter(s -> s.isGeneral() && s.isPublic())
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
+        this.addParticipantsIntoChannelsFromGeneralSection(event.getStudentIds(), generalSection);
+
         var savedChannelData = channelRepository.save(generalChannelForSection);
         workspace.addParticipants(savedChannelData.getMemberIds());
         workspaceRepository.save(workspace);
+    }
+
+    private void addParticipantsIntoChannelsFromGeneralSection(List<String> newParticipantIds, Section section) {
+        List<Channel> channelsInSection = section.getChannelIds().stream()
+                .map(channelId -> channelRepository.findById(channelId)
+                        .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL)))
+                .toList();
+
+        for (Channel channel : channelsInSection) {
+            channel.addMembers(newParticipantIds);
+            channelRepository.save(channel);
+        }
     }
 
     public Channel createGeneralChannel(String sectionId, List<String> members, Workspace workspace) {
@@ -251,7 +271,7 @@ public class ChannelServiceImpl implements ChannelService {
                     .firstName(ownerInfo.getFirstName())
                     .lastName(ownerInfo.getLastName())
                     .build());
-            var res = studentResponses.stream()
+            return studentResponses.stream()
                     .map(studentResponse -> {
                         boolean isOwner = workspace.getOwnerId().equals(studentResponse.getStudentId());
                         return UserResponse.builder()
@@ -261,12 +281,16 @@ public class ChannelServiceImpl implements ChannelService {
                                 .avatarUrl(studentResponse.getAvatarUrl())
                                 .isOwner(isOwner)
                                 .build();
-                    }).toList();
-            return res;
+                    })
+                    .sorted((u1, u2) -> {
+                        if (u1.isOwner() && !u2.isOwner()) return -1;
+                        if (!u1.isOwner() && u2.isOwner()) return 1;
+                        return 0;
+                    })
+                    .toList();
         } catch (Exception e) {
             throw new AppException(ErrorCode.GET_USER_PROFILE_FAILED);
         }
-
     }
 
     @Override

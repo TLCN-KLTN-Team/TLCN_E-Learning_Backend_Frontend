@@ -31,14 +31,32 @@ const MessageInput = ({
   const [newMessage, setNewMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isMultiline, setIsMultiline] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  // Auto-resize textarea
+  const handleTextareaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const textarea = e.target;
+    setNewMessage(textarea.value);
+
+    // Reset height to auto to get correct scrollHeight
+    textarea.style.height = "auto";
+    // Set height based on scrollHeight, with max height limit
+    const maxHeight = 200; // Maximum height in pixels
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+
+    // Check if multiline (height > minimum single line height)
+    setIsMultiline(newHeight > 48);
   };
 
   const uploadFilesForMessage = async () => {
@@ -92,6 +110,12 @@ const MessageInput = ({
       // Clear input and files after successful operation
       setNewMessage("");
       setSelectedFiles([]);
+      setIsMultiline(false);
+
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
 
       console.log("✅ Operation completed successfully");
     } catch (error) {
@@ -205,27 +229,39 @@ const MessageInput = ({
       )}
 
       {/* Message input */}
-      <div className="relative">
-        <PlusCircle className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-white" />
-        <input
-          type="text"
+      <div className="flex items-start gap-2 bg-gray-700 rounded-lg p-3">
+        {/* Left icon */}
+        <div className={`flex-shrink-0 ${isMultiline ? "pt-0.5" : ""}`}>
+          <PlusCircle className="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" />
+        </div>
+
+        {/* Textarea */}
+        <textarea
+          ref={textareaRef}
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
+          onChange={handleTextareaChange}
           onKeyPress={handleKeyPress}
           placeholder={`Message #${selectedChannel.channelName}`}
           disabled={!isConnected}
-          className="w-full px-12 py-3 bg-gray-700 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          rows={1}
+          className="flex-1 bg-transparent text-white placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed resize-none overflow-y-auto min-h-[24px] max-h-[176px] outline-none border-none focus:outline-none focus:ring-0"
         />
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+
+        {/* Right icons */}
+        <div
+          className={`flex-shrink-0 flex items-center gap-2 ${
+            isMultiline ? "pt-0.5" : ""
+          }`}
+        >
           <button
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white transition-colors"
             title="GIF"
             disabled={!isConnected}
           >
             <Gift className="w-5 h-5" />
           </button>
           <button
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white transition-colors"
             title="Emoji"
             disabled={!isConnected}
           >
@@ -233,7 +269,7 @@ const MessageInput = ({
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="text-gray-400 hover:text-white disabled:opacity-50"
+            className="text-gray-400 hover:text-white disabled:opacity-50 transition-colors"
             title="Upload file"
             disabled={!isConnected || isUploading}
           >
@@ -241,7 +277,7 @@ const MessageInput = ({
           </button>
           <button
             onClick={() => imageInputRef.current?.click()}
-            className="text-gray-400 hover:text-white disabled:opacity-50"
+            className="text-gray-400 hover:text-white disabled:opacity-50 transition-colors"
             title="Upload image"
             disabled={!isConnected || isUploading}
           >

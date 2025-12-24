@@ -17,6 +17,7 @@ export interface UserResponse {
   lastName: string;
   mssv: string;
   avatarUrl?: string | null;
+  owner: boolean;
 }
 
 export interface UserChatInfo {
@@ -39,6 +40,7 @@ export interface Participant {
   firstName?: string | null;
   lastName?: string | null;
   avatarUrl?: string | null;
+  owner?: boolean;
 }
 
 export interface WorkspaceResponse {

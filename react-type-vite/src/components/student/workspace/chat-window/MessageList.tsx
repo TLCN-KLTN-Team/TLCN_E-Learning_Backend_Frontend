@@ -117,8 +117,6 @@ const MessageList = ({
   ): boolean => {
     if (!previousMessage) return false;
 
-    console.log("Comparing messages:", { currentMessage, previousMessage });
-
     const isSameSender = currentMessage.sender.id === previousMessage.sender.id;
     const timeDifference =
       new Date(currentMessage.createdDate).getTime() -

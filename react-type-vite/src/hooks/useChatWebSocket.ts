@@ -48,7 +48,7 @@ export const useChatWebSocket = () => {
     }
 
     // Correct WebSocket URL for Spring Boot STOMP
-    const sock = new SockJS(import.meta.env.VITE_SOCKET_URL_DEPLOYMENT);
+    const sock = new SockJS(import.meta.env.VITE_SOCKET_URL);
 
     const stompClient = new Client({
       webSocketFactory: () => sock,

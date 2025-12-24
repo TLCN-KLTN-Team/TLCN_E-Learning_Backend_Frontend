@@ -17,7 +17,7 @@ const searchAndFiltersPublishedCourses = async (
   minRating?: number,
   practiceType?: string,
   levels?: string[],
-  categories?: string[],
+  category?: string,
   sortBy?: string
 ): Promise<PaginatedResponse<PublishedCourseResponse>> => {
   // Build query params properly
@@ -41,8 +41,8 @@ const searchAndFiltersPublishedCourses = async (
   if (levels && levels.length > 0) {
     levels.forEach((level) => params.append("levels", level));
   }
-  if (categories && categories.length > 0) {
-    categories.forEach((category) => params.append("categories", category));
+  if (category) {
+    params.append("category", category);
   }
   if (practiceType != undefined) {
     params.append("practiceType", practiceType);

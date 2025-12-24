@@ -10,7 +10,9 @@ import org.springframework.data.elasticsearch.annotations.*;
 import org.springframework.data.elasticsearch.core.suggest.Completion;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Data
 @AllArgsConstructor
@@ -22,20 +24,35 @@ public class PublishedCourseDocument {
     @Field(type = FieldType.Keyword)
     private String id;
 
-    @Field(type = FieldType.Text) // analyzed for full-text search
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, analyzer = "standard"),
+            otherFields = {
+                    @InnerField(suffix = "keyword", type = FieldType.Keyword),
+                    @InnerField(suffix = "raw", type = FieldType.Text, analyzer = "keyword")
+            }
+    )
     private String courseName;
 
-    @Field(type = FieldType.Text)
+    @MultiField(
+            mainField = @Field(type = FieldType.Text),
+            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword)
+    )
     private String description;
 
     @Field(type = FieldType.Text)
     private String courseIntroduction;
 
-    @Field(type = FieldType.Keyword) // not analyzed. used for filtering
+    @MultiField(
+            mainField = @Field(type = FieldType.Text),
+            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword)
+    )
     private String category;
 
     @Field(type = FieldType.Keyword)
     private String level;
+
+    @Field(type = FieldType.Text)
+    private String instructor;
 
     @Field(type = FieldType.Double)
     private BigDecimal price;
@@ -48,6 +65,9 @@ public class PublishedCourseDocument {
 
     @Field(type = FieldType.Date)
     private LocalDate createdAt;
+
+    @Field(type = FieldType.Date)
+    private LocalDate updatedAt;
 
     /**
      * Dùng cho autocomplete tên khóa học
