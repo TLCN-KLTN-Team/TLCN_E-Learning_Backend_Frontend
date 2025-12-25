@@ -7,6 +7,7 @@ import type {
   ChatMessageRequest,
   ChatMessageResponse,
 } from "@/types/chat.types";
+import { toast } from "react-toastify";
 
 // Types for WebSocket communication
 export interface WebSocketError {
@@ -48,7 +49,7 @@ export const useChatWebSocket = () => {
     }
 
     // Correct WebSocket URL for Spring Boot STOMP
-    const sock = new SockJS(import.meta.env.VITE_SOCKET_URL);
+    const sock = new SockJS(`${import.meta.env.VITE_BASE_URL}/server/ws`);
 
     const stompClient = new Client({
       webSocketFactory: () => sock,
@@ -133,7 +134,6 @@ export const useChatWebSocket = () => {
         (message: IMessage) => {
           try {
             const chatMessage: ChatMessageResponse = JSON.parse(message.body);
-            console.log("Received public message:", chatMessage);
 
             // Set 'me' property based on current user
             chatMessage.me = user?.id === chatMessage.sender.id;
@@ -164,7 +164,6 @@ export const useChatWebSocket = () => {
   // Subscribe to direct messages - STABLE callback
   const subscribeToDirectMessages = useCallback(() => {
     if (!clientRef.current?.connected || !user?.username) {
-      console.error("WebSocket not connected or user not available");
       return () => {}; // Return stable function
     }
 
@@ -174,7 +173,6 @@ export const useChatWebSocket = () => {
       (message: IMessage) => {
         try {
           const chatMessage: ChatMessageResponse = JSON.parse(message.body);
-          console.log("Received direct message:", chatMessage);
 
           // Set 'me' property based on current user
           chatMessage.me = user?.id === chatMessage.sender.id;
@@ -185,6 +183,7 @@ export const useChatWebSocket = () => {
             return [...prev, chatMessage];
           });
         } catch (error) {
+          toast.error("Failed to parse direct message");
           console.error("Error parsing direct message:", error);
         }
       }
@@ -363,7 +362,6 @@ export const useChatWebSocket = () => {
       clientRef.current = null;
       setClient(null);
       setIsConnected(false);
-      console.log("🔌 WebSocket connection closed manually");
     }
   }, []);
 

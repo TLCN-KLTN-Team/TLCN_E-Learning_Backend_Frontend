@@ -113,12 +113,6 @@ public class AuthenticationService {
 
     // logic login and onboard user with social login
 
-    private String uploadAvatarToStorage() {
-        // Implement your logic to upload the avatar to your storage service
-        // and return the URL of the uploaded avatar.
-        return avatarUrl; // Placeholder implementation
-    }
-
     public AuthenticationResponse outboundAuthenticate(String code, String provider) {
         provider = provider.trim().toLowerCase();
         User user = null;
