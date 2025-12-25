@@ -10,6 +10,7 @@ import Courses from "@/pages/user/Courses";
 import CourseDetail from "@/pages/user/course/CourseDetail";
 import TeacherDetail from "@/pages/user/course/TeacherDetail";
 import DetailEducationalUnit from "@/pages/user/universitry/DetailEducationalUnit";
+import AboutUs from "@/pages/user/home/AboutUs";
 
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
@@ -35,6 +36,7 @@ const PublicRoutes = [
     path="/forgot-password"
     element={<ForgotPasswordPage />}
   />,
+  <Route key="about-us" path="/about-us" element={<AboutUs />} />,
   <Route key="contact" path="/contact" element={<Contact />} />,
   <Route
     key="education-unit-registration"

@@ -29,6 +29,7 @@ function AppContent() {
       "/register",
       "/forgot-password",
       "/verify-email",
+      "/about-us",
       "/contact",
       "/register-education-unit",
       "/courses",

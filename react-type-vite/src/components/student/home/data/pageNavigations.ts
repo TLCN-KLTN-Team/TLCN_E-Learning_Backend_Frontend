@@ -9,6 +9,6 @@ export const navigation = [
       { name: "Không gian học tập", href: "/student/workspace" },
     ],
   },
-  { name: "Về chúng tôi", href: "#about" },
+  { name: "Về chúng tôi", href: "/about-us" },
   { name: "Liên hệ", href: "/contact" },
 ];
