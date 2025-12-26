@@ -31,6 +31,7 @@ const SystemAdminRoutes = [
     <Route path="statistics" element={<SystemStatisticsPage />} />
     <Route path="profile" element={<SystemAdminProfilePage />} />
     <Route path="edit-profile" element={<SystemAdminProfilePage />} />
+    <Route path="info" element={<SystemAdminProfilePage />} />
   </Route>,
 ];
 

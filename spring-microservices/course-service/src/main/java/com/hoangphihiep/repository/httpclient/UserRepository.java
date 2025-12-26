@@ -20,4 +20,7 @@ public interface UserRepository {
     @GetMapping("/me")
     ApiResponse<UserResponse> getCurrentUser();
 
+    @GetMapping("/users/countUsers")
+    ApiResponse<Integer> countUsersByRole(@RequestParam("role") String role);
+
 }

@@ -1,8 +1,10 @@
 import type React from "react";
-import AdminProfilePage from "../../components/system-admin/AdminProfilePage";
+import ProfilePage from "@/components/shared/ProfilePage";
 
 const SystemAdminProfilePage: React.FC = () => {
-  return <AdminProfilePage />;
+  return (
+    <ProfilePage roleLabel="System Administrator" roleBadgeColor="green" />
+  );
 };
 
 export default SystemAdminProfilePage;

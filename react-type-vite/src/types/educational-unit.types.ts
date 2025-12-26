@@ -80,6 +80,7 @@ export interface EducationalUnitDetailResponse {
   representativeName?: string;
   representativeEmail?: string;
   representativePhone?: string;
+  departments: string[];
   teachers: EducationalUnitTeacher[];
   courses: EducationalUnitCourse[];
 }

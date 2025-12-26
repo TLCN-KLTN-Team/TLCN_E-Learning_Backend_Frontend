@@ -105,11 +105,6 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
         { name: "Giỏ hàng của tôi", icon: ShoppingCart, href: "/cart" },
         { name: "Danh sách yêu thích", icon: Heart, href: "/wishlist" },
         { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
-        {
-          name: "Bảng điều khiển của giảng viên",
-          icon: User,
-          href: "/instructor",
-        },
       ],
     },
     {

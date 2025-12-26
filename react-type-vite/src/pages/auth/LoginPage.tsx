@@ -137,7 +137,12 @@ const LoginPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    login(formData.username, formData.password)
+
+    // Trim username and password before submission
+    const trimmedUsername = formData.username.trim();
+    const trimmedPassword = formData.password.trim();
+
+    login(trimmedUsername, trimmedPassword)
       .then(() => {
         const auth = getAuthInfo();
         if (auth) {
@@ -158,7 +163,7 @@ const LoginPage = () => {
           errorMessage.includes("not verified")
         ) {
           // Lưu email và chuyển sang form OTP
-          setEmailToVerify(formData.username);
+          setEmailToVerify(trimmedUsername);
           setShowOtpVerification(true);
           // Tự động gửi lại OTP
           handleResendOtpFromLogin();

@@ -39,7 +39,7 @@ export function GeneralInfo({
                 <div>
                   <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
                     <GraduationCap className="w-5 h-5 text-blue-600" />
-                    Chuyên ngành mạnh
+                    Các khoa đào tạo
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {specializations.map((spec, index) => (
@@ -53,7 +53,7 @@ export function GeneralInfo({
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
                     <BookOpen className="w-5 h-5 text-blue-600" />
                     Hệ đào tạo
@@ -69,7 +69,7 @@ export function GeneralInfo({
                       </Badge>
                     ))}
                   </div>
-                </div>
+                </div> */}
               </div>
 
               {/* Right Column - Contact */}

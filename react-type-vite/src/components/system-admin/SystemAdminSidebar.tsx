@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { Link, useLocation } from "react-router-dom";
+import logo from "@/assets/open-edu-light.png";
 
 interface SystemAdminSidebarProps {
   isSidebarOpen: boolean;
@@ -94,13 +95,18 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
       >
         <div className="p-6">
           {/* Close button for mobile */}
-          <div className="flex items-center justify-between mb-8 lg:justify-start">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white font-bold mr-3">
-                S
-              </div>
-              <span className="text-xl font-bold">System Admin</span>
-            </div>
+          <div className="flex items-center justify-between mb-8">
+            <Link
+              to="/system-admin"
+              className="flex items-center max-w-[140px] lg:max-w-[180px]"
+              style={{ textDecoration: "none" }}
+            >
+              <img
+                src={logo}
+                alt="OpenEdu - E-Learning Platform"
+                className="h-6 lg:h-8 w-auto max-w-full object-contain"
+              />
+            </Link>
             <button
               onClick={() => setIsSidebarOpen(false)}
               className="lg:hidden p-1 text-gray-400 hover:text-white"

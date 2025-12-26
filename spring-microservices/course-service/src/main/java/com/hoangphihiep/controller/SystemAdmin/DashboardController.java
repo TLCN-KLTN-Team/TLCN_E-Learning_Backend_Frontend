@@ -3,6 +3,7 @@ package com.hoangphihiep.controller.SystemAdmin;
 import com.hoangphihiep.dto.request.DashboardFilterRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.DashboardResponse;
+import com.hoangphihiep.dto.response.UserDistributionResponse;
 import com.hoangphihiep.factory.DashboardFilterFactory;
 import com.hoangphihiep.service.DashboardService;
 import com.hoangphihiep.utils.EducationType;
@@ -91,6 +92,15 @@ public class DashboardController {
         return ApiResponse.success(
                 response,
                 "Dashboard statistics retrieved successfully"
+        );
+    }
+
+    @GetMapping("/distribution")
+    public ApiResponse<UserDistributionResponse> getUserDistribution() {
+        UserDistributionResponse distribution = dashboardService.getUserDistribution();
+        return ApiResponse.success(
+                distribution,
+                "User distribution retrieved successfully"
         );
     }
 

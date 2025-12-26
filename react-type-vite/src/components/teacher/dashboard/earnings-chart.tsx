@@ -136,7 +136,7 @@ const EarningsChart: React.FC = () => {
     for (let i = 0; i <= 5; i++) {
       const value = minValue + (valueRange / 5) * (5 - i)
       const y = padding + (chartHeight / 5) * i
-      ctx.fillText(`$${Math.round(value / 1000)}k`, padding - 10, y + 4)
+      ctx.fillText(`${Math.round(value / 1000)}k`, padding - 10, y + 4)
     }
   }, [revenue])
 
@@ -156,7 +156,7 @@ const EarningsChart: React.FC = () => {
               Current Month
             </span>
             <h4 className="text-3xl font-bold text-blue-600 my-2">
-              {loading ? "Loading..." : `$${(currentRevenue / 1000).toFixed(1)}k`}
+              {loading ? "Loading..." : `${(currentRevenue / 1000).toFixed(1)}k`}
             </h4>
             <p className="mb-0 text-sm">
               {!loading && (
@@ -174,7 +174,7 @@ const EarningsChart: React.FC = () => {
               Last Month
             </span>
             <h4 className="text-3xl font-bold my-2">
-              {loading ? "Loading..." : `$${(lastRevenue / 1000).toFixed(1)}k`}
+              {loading ? "Loading..." : `${(lastRevenue / 1000).toFixed(1)}k`}
             </h4>
             <p className="mb-0 text-sm">
               <span className="text-gray-600 font-medium inline-flex items-center mr-1">

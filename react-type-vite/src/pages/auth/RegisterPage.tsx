@@ -166,7 +166,7 @@ const RegisterPage = () => {
     e.preventDefault();
 
     // Validate all fields
-    const newErrors: FormErrors = { } as FormErrors;
+    const newErrors: FormErrors = {} as FormErrors;
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key as keyof RegisterData]);
       if (error) {
@@ -180,9 +180,20 @@ const RegisterPage = () => {
       navigate("/");
     }
 
-    // Step 1: Register user and send verification code
+    // Trim all text fields before submission
+    const trimmedData = {
+      ...formData,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName?.trim() || "",
+      email: formData.email.trim(),
+      phoneNumber: formData.phoneNumber.trim(),
+      password: formData.password.trim(),
+      confirmPassword: formData.confirmPassword.trim(),
+    };
+
+    // Step 2: Register user and send verification code
     setIsRegistering(true);
-    register(formData)
+    register(trimmedData)
       .then((email: string) => {
         setEmailToVerify(email);
         setCurrentStep("verify-account");

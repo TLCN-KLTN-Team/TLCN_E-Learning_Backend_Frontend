@@ -38,6 +38,9 @@ public interface StudentRepository {
     @GetMapping("/students/all-by-educationalUnit/{educationalUnitId}")
     ApiResponse<List<StudentResponse>> getAllStudentsByEducationalUnit(@PathVariable int educationalUnitId);
 
+    @GetMapping("/students/count-by-educational-unit/{educationalUnitId}")
+    ApiResponse<Long> countStudentsByEducationalUnit(@PathVariable Integer educationalUnitId);
+
     @PostMapping("/students/users-by-student-ids")
     ApiResponse<List<String>> getUsersByStudentIds(
             @RequestBody Map<String, List<String>> request

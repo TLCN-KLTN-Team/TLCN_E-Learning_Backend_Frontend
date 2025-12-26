@@ -6,6 +6,16 @@ import axiosInstance from "./httpClient/axiosInstance";
 import type { UserResponse } from "./response/userResponse";
 import type { ChangePasswordData } from "@/types/profile.types";
 
+export interface UserUpdateRequest {
+  firstName: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+  dob?: Date;
+  bio?: string;
+  avatar?: File;
+}
+
 export const getUsers = async (
   page: number = 0,
   size: number = 10,
@@ -60,12 +70,33 @@ export const changeUserStatus = async (
   return response.data.result;
 };
 
-const changePassword = async (request: ChangePasswordData): Promise<void> => {
+export const changePassword = async (
+  request: ChangePasswordData
+): Promise<void> => {
   const response = await axiosInstance.put<ApiResponse<void>>(
     "/identity/users/change-password",
     request
   );
   return response.data.result;
+};
+
+export const updateProfile = async (data: UserUpdateRequest): Promise<void> => {
+  await axiosInstance.put("/identity/users/update-profile", data);
+};
+
+export const updateAvatar = async (avatar: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", avatar);
+  const response = await axiosInstance.put<ApiResponse<string>>(
+    "/identity/users/update-avatar",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  return response.data.result; // Returns the URL of the uploaded image
 };
 
 export default {

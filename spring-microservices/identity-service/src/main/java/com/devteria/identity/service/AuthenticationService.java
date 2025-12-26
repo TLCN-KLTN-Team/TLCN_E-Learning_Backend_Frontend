@@ -180,8 +180,15 @@ public class AuthenticationService {
     }
     // end social login
 
+    private void trimAndNormalizeRequest(AuthenticationRequest request) {
+        request.setUsername(request.getUsername().trim());
+        request.setPassword(request.getPassword().trim());
+    }
+
     // logic authen & login with username, not social login
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws ParseException, JOSEException {
+        this.trimAndNormalizeRequest(request);
+
         var userByEmail = userRepository.findByEmail(request.getUsername()).orElse(null);
 
         var userByUsername =
@@ -194,9 +201,9 @@ public class AuthenticationService {
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS);
 
-        //        if (!user.isEmailVerified()) {
-        //            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
-        //        }
+        if (!user.isEmailVerified()) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+        }
 
         return getAuthorizationData(user);
     }

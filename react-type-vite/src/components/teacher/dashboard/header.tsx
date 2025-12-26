@@ -10,8 +10,6 @@ import {
   LogOut,
   UserCircle,
   CreditCard,
-  Globe,
-  HelpCircle,
   BellDot,
   BellRing,
 } from "lucide-react";
@@ -53,21 +51,20 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
       section: "Teacher",
       items: [
         { name: "Dashboard", icon: User, href: "/teacher/dashboard" },
-        { name: "User Management", icon: UserCircle, href: "/teacher/users" },
-        { name: "Course Management", icon: Settings, href: "/teacher/courses" },
+        { name: "Quản lý thông tin cá nhân", icon: UserCircle, href: "/teacher/info" },
       ],
     },
     {
       section: "Notifications",
       items: [
         {
-          name: "Notifications",
+          name: "Thông báo",
           icon: BellRing,
           href: "/teacher/notifications",
           badge: "New",
         },
         {
-          name: "Messages",
+          name: "Tin nhắn",
           icon: BellDot,
           href: "/teacher/messages",
           badge: "5",
@@ -89,18 +86,18 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
         },
       ],
     },
-    {
-      section: "Other",
-      items: [
-        {
-          name: "Language",
-          icon: Globe,
-          href: "/teacher/language",
-          badge: "English",
-        },
-        { name: "Help & Support", icon: HelpCircle, href: "/teacher/help" },
-      ],
-    },
+    // {
+    //   section: "Other",
+    //   items: [
+    //     {
+    //       name: "Language",
+    //       icon: Globe,
+    //       href: "/teacher/language",
+    //       badge: "English",
+    //     },
+    //     { name: "Help & Support", icon: HelpCircle, href: "/teacher/help" },
+    //   ],
+    // },
   ];
 
   // Generate avatar initials from firstName and lastName

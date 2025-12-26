@@ -5,6 +5,7 @@ import type {
   DashboardResponse,
   PeriodType,
   EducationType,
+  UserDistributionResponse,
 } from "@/types/dashboard.types";
 
 /**
@@ -103,6 +104,18 @@ class DashboardApiService {
     const response = await axiosInstance.get<ApiResponse<string>>(
       `${this.BASE_PATH}/health`
     );
+
+    return response.data.result;
+  }
+
+  /**
+   * Get user distribution by role
+   * @returns User distribution statistics
+   */
+  static async getUserDistribution(): Promise<UserDistributionResponse> {
+    const response = await axiosInstance.get<
+      ApiResponse<UserDistributionResponse>
+    >(`${this.BASE_PATH}/distribution`);
 
     return response.data.result;
   }

@@ -75,9 +75,11 @@ public class EducationalUnitService {
         EducationalUnit educationalUnit = educationalUnitRepository.findById(id).orElseThrow(
                 () -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND)
         );
+        long totalStudents = 0;
 
         List<TeacherResponse> teachers;
         try {
+            totalStudents = studentRepository.countStudentsByEducationalUnit(id).getResult();
             teachers = teacherRepository
                     .getTeachersByEducationalUnitNoPage(id).getResult();
         } catch (Exception e) {
@@ -96,7 +98,12 @@ public class EducationalUnitService {
                 .website(educationalUnit.getWebsite())
                 .description(educationalUnit.getDescription())
                 .establishedYear(educationalUnit.getEstablishedYear())
-                .totalStudents(1000)
+                .totalStudents(totalStudents)
+                .departments(educationalUnit.getDepartments()
+                        .stream()
+                        .map(Department::getName)
+                        .toList()
+                )
                 .teachers(teachers.stream()
                         .map(teacher -> {
                             Department department = departmentRepo.findById(Integer.parseInt(teacher.getDepartmentId()))
