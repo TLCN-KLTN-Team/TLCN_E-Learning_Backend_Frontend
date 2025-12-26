@@ -150,7 +150,7 @@ export function LecturersSection({
                     className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto"
                     onClick={() =>
                       window.open(
-                        `${import.meta.env.VITE_LOCALHOST_URL}/teacher/${lecturer.id}`,
+                        `${import.meta.env.VITE_APP_URL}/teacher/${lecturer.id}`,
                         "_blank"
                       )
                     }

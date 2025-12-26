@@ -12,7 +12,7 @@ import type { TeacherPublicStatisticsResponse } from "../../../services/api/teac
 
 const StatsCards: React.FC = () => {
   const { user } = useAuth()
-  const [revenue, setRevenue] = useState<TeacherRevenueResponse | null>(null)
+  const [, setRevenue] = useState<TeacherRevenueResponse | null>(null)
   const [stats, setStats] = useState<TeacherPublicStatisticsResponse | null>(null)
   const [loading, setLoading] = useState(true)
 

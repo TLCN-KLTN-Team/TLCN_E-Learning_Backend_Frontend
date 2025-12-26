@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState } from "react"
 import {
-  X,
   Upload,
   Link as LinkIcon,
   FileText,

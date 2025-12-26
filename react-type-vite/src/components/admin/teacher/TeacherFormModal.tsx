@@ -65,7 +65,6 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
         dob: editingTeacher.dob || "",
         departmentId: editingTeacher.departmentId || "",
         description: editingTeacher.description || "",
-        socialUrl: editingTeacher.socialUrl || "",
         bankAccountNumber: editingTeacher.bankAccountNumber || "",
       });
     } else if (isOpen && !editingTeacher) {
