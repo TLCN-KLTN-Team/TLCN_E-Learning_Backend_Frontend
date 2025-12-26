@@ -131,7 +131,7 @@ const StudentAssignmentsPage: React.FC = () => {
           </div>
 
           {/* Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -157,15 +157,6 @@ const StudentAssignmentsPage: React.FC = () => {
                   <h3 className="text-2xl font-bold text-card-foreground">{pendingCount}</h3>
                 </div>
                 <XCircle className="w-8 h-8 text-orange-500" />
-              </div>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Điểm TB</p>
-                  <h3 className="text-2xl font-bold text-card-foreground">{averageScore}</h3>
-                </div>
-                <Award className="w-8 h-8 text-purple-500" />
               </div>
             </div>
           </div>

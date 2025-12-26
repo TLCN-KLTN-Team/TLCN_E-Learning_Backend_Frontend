@@ -1,72 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, Eye, Clock, AlertCircle, Loader2, 
-  ArrowRight, CheckCircle, XCircle, Award, Users
-} from 'lucide-react';
-import * as quizGradingApi from '@/services/api/teacher/quizGradingApi';
-import type { QuizResultResponse } from '@/services/api/response/quizResultResponse';
-import type { QuizStatisticsResponse } from '@/services/api/response/quizStatisticsResponse';
-import { useSelectedClass } from '@/context/teacher/SelectedClassContext';
+"use client"
+
+import type React from "react"
+import { useState, useEffect } from "react"
+import { Search, Eye, Clock, AlertCircle, Loader2, ArrowRight, CheckCircle, XCircle, Award, Users } from "lucide-react"
+import * as quizGradingApi from "@/services/api/teacher/quizGradingApi"
+import type { QuizResultResponse } from "@/services/api/response/quizResultResponse"
+import type { QuizStatisticsResponse } from "@/services/api/response/quizStatisticsResponse"
+import { useSelectedClass } from "@/context/teacher/SelectedClassContext"
 
 interface ExamResultsViewProps {
-  courseId: number;
+  courseId?: number
 }
 
 const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
-  const { selectedClass } = useSelectedClass();
-  const [results, setResults] = useState<QuizResultResponse[]>([]);
-  const [statistics, setStatistics] = useState<QuizStatisticsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterQuiz, setFilterQuiz] = useState<string>('all');
-  const [selectedResult, setSelectedResult] = useState<QuizResultResponse | null>(null);
+  const { selectedClass } = useSelectedClass()
+  const [results, setResults] = useState<QuizResultResponse[]>([])
+  const [statistics, setStatistics] = useState<QuizStatisticsResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterQuiz, setFilterQuiz] = useState<string>("all")
+  const [selectedResult, setSelectedResult] = useState<QuizResultResponse | null>(null)
 
   useEffect(() => {
     if (!selectedClass) {
-      setResults([]);
-      setStatistics(null);
-      setError(null);
-      return;
+      setResults([])
+      setStatistics(null)
+      setError(null)
+      return
     }
-    fetchData();
-  }, [selectedClass]);
+    fetchData()
+  }, [selectedClass])
 
   const fetchData = async () => {
-    if (!selectedClass) return;
+    if (!selectedClass) return
 
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
       // Fetch results
-      const resultsData = await quizGradingApi.getQuizResultsForClass(selectedClass.id);
-      setResults(resultsData);
+      const resultsData = await quizGradingApi.getQuizResultsForClass(selectedClass.id)
+      setResults(resultsData)
 
       // Fetch statistics
-      const statsData = await quizGradingApi.getQuizStatistics(selectedClass.id);
-      setStatistics(statsData as any);
+      const statsData = await quizGradingApi.getQuizStatistics(selectedClass.id)
+      setStatistics(statsData)
     } catch (error: any) {
-      console.error('Error fetching data:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể tải dữ liệu';
-      setError(errorMessage);
+      console.error("Error fetching data:", error)
+      const errorMessage = error?.response?.data?.message || error?.message || "Không thể tải dữ liệu"
+      setError(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const filteredResults = results.filter((result) => {
     const matchesSearch =
       result.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.studentId?.includes(searchTerm) ||
-      result.quizTitle?.toLowerCase().includes(searchTerm.toLowerCase());
+      result.quizTitle?.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesFilter = filterQuiz === 'all' || result.quizTitle === filterQuiz;
+    const matchesFilter = filterQuiz === "all" || result.quizTitle === filterQuiz
 
-    return matchesSearch && matchesFilter;
-  });
+    return matchesSearch && matchesFilter
+  })
 
-  const quizzes = Array.from(new Set(results.map((r) => r.quizTitle)));
+  const quizzes = Array.from(new Set(results.map((r) => r.quizTitle)))
+
+  const calculateAveragePercentage = () => {
+    if (results.length === 0) return 0
+    const sum = results.reduce((acc, result) => acc + result.percentage, 0)
+    return sum / results.length
+  }
 
   if (!selectedClass) {
     return (
@@ -88,7 +94,7 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   if (loading) {
@@ -105,7 +111,7 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
           <p className="text-gray-600">Đang tải dữ liệu...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -121,15 +127,12 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
           <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
           <p className="text-red-600 mb-2">Có lỗi xảy ra</p>
           <p className="text-sm text-red-500 mb-4">{error}</p>
-          <button
-            onClick={fetchData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
+          <button onClick={fetchData} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             Thử lại
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -187,10 +190,8 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                 <Award className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Điểm TB</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {statistics.averagePercentage.toFixed(1)}%
-                </p>
+                <p className="text-sm text-gray-600">Phần Trăm TB</p>
+                <p className="text-2xl font-bold text-orange-600">{calculateAveragePercentage().toFixed(1)}%</p>
               </div>
             </div>
           </div>
@@ -230,8 +231,8 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
             <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">
               {results.length === 0
-                ? 'Chưa có kết quả kiểm tra nào trong lớp này'
-                : 'Không tìm thấy kết quả nào phù hợp với bộ lọc'}
+                ? "Chưa có kết quả kiểm tra nào trong lớp này"
+                : "Không tìm thấy kết quả nào phù hợp với bộ lọc"}
             </p>
           </div>
         ) : (
@@ -239,7 +240,7 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
             <div
               key={result.id}
               className={`bg-white border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${
-                selectedResult?.id === result.id ? 'ring-2 ring-blue-500' : 'border-gray-200'
+                selectedResult?.id === result.id ? "ring-2 ring-blue-500" : "border-gray-200"
               }`}
               onClick={() => setSelectedResult(selectedResult?.id === result.id ? null : result)}
             >
@@ -249,12 +250,10 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                     <h3 className="font-semibold text-lg">{result.quizTitle}</h3>
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded ${
-                        result.isPassed
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                        result.isPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {result.isPassed ? 'Đạt' : 'Không Đạt'}
+                      {result.isPassed ? "Đạt" : "Không Đạt"}
                     </span>
                   </div>
 
@@ -277,23 +276,25 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                       <p className="font-medium">Thời gian</p>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        <span>{Math.floor(result.timeSpent / 60)} phút</span>
+                        <span className="text-base">
+                          {result.timeSpent != null && !isNaN(result.timeSpent)
+                            ? result.timeSpent >= 60
+                              ? `${Math.floor(result.timeSpent / 60)} phút ${result.timeSpent % 60}s`
+                              : `${result.timeSpent}s`
+                            : "N/A"}
+                        </span>
                       </div>
                     </div>
                     <div>
                       <p className="font-medium">Ngày làm</p>
-                      <p className="text-xs">
-                        {new Date(result.submittedAt).toLocaleDateString('vi-VN')}
-                      </p>
+                      <p className="text-xs">{new Date(result.submittedAt).toLocaleDateString("vi-VN")}</p>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full ${
-                        result.isPassed ? 'bg-green-500' : 'bg-red-500'
-                      }`}
+                      className={`h-2 rounded-full ${result.isPassed ? "bg-green-500" : "bg-red-500"}`}
                       style={{ width: `${result.percentage}%` }}
                     />
                   </div>
@@ -302,12 +303,12 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                 <button
                   className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedResult(selectedResult?.id === result.id ? null : result);
+                    e.stopPropagation()
+                    setSelectedResult(selectedResult?.id === result.id ? null : result)
                   }}
                 >
                   <Eye className="h-4 w-4" />
-                  {selectedResult?.id === result.id ? 'Ẩn' : 'Chi tiết'}
+                  {selectedResult?.id === result.id ? "Ẩn" : "Chi tiết"}
                 </button>
               </div>
 
@@ -317,18 +318,14 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                   <div className="bg-gray-50 p-4 rounded-lg space-y-4">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="font-semibold text-lg">Kết quả chi tiết</h4>
-                      <span className="text-sm text-gray-600">
-                        Lần thi thứ {result.attemptNumber}
-                      </span>
+                      <span className="text-sm text-gray-600">Lần thi thứ {result.attemptNumber}</span>
                     </div>
 
                     {result.answers.map((answer, idx) => (
                       <div
                         key={answer.id}
                         className={`p-4 rounded-lg border ${
-                          answer.isCorrect
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-red-50 border-red-200'
+                          answer.isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
                         }`}
                       >
                         <div className="flex items-start justify-between mb-2">
@@ -346,9 +343,7 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                             ) : (
                               <XCircle className="h-5 w-5 text-red-600" />
                             )}
-                            <span className="text-sm font-semibold">
-                              +{answer.pointsAwarded.toFixed(1)} điểm
-                            </span>
+                            <span className="text-sm font-semibold">+{answer.pointsAwarded.toFixed(1)} điểm</span>
                           </div>
                         </div>
 
@@ -391,7 +386,7 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ExamResultsView;
+export default ExamResultsView

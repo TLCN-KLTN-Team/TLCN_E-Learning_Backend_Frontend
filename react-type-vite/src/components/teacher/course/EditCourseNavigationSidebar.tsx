@@ -61,13 +61,7 @@ const EditCourseNavigationSidebar: React.FC<EditCourseNavigationSidebarProps> = 
       label: "Xem Bài Kiểm Tra",
       icon: <ClipboardList className="w-5 h-5" />,
       description: selectedClass ? `Lớp: ${selectedClass.className}` : "Vui lòng chọn lớp học",
-    },
-    {
-      id: "workspace",
-      label: "Workspace Lớp",
-      icon: <Zap className="w-5 h-5" />,
-      description: selectedClass ? `Lớp: ${selectedClass.className}` : "Vui lòng chọn lớp học",
-    },
+    }
   ]
 
   return (

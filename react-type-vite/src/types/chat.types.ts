@@ -32,6 +32,7 @@ export interface UserProfileResponse {
   lastName: string;
   mssv: string;
   avatar?: string | null;
+  owner: boolean;
 }
 
 export interface Participant {

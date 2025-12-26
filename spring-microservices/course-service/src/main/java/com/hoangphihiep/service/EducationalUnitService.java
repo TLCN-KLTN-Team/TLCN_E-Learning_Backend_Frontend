@@ -1,6 +1,7 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.EducationalUnitRegistrationRequest;
+import com.hoangphihiep.dto.request.EducationalUnitRequest;
 import com.hoangphihiep.dto.request.StatusUpdateRequest;
 import com.hoangphihiep.dto.request.UserRequest;
 import com.hoangphihiep.dto.response.*;
@@ -223,6 +224,97 @@ public class EducationalUnitService {
             log.error("Error occurred while checking institution for admin: {}", adminId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
+    }
+
+    @Transactional
+    public EducationalUnitResponse updateEducationalUnit(String adminId, EducationalUnitRequest request) {
+        log.info("Updating educational unit for admin: {}", adminId);
+
+        // Find educational unit by admin ID
+        EducationalUnit educationalUnit = educationalUnitRepository.findByIdAdmin(adminId)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        // Update fields if provided
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            educationalUnit.setName(request.getName());
+        }
+
+        if (request.getType() != null) {
+            educationalUnit.setType(request.getType());
+        }
+
+        if (request.getAddress() != null) {
+            educationalUnit.setAddress(request.getAddress());
+        }
+
+        if (request.getPhone() != null) {
+            educationalUnit.setPhone(request.getPhone());
+        }
+
+        if (request.getEmail() != null) {
+            educationalUnit.setEmail(request.getEmail());
+        }
+
+        if (request.getWebsite() != null) {
+            educationalUnit.setWebsite(request.getWebsite());
+        }
+
+        if (request.getDescription() != null) {
+            educationalUnit.setDescription(request.getDescription());
+        }
+
+        if (request.getEstablishedYear() != null) {
+            educationalUnit.setEstablishedYear(request.getEstablishedYear());
+        }
+
+        // Save updated entity
+        EducationalUnit savedUnit = educationalUnitRepository.save(educationalUnit);
+        log.info("Educational unit updated successfully with ID: {}", savedUnit.getId());
+
+        // Get user info for response
+        UserResponse userInfo = userInfoApi.getUserInfo(adminId).getResult();
+
+        // Get counts
+        long totalCourses = courseRepository.countByEducationalUnitId(savedUnit.getId());
+        long totalDepartments = departmentRepository.countByEducationalUnitId(savedUnit.getId());
+
+        long totalTeachers = 0L;
+        long totalStudents = 0L;
+        try {
+            totalTeachers = userInfoApi.countTeachersByEducationalUnit(savedUnit.getId()).getResult();
+        } catch (Exception ex) {
+            log.warn("Failed to fetch teacher count: {}", ex.getMessage());
+        }
+        try {
+            totalStudents = userInfoApi.countStudentsByEducationalUnit(savedUnit.getId()).getResult();
+        } catch (Exception ex) {
+            log.warn("Failed to fetch student count: {}", ex.getMessage());
+        }
+
+        // Build and return response
+        return EducationalUnitResponse.builder()
+                .id(savedUnit.getId())
+                .name(savedUnit.getName())
+                .type(savedUnit.getType())
+                .address(savedUnit.getAddress())
+                .phone(savedUnit.getPhone())
+                .email(savedUnit.getEmail())
+                .website(savedUnit.getWebsite())
+                .logo(savedUnit.getLogo())
+                .description(savedUnit.getDescription())
+                .establishedYear(savedUnit.getEstablishedYear())
+                .status(savedUnit.getStatus().getStatus())
+                .subscriptionStartDate(savedUnit.getSubscriptionStartDate())
+                .subscriptionEndDate(savedUnit.getSubscriptionEndDate())
+                .createdAt(savedUnit.getCreatedAt())
+                .totalCourses((int) totalCourses)
+                .totalDepartments((int) totalDepartments)
+                .totalTeachers((int) totalTeachers)
+                .totalStudents((int) totalStudents)
+                .representativeName(userInfo.getFirstName() + " " + userInfo.getLastName())
+                .representativeEmail(userInfo.getEmail())
+                .representativePhone(userInfo.getPhoneNumber())
+                .build();
     }
     
     public Double getAverageInternalStudentRatio(String adminId) {

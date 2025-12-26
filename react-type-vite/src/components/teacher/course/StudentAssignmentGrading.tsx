@@ -372,9 +372,8 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600">
                     <div>
                       <p className="font-medium text-gray-900">
-                        {submission.studentName || submission.idUser}
+                        {submission.studentName}
                       </p>
-                      <p className="text-xs">{submission.idUser}</p>
                     </div>
                     <div>
                       <p className="font-medium">Nộp Bài</p>
@@ -515,7 +514,7 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Điểm (Tối đa: {submission.maxScore || 100} điểm)
+                          Điểm
                         </label>
                         <input
                           type="number"

@@ -1,6 +1,7 @@
 package com.hoangphihiep.controller.Admin;
 
 import com.hoangphihiep.dto.request.EducationalUnitRegistrationRequest;
+import com.hoangphihiep.dto.request.EducationalUnitRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.EducationalUnitResponse;
 import com.hoangphihiep.dto.response.EducationUnitRegistrationResponse;
@@ -74,5 +75,18 @@ public class EducationalUnitController {
                     .message("Đăng ký đơn vị đào tạo thất bại: " + e.getMessage())
                     .build());
         }
+    }
+
+    @PutMapping("/my-educationalUnit")
+    public ApiResponse<EducationalUnitResponse> updateMyEducationalUnit(
+            @RequestBody @Valid EducationalUnitRequest request) {
+        String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        EducationalUnitResponse updatedUnit = educationalUnitService.updateEducationalUnit(currentAdminId, request);
+
+        return ApiResponse.<EducationalUnitResponse>builder()
+                .result(updatedUnit)
+                .message("Cập nhật thông tin đơn vị đào tạo thành công")
+                .build();
     }
 }

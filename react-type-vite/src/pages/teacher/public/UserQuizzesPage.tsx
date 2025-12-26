@@ -72,8 +72,8 @@ const StudentQuizzesPage: React.FC = () => {
     }
   }
 
-  const averageScore = quizAttempts.length > 0
-    ? (quizAttempts.reduce((sum, q) => sum + q.score, 0) / quizAttempts.length).toFixed(1)
+  const averagePercentage = quizAttempts.length > 0
+    ? Math.round(quizAttempts.reduce((sum, q) => sum + ((q.questionsCorrect / q.totalQuestions) * 100), 0) / quizAttempts.length)
     : 0
 
   return (
@@ -112,8 +112,8 @@ const StudentQuizzesPage: React.FC = () => {
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Điểm trung bình</p>
-                  <h3 className="text-2xl font-bold text-card-foreground">{averageScore}</h3>
+                  <p className="text-sm text-muted-foreground">Tỷ lệ hoàn thành TB</p>
+                  <h3 className="text-2xl font-bold text-card-foreground">{averagePercentage}%</h3>
                 </div>
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>

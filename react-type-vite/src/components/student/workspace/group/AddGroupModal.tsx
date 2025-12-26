@@ -54,6 +54,7 @@ const AddGroupModal = ({
         lastName: member.lastName,
         mssv: member.mssv,
         avatarUrl: member.avatar,
+        owner: member.owner,
       }));
       setIsSearching(false);
       return convertedMembers || [];

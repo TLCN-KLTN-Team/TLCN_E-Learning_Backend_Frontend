@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeacherPublicStatisticsResponse {
+    private Integer totalCoursesPublish;
+    private Integer totalUserPublish;
     private Integer totalCourses;
     private Integer totalStudents;
     private Double totalRevenue;

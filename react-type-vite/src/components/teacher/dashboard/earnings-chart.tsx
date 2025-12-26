@@ -1,18 +1,47 @@
 "use client"
 
-import type React from "react"
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { ArrowUp, ArrowDown } from "lucide-react"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useAuth } from "../../../context/auth-context/useAuth"
 import { getTeacherRevenue } from "../../../services/api/teacher/revenueApi"
 import type { TeacherRevenueResponse } from "../../../services/api/teacher/revenueApi"
 
+// Format currency helper
+const formatCurrency = (value: number) => {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(1)}M`
+  }
+  return `${(value / 1000).toFixed(1)}k`
+}
+
+// Custom Tooltip component
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-3">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+          Tháng {data.monthLabel}
+        </p>
+        <p className="text-lg font-bold text-blue-600">
+          {formatCurrency(data.revenue)}
+        </p>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+          {data.orderCount} đơn hàng
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
 const EarningsChart: React.FC = () => {
   const { user } = useAuth()
-  const chartRef = useRef<HTMLDivElement>(null)
   const [revenue, setRevenue] = useState<TeacherRevenueResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Load data from backend API
   useEffect(() => {
     const loadData = async () => {
       if (!user?.id) return
@@ -30,116 +59,23 @@ const EarningsChart: React.FC = () => {
     loadData()
   }, [user?.id])
 
-  useEffect(() => {
-    if (!revenue?.monthlyRevenueDetails || revenue.monthlyRevenueDetails.length === 0 || !chartRef.current) {
-      return
+  // Prepare chart data
+  const chartData = revenue?.monthlyRevenueDetails.map(item => ({
+    month: item.month,
+    monthLabel: item.month.split("-")[1],
+    revenue: item.revenue,
+    orderCount: item.orderCount
+  })) || []
+
+  // Format currency helper
+  const formatCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`
     }
+    return `${(value / 1000).toFixed(1)}k`
+  }
 
-    const canvas = document.createElement("canvas")
-    canvas.width = 800
-    canvas.height = 300
-    canvas.style.width = "100%"
-    canvas.style.height = "300px"
-    canvas.style.maxWidth = "100%"
-
-    const ctx = canvas.getContext("2d")
-    if (!ctx || !chartRef.current) return
-
-    // Clear previous content
-    chartRef.current.innerHTML = ""
-    chartRef.current.appendChild(canvas)
-
-    // Data from API
-    const monthlyData = revenue.monthlyRevenueDetails || []
-    const data = monthlyData.map((m) => Number(m.revenue) || 0)
-    const labels = monthlyData.map((m) => m.month.split("-")[1]) // Extract month number
-
-    if (data.length === 0) return
-
-    // Chart dimensions
-    const padding = 60
-    const chartWidth = canvas.width - 2 * padding
-    const chartHeight = canvas.height - 2 * padding
-
-    // Find min and max values
-    const minValue = Math.min(...data, 0)
-    const maxValue = Math.max(...data)
-    const valueRange = maxValue - minValue || 1
-
-    // Draw background
-    ctx.fillStyle = "#f8fafc"
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    // Draw grid lines
-    ctx.strokeStyle = "#e2e8f0"
-    ctx.lineWidth = 1
-
-    // Horizontal grid lines
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + (chartHeight / 5) * i
-      ctx.beginPath()
-      ctx.moveTo(padding, y)
-      ctx.lineTo(canvas.width - padding, y)
-      ctx.stroke()
-    }
-
-    // Vertical grid lines
-    for (let i = 0; i < data.length; i++) {
-      const x = padding + (chartWidth / (data.length - 1)) * i
-      ctx.beginPath()
-      ctx.moveTo(x, padding)
-      ctx.lineTo(x, canvas.height - padding)
-      ctx.stroke()
-    }
-
-    // Draw the line chart
-    ctx.strokeStyle = "#066ac9"
-    ctx.lineWidth = 3
-    ctx.beginPath()
-
-    data.forEach((value, index) => {
-      const x = padding + (chartWidth / (data.length - 1)) * index
-      const y = canvas.height - padding - ((value - minValue) / valueRange) * chartHeight
-
-      if (index === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
-      }
-    })
-
-    ctx.stroke()
-
-    // Draw data points
-    ctx.fillStyle = "#066ac9"
-    data.forEach((value, index) => {
-      const x = padding + (chartWidth / (data.length - 1)) * index
-      const y = canvas.height - padding - ((value - minValue) / valueRange) * chartHeight
-
-      ctx.beginPath()
-      ctx.arc(x, y, 4, 0, 2 * Math.PI)
-      ctx.fill()
-    })
-
-    // Draw labels
-    ctx.fillStyle = "#64748b"
-    ctx.font = "12px sans-serif"
-    ctx.textAlign = "center"
-
-    labels.forEach((label, index) => {
-      const x = padding + (chartWidth / (data.length - 1)) * index
-      ctx.fillText(`M${label}`, x, canvas.height - padding + 20)
-    })
-
-    // Draw y-axis labels
-    ctx.textAlign = "right"
-    for (let i = 0; i <= 5; i++) {
-      const value = minValue + (valueRange / 5) * (5 - i)
-      const y = padding + (chartHeight / 5) * i
-      ctx.fillText(`${Math.round(value / 1000)}k`, padding - 10, y + 4)
-    }
-  }, [revenue])
-
+  // Calculate statistics
   const currentMonth = revenue?.monthlyRevenueDetails?.[revenue.monthlyRevenueDetails.length - 1]
   const lastMonth = revenue?.monthlyRevenueDetails?.[revenue.monthlyRevenueDetails.length - 2]
   const currentRevenue = Number(currentMonth?.revenue) || 0
@@ -148,47 +84,86 @@ const EarningsChart: React.FC = () => {
 
   return (
     <div className="mt-5">
-      <div className="bg-transparent border border-gray-200 dark:border-gray-700 rounded-lg p-4 h-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
-          {/* Content */}
-          <div className="sm:col-span-1 md:col-span-1">
-            <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-900 text-white rounded">
-              Current Month
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+          {/* Current Month */}
+          <div>
+            <span className="inline-block px-3 py-1 text-xs font-semibold bg-blue-600 text-white rounded-full mb-3">
+              Tháng hiện tại
             </span>
-            <h4 className="text-3xl font-bold text-blue-600 my-2">
-              {loading ? "Loading..." : `${(currentRevenue / 1000).toFixed(1)}k`}
+            <h4 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+              {loading ? "..." : formatCurrency(currentRevenue)}
             </h4>
-            <p className="mb-0 text-sm">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {!loading && (
-                <span className={`${percentChange >= 0 ? "text-green-600" : "text-red-600"} font-medium inline-flex items-center mr-1`}>
-                  {percentChange >= 0 ? "+" : ""}{percentChange.toFixed(2)}%{" "}
-                  {percentChange >= 0 ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />}
+                <span className={`font-semibold inline-flex items-center ${
+                  percentChange >= 0 ? "text-green-600" : "text-red-600"
+                }`}>
+                  {percentChange >= 0 ? "+" : ""}{percentChange.toFixed(1)}%
+                  {percentChange >= 0 ? 
+                    <ArrowUp className="w-4 h-4 ml-1" /> : 
+                    <ArrowDown className="w-4 h-4 ml-1" />
+                  }
                 </span>
               )}
-              vs last month
+              <span className="ml-1">so với tháng trước</span>
             </p>
           </div>
-          {/* Content */}
-          <div className="sm:col-span-1 md:col-span-1">
-            <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-900 text-white rounded">
-              Last Month
+
+          {/* Last Month */}
+          <div>
+            <span className="inline-block px-3 py-1 text-xs font-semibold bg-gray-700 dark:bg-gray-600 text-white rounded-full mb-3">
+              Tháng trước
             </span>
-            <h4 className="text-3xl font-bold my-2">
-              {loading ? "Loading..." : `${(lastRevenue / 1000).toFixed(1)}k`}
+            <h4 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              {loading ? "..." : formatCurrency(lastRevenue)}
             </h4>
-            <p className="mb-0 text-sm">
-              <span className="text-gray-600 font-medium inline-flex items-center mr-1">
-                Previous period
-              </span>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Kỳ trước đó
             </p>
           </div>
         </div>
 
-        <div
-          ref={chartRef}
-          className="mt-6 h-80 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4"
-        >
-          {loading && <div className="flex items-center justify-center h-full">Loading chart...</div>}
+        {/* Chart */}
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-6">
+          {loading ? (
+            <div className="flex items-center justify-center h-80">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                <p className="text-gray-600 dark:text-gray-400">Đang tải biểu đồ...</p>
+              </div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis 
+                  dataKey="monthLabel" 
+                  stroke="#64748b"
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tickFormatter={(value) => `T${value}`}
+                />
+                <YAxis 
+                  stroke="#64748b"
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tickFormatter={(value) => {
+                    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
+                    return `${(value / 1000).toFixed(0)}k`
+                  }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Line 
+                  type="monotone" 
+                  dataKey="revenue" 
+                  stroke="#2563eb" 
+                  strokeWidth={3}
+                  dot={{ fill: '#2563eb', r: 5 }}
+                  activeDot={{ r: 7, fill: '#1d4ed8' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>

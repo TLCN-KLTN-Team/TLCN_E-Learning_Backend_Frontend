@@ -2,6 +2,8 @@ import axiosInstance from "../httpClient/axiosInstance"
 import type { ApiResponse } from "../response/apiResponse"
 
 export interface TeacherPublicStatisticsResponse {
+  totalCoursesPublish: number
+  totalUserPublish: number
   totalCourses: number
   totalStudents: number
   totalRevenue: number

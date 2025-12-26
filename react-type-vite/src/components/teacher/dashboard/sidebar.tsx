@@ -12,12 +12,14 @@ import {
   ChevronRight,
   EarthLock,
 } from "lucide-react";
+import { toast } from "react-toastify";
+import { useAuth } from "@/context/auth-context/useAuth";
 import openEduIcon from "@/assets/open-edu-dark.png";
 
 const menuItems = [
   { name: "Dashboard", icon: LayoutGrid, path: "/teacher/home" },
   {
-    name: "Khóa Học Được Gán",
+    name: "Khóa Học Nội Bộ",
     icon: BookOpen,
     path: "/teacher/assigned-courses",
   },
@@ -41,6 +43,14 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
   const location = useLocation();
+  const { logout } = useAuth();
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    logout();
+    toast.success("Đăng xuất thành công!");
+  };
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -91,6 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
           })}
 
           <button
+            onClick={handleLogout}
             className={`flex items-center w-full px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 group mt-4`}
             title={collapsed ? "Sign Out" : undefined}
           >

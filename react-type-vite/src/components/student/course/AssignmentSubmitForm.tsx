@@ -141,155 +141,154 @@ const AssignmentSubmitForm: React.FC<AssignmentSubmitFormProps> = ({
 
   return (
     <Modal isOpen={true} onClose={onClose} maxWidth="max-w-2xl">
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">
-              {existingSubmission ? "Cập nhật bài nộp" : "Nộp bài tập"}
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">{assignment.title}</p>
+      <div className="flex flex-col max-h-[90vh]">
+        {/* Header - Fixed */}
+        <div className="p-6 pb-4 border-b flex-shrink-0">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">
+                {existingSubmission ? "Cập nhật bài nộp" : "Nộp bài tập"}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">{assignment.title}</p>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <X className="h-5 w-5" />
-          </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-
-        <div className="space-y-4">
-          {/* Text Submission */}
-          {canSubmitText && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nội dung bài làm
-              </label>
-              <textarea
-                value={submissionText}
-                onChange={(e) => setSubmissionText(e.target.value)}
-                rows={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Nhập nội dung bài làm của bạn..."
-              />
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
 
-          {/* File Upload */}
-          {canSubmitFile && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tệp đính kèm
-              </label>
-              
-              {/* Upload Button */}
-              <div className="mb-3">
-                <label className="cursor-pointer">
-                  <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
-                    <Upload className="h-5 w-5 text-gray-600" />
-                    <span className="text-sm text-gray-600">
-                      Chọn file để upload (Tối đa 10MB/file)
-                    </span>
-                  </div>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    disabled={isSubmitting}
-                    accept="*/*"
-                  />
+          <div className="space-y-4">
+            {/* Text Submission */}
+            {canSubmitText && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nội dung bài làm
                 </label>
-              </div>
-
-              {/* Existing Files (for updates) */}
-              {existingFiles.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-xs text-gray-500 mb-2">File đã tải lên trước đó:</p>
-                  <div className="space-y-2">
-                    {existingFiles.map((file, index) => (
-                      <div
-                        key={`existing-${index}`}
-                        className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded"
-                      >
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm">{getFileName(file)}</span>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveExistingFile(index)}
-                          className="p-1 hover:bg-blue-100 rounded"
-                          disabled={isSubmitting}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* New Files */}
-              {newFiles.length > 0 && (
-                <div>
-                  <p className="text-xs text-gray-500 mb-2">File mới:</p>
-                  <div className="space-y-2">
-                    {newFiles.map((file, index) => (
-                      <div
-                        key={`new-${index}`}
-                        className="flex items-center justify-between p-3 bg-gray-50 border rounded"
-                      >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm truncate">{file.name}</p>
-                            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveNewFile(index)}
-                          className="p-1 hover:bg-gray-200 rounded ml-2"
-                          disabled={isSubmitting}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Link Submission */}
-          {canSubmitLink && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Link bài làm
-              </label>
-              <div className="flex items-center gap-2">
-                <LinkIcon className="h-5 w-5 text-gray-400" />
-                <input
-                  type="url"
-                  value={submissionLink}
-                  onChange={(e) => setSubmissionLink(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://..."
+                <textarea
+                  value={submissionText}
+                  onChange={(e) => setSubmissionText(e.target.value)}
+                  rows={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập nội dung bài làm của bạn..."
                 />
               </div>
-            </div>
-          )}
+            )}
+
+            {/* File Upload */}
+            {canSubmitFile && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tệp đính kèm
+                </label>
+                
+                {/* Upload Button */}
+                <div className="mb-3">
+                  <label className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
+                      <Upload className="h-5 w-5 text-gray-600" />
+                      <span className="text-sm text-gray-600">
+                        Chọn file để upload (Tối đa 10MB/file)
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      disabled={isSubmitting}
+                      accept="*/*"
+                    />
+                  </label>
+                </div>
+
+                {/* Existing Files (for updates) */}
+                {existingFiles.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-2">File đã tải lên trước đó:</p>
+                    <div className="space-y-2">
+                      {existingFiles.map((file, index) => (
+                        <div
+                          key={`existing-${index}`}
+                          className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded"
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm">{getFileName(file)}</span>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveExistingFile(index)}
+                            className="p-1 hover:bg-blue-100 rounded"
+                            disabled={isSubmitting}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New Files */}
+                {newFiles.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2">File mới:</p>
+                    <div className="space-y-2">
+                      {newFiles.map((file, index) => (
+                        <div
+                          key={`new-${index}`}
+                          className="flex items-center justify-between p-3 bg-gray-50 border rounded"
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm truncate">{file.name}</p>
+                              <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveNewFile(index)}
+                            className="p-1 hover:bg-gray-200 rounded ml-2"
+                            disabled={isSubmitting}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Link Submission */}
+            {canSubmitLink && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Link bài làm
+                </label>
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="h-5 w-5 text-gray-400" />
+                  <input
+                    type="url"
+                    value={submissionLink}
+                    onChange={(e) => setSubmissionLink(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+        {/* Actions - Fixed at bottom */}
+        <div className="flex justify-end gap-3 p-6 pt-4 border-t flex-shrink-0 bg-white">
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>

@@ -92,9 +92,6 @@ public class TeacherCourseController {
             @RequestPart(value = "rubricFiles", required = false) List<MultipartFile> rubricFiles
     ) throws JsonProcessingException {  // Thêm throws
 
-        System.out.println("========== DEBUG REQUEST ==========");
-        System.out.println("Raw JSON string: " + dataJson);
-
         // Parse JSON string thành object
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule()); // Nếu có Date/Time fields
@@ -102,11 +99,6 @@ public class TeacherCourseController {
 
         BulkSectionRequest request = mapper.readValue(dataJson, BulkSectionRequest.class);
 
-        System.out.println("Parsed request object: " + request);
-        System.out.println("Course ID: " + request.getCourseId());
-        System.out.println("Total sections: " + request.getSections().size());
-
-        System.out.println("========== DEBUG FILES ==========");
         printFileList("Lesson files", lessonFiles);
         printFileList("Question files", questionFiles);
         printFileList("Assignment files", assignmentFiles);

@@ -193,16 +193,9 @@ const CourseDetail: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-blue-400 mb-4">
-            <span className="hover:text-blue-300 cursor-pointer">
-              Development
-            </span>
             <span className="text-gray-400">›</span>
             <span className="hover:text-blue-300 cursor-pointer">
-              Data Science
-            </span>
-            <span className="text-gray-400">›</span>
-            <span className="hover:text-blue-300 cursor-pointer">
-              {course.category}
+              {course.courseType}
             </span>
           </div>
 

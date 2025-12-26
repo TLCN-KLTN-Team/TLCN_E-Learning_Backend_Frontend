@@ -4,6 +4,7 @@ package com.hoangphihiep.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -60,6 +61,7 @@ public class SecurityConfig {
         httpSecurity.addFilterAfter(requestLoggingFilter, org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                         .requestMatchers("/actuator/**").permitAll()

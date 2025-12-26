@@ -4,6 +4,13 @@ services:
     image: mysql:8.0
     container_name: mysql-db
     restart: unless-stopped
+    command: >
+      --max_connections=150
+      --innodb_buffer_pool_size=384M
+      --innodb_log_file_size=64M
+      --innodb_flush_log_at_trx_commit=2
+      --innodb_flush_method=O_DIRECT
+      --table_open_cache=2000
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_USER: ${MYSQL_USER}
@@ -18,13 +25,28 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     ports:
       - "3306:3306"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 768M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   mongodb:
     image: "mongo:7.0-jammy"
     container_name: mongodb
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
@@ -39,11 +61,34 @@ services:
       retries: 5
     ports:
       - "27017:27017"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   redis:
     image: "redis:latest"
     container_name: redis_server
     restart: unless-stopped
+    command: >
+      redis-server
+        --maxmemory 100mb
+        --maxmemory-policy allkeys-lru
+        --save 60 1000
+        --appendonly yes
+        --appendfsync everysec
+        --stop-writes-on-bgsave-error no
+        --rdbcompression yes
+        --rdbchecksum yes
     volumes:
       - redis_data:/data
     networks:
@@ -55,6 +100,19 @@ services:
       retries: 3
     ports:
       - "6379:6379"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
@@ -63,9 +121,20 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ES_JAVA_OPTS=-Xms256m -Xmx512m
+      - bootstrap.memory_lock=true
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=85%
+      - cluster.routing.allocation.disk.watermark.high=90%
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     volumes:
-      - es-data:/usr/share/elasticsearch/data
+      - es_data:/usr/share/elasticsearch/data
     networks:
       - backend-network
     healthcheck:
@@ -73,8 +142,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 60s
     ports:
       - "9200:9200"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 896M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.12.0
@@ -82,6 +165,8 @@ services:
     restart: unless-stopped
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_NAME=kibana
+      - SERVER_HOST=0.0.0.0
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -89,6 +174,25 @@ services:
       - backend-network
     ports:
       - "5601:5601"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -96,17 +200,39 @@ services:
     restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+      KAFKA_HEAP_OPTS: "-Xms64m -Xmx128m"
     networks:
       - backend-network
     ports:
       - "2181:2181"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 192M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "2181" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
     restart: unless-stopped
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -117,7 +243,10 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_HEAP_OPTS: "-Xms512M -Xmx512M"
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 536870912
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_HEAP_OPTS: "-Xms384M -Xmx512M"
     networks:
       - backend-network
     healthcheck:
@@ -127,6 +256,19 @@ services:
       retries: 5
     ports:
       - "9092:9092"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 768M
+        reservations:
+          cpus: '0.4'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
 
   identity-service:
     image: ${DOCKERHUB_USER}/identity-service:${VERSION:-latest}
@@ -138,6 +280,13 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/identity_service?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 3
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: 20000
+      SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: 300000
+      SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: 1200000
+
       JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
@@ -152,7 +301,13 @@ services:
       FILE_SERVICE_URL: http://file-service:8084/file-handler
       COURSE_MANAGEMENT_URL: http://course-service:8088/course-management
       API_GATEWAY_URL: http://api-gateway:8888
-
+      JAVA_OPTS: >
+        -Xms128m
+        -Xmx384m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+        -Djava.security.egd=file:/dev/./urandom
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
@@ -170,8 +325,21 @@ services:
       test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/identity/actuator/health" ]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 90s
+      retries: 10
+      start_period: 180s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 576M
+        reservations:
+          cpus: '0.3'
+          memory: 384M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   course-service:
     image: ${DOCKERHUB_USER}/course-service:${VERSION:-latest}
@@ -181,6 +349,10 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/course_management?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 20
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
+
       JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
 
       SMTP_HOST: ${SMTP_HOST}
@@ -199,7 +371,13 @@ services:
       ELASTICSEARCH_URIS: http://elasticsearch:9200
       ELASTICSEARCH_HOST: elasticsearch
       ELASTICSEARCH_PORT: 9200
-
+      JAVA_OPTS: >
+        -Xms128m
+        -Xmx384m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+        -Djava.security.egd=file:/dev/./urandom
       VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
       VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET}
       VNPAY_PAY_URL: ${VNPAY_PAY_URL}
@@ -224,6 +402,19 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 576M
+        reservations:
+          cpus: '0.3'
+          memory: 384M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   file-service:
     image: ${DOCKERHUB_USER}/file-service:${VERSION:-latest}
@@ -236,6 +427,12 @@ services:
       CLOUDINARY_CLOUD_NAME: ${FILE_SERVICE_CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${FILE_SERVICE_CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${FILE_SERVICE_CLOUDINARY_API_SECRET}
+      JAVA_OPTS: >
+        -Xms96m
+        -Xmx256m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -Djava.security.egd=file:/dev/./urandom
     depends_on:
       mongodb:
         condition: service_healthy
@@ -247,6 +444,19 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   chat-service:
     image: ${DOCKERHUB_USER}/chat-service:${VERSION:-latest}
@@ -265,6 +475,12 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       MONGO_DB_USERNAME: ${MONGO_DB_USERNAME}
       MONGO_DB_PASSWORD: ${MONGO_DB_PASSWORD}
+      JAVA_OPTS: >
+        -Xms96m
+        -Xmx256m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -Djava.security.egd=file:/dev/./urandom
     depends_on:
       mongodb:
         condition: service_healthy
@@ -278,6 +494,19 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   api-gateway:
     image: ${DOCKERHUB_USER}/api-gateway:${VERSION:-latest}
@@ -293,6 +522,12 @@ services:
       COURSE_SERVICE_URI: http://course-service:8088
       CHAT_SERVICE_URI: http://chat-service:8090
       CHAT_SERVICE_WS_URI: ws://chat-service:8090
+      JAVA_OPTS: >
+        -Xms128m
+        -Xmx256m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -Djava.security.egd=file:/dev/./urandom
     depends_on:
       identity-service:
         condition: service_healthy
@@ -310,14 +545,31 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.6'
+          memory: 384M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 
 volumes:
-  es-data:
+  es_data:
+    driver: local
   mysql_data:
     driver: local
   mongo_data:
     driver: local
   redis_data:
+    driver: local
+  kafka_data:
     driver: local
 
 networks:
