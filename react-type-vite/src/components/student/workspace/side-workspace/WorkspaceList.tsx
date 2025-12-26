@@ -1,6 +1,5 @@
-import { Plus, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { getAvartarFromName } from "@/utils/callApiUtils";
-import { hasRole } from "@/utils/roleUtils";
 import type { WorkspaceResponse } from "@/types/chat.types";
 
 interface WorkspaceListProps {

@@ -32,6 +32,10 @@ public class TeacherPublicCourseService {
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
     private final OrderItemRepository orderItemRepository;
     private final UserInfoApi userInfoApi;
+    private final LessonRepository lessonRepository;
+    private final QuizRepository quizRepository;
+    private final LessonProgressRepository lessonProgressRepository;
+    private final AssignmentRepository assignmentRepository;
 
     public Page<PublicCourseResponse> getPublicCoursesByTeacher(String teacherId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -169,9 +173,11 @@ public class TeacherPublicCourseService {
     public TeacherPublicStatisticsResponse getTeacherStatistics(String teacherId) {
         List<Course> courses = courseRepository.findByIdTeacherAndPriceGreaterThan(teacherId, 0.0);
         
-        int totalCourses = courses.size();
-        int totalStudents = 0;
+        int totalCoursesPublish = courses.size();
+        int totalUserPublish = 0;
         double totalRevenue = 0.0;
+
+        int totalCourses = courseRepository.countByTeacherId(teacherId);
 
         for (Course course : courses) {
             List<OrderItem> orderItems = orderItemRepository.findByOriginalCourseId(course.getId());
@@ -179,7 +185,7 @@ public class TeacherPublicCourseService {
                     .map(item -> item.getOrder().getIdUser())
                     .distinct()
                     .count();
-            totalStudents += (int) uniqueUsers;
+            totalUserPublish += (int) uniqueUsers;
             if (course.getPublishedCourse() != null && course.getPublishedCourse().getCoursePrice() != null) {
                 totalRevenue += course.getPublishedCourse().getCoursePrice().doubleValue() * uniqueUsers;
             }
@@ -195,14 +201,23 @@ public class TeacherPublicCourseService {
             pendingAssignments += assignmentSubmissionRepository.countByCourseIdAndScoreIsNull(course.getId());
         }
 
+        int totalStudents = 0;
+
+        List<Course> courseList = courseRepository.findByIdTeacher(teacherId);
+        for (Course course: courseList){
+            totalStudents += course.getCurrentStudents();
+        }
+
         return TeacherPublicStatisticsResponse.builder()
+                .totalCoursesPublish(totalCoursesPublish)
+                .totalUserPublish(totalUserPublish)
                 .totalCourses(totalCourses)
                 .totalStudents(totalStudents)
                 .totalRevenue(totalRevenue)
                 .totalQuizAttempts(totalQuizAttempts)
                 .totalAssignmentsSubmitted(totalAssignmentsSubmitted)
                 .pendingAssignments(pendingAssignments)
-                .averageCourseRating(0.0) // TODO: Calculate from reviews
+                .averageCourseRating(0.0)
                 .build();
     }
 
@@ -249,26 +264,13 @@ public class TeacherPublicCourseService {
         Double progressPercent = progress != null ? progress.getProgressPercentage() : 0.0;
 
         int quizzesTaken = quizAttemptRepository.countByUserIdAndCourseId(userId, courseId);
-
         int assignmentsSubmitted = assignmentSubmissionRepository.countByUserIdAndCourseId(userId, courseId);
+        int lessonsCompleted = lessonProgressRepository.countViewedLessonsByUserAndCourse(userId, courseId);
 
-        Double quizAvg = quizAttemptRepository.getAverageScoreByStudentAndCourse(userId, courseId);
-
-        System.out.println("điểm trung bình cuủa quiz: " + quizAvg);
-        Double assignmentAvg = assignmentSubmissionRepository.getAverageScoreByStudentAndCourse(userId, courseId);
-        System.out.println("điểm trung bình cuủa assignment: " + assignmentAvg);
-        double totalAvg = 0.0;
-        int count = 0;
-        if (quizAvg != null && quizAvg > 0) {
-            totalAvg += quizAvg;
-            count++;
-        }
-        if (assignmentAvg != null && assignmentAvg > 0) {
-            totalAvg += assignmentAvg;
-            count++;
-        }
-        // Convert from percentage (0-100) to scale of 10 (0-10)
-        Double averageScore = count > 0 ? (totalAvg / count) / 10.0 : 0.0;
+        // Đếm số lượng đã public
+        int publishedLessons = lessonRepository.countPublishedLessonsByCourseId(courseId);
+        int publishedQuizzes = quizRepository.countPublishedQuizzesByCourseId(courseId);
+        int publishedAssignments = assignmentRepository.countPublishedAssignmentsByCourseId(courseId);
 
         ApiResponse<UserResponse> userResponse = userInfoApi.getUserInfo(userId);
         UserResponse user = userResponse.getResult();
@@ -292,8 +294,11 @@ public class TeacherPublicCourseService {
                 .progress(progressPercent)
                 .quizzesTaken(quizzesTaken)
                 .assignmentsSubmitted(assignmentsSubmitted)
-                .averageScore(averageScore)
-                .avatarUrl(null) // TODO: Get from identity service
+                .lessonsCompleted(lessonsCompleted)
+                .publishedLessons(publishedLessons)
+                .publishedQuizzes(publishedQuizzes)
+                .publishedAssignments(publishedAssignments)
+                .avatarUrl(null)
                 .build();
     }
 

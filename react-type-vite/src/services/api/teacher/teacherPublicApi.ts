@@ -20,7 +20,10 @@ export interface PublicCourseStudent {
   progress: number
   quizzesTaken: number
   assignmentsSubmitted: number
-  averageScore: number
+  lessonsCompleted: number
+  publishedLessons: number
+  publishedQuizzes: number
+  publishedAssignments: number
   avatarUrl?: string
 }
 

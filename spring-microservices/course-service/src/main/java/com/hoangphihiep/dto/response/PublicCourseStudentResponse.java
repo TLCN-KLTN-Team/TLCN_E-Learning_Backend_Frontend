@@ -19,6 +19,9 @@ public class PublicCourseStudentResponse {
     private Double progress; // Phần trăm hoàn thành
     private Integer quizzesTaken; // Số bài quiz đã làm
     private Integer assignmentsSubmitted; // Số bài tập đã nộp
-    private Double averageScore; // Điểm trung bình
+    private Integer lessonsCompleted;
+    private Integer publishedLessons;
+    private Integer publishedQuizzes;
+    private Integer publishedAssignments;
     private String avatarUrl;
 }

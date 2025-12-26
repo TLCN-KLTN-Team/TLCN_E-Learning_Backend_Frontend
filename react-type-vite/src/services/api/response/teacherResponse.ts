@@ -12,7 +12,7 @@ export interface TeacherResponse {
   departmentId?: string;
   educationalUnitId?: string;
   description?: string;
-  socialUrl?: string;
+  avatarUrl?: string;
   bankAccountNumber?: string;
   department?: DepartmentResponse;
   educationalUnit?: EducationalUnitResponse;

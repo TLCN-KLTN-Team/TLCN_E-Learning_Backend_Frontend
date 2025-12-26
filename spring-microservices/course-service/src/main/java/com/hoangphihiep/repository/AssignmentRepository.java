@@ -17,4 +17,9 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Integer>
 
     @Query("SELECT a FROM Assignment a WHERE a.section.course.id = :courseId ORDER BY a.createdAt DESC")
     List<Assignment> findByCourseIdOrderByCreatedAtDesc(@Param("courseId") Integer courseId);
+
+    @Query("SELECT COUNT(a) FROM Assignment a " +
+            "WHERE a.section.course.id = :courseId " +
+            "AND a.isPublished = true")
+    int countPublishedAssignmentsByCourseId(@Param("courseId") Integer courseId);
 }

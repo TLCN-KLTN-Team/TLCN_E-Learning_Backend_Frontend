@@ -80,6 +80,7 @@ export interface PublishedCourseDetailResponse {
   category: string;
   isHandsOn: boolean;
   purchaserStatus: boolean;
+  courseType: String;
   courseVideo?: string; // Video preview URL from published_course
   sections?: PublishedSectionResponse[]; // Published sections
   courseTarget?: string[]; // Learning objectives list

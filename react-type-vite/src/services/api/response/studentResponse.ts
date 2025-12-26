@@ -20,6 +20,8 @@ export interface StudentResponse {
   totalAssignments: number
   completedQuizzes: number
   totalQuizzes: number
+  totalLessons: number
+  viewedLessons: number
   averageScore: number
   lastAccessTime?: Date
   totalLearningHours: number

@@ -45,6 +45,7 @@ public class CourseEnrollmentService {
     private final StudentRepository studentClient;
     private final CourseProgressRepository courseProgressRepository;
     private final LessonProgressRepository lessonProgressRepository;
+    private final LessonRepository lessonRepository;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
@@ -286,6 +287,9 @@ public class CourseEnrollmentService {
 
             int totalQuizzes = quizRepository.countByCourseId(courseId);
             System.out.println ("tổng số bài kiểm tra: "+ totalQuizzes);
+
+            int totalLessons = lessonRepository.countByCourseId(courseId);
+            System.out.println ("tổng số bài học: " + totalLessons);
             // Batch fetch student details with statistics
             List<StudentResponse> students = new ArrayList<>();
             for (String studentId : studentIds) {
@@ -295,7 +299,7 @@ public class CourseEnrollmentService {
                         StudentResponse student = response.getResult();
                         System.out.println ("user id của student: " + studentId);
                         // Calculate statistics for this student
-                        enrichStudentWithStatistics(student, student.getId(), courseId, totalAssignments, totalQuizzes);
+                        enrichStudentWithStatistics(student, student.getId(), courseId, totalAssignments, totalQuizzes, totalLessons);
 
                         students.add(student);
                     }
@@ -523,13 +527,15 @@ public class CourseEnrollmentService {
     }
 
     private void enrichStudentWithStatistics(StudentResponse student, String studentId,
-                                             Integer courseId, int totalAssignments, int totalQuizzes) {
+                                             Integer courseId, int totalAssignments, int totalQuizzes, int totalLessons) {
         try {
             // Get submitted assignments count
             int submittedAssignments = submissionRepository.countSubmittedAssignmentsByStudentAndCourse(studentId, courseId);
 
             // Get completed quizzes count
             int completedQuizzes = quizAttemptRepository.countCompletedQuizzesByStudentAndCourse(studentId, courseId);
+
+            int viewedLessons = lessonProgressRepository.countViewedLessonsByUserAndCourse(studentId, courseId);
 
             // Calculate average score from both assignments and quizzes
             Double averageScore = calculateAverageScore(studentId, courseId);
@@ -539,6 +545,8 @@ public class CourseEnrollmentService {
             student.setTotalAssignments(totalAssignments);
             student.setCompletedQuizzes(completedQuizzes);
             student.setTotalQuizzes(totalQuizzes);
+            student.setViewedLessons(viewedLessons);
+            student.setTotalLessons(totalLessons);
             student.setAverageScore(averageScore != null ? averageScore.intValue() : 0);
 
         } catch (Exception e) {
@@ -548,6 +556,8 @@ public class CourseEnrollmentService {
             student.setTotalAssignments(totalAssignments);
             student.setCompletedQuizzes(0);
             student.setTotalQuizzes(totalQuizzes);
+            student.setViewedLessons(0);
+            student.setTotalLessons(totalLessons);
             student.setAverageScore(0);
         }
     }

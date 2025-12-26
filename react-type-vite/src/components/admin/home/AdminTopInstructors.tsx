@@ -25,7 +25,7 @@ const AdminTopInstructors: React.FC = () => {
           (page.content || []).map((pc) => ({
             course: pc.course?.courseName,
             teacherId: pc.course?.teacher?.id || pc.course?.idTeacher,
-            socialUrl: pc.course?.teacher?.socialUrl,
+            socialUrl: pc.course?.teacher?.avatarUrl,
           }))
         )
         setPublishedCourses(page.content || [])
@@ -58,7 +58,7 @@ const AdminTopInstructors: React.FC = () => {
           name: fullName,
           courses: 0,
           students: 0,
-          avatar: teacher?.socialUrl,
+          avatar: teacher?.avatarUrl,
         })
       }
 

@@ -47,6 +47,10 @@ public class StudentResponse {
 
     private Integer totalQuizzes;
 
+    private Integer viewedLessons;
+
+    private Integer totalLessons;
+
     private Integer averageScore;
 
     private String accountStatus;

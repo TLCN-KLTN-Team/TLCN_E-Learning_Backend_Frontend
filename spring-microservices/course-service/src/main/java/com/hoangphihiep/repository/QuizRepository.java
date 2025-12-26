@@ -19,4 +19,9 @@ public interface QuizRepository extends JpaRepository<Quiz, Integer> {
 
     @Query("SELECT COUNT(q) FROM Quiz q WHERE q.section.course.id = :courseId")
     int countByCourseId(@Param("courseId") Integer courseId);
+
+    @Query("SELECT COUNT(q) FROM Quiz q " +
+            "WHERE q.section.course.id = :courseId " +
+            "AND q.isPublished = true")
+    int countPublishedQuizzesByCourseId(@Param("courseId") Integer courseId);
 }

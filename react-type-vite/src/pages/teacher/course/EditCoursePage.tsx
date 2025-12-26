@@ -17,7 +17,6 @@ import { useAuth } from "@/context/auth-context/useAuth"
 import { getTeacherByUserId } from "@/services/api/teacher/teacherApi"
 import StudentAssignmentGrading from "@/components/teacher/course/StudentAssignmentGrading"
 import ExamResultsView from "@/components/teacher/course/ExamResultsView"
-import ClassWorkspaceManager from "@/components/teacher/course/ClassWorkspaceManager"
 import { SelectedClassProvider } from "@/context/teacher/SelectedClassContext"
 
 interface CourseData {
@@ -288,11 +287,6 @@ const EditCoursePageContent: React.FC = () => {
             {/* Exam Results Tab */}
             {activeTab === "exam" && (
               <ExamResultsView courseId={Number(courseId)} />
-            )}
-
-            {/* Class Workspace Tab */}
-            {activeTab === "workspace" && (
-              <ClassWorkspaceManager courseId={courseId || ""} />
             )}
           </div>
         </div>

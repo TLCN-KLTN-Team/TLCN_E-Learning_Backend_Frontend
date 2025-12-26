@@ -16,13 +16,23 @@ import {
   Award,
   Filter,
   Download,
-  RefreshCw
+  RefreshCw,
+  BookOpen
 } from "lucide-react"
 import { toast } from "react-toastify"
 import teacherPublicApi, { type PublicCourseStudent } from "@/services/api/teacher/teacherPublicApi"
 import { CourseApiService } from "@/services/api/user/courseApi"
 
 interface Student extends PublicCourseStudent {}
+
+// Helper function to calculate progress from lessons, quizzes, and assignments
+const calculateProgress = (student: Student): number => {
+  const totalPublished = student.publishedLessons + student.publishedQuizzes + student.publishedAssignments
+  if (totalPublished === 0) return 0
+  
+  const totalCompleted = student.lessonsCompleted + student.quizzesTaken + student.assignmentsSubmitted
+  return (totalCompleted / totalPublished) * 100
+}
 
 // Helper function to get progress color based on percentage
 const getProgressColor = (progress: number): string => {
@@ -36,6 +46,15 @@ const getProgressTextColor = (progress: number): string => {
   if (progress <= 30) return "text-red-600"
   if (progress <= 70) return "text-yellow-600"
   return "text-green-600"
+}
+
+// Helper function to get completion status color
+const getCompletionColor = (completed: number, total: number): string => {
+  if (total === 0) return "text-gray-500"
+  const percentage = (completed / total) * 100
+  if (percentage === 100) return "text-green-600"
+  if (percentage >= 50) return "text-yellow-600"
+  return "text-red-600"
 }
 
 const CourseStudentsPage: React.FC = () => {
@@ -112,6 +131,11 @@ const CourseStudentsPage: React.FC = () => {
     navigate(`/teacher/public-courses/${courseId}/students/${studentId}/assignments`)
   }
 
+  // Calculate total lessons, quizzes, assignments completed
+  const totalLessonsCompleted = students.reduce((sum, s) => sum + s.lessonsCompleted, 0)
+  const totalQuizzesTaken = students.reduce((sum, s) => sum + s.quizzesTaken, 0)
+  const totalAssignmentsSubmitted = students.reduce((sum, s) => sum + s.assignmentsSubmitted, 0)
+
   if (loading) {
     return (
       <div className="flex-1 overflow-auto">
@@ -132,7 +156,7 @@ const CourseStudentsPage: React.FC = () => {
   return (
     <div className="flex-1 overflow-auto">
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <Button
@@ -152,7 +176,7 @@ const CourseStudentsPage: React.FC = () => {
           </div>
 
           {/* Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -168,7 +192,7 @@ const CourseStudentsPage: React.FC = () => {
                   <p className="text-sm text-muted-foreground">Tiến độ TB</p>
                   <h3 className="text-2xl font-bold text-card-foreground">
                     {students.length > 0 
-                      ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+                      ? Math.round(students.reduce((sum, s) => sum + calculateProgress(s), 0) / students.length)
                       : 0}%
                   </h3>
                 </div>
@@ -178,11 +202,20 @@ const CourseStudentsPage: React.FC = () => {
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Điểm TB</p>
+                  <p className="text-sm text-muted-foreground">Bài học</p>
                   <h3 className="text-2xl font-bold text-card-foreground">
-                    {students.length > 0
-                      ? (students.reduce((sum, s) => sum + s.averageScore, 0) / students.length).toFixed(1)
-                      : 0}/10
+                    {totalLessonsCompleted}
+                  </h3>
+                </div>
+                <BookOpen className="w-8 h-8 text-indigo-500" />
+              </div>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Bài kiểm tra</p>
+                  <h3 className="text-2xl font-bold text-card-foreground">
+                    {totalQuizzesTaken}
                   </h3>
                 </div>
                 <ClipboardCheck className="w-8 h-8 text-orange-500" />
@@ -191,9 +224,9 @@ const CourseStudentsPage: React.FC = () => {
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Bài tập đã nộp</p>
+                  <p className="text-sm text-muted-foreground">Bài tập</p>
                   <h3 className="text-2xl font-bold text-card-foreground">
-                    {students.reduce((sum, s) => sum + s.assignmentsSubmitted, 0)}
+                    {totalAssignmentsSubmitted}
                   </h3>
                 </div>
                 <FileText className="w-8 h-8 text-purple-500" />
@@ -261,13 +294,13 @@ const CourseStudentsPage: React.FC = () => {
                         Tiến độ
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Bài học
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Bài kiểm tra
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Bài tập
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Điểm TB
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Thao tác
@@ -298,31 +331,29 @@ const CourseStudentsPage: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <div className="flex-1 bg-muted rounded-full h-2.5 min-w-[100px] overflow-hidden">
                               <div
-                                className={`h-2.5 rounded-full transition-all ${getProgressColor(student.progress)}`}
-                                style={{ width: `${Math.min(100, Math.max(0, student.progress))}%` }}
-                                aria-label={`Progress: ${Math.round(student.progress)}%`}
+                                className={`h-2.5 rounded-full transition-all ${getProgressColor(calculateProgress(student))}`}
+                                style={{ width: `${Math.min(100, Math.max(0, calculateProgress(student)))}%` }}
+                                aria-label={`Progress: ${Math.round(calculateProgress(student))}%`}
                               />
                             </div>
-                            <span className={`text-sm font-semibold min-w-[45px] text-right ${getProgressTextColor(student.progress)}`}>
-                              {Math.round(student.progress)}%
+                            <span className={`text-sm font-semibold min-w-[45px] text-right ${getProgressTextColor(calculateProgress(student))}`}>
+                              {Math.round(calculateProgress(student))}%
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm text-card-foreground">{student.quizzesTaken} bài</span>
+                          <span className={`text-sm font-medium ${getCompletionColor(student.lessonsCompleted, student.publishedLessons)}`}>
+                            {student.lessonsCompleted}/{student.publishedLessons}
+                          </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm text-card-foreground">{student.assignmentsSubmitted} bài</span>
+                          <span className={`text-sm font-medium ${getCompletionColor(student.quizzesTaken, student.publishedQuizzes)}`}>
+                            {student.quizzesTaken}/{student.publishedQuizzes}
+                          </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            student.averageScore >= 8
-                              ? 'bg-green-100 text-green-800'
-                              : student.averageScore >= 6
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {student.averageScore.toFixed(1)}/10
+                          <span className={`text-sm font-medium ${getCompletionColor(student.assignmentsSubmitted, student.publishedAssignments)}`}>
+                            {student.assignmentsSubmitted}/{student.publishedAssignments}
                           </span>
                         </td>
                         <td className="px-6 py-4">

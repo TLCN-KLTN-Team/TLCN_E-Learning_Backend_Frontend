@@ -92,7 +92,7 @@ const AssignedCoursesPage: React.FC = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 flex items-center text-foreground">
               <BookOpen className="mr-3 text-primary" size={32} />
-              Khóa Học Được Gán
+              Khóa Học Nội Bộ
             </h1>
             <p className="text-muted-foreground text-lg">Quản lý và chỉnh sửa các khóa học mà admin đã gán cho bạn</p>
           </div>

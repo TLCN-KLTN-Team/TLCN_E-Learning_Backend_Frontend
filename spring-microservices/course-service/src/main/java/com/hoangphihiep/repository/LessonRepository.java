@@ -13,12 +13,14 @@ public interface LessonRepository extends JpaRepository<Lesson, Integer> {
 
     List<Lesson> findBySectionId(int sectionId);
 
-    @Query("SELECT l FROM Lesson l WHERE l.section.id = :sectionId ORDER BY l.numberItem")
-    List<Lesson> findBySectionIdOrderByOrderIndex(@Param("sectionId") int sectionId);
-
     @Query("SELECT l FROM Lesson l WHERE l.section.course.id = :courseId")
     List<Lesson> findByCourseId(@Param("courseId") int courseId);
 
-    @Query("SELECT l FROM Lesson l WHERE LOWER(l.title) LIKE LOWER(CONCAT('%', :name, '%'))")
-    List<Lesson> findByLessonNameContaining(@Param("name") String name);
+    @Query("SELECT COUNT(l) FROM Lesson l WHERE l.section.course.id = :courseId")
+    int countByCourseId(@Param("courseId") Integer courseId);
+
+    @Query("SELECT COUNT(l) FROM Lesson l " +
+            "WHERE l.section.course.id = :courseId " +
+            "AND l.isPublished = true")
+    int countPublishedLessonsByCourseId(@Param("courseId") Integer courseId);
 }

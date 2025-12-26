@@ -26,10 +26,13 @@ public class WebClientConfiguration {
     CorsWebFilter corsWebFilter(){
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
+        // ✅ Cấu hình chi tiết (giữ lại phần này)
         corsConfiguration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-                "https://openedu-six.vercel.app"
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "https://openedu-six.vercel.app",
+                "https://yourdomain.com",
+                "https://*.yourdomain.com"
         ));
 
         corsConfiguration.setAllowedMethods(Arrays.asList(
@@ -39,7 +42,9 @@ public class WebClientConfiguration {
         corsConfiguration.setAllowedHeaders(Arrays.asList("*"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setExposedHeaders(Arrays.asList(
-                "Authorization", "Content-Type"
+                "Authorization", "Content-Type",
+                "Content-Disposition",  // ← Thêm này
+                "X-Total-Count"
         ));
         corsConfiguration.setMaxAge(3600L);
 

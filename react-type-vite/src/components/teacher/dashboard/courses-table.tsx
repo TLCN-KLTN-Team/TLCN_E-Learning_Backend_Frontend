@@ -1,8 +1,7 @@
-import type React from "react"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Edit, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Edit, Trash2, ChevronLeft, ChevronRight, Users, BookOpen, Award } from "lucide-react"
 import { useAuth } from "../../../context/auth-context/useAuth"
 import { getTeacherByUserId } from "../../../services/api/teacher/teacherApi"
 import { getTeacherCourses } from "../../../services/api/teacher/teacherCourseApi"
@@ -72,146 +71,234 @@ const CoursesTable: React.FC = () => {
   }
 
   return (
-    <div className="mt-0">
-      <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg mt-5 overflow-hidden shadow-sm">
-        {/* Card header START */}
-        <div className="bg-white border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h3 className="text-lg font-semibold mb-2 sm:mb-0 text-gray-800">My Courses</h3>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="bg-[#cde1f4] text-[#066ac9] border-[#9bc3e9] hover:bg-[#9bc3e9] transition-colors duration-300"
-            >
-              <Link to="/teacher/courses">View all</Link>
-            </Button>
+    <div className="mt-6">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Khóa học của tôi</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Quản lý và theo dõi hiệu suất khóa học của bạn
+              </p>
+            </div>
           </div>
         </div>
-        {/* Card header END */}
 
-        {/* Card body START */}
-        <div className="p-0">
+        {/* Body */}
+        <div className="p-6">
           {loading ? (
-            <div className="px-6 py-8 text-center text-gray-500">Loading courses...</div>
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading courses...</p>
+            </div>
           ) : courses.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500">No courses found. Create your first course!</div>
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-6 mb-4">
+                <BookOpen className="w-12 h-12 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No courses yet</h4>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Get started by creating your first course</p>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                Create Your First Course
+              </Button>
+            </div>
           ) : (
             <>
-              <div className="overflow-x-auto border-0 rounded-lg">
-                {/* Table START */}
-                <table className="w-full table-auto bg-[#24292d] dark:bg-gray-900 text-gray-100 p-4 mb-0">
-                  {/* Table head */}
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
                   <thead>
-                    <tr>
-                      <th className="border-0 rounded-l-lg px-6 py-3 text-left text-xs font-medium text-[#9a9ea4] uppercase tracking-wider">
-                        Course Name
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-left py-4 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                        Course
                       </th>
-                      <th className="border-0 px-6 py-3 text-left text-xs font-medium text-[#9a9ea4] uppercase tracking-wider">
+                      <th className="text-center py-4 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                         Students
                       </th>
-                      <th className="border-0 px-6 py-3 text-left text-xs font-medium text-[#9a9ea4] uppercase tracking-wider">
+                      <th className="text-center py-4 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                         Credits
                       </th>
-                      <th className="border-0 rounded-r-lg px-6 py-3 text-left text-xs font-medium text-[#9a9ea4] uppercase tracking-wider">
-                        Action
+                      <th className="text-right py-4 px-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
                       </th>
                     </tr>
                   </thead>
-                  {/* Table body START */}
-                  <tbody className="divide-y divide-[#404448]">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {courses.map((course) => (
-                      <tr key={course.id} className="hover:bg-[#404448] transition-colors duration-300">
-                        {/* Course item */}
-                        <td className="px-6 py-4">
-                          <h6 className="mb-0 text-sm font-medium text-white">
-                            <a href="#" className="hover:text-[#066ac9] transition-colors duration-300">
-                              {course.courseName}
-                            </a>
-                          </h6>
+                      <tr 
+                        key={course.id} 
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+                      >
+                        <td className="py-4 px-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center">
+                              <BookOpen className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                              <h6 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                {course.courseName}
+                              </h6>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Course ID: {course.id}
+                              </p>
+                            </div>
+                          </div>
                         </td>
-                        {/* Students item */}
-                        <td className="px-6 py-4 text-sm text-gray-100">{course.currentStudents || 0}</td>
-                        {/* Credits item */}
-                        <td className="px-6 py-4 text-sm text-gray-100">{course.credits || 0}</td>
-                        {/* Action item */}
-                        <td className="px-6 py-4">
-                          <div className="flex space-x-1">
+                        <td className="py-4 px-4">
+                          <div className="flex items-center justify-center">
+                            <div className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full">
+                              <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                {course.currentStudents || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center justify-center">
+                            <div className="flex items-center space-x-2 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-full">
+                              <Award className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                                {course.credits || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Link to={`/teacher/courses/${course.id}/edit`}>
+                              <Button
+                                size="sm"
+                                className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-0 h-9 px-3"
+                              >
+                                <Edit className="w-4 h-4 mr-1.5" />
+                                Edit
+                              </Button>
+                            </Link>
                             <Button
                               size="sm"
-                              asChild
-                              className="bg-[#cef2e7] text-[#0cbc87] hover:bg-[#9ee4cf] border-0 rounded-full w-8 h-8 p-0 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5"
+                              className="bg-red-50 hover:bg-red-100 text-red-600 border-0 h-9 px-3"
                             >
-                              <Link to={`/teacher/courses/${course.id}/edit`}>
-                                <Edit className="w-3 h-3" />
-                              </Link>
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="bg-[#f7d4d8] text-[#d6293e] hover:bg-[#efa9b2] border-0 rounded-full w-8 h-8 p-0 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5"
-                            >
-                              <X className="w-3 h-3" />
+                              <Trash2 className="w-4 h-4 mr-1.5" />
+                              Delete
                             </Button>
                           </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                  {/* Table body END */}
                 </table>
-                {/* Table END */}
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {courses.map((course) => (
+                  <div 
+                    key={course.id}
+                    className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-start space-x-3 mb-3">
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center">
+                        <BookOpen className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h6 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {course.courseName}
+                        </h6>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          ID: {course.id}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                        <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <div>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Students</p>
+                          <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                            {course.currentStudents || 0}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
+                        <Award className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <div>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Credits</p>
+                          <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                            {course.credits || 0}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <Link to={`/teacher/courses/${course.id}/edit`} className="flex-1">
+                        <Button size="sm" className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border-0">
+                          <Edit className="w-4 h-4 mr-1.5" />
+                          Edit
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-3 px-6 pb-4">
-                  {/* Content */}
-                  <p className="mb-0 text-center sm:text-left text-sm text-gray-600 dark:text-gray-400">
-                    Showing {page * size + 1} to {Math.min((page + 1) * size, (page + 1) * size)} entries
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Showing <span className="font-medium">{page * size + 1}</span> to{" "}
+                    <span className="font-medium">{Math.min((page + 1) * size, courses.length)}</span> of{" "}
+                    <span className="font-medium">{courses.length}</span> courses
                   </p>
-                  {/* Pagination */}
-                  <nav className="flex justify-center mb-0" aria-label="navigation">
+                  
+                  <nav className="flex items-center space-x-2">
+                    <Button
+                      onClick={handlePreviousPage}
+                      disabled={page === 0}
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1" />
+                      Previous
+                    </Button>
+                    
                     <div className="flex space-x-1">
-                      <Button
-                        onClick={handlePreviousPage}
-                        disabled={page === 0}
-                        variant="outline"
-                        size="sm"
-                        className="bg-[#cde1f4] text-[#066ac9] border-[#9bc3e9] hover:bg-[#9bc3e9] transition-colors duration-300 disabled:opacity-50"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </Button>
                       {getPageNumbers().map((pageNum) => (
                         <Button
                           key={pageNum}
                           onClick={() => handlePageClick(pageNum)}
                           size="sm"
-                          className={
+                          className={`h-9 px-3 ${
                             pageNum === page
-                              ? "bg-[#066ac9] text-white hover:bg-[#0555a1] transition-colors duration-300"
-                              : "bg-[#cde1f4] text-[#066ac9] border-[#9bc3e9] hover:bg-[#9bc3e9] transition-colors duration-300"
-                          }
+                              ? "bg-blue-600 text-white hover:bg-blue-700"
+                              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600"
+                          }`}
                         >
                           {pageNum + 1}
                         </Button>
                       ))}
-                      <Button
-                        onClick={handleNextPage}
-                        disabled={page >= totalPages - 1}
-                        variant="outline"
-                        size="sm"
-                        className="bg-[#cde1f4] text-[#066ac9] border-[#9bc3e9] hover:bg-[#9bc3e9] transition-colors duration-300 disabled:opacity-50"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
                     </div>
+                    
+                    <Button
+                      onClick={handleNextPage}
+                      disabled={page >= totalPages - 1}
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
                   </nav>
                 </div>
               )}
             </>
           )}
         </div>
-        {/* Card body END */}
       </div>
     </div>
   )

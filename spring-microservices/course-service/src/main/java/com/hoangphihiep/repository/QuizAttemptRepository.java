@@ -47,6 +47,7 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Intege
     @Query("SELECT COUNT(DISTINCT qa.quiz.id) FROM QuizAttempt qa " +
             "WHERE qa.idUser = :studentId " +
             "AND qa.quiz.section.course.id = :courseId " +
+            "AND qa.isPassed = TRUE " +
             "AND qa.submittedAt IS NOT NULL")
     int countCompletedQuizzesByStudentAndCourse(@Param("studentId") String studentId, @Param("courseId") Integer courseId);
 

@@ -40,7 +40,10 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
             "c.publishedCourse.coursePrice > :price")
     List<Course> findByIdTeacherAndPriceGreaterThan(@Param("teacherId") String teacherId, 
                                                      @Param("price") Double price);
-    
+
+    @Query("SELECT COUNT(c) FROM Course c WHERE c.idTeacher = :teacherId")
+    Integer countByTeacherId(@Param("teacherId") String teacherId);
+
     @Query("SELECT COUNT(c) FROM Course c WHERE c.educationalUnit.id = :educationalUnitId")
     long countByEducationalUnitId(@Param("educationalUnitId") Integer educationalUnitId);
     
