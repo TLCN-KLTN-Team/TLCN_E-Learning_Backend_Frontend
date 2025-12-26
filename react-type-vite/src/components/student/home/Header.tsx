@@ -3,7 +3,6 @@ import { useTheme } from "../../../context/theme-context";
 import { ThemeToggle } from "../../ui/ThemeToggle";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  User,
   Settings,
   ShoppingCart,
   BellDot,

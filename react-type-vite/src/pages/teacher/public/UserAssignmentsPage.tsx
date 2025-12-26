@@ -104,9 +104,6 @@ const StudentAssignmentsPage: React.FC = () => {
 
   const gradedCount = assignments.filter(a => a.status === 'graded').length
   const pendingCount = assignments.filter(a => a.status === 'pending').length
-  const averageScore = gradedCount > 0
-    ? (assignments.filter(a => a.score !== null).reduce((sum, a) => sum + (a.score || 0), 0) / gradedCount).toFixed(1)
-    : 0
 
   return (
     <div className="flex-1 overflow-auto">

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { BookOpen, FileText, Users, Settings, CheckCircle2, ClipboardList, Zap, X } from 'lucide-react'
+import { BookOpen, FileText, Users, Settings, CheckCircle2, ClipboardList, X } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { useSelectedClass } from "@/context/teacher/SelectedClassContext"
 

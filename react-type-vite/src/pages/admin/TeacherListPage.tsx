@@ -767,7 +767,7 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({
           )}
 
           {/* Additional Information */}
-          {(teacher.description || teacher.socialUrl) && (
+          {(teacher.description || teacher.avatarUrl) && (
             <div className="bg-orange-50 rounded-lg p-4">
               <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                 <FileText size={16} className="mr-2 text-orange-600" />
@@ -785,7 +785,7 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({
                     </div>
                   </div>
                 )}
-                {teacher.socialUrl && (
+                {teacher.avatarUrl && (
                   <div className="flex items-start">
                     <LinkIcon size={16} className="mr-3 text-gray-400 mt-1" />
                     <div className="flex-1">
@@ -793,12 +793,12 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({
                         Liên Kết Mạng Xã Hội
                       </p>
                       <a
-                        href={teacher.socialUrl}
+                        href={teacher.avatarUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline break-all"
                       >
-                        {teacher.socialUrl}
+                        {teacher.avatarUrl}
                       </a>
                     </div>
                   </div>

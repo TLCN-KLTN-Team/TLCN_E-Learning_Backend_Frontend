@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { GraduationCap, BookOpen, Phone, Mail, Globe } from "lucide-react";
+import { GraduationCap, Phone, Mail, Globe } from "lucide-react";
 
 interface GeneralInfoProps {
   description: string;
@@ -16,7 +16,6 @@ interface GeneralInfoProps {
 export function GeneralInfo({
   description,
   specializations,
-  educationLevels,
   contact,
 }: GeneralInfoProps) {
   return (
