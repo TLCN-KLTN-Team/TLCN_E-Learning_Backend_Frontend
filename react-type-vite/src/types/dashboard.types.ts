@@ -85,6 +85,7 @@ export interface ChartDataPoint {
   name: string;
   value: number;
   date?: string;
+  [key: string]: string | number | undefined;
 }
 
 export interface TimeSeriesData {
@@ -100,4 +101,11 @@ export type TrainingUnitType = "all" | "university" | "enterprise" | "center";
 export interface DashboardFilters {
   timeFilter: TimeFilter;
   trainingUnitType: TrainingUnitType;
+}
+
+export interface UserDistributionResponse {
+  totalUsers: number;
+  adminUsers: number;
+  instructorUsers: number;
+  studentUsers: number;
 }

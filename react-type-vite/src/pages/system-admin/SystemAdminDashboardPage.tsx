@@ -10,7 +10,6 @@ import {
   Loader2,
 } from "lucide-react";
 import StatCard from "@/components/system-admin/dashboard/StatCard";
-import UserGrowthChart from "@/components/system-admin/dashboard/UserGrowthChart";
 import WeeklyVisitsChart from "@/components/system-admin/dashboard/WeeklyVisitsChart";
 import UserDistributionChart from "@/components/system-admin/dashboard/UserDistributionChart";
 import TrainingUnitStatusChart from "@/components/system-admin/dashboard/TrainingUnitStatusChart";
@@ -22,9 +21,7 @@ import type {
 } from "@/types/dashboard.types";
 import { PeriodType, EducationType } from "@/types/dashboard.types";
 import {
-  mockUserGrowthData,
   mockWeeklyVisitsData,
-  mockUserDistribution,
   mockTrainingUnitDistribution,
   mockCourseCompletionData,
 } from "@/components/system-admin/data/dashboardMockData";
@@ -271,12 +268,12 @@ const SystemAdminDashboardPage: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Growth Chart */}
-        <div className="lg:col-span-2">
+        {/* <div className="lg:col-span-2">
           <UserGrowthChart data={mockUserGrowthData} />
-        </div>
+        </div> */}
 
         {/* User Distribution Pie Chart */}
-        <UserDistributionChart data={mockUserDistribution} />
+        <UserDistributionChart />
 
         {/* Training Unit Status Chart */}
         <TrainingUnitStatusChart data={mockTrainingUnitDistribution} />

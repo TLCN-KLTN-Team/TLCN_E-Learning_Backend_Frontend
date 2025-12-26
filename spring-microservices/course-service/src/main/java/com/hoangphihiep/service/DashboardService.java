@@ -2,7 +2,10 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.DashboardFilterRequest;
 import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.exception.AppException;
+import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.*;
+import com.hoangphihiep.repository.httpclient.UserRepository;
 import com.hoangphihiep.utils.EducationalUnitStatus;
 import com.hoangphihiep.utils.PeriodRange;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ public class DashboardService {
     private final CourseProgressRepository courseProgressRepository;
     private final PageVisitRepository pageVisitRepository;
     private final ViolationRepository violationRepository;
+    private final UserRepository userRepository;
 
     /**
      * Get comprehensive dashboard statistics based on filter
@@ -61,6 +65,14 @@ public class DashboardService {
                 .build();
     }
 
+    private Long countUsersByRole(String role) {
+        try {
+            return Long.parseLong(String.valueOf(userRepository.countUsersByRole(role).getResult()));
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.FEIGN_CLIENT_ERROR);
+        }
+    }
+
     /**
      * Calculate user statistics with student/teacher breakdown
      */
@@ -68,25 +80,24 @@ public class DashboardService {
                                                       Date currentStart, Date currentEnd,
                                                       Date previousStart, Date previousEnd) {
         // Count distinct students who enrolled in the current period
-        Long currentStudents = enrollmentRepository.countDistinctStudentsInPeriod(
-                educationType, currentStart, currentEnd);
+        Long currentStudents = this.countUsersByRole("STUDENT");
         Long previousStudents = enrollmentRepository.countDistinctStudentsInPeriod(
                 educationType, previousStart, previousEnd);
 
         // For teachers, count distinct teachers from courses (simplified approach)
         // In a real system, you'd call identity-service via Feign client
-        Long currentTeachers = courseRepository.countActiveCoursesInPeriod(
-                educationType, currentStart, currentEnd) / 10; // Approximation
+        Long currentTeachers = this.countUsersByRole("TEACHER"); // Approximation
         Long previousTeachers = courseRepository.countActiveCoursesInPeriod(
                 educationType, previousStart, previousEnd) / 10;
 
+        Long totalUsers = this.countUsersByRole("USER") + this.countUsersByRole("STUDENT") + this.countUsersByRole("TEACHER");
         Long totalCurrent = currentStudents + currentTeachers;
         Long totalPrevious = previousStudents + previousTeachers;
 
         Double growthRate = calculateGrowthRate(totalCurrent, totalPrevious);
 
         return UserStatisticsResponse.builder()
-                .totalUsers(totalCurrent)
+                .totalUsers(totalUsers)
                 .studentCount(currentStudents)
                 .teacherCount(currentTeachers)
                 .growthRate(growthRate)
@@ -206,6 +217,24 @@ public class DashboardService {
         }
         double rate = ((current - previous) * 100.0) / previous;
         return Math.round(rate * 10.0) / 10.0; // Round to 1 decimal place
+    }
+
+    public UserDistributionResponse getUserDistribution() {
+        try {
+            Long totalUsers = this.countUsersByRole("USER");
+            Long adminUsers = this.countUsersByRole("ADMIN");
+            Long instructorUsers = this.countUsersByRole("TEACHER");
+            Long studentUsers = this.countUsersByRole("STUDENT");
+
+            return UserDistributionResponse.builder()
+                    .totalUsers(totalUsers)
+                    .adminUsers(adminUsers)
+                    .instructorUsers(instructorUsers)
+                    .studentUsers(studentUsers)
+                    .build();
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.FEIGN_CLIENT_ERROR);
+        }
     }
 }
 

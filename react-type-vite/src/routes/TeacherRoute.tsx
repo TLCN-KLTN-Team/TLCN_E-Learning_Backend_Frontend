@@ -10,6 +10,7 @@ import CourseStudentsPage from "@/pages/teacher/public/CourseUsersPage";
 import StudentQuizzesPage from "@/pages/teacher/public/UserQuizzesPage";
 import StudentAssignmentsPage from "@/pages/teacher/public/UserAssignmentsPage";
 import TeacherRevenuePage from "@/pages/teacher/revenue/TeacherRevenuePage";
+import TeacherProfilePage from "@/pages/teacher/TeacherProfilePage";
 
 // Teacher routes - protected routes for teacher role
 const TeacherRoutes = [
@@ -72,6 +73,9 @@ const TeacherRoutes = [
       path="revenue"
       element={<TeacherRevenuePage />}
     />
+
+    {/* Profile Route */}
+    <Route key="teacher-info" path="info" element={<TeacherProfilePage />} />
   </Route>,
 ];
 

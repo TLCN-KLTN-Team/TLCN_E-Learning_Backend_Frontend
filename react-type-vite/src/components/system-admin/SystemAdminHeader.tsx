@@ -60,6 +60,10 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
           >
             <Menu className="w-5 h-5" />
           </button>
+          {/* System Admin Title */}
+          <h1 className="text-lg md:text-xl font-bold text-gray-900">
+            System Admin
+          </h1>
         </div>
 
         <div className="flex items-center space-x-2 md:space-x-4">

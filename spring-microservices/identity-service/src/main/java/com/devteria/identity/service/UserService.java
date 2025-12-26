@@ -101,8 +101,21 @@ public class UserService {
         }
     }
 
+    private void trimAndNormalizeReq(RegisterRequest request) {
+        request.setFirstName(request.getFirstName().trim());
+        request.setLastName(request.getLastName().trim());
+        request.setEmail(request.getEmail().trim().toLowerCase());
+        request.setPassword(request.getPassword().trim());
+        if (request.getPhoneNumber() != null) {
+            request.setPhoneNumber(request.getPhoneNumber().trim());
+        }
+    }
+
     @Transactional
     public String createUser(RegisterRequest request) {
+        // Trim and normalize data before saving
+        this.trimAndNormalizeReq(request);
+
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAccountStatus(AccountStatus.PENDING_VERIFICATION);
@@ -368,5 +381,14 @@ public class UserService {
         log.info("Call to db");
         return userMapper.toUserResponse(
                 userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
+    }
+
+    public int countByRole(String role) {
+        try {
+            Role roleEnum = Role.valueOf(role.toUpperCase());
+            return userRepository.countByRole(roleEnum);
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.INVALID_ROLE);
+        }
     }
 }

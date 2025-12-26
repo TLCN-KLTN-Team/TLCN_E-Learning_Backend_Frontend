@@ -114,7 +114,7 @@ const DetailEducationalUnit = () => {
     ...new Set(courses.map((c) => c.category).filter(Boolean)),
   ] as string[];
 
-  const departments = [...new Set(lecturers.map((l) => l.department))];
+  const departments = data.departments || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -136,7 +136,7 @@ const DetailEducationalUnit = () => {
       <div className="px-4 md:px-6 lg:px-8">
         <GeneralInfo
           description={data.description || "Chưa có mô tả chi tiết."}
-          specializations={[]}
+          specializations={departments}
           educationLevels={[]}
           contact={{
             email: data.email || "",

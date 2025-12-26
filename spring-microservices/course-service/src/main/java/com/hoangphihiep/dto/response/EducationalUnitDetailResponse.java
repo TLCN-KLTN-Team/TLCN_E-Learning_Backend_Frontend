@@ -27,7 +27,7 @@ public class EducationalUnitDetailResponse {
     private Integer totalDepartments;
     private Integer totalCourses;
     private Integer totalTeachers;
-    private Integer totalStudents;
+    private Long totalStudents;
     // representative info
     private String representativeName;
     private String representativeEmail;
@@ -35,6 +35,7 @@ public class EducationalUnitDetailResponse {
 
     private List<Teacher> teachers;
     private List<Course> courses;
+    private List<String> departments;
 
     @Data
     @NoArgsConstructor
