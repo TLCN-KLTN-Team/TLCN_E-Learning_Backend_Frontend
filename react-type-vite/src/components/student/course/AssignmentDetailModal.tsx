@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
@@ -23,6 +21,8 @@ import AssignmentSubmitForm from "./AssignmentSubmitForm"
 import type { AssignmentDetailResponse } from "@/services/api/response/assignmentDetailResponse"
 import type { AssignmentSubmissionResponse } from "@/services/api/response/assignmentSubmissionResponse"
 import DiscussionSection from "./DiscussionSection"
+import { useAuth } from "@/context/auth-context/useAuth"
+import { getAssignmentUnreadCount, markAssignmentDiscussionAsRead } from "@/services/api/assignmentDiscussionApi"
 
 interface AssignmentDetailModalProps {
   isOpen: boolean
@@ -35,12 +35,14 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
   onClose,
   assignmentId,
 }) => {
+  const { user } = useAuth()
   const [assignment, setAssignment] = useState<AssignmentDetailResponse | null>(null)
   const [mySubmission, setMySubmission] = useState<AssignmentSubmissionResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSubmitForm, setShowSubmitForm] = useState(false)
   const [activeTab, setActiveTab] = useState<"info" | "discussion">("info")
+  const [unreadCount, setUnreadCount] = useState<number>(0)
 
   useEffect(() => {
     if (isOpen && assignmentId) {
@@ -53,13 +55,15 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
       setIsLoading(true)
       setError(null)
 
-      const [assignmentData, submissionData] = await Promise.all([
+      const [assignmentData, submissionData, unreadCountData] = await Promise.all([
         assignmentApi.getAssignmentDetail(assignmentId),
         assignmentApi.getMySubmission(assignmentId),
+        getAssignmentUnreadCount(assignmentId).catch(() => 0), // Fallback to 0 if fails
       ])
 
       setAssignment(assignmentData)
       setMySubmission(submissionData)
+      setUnreadCount(unreadCountData)
     } catch (err) {
       console.error("Error fetching assignment detail:", err)
       setError("Không thể tải thông tin bài tập")
@@ -181,7 +185,17 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
               Thông tin & Nộp bài
             </button>
             <button
-              onClick={() => setActiveTab("discussion")}
+              onClick={async () => {
+                setActiveTab("discussion")
+                if (unreadCount > 0) {
+                  try {
+                    await markAssignmentDiscussionAsRead(assignmentId)
+                    setUnreadCount(0)
+                  } catch (err) {
+                    console.error("Error marking as read:", err)
+                  }
+                }
+              }}
               className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                 activeTab === "discussion"
                   ? "border-blue-500 text-blue-600"
@@ -190,6 +204,11 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
             >
               <MessageSquare className="w-4 h-4" />
               Thảo luận
+              {unreadCount > 0 && (
+                <span className="ml-1 px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </button>
           </nav>
         </div>
@@ -432,6 +451,7 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
               itemType="assignment"
               itemId={assignmentId}
               itemTitle={assignment.title}
+              user={user}
             />
           )}
         </div>

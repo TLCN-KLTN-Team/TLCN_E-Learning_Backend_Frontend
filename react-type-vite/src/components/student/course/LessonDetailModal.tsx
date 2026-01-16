@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { X, Play, FileText, Download, Loader2, AlertCircle, Calendar, Clock } from "lucide-react";
+import { X, Play, FileText, Download, Loader2, AlertCircle, Calendar, Clock, MessageSquare, BookOpen } from "lucide-react";
 import type { LessonResponse } from "@/services/api/response/lessonResponse";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
+import DiscussionSection from "./DiscussionSection";
+import { useAuth } from "@/context/auth-context/useAuth";
+import { getUnreadCount, markDiscussionAsRead } from "@/services/api/lessonDiscussionApi";
 
 interface LessonDetailModalProps {
   isOpen: boolean;
@@ -11,15 +14,22 @@ interface LessonDetailModalProps {
 }
 
 const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }: LessonDetailModalProps) => {
+  const { user } = useAuth();
   const [lesson] = useState<LessonResponse | null>(initialLesson || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"info" | "discussion">("info");
+  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
       if (lessonId && !initialLesson) {
         fetchLessonDetail();
+      }
+      // Fetch unread count
+      if (lessonId) {
+        fetchUnreadCount();
       }
     } else {
       document.body.style.overflow = "unset";
@@ -29,6 +39,30 @@ const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }:
       document.body.style.overflow = "unset";
     };
   }, [isOpen, lessonId]);
+
+  // Mark discussion as read when switching to discussion tab
+  const handleTabChange = async (tab: "info" | "discussion") => {
+    setActiveTab(tab);
+    if (tab === "discussion" && lessonId) {
+      try {
+        await markDiscussionAsRead(lessonId);
+        setUnreadCount(0);
+      } catch (err) {
+        console.error("Error marking discussion as read:", err);
+      }
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    if (!lessonId) return;
+    try {
+      const count = await getUnreadCount(lessonId);
+      setUnreadCount(count);
+    } catch (err) {
+      console.error("Error fetching unread count:", err);
+      setUnreadCount(0);
+    }
+  };
 
   const fetchLessonDetail = async () => {
     try {
@@ -90,34 +124,76 @@ const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }:
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
-        <div className="p-6 max-h-[85vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start justify-between p-6 pb-0 border-b">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                {lesson.videoUrl ? (
-                  <Play className="w-6 h-6 text-blue-600 flex-shrink-0" />
-                ) : (
-                  <FileText className="w-6 h-6 text-blue-600 flex-shrink-0" />
-                )}
+                <BookOpen className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
                   {lesson.title}
                 </h2>
               </div>
-              <p className="text-sm text-gray-500 ml-9">
-                Bài #{lesson.numberItem} • {lesson.sectionName}
-              </p>
+              {lesson.description && (
+                <p className="text-gray-600 mt-2">{lesson.description}</p>
+              )}
+              <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                <span className="flex items-center gap-1">
+                  <BookOpen className="w-4 h-4" />
+                  Bài học #{lesson.numberItem}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {new Date(lesson.createdAt).toLocaleDateString("vi-VN")}
+                </span>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <X className="w-6 h-6 text-gray-600" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Lesson Info Summary */}
+          {/* Tabs */}
+          <div className="border-b px-6">
+            <nav className="flex -mb-px">
+              <button
+                onClick={() => handleTabChange("info")}
+                className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                  activeTab === "info"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                Nội dung bài học
+              </button>
+              <button
+                onClick={() => handleTabChange("discussion")}
+                className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                  activeTab === "discussion"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Thảo luận
+                {unreadCount > 0 && (
+                  <span className="ml-1 px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === "info" && (
+              <div className="space-y-6">{/* Lesson Info Summary */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
             <h3 className="font-semibold text-lg mb-4">Thông tin bài học</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -258,15 +334,18 @@ const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }:
               </div>
             </div>
           )}
+              </div>
+            )}
 
-          {/* Actions */}
-          <div className="flex justify-end pt-4 border-t">
-            <button
-              onClick={onClose}
-              className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Đóng
-            </button>
+            {/* Discussion Tab */}
+            {activeTab === "discussion" && lessonId && (
+              <DiscussionSection
+                itemType="lesson"
+                itemId={lessonId}
+                itemTitle={lesson.title}
+                user={user}
+              />
+            )}
           </div>
         </div>
       </div>

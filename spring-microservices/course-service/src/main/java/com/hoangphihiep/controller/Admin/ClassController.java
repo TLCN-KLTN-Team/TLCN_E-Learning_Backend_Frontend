@@ -1,9 +1,11 @@
 package com.hoangphihiep.controller.Admin;
 
 import com.hoangphihiep.dto.request.CourseClassRequest;
+import com.hoangphihiep.dto.request.ClassImportRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.ClassStudentStatsResponse;
 import com.hoangphihiep.dto.response.CourseClassResponse;
+import com.hoangphihiep.dto.response.ClassImportResponse;
 import com.hoangphihiep.dto.response.StudentResponse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
@@ -67,6 +69,21 @@ public class ClassController {
 
         return ApiResponse.<Page<CourseClassResponse>>builder()
                 .result(classes)
+                .build();
+    }
+
+    @PostMapping("/courses/{courseId}/classes/bulk-import")
+    public ApiResponse<ClassImportResponse> bulkImportClasses(
+            @PathVariable int educationalUnitId,
+            @PathVariable int courseId,
+            @Valid @RequestBody ClassImportRequest request) {
+
+        log.info("Bulk importing {} classes for course {} in educational unit {}", request.getClasses() != null ? request.getClasses().size() : 0, courseId, educationalUnitId);
+
+        ClassImportResponse result = classService.bulkImportClasses(courseId, request.getClasses());
+
+        return ApiResponse.<ClassImportResponse>builder()
+                .result(result)
                 .build();
     }
 

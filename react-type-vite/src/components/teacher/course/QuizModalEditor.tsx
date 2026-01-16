@@ -73,14 +73,12 @@ const QuizModalEditor: React.FC<{
       const existingQuizzes = section?.quizs ? Array.from(section.quizs) : []
       const nextQuizNumberItem = getNextQuizNumberItem(existingQuizzes)
 
-      const questionsWithOrderIndex = (quiz.questions || []).map((q, index) => ({
-        ...q,
-        orderIndex: q.orderIndex ?? index + 1,
-        answers: (q.answers || []).map((a, answerIndex) => ({
-          ...a,
-          orderIndex: a.orderIndex ?? answerIndex + 1,
-        })),
-      }))
+      // Extract question IDs for many-to-many relationship
+      const questionIds = (quiz.questions || [])
+        .filter(q => q.id) // Only include questions with IDs (from library)
+        .map(q => q.id!)
+
+      console.log('[QuizModalEditor] Saving quiz with question IDs:', questionIds)
 
       const newQuiz: QuizRequest = {
         title: quiz.title,
@@ -93,7 +91,8 @@ const QuizModalEditor: React.FC<{
         sectionId,
         showResults: quiz.showResults,
         isPublished: false,
-        questions: questionsWithOrderIndex,
+        questions: quiz.questions, // Include questions for frontend display
+        questionIds, // Send question IDs instead of full question data
         ...(quiz.startTime && quiz.startTime.trim() !== "" && { startTime: new Date(quiz.startTime).toISOString() }),
         ...(quiz.endTime && quiz.endTime.trim() !== "" && { endTime: new Date(quiz.endTime).toISOString() }),
       }

@@ -31,7 +31,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @Getter
 @Setter
-@EqualsAndHashCode(exclude = {"section", "questions"})
+@EqualsAndHashCode(exclude = {"section"})
 @Table(name="quiz")
 @NamedQuery(name="Quiz.findAll", query="SELECT q from Quiz q")
 public class Quiz implements Serializable {
@@ -73,20 +73,14 @@ public class Quiz implements Serializable {
 
     @Column(name = "end_time")
     private LocalDateTime endTime;
+    
     @ManyToOne
     @JoinColumn(name = "section_id")
     private Section section;
 
-    @OneToMany(mappedBy = "quiz", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private Set<Question> questions = new HashSet<>();
+    // Removed direct relationship with Question - now using QuizQuestion join table
+    // Many-to-many relationship handled via QuizQuestion entity
 
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
     private Set<QuizAttempt> quizAttempts = new HashSet<>();
-
-    public void addQuestion(Question question) {
-        if (question != null) {
-            questions.add(question);
-        }
-    }
 }

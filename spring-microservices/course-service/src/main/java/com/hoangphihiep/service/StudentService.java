@@ -2,6 +2,7 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.StudentRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.dto.response.StudentImportResponse;
 import com.hoangphihiep.dto.response.StudentResponse;
 import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseClass;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -227,6 +229,53 @@ public class StudentService {
             log.error("Unexpected error updating student status {}: {}", studentId, e.getMessage(), e);
             throw new AppException(ErrorCode.STUDENT_VALIDATION_FAILED);
         }
+    }
+
+    public StudentImportResponse bulkImportStudents(int educationalUnitId, List<StudentRequest> students) {
+        List<StudentImportResponse.ImportResultDetail> results = new ArrayList<>();
+        int successful = 0;
+        int failed = 0;
+
+        for (StudentRequest student : students) {
+            try {
+                // Set educational unit ID as String to match DTO and identity-service
+                student.setEducationalUnitId(String.valueOf(educationalUnitId));
+                
+                // Create student using existing createStudent method
+                StudentResponse response = createStudent(student);
+                
+                results.add(StudentImportResponse.ImportResultDetail.builder()
+                    .username(student.getUsername())
+                    .success(true)
+                    .message("Tạo sinh viên thành công")
+                    .build());
+                successful++;
+                
+            } catch (Exception e) {
+                log.error("Failed to import student {}: {}", student.getUsername(), e.getMessage());
+                
+                String errorMessage = e.getMessage();
+                if (e instanceof AppException) {
+                    AppException appEx = (AppException) e;
+                    errorMessage = appEx.getErrorCode().getMessage();
+                }
+                
+                results.add(StudentImportResponse.ImportResultDetail.builder()
+                    .username(student.getUsername())
+                    .success(false)
+                    .message(errorMessage != null ? errorMessage : "Lỗi không xác định")
+                    .build());
+                failed++;
+            }
+        }
+
+        log.info("Bulk import completed: {} successful, {} failed", successful, failed);
+
+        return StudentImportResponse.builder()
+            .successful(successful)
+            .failed(failed)
+            .results(results)
+            .build();
     }
 
 }

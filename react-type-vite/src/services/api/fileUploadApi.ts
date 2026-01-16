@@ -17,3 +17,30 @@ export const uploadMultipleFiles = async (
 
   return response.data.result;
 };
+
+export interface FileUploadResponse {
+  url: string;
+  publicId: string;
+  originalFilename: string;
+  format: string;
+}
+
+/**
+ * Upload single image for discussion messages
+ */
+export const uploadImage = async (file: File): Promise<FileUploadResponse> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await axiosInstance.post<FileUploadResponse>(
+    "/server/api/discussions/quiz/upload-image",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data;
+};

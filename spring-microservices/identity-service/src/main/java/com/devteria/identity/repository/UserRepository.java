@@ -2,7 +2,6 @@ package com.devteria.identity.repository;
 
 import java.util.Optional;
 
-import com.devteria.identity.entity.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.devteria.identity.entity.Role;
 import com.devteria.identity.entity.User;
 
 @Repository
@@ -52,6 +52,6 @@ public interface UserRepository extends JpaRepository<User, String> {
             @Param("status") String status,
             Pageable pageable);
 
-	@Query("SELECT COUNT(u) FROM User u WHERE u.role = :roleEnum")
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role = :roleEnum")
     int countByRole(Role roleEnum);
 }

@@ -30,6 +30,7 @@ import type { SectionResponse } from "@/services/api/response/sectionResponse";
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse";
 import QuizDetailModal from "@/components/student/course/QuizDetailModal";
 import AssignmentDetailModal from "@/components/student/course/AssignmentDetailModal";
+import LessonDiscussionModal from "@/components/student/course/LessonDiscussionModal";
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
 import progressApi from "@/services/api/student/progressApi";
 import {
@@ -69,6 +70,13 @@ const CourseDetail = () => {
   // Lesson detail state
   const [expandedLessonId, setExpandedLessonId] = useState<number | null>(null);
 
+  // Lesson discussion modal state
+  const [selectedLessonForDiscussion, setSelectedLessonForDiscussion] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [isLessonDiscussionModalOpen, setIsLessonDiscussionModalOpen] = useState(false);
+
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );
@@ -103,7 +111,7 @@ const CourseDetail = () => {
       const detail = await progressApi.getCourseProgressDetail(Number(id));
       console.log("📝 Course progress detail:", detail);
       console.log("📚 Lesson progresses:", detail?.courseProgress?.lessonProgresses);
-      
+
       const completedLessonIds = new Set(
         detail?.courseProgress?.lessonProgresses
           ?.filter((lp: any) => {
@@ -112,11 +120,55 @@ const CourseDetail = () => {
           })
           ?.map((lp: any) => lp.lessonId) || []
       );
-      
+
       console.log("✅ Completed lesson IDs:", Array.from(completedLessonIds));
       setCompletedLessons(completedLessonIds);
     } catch (error) {
       console.error("Error fetching progress stats:", error);
+    }
+  };
+
+  // Fetch sections and contents
+  const fetchFilteredSections = async () => {
+    if (!id) return;
+
+    try {
+      setIsLoadingSections(true);
+      setSectionsError(null);
+
+      const filteredSections =
+        await courseEnrollmentApi.getEnrolledCourseContents(Number(id));
+
+      console.log("📚 Sections data:", filteredSections);
+
+      // Log quiz and assignment data for debugging
+      filteredSections.forEach(section => {
+        if (section.quizs) {
+          console.log(`📝 Section "${section.title}" - Quizzes:`, Array.from(section.quizs).map(q => ({
+            id: q.id,
+            title: q.title,
+            attemptsCount: q.attemptsCount
+          })));
+        }
+        if (section.assignments) {
+          console.log(`📋 Section "${section.title}" - Assignments:`, Array.from(section.assignments).map(a => ({
+            id: a.id,
+            title: a.title,
+            submissionsCount: a.submissionsCount
+          })));
+        }
+      });
+
+      setSections(filteredSections);
+
+      if (filteredSections.length > 0) {
+        setExpandedSections(new Set([filteredSections[0].id]));
+      }
+    } catch (error) {
+      console.error("Error fetching filtered sections:", error);
+      setSectionsError("Đã xảy ra lỗi khi tải nội dung khóa học");
+    } finally {
+      setIsLoadingSections(false);
     }
   };
 
@@ -150,7 +202,7 @@ const CourseDetail = () => {
           console.error("Error refreshing progress stats:", error);
         }
       }, 500);
-      
+
     } catch (error) {
       console.error("Error marking lesson complete:", error);
       alert("Không thể đánh dấu bài học đã hoàn thành. Vui lòng thử lại.");
@@ -185,29 +237,6 @@ const CourseDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    const fetchFilteredSections = async () => {
-      if (!id) return;
-
-      try {
-        setIsLoadingSections(true);
-        setSectionsError(null);
-
-        const filteredSections =
-          await courseEnrollmentApi.getEnrolledCourseContents(Number(id));
-
-        setSections(filteredSections);
-
-        if (filteredSections.length > 0) {
-          setExpandedSections(new Set([filteredSections[0].id]));
-        }
-      } catch (error) {
-        console.error("Error fetching filtered sections:", error);
-        setSectionsError("Không thể tải nội dung khóa học");
-      } finally {
-        setIsLoadingSections(false);
-      }
-    };
-
     if (activeTab === "content") {
       fetchFilteredSections();
     }
@@ -376,11 +405,10 @@ const CourseDetail = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
+                  className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   <tab.icon className="w-4 h-4 mr-2" />
                   {tab.label}
@@ -512,27 +540,24 @@ const CourseDetail = () => {
                                           >
                                             {/* Lesson Header */}
                                             <div
-                                              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                                                expandedLessonId === lesson.id
+                                              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${expandedLessonId === lesson.id
                                                   ? "bg-blue-100 border-blue-400 shadow-md"
                                                   : "hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm"
-                                              } ${
-                                                isCompleted
+                                                } ${isCompleted
                                                   ? "border-green-400 bg-green-50"
                                                   : ""
-                                              }`}
+                                                }`}
                                             >
                                               <div className="flex-shrink-0">
                                                 {isCompleted ? (
                                                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                                                 ) : (
                                                   <Circle
-                                                    className={`w-5 h-5 ${
-                                                      expandedLessonId ===
-                                                      lesson.id
+                                                    className={`w-5 h-5 ${expandedLessonId ===
+                                                        lesson.id
                                                         ? "text-blue-600"
                                                         : "text-gray-400"
-                                                    }`}
+                                                      }`}
                                                   />
                                                 )}
                                               </div>
@@ -619,7 +644,7 @@ const CourseDetail = () => {
                                                   }
                                                 >
                                                   {expandedLessonId ===
-                                                  lesson.id ? (
+                                                    lesson.id ? (
                                                     <ChevronDown className="w-5 h-5 text-blue-600" />
                                                   ) : (
                                                     <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -785,7 +810,7 @@ const CourseDetail = () => {
                                                   {/* Attachments */}
                                                   {lesson.attachments &&
                                                     lesson.attachments.length >
-                                                      0 && (
+                                                    0 && (
                                                       <div className="space-y-2">
                                                         <h4 className="font-semibold text-gray-700 flex items-center gap-2">
                                                           <Download className="w-5 h-5 text-green-500" />
@@ -824,6 +849,23 @@ const CourseDetail = () => {
                                                       </div>
                                                     )}
 
+                                                  {/* Discussion Button */}
+                                                  <div className="pt-4 border-t">
+                                                    <button
+                                                      onClick={() => {
+                                                        setSelectedLessonForDiscussion({
+                                                          id: lesson.id,
+                                                          title: lesson.title,
+                                                        });
+                                                        setIsLessonDiscussionModalOpen(true);
+                                                      }}
+                                                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                                    >
+                                                      <MessageSquare className="w-5 h-5" />
+                                                      Thảo luận về bài học này
+                                                    </button>
+                                                  </div>
+
                                                   {/* Section Info */}
                                                   <div className="pt-4 border-t text-sm text-gray-500">
                                                     <p>
@@ -852,16 +894,21 @@ const CourseDetail = () => {
                                     <div className="space-y-2">
                                       {sortedQuizzes.map((quiz) => {
                                         const isCompleted =
-                                          quiz.attemptsCount > 0;
+                                          (quiz.attemptsCount || 0) > 0;
+
+                                        console.log(`🎯 Quiz "${quiz.title}":`, {
+                                          id: quiz.id,
+                                          attemptsCount: quiz.attemptsCount,
+                                          isCompleted
+                                        });
 
                                         return (
                                           <div
                                             key={quiz.id}
-                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
-                                              isCompleted
+                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${isCompleted
                                                 ? "border-green-400 bg-green-50"
                                                 : "border-purple-200 bg-purple-50 hover:bg-purple-100"
-                                            }`}
+                                              }`}
                                           >
                                             <div className="flex-shrink-0">
                                               {isCompleted ? (
@@ -885,22 +932,25 @@ const CourseDetail = () => {
                                                   ` • Đã làm ${quiz.attemptsCount} lần`}
                                               </p>
                                             </div>
-                                            {isCompleted ? (
-                                              <span className="px-3 py-1.5 bg-green-100 text-green-700 text-sm rounded flex items-center gap-1">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                                Đã nộp
-                                              </span>
-                                            ) : (
-                                              <button
-                                                className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
-                                                onClick={() => {
-                                                  setSelectedQuizId(quiz.id);
-                                                  setIsQuizModalOpen(true);
-                                                }}
-                                              >
-                                                Làm bài
-                                              </button>
-                                            )}
+                                            <button
+                                              className={`px-3 py-1.5 text-sm rounded flex items-center gap-1 transition-colors ${isCompleted
+                                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                  : "bg-purple-600 text-white hover:bg-purple-700"
+                                                }`}
+                                              onClick={() => {
+                                                setSelectedQuizId(quiz.id);
+                                                setIsQuizModalOpen(true);
+                                              }}
+                                            >
+                                              {isCompleted ? (
+                                                <>
+                                                  <CheckCircle2 className="w-3 h-3" />
+                                                  Xem chi tiết
+                                                </>
+                                              ) : (
+                                                "Làm bài"
+                                              )}
+                                            </button>
                                           </div>
                                         );
                                       })}
@@ -920,14 +970,19 @@ const CourseDetail = () => {
                                           (assignment.submissionsCount || 0) >
                                           0;
 
+                                        console.log(`📝 Assignment "${assignment.title}":`, {
+                                          id: assignment.id,
+                                          submissionsCount: assignment.submissionsCount,
+                                          isCompleted
+                                        });
+
                                         return (
                                           <div
                                             key={assignment.id}
-                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
-                                              isCompleted
+                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${isCompleted
                                                 ? "border-green-400 bg-green-50"
                                                 : "border-orange-200 bg-orange-50 hover:bg-orange-100"
-                                            }`}
+                                              }`}
                                           >
                                             <div className="flex-shrink-0">
                                               {isCompleted ? (
@@ -955,27 +1010,30 @@ const CourseDetail = () => {
                                                 {isCompleted && ` • Đã nộp`}
                                               </p>
                                             </div>
-                                            {isCompleted ? (
-                                              <span className="px-3 py-1.5 bg-green-100 text-green-700 text-sm rounded flex items-center gap-1">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                                Đã nộp
-                                              </span>
-                                            ) : (
-                                              <button
-                                                className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setSelectedAssignmentId(
-                                                    assignment.id
-                                                  );
-                                                  setIsAssignmentModalOpen(
-                                                    true
-                                                  );
-                                                }}
-                                              >
-                                                Nộp bài
-                                              </button>
-                                            )}
+                                            <button
+                                              className={`px-3 py-1.5 text-sm rounded flex items-center gap-1 transition-colors ${isCompleted
+                                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                  : "bg-orange-600 text-white hover:bg-orange-700"
+                                                }`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedAssignmentId(
+                                                  assignment.id
+                                                );
+                                                setIsAssignmentModalOpen(
+                                                  true
+                                                );
+                                              }}
+                                            >
+                                              {isCompleted ? (
+                                                <>
+                                                  <CheckCircle2 className="w-3 h-3" />
+                                                  Xem chi tiết
+                                                </>
+                                              ) : (
+                                                "Nộp bài"
+                                              )}
+                                            </button>
                                           </div>
                                         );
                                       })}
@@ -1070,10 +1128,12 @@ const CourseDetail = () => {
         onClose={() => {
           setIsQuizModalOpen(false);
           setSelectedQuizId(null);
-          // Refresh progress after quiz submission
+          // Refresh progress and sections after quiz submission
           fetchProgressStats();
+          fetchFilteredSections();
         }}
         quizId={selectedQuizId || 0}
+        returnPath={`/student/dashboard/course/classes/${id}`}
       />
 
       <AssignmentDetailModal
@@ -1081,10 +1141,21 @@ const CourseDetail = () => {
         onClose={() => {
           setIsAssignmentModalOpen(false);
           setSelectedAssignmentId(null);
-          // Refresh progress after assignment submission
+          // Refresh progress and sections after assignment submission
           fetchProgressStats();
+          fetchFilteredSections();
         }}
         assignmentId={selectedAssignmentId || 0}
+      />
+
+      <LessonDiscussionModal
+        isOpen={isLessonDiscussionModalOpen}
+        onClose={() => {
+          setIsLessonDiscussionModalOpen(false);
+          setSelectedLessonForDiscussion(null);
+        }}
+        lessonId={selectedLessonForDiscussion?.id || 0}
+        lessonTitle={selectedLessonForDiscussion?.title || ""}
       />
     </div>
   );

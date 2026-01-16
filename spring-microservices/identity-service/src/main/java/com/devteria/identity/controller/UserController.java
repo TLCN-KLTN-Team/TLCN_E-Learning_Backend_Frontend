@@ -91,9 +91,7 @@ public class UserController {
     @GetMapping("/countUsers")
     public ApiResponse<Integer> countUsersByRole(@RequestParam String role) {
         int count = userService.countByRole(role);
-        return ApiResponse.<Integer>builder()
-                .result(count)
-                .build();
+        return ApiResponse.<Integer>builder().result(count).build();
     }
 
     @DeleteMapping("/{userId}")

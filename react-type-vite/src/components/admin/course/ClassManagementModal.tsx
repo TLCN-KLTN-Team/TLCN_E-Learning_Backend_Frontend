@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { X, Plus, Edit, Trash2, Users, School, Calendar, Hash } from "lucide-react";
+import { X, Plus, Edit, Trash2, Users, School, Calendar, Hash, Upload } from "lucide-react";
 import { toast } from 'react-toastify';
 import { Button } from "@/components/ui/button";
 import * as classApi from "@/services/api/admin/classApi";
 import EnrollStudentsToClassModal from "./EnrollStudentsToClassModal";
+import ImportClassesModal from "./ImportClassesModal";
 import type { CourseResponse } from "@/services/api/response/courseResponse";
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse";
 import type { CourseClassRequest } from "@/services/api/request/courseClassRequest";
@@ -30,6 +31,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
   const [selectedClass, setSelectedClass] = useState<CourseClassResponse | null>(null);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   
   const [formData, setFormData] = useState({
     className: "",
@@ -270,14 +272,24 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                         </div>
                       </div>
                       
-                      <Button 
-                        onClick={() => setShowCreateForm(true)} 
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
-                      >
-                        <Plus size={16} />
-                        <span className="hidden sm:inline">Tạo Lớp Học Mới</span>
-                        <span className="sm:hidden">Tạo Lớp</span>
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => setShowCreateForm(true)} 
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
+                        >
+                          <Plus size={16} />
+                          <span className="hidden sm:inline">Tạo Lớp Học Mới</span>
+                          <span className="sm:hidden">Tạo Lớp</span>
+                        </Button>
+                        <Button
+                          onClick={() => setShowImportModal(true)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 text-lg"
+                        >
+                          <Upload size={16} />
+                          <span className="hidden sm:inline">Import từ File</span>
+                          <span className="sm:hidden">Import</span>
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Classes List */}
@@ -568,6 +580,17 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
         courseClass={selectedClass}
         educationalUnitId={educationalUnitId}
         onSuccess={handleEnrollSuccess}
+      />
+
+      <ImportClassesModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        educationalUnitId={educationalUnitId}
+        course={course}
+        onSuccess={async () => {
+          await loadClasses();
+          onSuccess?.();
+        }}
       />
     </>
   );

@@ -12,6 +12,9 @@ import java.util.List;
 public interface AssignmentRepository extends JpaRepository<Assignment, Integer> {
     List<Assignment> findBySectionId(Integer sectionId);
 
+    @Query("SELECT a FROM Assignment a WHERE a.section.course.id = :courseId")
+    List<Assignment> findByCourseId(@Param("courseId") Integer courseId);
+
     @Query("SELECT COUNT(a) FROM Assignment a WHERE a.section.course.id = :courseId")
     int countByCourseId(@Param("courseId") Integer courseId);
 

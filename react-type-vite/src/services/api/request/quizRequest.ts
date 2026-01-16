@@ -14,7 +14,8 @@ export interface QuizRequest {
   isPublished?: boolean;
   startTime?: string;
   endTime?: string;
-  questions?: QuestionRequest[]; // Changed from Set to Array for frontend
+  questions?: QuestionRequest[]; // For frontend display only
+  questionIds?: number[]; // IDs for many-to-many relationship
   createdAt?: string;
   updateAt?: string;
 }

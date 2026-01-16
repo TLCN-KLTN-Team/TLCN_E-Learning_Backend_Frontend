@@ -2,6 +2,7 @@ import axiosInstance from "../httpClient/axiosInstance";
 import type { CourseClassRequest } from "../request/courseClassRequest";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import type { CourseClassResponse } from "../response/courseClassResponse";
+import type { ClassImportResponse } from "../response/classImportResponse";
 import type { ClassStudentStatsResponse } from "../response/studentEnrollmentResponse";
 import type { StudentResponse } from "../response/studentResponse";
 
@@ -117,3 +118,15 @@ export const getClassStatisticsByClass = async (
   )
   return response.data.result
 }
+
+export const bulkImportClasses = async (
+  educationalUnitId: number,
+  courseId: number,
+  classes: CourseClassRequest[]
+): Promise<ClassImportResponse> => {
+  const response = await axiosInstance.post<ApiResponse<ClassImportResponse>>(
+    `/course-management/admin/educationalUnit/${educationalUnitId}/courses/${courseId}/classes/bulk-import`,
+    { classes }
+  );
+  return response.data.result;
+};

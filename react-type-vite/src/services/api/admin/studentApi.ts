@@ -65,3 +65,14 @@ export const getAllStudents = async (): Promise<StudentResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<StudentResponse[]>>(`/course-management/admin/students/all`)
   return response.data.result
 }
+
+export const bulkImportStudents = async (
+  educationalUnitId: number,
+  students: StudentRequest[]
+): Promise<{ successful: number; failed: number; results: any[] }> => {
+  const response = await axiosInstance.post<ApiResponse<{ successful: number; failed: number; results: any[] }>>(
+    `/course-management/admin/educationalUnit/${educationalUnitId}/students/bulk-import`,
+    { students }
+  );
+  return response.data.result;
+};

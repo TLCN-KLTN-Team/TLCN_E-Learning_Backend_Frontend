@@ -46,6 +46,14 @@ export const quizApi = {
       `${QUIZ_API_BASE}/attempts/${attemptId}`
     )
     return response.data.result
+  },
+
+  // Get all quizzes for a class (for teacher discussion view)
+  getQuizzesByClass: async (classId: number): Promise<QuizResponse[]> => {
+    const response = await axiosInstance.get<ApiResponse<QuizResponse[]>>(
+      `/course-management/teacher/quizzes/class/${classId}`
+    )
+    return response.data.result
   }
 }
 

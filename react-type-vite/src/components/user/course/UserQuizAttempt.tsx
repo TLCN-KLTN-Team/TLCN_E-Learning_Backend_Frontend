@@ -14,7 +14,7 @@ import type { AnswerResponse } from '@/services/api/response/answerResponse'
 import type { QuizAttemptHistoryResponse } from '@/services/api/response/quizAttemptHistoryResponse'
 import type { QuizAttemptResponse } from '@/services/api/response/quizAttemptResponse'
 import type { QuizAnswerSubmission } from '@/services/api/request/quizAttemptRequest'
-import { Clock, CheckCircle, XCircle, Award, History, ChevronLeft, ChevronRight, LayoutGrid, LayoutList } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, Award, History, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, X, Eye, EyeOff, Flag } from 'lucide-react'
 
 type ViewMode = 'history' | 'taking' | 'result'
 type QuizViewMode = 'single' | 'all'
@@ -29,9 +29,10 @@ interface UserAnswer {
 interface Props {
   quizIdProp?: number
   onQuizCompleted?: () => void
+  onExit?: () => void
 }
 
-export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props = {}) {
+export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }: Props = {}) {
   const { quizId: quizIdParam } = useParams<{ quizId: string }>()
   const quizId = quizIdProp ? String(quizIdProp) : quizIdParam
   const navigate = useNavigate()
@@ -44,23 +45,58 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
   const [currentAttemptId, setCurrentAttemptId] = useState<number | null>(null)
   const [userAnswers, setUserAnswers] = useState<Map<number, UserAnswer>>(new Map())
   const [attemptResult, setAttemptResult] = useState<QuizAttemptResponse | null>(null)
-  
+  const [showAnswerReview, setShowAnswerReview] = useState(false)
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set())
+
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [timeSpent, setTimeSpent] = useState<number>(0)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (quizId) {
+      const savedState = localStorage.getItem(`quiz-attempt-${quizId}`)
+      if (savedState) {
+        try {
+          const { attemptId, timeLeft: savedTimeLeft, answers, timestamp, flaggedQuestions: savedFlagged } = JSON.parse(savedState)
+          const elapsed = Math.floor((Date.now() - timestamp) / 1000)
+          const newTimeLeft = Math.max(0, savedTimeLeft - elapsed)
+
+          if (newTimeLeft > 0 && attemptId) {
+            setCurrentAttemptId(attemptId)
+            setTimeLeft(newTimeLeft)
+            setTimeSpent(elapsed)
+            setViewMode('taking')
+
+            const answersMap = new Map()
+            answers.forEach((a: any) => {
+              answersMap.set(a.questionId, a)
+            })
+            setUserAnswers(answersMap)
+            // Restore flagged questions
+            if (savedFlagged) {
+              setFlaggedQuestions(new Set(savedFlagged))
+            }
+
+            loadQuizData(true)
+            return
+          } else {
+            localStorage.removeItem(`quiz-attempt-${quizId}`)
+          }
+        } catch (err) {
+          console.error('Error restoring quiz state:', err)
+        }
+      }
+
       loadQuizData()
     }
   }, [quizId])
 
-  // Timer effect
   useEffect(() => {
-    if (viewMode === 'taking' && timeLeft > 0) {
+    if (viewMode === 'taking') {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
+          if (prev <= 0) return 0
           if (prev <= 1) {
             handleAutoSubmit()
             return 0
@@ -71,9 +107,30 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
       }, 1000)
       return () => clearInterval(timer)
     }
-  }, [viewMode, timeLeft])
+  }, [viewMode])
 
-  const loadQuizData = async () => {
+  useEffect(() => {
+    if (viewMode === 'taking' && currentAttemptId && quizId) {
+      const state = {
+        attemptId: currentAttemptId,
+        timeLeft,
+        answers: Array.from(userAnswers.values()),
+        timestamp: Date.now(),
+        flaggedQuestions: Array.from(flaggedQuestions)
+      }
+      localStorage.setItem(`quiz-attempt-${quizId}`, JSON.stringify(state))
+    }
+  }, [viewMode, currentAttemptId, timeLeft, userAnswers, quizId, flaggedQuestions])
+
+  useEffect(() => {
+    if (viewMode === 'result' && attemptResult) {
+      setShowAnswerReview(true)
+    } else if (viewMode !== 'result') {
+      setShowAnswerReview(false)
+    }
+  }, [viewMode, attemptResult])
+
+  const loadQuizData = async (skipAutoStart = false) => {
     try {
       setLoading(true)
       console.log('🔄 Đang load quiz với ID:', quizId)
@@ -87,13 +144,16 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
       console.log('📜 Lịch sử attempts:', history)
       setQuiz(quizData)
       setAttemptHistory(history)
-      
-      // Auto-start quiz attempt
-      if (quizData.attemptLimit > 0 && history.length >= quizData.attemptLimit) {
-        toast.error(`Bạn đã hết số lần làm bài (${quizData.attemptLimit} lần)`)
+
+      if (skipAutoStart) {
         return
       }
-      
+
+      // if (quizData.attemptLimit > 0 && history.length >= quizData.attemptLimit) {
+      //   toast.error(`Bạn đã hết số lần làm bài (${quizData.attemptLimit} lần)`)
+      //   return
+      // }
+
       const { attemptId } = await userQuizApi.startQuizAttempt(Number(quizId))
       setCurrentAttemptId(attemptId)
       setViewMode('taking')
@@ -112,19 +172,19 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
     if (!quiz) return
     console.log('🎯 Bắt đầu quiz attempt cho quiz ID:', quizId)
     console.log('📊 Quiz hiện tại:', quiz)
-    // Check attempt limit
-    if (quiz.attemptLimit > 0 && attemptHistory.length >= quiz.attemptLimit) {
-      toast.error(`Bạn đã hết số lần làm bài (${quiz.attemptLimit} lần)`)
-      return
-    }
+
+    // if (quiz.attemptLimit > 0 && attemptHistory.length >= quiz.attemptLimit) {
+    //   toast.error(`Bạn đã hết số lần làm bài (${quiz.attemptLimit} lần)`)
+    //   return
+    // }
 
     try {
       setLoading(true)
       const { attemptId } = await userQuizApi.startQuizAttempt(Number(quizId))
-       console.log('✅ Attempt ID nhận được:', attemptId)
+      console.log('✅ Attempt ID nhận được:', attemptId)
       setCurrentAttemptId(attemptId)
       setViewMode('taking')
-      setTimeLeft(quiz.duration * 60) // Convert to seconds
+      setTimeLeft(quiz.duration * 60)
       setTimeSpent(0)
       setUserAnswers(new Map())
       toast.success('Bắt đầu làm bài!')
@@ -135,9 +195,9 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
     }
   }
 
-  const handleAnswerChange = (questionId: number, question: QuestionResponse, value: string | number) => {
+  const handleAnswerChange = (questionId: number, question: QuestionResponse, value: string | number | number[]) => {
     const newAnswers = new Map(userAnswers)
-    
+
     if (question.questionType === 'SINGLE_CHOICE' || question.questionType === 'TRUE_FALSE') {
       newAnswers.set(questionId, {
         questionId,
@@ -149,10 +209,15 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
       const newSelected = current.includes(answerId)
         ? current.filter(id => id !== answerId)
         : [...current, answerId]
-      
+
       newAnswers.set(questionId, {
         questionId,
         selectedAnswerIds: newSelected
+      })
+    } else if (question.questionType === 'FILL_IN_THE_BLANK') {
+      newAnswers.set(questionId, {
+        questionId,
+        selectedAnswerIds: Array.isArray(value) ? value : []
       })
     } else if (question.questionType === 'ESSAY') {
       newAnswers.set(questionId, {
@@ -160,28 +225,30 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
         answerText: String(value)
       })
     }
-    
+
     setUserAnswers(newAnswers)
   }
 
   const handleSubmitQuiz = async () => {
-    if (!quiz || !currentAttemptId) return
+    if (!quiz) return
+    if (!currentAttemptId) {
+      toast.error("Không tìm thấy ID bài làm. Vui lòng tải lại trang!")
+      return
+    }
 
-    // Check if all questions answered
     const questionsArray = Array.from(quiz.questions)
     const unanswered = questionsArray.filter(q => !userAnswers.has(q.id))
     const answered = questionsArray.length - unanswered.length
-    
-    // Detailed confirmation
-    const confirmMessage = unanswered.length > 0 
+
+    const confirmMessage = unanswered.length > 0
       ? `Bạn đã trả lời ${answered}/${questionsArray.length} câu hỏi.\nCòn ${unanswered.length} câu chưa trả lời.\n\nBạn có chắc muốn nộp bài?`
       : `Bạn đã trả lời đầy đủ ${questionsArray.length} câu hỏi.\n\nBạn có chắc muốn nộp bài?`
-    
+
     if (!window.confirm(confirmMessage)) return
 
     try {
       setSubmitting(true)
-      
+
       const answers: QuizAnswerSubmission[] = Array.from(userAnswers.values()).map(answer => ({
         questionId: answer.questionId,
         selectedAnswerId: answer.selectedAnswerId,
@@ -195,16 +262,19 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
         timeSpent
       })
 
+      localStorage.removeItem(`quiz-attempt-${quizId}`)
+
+      const courseKeys = Object.keys(localStorage).filter(key => key.startsWith('course-learning-'))
+      courseKeys.forEach(key => localStorage.removeItem(key))
+
       setAttemptResult(result)
       setViewMode('result')
       toast.success('Nộp bài thành công!')
-      
-      // Notify parent component
+
       if (onQuizCompleted) {
         onQuizCompleted()
       }
-      
-      // Reload history
+
       const history = await userQuizApi.getQuizAttemptHistory(Number(quizId))
       setAttemptHistory(history)
     } catch (error: any) {
@@ -222,18 +292,12 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
   const handleViewAttemptResult = async (attemptNumber: number) => {
     try {
       setLoading(true)
-      // Fetch attempt by attempt number (needs API update or use attemptHistory to get proper ID)
-      // For now, we'll use attemptNumber - 1 as index to get from history
       const attempt = attemptHistory[attemptNumber - 1]
       if (!attempt) {
         toast.error('Không tìm thấy thông tin lần làm bài')
         return
       }
-      // In real scenario, we need an API that accepts attemptNumber or the history should return attemptId
-      // For now we'll show a message
       toast('Tính năng xem chi tiết kết quả đang được cập nhật', { icon: 'ℹ️' })
-      // setAttemptResult(result)
-      // setViewMode('result')
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể xem kết quả')
     } finally {
@@ -252,11 +316,17 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
     return userAnswers.size
   }
 
-  // const getProgress = () => {
-  //   if (!quiz) return 0
-  //   const total = Array.from(quiz.questions).length
-  //   return (getAnsweredCount() / total) * 100
-  // }
+  const toggleQuestionFlag = (questionId: number) => {
+    setFlaggedQuestions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId)
+      } else {
+        newSet.add(questionId)
+      }
+      return newSet
+    })
+  }
 
   if (loading && !quiz) {
     return (
@@ -274,22 +344,22 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
   // History View
   if (viewMode === 'history') {
     const questionsArray = Array.from(quiz.questions)
-    const canStartNewAttempt = quiz.attemptLimit === 0 || attemptHistory.length < quiz.attemptLimit
+    const canStartNewAttempt = true // quiz.attemptLimit === 0 || attemptHistory.length < quiz.attemptLimit
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
         <div className="container mx-auto py-8 px-4 max-w-5xl">
-          {/* Breadcrumb */}
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate(-1)}
+              onClick={() => onExit ? onExit() : navigate(-1)}
               className="text-gray-600 hover:text-gray-900 -ml-2"
             >
               <ChevronLeft className="h-5 w-5 mr-1" />
               Quay lại khóa học
             </Button>
           </div>
+
           <Card className="shadow-xl border-0 overflow-hidden">
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-8 py-6">
               <CardTitle className="text-3xl text-white mb-2">{quiz.title}</CardTitle>
@@ -299,8 +369,8 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                 </CardDescription>
               )}
             </div>
+
             <CardContent className="p-8 space-y-6">
-              {/* Quiz Info */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-xl border border-blue-200">
                   <Clock className="h-6 w-6 text-blue-600 mb-2" />
@@ -308,6 +378,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                   <p className="text-2xl font-bold text-gray-900">{quiz.duration}</p>
                   <p className="text-xs text-gray-500">phút</p>
                 </div>
+
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-xl border border-purple-200">
                   <History className="h-6 w-6 text-purple-600 mb-2" />
                   <p className="text-xs text-gray-600 mb-1">Số lần làm</p>
@@ -316,12 +387,14 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                   </p>
                   <p className="text-xs text-gray-500">lần</p>
                 </div>
+
                 <div className="bg-gradient-to-br from-green-50 to-green-100 p-5 rounded-xl border border-green-200">
                   <Award className="h-6 w-6 text-green-600 mb-2" />
                   <p className="text-xs text-gray-600 mb-1">Điểm qua</p>
                   <p className="text-2xl font-bold text-gray-900">{quiz.passingScore}</p>
                   <p className="text-xs text-gray-500">%</p>
                 </div>
+
                 <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-5 rounded-xl border border-orange-200">
                   <CheckCircle className="h-6 w-6 text-orange-600 mb-2" />
                   <p className="text-xs text-gray-600 mb-1">Số câu hỏi</p>
@@ -330,7 +403,6 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                 </div>
               </div>
 
-              {/* Attempt History */}
               {attemptHistory.length > 0 && (
                 <div>
                   <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -339,14 +411,18 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                   </h3>
                   <div className="space-y-3">
                     {attemptHistory.map((attempt, index) => (
-                      <Card key={index} className="border-l-4 hover:shadow-md transition-shadow" style={{
-                        borderLeftColor: attempt.isPassed ? '#10b981' : '#ef4444'
-                      }}>
+                      <Card
+                        key={index}
+                        className="border-l-4 hover:shadow-md transition-shadow"
+                        style={{ borderLeftColor: attempt.isPassed ? '#10b981' : '#ef4444' }}
+                      >
                         <CardContent className="p-5">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <span className="text-lg font-bold text-gray-900">Lần {attempt.attemptNumber}</span>
+                                <span className="text-lg font-bold text-gray-900">
+                                  Lần {attempt.attemptNumber}
+                                </span>
                                 {attempt.isPassed ? (
                                   <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
                                     <CheckCircle className="h-4 w-4" />
@@ -385,9 +461,8 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                 </div>
               )}
 
-              {/* Start Button */}
               {canStartNewAttempt ? (
-                <Button 
+                <Button
                   onClick={handleStartQuiz}
                   disabled={loading}
                   size="lg"
@@ -437,14 +512,173 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
 
     const handleQuestionClick = (index: number) => {
       setCurrentQuestionIndex(index)
-      
-      // Scroll to question if in all view mode
+
       if (quizViewMode === 'all') {
         const questionElement = document.getElementById(`question-${index}`)
         if (questionElement) {
           questionElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }
       }
+    }
+
+    const renderFillInTheBlankQuestion = (question: QuestionResponse) => {
+      const userAnswer = userAnswers.get(question.id)
+      const blankAnswerMap = userAnswer?.selectedAnswerIds || []
+      const partRegex = /(\[[_\s]*\d+[_\s]*\])/g
+      const parts = question.questionText.split(partRegex)
+      let blankCounter = 0
+
+      const getAnswerForBlank = (blankIndex: number): string | undefined => {
+        const answerId = blankAnswerMap[blankIndex]
+        if (!answerId) return undefined
+        const answer = Array.from(question.answers || []).find((a) => a.id === answerId)
+        return answer?.content
+      }
+
+      const handleDropOnBlank = (blankIndex: number, e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const answerId = parseInt(e.dataTransfer.getData("answerId"))
+        const sourceBlankIndex = e.dataTransfer.getData("sourceBlankIndex")
+
+        if (answerId) {
+          const newAnswerIds = [...blankAnswerMap]
+
+          while (newAnswerIds.length <= blankIndex) {
+            newAnswerIds.push(0)
+          }
+
+          if (sourceBlankIndex !== "") {
+            const srcIdx = parseInt(sourceBlankIndex)
+            while (newAnswerIds.length <= srcIdx) {
+              newAnswerIds.push(0)
+            }
+          }
+
+          if (sourceBlankIndex !== "" && sourceBlankIndex !== null) {
+            const sourceIndex = parseInt(sourceBlankIndex)
+            if (!isNaN(sourceIndex) && sourceIndex !== blankIndex) {
+              newAnswerIds[sourceIndex] = 0
+            }
+          }
+
+          newAnswerIds[blankIndex] = answerId
+          handleAnswerChange(question.id, question, newAnswerIds)
+        }
+      }
+
+      const handleDragStart = (answerId: number, e: React.DragEvent) => {
+        e.dataTransfer.effectAllowed = "copy"
+        e.dataTransfer.setData("answerId", answerId.toString())
+        e.dataTransfer.setData("sourceBlankIndex", "")
+      }
+
+      const handleDragStartFromBlank = (answerId: number, blankIndex: number, e: React.DragEvent) => {
+        e.stopPropagation()
+        e.dataTransfer.effectAllowed = "copy"
+        e.dataTransfer.setData("answerId", answerId.toString())
+        e.dataTransfer.setData("sourceBlankIndex", blankIndex.toString())
+      }
+
+      const handleRemoveFromBlank = (blankIndex: number) => {
+        const newAnswerIds = [...blankAnswerMap]
+        newAnswerIds[blankIndex] = 0
+        handleAnswerChange(question.id, question, newAnswerIds)
+      }
+
+      const usedAnswerIds = new Set(blankAnswerMap.filter(id => id !== 0 && id !== undefined))
+
+      return (
+        <div className="space-y-8 pl-0 md:pl-2">
+          <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm leading-10 text-lg">
+            {parts.map((part, index) => {
+              if (part.match(partRegex)) {
+                const currentBlankIndex = blankCounter++
+                const answerText = getAnswerForBlank(currentBlankIndex)
+
+                return (
+                  <span
+                    key={index}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = "copy"
+                    }}
+                    onDrop={(e) => handleDropOnBlank(currentBlankIndex, e)}
+                    className={`
+                      inline-flex items-center justify-center align-middle mx-1.5 px-3 py-1
+                      min-w-[120px] min-h-[40px] h-auto rounded-md border-2 transition-all select-none
+                      ${answerText
+                        ? "bg-blue-100 border-blue-500 text-blue-800"
+                        : "bg-gray-50 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:bg-blue-50"
+                      }
+                    `}
+                  >
+                    {answerText ? (
+                      <span
+                        draggable
+                        onDragStart={(e) => {
+                          const answerId = blankAnswerMap[currentBlankIndex]
+                          if (answerId) {
+                            handleDragStartFromBlank(answerId, currentBlankIndex, e)
+                          }
+                        }}
+                        className="flex items-center gap-1 font-medium text-base whitespace-normal break-words text-center cursor-grab active:cursor-grabbing w-full justify-center h-full"
+                      >
+                        {answerText}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRemoveFromBlank(currentBlankIndex)
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          className="ml-1 p-0.5 hover:bg-blue-200 rounded-full text-blue-600 transition-colors"
+                          title="Xóa"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ) : (
+                      <span className="text-sm pointer-events-none">
+                        ({currentBlankIndex + 1})
+                      </span>
+                    )}
+                  </span>
+                )
+              }
+              return <span key={index} className="text-gray-800 align-middle">{part}</span>
+            })}
+          </div>
+
+          <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Kéo đáp án vào ô trống tương ứng
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              {question.answers && Array.from(question.answers).sort((a, b) => a.orderIndex - b.orderIndex).map((answer) => {
+                const isUsed = usedAnswerIds.has(answer.id)
+                return (
+                  <div
+                    key={answer.id}
+                    draggable={!isUsed}
+                    onDragStart={(e) => !isUsed && handleDragStart(answer.id, e)}
+                    className={`
+                      px-4 py-2 rounded-lg font-medium text-sm transition-all border select-none
+                      ${isUsed
+                        ? "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed opacity-60"
+                        : "bg-white text-gray-700 border-gray-300 shadow-sm hover:shadow-md hover:border-blue-400 hover:text-blue-600 cursor-grab active:cursor-grabbing"
+                      }
+                    `}
+                  >
+                    {answer.content}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )
     }
 
     const renderQuestion = (question: QuestionResponse, qIndex: number) => {
@@ -460,9 +694,51 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
       const userAnswer = userAnswers.get(question.id)
       console.log('User answer hiện tại:', userAnswer)
 
+      // Handle FILL_IN_THE_BLANK separately
+      if (question.questionType === 'FILL_IN_THE_BLANK') {
+        return (
+          <div
+            key={question.id}
+            id={`question-${qIndex}`}
+            className="bg-white rounded-lg border p-6 mb-6"
+          >
+            {/* Question Header */}
+            <div className="mb-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg font-bold">
+                  {qIndex + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      Điền khuyết
+                    </span>
+                    <span className="text-xs text-gray-500">Điểm {question.score}</span>
+                    {userAnswers.has(question.id) && (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    )}
+                    <button
+                      onClick={() => toggleQuestionFlag(question.id)}
+                      className={`ml-auto p-1.5 rounded hover:bg-gray-100 transition-colors ${flaggedQuestions.has(question.id) ? 'text-red-600' : 'text-gray-400'
+                        }`}
+                      title={flaggedQuestions.has(question.id) ? 'Bỏ đánh dấu' : 'Đánh dấu câu hỏi'}
+                    >
+                      <Flag className="h-5 w-5" fill={flaggedQuestions.has(question.id) ? 'currentColor' : 'none'} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Fill in the Blank Content */}
+            {renderFillInTheBlankQuestion(question)}
+          </div>
+        )
+      }
+
       return (
-        <div 
-          key={question.id} 
+        <div
+          key={question.id}
           id={`question-${qIndex}`}
           className="bg-white rounded-lg border p-6 mb-6"
         >
@@ -477,18 +753,26 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                   <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                     {question.questionType === 'SINGLE_CHOICE' ? 'Một đáp án' : question.questionType === 'MULTIPLE_CHOICE' ? 'Nhiều đáp án' : 'Đúng/Sai'}
                   </span>
-                  <span className="text-xs text-gray-500">Đạt điểm {question.score} trên {question.score}</span>
+                  <span className="text-xs text-gray-500">Điểm {question.score}</span>
                   {userAnswers.has(question.id) && (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   )}
+                  <button
+                    onClick={() => toggleQuestionFlag(question.id)}
+                    className={`ml-auto p-1.5 rounded hover:bg-gray-100 transition-colors ${flaggedQuestions.has(question.id) ? 'text-red-600' : 'text-gray-400'
+                      }`}
+                    title={flaggedQuestions.has(question.id) ? 'Bỏ đánh dấu' : 'Đánh dấu câu hỏi'}
+                  >
+                    <Flag className="h-5 w-5" fill={flaggedQuestions.has(question.id) ? 'currentColor' : 'none'} />
+                  </button>
                 </div>
                 <p className="text-gray-900 text-base">{question.questionText}</p>
                 {question.attachments && question.attachments.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {question.attachments.map((url: string, i: number) => (
-                      <img 
-                        key={i} 
-                        src={url} 
+                      <img
+                        key={i}
+                        src={url}
                         alt={`Attachment ${i + 1}`}
                         className="max-w-full h-auto rounded border"
                       />
@@ -508,13 +792,13 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
               >
                 <div className="space-y-2">
                   {answersArray.map((answer: AnswerResponse) => (
-                    <Label 
+                    <Label
                       key={answer.id}
                       htmlFor={`q${question.id}-a${answer.id}`}
                       className="flex items-center p-3 border rounded hover:bg-gray-50 cursor-pointer"
                     >
-                      <RadioGroupItem 
-                        value={answer.id.toString()} 
+                      <RadioGroupItem
+                        value={answer.id.toString()}
                         id={`q${question.id}-a${answer.id}`}
                         className="mr-3"
                       />
@@ -573,7 +857,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
             <div>
               <h1 className="text-xl font-bold text-gray-900">{quiz.title}</h1>
               <p className="text-sm text-gray-500">
-                {quizViewMode === 'single' 
+                {quizViewMode === 'single'
                   ? `Câu hỏi ${currentQuestionIndex + 1}/${questionsArray.length}`
                   : `Tất cả ${questionsArray.length} câu hỏi`
                 }
@@ -597,10 +881,12 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                   </>
                 )}
               </button>
-              
+
               <div className="flex items-center gap-2 text-gray-700">
                 <Clock className="h-5 w-5" />
-                <span className="text-lg font-semibold">{formatTime(timeLeft)}</span>
+                <span className="text-lg font-semibold">
+                  {quiz.duration === 0 ? formatTime(timeSpent) : formatTime(timeLeft)}
+                </span>
               </div>
               <Button
                 onClick={handleSubmitQuiz}
@@ -619,7 +905,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
             {quizViewMode === 'single' ? (
               <>
                 {renderQuestion(currentQuestion, currentQuestionIndex)}
-                
+
                 {/* Navigation */}
                 <div className="flex justify-between">
                   <Button
@@ -671,19 +957,21 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
                 {questionsArray.map((q, idx) => {
                   const isAnswered = userAnswers.has(q.id)
                   const isActive = idx === currentQuestionIndex && quizViewMode === 'single'
+                  const isFlagged = flaggedQuestions.has(q.id)
                   return (
                     <button
                       key={q.id}
                       onClick={() => handleQuestionClick(idx)}
-                      className={`w-10 h-10 rounded border-2 flex items-center justify-center font-medium text-sm ${
-                        isActive ? 'ring-2 ring-blue-600 ring-offset-2' : ''
-                      } ${
-                        isAnswered
+                      className={`w-10 h-10 rounded border-2 flex items-center justify-center font-medium text-sm relative ${isActive ? 'ring-2 ring-blue-600 ring-offset-2' : ''
+                        } ${isAnswered
                           ? 'bg-green-50 border-green-500 text-green-700'
                           : 'bg-white border-gray-300 text-gray-600 hover:border-blue-400'
-                      }`}
+                        }`}
                     >
                       {idx + 1}
+                      {isFlagged && (
+                        <Flag className="h-3 w-3 text-red-500 absolute -top-1 -right-1" fill="currentColor" />
+                      )}
                     </button>
                   )
                 })}
@@ -716,13 +1004,16 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
 
   // Result View
   if (viewMode === 'result' && attemptResult) {
+    const questionsArray = Array.from(quiz.questions).sort((a, b) => a.orderIndex - b.orderIndex)
+    const answersByQuestion = new Map(attemptResult.answers.map(answer => [answer.questionId, answer]))
+
     return (
       <div className="py-6 px-4 max-w-3xl mx-auto">
         {/* Breadcrumb */}
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate(-1)}
+            onClick={() => onExit ? onExit() : navigate(-1)}
             className="text-gray-600 hover:text-gray-900 -ml-2"
           >
             <ChevronLeft className="h-5 w-5 mr-1" />
@@ -730,69 +1021,242 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted }: Props =
           </Button>
         </div>
         <Card className="shadow-2xl border-0 overflow-hidden">
-            <div className={`px-8 py-12 text-center ${
-              attemptResult.isPassed 
-                ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
-                : 'bg-gradient-to-br from-red-500 to-rose-600'
+          <div className={`px-8 py-12 text-center ${attemptResult.isPassed
+            ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+            : 'bg-gradient-to-br from-red-500 to-rose-600'
             }`}>
-              <div className="mx-auto mb-6 w-24 h-24 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                {attemptResult.isPassed ? (
-                  <CheckCircle className="h-14 w-14 text-white" />
-                ) : (
-                  <XCircle className="h-14 w-14 text-white" />
-                )}
+            <div className="mx-auto mb-6 w-24 h-24 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+              {attemptResult.isPassed ? (
+                <CheckCircle className="h-14 w-14 text-white" />
+              ) : (
+                <XCircle className="h-14 w-14 text-white" />
+              )}
+            </div>
+            <CardTitle className="text-4xl font-bold text-white mb-3">
+              {attemptResult.isPassed ? 'Chúc mừng! Bạn đã đạt' : 'Chưa đạt yêu cầu'}
+            </CardTitle>
+            <div className="text-white/90 text-xl">
+              Điểm số: <span className="font-bold text-2xl">{attemptResult.score}/{attemptResult.totalScore}</span>
+              <span className="ml-2 text-lg">
+                ({((attemptResult.score / attemptResult.totalScore) * 100).toFixed(1)}%)
+              </span>
+            </div>
+          </div>
+
+          <CardContent className="p-8 space-y-6">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl text-center border border-blue-200">
+                <Clock className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-1">Thời gian</p>
+                <p className="text-2xl font-bold text-gray-900">{formatTime(attemptResult.timeSpent)}</p>
               </div>
-              <CardTitle className="text-4xl font-bold text-white mb-3">
-                {attemptResult.isPassed ? 'Chúc mừng! Bạn đã đạt' : 'Chưa đạt yêu cầu'}
-              </CardTitle>
-              <div className="text-white/90 text-xl">
-                Điểm số: <span className="font-bold text-2xl">{attemptResult.score}/{attemptResult.totalScore}</span>
-                <span className="ml-2 text-lg">
-                  ({((attemptResult.score / attemptResult.totalScore) * 100).toFixed(1)}%)
-                </span>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl text-center border border-purple-200">
+                <Award className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-1">Điểm đạt được</p>
+                <p className="text-2xl font-bold text-gray-900">{attemptResult.score}</p>
+              </div>
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl text-center border border-green-200">
+                <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-1">Kết quả</p>
+                <p className={`text-lg font-bold ${attemptResult.isPassed ? 'text-green-600' : 'text-red-600'}`}>
+                  {attemptResult.isPassed ? 'Đạt' : 'Không đạt'}
+                </p>
               </div>
             </div>
-            
-            <CardContent className="p-8 space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl text-center border border-blue-200">
-                  <Clock className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-1">Thời gian</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatTime(attemptResult.timeSpent)}</p>
-                </div>
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl text-center border border-purple-200">
-                  <Award className="h-6 w-6 text-purple-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-1">Điểm đạt được</p>
-                  <p className="text-2xl font-bold text-gray-900">{attemptResult.score}</p>
-                </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl text-center border border-green-200">
-                  <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-1">Kết quả</p>
-                  <p className={`text-lg font-bold ${attemptResult.isPassed ? 'text-green-600' : 'text-red-600'}`}>
-                    {attemptResult.isPassed ? 'Đạt' : 'Không đạt'}
-                  </p>
-                </div>
-              </div>
 
-              <div className="flex gap-4">
-                <Button 
-                  onClick={() => setViewMode('history')}
-                  variant="outline"
-                  className="flex-1 py-6 text-base"
-                >
-                  Xem lịch sử
-                </Button>
-               <Button 
-                  onClick={() => navigate(-1)}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 
+            <div className="flex gap-4">
+              <Button
+                onClick={() => setViewMode('history')}
+                variant="outline"
+                className="flex-1 py-6 text-base"
+              >
+                Xem lịch sử
+              </Button>
+              <Button
+                onClick={() => {
+                  // Clear CourseLearning localStorage before navigating back
+                  const courseKeys = Object.keys(localStorage).filter(key => key.startsWith('course-learning-'))
+                  courseKeys.forEach(key => localStorage.removeItem(key))
+                  console.log('🗑️ Cleared CourseLearning state from localStorage')
+                  onExit ? onExit() : navigate(-1)
+                }}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 
                             hover:from-purple-700 hover:to-indigo-700 
                             py-6 text-base text-white"
-                >
-                  Hoàn thành
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              >
+                Hoàn thành
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-gray-900">Chi tiết đáp án</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAnswerReview(!showAnswerReview)}
+              className="flex items-center gap-2"
+            >
+              {showAnswerReview ? (
+                <>
+                  <EyeOff className="h-4 w-4" />
+                  Ẩn đáp án
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4" />
+                  Xem đáp án
+                </>
+              )}
+            </Button>
+          </div>
+
+          {showAnswerReview && (
+            <div className="space-y-4">
+              {questionsArray.map((question, idx) => {
+                const attemptAnswer = answersByQuestion.get(question.id)
+                const answersArray = Array.from(question.answers || []).sort((a, b) => a.orderIndex - b.orderIndex)
+                const answerById = new Map(answersArray.map(a => [a.id, a]))
+                const correctAnswers = answersArray.filter(a => a.isCorrect)
+
+                const renderUserAnswer = () => {
+                  if (!attemptAnswer) {
+                    return <p className="text-gray-500">Chưa trả lời</p>
+                  }
+
+                  if (question.questionType === 'ESSAY') {
+                    return (
+                      <p className="text-gray-800 whitespace-pre-wrap">{attemptAnswer.answerText || 'Chưa trả lời'}</p>
+                    )
+                  }
+
+                  if (question.questionType === 'FILL_IN_THE_BLANK') {
+                    const blanks = attemptAnswer.selectedAnswerIds || []
+                    if (blanks.length === 0) {
+                      return <p className="text-gray-500">Chưa trả lời</p>
+                    }
+
+                    return (
+                      <div className="space-y-1">
+                        {blanks.map((answerId, blankIdx) => (
+                          <div key={blankIdx} className="text-sm text-gray-800">
+                            <span className="font-semibold text-gray-600 mr-2">Ô {blankIdx + 1}:</span>
+                            <span>{answerById.get(answerId)?.content || '—'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }
+
+                  if (question.questionType === 'MULTIPLE_CHOICE') {
+                    const selectedIds = attemptAnswer.selectedAnswerIds || []
+                    if (selectedIds.length === 0) return <p className="text-gray-500">Chưa trả lời</p>
+
+                    return (
+                      <ul className="list-disc list-inside text-gray-800">
+                        {selectedIds.map(id => (
+                          <li key={id}>{answerById.get(id)?.content || '—'}</li>
+                        ))}
+                      </ul>
+                    )
+                  }
+
+                  const selected = attemptAnswer.selectedAnswerId
+                  if (!selected) return <p className="text-gray-500">Chưa trả lời</p>
+
+                  return <p className="text-gray-800">{answerById.get(selected)?.content || '—'}</p>
+                }
+
+                const renderCorrectAnswers = () => {
+                  if (question.questionType === 'ESSAY') {
+                    return <p className="text-gray-500">Chờ giáo viên chấm</p>
+                  }
+
+                  if (question.questionType === 'FILL_IN_THE_BLANK') {
+                    if (correctAnswers.length === 0) return <p className="text-gray-500">Chưa có đáp án</p>
+                    return (
+                      <div className="space-y-1">
+                        {correctAnswers.map((answer, index) => (
+                          <div key={answer.id} className="text-sm text-gray-800">
+                            <span className="font-semibold text-gray-600 mr-2">Ô {index + 1}:</span>
+                            <span>{answer.content}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }
+
+                  if (correctAnswers.length === 0) return <p className="text-gray-500">Chưa có đáp án</p>
+
+                  return (
+                    <ul className="list-disc list-inside text-gray-800">
+                      {correctAnswers.map(answer => (
+                        <li key={answer.id}>{answer.content}</li>
+                      ))}
+                    </ul>
+                  )
+                }
+
+                const isCorrect = attemptAnswer?.isCorrect
+
+                return (
+                  <div key={question.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-semibold">
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <p className="font-semibold text-gray-900">{question.questionText}</p>
+                          <p className="text-xs text-gray-500">
+                            {question.questionType === 'SINGLE_CHOICE' && 'Một đáp án'}
+                            {question.questionType === 'MULTIPLE_CHOICE' && 'Nhiều đáp án'}
+                            {question.questionType === 'TRUE_FALSE' && 'Đúng/Sai'}
+                            {question.questionType === 'FILL_IN_THE_BLANK' && 'Điền khuyết'}
+                            {question.questionType === 'ESSAY' && 'Tự luận'}
+                          </p>
+                        </div>
+                      </div>
+                      {attemptAnswer && (
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            }`}
+                        >
+                          {isCorrect ? 'Đúng' : 'Sai'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <div className="bg-white rounded-lg border p-3">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Câu trả lời của bạn</p>
+                        {renderUserAnswer()}
+                      </div>
+                      <div className="bg-white rounded-lg border p-3">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Đáp án đúng</p>
+                        {renderCorrectAnswers()}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading state
+  if (loading && !quiz) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải bài kiểm tra...</p>
+        </div>
       </div>
     )
   }

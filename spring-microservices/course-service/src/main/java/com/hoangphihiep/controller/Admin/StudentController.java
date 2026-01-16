@@ -1,7 +1,9 @@
 package com.hoangphihiep.controller.Admin;
 
+import com.hoangphihiep.dto.request.StudentImportRequest;
 import com.hoangphihiep.dto.request.StudentRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.dto.response.StudentImportResponse;
 import com.hoangphihiep.dto.response.StudentResponse;
 import com.hoangphihiep.service.*;
 import jakarta.validation.Valid;
@@ -38,7 +40,7 @@ public class StudentController {
             @PathVariable int educationalUnitId,
             @Valid @RequestBody StudentRequest request) {
 
-        request.setEducationalUnitId(educationalUnitId);
+        request.setEducationalUnitId(String.valueOf(educationalUnitId));
 
         StudentResponse response = studentService.createStudent(request);
 
@@ -54,7 +56,7 @@ public class StudentController {
             @Valid @RequestBody StudentRequest request) {
 
         // Đảm bảo educationalUnitId khớp với institutionId
-        request.setEducationalUnitId(educationalUnitId);
+        request.setEducationalUnitId(String.valueOf(educationalUnitId));
 
         StudentResponse response = studentService.updateStudent(studentId, request);
 
@@ -88,6 +90,21 @@ public class StudentController {
 
         return ApiResponse.<StudentResponse>builder()
                 .result(response)
+                .build();
+    }
+
+    @PostMapping("/students/bulk-import")
+    public ApiResponse<StudentImportResponse> bulkImportStudents(
+            @PathVariable int educationalUnitId,
+            @Valid @RequestBody StudentImportRequest request) {
+
+        log.info("Bulk importing {} students for educational unit {}", 
+                request.getStudents().size(), educationalUnitId);
+
+        StudentImportResponse result = studentService.bulkImportStudents(educationalUnitId, request.getStudents());
+
+        return ApiResponse.<StudentImportResponse>builder()
+                .result(result)
                 .build();
     }
 }

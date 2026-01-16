@@ -75,17 +75,17 @@ public class UserQuizService {
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
 
         LocalDateTime now = LocalDateTime.now();
-        if (quiz.getStartTime() != null && quiz.getStartTime().isAfter(now)) {
-            throw new AppException(ErrorCode.QUIZ_NOT_STARTED);
-        }
-        if (quiz.getEndTime() != null && quiz.getEndTime().isBefore(now)) {
-            throw new AppException(ErrorCode.QUIZ_ENDED);
-        }
+        // if (quiz.getStartTime() != null && quiz.getStartTime().isAfter(now)) {
+        //     throw new AppException(ErrorCode.QUIZ_NOT_STARTED);
+        // }
+        // if (quiz.getEndTime() != null && quiz.getEndTime().isBefore(now)) {
+        //     throw new AppException(ErrorCode.QUIZ_ENDED);
+        // }
 
         int attemptCount = quizAttemptRepository.countByQuizIdAndIdUser(quizId, userId);
-        if (attemptCount >= quiz.getAttemptLimit()) {
-            throw new AppException(ErrorCode.QUIZ_ATTEMPT_LIMIT_REACHED);
-        }
+        // if (attemptCount >= quiz.getAttemptLimit()) {
+        //     throw new AppException(ErrorCode.QUIZ_ATTEMPT_LIMIT_REACHED);
+        // }
 
         QuizAttempt attempt = QuizAttempt.builder()
                 .idUser(userId)
@@ -145,6 +145,57 @@ public class UserQuizService {
                     }
 
                     // Store selected IDs as comma-separated string
+                    String selectedAnswersJson = answerRequest.getSelectedAnswerIds().stream()
+                            .map(String::valueOf)
+                            .collect(Collectors.joining(","));
+
+                    QuizAttemptAnswer attemptAnswer = QuizAttemptAnswer.builder()
+                            .quizAttempt(attempt)
+                            .question(question)
+                            .selectedAnswer(null)
+                            .answerText(selectedAnswersJson)
+                            .isCorrect(isCorrect)
+                            .pointsAwarded(pointsAwarded)
+                            .answeredAt(LocalDateTime.now())
+                            .build();
+
+                    attemptAnswers.add(attemptAnswer);
+                }
+            } else if ("FILL_IN_THE_BLANK".equals(question.getQuestionType())) {
+                // Handle fill in the blank
+                if (answerRequest.getSelectedAnswerIds() != null &&
+                        !answerRequest.getSelectedAnswerIds().isEmpty()) {
+
+                    // Lấy tất cả các đáp án đúng cho câu hỏi, sắp xếp theo orderIndex
+                    List<Answer> correctAnswers = answerRepository
+                            .findByQuestionIdAndIsCorrect(question.getId(), true);
+                    
+                    // Tạo map: orderIndex -> correct answerId
+                    Map<Integer, Integer> correctAnswerMap = correctAnswers.stream()
+                            .collect(Collectors.toMap(
+                                Answer::getOrderIndex,
+                                Answer::getId
+                            ));
+
+                    // Kiểm tra từng blank
+                    int correctBlanks = 0;
+                    for (int i = 0; i < answerRequest.getSelectedAnswerIds().size(); i++) {
+                        Integer selectedAnswerId = answerRequest.getSelectedAnswerIds().get(i);
+                        Integer correctAnswerId = correctAnswerMap.get(i);
+                        
+                        if (selectedAnswerId != null && selectedAnswerId.equals(correctAnswerId)) {
+                            correctBlanks++;
+                        }
+                    }
+
+                    // Tính điểm: đúng hết mới có điểm
+                    isCorrect = (correctBlanks == correctAnswers.size());
+                    if (isCorrect) {
+                        pointsAwarded = question.getScore();
+                        earnedScore += pointsAwarded;
+                    }
+
+                    // Lưu danh sách IDs vào answerText
                     String selectedAnswersJson = answerRequest.getSelectedAnswerIds().stream()
                             .map(String::valueOf)
                             .collect(Collectors.joining(","));

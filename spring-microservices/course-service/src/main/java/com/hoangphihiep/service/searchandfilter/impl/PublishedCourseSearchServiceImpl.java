@@ -356,7 +356,7 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
         List<PublishedCourseCardResponse> result = publishedCourses.stream()
                 .map(course -> PublishedCourseCardResponse.builder()
                         .id(course.getId())
-                        .courseName(course.getCourse().getCourseName())
+                        .courseName(course.getCourseName())
                         .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
                         .amountPrice(course.getCoursePrice())
                         .authorName(course.getAuthorName())

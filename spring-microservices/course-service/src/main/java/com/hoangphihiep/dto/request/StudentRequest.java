@@ -34,7 +34,7 @@ public class StudentRequest {
 
     private String departmentId;
 
-    private Integer educationalUnitId;
+    private String educationalUnitId;
 
     private String description;
 

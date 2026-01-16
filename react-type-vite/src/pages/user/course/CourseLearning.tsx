@@ -3,11 +3,11 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  BookOpen, 
-  FileText, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  BookOpen,
+  FileText,
   ClipboardCheck,
   CheckCircle,
   Clock,
@@ -25,7 +25,8 @@ import {
   Upload,
   Link as LinkIcon,
   Loader2,
-  Trash2
+  Trash2,
+  MessageSquare
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getSectionsByCourseId } from "@/services/api/user/sectionApi"
@@ -42,6 +43,11 @@ import progressApi from "@/services/api/user/progressApi"
 import reviewApi from "@/services/api/user/reviewApi"
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse"
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer"
+import StudentDiscussionPanel from "@/components/user/course/StudentDiscussionPanel"
+import { useAuth } from "@/context/auth-context/useAuth"
+import { getCourseQuizUnreadCount } from "@/services/api/courseQuizDiscussionApi"
+import { getCourseAssignmentUnreadCount } from "@/services/api/courseAssignmentDiscussionApi"
+import { getCourseLessonDiscussionUnreadCount } from "@/services/api/courseLessonDiscussionApi"
 
 type ContentItem = {
   id: number
@@ -57,7 +63,7 @@ type ContentItem = {
 const CourseLearning: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>()
   const navigate = useNavigate()
-  
+
   const [courseName, setCourseName] = useState<string>("")
   const [courseData, setCourseData] = useState<any>(null)
   const [sections, setSections] = useState<SectionResponse[]>([])
@@ -66,22 +72,29 @@ const CourseLearning: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set())
-  const [activeTab, setActiveTab] = useState<"overview" | "about" | "notes" | "announcements" | "reviews" | "tools">("overview")
+  const [activeTab, setActiveTab] = useState<"overview" | "about" | "notes" | "announcements" | "reviews" | "tools" | "discussion">("overview")
   const [contentDisplayMode, setContentDisplayMode] = useState<'normal' | 'quiz' | 'assignment'>('normal')
-  
+  const { user } = useAuth()
+
   // Progress tracking states
   const [progressStats, setProgressStats] = useState<ProgressStatsResponse | null>(null)
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set())
   const [completedQuizzes, setCompletedQuizzes] = useState<Set<number>>(new Set())
   const [completedAssignments, setCompletedAssignments] = useState<Set<number>>(new Set())
   const [isMarkingComplete, setIsMarkingComplete] = useState<Set<number>>(new Set())
-  
+
   // Assignment submission modal
   const [showSubmissionModal, setShowSubmissionModal] = useState(false)
   const [submissionContent, setSubmissionContent] = useState('')
   const [submissionFiles, setSubmissionFiles] = useState<File[]>([])
   const [submissionLink, setSubmissionLink] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Unread discussion count
+  const [unreadDiscussionCount, setUnreadDiscussionCount] = useState<number>(0)
+
+  // Current item - must be declared before useEffect hooks
+  const currentItem = contentItems[currentItemIndex]
 
   // Fetch progress stats
   const fetchProgressStats = async () => {
@@ -96,7 +109,7 @@ const CourseLearning: React.FC = () => {
       const detail = await progressApi.getPublishedCourseProgressDetail(Number(courseId))
       console.log("📋 Progress Detail Full:", detail)
       console.log("📋 Lesson Progresses:", detail.courseProgress.lessonProgresses)
-      
+
       // If lessonProgress exists, consider it completed (even if isCompleted is false)
       // This is because the backend creates lessonProgress when user completes a lesson
       const completedLessonIds = new Set(
@@ -107,11 +120,11 @@ const CourseLearning: React.FC = () => {
 
       // Fetch completed quizzes and assignments (check from sections which items have attempts/submissions)
       const sectionsData = await getSectionsByCourseId(Number(courseId))
-      
+
       // Collect all quiz and assignment IDs
       const allQuizIds: number[] = []
       const allAssignmentIds: number[] = []
-      
+
       sectionsData.forEach(section => {
         if (section.quizs) {
           section.quizs.forEach(quiz => allQuizIds.push(quiz.id))
@@ -192,10 +205,54 @@ const CourseLearning: React.FC = () => {
     }
   }
 
+  // Restore contentDisplayMode and currentItemIndex from localStorage on mount
   useEffect(() => {
+    if (courseId) {
+      const savedState = localStorage.getItem(`course-learning-${courseId}`)
+      if (savedState) {
+        try {
+          const { displayMode, itemIndex, timestamp } = JSON.parse(savedState)
+          const elapsed = Date.now() - timestamp
+          // Only restore if within 24 hours (86400000 ms)
+          if (elapsed < 86400000) {
+            console.log('🔄 Restoring saved state:', { displayMode, itemIndex })
+            setContentDisplayMode(displayMode)
+            setCurrentItemIndex(itemIndex)
+          } else {
+            localStorage.removeItem(`course-learning-${courseId}`)
+          }
+        } catch (err) {
+          console.error('Error restoring state:', err)
+        }
+      }
+    }
     loadCourseData()
     fetchProgressStats()
   }, [courseId])
+
+  // Fetch unread count for current item
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!currentItem || !courseId) return
+
+      try {
+        let count = 0
+        if (currentItem.type === 'quiz') {
+          count = await getCourseQuizUnreadCount(Number(courseId), currentItem.id)
+        } else if (currentItem.type === 'assignment') {
+          count = await getCourseAssignmentUnreadCount(Number(courseId), currentItem.id)
+        } else if (currentItem.type === 'lesson') {
+          count = await getCourseLessonDiscussionUnreadCount(Number(courseId), currentItem.id)
+        }
+        setUnreadDiscussionCount(count)
+      } catch (error) {
+        console.error('Error fetching unread count:', error)
+        setUnreadDiscussionCount(0)
+      }
+    }
+
+    fetchUnreadCount()
+  }, [currentItem, courseId])
 
   // Sync completedLessons with contentItems
   useEffect(() => {
@@ -206,11 +263,11 @@ const CourseLearning: React.FC = () => {
         assignments: Array.from(completedAssignments),
         totalItems: contentItems.length
       })
-      
+
       let hasChanges = false
       const updatedItems = contentItems.map(item => {
         let shouldBeCompleted = false
-        
+
         if (item.type === 'lesson') {
           shouldBeCompleted = completedLessons.has(item.id)
         } else if (item.type === 'quiz') {
@@ -218,15 +275,15 @@ const CourseLearning: React.FC = () => {
         } else if (item.type === 'assignment') {
           shouldBeCompleted = completedAssignments.has(item.id)
         }
-        
+
         if (shouldBeCompleted !== item.isCompleted) {
           hasChanges = true
           console.log(`${shouldBeCompleted ? '✅' : '❌'} ${item.type} #${item.id} "${item.title}" completed=${shouldBeCompleted}`)
         }
-        
+
         return { ...item, isCompleted: shouldBeCompleted }
       })
-      
+
       if (hasChanges) {
         console.log("📝 Updating contentItems with new completion status")
         setContentItems(updatedItems)
@@ -234,12 +291,26 @@ const CourseLearning: React.FC = () => {
     }
   }, [completedLessons, completedQuizzes, completedAssignments])
 
-  // Auto-hide sidebar when entering quiz/assignment mode
+  // Auto-hide sidebar when entering quiz/assignment mode and save state to localStorage
   useEffect(() => {
     if (contentDisplayMode === 'quiz' || contentDisplayMode === 'assignment') {
       setSidebarOpen(false)
+      // Save state to localStorage
+      if (courseId) {
+        const state = {
+          displayMode: contentDisplayMode,
+          itemIndex: currentItemIndex,
+          timestamp: Date.now()
+        }
+        localStorage.setItem(`course-learning-${courseId}`, JSON.stringify(state))
+        console.log('💾 Saved state to localStorage:', state)
+      }
+    } else if (contentDisplayMode === 'normal' && courseId) {
+      // Clear localStorage when returning to normal mode
+      localStorage.removeItem(`course-learning-${courseId}`)
+      console.log('🗑️ Cleared saved state from localStorage')
     }
-  }, [contentDisplayMode])
+  }, [contentDisplayMode, currentItemIndex, courseId])
 
   const loadCourseData = async () => {
     if (!courseId) return
@@ -261,7 +332,7 @@ const CourseLearning: React.FC = () => {
 
       // Flatten all content items
       const items: ContentItem[] = []
-      
+
       sectionsData.forEach((section) => {
         // Add lessons
         if (section.lessons) {
@@ -323,7 +394,7 @@ const CourseLearning: React.FC = () => {
       })
 
       setContentItems(items)
-      
+
       // Expand first section by default
       if (sectionsData.length > 0) {
         setExpandedSections(new Set([sectionsData[0].id]))
@@ -336,8 +407,6 @@ const CourseLearning: React.FC = () => {
       setLoading(false)
     }
   }
-
-  const currentItem = contentItems[currentItemIndex]
 
   const handlePrevious = () => {
     if (currentItemIndex > 0) {
@@ -352,7 +421,7 @@ const CourseLearning: React.FC = () => {
       const updatedItems = [...contentItems]
       updatedItems[currentItemIndex].isCompleted = true
       setContentItems(updatedItems)
-      
+
       setCurrentItemIndex(currentItemIndex + 1)
       setContentDisplayMode('normal')
     }
@@ -395,15 +464,15 @@ const CourseLearning: React.FC = () => {
 
   const handleSubmitAssignment = async () => {
     if (!currentItem || currentItem.type !== 'assignment') return
-    
+
     const assignment = currentItem.data as AssignmentResponse
     const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "")
     const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "")
     const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "")
-    
+
     try {
       setSubmitting(true)
-      
+
       // Validate
       const hasContent = submissionContent || submissionFiles.length > 0 || submissionLink
       if (!hasContent) {
@@ -411,33 +480,33 @@ const CourseLearning: React.FC = () => {
         setSubmitting(false)
         return
       }
-      
+
       const submitData = {
         assignmentId: currentItem.id,
         submissionText: canSubmitText ? submissionContent : undefined,
         submissionLink: canSubmitLink ? submissionLink : undefined,
       }
-      
+
       await assignmentApi.submitAssignment(
         currentItem.id,
         submitData,
         canSubmitFile ? submissionFiles : undefined
       )
-      
+
       toast.success('Nộp bài thành công!')
       setShowSubmissionModal(false)
-      
+
       // Reset form
       setSubmissionContent('')
       setSubmissionFiles([])
       setSubmissionLink('')
-      
+
       // Update completed assignments immediately
       setCompletedAssignments(prev => new Set(prev).add(currentItem.id))
-      
+
       // Reload assignment data to show new submission
       loadCourseData()
-      
+
       // Refresh progress stats
       fetchProgressStats()
     } catch (error: any) {
@@ -451,13 +520,19 @@ const CourseLearning: React.FC = () => {
     // Show Quiz Attempt
     if (contentDisplayMode === 'quiz' && currentItem?.type === 'quiz') {
       return (
-        <UserQuizAttempt 
-          quizIdProp={currentItem.id} 
+        <UserQuizAttempt
+          quizIdProp={currentItem.id}
           onQuizCompleted={() => {
             // Mark quiz as completed
             setCompletedQuizzes(prev => new Set(prev).add(currentItem.id))
             // Refresh progress stats
             fetchProgressStats()
+          }}
+          onExit={() => {
+            setContentDisplayMode('normal')
+            if (courseId) {
+              localStorage.removeItem(`course-learning-${courseId}`)
+            }
           }}
         />
       )
@@ -501,107 +576,107 @@ const CourseLearning: React.FC = () => {
     <div className="flex flex-col h-screen bg-white">
       {/* Top Navigation Bar - Hide in quiz/assignment mode */}
       {contentDisplayMode === 'normal' && (
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="text-white hover:bg-gray-800"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          
-          <h1 className="text-white font-medium text-sm max-w-md truncate">{courseName}</h1>
-        </div>
+        <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="text-white hover:bg-gray-800"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
 
-        <div className="flex items-center gap-3">
-          <div className="relative group">
+            <h1 className="text-white font-medium text-sm max-w-md truncate">{courseName}</h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-gray-800 gap-2"
+              >
+                <span className="text-sm">Your progress: {(progressStats?.overallProgress || 0).toFixed(2)}%</span>
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+
+              {/* Progress Dropdown */}
+              {progressStats && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 mb-3">Tiến độ học tập</h3>
+
+                    {/* Overall Progress */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-600">Tổng quan</span>
+                        <span className="text-sm font-semibold text-blue-600">{(progressStats.overallProgress).toFixed(2)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                          style={{ width: `${(progressStats.overallProgress).toFixed(2)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Breakdown */}
+                    <div className="space-y-2 border-t pt-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <PlayCircle className="w-4 h-4 text-blue-600" />
+                          <span className="text-gray-700">Bài học</span>
+                        </div>
+                        <span className="font-medium">
+                          {progressStats.completedLessons}/{progressStats.totalLessons}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <ClipboardCheck className="w-4 h-4 text-purple-600" />
+                          <span className="text-gray-700">Bài kiểm tra</span>
+                        </div>
+                        <span className="font-medium">
+                          {progressStats.completedQuizzes}/{progressStats.totalQuizzes}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-green-600" />
+                          <span className="text-gray-700">Bài tập</span>
+                        </div>
+                        <span className="font-medium">
+                          {progressStats.completedAssignments}/{progressStats.totalAssignments}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Button
               variant="ghost"
               size="sm"
               className="text-white hover:bg-gray-800 gap-2"
             >
-              <span className="text-sm">Your progress: {(progressStats?.overallProgress || 0).toFixed(2)}%</span>
-              <ChevronDown className="w-4 h-4" />
+              <Share2 className="w-4 h-4" />
+              <span className="text-sm">Share</span>
             </Button>
-            
-            {/* Progress Dropdown */}
-            {progressStats && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Tiến độ học tập</h3>
-                  
-                  {/* Overall Progress */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Tổng quan</span>
-                      <span className="text-sm font-semibold text-blue-600">{(progressStats.overallProgress).toFixed(2)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                          style={{ width: `${(progressStats.overallProgress).toFixed(2)}%` }}
-                        />
-                    </div>
-                  </div>
 
-                  {/* Breakdown */}
-                  <div className="space-y-2 border-t pt-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <PlayCircle className="w-4 h-4 text-blue-600" />
-                        <span className="text-gray-700">Bài học</span>
-                      </div>
-                      <span className="font-medium">
-                        {progressStats.completedLessons}/{progressStats.totalLessons}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <ClipboardCheck className="w-4 h-4 text-purple-600" />
-                        <span className="text-gray-700">Bài kiểm tra</span>
-                      </div>
-                      <span className="font-medium">
-                        {progressStats.completedQuizzes}/{progressStats.totalQuizzes}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-green-600" />
-                        <span className="text-gray-700">Bài tập</span>
-                      </div>
-                      <span className="font-medium">
-                        {progressStats.completedAssignments}/{progressStats.totalAssignments}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-white hover:bg-gray-800"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
           </div>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-gray-800 gap-2"
-          >
-            <Share2 className="w-4 h-4" />
-            <span className="text-sm">Share</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-white hover:bg-gray-800"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
         </div>
-      </div>
       )}
 
       <div className="flex flex-1 overflow-hidden">
@@ -610,441 +685,454 @@ const CourseLearning: React.FC = () => {
           <div className="overflow-y-auto h-full">
             {/* Content with fade transition */}
             <div className="animate-fadeIn">
-            {/* Quiz/Assignment Display - uses contentDisplayMode */}
-            {contentDisplayMode === 'quiz' && currentItem?.type === "quiz" && (
-              <div className="bg-white">
-                {renderContent()}
-              </div>
-            )}
-
-            {contentDisplayMode === 'assignment' && currentItem?.type === "assignment" && (
-              <div className="bg-white">
-                {renderContent()}
-              </div>
-            )}
-
-            {/* Normal Content View */}
-            {contentDisplayMode === 'normal' && (
-            <>
-            {/* Video Player Area - Only show for lessons with video */}
-            {currentItem?.type === "lesson" && (
-              <div className="bg-black w-full flex-shrink-0 h-[570px]">
-                <LessonVideoPlayer lesson={currentItem.data as LessonResponse} />
-              </div>
-            )}
-
-            {/* Quiz Start Card */}
-            {currentItem?.type === "quiz" && (
-              <div className="bg-gradient-to-br from-purple-600 to-purple-800 w-full flex-shrink-0 h-[570px] flex items-center justify-center p-12">
-                <div className="text-center max-w-2xl">
-                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <ClipboardCheck className="w-12 h-12 text-white" />
-                  </div>
-                  <h2 className="text-4xl font-bold text-white mb-4">
-                    {(currentItem.data as QuizResponse).title}
-                  </h2>
-                  <p className="text-xl text-purple-100 mb-8">
-                    Sẵn sàng kiểm tra kiến thức của bạn?
-                  </p>
-                  <div className="flex items-center justify-center gap-8 mb-8 text-white">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      <span>{Array.from((currentItem.data as QuizResponse).questions || []).length} câu hỏi</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-5 h-5" />
-                      <span>{(currentItem.data as QuizResponse).duration} phút</span>
-                    </div>
-                  </div>
-                  <Button 
-                    size="lg"
-                    className="bg-white text-purple-700 hover:bg-purple-50 px-8 py-6 text-lg font-semibold rounded-xl shadow-xl"
-                    onClick={() => setContentDisplayMode('quiz')}
-                  >
-                    <PlayCircle className="w-6 h-6 mr-2" />
-                    Bắt đầu làm bài
-                  </Button>
+              {/* Quiz/Assignment Display - uses contentDisplayMode */}
+              {contentDisplayMode === 'quiz' && currentItem?.type === "quiz" && (
+                <div className="bg-white">
+                  {renderContent()}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Assignment Start Card */}
-            {currentItem?.type === "assignment" && (
-              <div className="bg-gradient-to-br from-green-600 to-green-800 w-full flex-shrink-0 h-[570px] flex items-center justify-center p-12">
-                <div className="text-center max-w-2xl">
-                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FileText className="w-12 h-12 text-white" />
-                  </div>
-                  <h2 className="text-4xl font-bold text-white mb-4">
-                    {(currentItem.data as AssignmentResponse).title}
-                  </h2>
-                  {(currentItem.data as AssignmentResponse).deadline && (
-                    <p className="text-xl text-green-100 mb-8 flex items-center justify-center gap-2">
-                      <Clock className="w-5 h-5" />
-                      Hạn nộp: {new Date((currentItem.data as AssignmentResponse).deadline).toLocaleDateString("vi-VN", {
-                        year: 'numeric',
-                        month: 'long', 
-                        day: 'numeric'
-                      })}
-                    </p>
+              {contentDisplayMode === 'assignment' && currentItem?.type === "assignment" && (
+                <div className="bg-white">
+                  {renderContent()}
+                </div>
+              )}
+
+              {/* Normal Content View */}
+              {contentDisplayMode === 'normal' && (
+                <>
+                  {/* Video Player Area - Only show for lessons with video */}
+                  {currentItem?.type === "lesson" && (
+                    <div className="bg-black w-full flex-shrink-0 h-[570px]">
+                      <LessonVideoPlayer lesson={currentItem.data as LessonResponse} />
+                    </div>
                   )}
-                  <Button 
-                    size="lg"
-                    className="bg-white text-green-700 hover:bg-green-50 px-8 py-6 text-lg font-semibold rounded-xl shadow-xl"
-                    onClick={handleOpenSubmissionModal}
-                  >
-                    <FileText className="w-6 h-6 mr-2" />
-                    Xem chi tiết & Nộp bài
-                  </Button>
-                </div>
-              </div>
-            )}
 
-            {/* Tabs Navigation */}
-            <div className="border-b bg-white flex-shrink-0 sticky top-0 z-10">
-              <div className="flex gap-8 px-6">
-                <button
-                  onClick={() => setActiveTab("overview")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "overview"
-                      ? "border-gray-900 text-gray-900"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  Overview
-                </button>
-                <button
-                  onClick={() => setActiveTab("about")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "about"
-                      ? "border-gray-900 text-gray-900"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  {currentItem?.type === "lesson" && "About this lecture"}
-                  {currentItem?.type === "quiz" && "About this quiz"}
-                  {currentItem?.type === "assignment" && "About this assignment"}
-                </button>
-                <button
-                  onClick={() => setActiveTab("notes")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "notes"
-                      ? "border-gray-900 text-gray-900"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  Notes
-                </button>
-                <button
-                  onClick={() => setActiveTab("announcements")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "announcements"
-                      ? "border-gray-900 text-gray-900"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  Announcements
-                </button>
-                <button
-                  onClick={() => setActiveTab("reviews")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "reviews"
-                      ? "border-gray-900 text-gray-900"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  Reviews
-                </button>
-                <button
-                  onClick={() => setActiveTab("tools")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "tools"
-                      ? "border-gray-900 text-gray-900"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  Learning tools
-                </button>
-              </div>
-            </div>
+                  {/* Quiz Start Card */}
+                  {currentItem?.type === "quiz" && (
+                    <div className="bg-gradient-to-br from-purple-600 to-purple-800 w-full flex-shrink-0 h-[570px] flex items-center justify-center p-12">
+                      <div className="text-center max-w-2xl">
+                        <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <ClipboardCheck className="w-12 h-12 text-white" />
+                        </div>
+                        <h2 className="text-4xl font-bold text-white mb-4">
+                          {(currentItem.data as QuizResponse).title}
+                        </h2>
+                        <p className="text-xl text-purple-100 mb-8">
+                          Sẵn sàng kiểm tra kiến thức của bạn?
+                        </p>
+                        <div className="flex items-center justify-center gap-8 mb-8 text-white">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-5 h-5" />
+                            <span>{Array.from((currentItem.data as QuizResponse).questions || []).length} câu hỏi</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-5 h-5" />
+                            <span>{(currentItem.data as QuizResponse).duration} phút</span>
+                          </div>
+                        </div>
+                        <Button
+                          size="lg"
+                          className="bg-white text-purple-700 hover:bg-purple-50 px-8 py-6 text-lg font-semibold rounded-xl shadow-xl"
+                          onClick={() => setContentDisplayMode('quiz')}
+                        >
+                          <PlayCircle className="w-6 h-6 mr-2" />
+                          Bắt đầu làm bài
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
-            {/* Tab Content */}
-            <div className="bg-white">
-              <div className="max-w-4xl mx-auto px-6 py-8">
-                {activeTab === "overview" && courseData && <CourseOverview course={courseData} />}
-                {activeTab === "about" && renderContent()}
-                {activeTab === "notes" && <NotesTab />}
-                {activeTab === "announcements" && <AnnouncementsTab />}
-                {activeTab === "reviews" && <ReviewsTab />}
-                {activeTab === "tools" && (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500">Công cụ học tập đang phát triển</p>
+                  {/* Assignment Start Card */}
+                  {currentItem?.type === "assignment" && (
+                    <div className="bg-gradient-to-br from-green-600 to-green-800 w-full flex-shrink-0 h-[570px] flex items-center justify-center p-12">
+                      <div className="text-center max-w-2xl">
+                        <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <FileText className="w-12 h-12 text-white" />
+                        </div>
+                        <h2 className="text-4xl font-bold text-white mb-4">
+                          {(currentItem.data as AssignmentResponse).title}
+                        </h2>
+                        {(currentItem.data as AssignmentResponse).deadline && (
+                          <p className="text-xl text-green-100 mb-8 flex items-center justify-center gap-2">
+                            <Clock className="w-5 h-5" />
+                            Hạn nộp: {new Date((currentItem.data as AssignmentResponse).deadline).toLocaleDateString("vi-VN", {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        )}
+                        <Button
+                          size="lg"
+                          className="bg-white text-green-700 hover:bg-green-50 px-8 py-6 text-lg font-semibold rounded-xl shadow-xl"
+                          onClick={handleOpenSubmissionModal}
+                        >
+                          <FileText className="w-6 h-6 mr-2" />
+                          Xem chi tiết & Nộp bài
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tabs Navigation */}
+                  <div className="border-b bg-white flex-shrink-0 sticky top-0 z-10">
+                    <div className="flex gap-8 px-6">
+                      <button
+                        onClick={() => setActiveTab("overview")}
+                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "overview"
+                            ? "border-gray-900 text-gray-900"
+                            : "border-transparent text-gray-600 hover:text-gray-900"
+                          }`}
+                      >
+                        Overview
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("about")}
+                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "about"
+                            ? "border-gray-900 text-gray-900"
+                            : "border-transparent text-gray-600 hover:text-gray-900"
+                          }`}
+                      >
+                        {currentItem?.type === "lesson" && "About this lecture"}
+                        {currentItem?.type === "quiz" && "About this quiz"}
+                        {currentItem?.type === "assignment" && "About this assignment"}
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("notes")}
+                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "notes"
+                            ? "border-gray-900 text-gray-900"
+                            : "border-transparent text-gray-600 hover:text-gray-900"
+                          }`}
+                      >
+                        Notes
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("announcements")}
+                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "announcements"
+                            ? "border-gray-900 text-gray-900"
+                            : "border-transparent text-gray-600 hover:text-gray-900"
+                          }`}
+                      >
+                        Announcements
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("reviews")}
+                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "reviews"
+                            ? "border-gray-900 text-gray-900"
+                            : "border-transparent text-gray-600 hover:text-gray-900"
+                          }`}
+                      >
+                        Reviews
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("tools")}
+                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "tools"
+                            ? "border-gray-900 text-gray-900"
+                            : "border-transparent text-gray-600 hover:text-gray-900"
+                          }`}
+                      >
+                        Learning tools
+                      </button>
+                      {currentItem && (
+                        <button
+                          onClick={() => setActiveTab("discussion")}
+                          className={`py-4 text-sm font-medium border-b-2 transition-colors relative ${activeTab === "discussion"
+                              ? "border-gray-900 text-gray-900"
+                              : "border-transparent text-gray-600 hover:text-gray-900"
+                            }`}
+                        >
+                          <MessageSquare className="w-4 h-4 inline mr-2" />
+                          Thảo luận
+                          {unreadDiscussionCount > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                              {unreadDiscussionCount}
+                            </span>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* Bottom Navigation */}
-            <div className="border-t bg-white px-6 py-3 flex items-center justify-between">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentItemIndex === 0}
-                className="gap-2"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
-              </Button>
+                  {/* Tab Content */}
+                  <div className="bg-white">
+                    <div className="max-w-4xl mx-auto px-6 py-8">
+                      {activeTab === "overview" && courseData && <CourseOverview course={courseData} />}
+                      {activeTab === "about" && renderContent()}
+                      {activeTab === "notes" && <NotesTab />}
+                      {activeTab === "announcements" && <AnnouncementsTab />}
+                      {activeTab === "reviews" && <ReviewsTab />}
+                      {activeTab === "tools" && (
+                        <div className="text-center py-12">
+                          <p className="text-gray-500">Công cụ học tập đang phát triển</p>
+                        </div>
+                      )}
+                      {activeTab === "discussion" && currentItem && courseId && (
+                        <StudentDiscussionPanel
+                          key={`${currentItem.type}-${currentItem.id}`}
+                          itemType={currentItem.type}
+                          itemId={currentItem.id}
+                          itemTitle={currentItem.title}
+                          publishedCourseId={Number(courseId)}
+                          user={user}
+                        />
+                      )}
+                    </div>
+                  </div>
 
-              <Button
-                onClick={handleNext}
-                disabled={currentItemIndex === contentItems.length - 1}
-                className="bg-gray-900 hover:bg-gray-800 text-white gap-2"
-              >
-                Next
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-            </>
-            )}
+                  {/* Bottom Navigation */}
+                  <div className="border-t bg-white px-6 py-3 flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevious}
+                      disabled={currentItemIndex === 0}
+                      className="gap-2"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Previous
+                    </Button>
+
+                    <Button
+                      onClick={handleNext}
+                      disabled={currentItemIndex === contentItems.length - 1}
+                      className="bg-gray-900 hover:bg-gray-800 text-white gap-2"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         {/* Sidebar - Course Content - Hide in quiz/assignment mode */}
         {contentDisplayMode === 'normal' && (
-        <div
-          className={`${
-            sidebarOpen ? "w-full md:w-[500px]" : "w-0"
-          } bg-white border-l overflow-hidden transition-all duration-300 flex-shrink-0`}
-        >
-          <div className="h-full flex flex-col">
-            {/* Sidebar Header */}
-            <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
-              <h2 className="font-semibold text-base">Course content</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebarOpen(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
+          <div
+            className={`${sidebarOpen ? "w-full md:w-[500px]" : "w-0"
+              } bg-white border-l overflow-hidden transition-all duration-300 flex-shrink-0`}
+          >
+            <div className="h-full flex flex-col">
+              {/* Sidebar Header */}
+              <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+                <h2 className="font-semibold text-base">Course content</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarOpen(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
 
-            {/* Sidebar Content */}
-            <div className="flex-1 overflow-y-auto">
-              {sections.map((section) => {
-                const sectionItems = contentItems.filter(item => item.sectionId === section.id)
-                const completedCount = sectionItems.filter(item => item.isCompleted).length
-                const isExpanded = expandedSections.has(section.id)
-                const totalMinutes = sectionItems.reduce((sum) => sum + 3, 0) // Mock duration
+              {/* Sidebar Content */}
+              <div className="flex-1 overflow-y-auto">
+                {sections.map((section) => {
+                  const sectionItems = contentItems.filter(item => item.sectionId === section.id)
+                  const completedCount = sectionItems.filter(item => item.isCompleted).length
+                  const isExpanded = expandedSections.has(section.id)
+                  const totalMinutes = sectionItems.reduce((sum) => sum + 3, 0) // Mock duration
 
-                return (
-                  <div key={section.id} className="border-b">
-                    {/* Section Header */}
-                    <button
-                      onClick={() => toggleSection(section.id)}
-                      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 text-left transition-colors"
-                    >
-                      <div className="flex-1 pr-2">
-                        <h3 className="font-medium text-sm mb-1">{section.title}</h3>
-                        <p className="text-xs text-gray-600">
-                          {completedCount}/{sectionItems.length} | {totalMinutes}min
-                        </p>
-                      </div>
-                      <ChevronDown
-                        className={`w-5 h-5 text-gray-600 transition-transform flex-shrink-0 ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
+                  return (
+                    <div key={section.id} className="border-b">
+                      {/* Section Header */}
+                      <button
+                        onClick={() => toggleSection(section.id)}
+                        className="w-full flex items-center justify-between p-4 hover:bg-gray-50 text-left transition-colors"
+                      >
+                        <div className="flex-1 pr-2">
+                          <h3 className="font-medium text-sm mb-1">{section.title}</h3>
+                          <p className="text-xs text-gray-600">
+                            {completedCount}/{sectionItems.length} | {totalMinutes}min
+                          </p>
+                        </div>
+                        <ChevronDown
+                          className={`w-5 h-5 text-gray-600 transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""
+                            }`}
+                        />
+                      </button>
 
-                    {/* Section Items */}
-                    {isExpanded && (
-                      <div className="bg-gray-50">
-                        {/* Lessons Group */}
-                        {sectionItems.filter(item => item.type === "lesson").length > 0 && (
-                          <div className="mb-2">
-                            <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
-                              Lessons
-                            </div>
-                            {sectionItems
-                              .filter(item => item.type === "lesson")
-                              .map((item) => {
-                                const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
-                                const isActive = itemIndex === currentItemIndex
-                                // Get the actual item from contentItems to ensure we have latest isCompleted
-                                const actualItem = contentItems[itemIndex] || item
+                      {/* Section Items */}
+                      {isExpanded && (
+                        <div className="bg-gray-50">
+                          {/* Lessons Group */}
+                          {sectionItems.filter(item => item.type === "lesson").length > 0 && (
+                            <div className="mb-2">
+                              <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
+                                Lessons
+                              </div>
+                              {sectionItems
+                                .filter(item => item.type === "lesson")
+                                .map((item) => {
+                                  const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
+                                  const isActive = itemIndex === currentItemIndex
+                                  // Get the actual item from contentItems to ensure we have latest isCompleted
+                                  const actualItem = contentItems[itemIndex] || item
 
-                                return (
-                                  <div
-                                    key={`${item.type}-${item.id}`}
-                                    className={`w-full flex items-start gap-3 px-4 py-3 transition-colors group ${
-                                      isActive
-                                        ? "bg-blue-50 border-l-4 border-blue-600"
-                                        : "hover:bg-gray-100 border-l-4 border-transparent"
-                                    }`}
-                                  >
-                                    <div className="flex-shrink-0 pt-0.5">
-                                      {actualItem.isCompleted ? (
-                                        <CheckCircle className="w-4 h-4 text-blue-600" />
-                                      ) : (
-                                        <div className={`w-4 h-4 rounded-full border-2 ${
-                                          isActive ? "border-blue-600" : "border-gray-400"
-                                        }`} />
-                                      )}
-                                    </div>
-                                    <div 
-                                      className="flex-1 min-w-0 cursor-pointer"
-                                      onClick={() => handleItemClick(itemIndex)}
+                                  return (
+                                    <div
+                                      key={`${item.type}-${item.id}`}
+                                      className={`w-full flex items-start gap-3 px-4 py-3 transition-colors group ${isActive
+                                          ? "bg-blue-50 border-l-4 border-blue-600"
+                                          : "hover:bg-gray-100 border-l-4 border-transparent"
+                                        }`}
                                     >
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
-                                          {item.orderIndex}.
-                                        </span>
-                                        <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
-                                          {item.title}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                                        {getItemIcon(item.type)}
-                                        <span>3min</span>
-                                      </div>
-                                    </div>
-                                    {!actualItem.isCompleted && isActive && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleMarkLessonComplete(item.id)
-                                        }}
-                                        disabled={isMarkingComplete.has(item.id)}
-                                        className="flex-shrink-0 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                      >
-                                        {isMarkingComplete.has(item.id) ? (
-                                          <Loader2 className="w-3 h-3 animate-spin" />
+                                      <div className="flex-shrink-0 pt-0.5">
+                                        {actualItem.isCompleted ? (
+                                          <CheckCircle className="w-4 h-4 text-blue-600" />
                                         ) : (
-                                          "✓"
+                                          <div className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-blue-600" : "border-gray-400"
+                                            }`} />
                                         )}
-                                      </button>
-                                    )}
-                                  </div>
-                                )
-                              })}
-                          </div>
-                        )}
-
-                        {/* Quizzes Group */}
-                        {sectionItems.filter(item => item.type === "quiz").length > 0 && (
-                          <div className="mb-2">
-                            <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
-                              Quizzes
-                            </div>
-                            {sectionItems
-                              .filter(item => item.type === "quiz")
-                              .map((item) => {
-                                const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
-                                const isActive = itemIndex === currentItemIndex
-                                const actualItem = contentItems[itemIndex] || item
-
-                                return (
-                                  <button
-                                    key={`${item.type}-${item.id}`}
-                                    onClick={() => handleItemClick(itemIndex)}
-                                    className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
-                                      isActive
-                                        ? "bg-blue-50 border-l-4 border-blue-600"
-                                        : "hover:bg-gray-100 border-l-4 border-transparent"
-                                    }`}
-                                  >
-                                    <div className="flex-shrink-0 pt-0.5">
-                                      {actualItem.isCompleted ? (
-                                        <CheckCircle className="w-4 h-4 text-purple-600" />
-                                      ) : (
-                                        <div className={`w-4 h-4 rounded-full border-2 ${
-                                          isActive ? "border-blue-600" : "border-gray-400"
-                                        }`} />
+                                      </div>
+                                      <div
+                                        className="flex-1 min-w-0 cursor-pointer"
+                                        onClick={() => handleItemClick(itemIndex)}
+                                      >
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                                            {item.orderIndex}.
+                                          </span>
+                                          <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
+                                            {item.title}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          {getItemIcon(item.type)}
+                                          <span>3min</span>
+                                        </div>
+                                      </div>
+                                      {!actualItem.isCompleted && isActive && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleMarkLessonComplete(item.id)
+                                          }}
+                                          disabled={isMarkingComplete.has(item.id)}
+                                          className="flex-shrink-0 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                          {isMarkingComplete.has(item.id) ? (
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                          ) : (
+                                            "✓"
+                                          )}
+                                        </button>
                                       )}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
-                                          {item.orderIndex}.
-                                        </span>
-                                        <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
-                                          {item.title}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                                        {getItemIcon(item.type)}
-                                        <span>3min</span>
-                                      </div>
-                                    </div>
-                                  </button>
-                                )
-                              })}
-                          </div>
-                        )}
-
-                        {/* Assignments Group */}
-                        {sectionItems.filter(item => item.type === "assignment").length > 0 && (
-                          <div className="mb-2">
-                            <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
-                              Assignments
+                                  )
+                                })}
                             </div>
-                            {sectionItems
-                              .filter(item => item.type === "assignment")
-                              .map((item) => {
-                                const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
-                                const isActive = itemIndex === currentItemIndex
-                                const actualItem = contentItems[itemIndex] || item
+                          )}
 
-                                return (
-                                  <button
-                                    key={`${item.type}-${item.id}`}
-                                    onClick={() => handleItemClick(itemIndex)}
-                                    className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
-                                      isActive
-                                        ? "bg-blue-50 border-l-4 border-blue-600"
-                                        : "hover:bg-gray-100 border-l-4 border-transparent"
-                                    }`}
-                                  >
-                                    <div className="flex-shrink-0 pt-0.5">
-                                      {actualItem.isCompleted ? (
-                                        <CheckCircle className="w-4 h-4 text-green-600" />
-                                      ) : (
-                                        <div className={`w-4 h-4 rounded-full border-2 ${
-                                          isActive ? "border-blue-600" : "border-gray-400"
-                                        }`} />
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
-                                          {item.orderIndex}.
-                                        </span>
-                                        <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
-                                          {item.title}
-                                        </span>
+                          {/* Quizzes Group */}
+                          {sectionItems.filter(item => item.type === "quiz").length > 0 && (
+                            <div className="mb-2">
+                              <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
+                                Quizzes
+                              </div>
+                              {sectionItems
+                                .filter(item => item.type === "quiz")
+                                .map((item) => {
+                                  const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
+                                  const isActive = itemIndex === currentItemIndex
+                                  const actualItem = contentItems[itemIndex] || item
+
+                                  return (
+                                    <button
+                                      key={`${item.type}-${item.id}`}
+                                      onClick={() => handleItemClick(itemIndex)}
+                                      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${isActive
+                                          ? "bg-blue-50 border-l-4 border-blue-600"
+                                          : "hover:bg-gray-100 border-l-4 border-transparent"
+                                        }`}
+                                    >
+                                      <div className="flex-shrink-0 pt-0.5">
+                                        {actualItem.isCompleted ? (
+                                          <CheckCircle className="w-4 h-4 text-purple-600" />
+                                        ) : (
+                                          <div className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-blue-600" : "border-gray-400"
+                                            }`} />
+                                        )}
                                       </div>
-                                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                                        {getItemIcon(item.type)}
-                                        <span>3min</span>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                                            {item.orderIndex}.
+                                          </span>
+                                          <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
+                                            {item.title}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          {getItemIcon(item.type)}
+                                          <span>3min</span>
+                                        </div>
                                       </div>
-                                    </div>
-                                  </button>
-                                )
-                              })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                                    </button>
+                                  )
+                                })}
+                            </div>
+                          )}
+
+                          {/* Assignments Group */}
+                          {sectionItems.filter(item => item.type === "assignment").length > 0 && (
+                            <div className="mb-2">
+                              <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
+                                Assignments
+                              </div>
+                              {sectionItems
+                                .filter(item => item.type === "assignment")
+                                .map((item) => {
+                                  const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
+                                  const isActive = itemIndex === currentItemIndex
+                                  const actualItem = contentItems[itemIndex] || item
+
+                                  return (
+                                    <button
+                                      key={`${item.type}-${item.id}`}
+                                      onClick={() => handleItemClick(itemIndex)}
+                                      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${isActive
+                                          ? "bg-blue-50 border-l-4 border-blue-600"
+                                          : "hover:bg-gray-100 border-l-4 border-transparent"
+                                        }`}
+                                    >
+                                      <div className="flex-shrink-0 pt-0.5">
+                                        {actualItem.isCompleted ? (
+                                          <CheckCircle className="w-4 h-4 text-green-600" />
+                                        ) : (
+                                          <div className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-blue-600" : "border-gray-400"
+                                            }`} />
+                                        )}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                                            {item.orderIndex}.
+                                          </span>
+                                          <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
+                                            {item.title}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          {getItemIcon(item.type)}
+                                          <span>3min</span>
+                                        </div>
+                                      </div>
+                                    </button>
+                                  )
+                                })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
-        </div>
         )}
       </div>
 
@@ -1054,154 +1142,154 @@ const CourseLearning: React.FC = () => {
         const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "")
         const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "")
         const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "")
-        
+
         return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="p-6 border-b">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Nộp bài tập</h3>
-                  <p className="text-sm text-gray-600 mt-1">{assignment.title}</p>
-                </div>
-                <button
-                  onClick={() => setShowSubmissionModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                  aria-label="Đóng"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              {/* Text Submission */}
-              {canSubmitText && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nội dung bài làm
-                </label>
-                <textarea
-                  value={submissionContent}
-                  onChange={(e) => setSubmissionContent(e.target.value)}
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập nội dung bài làm của bạn..."
-                />
-              </div>
-              )}
-
-              {/* File Upload */}
-              {canSubmitFile && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tệp đính kèm
-                </label>
-                
-                {/* Upload Button */}
-                <div className="mb-3">
-                  <label htmlFor="assignment-file-upload" className="cursor-pointer">
-                    <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
-                      <Upload className="h-5 w-5 text-gray-600" />
-                      <span className="text-sm text-gray-600">
-                        Chọn file để upload (Tối đa 10MB/file)
-                      </span>
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={(e) => setSubmissionFiles(Array.from(e.target.files || []))}
-                      className="hidden"
-                      id="assignment-file-upload"
-                      disabled={submitting}
-                      accept="*/*"
-                    />
-                  </label>
-                </div>
-
-                {/* File List */}
-                {submissionFiles.length > 0 && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="p-6 border-b">
+                <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 mb-2">File mới:</p>
-                    <div className="space-y-2">
-                      {submissionFiles.map((file, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between p-3 bg-gray-50 border rounded"
-                        >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm truncate">{file.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {file.size < 1024 ? file.size + ' B'
-                                  : file.size < 1024 * 1024 ? (file.size / 1024).toFixed(1) + ' KB'
-                                  : (file.size / (1024 * 1024)).toFixed(1) + ' MB'}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setSubmissionFiles(submissionFiles.filter((_, i) => i !== idx))}
-                            className="p-1 hover:bg-gray-200 rounded ml-2"
-                            disabled={submitting}
-                            aria-label="Xóa file"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </button>
+                    <h3 className="text-xl font-bold text-gray-900">Nộp bài tập</h3>
+                    <p className="text-sm text-gray-600 mt-1">{assignment.title}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowSubmissionModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                    aria-label="Đóng"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Text Submission */}
+                {canSubmitText && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nội dung bài làm
+                    </label>
+                    <textarea
+                      value={submissionContent}
+                      onChange={(e) => setSubmissionContent(e.target.value)}
+                      rows={8}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Nhập nội dung bài làm của bạn..."
+                    />
+                  </div>
+                )}
+
+                {/* File Upload */}
+                {canSubmitFile && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tệp đính kèm
+                    </label>
+
+                    {/* Upload Button */}
+                    <div className="mb-3">
+                      <label htmlFor="assignment-file-upload" className="cursor-pointer">
+                        <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
+                          <Upload className="h-5 w-5 text-gray-600" />
+                          <span className="text-sm text-gray-600">
+                            Chọn file để upload (Tối đa 10MB/file)
+                          </span>
                         </div>
-                      ))}
+                        <input
+                          type="file"
+                          multiple
+                          onChange={(e) => setSubmissionFiles(Array.from(e.target.files || []))}
+                          className="hidden"
+                          id="assignment-file-upload"
+                          disabled={submitting}
+                          accept="*/*"
+                        />
+                      </label>
+                    </div>
+
+                    {/* File List */}
+                    {submissionFiles.length > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-2">File mới:</p>
+                        <div className="space-y-2">
+                          {submissionFiles.map((file, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between p-3 bg-gray-50 border rounded"
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm truncate">{file.name}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {file.size < 1024 ? file.size + ' B'
+                                      : file.size < 1024 * 1024 ? (file.size / 1024).toFixed(1) + ' KB'
+                                        : (file.size / (1024 * 1024)).toFixed(1) + ' MB'}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setSubmissionFiles(submissionFiles.filter((_, i) => i !== idx))}
+                                className="p-1 hover:bg-gray-200 rounded ml-2"
+                                disabled={submitting}
+                                aria-label="Xóa file"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Link Submission */}
+                {canSubmitLink && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Link bài làm
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <LinkIcon className="h-5 w-5 text-gray-400" />
+                      <input
+                        type="url"
+                        value={submissionLink}
+                        onChange={(e) => setSubmissionLink(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
+                      />
                     </div>
                   </div>
                 )}
               </div>
-              )}
 
-              {/* Link Submission */}
-              {canSubmitLink && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Link bài làm
-                </label>
-                <div className="flex items-center gap-2">
-                  <LinkIcon className="h-5 w-5 text-gray-400" />
-                  <input
-                    type="url"
-                    value={submissionLink}
-                    onChange={(e) => setSubmissionLink(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://..."
-                  />
-                </div>
+              {/* Actions */}
+              <div className="flex justify-end gap-3 p-6 pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowSubmissionModal(false)} disabled={submitting}>
+                  Hủy
+                </Button>
+                <Button
+                  onClick={handleSubmitAssignment}
+                  disabled={submitting}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Đang nộp...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Nộp bài
+                    </>
+                  )}
+                </Button>
               </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 p-6 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowSubmissionModal(false)} disabled={submitting}>
-                Hủy
-              </Button>
-              <Button
-                onClick={handleSubmitAssignment}
-                disabled={submitting}
-                className="bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Đang nộp...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Nộp bài
-                  </>
-                )}
-              </Button>
             </div>
           </div>
-        </div>
         )
       })()}
     </div>
@@ -1231,7 +1319,7 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
           </div>
           <p className="text-lg font-bold text-gray-900">{course.level || "Tất cả"}</p>
         </div>
-        
+
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-5 h-5 text-green-600" />
@@ -1239,7 +1327,7 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
           </div>
           <p className="text-lg font-bold text-gray-900">{course.duration || "N/A"}</p>
         </div>
-        
+
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <Star className="w-5 h-5 text-purple-600" />
@@ -1247,7 +1335,7 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
           </div>
           <p className="text-lg font-bold text-gray-900">{course.rating || "5.0"} ⭐</p>
         </div>
-        
+
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <FileText className="w-5 h-5 text-orange-600" />
@@ -1287,7 +1375,7 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
         </div>
       )}
 
-        {/* Teacher Info */}
+      {/* Teacher Info */}
       {course.instructorName && (
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6">
           <h2 className="text-2xl font-bold mb-4">Giảng viên</h2>
@@ -1321,7 +1409,7 @@ const NotesTab: React.FC = () => {
             placeholder="Create a new note at 0:00"
             className="w-full border rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
-          <button 
+          <button
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             aria-label="Add note"
           >
@@ -1396,17 +1484,17 @@ const ReviewsTab: React.FC = () => {
 
   const loadReviews = async () => {
     if (!courseId) return
-    
+
     try {
       setLoading(true)
-      
+
       // Load reviews and stats in parallel
       const [reviewsData, statsData, userReviewData] = await Promise.all([
         reviewApi.getCourseReviews(Number(courseId)),
         reviewApi.getCourseReviewStats(Number(courseId)),
         reviewApi.getUserReviewForCourse(Number(courseId))
       ])
-      
+
       setReviews(reviewsData)
       setReviewStats(statsData)
       setUserReview(userReviewData)
@@ -1436,7 +1524,7 @@ const ReviewsTab: React.FC = () => {
 
     try {
       setSubmitting(true)
-      
+
       if (userReview) {
         // Update existing review
         console.log("Updating review:", userReview.id, reviewForm)
@@ -1455,7 +1543,7 @@ const ReviewsTab: React.FC = () => {
         })
         toast.success("Gửi đánh giá thành công!")
       }
-      
+
       setShowReviewForm(false)
       setReviewForm({ rate: 5, content: "" })
       await loadReviews()
@@ -1470,7 +1558,7 @@ const ReviewsTab: React.FC = () => {
 
   const handleDeleteReview = async () => {
     if (!userReview) return
-    
+
     if (!window.confirm("Bạn có chắc chắn muốn xóa đánh giá này? Hành động này không thể hoàn tác.")) return
 
     try {
@@ -1500,7 +1588,7 @@ const ReviewsTab: React.FC = () => {
   // Filter reviews
   const filteredReviews = reviews.filter(review => {
     const matchesSearch = review.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         review.createdByName?.toLowerCase().includes(searchQuery.toLowerCase())
+      review.createdByName?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesRating = filterRating === "all" || review.rate === Number(filterRating)
     return matchesSearch && matchesRating
   })
@@ -1550,11 +1638,10 @@ const ReviewsTab: React.FC = () => {
                       className="focus:outline-none"
                     >
                       <Star
-                        className={`w-8 h-8 ${
-                          star <= reviewForm.rate
+                        className={`w-8 h-8 ${star <= reviewForm.rate
                             ? "fill-orange-500 text-orange-500"
                             : "text-gray-300"
-                        }`}
+                          }`}
                       />
                     </button>
                   ))}
@@ -1629,20 +1716,19 @@ const ReviewsTab: React.FC = () => {
               </Button>
             </div>
           </div>
-          
+
           <div className="flex gap-1 mb-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <Star
                 key={star}
-                className={`w-5 h-5 ${
-                  star <= userReview.rate
+                className={`w-5 h-5 ${star <= userReview.rate
                     ? "fill-orange-500 text-orange-500"
                     : "text-gray-300"
-                }`}
+                  }`}
               />
             ))}
           </div>
-          
+
           <p className="text-gray-700">{userReview.content}</p>
           <p className="text-sm text-gray-500 mt-2">
             {new Date(userReview.createdAt).toLocaleDateString('vi-VN')}
@@ -1662,11 +1748,10 @@ const ReviewsTab: React.FC = () => {
                       className="focus:outline-none"
                     >
                       <Star
-                        className={`w-8 h-8 ${
-                          star <= reviewForm.rate
+                        className={`w-8 h-8 ${star <= reviewForm.rate
                             ? "fill-orange-500 text-orange-500"
                             : "text-gray-300"
-                        }`}
+                          }`}
                       />
                     </button>
                   ))}
@@ -1719,7 +1804,7 @@ const ReviewsTab: React.FC = () => {
       {/* Student Feedback Section */}
       <div className="mb-12">
         <h2 className="text-2xl font-bold mb-6">Student feedback</h2>
-        
+
         <div className="flex gap-8 items-start mb-8">
           {/* Rating Score */}
           <div className="text-center">
@@ -1728,13 +1813,12 @@ const ReviewsTab: React.FC = () => {
             </div>
             <div className="flex gap-1 justify-center mb-2">
               {[1, 2, 3, 4, 5].map(i => (
-                <Star 
-                  key={i} 
-                  className={`w-4 h-4 ${
-                    i <= Math.round(averageRating)
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${i <= Math.round(averageRating)
                       ? "fill-orange-500 text-orange-500"
                       : "text-gray-300"
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -1756,7 +1840,7 @@ const ReviewsTab: React.FC = () => {
               return (
                 <div key={stars} className="flex items-center gap-3">
                   <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-orange-500"
                       {...({ style: { width: `${percentage}%` } } as any)}
                     />
@@ -1792,8 +1876,8 @@ const ReviewsTab: React.FC = () => {
               className="w-full border rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
           </div>
-          
-          <select 
+
+          <select
             value={filterRating}
             onChange={(e) => setFilterRating(e.target.value)}
             className="border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
@@ -1832,13 +1916,12 @@ const ReviewsTab: React.FC = () => {
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex gap-1">
                           {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`w-4 h-4 ${
-                                i < review.rate 
-                                  ? 'fill-orange-500 text-orange-500' 
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${i < review.rate
+                                  ? 'fill-orange-500 text-orange-500'
                                   : 'text-gray-300'
-                              }`}
+                                }`}
                             />
                           ))}
                         </div>
@@ -1895,7 +1978,7 @@ const LessonVideoPlayer: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => 
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       ></iframe>
-      
+
       {/* Fullscreen Button */}
       <button
         onClick={handleFullscreen}
@@ -1915,7 +1998,7 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
       {/* Lesson Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-3">{lesson.title}</h1>
-        
+
         {lesson.description && (
           <p className="text-lg text-gray-600 leading-relaxed">{lesson.description}</p>
         )}
@@ -1955,9 +2038,9 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
           </h2>
           <div className="space-y-2 text-sm text-gray-600">
             <p>Video bài học đã được phát ở phía trên</p>
-            <a 
-              href={lesson.videoUrl} 
-              target="_blank" 
+            <a
+              href={lesson.videoUrl}
+              target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1"
             >
@@ -2123,11 +2206,10 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
             {quizHistory.map((attempt: any, index: number) => (
               <div
                 key={attempt.id}
-                className={`p-4 rounded-lg border-l-4 ${
-                  attempt.isPassed
+                className={`p-4 rounded-lg border-l-4 ${attempt.isPassed
                     ? 'bg-green-50 border-green-500'
                     : 'bg-red-50 border-red-500'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -2180,7 +2262,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
       setLoading(true)
       const data = await assignmentApi.getMySubmission(assignment.id)
       setSubmission(data)
-      
+
       // Pre-fill form if editing
       if (data) {
         setSubmissionContent(data.submissionText || '')
@@ -2204,7 +2286,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
 
   const handleDelete = async () => {
     if (!submission || !window.confirm('Bạn có chắc chắn muốn xóa bài nộp này?')) return
-    
+
     try {
       await assignmentApi.deleteSubmission(submission.id)
       toast.success('Đã xóa bài nộp')
@@ -2216,36 +2298,36 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
 
   const handleUpdate = async () => {
     if (!submission) return
-    
+
     const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "")
     const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "")
     const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "")
-    
+
     try {
       setSubmitting(true)
-      
+
       const hasContent = submissionContent || submissionFiles.length > 0 || submissionLink
       if (!hasContent) {
         toast.error('Vui lòng nhập nội dung bài làm')
         setSubmitting(false)
         return
       }
-      
+
       const updateData = {
         assignmentId: assignment.id,
         submissionText: canSubmitText ? submissionContent : undefined,
         submissionLink: canSubmitLink ? submissionLink : undefined,
       }
-      
+
       const existingFiles = submission.submissionFiles || []
-      
+
       await assignmentApi.updateSubmission(
         submission.id,
         updateData,
         canSubmitFile ? submissionFiles : undefined,
         canSubmitFile ? existingFiles : undefined
       )
-      
+
       toast.success('Đã cập nhật bài nộp')
       setShowEditModal(false)
       setSubmissionFiles([])
@@ -2274,9 +2356,9 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
           <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-300 px-4 py-2 rounded-lg mb-4">
             <Clock className="w-5 h-5 text-orange-600" />
             <span className="font-semibold text-orange-900">
-              Hạn nộp: {new Date(assignment.deadline).toLocaleDateString("vi-VN", { 
-                year: 'numeric', 
-                month: 'long', 
+              Hạn nộp: {new Date(assignment.deadline).toLocaleDateString("vi-VN", {
+                year: 'numeric',
+                month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
@@ -2301,8 +2383,8 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
                   <span className="text-sm font-medium text-blue-900">Điểm: {submission.score}/{assignment.maxScore}</span>
                 </div>
               )}
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={handleEdit}
                 className="border-green-600 text-green-700 hover:bg-green-50"
@@ -2310,8 +2392,8 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
                 <FileText className="w-4 h-4 mr-1" />
                 Chỉnh sửa bài làm
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={handleDelete}
                 className="text-red-600 hover:bg-red-50"
@@ -2331,7 +2413,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
                 </div>
               </div>
             )}
-            
+
             {/* Files */}
             {submission.submissionFiles && submission.submissionFiles.length > 0 && (
               <div>
@@ -2348,7 +2430,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
                 </div>
               </div>
             )}
-            
+
             {/* Link */}
             {submission.submissionLink && (
               <div>
@@ -2367,7 +2449,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
               <Clock className="w-4 h-4 text-blue-600" />
               <span>Nộp lúc: {new Date(submission.submittedAt).toLocaleString('vi-VN')}</span>
             </div>
-            
+
             {/* Feedback if graded */}
             {submission.feedback && (
               <div>
@@ -2477,7 +2559,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
         const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "")
         const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "")
         const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "")
-        
+
         return (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -2496,7 +2578,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
                   </button>
                 </div>
               </div>
-              
+
               <div className="p-6 space-y-4">
                 {canSubmitText && (
                   <div>
@@ -2551,7 +2633,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
                                   <p className="text-xs text-gray-500">
                                     {file.size < 1024 ? file.size + ' B'
                                       : file.size < 1024 * 1024 ? (file.size / 1024).toFixed(1) + ' KB'
-                                      : (file.size / (1024 * 1024)).toFixed(1) + ' MB'}
+                                        : (file.size / (1024 * 1024)).toFixed(1) + ' MB'}
                                   </p>
                                 </div>
                               </div>

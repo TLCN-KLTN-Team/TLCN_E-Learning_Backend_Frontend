@@ -105,6 +105,14 @@ export const assignmentApi = {
   // Delete submission (nếu chưa quá hạn)
   deleteSubmission: async (submissionId: number): Promise<void> => {
     await axiosInstance.delete(`${ASSIGNMENT_API_BASE}/submissions/${submissionId}`)
+  },
+
+  // Get all assignments for a class (for teacher discussion view)
+  getAssignmentsByClass: async (classId: number): Promise<AssignmentDetailResponse[]> => {
+    const response = await axiosInstance.get<ApiResponse<AssignmentDetailResponse[]>>(
+      `/course-management/teacher/assignments/class/${classId}`
+    )
+    return response.data.result
   }
 }
 

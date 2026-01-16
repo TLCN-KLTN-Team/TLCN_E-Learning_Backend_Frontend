@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import {
   CheckCircle,
   XCircle,
@@ -23,6 +23,8 @@ import type { QuizAttemptResponse } from "@/services/api/response/quizAttemptRes
 const QuizResultPage: React.FC = () => {
   const { quizId, attemptId } = useParams<{ quizId: string; attemptId: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnPath = location.state?.returnPath
 
   const [result, setResult] = useState<QuizAttemptResponse | null>(null)
   const [quiz, setQuiz] = useState<QuizResponse | null>(null)
@@ -101,7 +103,7 @@ const QuizResultPage: React.FC = () => {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate("/student/dashboard")}
+            onClick={() => navigate(returnPath || "/student/dashboard")}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -111,11 +113,10 @@ const QuizResultPage: React.FC = () => {
 
         {/* Result Card */}
         <div
-          className={`rounded-lg p-8 mb-6 text-white ${
-            isPassed
-              ? "bg-gradient-to-r from-green-600 to-green-700"
-              : "bg-gradient-to-r from-red-600 to-red-700"
-          }`}
+          className={`rounded-lg p-8 mb-6 text-white ${isPassed
+            ? "bg-gradient-to-r from-green-600 to-green-700"
+            : "bg-gradient-to-r from-red-600 to-red-700"
+            }`}
         >
           <div className="text-center">
             {isPassed ? (
@@ -123,11 +124,11 @@ const QuizResultPage: React.FC = () => {
             ) : (
               <XCircle className="h-20 w-20 mx-auto mb-4" />
             )}
-            
+
             <h1 className="text-3xl font-bold mb-2">
               {isPassed ? "Chúc mừng! Bạn đã đạt" : "Chưa đạt yêu cầu"}
             </h1>
-            
+
             <p className="text-xl mb-6 opacity-90">{quiz.title}</p>
 
             <div className="flex justify-center items-center gap-8 mb-6">
@@ -201,15 +202,15 @@ const QuizResultPage: React.FC = () => {
                 const question = Array.from(quiz.questions || []).find(
                   (q) => q.id === answer.questionId
                 )
-                
+
                 if (!question) return null
 
                 const isExpanded = expandedQuestions.has(answer.questionId)
-                
+
                 // Get selected answers (single or multiple)
-                const selectedAnswerIds = answer.selectedAnswerIds || 
+                const selectedAnswerIds = answer.selectedAnswerIds ||
                   (answer.selectedAnswerId ? [answer.selectedAnswerId] : [])
-                
+
 
                 // Get all answers for display
                 const allAnswers = question.answers
@@ -219,11 +220,10 @@ const QuizResultPage: React.FC = () => {
                 return (
                   <div
                     key={answer.id}
-                    className={`border-2 rounded-lg p-4 ${
-                      answer.isCorrect
-                        ? "border-green-300 bg-green-50"
-                        : "border-red-300 bg-red-50"
-                    }`}
+                    className={`border-2 rounded-lg p-4 ${answer.isCorrect
+                      ? "border-green-300 bg-green-50"
+                      : "border-red-300 bg-red-50"
+                      }`}
                   >
                     <button
                       onClick={() => toggleQuestion(answer.questionId)}
@@ -239,13 +239,15 @@ const QuizResultPage: React.FC = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                                {question.questionType === "SINGLE_CHOICE" 
+                                {question.questionType === "SINGLE_CHOICE"
                                   ? "Một đáp án"
                                   : question.questionType === "MULTIPLE_CHOICE"
-                                  ? "Nhiều đáp án"
-                                  : question.questionType === "TRUE_FALSE"
-                                  ? "Đúng/Sai"
-                                  : "Không xác định"}
+                                    ? "Nhiều đáp án"
+                                    : question.questionType === "TRUE_FALSE"
+                                      ? "Đúng/Sai"
+                                      : question.questionType === "FILL_IN_THE_BLANK"
+                                        ? "Điền khuyết"
+                                        : "Không xác định"}
                               </span>
                             </div>
                             <p className="font-medium text-gray-900 mb-1">
@@ -303,11 +305,11 @@ const QuizResultPage: React.FC = () => {
                               {allAnswers.map((ans) => {
                                 const isSelected = selectedAnswerIds.includes(ans.id)
                                 const isCorrectAnswer = ans.isCorrect
-                                
+
                                 let borderColor = "border-gray-300"
                                 let bgColor = "bg-white"
                                 let label = ""
-                                
+
                                 if (isCorrectAnswer && isSelected) {
                                   // Đúng và đã chọn
                                   borderColor = "border-green-500"
@@ -346,13 +348,12 @@ const QuizResultPage: React.FC = () => {
                                       </span>
                                     </div>
                                     {label && (
-                                      <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
-                                        isCorrectAnswer && isSelected
-                                          ? "bg-green-200 text-green-800"
-                                          : isCorrectAnswer
+                                      <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${isCorrectAnswer && isSelected
+                                        ? "bg-green-200 text-green-800"
+                                        : isCorrectAnswer
                                           ? "bg-green-100 text-green-700"
                                           : "bg-red-200 text-red-800"
-                                      }`}>
+                                        }`}>
                                         {label}
                                       </span>
                                     )}
@@ -373,11 +374,11 @@ const QuizResultPage: React.FC = () => {
                               {allAnswers.map((ans) => {
                                 const isSelected = selectedAnswerIds.includes(ans.id)
                                 const isCorrectAnswer = ans.isCorrect
-                                
+
                                 let borderColor = "border-gray-300"
                                 let bgColor = "bg-white"
                                 let label = ""
-                                
+
                                 if (isCorrectAnswer && isSelected) {
                                   // Đúng và đã chọn
                                   borderColor = "border-green-500"
@@ -416,19 +417,114 @@ const QuizResultPage: React.FC = () => {
                                       </span>
                                     </div>
                                     {label && (
-                                      <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
-                                        isCorrectAnswer && isSelected
-                                          ? "bg-green-200 text-green-800"
-                                          : isCorrectAnswer
+                                      <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${isCorrectAnswer && isSelected
+                                        ? "bg-green-200 text-green-800"
+                                        : isCorrectAnswer
                                           ? "bg-green-100 text-green-700"
                                           : "bg-red-200 text-red-800"
-                                      }`}>
+                                        }`}>
                                         {label}
                                       </span>
                                     )}
                                   </div>
                                 )
                               })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* For FILL_IN_THE_BLANK - Show blanks with answers */}
+                        {question.questionType === "FILL_IN_THE_BLANK" && (
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-3">
+                              Câu trả lời của bạn:
+                            </p>
+                            <div className="space-y-3">
+                              {(() => {
+                                console.log('🔍 FILL_IN_THE_BLANK Debug:')
+                                console.log('- Question:', question.questionText)
+                                console.log('- Selected Answer IDs:', selectedAnswerIds)
+                                console.log('- All Answers:', allAnswers)
+
+                                // Parse question text to find blanks
+                                const partRegex = /(\[[_\s]*\d+[_\s]*\])/g
+                                const parts = question.questionText.split(partRegex)
+                                let blankCounter = 0
+                                const blankElements: React.ReactElement[] = []
+
+                                parts.forEach((part) => {
+                                  if (part.match(partRegex)) {
+                                    const currentBlankIndex = blankCounter++
+                                    const answerId = selectedAnswerIds[currentBlankIndex]
+                                    const selectedAnswer = allAnswers.find(a => a.id === answerId)
+
+                                    // Fix: Find correct answer by orderIndex matching blank position
+                                    // Each blank corresponds to an answer with the same orderIndex
+                                    const correctAnswer = allAnswers.find(a => {
+                                      return a.isCorrect && a.orderIndex === currentBlankIndex
+                                    })
+
+                                    console.log(`Blank ${currentBlankIndex}:`)
+                                    console.log('  - Answer ID:', answerId)
+                                    console.log('  - Selected:', selectedAnswer)
+                                    console.log('  - Correct:', correctAnswer)
+
+                                    const isCorrect = selectedAnswer && correctAnswer && answerId === correctAnswer.id
+
+                                    blankElements.push(
+                                      <div
+                                        key={`blank-${currentBlankIndex}`}
+                                        className={`p-4 border-2 rounded-lg ${isCorrect
+                                          ? "border-green-500 bg-green-100"
+                                          : "border-red-500 bg-red-100"
+                                          }`}
+                                      >
+                                        <div className="flex items-start gap-3">
+                                          {isCorrect ? (
+                                            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                          ) : (
+                                            <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                          )}
+                                          <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-700 mb-2">
+                                              Ô trống số {currentBlankIndex + 1}:
+                                            </p>
+                                            <div className="space-y-2">
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-xs text-gray-600">Bạn chọn:</span>
+                                                <span className={`font-medium ${isCorrect ? "text-green-700" : "text-red-700"
+                                                  }`}>
+                                                  {selectedAnswer?.content || "(Không trả lời)"}
+                                                </span>
+                                                {isCorrect && (
+                                                  <span className="text-xs font-semibold px-2 py-1 rounded bg-green-200 text-green-800">
+                                                    Đúng
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {!isCorrect && correctAnswer && (
+                                                <div className="flex items-center gap-2">
+                                                  <span className="text-xs text-gray-600">Đáp án đúng:</span>
+                                                  <span className="font-medium text-green-700">
+                                                    {correctAnswer.content}
+                                                  </span>
+                                                  <span className="text-xs font-semibold px-2 py-1 rounded bg-green-200 text-green-800">
+                                                    Đáp án đúng
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )
+                                  }
+                                })
+
+                                return blankElements.length > 0 ? blankElements : (
+                                  <p className="text-sm text-gray-500">Không có đáp án</p>
+                                )
+                              })()}
                             </div>
                           </div>
                         )}
@@ -445,7 +541,7 @@ const QuizResultPage: React.FC = () => {
         <div className="flex gap-4 justify-center">
           <Button
             variant="outline"
-            onClick={() => navigate("/student/dashboard")}
+            onClick={() => navigate(returnPath || "/student/dashboard")}
           >
             <Home className="h-4 w-4 mr-2" />
             Về trang chủ

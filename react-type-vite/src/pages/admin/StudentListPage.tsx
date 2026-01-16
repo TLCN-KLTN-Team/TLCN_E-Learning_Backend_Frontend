@@ -21,9 +21,11 @@ import {
   Users,
   Link as LinkIcon,
   FileText,
+  Upload,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import StudentFormModal from "@/components/admin/student/StudentFormModal";
+import ImportStudentsModal from "@/components/admin/student/ImportStudentsModal";
 import * as studentApi from "@/services/api/admin/studentApi";
 import educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { StudentResponse } from "@/services/api/response/studentResponse";
@@ -33,6 +35,7 @@ import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 const StudentListPage: React.FC = () => {
   const [students, setStudents] = useState<StudentResponse[]>([]);
   const [showStudentModal, setShowStudentModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
@@ -283,13 +286,22 @@ const StudentListPage: React.FC = () => {
             {currentEducationalUnit?.name || "cơ sở giáo dục của bạn"}
           </p>
         </div>
-        <Button
-          onClick={() => setShowStudentModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
-        >
-          <UserPlus className="mr-2" size={18} />
-          Tạo Học sinh Mới
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => setShowStudentModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
+          >
+            <UserPlus className="mr-2" size={18} />
+            Tạo Học sinh Mới
+          </Button>
+          <Button
+            onClick={() => setShowImportModal(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 text-lg"
+          >
+            <Upload className="mr-2" size={18} />
+            Import từ File
+          </Button>
+        </div>
       </div>
 
       {/* Statistics and Search */}
@@ -596,9 +608,16 @@ const StudentListPage: React.FC = () => {
       <StudentFormModal
         isOpen={showStudentModal}
         onClose={handleCloseModal}
-        educationalUnitId={educationalUnitId}
+        educationalUnitId={educationalUnitId!}
         onSuccess={handleSuccess}
         editingStudent={editingStudent}
+      />
+
+      <ImportStudentsModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        educationalUnitId={educationalUnitId!}
+        onSuccess={handleSuccess}
       />
     </div>
   );
