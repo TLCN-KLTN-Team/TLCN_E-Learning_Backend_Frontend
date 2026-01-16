@@ -2,6 +2,7 @@ package com.hoangphihiep.controller.Teacher;
 
 import com.hoangphihiep.dto.request.GradeAssignmentRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.dto.response.AssignmentResponse;
 import com.hoangphihiep.dto.response.AssignmentGradingResponse;
 import com.hoangphihiep.dto.response.AssignmentSubmissionResponse;
 import com.hoangphihiep.service.TeacherAssignmentService;
@@ -20,6 +21,24 @@ import java.util.Map;
 public class TeacherAssignmentController {
 
     private final TeacherAssignmentService teacherAssignmentService;
+
+    /**
+     * Get all assignments for a class (for discussion view)
+     * GET /api/teacher/assignments/class/{classId}
+     */
+    @GetMapping("/class/{classId}")
+    public ApiResponse<List<AssignmentResponse>> getAssignmentsByClass(
+            @PathVariable Integer classId) {
+
+        log.info("GET assignments for class: {}", classId);
+
+        List<AssignmentResponse> assignments =
+                teacherAssignmentService.getAssignmentsByClass(classId);
+
+        return ApiResponse.<List<AssignmentResponse>>builder()
+                .result(assignments)
+                .build();
+    }
 
     /**
      * Get all submissions for grading in a class
@@ -107,10 +126,6 @@ public class TeacherAssignmentController {
             @PathVariable Integer classId) {
 
         log.info("Fetching grading statistics for class: {}", classId);
-        System.out.println ("Có vào đây");
-        System.out.println ("Có vào đây");
-        System.out.println ("Có vào đây");
-        System.out.println ("Có vào đây");
         Map<String, Object> statistics =
                 teacherAssignmentService.getGradingStatistics(classId);
 

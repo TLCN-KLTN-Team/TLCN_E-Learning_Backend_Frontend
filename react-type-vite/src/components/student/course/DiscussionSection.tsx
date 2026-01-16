@@ -1,231 +1,380 @@
-import { useState, useEffect } from "react";
-import { MessageSquare, Send, ThumbsUp, Clock, User, Loader2, AlertCircle, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { MessageSquare, Send, ThumbsUp, Clock, User, Loader2, AlertCircle, Trash2, Image as ImageIcon, X } from "lucide-react";
+import { quizDiscussionWS, type DiscussionMessage as QuizDiscussionMessage } from "@/services/websocket/quizDiscussionWebSocket";
+import { assignmentDiscussionWS, type DiscussionMessage as AssignmentDiscussionMessage } from "@/services/websocket/assignmentDiscussionWebSocket";
+import { lessonDiscussionWS, type DiscussionMessage as LessonDiscussionMessage } from "@/services/websocket/lessonDiscussionWebSocket";
+import { 
+  getQuizDiscussion, 
+  postDiscussionMessage, 
+  deleteDiscussionMessage,
+  toggleDiscussionLike,
+  markDiscussionAsRead
+} from "@/services/api/quizDiscussionApi";
+import {
+  getAssignmentDiscussion,
+  postAssignmentDiscussionMessage,
+  deleteAssignmentDiscussionMessage,
+  toggleAssignmentDiscussionLike,
+  markAssignmentDiscussionAsRead
+} from "@/services/api/assignmentDiscussionApi";
+import {
+  getLessonDiscussion,
+  postLessonDiscussionMessage,
+  deleteLessonDiscussionMessage,
+  toggleLessonDiscussionLike,
+  markLessonDiscussionAsRead
+} from "@/services/api/lessonDiscussionApi";
+import { uploadImage } from "@/services/api/fileUploadApi";
+import { toast } from "react-toastify";
+import { getAccessToken } from "@/utils/localStorageVariables";
+import type { User as UserType } from "@/context/auth-context/types";
 
-interface Comment {
-  id: number;
-  userId: number;
-  userName: string;
-  userAvatar?: string;
-  content: string;
-  createdAt: string;
-  likes: number;
-  isLiked: boolean;
-  isOwner: boolean;
-}
+type DiscussionMessage = QuizDiscussionMessage | AssignmentDiscussionMessage | LessonDiscussionMessage;
 
 interface DiscussionSectionProps {
-  itemType: "quiz" | "assignment";
+  itemType: "quiz" | "assignment" | "lesson";
   itemId: number;
   itemTitle: string;
+  user?: UserType | null;
 }
 
-const DiscussionSection = ({ itemType, itemId}: DiscussionSectionProps) => {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState("");
+const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) => {
+  const [messages, setMessages] = useState<DiscussionMessage[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    fetchComments();
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      initializeDiscussion();
+    }
+
+    return () => {
+      if (itemType === "quiz") {
+        quizDiscussionWS.unsubscribeFromQuizDiscussion(itemId);
+      } else if (itemType === "assignment") {
+        assignmentDiscussionWS.unsubscribeFromAssignmentDiscussion(itemId);
+      } else if (itemType === "lesson") {
+        lessonDiscussionWS.unsubscribeFromLessonDiscussion(itemId);
+      }
+    };
   }, [itemType, itemId]);
 
-  const fetchComments = async () => {
-    setIsLoading(true);
-    setError(null);
-    
+  const initializeDiscussion = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await discussionApi.getComments(itemType, itemId);
-      // setComments(response);
-      
-      // Mock data for demonstration
-      setTimeout(() => {
-        const mockComments: Comment[] = [
-          {
-            id: 1,
-            userId: 1,
-            userName: "Nguyễn Văn A",
-            content: "Câu hỏi số 3 có vẻ hơi khó hiểu, mọi người có thể giải thích thêm không?",
-            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            likes: 5,
-            isLiked: false,
-            isOwner: false,
-          },
-          {
-            id: 2,
-            userId: 2,
-            userName: "Trần Thị B",
-            content: "Mình nghĩ đáp án nên là B vì dựa vào lý thuyết ở bài học 2...",
-            createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-            likes: 3,
-            isLiked: true,
-            isOwner: false,
-          },
-          {
-            id: 3,
-            userId: 999,
-            userName: "Bạn",
-            content: "Cảm ơn mọi người đã giải đáp, mình hiểu rồi!",
-            createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-            likes: 1,
-            isLiked: false,
-            isOwner: true,
-          },
-        ];
-        setComments(mockComments);
-        setIsLoading(false);
-      }, 800);
+      setIsConnecting(true);
+      setIsLoading(true);
+
+      const token = getAccessToken();
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      if (itemType === "quiz") {
+        await quizDiscussionWS.connect(token);
+
+        const response = await getQuizDiscussion(itemId);
+        
+        if (response && response.content) {
+          setMessages(response.content);
+        } else {
+          setMessages([]);
+        }
+
+        // Mark messages as read
+        await markDiscussionAsRead(itemId).catch(err => {
+          console.error("Failed to mark quiz as read:", err);
+        });
+
+        quizDiscussionWS.subscribeToQuizDiscussion(
+          itemId,
+          handleNewMessage,
+          handleMessageDelete,
+          handleMessageUpdate
+        );
+      } else if (itemType === "assignment") {
+        await assignmentDiscussionWS.connect(token);
+
+        const response = await getAssignmentDiscussion(itemId);
+        
+        if (response && response.content) {
+          setMessages(response.content);
+        } else {
+          setMessages([]);
+        }
+
+        // Mark messages as read
+        await markAssignmentDiscussionAsRead(itemId).catch(err => {
+          console.error("Failed to mark assignment as read:", err);
+        });
+
+        assignmentDiscussionWS.subscribeToAssignmentDiscussion(
+          itemId,
+          handleNewMessage,
+          handleMessageDelete,
+          handleMessageUpdate
+        );
+      } else if (itemType === "lesson") {
+        await lessonDiscussionWS.connect(token);
+
+        const response = await getLessonDiscussion(itemId);
+        
+        if (response && response.content) {
+          setMessages(response.content);
+        } else {
+          setMessages([]);
+        }
+
+        // Mark messages as read
+        await markLessonDiscussionAsRead(itemId).catch(err => {
+          console.error("Failed to mark lesson as read:", err);
+        });
+
+        lessonDiscussionWS.subscribeToLessonDiscussion(
+          itemId,
+          handleNewMessage,
+          handleMessageDelete,
+          handleMessageUpdate
+        );
+      }
+
+      setIsConnecting(false);
+      setError(null);
     } catch (err) {
-      console.error("Error fetching comments:", err);
-      setError("Không thể tải bình luận");
+      console.error("Error initializing discussion:", err);
+      setError("Không thể kết nối thảo luận");
+      setIsConnecting(false);
+      toast.error("Không thể kết nối thảo luận realtime");
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSubmitComment = async () => {
-    if (!newComment.trim()) return;
+  const handleNewMessage = (message: DiscussionMessage) => {
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === message.id)) {
+        return prev;
+      }
+      return [...prev, message];
+    });
+  };
+
+  const handleMessageDelete = (messageId: string) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+  };
+
+  const handleMessageUpdate = (updatedMessage: DiscussionMessage) => {
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.id === updatedMessage.id) {
+          // Only update likes count, preserve current user's isLiked and isOwner
+          return {
+            ...msg,
+            likes: updatedMessage.likes,
+          };
+        }
+        return msg;
+      })
+    );
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Vui lòng chọn file ảnh');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Ảnh không được vượt quá 10MB');
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSubmitMessage = async () => {
+    if ((!newMessage.trim() && !selectedImage) || isSubmitting) return;
 
     setIsSubmitting(true);
-    
+
     try {
-      // TODO: Replace with actual API call
-      // await discussionApi.createComment({
-      //   itemType,
-      //   itemId,
-      //   content: newComment,
-      // });
+      const fullName = user?.firstName && user?.lastName 
+        ? `${user.firstName} ${user.lastName}` 
+        : user?.username || user?.email || "User";
+      const userAvatar = user?.avatarUrl || undefined;
       
-      // Mock successful submission
-      setTimeout(() => {
-        const newCommentObj: Comment = {
-          id: Date.now(),
-          userId: 999,
-          userName: "Bạn",
-          content: newComment,
-          createdAt: new Date().toISOString(),
-          likes: 0,
-          isLiked: false,
-          isOwner: true,
-        };
-        
-        setComments([newCommentObj, ...comments]);
-        setNewComment("");
-        setIsSubmitting(false);
-      }, 500);
+      let imageUrl: string | undefined;
+      if (selectedImage) {
+        const uploadResult = await uploadImage(selectedImage);
+        imageUrl = uploadResult.url;
+      }
+      
+      if (itemType === "quiz") {
+        await postDiscussionMessage(itemId, {
+          content: newMessage || (imageUrl ? "[Đã gửi ảnh]" : ""),
+          userName: fullName,
+          userAvatar: userAvatar,
+          imageUrl: imageUrl,
+        });
+      } else if (itemType === "assignment") {
+        await postAssignmentDiscussionMessage(itemId, {
+          content: newMessage || (imageUrl ? "[Đã gửi ảnh]" : ""),
+          userName: fullName,
+          userAvatar: userAvatar,
+          imageUrl: imageUrl,
+        });
+      } else if (itemType === "lesson") {
+        await postLessonDiscussionMessage(itemId, {
+          content: newMessage || (imageUrl ? "[Đã gửi ảnh]" : ""),
+          userName: fullName,
+          userAvatar: userAvatar,
+          imageUrl: imageUrl,
+        });
+      }
+      
+      setNewMessage("");
+      handleRemoveImage();
     } catch (err) {
-      console.error("Error submitting comment:", err);
-      alert("Không thể gửi bình luận. Vui lòng thử lại.");
+      console.error("Error sending message:", err);
+      toast.error("Không thể gửi tin nhắn");
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleLikeComment = async (commentId: number) => {
+  const handleDelete = async (messageId: string) => {
+    if (!window.confirm("Bạn có chắc muốn xóa tin nhắn này?")) return;
+
     try {
-      // TODO: Replace with actual API call
-      // await discussionApi.toggleLike(commentId);
-      
-      setComments(comments.map(comment => {
-        if (comment.id === commentId) {
-          return {
-            ...comment,
-            isLiked: !comment.isLiked,
-            likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
-          };
-        }
-        return comment;
-      }));
+      if (itemType === "quiz") {
+        await deleteDiscussionMessage(messageId);
+      } else if (itemType === "assignment") {
+        await deleteAssignmentDiscussionMessage(messageId);
+      } else if (itemType === "lesson") {
+        await deleteLessonDiscussionMessage(messageId);
+      }
+      // Remove message from UI immediately after successful deletion
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+      toast.success("Đã xóa tin nhắn");
     } catch (err) {
-      console.error("Error liking comment:", err);
+      console.error("Error deleting message:", err);
+      toast.error("Không thể xóa tin nhắn");
     }
   };
 
-  const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("Bạn có chắc muốn xóa bình luận này?")) return;
-
+  const handleLike = async (messageId: string) => {
     try {
-      // TODO: Replace with actual API call
-      // await discussionApi.deleteComment(commentId);
+      let updatedMessage;
+      if (itemType === "quiz") {
+        updatedMessage = await toggleDiscussionLike(messageId);
+      } else if (itemType === "assignment") {
+        updatedMessage = await toggleAssignmentDiscussionLike(messageId);
+      } else if (itemType === "lesson") {
+        updatedMessage = await toggleLessonDiscussionLike(messageId);
+      }
       
-      setComments(comments.filter(c => c.id !== commentId));
+      if (updatedMessage) {
+        // Update current user's message state immediately
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (msg.id === messageId) {
+              return {
+                ...msg,
+                likes: updatedMessage.likes,
+                isLiked: updatedMessage.isLiked,
+              };
+            }
+            return msg;
+          })
+        );
+      }
     } catch (err) {
-      console.error("Error deleting comment:", err);
-      alert("Không thể xóa bình luận. Vui lòng thử lại.");
+      console.error("Error toggling like:", err);
+      toast.error("Không thể thích/bỏ thích");
     }
   };
 
-  const formatTimeAgo = (dateString: string) => {
+  const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInMinutes = Math.floor(diffInMs / 60000);
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-    if (diffInMinutes < 1) return "Vừa xong";
-    if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
-    if (diffInHours < 24) return `${diffInHours} giờ trước`;
-    if (diffInDays < 7) return `${diffInDays} ngày trước`;
+    if (diffMins < 1) return "Vừa xong";
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
     return date.toLocaleDateString("vi-VN");
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-2 pb-3 border-b">
+    // THAY ĐỔI QUAN TRỌNG:
+    // h-[calc(100vh-220px)]: Chiều cao tự động bằng màn hình trừ đi phần Header của Modal (khoảng 220px)
+    // min-h-[400px]: Đảm bảo không bị quá bé
+    <div className="flex flex-col h-[calc(100vh-220px)] min-h-[400px] bg-white rounded-lg">
+      
+      {/* 1. Header (Cố định) */}
+      <div className="flex items-center gap-2 pb-3 border-b shrink-0 px-1 pt-1">
         <MessageSquare className="w-5 h-5 text-blue-600" />
         <h3 className="text-lg font-semibold text-gray-800">
           Thảo luận về {itemType === "quiz" ? "bài kiểm tra" : "bài tập"}
         </h3>
         <span className="text-sm text-gray-500">
-          ({comments.length} bình luận)
+          ({messages.length} tin nhắn)
         </span>
+        {isConnecting && (
+          <span className="text-xs text-yellow-600 flex items-center gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Đang kết nối...
+          </span>
+        )}
+        {!isConnecting && (
+          itemType === "quiz" 
+            ? quizDiscussionWS.isConnected() 
+            : itemType === "assignment" 
+            ? assignmentDiscussionWS.isConnected()
+            : lessonDiscussionWS.isConnected()
+        ) && (
+          <span className="text-xs text-green-600">● Realtime</span>
+        )}
       </div>
 
-      {/* New Comment Form */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Chia sẻ suy nghĩ của bạn, đặt câu hỏi hoặc thảo luận với các bạn khác..."
-          className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          rows={3}
-          disabled={isSubmitting}
-        />
-        <div className="flex justify-between items-center mt-3">
-          <p className="text-xs text-gray-500">
-            💡 Hãy tôn trọng và hỗ trợ lẫn nhau trong học tập
-          </p>
-          <button
-            onClick={handleSubmitComment}
-            disabled={!newComment.trim() || isSubmitting}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg flex items-center gap-2 transition-colors"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Đang gửi...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Gửi bình luận
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Comments List */}
-      <div className="space-y-3">
-        {/* Loading State */}
+      {/* 2. Danh sách tin nhắn (Cuộn) */}
+      <div className="flex-1 overflow-y-auto space-y-3 p-2 my-2 custom-scrollbar">
         {isLoading && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
         )}
 
-        {/* Error State */}
         {error && (
           <div className="flex items-center gap-2 text-red-600 bg-red-50 p-4 rounded-lg">
             <AlertCircle className="w-5 h-5" />
@@ -233,21 +382,21 @@ const DiscussionSection = ({ itemType, itemId}: DiscussionSectionProps) => {
           </div>
         )}
 
-        {/* Comments */}
-        {!isLoading && !error && comments.length > 0 && (
+        {!isLoading && !error && messages.length > 0 && (
           <>
-            {comments.map((comment) => (
+            {messages.map((message) => (
               <div
-                key={comment.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                key={message.id}
+                className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                  message.isDeleted ? "opacity-50" : ""
+                }`}
               >
-                {/* Comment Header */}
                 <div className="flex items-start gap-3 mb-3">
                   <div className="flex-shrink-0">
-                    {comment.userAvatar ? (
+                    {message.userAvatar ? (
                       <img
-                        src={comment.userAvatar}
-                        alt={comment.userName}
+                        src={message.userAvatar}
+                        alt={message.userName}
                         className="w-10 h-10 rounded-full"
                       />
                     ) : (
@@ -257,69 +406,157 @@ const DiscussionSection = ({ itemType, itemId}: DiscussionSectionProps) => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-800">
-                        {comment.userName}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-gray-900">
+                        {message.userName}
                       </span>
-                      {comment.isOwner && (
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
+                      {message.userRole === "TEACHER" && (
+                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                          Giảng viên
+                        </span>
+                      )}
+                      {message.userId === user?.id && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
                           Bạn
                         </span>
                       )}
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {formatTimeAgo(comment.createdAt)}
+                        {formatTime(message.createdAt)}
                       </span>
                     </div>
+                    <p className="text-gray-700 whitespace-pre-wrap">
+                      {message.isDeleted ? "[Tin nhắn đã bị xóa]" : message.content}
+                    </p>
+                    {message.imageUrl && !message.isDeleted && (
+                      <img
+                        src={message.imageUrl}
+                        alt="Attachment"
+                        className="mt-2 max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(message.imageUrl, '_blank')}
+                      />
+                    )}
                   </div>
                 </div>
 
-                {/* Comment Content */}
-                <p className="text-gray-700 mb-3 ml-13">
-                  {comment.content}
-                </p>
-
-                {/* Comment Actions */}
-                <div className="flex items-center gap-4 ml-13">
-                  <button
-                    onClick={() => handleLikeComment(comment.id)}
-                    className={`flex items-center gap-1 text-sm transition-colors ${
-                      comment.isLiked
-                        ? "text-blue-600"
-                        : "text-gray-500 hover:text-blue-600"
-                    }`}
-                  >
-                    <ThumbsUp className={`w-4 h-4 ${comment.isLiked ? "fill-current" : ""}`} />
-                    <span>{comment.likes > 0 ? comment.likes : "Thích"}</span>
-                  </button>
-
-                  {comment.isOwner && (
+                {!message.isDeleted && (
+                  <div className="flex items-center gap-4 ml-13">
                     <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 transition-colors"
+                      onClick={() => handleLike(message.id)}
+                      className={`flex items-center gap-1 text-sm transition-colors ${
+                        message.isLiked
+                          ? "text-blue-600"
+                          : "text-gray-600 hover:text-blue-600"
+                      }`}
                     >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Xóa</span>
+                      <ThumbsUp
+                        className={`w-4 h-4 ${message.isLiked ? "fill-current" : ""}`}
+                      />
+                      {message.likes > 0 && <span>{message.likes}</span>}
                     </button>
-                  )}
-                </div>
+
+                    {message.userId === user?.id && (
+                      <button
+                        onClick={() => handleDelete(message.id)}
+                        className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </>
         )}
 
-        {/* Empty State */}
-        {!isLoading && !error && comments.length === 0 && (
-          <div className="text-center py-8">
-            <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 mb-1">
-              Chưa có bình luận nào
+        {!isLoading && !error && messages.length === 0 && (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-600 font-medium mb-1">
+              Chưa có thảo luận nào
             </p>
-            <p className="text-sm text-gray-400">
-              Hãy là người đầu tiên thảo luận về {itemType === "quiz" ? "bài kiểm tra" : "bài tập"} này!
+            <p className="text-sm text-gray-500">
+              Hãy là người đầu tiên bắt đầu cuộc trò chuyện!
             </p>
           </div>
         )}
+      </div>
+
+      {/* 3. Input Form (Luôn cố định ở đáy) */}
+      <div className="shrink-0 pt-2 bg-white z-10 sticky bottom-0">
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          {imagePreview && (
+            <div className="mb-3 relative inline-block">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="max-w-xs max-h-40 rounded-lg border border-gray-300"
+              />
+              <button
+                onClick={handleRemoveImage}
+                className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          <textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmitMessage();
+              }
+            }}
+            placeholder="Chia sẻ suy nghĩ của bạn, đặt câu hỏi hoặc thảo luận với các bạn khác..."
+            className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            rows={2}
+            disabled={isSubmitting || !(itemType === "quiz" ? quizDiscussionWS.isConnected() : itemType === "assignment" ? assignmentDiscussionWS.isConnected() : lessonDiscussionWS.isConnected())}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          <div className="flex justify-between items-center mt-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSubmitting}
+                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Đính kèm ảnh"
+              >
+                <ImageIcon className="w-5 h-5" />
+              </button>
+              <p className="text-xs text-gray-500">
+                💡 Hãy tôn trọng và hỗ trợ lẫn nhau trong học tập
+              </p>
+            </div>
+            <button
+              onClick={handleSubmitMessage}
+              disabled={(!newMessage.trim() && !selectedImage) || isSubmitting || !(itemType === "quiz" ? quizDiscussionWS.isConnected() : itemType === "assignment" ? assignmentDiscussionWS.isConnected() : lessonDiscussionWS.isConnected())}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg flex items-center gap-2 transition-colors"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Đang gửi...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Gửi tin nhắn
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

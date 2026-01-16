@@ -5,9 +5,10 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, ChevronRight, AlertCircle, Loader2, Plus } from 'lucide-react'
+import { Users, ChevronRight, AlertCircle, Loader2, Plus, MessageSquare } from 'lucide-react'
 import * as classApi from "@/services/api/admin/classApi";
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
+import ClassDiscussionModal from "./ClassDiscussionModal"
 
 interface ClassListViewProps {
   courseId: string
@@ -19,6 +20,8 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
   const [classes, setClasses] = useState<CourseClassResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [discussionModalOpen, setDiscussionModalOpen] = useState(false)
+  const [selectedClassForDiscussion, setSelectedClassForDiscussion] = useState<CourseClassResponse | null>(null)
 
   useEffect(() => {
     fetchClasses()
@@ -36,6 +39,12 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleOpenDiscussion = (classData: CourseClassResponse, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedClassForDiscussion(classData)
+    setDiscussionModalOpen(true)
   }
 
   if (loading) {
@@ -125,11 +134,24 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
                 {/* Description */}
                 {classData.description && <p className="text-sm text-gray-600 line-clamp-2">{classData.description}</p>}
 
-                {/* View Button */}
-                <Button onClick={() => onSelectClass(classData)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                  Xem Chi Tiết
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={(e) => handleOpenDiscussion(classData, e)} 
+                    variant="outline"
+                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Thảo luận
+                  </Button>
+                  <Button 
+                    onClick={() => onSelectClass(classData)} 
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Xem Chi Tiết
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -145,6 +167,19 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Discussion Modal */}
+      {selectedClassForDiscussion && (
+        <ClassDiscussionModal
+          isOpen={discussionModalOpen}
+          onClose={() => {
+            setDiscussionModalOpen(false)
+            setSelectedClassForDiscussion(null)
+          }}
+          classId={selectedClassForDiscussion.id}
+          className={selectedClassForDiscussion.className}
+        />
       )}
     </div>
   )

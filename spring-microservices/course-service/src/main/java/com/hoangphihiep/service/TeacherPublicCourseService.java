@@ -6,6 +6,7 @@ import com.hoangphihiep.entity.*;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.*;
+import com.hoangphihiep.entity.QuizQuestion;
 import com.hoangphihiep.repository.httpclient.UserInfoApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class TeacherPublicCourseService {
     private final QuizRepository quizRepository;
     private final LessonProgressRepository lessonProgressRepository;
     private final AssignmentRepository assignmentRepository;
+    private final QuizQuestionRepository quizQuestionRepository;
 
     public Page<PublicCourseResponse> getPublicCoursesByTeacher(String teacherId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -83,9 +85,10 @@ public class TeacherPublicCourseService {
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_ATTEMPT_NOT_FOUND));
 
         Quiz quiz = attempt.getQuiz();
-        Set<Question> questionSet = quiz.getQuestions();
-        List<Question> questions = new ArrayList<>(questionSet);
-        questions.sort(Comparator.comparing(Question::getOrderIndex));
+        List<Question> questions = quizQuestionRepository.findByQuizIdOrderByOrderIndex(quiz.getId())
+                .stream()
+                .map(QuizQuestion::getQuestion)
+                .toList();
         
         List<QuizAttemptDetailResponse.QuestionAnswerDetail> questionDetails = new ArrayList<>();
 
@@ -237,8 +240,12 @@ public class TeacherPublicCourseService {
         LocalDateTime updatedAt = course.getUpdatedAt() != null ?
                 course.getUpdatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime() : null;
         
+        Integer publishedCourseId = course.getPublishedCourse() != null ? 
+                course.getPublishedCourse().getId() : null;
+        
         return PublicCourseResponse.builder()
                 .id(course.getId())
+                .publishedCourseId(publishedCourseId)
                 .courseName(course.getCourseName())
                 .description(course.getDescription())
                 .credits(course.getCredits())
@@ -304,7 +311,7 @@ public class TeacherPublicCourseService {
 
     private StudentQuizAttemptResponse mapToStudentQuizAttemptResponse(QuizAttempt attempt) {
         Quiz quiz = attempt.getQuiz();
-        int totalQuestions = quiz.getQuestions().size();
+        int totalQuestions = quizQuestionRepository.countByQuizId(quiz.getId());
 
         List<QuizAttemptAnswer> answers = attempt.getAnswers() != null ? attempt.getAnswers() : new ArrayList<>();
         long correctCount = answers.stream().filter(ans -> ans.getIsCorrect() != null && ans.getIsCorrect()).count();

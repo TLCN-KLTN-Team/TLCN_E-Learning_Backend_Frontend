@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   EarthLock,
+  Brain,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -27,6 +28,11 @@ const menuItems = [
     name: "Khóa Học Thương Mại",
     icon: HelpCircle,
     path: "/teacher/public-courses",
+  },
+  { 
+    name: "Ngân hàng câu hỏi", 
+    icon: Brain, 
+    path: "/teacher/question-bank" 
   },
   { name: "Theo dõi doanh thu", icon: TrendingUp, path: "/teacher/revenue" },
   {

@@ -19,14 +19,14 @@ interface LessonItemProps {
   onEdit: (lesson: LessonResponse) => void
 }
 
-const LessonItem: React.FC<LessonItemProps> = ({ 
-  lesson, 
-  index, 
+const LessonItem: React.FC<LessonItemProps> = ({
+  lesson,
+  index,
   courseId,
   educationalUnitId,
-  onDelete, 
-  onReorder, 
-  onEdit 
+  onDelete,
+  onReorder,
+  onEdit
 }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -43,24 +43,32 @@ const LessonItem: React.FC<LessonItemProps> = ({
   }
 
   const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation()
     e.dataTransfer.setData("text/plain", index.toString())
+    e.dataTransfer.setData("application/tlcn-lesson", index.toString()) // Unique type
     setDraggedIndex(index)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     const fromIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
     const toIndex = index
 
     console.log("LessonItem handleDrop - từ vị trí:", fromIndex, "đến vị trí:", toIndex)
 
-    if (fromIndex !== toIndex) {
+    if (!isNaN(fromIndex) && fromIndex !== toIndex) {
       onReorder(fromIndex, toIndex)
     }
+    setDraggedIndex(null)
+  }
+
+  const handleDragEnd = () => {
     setDraggedIndex(null)
   }
 
@@ -70,9 +78,8 @@ const LessonItem: React.FC<LessonItemProps> = ({
   return (
     <>
       <div
-        className={`border rounded-lg transition-all ${
-          isDragging ? "opacity-50" : ""
-        } ${isDragOver ? "border-2 border-blue-300 bg-blue-50" : "border-gray-200"}`}
+        className={`border rounded-lg transition-all ${isDragging ? "opacity-50" : ""
+          } ${isDragOver ? "border-2 border-blue-300 bg-blue-50" : "border-gray-200"}`}
       >
         <div
           className={`flex items-center justify-between p-3 cursor-pointer ${!isDragging ? "hover:bg-gray-50" : ""}`}
@@ -80,6 +87,7 @@ const LessonItem: React.FC<LessonItemProps> = ({
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onDragEnd={handleDragEnd}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-3 flex-1">
@@ -96,10 +104,10 @@ const LessonItem: React.FC<LessonItemProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setIsVisibilityModalOpen(true)}
               title="Quản lý hiển thị cho các lớp"
             >

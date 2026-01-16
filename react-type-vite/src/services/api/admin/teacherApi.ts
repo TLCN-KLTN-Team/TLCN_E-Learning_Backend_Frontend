@@ -70,3 +70,32 @@ export const deleteTeacher = async (
     `/course-management/admin/educationalUnit/${educationalUnitId}/teachers/${teacherId}`
   );
 };
+
+/**
+ * Bulk import teachers
+ */
+export interface BulkImportResult {
+  successful: number;
+  failed: number;
+     results: {
+    username: string;
+    success: boolean;
+    message?: string;
+  }[];
+}
+
+export const bulkImportTeachers = async (
+  educationalUnitId: number,
+  teachers: TeacherRequest[]
+): Promise<BulkImportResult> => {
+  try {
+    const response = await axiosInstance.post<ApiResponse<BulkImportResult>>(
+      `/course-management/admin/educationalUnit/${educationalUnitId}/teachers/bulk-import`,
+      { teachers }
+    );
+    return response.data.result;
+  } catch (error: any) {
+    console.error("Bulk import error:", error);
+    throw error;
+  }
+};

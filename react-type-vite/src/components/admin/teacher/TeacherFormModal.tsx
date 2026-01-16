@@ -89,10 +89,14 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
   const loadDepartments = async () => {
     try {
       setLoadingDepartments(true);
-      const response = await departmentApi.getDepartmentsByEducationalUnit(educationalUnitId);
+      console.log('Loading departments for unit:', educationalUnitId);
+      const response = await departmentApi.getDepartmentsByEducationalUnit(educationalUnitId, 0, 100);
+      console.log('Departments response:', response);
       setDepartments(response.content || []);
+      console.log('Departments set:', response.content);
     } catch (error: any) {
       console.error('Error loading departments:', error);
+      console.error('Error details:', error?.response?.data || error?.message);
       toast.error('Không thể tải danh sách khoa/phòng ban');
     } finally {
       setLoadingDepartments(false);
@@ -409,7 +413,8 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
                     type="date" 
                     value={form.dob} 
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg transition-colors ${errors.dob ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+                    aria-label="Chọn ngày sinh"
+                    className={`w-full px-3 py-2 border rounded-lg transition-colors focus:outline-none ${errors.dob ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
                   />
                   {errors.dob && (
                     <p className="text-red-500 text-xs flex items-center mt-1">

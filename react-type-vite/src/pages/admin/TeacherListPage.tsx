@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import TeacherFormModal from "@/components/admin/teacher/TeacherFormModal";
+import ImportTeachersModal from "@/components/admin/teacher/ImportTeachersModal";
 import * as teacherApi from "@/services/api/admin/teacherApi";
 import educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { TeacherResponse } from "@/services/api/response/teacherResponse";
@@ -33,6 +34,7 @@ import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 const TeacherListPage: React.FC = () => {
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [educationalUnitLoading, setEducationalUnitLoading] = useState(true);
@@ -285,13 +287,22 @@ const TeacherListPage: React.FC = () => {
             {currentEducationalUnit?.name || "cơ sở giáo dục của bạn"}
           </p>
         </div>
-        <Button
-          onClick={() => setShowTeacherModal(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 text-lg"
-        >
-          <UserPlus className="mr-2" size={18} />
-          Tạo Giáo viên Mới
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => setShowImportModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
+          >
+            <FileText className="mr-2" size={18} />
+            Import từ File
+          </Button>
+          <Button
+            onClick={() => setShowTeacherModal(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 text-lg"
+          >
+            <UserPlus className="mr-2" size={18} />
+            Tạo Giáo viên Mới
+          </Button>
+        </div>
       </div>
 
       {/* Statistics and Search */}
@@ -594,6 +605,13 @@ const TeacherListPage: React.FC = () => {
         onSuccess={handleSuccess}
         editingTeacher={editingTeacher}
       />
+
+      <ImportTeachersModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        educationalUnitId={educationalUnitId || 0}
+        onSuccess={handleSuccess}
+      />
     </div>
   );
 };
@@ -866,6 +884,7 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({
         </div>
       </div>
     </div>
+      
   );
 };
 

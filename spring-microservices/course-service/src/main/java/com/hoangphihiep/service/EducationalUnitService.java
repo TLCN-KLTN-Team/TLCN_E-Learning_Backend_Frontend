@@ -110,7 +110,7 @@ public class EducationalUnitService {
                             Department department = departmentRepo.findById(Integer.parseInt(teacher.getDepartmentId()))
                                     .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
                             return EducationalUnitDetailResponse.Teacher.builder()
-                                    .id(teacher.getId())
+                                    .id(teacher.getTeacherId())
                                     .name(teacher.getLastName() + " " + teacher.getFirstName())
                                     .avatarUrl(teacher.getAvatarUrl())
                                     .departmentName(department.getName())

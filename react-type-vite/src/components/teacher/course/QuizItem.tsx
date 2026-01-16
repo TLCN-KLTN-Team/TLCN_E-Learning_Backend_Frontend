@@ -32,38 +32,57 @@ interface QuizItemProps {
   onEdit: (quiz: QuizResponse) => void
 }
 
-const QuizItem: React.FC<QuizItemProps> = ({ 
-  quiz, 
-  index, 
+const QuizItem: React.FC<QuizItemProps> = ({
+  quiz,
+  index,
   courseId,
   educationalUnitId,
-  onDelete, 
-  onReorder, 
-  onEdit 
+  onDelete,
+  onReorder,
+  onEdit
 }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isVisibilityModalOpen, setIsVisibilityModalOpen] = useState(false)
 
+  // Map question types to Vietnamese
+  const getQuestionTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      MULTIPLE_CHOICE: "Nhiều đáp án",
+      TRUE_FALSE: "Đúng/Sai",
+      SINGLE_CHOICE: "Một đáp án",
+      FILL_IN_THE_BLANK: "Điền khuyết",
+    }
+    return typeMap[type] || type
+  }
+
   const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation()
     e.dataTransfer.setData("text/plain", index.toString())
+    e.dataTransfer.setData("application/tlcn-quiz", index.toString())
     setDraggedIndex(index)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     const fromIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
     const toIndex = index
 
     console.log("QuizItem handleDrop - từ vị trí:", fromIndex, "đến vị trí:", toIndex)
 
-    if (fromIndex !== toIndex) {
+    if (!isNaN(fromIndex) && fromIndex !== toIndex) {
       onReorder(fromIndex, toIndex)
     }
+    setDraggedIndex(null)
+  }
+
+  const handleDragEnd = () => {
     setDraggedIndex(null)
   }
 
@@ -72,15 +91,14 @@ const QuizItem: React.FC<QuizItemProps> = ({
 
   // Chuyển đổi Set thành Array và tính toán thống kê
   const questionsArray = quiz.questions ? Array.from(quiz.questions) : []
-  const totalScore = questionsArray.reduce((sum, q) => sum + q.score, 0)
+  const totalScore = questionsArray.reduce((sum, q) => sum + (q != null ? q.score : 0), 0)
   const questionCount = questionsArray.length
 
   return (
     <>
       <div
-        className={`border rounded-lg transition-all ${isDragging ? "opacity-50" : ""} ${
-          isDragOver ? "border-2 border-blue-300 bg-blue-50" : "border-gray-200"
-        }`}
+        className={`border rounded-lg transition-all ${isDragging ? "opacity-50" : ""} ${isDragOver ? "border-2 border-blue-300 bg-blue-50" : "border-gray-200"
+          }`}
       >
         <div
           className={`flex items-center justify-between p-3 cursor-pointer ${!isDragging ? "hover:bg-gray-50" : ""}`}
@@ -88,6 +106,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onDragEnd={handleDragEnd}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-3 flex-1">
@@ -122,10 +141,10 @@ const QuizItem: React.FC<QuizItemProps> = ({
             )}
           </div>
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setIsVisibilityModalOpen(true)}
               title="Quản lý hiển thị cho các lớp"
             >
@@ -202,7 +221,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                               Câu {qIdx + 1}
                             </span>
                             <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                              {question.questionType}
+                              {getQuestionTypeLabel(question.questionType)}
                             </span>
                             <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded ml-auto">
                               {question.score} điểm
@@ -225,11 +244,10 @@ const QuizItem: React.FC<QuizItemProps> = ({
                                 .map((answer) => (
                                   <div
                                     key={answer.id}
-                                    className={`flex items-center gap-2 text-sm p-2 rounded ${
-                                      answer.isCorrect
+                                    className={`flex items-center gap-2 text-sm p-2 rounded ${answer.isCorrect
                                         ? "bg-green-50 border border-green-200"
                                         : "bg-gray-50 border border-gray-200"
-                                    }`}
+                                      }`}
                                   >
                                     {answer.isCorrect ? (
                                       <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />

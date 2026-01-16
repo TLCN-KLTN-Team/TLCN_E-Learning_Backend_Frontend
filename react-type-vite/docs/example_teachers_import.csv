@@ -1,0 +1,11 @@
+username,email,firstName,lastName,teacherId,password,dob,departmentId,description,socialUrl,bankAccountNumber
+john_doe,john.doe@example.com,John,Doe,T001,SecurePass@123,1985-05-15,1,Senior Mathematics Teacher,https://linkedin.com/in/johndoe,1234567890123
+jane_smith,jane.smith@example.com,Jane,Smith,T002,SecurePass@123,1988-03-22,1,English Language Instructor,https://facebook.com/janesmith,9876543210987
+michael_johnson,michael.j@example.com,Michael,Johnson,T003,SecurePass@123,1990-07-10,2,Physics Department Head,https://twitter.com/mjohnson,5555666677788
+sarah_williams,sarah.w@example.com,Sarah,Williams,T004,SecurePass@123,1992-01-28,2,Chemistry Teacher,,
+james_brown,james.brown@example.com,James,Brown,T005,SecurePass@123,1987-11-05,3,Computer Science Lecturer,https://github.com/jbrown,2222333344455
+mary_davis,mary.davis@example.com,Mary,Davis,T006,SecurePass@123,1991-09-14,3,Network Administrator,,
+william_miller,william.m@example.com,William,Miller,T007,SecurePass@123,1986-02-20,4,History Professor,https://linkedin.com/in/wmiller,6666777788899
+elizabeth_anderson,elizabeth.a@example.com,Elizabeth,Anderson,T008,SecurePass@123,1993-06-08,4,Geography Instructor,,
+david_thomas,david.thomas@example.com,David,Thomas,T009,SecurePass@123,1989-12-03,1,Mathematics Teacher,https://instagram.com/davidthomas,7777888899900
+susan_jackson,susan.j@example.com,Susan,Jackson,T010,SecurePass@123,1994-04-17,2,Biology Teacher,,3333444455566

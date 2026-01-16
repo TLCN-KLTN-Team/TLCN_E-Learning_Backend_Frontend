@@ -8,6 +8,8 @@ export interface QuestionRequest {
   orderIndex?: number;
   attachments?: string[]; // Added attachments array
   score: number;
+  difficultyLevel?: string; // EASY, MEDIUM, HARD
+  tags?: string; // Comma-separated tags
   createdAt?: string;
   updateAt?: string;
   answers: AnswerRequest[]; // Changed from Set to Array for frontend

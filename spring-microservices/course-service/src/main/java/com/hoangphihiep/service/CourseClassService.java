@@ -1,6 +1,7 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.CourseClassRequest;
+import com.hoangphihiep.dto.response.ClassImportResponse;
 import com.hoangphihiep.dto.response.CourseClassResponse;
 import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseClass;
@@ -19,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -141,5 +144,55 @@ public class CourseClassService {
         }
 
         classRepository.delete(courseClass);
+    }
+
+    @Transactional
+    public ClassImportResponse bulkImportClasses(Integer courseId, List<CourseClassRequest> classes) {
+        List<ClassImportResponse.ImportResultDetail> results = new ArrayList<>();
+        int successful = 0;
+        int failed = 0;
+
+        if (classes == null || classes.isEmpty()) {
+            return ClassImportResponse.builder()
+                    .successful(0)
+                    .failed(0)
+                    .results(results)
+                    .build();
+        }
+
+        for (CourseClassRequest req : classes) {
+            try {
+                // Ensure courseId is set from path
+                req.setCourseId(courseId);
+
+                CourseClassResponse created = createClass(req);
+                results.add(ClassImportResponse.ImportResultDetail.builder()
+                        .classCode(created.getClassCode())
+                        .success(true)
+                        .message("Tạo lớp học thành công")
+                        .build());
+                successful++;
+            } catch (AppException e) {
+                results.add(ClassImportResponse.ImportResultDetail.builder()
+                        .classCode(req.getClassCode())
+                        .success(false)
+                        .message(e.getErrorCode().getMessage())
+                        .build());
+                failed++;
+            } catch (Exception e) {
+                results.add(ClassImportResponse.ImportResultDetail.builder()
+                        .classCode(req.getClassCode())
+                        .success(false)
+                        .message(e.getMessage() != null ? e.getMessage() : "Lỗi không xác định")
+                        .build());
+                failed++;
+            }
+        }
+
+        return ClassImportResponse.builder()
+                .successful(successful)
+                .failed(failed)
+                .results(results)
+                .build();
     }
 }

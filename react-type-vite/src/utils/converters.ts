@@ -81,11 +81,16 @@ export const convertLessonResponseToRequest = (lesson: LessonResponse): LessonRe
 
 /**
  * Convert QuizResponse (from backend) to QuizRequest (for backend)
- * Converts Date objects to ISO strings, Set<QuestionResponse> to QuestionRequest[]
+ * For many-to-many relationship: extract question IDs instead of full question data
  * Don't send ID if it's a temporary ID (for new quizzes)
  */
 export const convertQuizResponseToRequest = (quiz: QuizResponse): QuizRequest => {
-  const questionsArray = quiz.questions ? Array.from(quiz.questions).map(convertQuestionResponseToRequest) : []
+  // Extract question IDs for many-to-many relationship
+  const questionIds = quiz.questions 
+    ? Array.from(quiz.questions)
+        .filter((q) => q != null && q.id && !isTemporaryId(q.id)) // Filter out null/undefined questions
+        .map(q => q!.id!)
+    : []
 
   return {
     ...(quiz.id && !isTemporaryId(quiz.id) && { id: quiz.id }),
@@ -104,7 +109,7 @@ export const convertQuizResponseToRequest = (quiz: QuizResponse): QuizRequest =>
 endTime: quiz.endTime
   ? new Date(quiz.endTime).toISOString()
   : undefined,
-    questions: questionsArray,
+    questionIds, // Send question IDs for many-to-many relationship
     createdAt: quiz.createdAt instanceof Date ? quiz.createdAt.toISOString() : quiz.createdAt,
     updateAt: quiz.updateAt instanceof Date ? quiz.updateAt.toISOString() : quiz.updateAt,
   }

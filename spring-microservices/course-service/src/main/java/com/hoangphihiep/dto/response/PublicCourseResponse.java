@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class PublicCourseResponse {
     private Integer id;
+    private Integer publishedCourseId; // ID of the published course
     private String courseName;
     private String description;
     private Integer credits;

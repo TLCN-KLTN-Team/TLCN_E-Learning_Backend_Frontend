@@ -2,6 +2,7 @@ import axiosInstance from "../httpClient/axiosInstance"
 
 export interface PublicCourseResponse {
   id: number
+  publishedCourseId?: number
   courseName: string
   description?: string
   credits?: number

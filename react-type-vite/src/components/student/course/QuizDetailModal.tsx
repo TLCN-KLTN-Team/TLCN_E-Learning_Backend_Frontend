@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
@@ -22,24 +20,30 @@ import type { QuizResponse } from "@/services/api/response/quizResponse"
 import quizApi from "@/services/api/student/quizApi"
 import type { QuizAttemptHistoryResponse } from "@/services/api/response/quizAttemptHistoryResponse"
 import DiscussionSection from "./DiscussionSection"
+import { useAuth } from "@/context/auth-context/useAuth"
+import { getUnreadCount, markDiscussionAsRead } from "@/services/api/quizDiscussionApi"
 
 interface QuizDetailModalProps {
   isOpen: boolean
   onClose: () => void
   quizId: number
+  returnPath?: string
 }
 
 const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
   isOpen,
   onClose,
   quizId,
+  returnPath,
 }) => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [quiz, setQuiz] = useState<QuizResponse | null>(null)
   const [attemptHistory, setAttemptHistory] = useState<QuizAttemptHistoryResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"info" | "discussion">("info")
+  const [unreadCount, setUnreadCount] = useState<number>(0)
 
   useEffect(() => {
     if (isOpen && quizId) {
@@ -52,13 +56,15 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
       setIsLoading(true)
       setError(null)
 
-      const [quizData, historyData] = await Promise.all([
+      const [quizData, historyData, unreadCountData] = await Promise.all([
         quizApi.getQuizDetail(quizId),
         quizApi.getQuizAttemptHistory(quizId),
+        getUnreadCount(quizId).catch(() => 0), // Fallback to 0 if fails
       ])
 
       setQuiz(quizData)
       setAttemptHistory(historyData)
+      setUnreadCount(unreadCountData)
     } catch (err) {
       console.error("Error fetching quiz detail:", err)
       setError("Không thể tải thông tin bài kiểm tra")
@@ -72,7 +78,9 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
 
     try {
       const { attemptId } = await quizApi.startQuizAttempt(quizId)
-      navigate(`/student/quiz/${quizId}/attempt/${attemptId}`)
+      navigate(`/student/quiz/${quizId}/attempt/${attemptId}`, {
+        state: { returnPath }
+      })
       onClose()
     } catch (err) {
       console.error("Error starting quiz:", err)
@@ -147,25 +155,38 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
           <nav className="flex -mb-px">
             <button
               onClick={() => setActiveTab("info")}
-              className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
-                activeTab === "info"
+              className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === "info"
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               <FileText className="w-4 h-4" />
               Thông tin & Làm bài
             </button>
             <button
-              onClick={() => setActiveTab("discussion")}
-              className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
-                activeTab === "discussion"
+              onClick={async () => {
+                setActiveTab("discussion")
+                if (unreadCount > 0) {
+                  try {
+                    await markDiscussionAsRead(quizId)
+                    setUnreadCount(0)
+                  } catch (err) {
+                    console.error("Error marking as read:", err)
+                  }
+                }
+              }}
+              className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === "discussion"
                   ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               <MessageSquare className="w-4 h-4" />
               Thảo luận
+              {unreadCount > 0 && (
+                <span className="ml-1 px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </button>
           </nav>
         </div>
@@ -352,6 +373,7 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
               itemType="quiz"
               itemId={quizId}
               itemTitle={quiz.title}
+              user={user}
             />
           )}
         </div>

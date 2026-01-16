@@ -32,6 +32,7 @@ public class SectionService {
     private final AnswerRepository answerRepository;
     private final AssignmentRepository assignmentRepository;
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
+    private final QuizQuestionRepository quizQuestionRepository;
     private final SectionMapper sectionMapper;
     private final FileHandlerRepository fileHandlerRepository;
     private final ContentVisibilityService contentVisibilityService;
@@ -458,7 +459,11 @@ public class SectionService {
                 Quiz savedQuiz = quizRepository.save(quiz);
                 section.addQuiz(savedQuiz);
 
-                if (quizRequest.getQuestions() != null && !quizRequest.getQuestions().isEmpty()) {
+                // Handle many-to-many relationship via questionIds
+                if (quizRequest.getQuestionIds() != null && !quizRequest.getQuestionIds().isEmpty()) {
+                    linkQuestionsToQuiz(savedQuiz.getId(), quizRequest.getQuestionIds());
+                } else if (quizRequest.getQuestions() != null && !quizRequest.getQuestions().isEmpty()) {
+                    // Backward compatibility: still support old format
                     upsertQuestions(quizRequest.getQuestions(), savedQuiz, questionFiles);
                 } else {
                     if (Boolean.TRUE.equals(quizRequest.getIsPublished())) {
@@ -556,7 +561,7 @@ public class SectionService {
                 }
 
                 Question savedQuestion = questionRepository.save(question);
-                quiz.addQuestion(savedQuestion);
+                // Removed direct relationship - questions are now linked via quiz_questions table
 
                 if (questionRequest.getAnswers() != null && !questionRequest.getAnswers().isEmpty()) {
                     upsertAnswers(questionRequest.getAnswers(), savedQuestion);
@@ -677,7 +682,7 @@ public class SectionService {
         question.setScore(request.getScore());
         question.setCreatedAt(new Date());
         question.setUpdateAt(new Date());
-        question.setQuiz(quiz);
+        // Removed direct quiz relationship - using many-to-many via quiz_questions table
         return question;
     }
 
@@ -976,12 +981,23 @@ public class SectionService {
 
             List<Quiz> quizzes = quizRepository.findBySectionId(id);
             for (Quiz quiz : quizzes) {
-                List<Question> questions = questionRepository.findByQuizId(quiz.getId());
+                // Load questions via QuizQuestion join table
+                List<QuizQuestion> quizQuestions = quizQuestionRepository.findByQuizIdOrderByOrderIndex(quiz.getId());
+                List<Question> questions = quizQuestions.stream()
+                        .map(QuizQuestion::getQuestion)
+                        .toList();
+                
                 for (Question question : questions) {
                     List<Answer> answers = answerRepository.findByQuestionId(question.getId());
                     answerRepository.deleteAll(answers);
                     answerRepository.flush();
                 }
+                
+                // Delete QuizQuestion links first
+                quizQuestionRepository.deleteByQuizId(quiz.getId());
+                quizQuestionRepository.flush();
+                
+                // Then delete questions
                 questionRepository.deleteAll(questions);
                 questionRepository.flush();
                 log.debug("Đã xóa {} câu hỏi cho bài kiểm tra có id: {}", questions.size(), quiz.getId());
@@ -1012,5 +1028,36 @@ public class SectionService {
             log.error("Lỗi khi xóa section id: {}", id, e);
             throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION);
         }
+    }
+
+    /**
+     * Link questions from library to quiz (many-to-many relationship)
+     */
+    private void linkQuestionsToQuiz(Integer quizId, Set<Integer> questionIds) {
+        log.info("Linking {} questions to quiz {}", questionIds.size(), quizId);
+        
+        // First, remove existing links for this quiz
+        quizQuestionRepository.deleteByQuizId(quizId);
+        
+        // Create new links
+        int orderIndex = 1;
+        for (Integer questionId : questionIds) {
+            // Validate question exists
+            Question question = questionRepository.findById(questionId)
+                    .orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
+            
+            // Validate it's a library question (not already owned by another quiz in one-to-many)
+            // Since we removed the quiz field from Question, all questions are now library questions
+            
+            QuizQuestion quizQuestion = QuizQuestion.builder()
+                    .quizId(quizId)
+                    .questionId(questionId)
+                    .orderIndex(orderIndex++)
+                    .build();
+            
+            quizQuestionRepository.save(quizQuestion);
+        }
+        
+        log.info("Successfully linked {} questions to quiz {}", questionIds.size(), quizId);
     }
 }

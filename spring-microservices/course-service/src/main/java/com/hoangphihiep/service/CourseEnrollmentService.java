@@ -139,18 +139,26 @@ public class CourseEnrollmentService {
     }
 
     public List<SectionResponse> getEnrolledCourseContentByClassIdStrict(Integer classId) {
+        // Get userId from SecurityContext
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("=== getEnrolledCourseContentByClassIdStrict called for classId: {}, userId: {} ===", classId, userId);
+
         CourseClass courseClass = courseClassRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_CLASS_NOT_FOUND));
 
         Course course = courseRepository.findById(courseClass.getCourse().getId())
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
+        log.info("Found course: {} (id: {})", course.getCourseName(), course.getId());
+
         try {
             List<Section> sections = sectionRepository.findByCourseIdOrderByOrderIndex(course.getId());
+            log.info("Found {} sections", sections.size());
 
             return sections.stream()
                     .filter(section -> isContentVisibleToClass(classId, "SECTION", section.getId()))
                     .map(section -> {
+                        log.info("Processing section: {} (id: {})", section.getTitle(), section.getId());
                         SectionResponse response = sectionMapper.toSectionResponse(section);
 
                         // Filter lessons
@@ -163,18 +171,45 @@ public class CourseEnrollmentService {
 
                         // Filter quizzes
                         if (response.getQuizs() != null) {
+                            log.info("Section {} has {} quizzes before filter", section.getTitle(), response.getQuizs().size());
                             Set<QuizResponse> filteredQuizzes = response.getQuizs().stream()
                                     .filter(quiz -> isContentVisibleToClass(classId, "QUIZ", quiz.getId()))
                                     .collect(Collectors.toSet());
                             response.setQuizs(filteredQuizzes);
+                            log.info("Section {} has {} quizzes after filter", section.getTitle(), filteredQuizzes.size());
+
+                            // Populate quiz attempts count for each visible quiz
+                            filteredQuizzes.forEach(quizResponse -> {
+                                log.info("Counting attempts for quiz: {} (id: {})", quizResponse.getTitle(), quizResponse.getId());
+                                int attemptsCount = quizAttemptRepository
+                                        .countByIdUserAndQuiz_Id(userId, quizResponse.getId());
+                                log.info("Quiz {} (id: {}) - attemptsCount: {} for user: {}", 
+                                        quizResponse.getTitle(), quizResponse.getId(), attemptsCount, userId);
+                                quizResponse.setAttemptsCount(attemptsCount);
+                            });
+                        } else {
+                            log.info("Section {} has NO quizzes (null)", section.getTitle());
                         }
 
                         // Filter assignments
                         if (response.getAssignments() != null) {
+                            log.info("Section {} has {} assignments before filter", section.getTitle(), response.getAssignments().size());
                             Set<AssignmentResponse> filteredAssignments = response.getAssignments().stream()
                                     .filter(assignment -> isContentVisibleToClass(classId, "ASSIGNMENT", assignment.getId()))
                                     .collect(Collectors.toSet());
                             response.setAssignments(filteredAssignments);
+                            log.info("Section {} has {} assignments after filter", section.getTitle(), filteredAssignments.size());
+
+                            // Populate assignment submissions count for each visible assignment
+                            filteredAssignments.forEach(assignmentResponse -> {
+                                int submissionsCount = assignmentSubmissionRepository
+                                        .countByIdUserAndAssignment_Id(userId, assignmentResponse.getId());
+                                log.info("Assignment {} (id: {}) - submissionsCount: {} for user: {}", 
+                                        assignmentResponse.getTitle(), assignmentResponse.getId(), submissionsCount, userId);
+                                assignmentResponse.setSubmissionsCount(submissionsCount);
+                            });
+                        } else {
+                            log.info("Section {} has NO assignments (null)", section.getTitle());
                         }
 
                         return response;
@@ -428,48 +463,6 @@ public class CourseEnrollmentService {
         courseRepository.save(course);
 
         log.info("Updated course {} total students to {}", courseId, totalStudents);
-    }
-
-    @Transactional(readOnly = true)
-    public List<SectionResponse> getEnrolledCourseContents(Integer classId) {
-        // Lấy userId từ SecurityContext
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // Verify enrollment
-        CourseClass courseClass = courseClassRepository.findById(classId)
-                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
-
-        Course course = courseClass.getCourse();
-
-        // Get published sections
-        List<Section> sections = sectionRepository.findByCourse_IdAndIsPublishedTrue(course.getId());
-
-        // Map to responses with counts
-        return sections.stream()
-                .map(section -> {
-                    SectionResponse response = sectionMapper.toSectionResponse(section);
-
-                    // Populate quiz attempts count for each quiz
-                    if (response.getQuizs() != null) {
-                        response.getQuizs().forEach(quizResponse -> {
-                            int attemptsCount = quizAttemptRepository
-                                    .countByIdUserAndQuiz_Id(userId, quizResponse.getId());
-                            quizResponse.setAttemptsCount(attemptsCount);
-                        });
-                    }
-
-                    // Populate assignment submissions count for each assignment
-                    if (response.getAssignments() != null) {
-                        response.getAssignments().forEach(assignmentResponse -> {
-                            int submissionsCount = assignmentSubmissionRepository
-                                    .countByIdUserAndAssignment_Id(userId, assignmentResponse.getId());
-                            assignmentResponse.setSubmissionsCount(submissionsCount);
-                        });
-                    }
-
-                    return response;
-                })
-                .collect(Collectors.toList());
     }
 
     // Private helper methods

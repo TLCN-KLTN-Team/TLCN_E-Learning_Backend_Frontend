@@ -48,7 +48,9 @@ public class QuizRequest {
     private LocalDateTime endTime;
 
     @Valid
-    private Set<QuestionRequest> questions;
+    private Set<QuestionRequest> questions; // For backward compatibility (optional)
+    
+    private Set<Integer> questionIds; // For many-to-many relationship
 
     private Date createdAt;
 

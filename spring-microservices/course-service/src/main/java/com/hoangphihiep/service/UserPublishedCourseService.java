@@ -10,7 +10,9 @@ import com.hoangphihiep.mapper.OrderMapper;
 import com.hoangphihiep.repository.OrderRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.repository.ReviewRepository;
+import com.hoangphihiep.repository.QuizQuestionRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
+import com.hoangphihiep.mapper.QuestionMapper;
 import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
 import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.JwtUtils;
@@ -21,10 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,6 +39,9 @@ public class UserPublishedCourseService {
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
     private final ReviewService reviewService;
+    private final QuizQuestionRepository quizQuestionRepository;
+    private final QuestionMapper questionMapper;
+    private final UserProgressService userProgressService;
 
     public List<OrderResponse> getPendingOrders() {
         String userId = JwtUtils.getCurrentUserId();
@@ -108,13 +110,25 @@ public class UserPublishedCourseService {
         });
 
         List<PublishedCourseProgressResponse> result = purchasedCourses.stream()
-                .map(pc -> PublishedCourseProgressResponse.builder()
-                        .publishedCourseId(pc.getId())
-                        .publishedCourseName(pc.getCourse().getCourseName())
-                        .authorName(pc.getAuthorName()!=null ? pc.getAuthorName() : "Author Name") // Placeholder for author name
-                        .progressPercentage(0) // Placeholder for progress
-                        .thumbnailUrl(pc.getCourseImage())
-                        .build())
+                .map(pc -> {
+                    double progressPercentage = 0;
+                    try {
+                        // Calculate real progress using UserProgressService
+                        ProgressStatsResponse progressStats = userProgressService.getPublishedCourseProgressStats(pc.getId());
+                        progressPercentage = Math.round(progressStats.getOverallProgress() * 100.0) / 100.0;
+                    } catch (Exception e) {
+                        // If user hasn't started or error, keep 0
+                        progressPercentage = 0;
+                    }
+                    
+                    return PublishedCourseProgressResponse.builder()
+                            .publishedCourseId(pc.getId())
+                            .publishedCourseName(pc.getCourse().getCourseName())
+                            .authorName(pc.getAuthorName()!=null ? pc.getAuthorName() : "Author Name")
+                            .progressPercentage(progressPercentage)
+                            .thumbnailUrl(pc.getCourseImage())
+                            .build();
+                })
                 .toList();
 
         return result;
@@ -302,10 +316,9 @@ public class UserPublishedCourseService {
                         .numberItem(quiz.getNumberItem())
                         .showResults(quiz.getShowResults())
                         .isPublished(quiz.getIsPublished())
-                        .questions(quiz.getQuestions() != null ? 
-                                quiz.getQuestions().stream()
-                                        .map(this::toQuestionResponse)
-                                        .collect(Collectors.toSet()) : new HashSet<>())
+                        .questions(quizQuestionRepository.findByQuizIdOrderByOrderIndex(quiz.getId()).stream()
+                                .map(qq -> questionMapper.toQuestionResponse(qq.getQuestion()))
+                                .collect(Collectors.toCollection(LinkedHashSet::new)))
                         .attemptsCount(0)  // TODO: Calculate from submissions
                         .startTime(quiz.getStartTime())
                         .endTime(quiz.getEndTime())

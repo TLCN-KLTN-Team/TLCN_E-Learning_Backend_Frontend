@@ -5,10 +5,11 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ShoppingBag, Search, Users, Clock, DollarSign, Grid3X3, List, Filter, TrendingUp } from "lucide-react"
+import { ShoppingBag, Search, Users, Clock, DollarSign, Grid3X3, List, Filter, TrendingUp, MessageSquare } from "lucide-react"
 import { useAuth } from "@/context/auth-context/useAuth"
 import { getTeacherByUserId } from "@/services/api/teacher/teacherApi"
 import teacherPublicApi, { type PublicCourseResponse } from "@/services/api/teacher/teacherPublicApi"
+import TeacherCourseDiscussionModal from "@/components/teacher/course/TeacherCourseDiscussionModal"
 
 const PublicCoursesPage: React.FC = () => {
   const { user } = useAuth()
@@ -19,6 +20,7 @@ const PublicCoursesPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [selectedCourseForDiscussion, setSelectedCourseForDiscussion] = useState<PublicCourseResponse | null>(null)
 
   useEffect(() => {
     const fetchTeacherIdAndCourses = async () => {
@@ -28,7 +30,6 @@ const PublicCoursesPage: React.FC = () => {
 
         if (!user?.id) {
           setError("User not authenticated")
-          navigate("/login")
           return
         }
 
@@ -78,6 +79,11 @@ const PublicCoursesPage: React.FC = () => {
 
   const handleViewCourseStudents = (courseId: number) => {
     navigate(`/teacher/public-courses/${courseId}/students`)
+  }
+
+  const handleOpenDiscussion = (course: PublicCourseResponse, event: React.MouseEvent) => {
+    event.stopPropagation()
+    setSelectedCourseForDiscussion(course)
   }
 
   if (loading) {
@@ -245,6 +251,15 @@ const PublicCoursesPage: React.FC = () => {
                           <span>{(course.price || 0).toLocaleString('vi-VN')}đ</span>
                         </div>
                       </div>
+                      
+                      <Button 
+                        className="w-full mt-2" 
+                        variant="default"
+                        onClick={(e) => handleOpenDiscussion(course, e)}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Thảo luận
+                      </Button>
 
                       <Button className="w-full" variant="outline">
                         <Users className="w-4 h-4 mr-2" />
@@ -266,6 +281,15 @@ const PublicCoursesPage: React.FC = () => {
                         <Users className="w-4 h-4 mr-2" />
                         Xem học viên
                       </Button>
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="ml-2"
+                        onClick={(e) => handleOpenDiscussion(course, e)}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Thảo luận
+                      </Button>
                     </>
                   )}
                 </div>
@@ -274,6 +298,17 @@ const PublicCoursesPage: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* Discussion Modal */}
+      {selectedCourseForDiscussion && selectedCourseForDiscussion.publishedCourseId && (
+        <TeacherCourseDiscussionModal
+          courseId={selectedCourseForDiscussion.id}
+          publishedCourseId={selectedCourseForDiscussion.publishedCourseId}
+          courseName={selectedCourseForDiscussion.courseName}
+          user={user}
+          onClose={() => setSelectedCourseForDiscussion(null)}
+        />
+      )}
     </div>
   )
 }

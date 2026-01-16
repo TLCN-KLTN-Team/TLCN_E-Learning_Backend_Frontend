@@ -17,7 +17,8 @@ public class AnswerRequest {
 
     private Integer id;
 
-    @NotNull(message = "Question ID is required")
+    // questionId is optional - only used when updating existing answers
+    // For new questions, questionId is set automatically by the service
     private Integer questionId;
 
     @NotBlank(message = "Answer content is required")

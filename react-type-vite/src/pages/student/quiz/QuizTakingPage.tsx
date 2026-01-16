@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import {
   Clock,
   ChevronLeft,
@@ -14,6 +14,7 @@ import {
   Loader2,
   LayoutGrid,
   LayoutList,
+  Flag,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { QuizResponse } from "@/services/api/response/quizResponse"
@@ -22,8 +23,10 @@ import quizApi from "@/services/api/student/quizApi"
 import type { QuizAnswerSubmission } from "@/services/api/request/quizAttemptRequest"
 
 const QuizTakingPage: React.FC = () => {
-  const { quizId} = useParams<{ quizId: string; attemptId: string }>()
+  const { quizId } = useParams<{ quizId: string; attemptId: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnPath = location.state?.returnPath
 
   const [quiz, setQuiz] = useState<QuizResponse | null>(null)
   const [questions, setQuestions] = useState<QuestionResponse[]>([])
@@ -33,11 +36,69 @@ const QuizTakingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
-  const [viewMode, setViewMode] = useState<"single" | "all">("single") // NEW: View mode state
+  const [viewMode, setViewMode] = useState<"single" | "all">("single")
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set())
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Map question types to Vietnamese
+  const getQuestionTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      MULTIPLE_CHOICE: "Nhiều đáp án",
+      TRUE_FALSE: "Đúng/Sai",
+      SINGLE_CHOICE: "Một đáp án",
+      FILL_IN_THE_BLANK: "Điền khuyết",
+    }
+    return typeMap[type] || type
+  }
+
+  const toggleQuestionFlag = (questionId: number) => {
+    setFlaggedQuestions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId)
+      } else {
+        newSet.add(questionId)
+      }
+      return newSet
+    })
+  }
 
   useEffect(() => {
     if (quizId) {
+      // Try to restore from localStorage first
+      const savedState = localStorage.getItem(`quiz-taking-${quizId}`)
+      if (savedState) {
+        try {
+          const { answers: savedAnswers, timeRemaining: savedTimeRemaining, timestamp, flaggedQuestions: savedFlagged } = JSON.parse(savedState)
+          const elapsed = Math.floor((Date.now() - timestamp) / 1000)
+          const newTimeRemaining = Math.max(0, savedTimeRemaining - elapsed)
+
+          if (newTimeRemaining > 0) {
+            console.log('🔄 Restoring quiz state from localStorage')
+            // Restore answers
+            const answersMap = new Map()
+            savedAnswers.forEach((answer: QuizAnswerSubmission) => {
+              answersMap.set(answer.questionId, answer)
+            })
+            setAnswers(answersMap)
+            setTimeRemaining(newTimeRemaining)
+            // Restore flagged questions
+            if (savedFlagged) {
+              setFlaggedQuestions(new Set(savedFlagged))
+            }
+
+            // Still need to load quiz data
+            fetchQuizData(true) // Pass flag to skip time reset
+            return
+          } else {
+            // Clear expired state
+            localStorage.removeItem(`quiz-taking-${quizId}`)
+          }
+        } catch (err) {
+          console.error('Error restoring quiz state:', err)
+        }
+      }
+
       fetchQuizData()
     }
 
@@ -68,11 +129,24 @@ const QuizTakingPage: React.FC = () => {
     }
   }, [quiz, timeRemaining])
 
-  const fetchQuizData = async () => {
+  // Save state to localStorage
+  useEffect(() => {
+    if (quizId && quiz && timeRemaining > 0) {
+      const state = {
+        answers: Array.from(answers.values()),
+        timeRemaining,
+        timestamp: Date.now(),
+        flaggedQuestions: Array.from(flaggedQuestions)
+      }
+      localStorage.setItem(`quiz-taking-${quizId}`, JSON.stringify(state))
+    }
+  }, [quizId, quiz, answers, timeRemaining, flaggedQuestions])
+
+  const fetchQuizData = async (skipTimeReset = false) => {
     try {
       const quizData = await quizApi.getQuizDetail(Number(quizId))
       setQuiz(quizData)
-      
+
       if (quizData.questions) {
         const questionsArray = Array.from(quizData.questions).sort(
           (a, b) => a.orderIndex - b.orderIndex
@@ -80,7 +154,10 @@ const QuizTakingPage: React.FC = () => {
         setQuestions(questionsArray)
       }
 
-      setTimeRemaining(quizData.duration * 60)
+      // Only reset time if not restoring from localStorage
+      if (!skipTimeReset) {
+        setTimeRemaining(quizData.duration * 60)
+      }
     } catch (error) {
       console.error("Error fetching quiz:", error)
       alert("Không thể tải bài kiểm tra")
@@ -127,7 +204,7 @@ const QuizTakingPage: React.FC = () => {
   const handleQuestionClick = (index: number) => {
     setCurrentQuestionIndex(index)
     setShowSidebar(false)
-    
+
     // Scroll to question if in all view mode
     if (viewMode === "all") {
       const questionElement = document.getElementById(`question-${index}`)
@@ -140,7 +217,7 @@ const QuizTakingPage: React.FC = () => {
   const isQuestionAnswered = (questionId: number): boolean => {
     const answer = answers.get(questionId)
     return !!(
-      answer?.selectedAnswerId || 
+      answer?.selectedAnswerId ||
       (answer?.selectedAnswerIds && answer.selectedAnswerIds.length > 0) ||
       answer?.answerText
     )
@@ -155,7 +232,7 @@ const QuizTakingPage: React.FC = () => {
 
   const handleAutoSubmit = async () => {
     if (isSubmitting) return
-    
+
     alert("Hết thời gian làm bài! Bài làm của bạn sẽ được tự động nộp.")
     await submitQuiz()
   }
@@ -182,13 +259,28 @@ const QuizTakingPage: React.FC = () => {
 
       const answersArray = Array.from(answers.values())
 
+      console.log('📤 Submitting quiz answers:')
+      console.log('- Total answers:', answersArray.length)
+      console.log('- Answers detail:', answersArray)
+      answersArray.forEach(answer => {
+        if (answer.selectedAnswerIds && answer.selectedAnswerIds.length > 0) {
+          console.log(`  Question ${answer.questionId} (FILL_IN_THE_BLANK):`, answer.selectedAnswerIds)
+        }
+      })
+
       const result = await quizApi.submitQuizAttempt(Number(quizId), {
         quizId: Number(quizId),
         answers: answersArray,
         timeSpent,
       })
 
-      navigate(`/student/quiz/${quizId}/result/${result.id}`)
+      // Clear localStorage after successful submit
+      localStorage.removeItem(`quiz-taking-${quizId}`)
+      console.log('🗑️ Cleared quiz state from localStorage')
+
+      navigate(`/student/quiz/${quizId}/result/${result.id}`, {
+        state: { returnPath }
+      })
     } catch (error) {
       console.error("Error submitting quiz:", error)
       alert("Không thể nộp bài. Vui lòng thử lại.")
@@ -196,17 +288,219 @@ const QuizTakingPage: React.FC = () => {
     }
   }
 
-  // NEW: Render single question component
-  const renderQuestion = (question: QuestionResponse, index: number) => {
+  const renderFillInTheBlankQuestion = (question: QuestionResponse) => {
     const currentAnswer = answers.get(question.id)
-    
+    const blankAnswerMap = currentAnswer?.selectedAnswerIds || []
+
+    const partRegex = /(\[[_\s]*\d+[_\s]*\])/g
+    const parts = question.questionText.split(partRegex)
+    let blankCounter = 0
+
+    const getAnswerForBlank = (blankIndex: number): string | undefined => {
+      const answerId = blankAnswerMap[blankIndex]
+      if (!answerId) return undefined
+      const answer = Array.from(question.answers || []).find((a) => a.id === answerId)
+      return answer?.content
+    }
+
+    const handleDropOnBlank = (blankIndex: number, e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      const answerId = parseInt(e.dataTransfer.getData("answerId"))
+      const sourceBlankIndex = e.dataTransfer.getData("sourceBlankIndex")
+
+      if (answerId) {
+        const newAnswerIds = [...blankAnswerMap]
+        while (newAnswerIds.length <= blankIndex) {
+          newAnswerIds.push(0);
+        }
+
+        if (sourceBlankIndex !== "") {
+          const srcIdx = parseInt(sourceBlankIndex)
+          while (newAnswerIds.length <= srcIdx) {
+            newAnswerIds.push(0);
+          }
+        }
+
+        if (sourceBlankIndex !== "" && sourceBlankIndex !== null) {
+          const sourceIndex = parseInt(sourceBlankIndex)
+          if (!isNaN(sourceIndex) && sourceIndex !== blankIndex) {
+            newAnswerIds[sourceIndex] = 0
+          }
+        }
+
+        newAnswerIds[blankIndex] = answerId
+        handleAnswerChange(question.id, undefined, undefined, newAnswerIds)
+      }
+    }
+
+    const handleDragStart = (answerId: number, e: React.DragEvent) => {
+      e.dataTransfer.effectAllowed = "copy"
+      e.dataTransfer.setData("answerId", answerId.toString())
+      e.dataTransfer.setData("sourceBlankIndex", "")
+    }
+
+    const handleDragStartFromBlank = (answerId: number, blankIndex: number, e: React.DragEvent) => {
+      e.stopPropagation()
+      e.dataTransfer.effectAllowed = "copy"
+      e.dataTransfer.setData("answerId", answerId.toString())
+      e.dataTransfer.setData("sourceBlankIndex", blankIndex.toString())
+    }
+
+    const handleRemoveFromBlank = (blankIndex: number) => {
+      const newAnswerIds = [...blankAnswerMap]
+      newAnswerIds[blankIndex] = 0
+      handleAnswerChange(question.id, undefined, undefined, newAnswerIds)
+    }
+
+    const usedAnswerIds = new Set(blankAnswerMap.filter(id => id !== 0 && id !== undefined))
+
     return (
-      <div 
-        key={question.id} 
+      <div className="space-y-8 pl-0 md:pl-2">
+        <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm leading-10 text-lg">
+          {parts.map((part, index) => {
+            if (part.match(partRegex)) {
+              const currentBlankIndex = blankCounter++
+              const answerText = getAnswerForBlank(currentBlankIndex)
+
+              return (
+                <span
+                  key={index}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = "copy"
+                  }}
+                  onDrop={(e) => handleDropOnBlank(currentBlankIndex, e)}
+                  className={`
+                    inline-flex items-center justify-center align-middle mx-1.5 px-3 py-1
+                    min-w-[120px] min-h-[40px] h-auto rounded-md border-2 transition-all select-none
+                    ${answerText
+                      ? "bg-blue-100 border-blue-500 text-blue-800"
+                      : "bg-gray-50 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:bg-blue-50"
+                    }
+                  `}
+                >
+                  {answerText ? (
+                    <span
+                      draggable
+                      onDragStart={(e) => {
+                        const answerId = blankAnswerMap[currentBlankIndex]
+                        if (answerId) {
+                          handleDragStartFromBlank(answerId, currentBlankIndex, e)
+                        }
+                      }}
+                      className="flex items-center gap-1 font-medium text-base whitespace-normal break-words text-center cursor-grab active:cursor-grabbing w-full justify-center h-full"
+                    >
+                      {answerText}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveFromBlank(currentBlankIndex)
+                        }}
+                        className="ml-1 p-0.5 hover:bg-blue-200 rounded-full text-blue-600 transition-colors"
+                        title="Xóa"
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="text-sm pointer-events-none text-gray-400">
+                      ({currentBlankIndex + 1})
+                    </span>
+                  )}
+                </span>
+              )
+            }
+            return <span key={index} className="text-gray-800 align-middle">{part}</span>
+          })}
+        </div>
+
+        <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
+          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Kéo đáp án vào ô trống tương ứng
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {question.answers &&
+              Array.from(question.answers)
+                .sort((a, b) => a.orderIndex - b.orderIndex)
+                .map((answer) => {
+                  const isUsed = usedAnswerIds.has(answer.id)
+                  return (
+                    <div
+                      key={answer.id}
+                      draggable={!isUsed}
+                      onDragStart={(e) => !isUsed && handleDragStart(answer.id, e)}
+                      className={`
+                        px-4 py-2 rounded-lg font-medium text-sm transition-all border select-none
+                        ${isUsed
+                          ? "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed opacity-60"
+                          : "bg-white text-gray-700 border-gray-300 shadow-sm hover:shadow-md hover:border-blue-400 hover:text-blue-600 cursor-grab active:cursor-grabbing"
+                        }
+                      `}
+                    >
+                      {answer.content}
+                    </div>
+                  )
+                })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderQuestion = (question: QuestionResponse, index: number) => {
+    if (question.questionType === "FILL_IN_THE_BLANK") {
+      return (
+        <div
+          key={question.id}
+          id={`question-${index}`}
+          className="bg-white rounded-lg shadow-sm p-6 mb-6"
+        >
+          <div className="mb-6">
+            <div className="flex items-start gap-3 mb-4">
+              <span className="flex-shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                {index + 1}
+              </span>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                    {getQuestionTypeLabel(question.questionType)}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    Điểm {question.score}
+                  </span>
+                  {isQuestionAnswered(question.id) && (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  )}
+                  <button
+                    onClick={() => toggleQuestionFlag(question.id)}
+                    className={`ml-auto p-1.5 rounded hover:bg-gray-100 transition-colors ${flaggedQuestions.has(question.id) ? 'text-red-600' : 'text-gray-400'
+                      }`}
+                    title={flaggedQuestions.has(question.id) ? 'Bỏ đánh dấu' : 'Đánh dấu câu hỏi'}
+                  >
+                    <Flag className="h-5 w-5" fill={flaggedQuestions.has(question.id) ? 'currentColor' : 'none'} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {renderFillInTheBlankQuestion(question)}
+        </div>
+      )
+    }
+
+    const currentAnswer = answers.get(question.id)
+
+    return (
+      <div
+        key={question.id}
         id={`question-${index}`}
         className="bg-white rounded-lg shadow-sm p-6 mb-6"
       >
-        {/* Question Header */}
         <div className="mb-6">
           <div className="flex items-start gap-3 mb-4">
             <span className="flex-shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
@@ -215,14 +509,22 @@ const QuizTakingPage: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                  {question.questionType}
+                  {getQuestionTypeLabel(question.questionType)}
                 </span>
                 <span className="text-xs text-gray-500">
-                  Đạt điểm {question.score} trên {question.score}
+                  Điểm {question.score}
                 </span>
                 {isQuestionAnswered(question.id) && (
                   <CheckCircle className="h-4 w-4 text-green-600" />
                 )}
+                <button
+                  onClick={() => toggleQuestionFlag(question.id)}
+                  className={`ml-auto p-1.5 rounded hover:bg-gray-100 transition-colors ${flaggedQuestions.has(question.id) ? 'text-red-600' : 'text-gray-400'
+                    }`}
+                  title={flaggedQuestions.has(question.id) ? 'Bỏ đánh dấu' : 'Đánh dấu câu hỏi'}
+                >
+                  <Flag className="h-5 w-5" fill={flaggedQuestions.has(question.id) ? 'currentColor' : 'none'} />
+                </button>
               </div>
               <p className="text-lg font-medium text-gray-900">
                 {question.questionText}
@@ -230,7 +532,6 @@ const QuizTakingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Question Attachments */}
           {question.attachments && question.attachments.length > 0 && (
             <div className="mb-4 pl-13 space-y-3">
               {question.attachments.map((attachment, idx) => (
@@ -249,10 +550,8 @@ const QuizTakingPage: React.FC = () => {
           )}
         </div>
 
-        {/* Answers */}
         <div className="space-y-3 pl-13">
           {question.questionType === "MULTIPLE_CHOICE" ? (
-            // Multiple Choice - Use checkboxes
             <>
               {question.answers &&
                 Array.from(question.answers)
@@ -262,11 +561,10 @@ const QuizTakingPage: React.FC = () => {
                     return (
                       <label
                         key={answer.id}
-                        className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                          isSelected
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                        }`}
+                        className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${isSelected
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -290,7 +588,6 @@ const QuizTakingPage: React.FC = () => {
                   })}
             </>
           ) : (
-            // Single Choice & True/False - Use radio buttons
             <>
               {question.answers &&
                 Array.from(question.answers)
@@ -298,11 +595,10 @@ const QuizTakingPage: React.FC = () => {
                   .map((answer) => (
                     <label
                       key={answer.id}
-                      className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        currentAnswer?.selectedAnswerId === answer.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                      }`}
+                      className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${currentAnswer?.selectedAnswerId === answer.id
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                        }`}
                     >
                       <input
                         type="radio"
@@ -340,7 +636,6 @@ const QuizTakingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -354,7 +649,7 @@ const QuizTakingPage: React.FC = () => {
               <div>
                 <h1 className="text-xl font-bold text-gray-900">{quiz.title}</h1>
                 <p className="text-sm text-gray-600">
-                  {viewMode === "single" 
+                  {viewMode === "single"
                     ? `Câu hỏi ${currentQuestionIndex + 1}/${questions.length}`
                     : `Tất cả ${questions.length} câu hỏi`
                   }
@@ -363,7 +658,6 @@ const QuizTakingPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              {/* View Mode Toggle */}
               <button
                 onClick={() => setViewMode(viewMode === "single" ? "all" : "single")}
                 className="hidden md:flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -382,19 +676,16 @@ const QuizTakingPage: React.FC = () => {
                 )}
               </button>
 
-              {/* Timer */}
               <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-lg ${
-                  timeRemaining < 300
-                    ? "bg-red-100 text-red-700"
-                    : "bg-blue-100 text-blue-700"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-lg ${timeRemaining < 300
+                  ? "bg-red-100 text-red-700"
+                  : "bg-blue-100 text-blue-700"
+                  }`}
               >
                 <Clock className="h-5 w-5" />
                 {formatTime(timeRemaining)}
               </div>
 
-              {/* Submit Button */}
               <Button
                 onClick={handleSubmitClick}
                 disabled={isSubmitting}
@@ -416,14 +707,11 @@ const QuizTakingPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">
-          {/* Main Content */}
           <div className="flex-1">
             {viewMode === "single" ? (
-              // Single Question View
               <>
                 {renderQuestion(currentQuestion, currentQuestionIndex)}
 
-                {/* Navigation */}
                 <div className="flex justify-between">
                   <Button
                     onClick={handlePreviousQuestion}
@@ -444,24 +732,19 @@ const QuizTakingPage: React.FC = () => {
                 </div>
               </>
             ) : (
-              // All Questions View
               <div className="space-y-6">
                 {questions.map((question, index) => renderQuestion(question, index))}
-                
               </div>
             )}
           </div>
 
-          {/* Sidebar - Question Navigator */}
           <div
-            className={`${
-              showSidebar ? "fixed inset-0 z-50 lg:relative" : "hidden lg:block"
-            } lg:w-80`}
+            className={`${showSidebar ? "fixed inset-0 z-50 lg:relative" : "hidden lg:block"
+              } lg:w-80`}
           >
             <div
-              className={`${
-                showSidebar ? "absolute right-0 top-0 h-full w-80" : ""
-              } bg-white rounded-lg shadow-sm p-6`}
+              className={`${showSidebar ? "absolute right-0 top-0 h-full w-80" : ""
+                } bg-white rounded-lg shadow-sm p-6`}
             >
               {showSidebar && (
                 <button
@@ -491,22 +774,25 @@ const QuizTakingPage: React.FC = () => {
                 {questions.map((question, index) => {
                   const status = getQuestionStatus(question.id)
                   const isActive = index === currentQuestionIndex && viewMode === "single"
+                  const isFlagged = flaggedQuestions.has(question.id)
 
                   return (
                     <button
                       key={question.id}
                       onClick={() => handleQuestionClick(index)}
                       className={`
-                        aspect-square rounded flex items-center justify-center font-medium text-sm
+                        aspect-square rounded flex items-center justify-center font-medium text-sm relative
                         ${isActive ? "ring-2 ring-blue-600 ring-offset-2" : ""}
-                        ${
-                          status === "answered"
-                            ? "bg-green-600 text-white hover:bg-green-700"
-                            : "bg-white border-2 border-gray-300 text-gray-700 hover:border-blue-300"
+                        ${status === "answered"
+                          ? "bg-green-600 text-white hover:bg-green-700"
+                          : "bg-white border-2 border-gray-300 text-gray-700 hover:border-blue-300"
                         }
                       `}
                     >
                       {index + 1}
+                      {isFlagged && (
+                        <Flag className="h-3 w-3 text-red-500 absolute -top-1 -right-1" fill="currentColor" />
+                      )}
                     </button>
                   )
                 })}
@@ -540,7 +826,7 @@ const QuizTakingPage: React.FC = () => {
 
       {/* Submit Confirmation Modal */}
       {showSubmitConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex items-start gap-3 mb-4">
               <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0" />
@@ -564,7 +850,7 @@ const QuizTakingPage: React.FC = () => {
                   setShowSubmitConfirm(false)
                   submitQuiz()
                 }}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 Nộp bài ngay
               </Button>

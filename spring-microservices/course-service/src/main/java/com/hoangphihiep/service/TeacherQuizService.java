@@ -1,11 +1,8 @@
 package com.hoangphihiep.service;
 
-import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.QuizResultResponse;
-import com.hoangphihiep.dto.response.QuizAnswerResponse;
-import com.hoangphihiep.dto.response.AnswerOptionResponse;
-import com.hoangphihiep.dto.response.StudentResponse;
+import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.*;
+import com.hoangphihiep.entity.QuizQuestion;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.*;
@@ -30,6 +27,9 @@ public class TeacherQuizService {
     private final CourseEnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final AnswerRepository answerRepository;
+    private final QuestionRepository questionRepository;
+    private final QuestionLibraryService questionLibraryService;
+    private final QuizQuestionRepository quizQuestionRepository;
 
     /**
      * Get all quiz results for a class
@@ -317,5 +317,107 @@ public class TeacherQuizService {
                 .pointsAwarded(attemptAnswer.getPointsAwarded())
                 .answeredAt(attemptAnswer.getAnsweredAt())
                 .build();
+    }
+
+    /**
+     * Add library questions to a quiz by copying them
+     * This creates new Question instances attached to the quiz
+     */
+    public List<Question> addLibraryQuestionsToQuiz(Integer quizId, List<Integer> libraryQuestionIds) {
+        log.info("Adding {} library questions to quiz {}", libraryQuestionIds.size(), quizId);
+
+        // Verify quiz exists and belongs to teacher
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
+
+        String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // Get library questions (with ownership verification)
+        List<QuestionResponse> libraryQuestions =
+                questionLibraryService.getLibraryQuestionsByIds(libraryQuestionIds);
+
+        // Copy each library question to the quiz
+        List<Question> copiedQuestions = new ArrayList<>();
+
+        int orderIndex = 1;
+        for (QuestionResponse libQuestion : libraryQuestions) {
+            // Create new Question instance
+            Question newQuestion = new Question();
+            // Removed direct quiz relationship - will link via QuizQuestion
+            newQuestion.setQuestionText(libQuestion.getQuestionText());
+            newQuestion.setQuestionType(libQuestion.getQuestionType());
+            newQuestion.setScore(libQuestion.getScore());
+            newQuestion.setDifficultyLevel(libQuestion.getDifficultyLevel());
+            newQuestion.setTags(libQuestion.getTags());
+            newQuestion.setTeacherId(teacherId);
+            newQuestion.setEducationalUnitId(libQuestion.getEducationalUnitId());
+
+            // Save the question first
+            Question savedQuestion = questionRepository.save(newQuestion);
+
+            // Copy answers
+            if (libQuestion.getAnswers() != null) {
+                for (com.hoangphihiep.dto.response.AnswerResponse libAnswer : libQuestion.getAnswers()) {
+                    Answer newAnswer = new Answer();
+                    newAnswer.setQuestion(savedQuestion);
+                    newAnswer.setContent(libAnswer.getContent());
+                    newAnswer.setIsCorrect(libAnswer.getIsCorrect());
+
+                    answerRepository.save(newAnswer);
+                }
+            }
+
+            copiedQuestions.add(savedQuestion);
+            
+            // Link question to quiz via QuizQuestion join table
+            QuizQuestion quizQuestion = QuizQuestion.builder()
+                    .quizId(quizId)
+                    .questionId(savedQuestion.getId())
+                    .orderIndex(orderIndex++)
+                    .build();
+            quizQuestionRepository.save(quizQuestion);
+        }
+
+        log.info("Successfully copied {} questions to quiz {}", copiedQuestions.size(), quizId);
+        return copiedQuestions;
+    }
+
+    /**
+     * Get all quizzes for a class
+     */
+    public List<QuizResponse> getQuizzesByClass(Integer classId) {
+        log.info("=== GET QUIZZES BY CLASS {} ===", classId);
+
+        // Verify class exists
+        CourseClass courseClass = classRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        Integer courseId = courseClass.getCourse().getId();
+        log.info("Course ID: {}", courseId);
+
+        // Get all quizzes for this course
+        List<Quiz> quizzes = quizRepository.findByCourseId(courseId);
+        log.info("Found {} quizzes for course", quizzes.size());
+
+        // Map to response DTOs
+        return quizzes.stream()
+                .map(quiz -> QuizResponse.builder()
+                        .id(quiz.getId())
+                        .sectionId(quiz.getSection() != null ? quiz.getSection().getId() : null)
+                        .sectionName(quiz.getSection() != null ? quiz.getSection().getTitle() : null)
+                        .title(quiz.getTitle())
+                        .description(quiz.getDescription())
+                        .duration(quiz.getDuration())
+                        .attemptLimit(quiz.getAttemptLimit())
+                        .passingScore(quiz.getPassingScore())
+                        .numberItem(quiz.getNumberItem())
+                        .showResults(quiz.getShowResults())
+                        .isPublished(quiz.getIsPublished())
+                        .startTime(quiz.getStartTime())
+                        .endTime(quiz.getEndTime())
+                        .createdAt(quiz.getCreatedAt())
+                        .updateAt(quiz.getUpdateAt())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

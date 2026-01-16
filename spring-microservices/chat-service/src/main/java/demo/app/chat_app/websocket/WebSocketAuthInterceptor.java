@@ -71,6 +71,11 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                         new UsernamePasswordAuthenticationToken(userId, null, null);
 
                 // Lưu vào session attributes (BAO GỒM TOKEN)
+                if (accessor.getSessionAttributes() == null) {
+                    log.error("Session attributes are null - this should not happen!");
+                    throw new IllegalStateException("WebSocket session attributes are not initialized");
+                }
+                
                 accessor.getSessionAttributes().put("userId", userId);
                 accessor.getSessionAttributes().put("authToken", bearerToken); // Lưu token đầy đủ với "Bearer "
                 

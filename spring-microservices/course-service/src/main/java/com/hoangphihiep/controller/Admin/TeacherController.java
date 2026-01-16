@@ -1,8 +1,9 @@
 package com.hoangphihiep.controller.Admin;
 
+import com.hoangphihiep.dto.request.TeacherImportRequest;
 import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.StudentResponse;
+import com.hoangphihiep.dto.response.TeacherImportResponse;
 import com.hoangphihiep.dto.response.TeacherResponse;
 import com.hoangphihiep.service.*;
 import jakarta.validation.Valid;
@@ -40,7 +41,7 @@ public class TeacherController {
             @PathVariable int educationalUnitId,
             @Valid @RequestBody TeacherRequest request) {
 
-        request.setEducationalUnitId(educationalUnitId);
+        request.setEducationalUnitId(String.valueOf(educationalUnitId));
 
         TeacherResponse response = teacherService.createTeacher(request);
 
@@ -66,7 +67,7 @@ public class TeacherController {
             @PathVariable String teacherId,
             @Valid @RequestBody TeacherRequest request) {
 
-        request.setEducationalUnitId(educationalUnitId);
+        request.setEducationalUnitId(String.valueOf(educationalUnitId));
 
         TeacherResponse response = teacherService.updateTeacher(teacherId, request);
 
@@ -88,6 +89,21 @@ public class TeacherController {
 
         return ApiResponse.<TeacherResponse>builder()
                 .result(response)
+                .build();
+    }
+
+    @PostMapping("/teachers/bulk-import")
+    public ApiResponse<TeacherImportResponse> bulkImportTeachers(
+            @PathVariable int educationalUnitId,
+            @Valid @RequestBody TeacherImportRequest request) {
+
+        log.info("Bulk importing {} teachers for educational unit {}", 
+                request.getTeachers().size(), educationalUnitId);
+
+        TeacherImportResponse result = teacherService.bulkImportTeachers(educationalUnitId, request.getTeachers());
+
+        return ApiResponse.<TeacherImportResponse>builder()
+                .result(result)
                 .build();
     }
 

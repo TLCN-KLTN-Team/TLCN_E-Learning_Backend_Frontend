@@ -33,7 +33,7 @@ public class Question implements Serializable {
     @Column(name = "question_text", length = 1000)
     private String questionText;
 
-    private String questionType;
+    private String questionType; // MULTIPLE_CHOICE, TRUE_FALSE, SHORT_ANSWER, ESSAY
 
     private int orderIndex;
 
@@ -42,6 +42,19 @@ public class Question implements Serializable {
 
     @Column(name = "score")
     private Double score;
+
+    // Metadata for question library
+    @Column(name = "difficulty_level", length = 20)
+    private String difficultyLevel; // EASY, MEDIUM, HARD
+
+    @Column(name = "tags", length = 500)
+    private String tags; // Comma-separated tags
+
+    @Column(name = "teacher_id")
+    private String teacherId; // Teacher who created this question
+
+    @Column(name = "educational_unit_id")
+    private Integer educationalUnitId;
 
     private Date createdAt;
 
@@ -56,7 +69,6 @@ public class Question implements Serializable {
         }
     }
 
-    @ManyToOne
-    @JoinColumn(name = "quiz_id", nullable = false)
-    private Quiz quiz;
+    // Removed direct relationship with Quiz - now using QuizQuestion join table
+    // Many-to-many relationship handled via QuizQuestion entity
 }

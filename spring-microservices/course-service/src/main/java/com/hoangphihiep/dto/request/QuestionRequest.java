@@ -20,14 +20,13 @@ public class QuestionRequest {
 
     private Integer id;
 
-    @NotNull(message = "Quiz ID is required")
-    private Integer quizId;
+    private Integer quizId; // Made optional for library questions
 
     @NotBlank(message = "Question text is required")
     private String questionText;
 
     @NotBlank(message = "Question type is required")
-    private String questionType;
+    private String questionType; // MULTIPLE_CHOICE, TRUE_FALSE, SHORT_ANSWER, ESSAY
 
     private Integer orderIndex;
 
@@ -35,6 +34,11 @@ public class QuestionRequest {
 
     @NotNull(message = "Score is required")
     private Double score;
+
+    // Library question fields
+    private String difficultyLevel; // EASY, MEDIUM, HARD
+    private String tags; // Comma-separated tags
+    private Integer educationalUnitId;
 
     private Date createdAt;
 

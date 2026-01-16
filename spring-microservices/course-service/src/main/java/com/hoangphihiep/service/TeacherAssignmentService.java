@@ -1,10 +1,7 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.GradeAssignmentRequest;
-import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.AssignmentSubmissionResponse;
-import com.hoangphihiep.dto.response.AssignmentGradingResponse;
-import com.hoangphihiep.dto.response.StudentResponse;
+import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.Assignment;
 import com.hoangphihiep.entity.AssignmentSubmission;
 import com.hoangphihiep.entity.CourseClass;
@@ -314,5 +311,43 @@ public class TeacherAssignmentService {
 
         log.info("Total responses built: {}", responses.size());
         return responses;
+    }
+
+    /**
+     * Get all assignments for a class
+     */
+    public List<AssignmentResponse> getAssignmentsByClass(Integer classId) {
+        log.info("=== GET ASSIGNMENTS BY CLASS {} ===", classId);
+
+        // Verify class exists
+        CourseClass courseClass = classRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
+
+        Integer courseId = courseClass.getCourse().getId();
+        log.info("Course ID: {}", courseId);
+
+        // Get all assignments for this course
+        List<Assignment> assignments = assignmentRepository.findByCourseId(courseId);
+        log.info("Found {} assignments for course", assignments.size());
+
+        // Map to response DTOs
+        return assignments.stream()
+                .map(assignment -> AssignmentResponse.builder()
+                        .id(assignment.getId())
+                        .sectionId(assignment.getSection() != null ? assignment.getSection().getId() : null)
+                        .sectionName(assignment.getSection() != null ? assignment.getSection().getTitle() : null)
+                        .title(assignment.getTitle())
+                        .description(assignment.getDescription())
+                        .deadline(assignment.getDeadline())
+                        .assignmentFiles(assignment.getAssignmentFiles())
+                        .submissionType(assignment.getSubmissionType())
+                        .rubricFiles(assignment.getRubricFiles())
+                        .maxScore(assignment.getMaxScore())
+                        .numberItem(assignment.getNumberItem())
+                        .isPublished(assignment.getIsPublished())
+                        .createdAt(assignment.getCreatedAt())
+                        .updateAt(assignment.getUpdateAt())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

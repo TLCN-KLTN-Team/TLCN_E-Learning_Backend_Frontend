@@ -2,8 +2,7 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.SectionResponse;
-import com.hoangphihiep.dto.response.StudentResponse;
+import com.hoangphihiep.dto.response.TeacherImportResponse;
 import com.hoangphihiep.dto.response.TeacherResponse;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
@@ -13,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -154,5 +154,52 @@ public class TeacherService {
             log.error("Unexpected error updating student status {}: {}", teacherId, e.getMessage(), e);
             throw new AppException(ErrorCode.STUDENT_VALIDATION_FAILED);
         }
+    }
+
+    public TeacherImportResponse bulkImportTeachers(int educationalUnitId, List<TeacherRequest> teachers) {
+        List<TeacherImportResponse.ImportResultDetail> results = new ArrayList<>();
+        int successful = 0;
+        int failed = 0;
+
+        for (TeacherRequest teacher : teachers) {
+            try {
+                // Set educational unit ID as String to match DTO and identity-service
+                teacher.setEducationalUnitId(String.valueOf(educationalUnitId));
+                
+                // Create teacher using existing createTeacher method
+                TeacherResponse response = createTeacher(teacher);
+                
+                results.add(TeacherImportResponse.ImportResultDetail.builder()
+                    .username(teacher.getUsername())
+                    .success(true)
+                    .message("Tạo giảng viên thành công")
+                    .build());
+                successful++;
+                
+            } catch (Exception e) {
+                log.error("Failed to import teacher {}: {}", teacher.getUsername(), e.getMessage());
+                
+                String errorMessage = e.getMessage();
+                if (e instanceof AppException) {
+                    AppException appEx = (AppException) e;
+                    errorMessage = appEx.getErrorCode().getMessage();
+                }
+                
+                results.add(TeacherImportResponse.ImportResultDetail.builder()
+                    .username(teacher.getUsername())
+                    .success(false)
+                    .message(errorMessage != null ? errorMessage : "Lỗi không xác định")
+                    .build());
+                failed++;
+            }
+        }
+
+        log.info("Bulk import completed: {} successful, {} failed", successful, failed);
+
+        return TeacherImportResponse.builder()
+            .successful(successful)
+            .failed(failed)
+            .results(results)
+            .build();
     }
 }

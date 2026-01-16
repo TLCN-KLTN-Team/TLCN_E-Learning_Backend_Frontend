@@ -62,9 +62,14 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
   const quizzesArray = section.quizs ? Array.from(section.quizs) : []
   const assignmentsArray = section.assignments ? Array.from(section.assignments) : []
 
+  // Sắp xếp ngay từ đầu để dùng cho cả hiển thị và handler
+  const sortedLessons = [...lessonsArray].sort((a, b) => a.numberItem - b.numberItem)
+  const sortedQuizzes = [...quizzesArray].sort((a, b) => a.numberItem - b.numberItem)
+  const sortedAssignments = [...assignmentsArray].sort((a, b) => a.numberItem - b.numberItem)
+
   const handleLessonsReorder = (fromIndex: number, toIndex: number) => {
-    const fromLesson = lessonsArray[fromIndex]
-    const toLesson = lessonsArray[toIndex]
+    const fromLesson = sortedLessons[fromIndex]
+    const toLesson = sortedLessons[toIndex]
 
     if (!fromLesson || !toLesson) return
 
@@ -81,8 +86,8 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
   }
 
   const handleQuizzesReorder = (fromIndex: number, toIndex: number) => {
-    const fromQuiz = quizzesArray[fromIndex]
-    const toQuiz = quizzesArray[toIndex]
+    const fromQuiz = sortedQuizzes[fromIndex]
+    const toQuiz = sortedQuizzes[toIndex]
 
     if (!fromQuiz || !toQuiz) return
 
@@ -99,8 +104,8 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
   }
 
   const handleAssignmentsReorder = (fromIndex: number, toIndex: number) => {
-    const fromAssignment = assignmentsArray[fromIndex]
-    const toAssignment = assignmentsArray[toIndex]
+    const fromAssignment = sortedAssignments[fromIndex]
+    const toAssignment = sortedAssignments[toIndex]
 
     if (!fromAssignment || !toAssignment) return
 
@@ -135,6 +140,11 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
 
   // Xử lý thêm bài kiểm tra mới
   const handleAddQuiz = (quizData: QuizRequest) => {
+    // Get questions from quizData if available, otherwise create empty set
+    const questionsToAdd = quizData.questions && quizData.questions.length > 0
+      ? new Set(quizData.questions)
+      : new Set()
+
     const newQuiz: QuizResponse = {
       id: Date.now(),
       title: quizData.title,
@@ -150,7 +160,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
       attemptsCount: 0,
       createdAt: new Date(),
       updateAt: new Date(),
-      questions: new Set((quizData.questions || []) as any),
+      questions: questionsToAdd,
       ...(quizData.startTime && { startTime: quizData.startTime }),
       ...(quizData.endTime && { endTime: quizData.endTime }),
     }
@@ -291,17 +301,11 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
   const isDragging = draggedIndex === index
   const isDragOver = draggedIndex !== null && draggedIndex !== index
 
-  // Sắp xếp bài học, bài kiểm tra và bài tập theo numberItem
-  const sortedLessons = lessonsArray.sort((a, b) => a.numberItem - b.numberItem)
-  const sortedQuizzes = quizzesArray.sort((a, b) => a.numberItem - b.numberItem)
-  const sortedAssignments = assignmentsArray.sort((a, b) => a.numberItem - b.numberItem)
-
   return (
     <>
       <Card
-        className={`transition-all ${isDragging ? "opacity-50" : ""} ${
-          isDragOver ? "border-2 border-blue-300 bg-blue-50" : ""
-        }`}
+        className={`transition-all ${isDragging ? "opacity-50" : ""} ${isDragOver ? "border-2 border-blue-300 bg-blue-50" : ""
+          }`}
         draggable
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
@@ -407,17 +411,17 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                   </div>
                 )}
                 {/* Nút Thêm Bài Học - Di chuyển xuống dưới danh sách */}
-                 
-                <div className="flex justify-end pt-2"> 
-                    <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsLessonModalOpen(true)}
-                  className="text-blue-600 hover:text-blue-700"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Thêm Bài Học
-                </Button>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsLessonModalOpen(true)}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Thêm Bài Học
+                  </Button>
                 </div>
               </div>
             </div>
@@ -454,17 +458,17 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                   </div>
                 )}
                 {/* Nút Thêm Bài Kiểm Tra - Di chuyển xuống dưới danh sách */}
-                
-                <div className="flex justify-end pt-2"> 
-                    <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsQuizModalOpen(true)}
-                  className="text-purple-600 hover:text-purple-700"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Thêm Bài Kiểm Tra
-                </Button>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsQuizModalOpen(true)}
+                    className="text-purple-600 hover:text-purple-700"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Thêm Bài Kiểm Tra
+                  </Button>
                 </div>
               </div>
             </div>
@@ -503,8 +507,8 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                   </div>
                 )}
                 {/* Nút Thêm Bài Tập - Di chuyển xuống dưới danh sách */}
-                <div className="flex justify-end pt-2"> 
-                    <Button
+                <div className="flex justify-end pt-2">
+                  <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setIsAssignmentModalOpen(true)}
@@ -514,7 +518,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
                     Thêm Bài Tập
                   </Button>
                 </div>
-                
+
               </div>
             </div>
 
