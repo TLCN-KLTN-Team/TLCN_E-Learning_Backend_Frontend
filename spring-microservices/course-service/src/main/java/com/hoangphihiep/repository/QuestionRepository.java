@@ -13,15 +13,6 @@ import java.util.Optional;
 
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Integer> {
-
-    // Removed old quiz-related queries - now using QuizQuestionRepository for many-to-many relationship
-
-    @Query("SELECT q FROM Question q WHERE LOWER(q.questionText) LIKE LOWER(CONCAT('%', :text, '%'))")
-    List<Question> findByQuestionTextContaining(@Param("text") String text);
-
-    List<Question> findByQuestionType(String questionType);
-
-    // Question Library methods - standalone questions that can be linked to multiple quizzes
     @Query("SELECT q FROM Question q WHERE q.teacherId = :teacherId")
     Page<Question> findLibraryQuestionsByTeacher(@Param("teacherId") String teacherId, Pageable pageable);
 
@@ -52,7 +43,6 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
     @Query("SELECT q FROM Question q LEFT JOIN FETCH q.answers WHERE q.id IN :ids")
     List<Question> findLibraryQuestionsByIdsWithAnswers(@Param("ids") List<Integer> ids);
 
-    // Count library questions by teacher
     @Query("SELECT COUNT(q) FROM Question q WHERE q.teacherId = :teacherId")
     long countLibraryQuestionsByTeacher(@Param("teacherId") String teacherId);
 }

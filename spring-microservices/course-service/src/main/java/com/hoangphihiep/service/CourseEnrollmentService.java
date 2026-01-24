@@ -11,6 +11,8 @@ import com.hoangphihiep.kafka.producer.CourseEventProducer;
 import com.hoangphihiep.mapper.SectionMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
+import com.hoangphihiep.repository.httpclient.NotificationRepository;
+import com.hoangphihiep.dto.request.NotificationMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -46,6 +48,7 @@ public class CourseEnrollmentService {
     private final CourseProgressRepository courseProgressRepository;
     private final LessonProgressRepository lessonProgressRepository;
     private final LessonRepository lessonRepository;
+    private final NotificationRepository notificationRepository;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
@@ -282,7 +285,11 @@ public class CourseEnrollmentService {
             // send event to create channel for a class
             Map<String, List<String>> request = new HashMap<>();
             request.put("studentIds", studentIds);
+            log.info("Fetching user IDs for notification. Student IDs: {}", studentIds);
+            
             List<String> userIdsOfStudents = studentClient.getUsersByStudentIds(request).getResult();
+            log.info("Found {} user IDs for notification: {}", userIdsOfStudents != null ? userIdsOfStudents.size() : 0, userIdsOfStudents);
+
             EnrollStudentsEvent event = EnrollStudentsEvent.builder()
                     .courseId(courseClass.getCourse().getId())
                     .classId(courseClass.getId())
@@ -290,6 +297,29 @@ public class CourseEnrollmentService {
                     .build();
 
             producer.addMembersToClassChannel(event);
+
+            // Send notification to each enrolled student
+            if (userIdsOfStudents != null && !userIdsOfStudents.isEmpty()) {
+                for (String userId : userIdsOfStudents) {
+                    try {
+                        log.info("Sending enrollment notification to user: {}", userId);
+                        notificationRepository.sendNotification(NotificationMessage.builder()
+                                .userId(userId)
+                                .type("ENROLLMENT")
+                                .message("Bạn đã được thêm vào lớp học: " + courseClass.getClassName() + " (" + courseClass.getCourse().getCourseName() + ")")
+                            .link("/student/classes/" + courseClass.getId())
+                            .data(Map.of(
+                                    "classId", courseClass.getId(),
+                                    "className", courseClass.getClassName(),
+                                    "courseId", courseClass.getCourse().getId(),
+                                    "courseName", courseClass.getCourse().getCourseName()
+                            ))
+                            .build());
+                } catch (Exception e) {
+                    log.error("Failed to send notification to student {}", userId, e);
+                    // Non-blocking, continue with other students
+                }
+            }
 
             log.info("Successfully enrolled {} students to class {}", studentsToEnroll.size(), classId);
 

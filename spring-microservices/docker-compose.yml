@@ -236,9 +236,9 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://127.0.0.1:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -367,6 +367,7 @@ services:
       FILE_SERVICE_URL: http://file-service:8084/file-handler
       APP_SERVICES_FILE: http://file-service:8084/file-handler
       API_GATEWAY_URL: http://api-gateway:8888
+      NOTIFICATION_SERVICE_URI: http://notification-service:8092
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       ELASTICSEARCH_URIS: http://elasticsearch:9200
       ELASTICSEARCH_HOST: elasticsearch
@@ -522,6 +523,7 @@ services:
       COURSE_SERVICE_URI: http://course-service:8088
       CHAT_SERVICE_URI: http://chat-service:8090
       CHAT_SERVICE_WS_URI: ws://chat-service:8090
+      NOTIFICATION_SERVICE_URI: http://notification-service:8092
       JAVA_OPTS: >
         -Xms128m
         -Xmx256m
@@ -537,6 +539,8 @@ services:
         condition: service_healthy
       chat-service:
         condition: service_healthy
+      notification-service:
+        condition: service_started
     networks:
       - backend-network
     healthcheck:
@@ -549,6 +553,49 @@ services:
       resources:
         limits:
           cpus: '0.6'
+          memory: 384M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USER}/notification-service:${VERSION:-latest}
+    container_name: notification-service
+    restart: unless-stopped
+    ports:
+      - "8092:8092"
+    environment:
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      APP_EMAIL_FROM: ${APP_EMAIL_FROM}
+      APP_EMAIL_FROM_NAME: ${APP_EMAIL_FROM_NAME}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      MONGO_DB_USERNAME: ${MONGO_DB_USERNAME}
+      MONGO_DB_PASSWORD: ${MONGO_DB_PASSWORD}
+      SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/notification_service?authSource=admin
+      JAVA_OPTS: >
+        -Xms128m
+        -Xmx256m
+        -XX:+UseG1GC
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
           memory: 384M
         reservations:
           cpus: '0.2'

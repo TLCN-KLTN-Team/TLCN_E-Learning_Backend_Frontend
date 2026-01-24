@@ -23,11 +23,19 @@ public class PublicCourseController {
     private final PublishedCourseSearchService publishedCourseSearchService;
     private final ElasticSearchIndexInitializer elasticSearchIndexInitializer;
     private final CourseTypeService courseTypeService;
+    private final com.hoangphihiep.service.AiRecommendationService aiRecommendationService; // Injected
+
 
     // some apis get data here
     // get courses suggest for user
     // get courses by favorite based on user behavior
     // we need to integrated ai
+    @GetMapping("/recommend")
+    public ApiResponse<?> getRecommendedCourses() {
+        var result = aiRecommendationService.getRecommendedCourses();
+        return ApiResponse.success(result, "Get recommended courses successfully");
+    }
+
 
     // get educational units which joined our system
 

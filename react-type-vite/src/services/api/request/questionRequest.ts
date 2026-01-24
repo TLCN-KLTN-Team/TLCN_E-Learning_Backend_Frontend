@@ -4,7 +4,7 @@ export interface QuestionRequest {
   id?: number;
   quizId?: number;
   questionText: string;
-  questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
+  questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'SHORT_ANSWER' | 'ESSAY';
   orderIndex?: number;
   attachments?: string[]; // Added attachments array
   score: number;

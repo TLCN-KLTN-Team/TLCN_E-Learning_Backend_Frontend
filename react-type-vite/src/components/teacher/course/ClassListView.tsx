@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Users, ChevronRight, AlertCircle, Loader2, Plus, MessageSquare } from 'lucide-react'
-import * as classApi from "@/services/api/admin/classApi";
+import * as classApi from "@/services/api/teacher/classManagementApi";
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
 import ClassDiscussionModal from "./ClassDiscussionModal"
 
@@ -78,23 +78,25 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
 
       {/* Classes Grid */}
       {classes.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {classes.map((classData) => (
             <Card
               key={classData.id}
-              className="hover:shadow-lg transition-shadow cursor-pointer"
+              className="hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col"
               onClick={() => onSelectClass(classData)}
             >
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{classData.className}</CardTitle>
+                    <CardTitle className="text-lg line-clamp-2" title={classData.className}>
+                      {classData.className}
+                    </CardTitle>
                     <p className="text-sm text-gray-600 mt-1">Mã lớp: {classData.classCode}</p>
                   </div>
                   <ChevronRight className="h-5 w-5 text-gray-400" />
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 flex-1 flex flex-col">
                 {/* Status Badge */}
                 <div>
                   <Badge
@@ -132,24 +134,29 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
                 )}
 
                 {/* Description */}
-                {classData.description && <p className="text-sm text-gray-600 line-clamp-2">{classData.description}</p>}
+                {classData.description && (
+                  <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+                    {classData.description}
+                  </p>
+                )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={(e) => handleOpenDiscussion(classData, e)} 
+                <div className="flex gap-2 mt-auto pt-2">
+                  <Button
+                    onClick={(e) => handleOpenDiscussion(classData, e)}
                     variant="outline"
-                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+                    size="sm"
+                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50 px-2"
                   >
-                    <MessageSquare className="h-4 w-4 mr-2" />
+                    <MessageSquare className="h-4 w-4 mr-1.5" />
                     Thảo luận
                   </Button>
-                  <Button 
-                    onClick={() => onSelectClass(classData)} 
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  <Button
+                    onClick={() => onSelectClass(classData)}
+                    size="sm"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2"
                   >
                     Xem Chi Tiết
-                    <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               </CardContent>

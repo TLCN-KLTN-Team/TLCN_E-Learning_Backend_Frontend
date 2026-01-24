@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogPortal,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -48,6 +47,10 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
+  const [tags, setTags] = useState("")
+
+  const [availableTags, setAvailableTags] = useState<string[]>([])
+
   const fetchQuestions = async () => {
     try {
       setLoading(true)
@@ -55,23 +58,43 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
         page: currentPage,
         size: 10,
         search: searchTerm || undefined,
-        questionType: questionType || undefined,
-        difficultyLevel: difficultyLevel || undefined,
+        questionType: questionType === "all" ? undefined : (questionType || undefined),
+        difficultyLevel: difficultyLevel === "all" ? undefined : (difficultyLevel || undefined),
+        tags: tags || undefined,
       })
-      
+
       const response = await getLibraryQuestions({
         page: currentPage,
         size: 10,
         search: searchTerm || undefined,
-        questionType: questionType || undefined,
-        difficultyLevel: difficultyLevel || undefined,
+        questionType: questionType === "all" ? undefined : (questionType || undefined),
+        difficultyLevel: difficultyLevel === "all" ? undefined : (difficultyLevel || undefined),
+        tags: tags || undefined,
         sortBy: "id",
         sortDirection: "DESC",
       })
 
       console.log('[QuestionSelector] Received questions:', response)
-      setQuestions(response.questions)
+
+      // Client-side filtering to ensure accuracy if backend is fuzzy
+      let filteredQuestions = response.questions
+      if (tags && tags !== "all") {
+        filteredQuestions = response.questions.filter(q =>
+          q.tags && q.tags.split(",").map(t => t.trim()).includes(tags)
+        )
+      }
+
+      setQuestions(filteredQuestions)
       setTotalPages(response.totalPages)
+
+      // Extract unique tags from original response (to keep list populated)
+      const uniqueTags = new Set<string>()
+      response.questions.forEach((q) => {
+        if (q.tags) {
+          q.tags.split(",").forEach((tag) => uniqueTags.add(tag.trim()))
+        }
+      })
+      setAvailableTags(Array.from(uniqueTags).sort())
     } catch (error) {
       console.error("[QuestionSelector] Error fetching questions:", error)
       toast.error("Không thể tải danh sách câu hỏi")
@@ -84,7 +107,7 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
     if (isOpen) {
       fetchQuestions()
     }
-  }, [isOpen, currentPage, searchTerm, questionType, difficultyLevel])
+  }, [isOpen, currentPage, searchTerm, questionType, difficultyLevel, tags])
 
   const toggleQuestion = (questionId: number) => {
     const newSelected = new Set(selectedQuestions)
@@ -112,12 +135,25 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
     onClose()
   }
 
+  const handleSelectAll = () => {
+    const allIdsOnPage = questions.map((q) => q.id)
+    const newSelected = new Set(selectedQuestions)
+    const allSelected = allIdsOnPage.every((id) => newSelected.has(id))
+
+    if (allSelected) {
+      allIdsOnPage.forEach((id) => newSelected.delete(id))
+    } else {
+      allIdsOnPage.forEach((id) => newSelected.add(id))
+    }
+    setSelectedQuestions(newSelected)
+  }
+
   const getQuestionTypeLabel = (type: string) => {
     const types: Record<string, string> = {
-      MULTIPLE_CHOICE: "Trắc nghiệm",
+      MULTIPLE_CHOICE: "Nhiều đáp án",
       TRUE_FALSE: "Đúng/Sai",
-      SHORT_ANSWER: "Trả lời ngắn",
-      ESSAY: "Tự luận",
+      SINGLE_CHOICE: "Một đáp án",
+      FILL_IN_THE_BLANK: "Điền khuyết",
     }
     return types[type] || type
   }
@@ -144,9 +180,9 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent 
-        className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white"
-        style={{ zIndex: 10000 }}
+      <DialogContent
+        className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-white"
+        style={{ zIndex: 10010 }}
       >
         <DialogHeader>
           <DialogTitle className="text-2xl">Chọn câu hỏi từ ngân hàng</DialogTitle>
@@ -156,41 +192,88 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
         </DialogHeader>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 py-3 border-b">
-          <div className="relative">
+        <div className="flex flex-col gap-4 py-4 border-b">
+          {/* Row 1: Search */}
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Tìm kiếm câu hỏi..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full"
             />
           </div>
 
-          <Select value={questionType} onValueChange={setQuestionType}>
-            <SelectTrigger>
-              <SelectValue placeholder="Loại câu hỏi" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="MULTIPLE_CHOICE">Trắc nghiệm</SelectItem>
-              <SelectItem value="TRUE_FALSE">Đúng/Sai</SelectItem>
-              <SelectItem value="SHORT_ANSWER">Trả lời ngắn</SelectItem>
-              <SelectItem value="ESSAY">Tự luận</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Row 2: Selects & Tag */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Select value={questionType} onValueChange={setQuestionType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Loại câu hỏi" />
+                </SelectTrigger>
+                <SelectContent className="z-[10020] bg-white">
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="MULTIPLE_CHOICE">Nhiều đáp án</SelectItem>
+                  <SelectItem value="TRUE_FALSE">Đúng/Sai</SelectItem>
+                  <SelectItem value="SINGLE_CHOICE">Một đáp án</SelectItem>
+                  <SelectItem value="FILL_IN_THE_BLANK">Điền khuyết</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <Select value={difficultyLevel} onValueChange={setDifficultyLevel}>
-            <SelectTrigger>
-              <SelectValue placeholder="Độ khó" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="EASY">Dễ</SelectItem>
-              <SelectItem value="MEDIUM">Trung bình</SelectItem>
-              <SelectItem value="HARD">Khó</SelectItem>
-            </SelectContent>
-          </Select>
+            <div>
+              <Select value={difficultyLevel} onValueChange={setDifficultyLevel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Độ khó" />
+                </SelectTrigger>
+                <SelectContent className="z-[10020] bg-white">
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="EASY">Dễ</SelectItem>
+                  <SelectItem value="MEDIUM">Trung bình</SelectItem>
+                  <SelectItem value="HARD">Khó</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative">
+              <Select value={tags} onValueChange={setTags}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Lọc theo tag" />
+                </SelectTrigger>
+                <SelectContent className="z-[10020] bg-white">
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {availableTags.map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Select All Toolbar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="select-all"
+              checked={
+                questions.length > 0 &&
+                questions.every((q) => selectedQuestions.has(q.id))
+              }
+              onCheckedChange={handleSelectAll}
+            />
+            <label
+              htmlFor="select-all"
+              className="text-sm font-medium cursor-pointer select-none"
+            >
+              Chọn tất cả ({questions.length})
+            </label>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Đã chọn: <span className="font-semibold text-primary">{selectedQuestions.size}</span> câu hỏi
+          </div>
         </div>
 
         {/* Selected Count */}
@@ -218,11 +301,10 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
             questions.map((question) => (
               <div
                 key={question.id}
-                className={`border rounded-lg p-3 cursor-pointer transition-all ${
-                  selectedQuestions.has(question.id)
-                    ? "border-primary bg-primary/5"
-                    : "hover:border-primary/50"
-                }`}
+                className={`border rounded-lg p-3 cursor-pointer transition-all ${selectedQuestions.has(question.id)
+                  ? "border-primary bg-primary/5"
+                  : "hover:border-primary/50"
+                  }`}
                 onClick={() => toggleQuestion(question.id)}
               >
                 <div className="flex items-start gap-3">
@@ -238,6 +320,11 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
                       {question.score && (
                         <Badge variant="secondary">{question.score} điểm</Badge>
                       )}
+                      {question.tags && question.tags.split(",").map((tag, index) => (
+                        <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {tag.trim()}
+                        </Badge>
+                      ))}
                     </div>
                     <p className="text-sm font-medium">{question.questionText}</p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -283,7 +370,11 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
           <Button variant="outline" onClick={handleClose}>
             Hủy
           </Button>
-          <Button onClick={handleConfirm} disabled={selectedQuestions.size === 0}>
+          <Button
+            onClick={handleConfirm}
+            disabled={selectedQuestions.size === 0}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
             <Plus className="h-4 w-4 mr-1" />
             Thêm {selectedQuestions.size > 0 ? `${selectedQuestions.size} ` : ""}câu hỏi
           </Button>

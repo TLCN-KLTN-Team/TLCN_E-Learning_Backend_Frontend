@@ -18,7 +18,7 @@ export const getAssignmentDiscussion = async (
   size: number = 20
 ): Promise<DiscussionPageResponse> => {
   const response = await axiosInstance.get<any>(
-    `/server/api/discussions/assignment/${assignmentId}/messages`,
+    `/server/discussions/assignment/${assignmentId}/messages`,
     {
       params: { page, size },
     }
@@ -35,7 +35,7 @@ export const postAssignmentDiscussionMessage = async (
 ): Promise<DiscussionMessage> => {
   console.log('POST assignment message request:', { assignmentId, request });
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/discussions/assignment/${assignmentId}/messages`,
+    `/server/discussions/assignment/${assignmentId}/messages`,
     request
   );
   console.log('POST assignment message response:', response.data);
@@ -48,7 +48,7 @@ export const postAssignmentDiscussionMessage = async (
  */
 export const deleteAssignmentDiscussionMessage = async (messageId: string): Promise<void> => {
   console.log('DELETE assignment message:', messageId);
-  await axiosInstance.delete(`/server/api/discussions/assignment/messages/${messageId}`);
+  await axiosInstance.delete(`/server/discussions/assignment/messages/${messageId}`);
 };
 
 /**
@@ -57,7 +57,7 @@ export const deleteAssignmentDiscussionMessage = async (messageId: string): Prom
 export const toggleAssignmentDiscussionLike = async (messageId: string): Promise<DiscussionMessage> => {
   console.log('LIKE assignment message:', messageId);
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/discussions/assignment/messages/${messageId}/like`
+    `/server/discussions/assignment/messages/${messageId}/like`
   );
   console.log('LIKE assignment message response:', response.data);
   return response.data;
@@ -68,7 +68,7 @@ export const toggleAssignmentDiscussionLike = async (messageId: string): Promise
  */
 export const markAssignmentDiscussionAsRead = async (assignmentId: number): Promise<void> => {
   console.log('Mark assignment discussion as read:', assignmentId);
-  await axiosInstance.post(`/server/api/discussions/assignment/${assignmentId}/mark-read`);
+  await axiosInstance.post(`/server/discussions/assignment/${assignmentId}/mark-read`);
 };
 
 /**
@@ -77,7 +77,7 @@ export const markAssignmentDiscussionAsRead = async (assignmentId: number): Prom
 export const getAssignmentUnreadCount = async (assignmentId: number): Promise<number> => {
   console.log('Get unread count for assignment:', assignmentId);
   const response = await axiosInstance.get<number>(
-    `/server/api/discussions/assignment/${assignmentId}/unread-count`
+    `/server/discussions/assignment/${assignmentId}/unread-count`
   );
   return response.data;
 };

@@ -1,10 +1,24 @@
 import { getAvartarFromName } from "@/utils/callApiUtils";
-import { Bell, ChevronDown, MessageCircleMore } from "lucide-react";
+import { Bell, ChevronDown, MessageCircleMore, BellRing } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import uteLogoDark from "../../../assets/open-edu-dark.png";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/auth-context/useAuth";
+import * as notificationApi from "@/services/api/notificationApi";
+import { toast } from "react-toastify";
+
+interface Notification {
+  id?: string;
+  senderId?: string;
+  recipientId: string;
+  content: string;
+  message?: string;
+  type: string;
+  isRead: boolean;
+  createdAt?: string;
+  link?: string;
+}
 
 
 const profileMenu = [
@@ -14,8 +28,90 @@ const profileMenu = [
 
 const Header = () => {
   const [isShowProfile, setIsShowProfile] = useState(false);
-  const { logout } = useAuth();
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.id) {
+      // 1. Fetch notification history
+      notificationApi.getUserNotifications(user.id)
+        .then(res => {
+          // @ts-ignore
+          const data = res.data?.result || res.data || [];
+          // @ts-ignore
+          setNotifications(data);
+          // @ts-ignore
+          setUnreadCount(data.filter(n => !n.isRead).length);
+        })
+        .catch(err => console.error("Failed to fetch notifications", err));
+
+      // 2. Subscribe to SSE notifications
+      const eventSource = notificationApi.subscribeToNotifications(user.id);
+
+      eventSource.onopen = () => console.log("SSE Connected");
+
+      // Listen for ENROLLMENT type notifications
+      eventSource.addEventListener("ENROLLMENT", (event) => {
+        const newNotif = JSON.parse(event.data);
+        const notifObj: Notification = {
+          recipientId: newNotif.userId,
+          content: newNotif.message,
+          type: newNotif.type,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          link: newNotif.link
+        };
+
+        setNotifications(prev => [notifObj, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        toast.info(`Thông báo mới: ${notifObj.content}`);
+      });
+
+      // Listen for general NOTIFICATION type
+      eventSource.addEventListener("NOTIFICATION", (event) => {
+        const newNotif = JSON.parse(event.data);
+        const notifObj: Notification = {
+          recipientId: newNotif.userId,
+          content: newNotif.message,
+          type: newNotif.type,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          link: newNotif.link
+        };
+        setNotifications(prev => [notifObj, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        toast.info(`Thông báo mới: ${notifObj.content}`);
+      });
+
+      eventSource.onerror = (err) => {
+        console.error("SSE Error", err);
+        eventSource.close();
+      };
+
+      return () => {
+        eventSource.close();
+      };
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="student-dashboard-header">
@@ -49,10 +145,79 @@ const Header = () => {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
-            <button className="student-dashboard-icon-btn">
-              <Bell className="w-5 h-5" />
+            {/* Notifications */}
+            <div className="relative" ref={notificationRef}>
+              <button 
+                className="student-dashboard-icon-btn relative"
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                )}
+              </button>
+              
               {/* Notification Dropdown */}
-            </button>
+              {isNotificationOpen && (
+                <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-[80vh] flex flex-col">
+                  <div className="p-4 border-b bg-transparent flex-shrink-0">
+                    <div className="flex justify-between items-center">
+                      <h6 className="font-semibold m-0">
+                        Thông báo{" "}
+                        {unreadCount > 0 && (
+                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
+                            {unreadCount} mới
+                          </span>
+                        )}
+                      </h6>
+                      <button className="text-sm text-blue-600 hover:underline">
+                        Đánh dấu đã đọc
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-0 overflow-y-auto flex-1">
+                    <ul className="list-none">
+                      {notifications.length === 0 ? (
+                        <li className="p-4 text-center text-gray-500">Không có thông báo</li>
+                      ) : (
+                        notifications.map((notif, idx) => (
+                          <li key={idx}>
+                            <div className={`p-3 border-b hover:bg-gray-50 flex ${!notif.isRead ? 'bg-blue-50' : ''}`}>
+                              <div className="mr-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                  <BellRing size={20} />
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-sm m-0 text-gray-800">
+                                  {notif.content}
+                                </p>
+                                <div className="flex justify-between items-center mt-1">
+                                  <span className="text-xs text-gray-500">
+                                    {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Vừa xong'}
+                                  </span>
+                                  {notif.link && (
+                                    <a href={notif.link} className="text-xs text-blue-600 underline ml-2">
+                                      Xem
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                  <div className="p-3 text-center border-t bg-transparent relative flex-shrink-0">
+                    <button className="text-blue-600 hover:underline">
+                      Xem tất cả thông báo
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <span
               className="student-dashboard-icon-btn"
               onClick={() => {

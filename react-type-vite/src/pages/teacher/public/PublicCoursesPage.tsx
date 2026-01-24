@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ShoppingBag, Search, Users, Clock, DollarSign, Grid3X3, List, Filter, TrendingUp, MessageSquare } from "lucide-react"
 import { useAuth } from "@/context/auth-context/useAuth"
@@ -44,12 +45,12 @@ const PublicCoursesPage: React.FC = () => {
 
         // Lấy danh sách khóa học public từ API
         const response = await teacherPublicApi.getPublicCourses(fetchedTeacherId, 0, 20)
-        
+
         setCourses(response.content)
         setFilteredCourses(response.content)
       } catch (err: any) {
         console.error("Error fetching data:", err)
-        
+
         // Nếu là lỗi authentication, redirect về login
         if (err?.message?.includes("Lỗi xác thực token") || err?.status === 401) {
           setError("Session expired. Please login again.")
@@ -57,7 +58,7 @@ const PublicCoursesPage: React.FC = () => {
         } else {
           setError("Failed to load public courses. Please try again later.")
         }
-        
+
         setCourses([])
         setFilteredCourses([])
       } finally {
@@ -214,60 +215,67 @@ const PublicCoursesPage: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-4"}>
               {filteredCourses.map((course) => (
-                <div
-                  key={course.id}
-                  className={`bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer ${
-                    viewMode === "list" ? "flex items-center p-4" : "p-6"
-                  }`}
-                  onClick={() => handleViewCourseStudents(course.id)}
-                >
+                <div key={course.id} className="h-full">
                   {viewMode === "grid" ? (
-                    <>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-card-foreground mb-2 line-clamp-2">
+                    <Card className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewCourseStudents(course.id)}>
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg line-clamp-2" title={course.courseName}>
                             {course.courseName}
-                          </h3>
+                          </CardTitle>
                         </div>
-                      </div>
+                      </CardHeader>
+                      <CardContent className="flex-1 flex flex-col space-y-3">
+                        {course.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{course.description}</p>
+                        )}
 
-                      {course.description && (
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{course.description}</p>
-                      )}
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Users className="w-4 h-4 mr-2" />
+                            <span>{course.currentStudents || 0} học viên</span>
+                          </div>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Clock className="w-4 h-4 mr-2" />
+                            <span>{course.credits || 0} tín chỉ</span>
+                          </div>
+                          <div className="flex items-center text-sm font-semibold text-green-600">
+                            <span>{(course.price || 0).toLocaleString('vi-VN')} đ</span>
+                          </div>
+                        </div>
 
-                      <div className="space-y-3 mb-6">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Users className="w-4 h-4 mr-2" />
-                          <span>{course.currentStudents || 0} học viên</span>
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Clock className="w-4 h-4 mr-2" />
-                          <span>{course.credits || 0} tín chỉ</span>
-                        </div>
-                        <div className="flex items-center text-sm font-semibold text-green-600">
-                          <DollarSign className="w-4 h-4 mr-2" />
-                          <span>{(course.price || 0).toLocaleString('vi-VN')}đ</span>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        className="w-full mt-2" 
-                        variant="default"
-                        onClick={(e) => handleOpenDiscussion(course, e)}
-                      >
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        Thảo luận
-                      </Button>
+                        <div className="flex gap-2 mt-auto pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50 px-2"
+                            onClick={(e) => handleOpenDiscussion(course, e)}
+                          >
+                            <MessageSquare className="w-4 h-4 mr-1.5" />
+                            Thảo luận
+                          </Button>
 
-                      <Button className="w-full" variant="outline">
-                        <Users className="w-4 h-4 mr-2" />
-                        Xem người dùng & Chấm bài
-                      </Button>
-                    </>
+                          <Button
+                            size="sm"
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewCourseStudents(course.id);
+                            }}
+                          >
+                            <Users className="w-4 h-4 mr-1.5" />
+                            Chấm bài
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ) : (
-                    <>
+                    <div
+                      className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer flex items-center p-4"
+                      onClick={() => handleViewCourseStudents(course.id)}
+                    >
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-card-foreground mb-1">{course.courseName}</h3>
                         <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{course.description}</p>
@@ -279,18 +287,18 @@ const PublicCoursesPage: React.FC = () => {
                       </div>
                       <Button variant="outline" size="sm" className="ml-4">
                         <Users className="w-4 h-4 mr-2" />
-                        Xem học viên
+                        Chấm bài
                       </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
+                      <Button
+                        variant="default"
+                        size="sm"
                         className="ml-2"
                         onClick={(e) => handleOpenDiscussion(course, e)}
                       >
                         <MessageSquare className="w-4 h-4 mr-2" />
                         Thảo luận
                       </Button>
-                    </>
+                    </div>
                   )}
                 </div>
               ))}

@@ -31,7 +31,7 @@ export interface DiscussionMessageRequest {
 
 class QuizDiscussionWebSocketService {
   private client: Client | null = null;
-  private subscriptions: Map<number, StompSubscription> = new Map();
+  private subscriptions: Map<number, StompSubscription[]> = new Map();
   private messageCallbacks: Map<number, (message: DiscussionMessage) => void> = new Map();
   private deleteCallbacks: Map<number, (messageId: string) => void> = new Map();
   private updateCallbacks: Map<number, (message: DiscussionMessage) => void> = new Map();
@@ -54,13 +54,13 @@ class QuizDiscussionWebSocketService {
 
     console.log('Starting new WebSocket connection...');
     this.isConnecting = true;
-    
+
     this.connectionPromise = new Promise((resolve, reject) => {
       try {
         // Connect via API Gateway
         const wsUrl = `${import.meta.env.VITE_BASE_URL || 'http://localhost:8888/api/v1'}/server/ws?token=${token}`;
         console.log('Connecting to WebSocket:', wsUrl);
-        
+
         const socket = new SockJS(wsUrl);
 
         this.client = new Client({
@@ -136,6 +136,8 @@ class QuizDiscussionWebSocketService {
     // Unsubscribe if already subscribed
     this.unsubscribeFromQuizDiscussion(quizId);
 
+    const subs: StompSubscription[] = [];
+
     // Subscribe to new messages
     const messageSub = this.client.subscribe(
       `/topic/quiz/${quizId}/discussion`,
@@ -149,6 +151,7 @@ class QuizDiscussionWebSocketService {
         }
       }
     );
+    subs.push(messageSub);
 
     // Subscribe to deletions
     const deleteSub = this.client.subscribe(
@@ -163,6 +166,7 @@ class QuizDiscussionWebSocketService {
         }
       }
     );
+    subs.push(deleteSub);
 
     // Subscribe to updates (likes, etc.)
     const updateSub = this.client.subscribe(
@@ -177,9 +181,10 @@ class QuizDiscussionWebSocketService {
         }
       }
     );
+    subs.push(updateSub);
 
     // Store subscription and callbacks
-    this.subscriptions.set(quizId, messageSub);
+    this.subscriptions.set(quizId, subs);
     this.messageCallbacks.set(quizId, onMessage);
     this.deleteCallbacks.set(quizId, onDelete);
     this.updateCallbacks.set(quizId, onUpdate);
@@ -191,9 +196,9 @@ class QuizDiscussionWebSocketService {
    * Unsubscribe from quiz discussion
    */
   unsubscribeFromQuizDiscussion(quizId: number): void {
-    const subscription = this.subscriptions.get(quizId);
-    if (subscription) {
-      subscription.unsubscribe();
+    const subs = this.subscriptions.get(quizId);
+    if (subs) {
+      subs.forEach(s => s.unsubscribe());
       this.subscriptions.delete(quizId);
       this.messageCallbacks.delete(quizId);
       this.deleteCallbacks.delete(quizId);

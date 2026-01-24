@@ -18,7 +18,7 @@ export const getLessonDiscussion = async (
   size: number = 20
 ): Promise<DiscussionPageResponse> => {
   const response = await axiosInstance.get<any>(
-    `/server/api/discussions/lesson/${lessonId}/messages`,
+    `/server/discussions/lesson/${lessonId}/messages`,
     {
       params: { page, size },
     }
@@ -33,7 +33,7 @@ export const postLessonDiscussionMessage = async (
 ): Promise<DiscussionMessage> => {
   console.log('POST lesson message request:', { lessonId, request });
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/discussions/lesson/${lessonId}/messages`,
+    `/server/discussions/lesson/${lessonId}/messages`,
     request
   );
   console.log('POST lesson message response:', response.data);
@@ -44,7 +44,7 @@ export const postLessonDiscussionMessage = async (
  * Delete a lesson discussion message
  */
 export const deleteLessonDiscussionMessage = async (messageId: string): Promise<void> => {
-  await axiosInstance.delete(`/server/api/discussions/lesson/messages/${messageId}`);
+  await axiosInstance.delete(`/server/discussions/lesson/messages/${messageId}`);
 };
 
 /**
@@ -52,7 +52,7 @@ export const deleteLessonDiscussionMessage = async (messageId: string): Promise<
  */
 export const toggleLessonDiscussionLike = async (messageId: string): Promise<DiscussionMessage> => {
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/discussions/lesson/messages/${messageId}/like`
+    `/server/discussions/lesson/messages/${messageId}/like`
   );
   return response.data;
 };
@@ -61,7 +61,7 @@ export const toggleLessonDiscussionLike = async (messageId: string): Promise<Dis
  * Mark all messages in a lesson discussion as read
  */
 export const markLessonDiscussionAsRead = async (lessonId: number): Promise<void> => {
-  await axiosInstance.post(`/server/api/discussions/lesson/${lessonId}/mark-read`);
+  await axiosInstance.post(`/server/discussions/lesson/${lessonId}/mark-read`);
 };
 
 /**
@@ -69,7 +69,7 @@ export const markLessonDiscussionAsRead = async (lessonId: number): Promise<void
  */
 export const getLessonUnreadCount = async (lessonId: number): Promise<number> => {
   const response = await axiosInstance.get<number>(
-    `/server/api/discussions/lesson/${lessonId}/unread-count`
+    `/server/discussions/lesson/${lessonId}/unread-count`
   );
   return response.data;
 };

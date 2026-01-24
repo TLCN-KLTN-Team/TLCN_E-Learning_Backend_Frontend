@@ -14,11 +14,7 @@ import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.EducationalUnitMapper;
 import com.hoangphihiep.repository.*;
-import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
-import com.hoangphihiep.repository.httpclient.TeacherRepository;
-import com.hoangphihiep.repository.httpclient.StudentRepository;
-import com.hoangphihiep.repository.httpclient.UserInfoApi;
-import com.hoangphihiep.repository.httpclient.UserRepository;
+import com.hoangphihiep.repository.httpclient.*;
 import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.EducationalUnitStatus;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +47,7 @@ public class EducationalUnitService {
     private final TeacherRepository teacherRepository;
     private final DepartmentRepository departmentRepo;
     private final CurrencyUtils currencyUtils;
+    private final ExpertRepository expertRepository;
 
     public List<EducationalUnitCardResponse> getAllEducationalUnits() {
         List<EducationalUnit> educationalUnits = educationalUnitRepository.findAll();
@@ -164,20 +161,65 @@ public class EducationalUnitService {
     }
 
     public EducationalUnitResponse getEducationalUnitByAdminId(String adminId) {
-        if (adminId == null || adminId.trim().isEmpty()) {
+        return getEducationalUnitByMemberId(adminId);
+    }
+
+    public EducationalUnitResponse getEducationalUnitByMemberId(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
         try {
-            Optional<EducationalUnit> educationalUnit = educationalUnitRepository.findByIdAdmin(adminId);
+            // 1. Try finding by Admin ID first (most common for Admin role)
+            Optional<EducationalUnit> educationalUnit = educationalUnitRepository.findByIdAdmin(userId);
 
+            // 2. If not found, try finding via Teacher Profile (for Teachers acting as Admin/Expert)
+            // Or if user is a Teacher/Expert accessing shared resources
+            if (educationalUnit.isEmpty()) {
+                try {
+                ApiResponse<TeacherResponse> teacherResponse = teacherRepository.getTeacherByUserId(userId);
+                if (teacherResponse != null && teacherResponse.getResult() != null) {
+                    String educationalUnitIdStr = teacherResponse.getResult().getEducationalUnitId();
+                        if (educationalUnitIdStr != null) {
+                            Integer eduId = Integer.parseInt(educationalUnitIdStr);
+                            educationalUnit = educationalUnitRepository.findById(eduId);
+                        }
+                    }
+                } catch (Exception ex) {
+                    // Ignore, maybe not a teacher
+                }
+            }
+
+            // 3. If still not found, try Expert Profile
+            if (educationalUnit.isEmpty()) {
+                try {
+                    ApiResponse<ExpertResponse> expertResponse = expertRepository.getExpertByUserId(userId);
+                    if (expertResponse != null && expertResponse.getResult() != null) {
+                        String educationalUnitIdStr = expertResponse.getResult().getEducationalUnitId();
+                        if (educationalUnitIdStr != null) {
+                            Integer eduId = Integer.parseInt(educationalUnitIdStr);
+                            educationalUnit = educationalUnitRepository.findById(eduId);
+                        }
+                    }
+                } catch (Exception ex) {
+                   // Ignore
+                }
+            }
+            
             if (educationalUnit.isEmpty()) {
                 return null;
             }
 
-            UserResponse userInfo = userInfoApi.getUserInfo(adminId).getResult();
-
             EducationalUnit edu = educationalUnit.get();
+            
+            UserResponse userInfo = null;
+            try {
+                // Get representative info (Admin) to display in response
+                userInfo = userInfoApi.getUserInfo(edu.getIdAdmin()).getResult();
+            } catch (Exception ex) {
+                log.warn("Failed to get admin info for unit {}: {}", edu.getId(), ex.getMessage());
+                userInfo = UserResponse.builder().email("").firstName("Unknown").lastName("User").phoneNumber("").build();
+            }
 
             long totalCourses = courseRepository.countByEducationalUnitId(edu.getId());
             long totalDepartments = departmentRepository.countByEducationalUnitId(edu.getId());
@@ -221,7 +263,6 @@ public class EducationalUnitService {
                     .build();
 
         } catch (Exception e) {
-            log.error("Error occurred while checking institution for admin: {}", adminId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }

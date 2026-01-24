@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { User, BookOpen, BarChart3, Loader2 } from "lucide-react"
 import { getStudentDetails } from "@/services/api/teacher/classManagementApi"
+import { getSubmissionsForClass } from "@/services/api/teacher/assignmentGradingApi"
+import { getQuizResultsForClass } from "@/services/api/teacher/quizGradingApi"
 import type { StudentResponse } from "@/services/api/response/studentResponse"
 
 interface StudentDetailModalProps {
@@ -22,6 +24,13 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
   const [detailedStudent, setDetailedStudent] = useState<StudentResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // State for calculated scores
+  const [calculatedScores, setCalculatedScores] = useState<{
+    assignment: number | null
+    quiz: number | null
+    total: number | null
+  }>({ assignment: null, quiz: null, total: null })
+
   useEffect(() => {
     if (isOpen && student) {
       fetchStudentDetails()
@@ -31,13 +40,86 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
   const fetchStudentDetails = async () => {
     try {
       setLoading(true)
-      const details = await getStudentDetails(classId,student.studentId)
+      const details = await getStudentDetails(classId, student.studentId)
+      console.log("Student Details API Response:", details)
       setDetailedStudent(details)
+
+      // Fetch additional grading data
+      await fetchGradingData(student.studentId)
     } catch (err) {
       console.error("Error fetching student details:", err)
       setDetailedStudent(student)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchGradingData = async (studentId: string) => {
+    try {
+      const [assignmentData, quizData] = await Promise.all([
+        getSubmissionsForClass(classId).catch(err => {
+          console.error("Error fetching assignments:", err)
+          return []
+        }),
+        getQuizResultsForClass(classId).catch(err => {
+          console.error("Error fetching quiz results:", err)
+          return []
+        })
+      ])
+
+      // 1. Calculate Assignment Average
+      let assignmentAvg: number | null = null
+      const studentAssignment = assignmentData.find(s => s.studentId === studentId)
+      if (studentAssignment && studentAssignment.averageScore != null) {
+        assignmentAvg = studentAssignment.averageScore
+        // Normalize if > 10
+        if (assignmentAvg > 10) assignmentAvg /= 10
+      }
+
+      // 2. Calculate Quiz Average
+      let quizAvg: number | null = null
+      // quizData is QuizResultResponse[] (all attempts)
+      // Filter by student
+      const studentAttempts = quizData.filter(q => q.studentId === studentId)
+
+      if (studentAttempts.length > 0) {
+        // Group by quizId and take MAX score for each quiz
+        const bestScoresByQuiz = new Map<number, number>()
+        studentAttempts.forEach(attempt => {
+          const currentMax = bestScoresByQuiz.get(attempt.quizId) || 0
+          // Assuming percentage 0-100. Normalize to 0-10
+          let score = attempt.percentage
+          if (score > 10) score /= 10
+
+          if (score > currentMax) {
+            bestScoresByQuiz.set(attempt.quizId, score)
+          }
+        })
+
+        let sum = 0
+        bestScoresByQuiz.forEach(score => sum += score)
+        quizAvg = bestScoresByQuiz.size > 0 ? sum / bestScoresByQuiz.size : 0
+      }
+
+      // 3. Calculate Total
+      let total: number | null = null
+      if (assignmentAvg != null || quizAvg != null) {
+        const a = assignmentAvg || 0
+        const q = quizAvg || 0
+        // Weight: 40% Ass, 60% Quiz (since no exam distinction)
+        // Or 40% Ass, 30% Quiz, 30% Exam (using Quiz for Exam)
+        // Let's use 40% Ass, 60% Quiz for now standard
+        total = (a * 0.4) + (q * 0.6)
+      }
+
+      setCalculatedScores({
+        assignment: assignmentAvg,
+        quiz: quizAvg,
+        total: total
+      })
+
+    } catch (error) {
+      console.error("Error calculating scores:", error)
     }
   }
 
@@ -187,32 +269,34 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ isOpen, onClose
                     <div className="p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Điểm Bài Tập</p>
                       <p className="text-2xl font-bold text-blue-600">
-                        {(currentStudent.averageScore * 0.4).toFixed(1)}
+                        {calculatedScores.assignment != null ? calculatedScores.assignment.toFixed(1) : "--"}
                       </p>
                     </div>
                     <div className="p-4 bg-green-50 rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Điểm Quiz</p>
                       <p className="text-2xl font-bold text-green-600">
-                        {(currentStudent.averageScore * 0.3).toFixed(1)}
+                        {calculatedScores.quiz != null ? calculatedScores.quiz.toFixed(1) : "--"}
                       </p>
                     </div>
                     <div className="p-4 bg-orange-50 rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Điểm Kiểm Tra</p>
                       <p className="text-2xl font-bold text-orange-600">
-                        {(currentStudent.averageScore * 0.3).toFixed(1)}
+                        {calculatedScores.quiz != null ? calculatedScores.quiz.toFixed(1) : "--"}
                       </p>
                     </div>
                   </div>
 
                   <div className="p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
                     <p className="text-sm text-gray-600 mb-1">Điểm Trung Bình</p>
-                    <p className="text-3xl font-bold text-purple-600">{currentStudent?.averageScore?.toFixed(1) ?? "0.0"}</p>
+                    <p className="text-3xl font-bold text-purple-600">
+                      {calculatedScores.total != null ? calculatedScores.total.toFixed(1) : "--"}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            
+
           </Tabs>
         )}
       </DialogContent>

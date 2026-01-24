@@ -3,7 +3,7 @@
 import {
   GraduationCap,
   Home,
-  Tv,
+
   Users,
   Package,
   DollarSign,
@@ -20,6 +20,7 @@ import { Link, useLocation } from "react-router-dom";
 import "../../../styles/admin.css";
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/open-edu-light.png';
+import { getAuthInfo } from "@/utils/auth.utils";
 
 interface AdminSidebarProps {
   isSidebarOpen: boolean;
@@ -45,26 +46,23 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const authInfo = getAuthInfo();
+  const role = authInfo?.role;
 
   // Debug logging
   console.log("AdminSidebar render:", { isSidebarOpen, currentPath: location.pathname });
 
-  const menuItems: MenuItem[] = [
+  let menuItems: MenuItem[] = [
     {
       id: "dashboard",
       label: "Bảng điều khiển",
       icon: Home,
       path: "/admin", // Full path for dashboard
     },
-    {
-      id: "courses",
-      label: "Khóa học",
-      icon: Tv,
-      path: "/admin/courses", // Full path
-    },
+
     {
       id: "students",
-      label: "Học viên",
+      label: "Sinh viên",
       icon: GraduationCap,
       path: "/admin/students", // Full path
     },
@@ -73,6 +71,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: "Giảng viên",
       icon: Users,
       path: "/admin/instructors", // Full path
+    },
+    {
+      id: "experts",
+      label: "Chuyên Gia",
+      icon: Users,
+      path: "/admin/experts", // Full path
     },
     {
       id: "departments",
@@ -84,7 +88,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       id: "published-courses",
       label: "Duyệt Khóa Học Thương Mại",
       icon: Package, // Import from lucide-react
-      path: "/admin/published-courses",
+      path: "/expert/published-courses",
     },
     {
       id: "earnings",
@@ -93,6 +97,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       path: "/admin/revenue",
     },
   ];
+
+  if (role === 'EXPERT') {
+    // Expert only sees 'published-courses'
+    menuItems = menuItems.filter(item => item.id === 'published-courses');
+  } else if (role === 'ADMIN') {
+    // Admin sees everything EXCEPT 'published-courses' (transferred to Expert)
+    menuItems = menuItems.filter(item => item.id !== 'published-courses');
+  }
 
   const isActive = (path: string) => {
     // Handle both exact matches and dashboard case
@@ -142,20 +154,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <span>{item.label}</span>
             </div>
             <ChevronDown
-              className={`w-4 h-4 transition-transform ${
-                isExpanded ? "rotate-180" : ""
-              }`}
+              className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""
+                }`}
             />
           </Button>
         ) : (
           <Link
             to={item.path!}
             onClick={() => handleMenuClick(item)}
-            className={`no-transition flex items-center px-3 py-3 rounded transition-colors ${
-              isActive(item.path!)
-                ? "bg-blue-600 text-white font-medium"
-                : "text-gray-300 hover:bg-gray-700 hover:text-white"
-            }`}
+            className={`no-transition flex items-center px-3 py-3 rounded transition-colors ${isActive(item.path!)
+              ? "bg-blue-600 text-white font-medium"
+              : "text-gray-300 hover:bg-gray-700 hover:text-white"
+              }`}
             style={{ textDecoration: "none", display: "flex" }}
           >
             <Icon className="w-5 h-5 mr-3" />
@@ -174,11 +184,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       setIsSidebarOpen(false);
                     }
                   }}
-                  className={`no-transition flex items-center justify-between px-3 py-2 text-sm transition-colors ${
-                    isActive(child.path)
-                      ? "text-blue-400 font-medium"
-                      : "text-gray-400 hover:text-white"
-                  }`}
+                  className={`no-transition flex items-center justify-between px-3 py-2 text-sm transition-colors ${isActive(child.path)
+                    ? "text-blue-400 font-medium"
+                    : "text-gray-400 hover:text-white"
+                    }`}
                   style={{ textDecoration: "none", display: "flex" }}
                 >
                   <span>{child.label}</span>
@@ -209,11 +218,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
       {/* Sidebar */}
       <nav
-        className={`admin-sidebar w-64 bg-gray-900 text-white flex flex-col h-screen fixed left-0 top-0 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          isSidebarOpen
-            ? "translate-x-0 sidebar-open"
-            : "-translate-x-full lg:translate-x-0"
-        }`}
+        className={`admin-sidebar w-64 bg-gray-900 text-white flex flex-col h-screen fixed left-0 top-0 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen
+          ? "translate-x-0 sidebar-open"
+          : "-translate-x-full lg:translate-x-0"
+          }`}
         style={{
           zIndex: 50,
           backgroundColor: "#111827",
@@ -246,64 +254,64 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       className="h-6 lg:h-8 w-auto max-w-full object-contain"
                     />
                   </Link>
-                {/* Mobile Close Button */}
-                <Button
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="lg:hidden p-1 text-gray-400 hover:text-white transition-colors"
-                  style={{ zIndex: 52 }}
-                >
-                  <X className="w-5 h-5" />
-                </Button>
+                  {/* Mobile Close Button */}
+                  <Button
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="lg:hidden p-1 text-gray-400 hover:text-white transition-colors"
+                    style={{ zIndex: 52 }}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            {/* Dynamic Menu Items */}
-            <div className="space-y-1">{menuItems.map(renderMenuItem)}</div>
+              {/* Dynamic Menu Items */}
+              <div className="space-y-1">{menuItems.map(renderMenuItem)}</div>
 
-            {/* Footer */}
-            <div className="px-4 pb-4 mt-8 pt-6 border-t border-gray-700">
-              <div className="flex justify-between items-center mb-3">
-                <Link
-                  to="/admin/settings"
-                  className="no-transition text-gray-400 hover:text-white transition-colors"
-                  title="Cài đặt"
-                  onClick={() => {
-                    if (window.innerWidth < 1024) {
-                      setIsSidebarOpen(false);
-                    }
-                  }}
-                >
-                  <Settings className="w-5 h-5" />
-                </Link>
-                <Link
-                  to="/"
-                  className="no-transition text-gray-400 hover:text-white transition-colors"
-                  title="Trang chủ"
-                  onClick={() => {
-                    if (window.innerWidth < 1024) {
-                      setIsSidebarOpen(false);
-                    }
-                  }}
-                >
-                  <Globe className="w-5 h-5" />
-                </Link>
-                <Link
-                  to="/login"
-                  className="no-transition text-gray-400 hover:text-white transition-colors"
-                  title="Đăng xuất"
-                  onClick={() => {
-                    if (window.innerWidth < 1024) {
-                      setIsSidebarOpen(false);
-                    }
-                  }}
-                >
-                  <LogOut className="w-5 h-5" />
-                </Link>
+              {/* Footer */}
+              <div className="px-4 pb-4 mt-8 pt-6 border-t border-gray-700">
+                <div className="flex justify-between items-center mb-3">
+                  <Link
+                    to="/admin/settings"
+                    className="no-transition text-gray-400 hover:text-white transition-colors"
+                    title="Cài đặt"
+                    onClick={() => {
+                      if (window.innerWidth < 1024) {
+                        setIsSidebarOpen(false);
+                      }
+                    }}
+                  >
+                    <Settings className="w-5 h-5" />
+                  </Link>
+                  <Link
+                    to="/"
+                    className="no-transition text-gray-400 hover:text-white transition-colors"
+                    title="Trang chủ"
+                    onClick={() => {
+                      if (window.innerWidth < 1024) {
+                        setIsSidebarOpen(false);
+                      }
+                    }}
+                  >
+                    <Globe className="w-5 h-5" />
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="no-transition text-gray-400 hover:text-white transition-colors"
+                    title="Đăng xuất"
+                    onClick={() => {
+                      if (window.innerWidth < 1024) {
+                        setIsSidebarOpen(false);
+                      }
+                    }}
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        {/* Ensure all containers are closed before ending nav */}
+          {/* Ensure all containers are closed before ending nav */}
         </div>
       </nav>
     </>

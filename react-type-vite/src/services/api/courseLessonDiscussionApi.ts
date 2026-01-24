@@ -14,7 +14,7 @@ export const getCourseLessonDiscussion = async (
   size: number = 50
 ) => {
   const response = await axiosInstance.get(
-    `/server/api/course-discussions/lesson/${publishedCourseId}/${lessonId}`,
+    `/server/course-discussions/lesson/${publishedCourseId}/${lessonId}`,
     {
       params: { page, size },
     }
@@ -28,7 +28,7 @@ export const postCourseLessonDiscussionMessage = async (
   message: CourseLessonDiscussionMessage
 ) => {
   const response = await axiosInstance.post(
-    `/server/api/course-discussions/lesson/${publishedCourseId}/${lessonId}/messages`,
+    `/server/course-discussions/lesson/${publishedCourseId}/${lessonId}/messages`,
     message
   );
   return response.data;
@@ -36,14 +36,14 @@ export const postCourseLessonDiscussionMessage = async (
 
 export const deleteCourseLessonDiscussionMessage = async (messageId: string) => {
   const response = await axiosInstance.delete(
-    `/server/api/course-discussions/lesson/messages/${messageId}`
+    `/server/course-discussions/lesson/messages/${messageId}`
   );
   return response.data;
 };
 
 export const toggleCourseLessonDiscussionLike = async (messageId: string) => {
   const response = await axiosInstance.post(
-    `/server/api/course-discussions/lesson/messages/${messageId}/like`
+    `/server/course-discussions/lesson/messages/${messageId}/like`
   );
   return response.data;
 };
@@ -53,7 +53,7 @@ export const markCourseLessonDiscussionAsRead = async (
   lessonId: number
 ) => {
   const response = await axiosInstance.post(
-    `/server/api/course-discussions/lesson/${publishedCourseId}/${lessonId}/mark-read`
+    `/server/course-discussions/lesson/${publishedCourseId}/${lessonId}/mark-read`
   );
   return response.data;
 };
@@ -63,7 +63,7 @@ export const getCourseLessonDiscussionUnreadCount = async (
   lessonId: number
 ) => {
   const response = await axiosInstance.get(
-    `/server/api/course-discussions/lesson/${publishedCourseId}/${lessonId}/unread-count`
+    `/server/course-discussions/lesson/${publishedCourseId}/${lessonId}/unread-count`
   );
   return response.data;
 };
@@ -76,7 +76,7 @@ export const getCourseBatchLessonUnreadCounts = async (
   lessonIds: number[]
 ): Promise<Record<number, number>> => {
   const response = await axiosInstance.get<Record<number, number>>(
-    `/server/api/course-discussions/lesson/${publishedCourseId}/batch-unread-counts`,
+    `/server/course-discussions/lesson/${publishedCourseId}/batch-unread-counts`,
     {
       params: { lessonIds: lessonIds.join(',') }
     }

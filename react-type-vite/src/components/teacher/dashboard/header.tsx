@@ -20,6 +20,19 @@ import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 
 import openEduIcon from "@/assets/open-edu-dark.png";
+import * as notificationApi from "@/services/api/notificationApi";
+
+interface Notification {
+  id?: string;
+  senderId?: string;
+  recipientId: string;
+  content: string; // From backend entity
+  message?: string; // From SSE event
+  type: string;
+  isRead: boolean;
+  createdAt?: string;
+  link?: string;
+}
 
 interface HeaderProps {
   isSidebarOpen: boolean;
@@ -45,6 +58,103 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const profileRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useResponsive();
   const { user, logout } = useAuth();
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.id) {
+      // 1. Fetch history
+      notificationApi.getUserNotifications(user.id)
+        .then(res => {
+          // @ts-ignore
+          const data = res.data?.result || res.data || [];
+          // Sort by date desc just in case
+          // @ts-ignore
+          setNotifications(data);
+          // @ts-ignore
+          setUnreadCount(data.filter(n => !n.isRead).length);
+        })
+        .catch(err => console.error("Failed to fetch notifications", err));
+
+      // 2. Subscribe SSE
+      const eventSource = notificationApi.subscribeToNotifications(user.id);
+
+      eventSource.onopen = () => console.log("SSE Connected");
+
+      eventSource.addEventListener("ASSIGNMENT", (event) => {
+        const newNotif = JSON.parse(event.data);
+        // Standardize structure if needed
+        const notifObj: Notification = {
+          recipientId: newNotif.userId,
+          content: newNotif.message,
+          type: newNotif.type,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          link: newNotif.link
+        };
+
+        setNotifications(prev => [notifObj, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        toast.info(`New Notification: ${notifObj.content}`);
+      });
+
+      eventSource.addEventListener("COURSE_REJECTED", (event) => {
+        const newNotif = JSON.parse(event.data);
+        const notifObj: Notification = {
+          recipientId: newNotif.userId,
+          content: newNotif.message,
+          type: newNotif.type,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          link: newNotif.link
+        };
+
+        setNotifications(prev => [notifObj, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        toast.error(`Khóa học bị từ chối: ${notifObj.content}`);
+      });
+
+      eventSource.addEventListener("COURSE_APPROVED", (event) => {
+        const newNotif = JSON.parse(event.data);
+        const notifObj: Notification = {
+          recipientId: newNotif.userId,
+          content: newNotif.message,
+          type: newNotif.type,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          link: newNotif.link
+        };
+
+        setNotifications(prev => [notifObj, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        toast.success(`Khóa học được phê duyệt: ${notifObj.content}`);
+      });
+
+      eventSource.addEventListener("NOTIFICATION", (event) => {
+        const newNotif = JSON.parse(event.data);
+        const notifObj: Notification = {
+          recipientId: newNotif.userId,
+          content: newNotif.message,
+          type: newNotif.type,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          link: newNotif.link
+        };
+        setNotifications(prev => [notifObj, ...prev]);
+        setUnreadCount(prev => prev + 1);
+      });
+
+      eventSource.onerror = (err) => {
+        console.error("SSE Error", err);
+        eventSource.close();
+      };
+
+      return () => {
+        eventSource.close();
+      };
+    }
+  }, [user?.id]);
 
   const profileMenuItems: MenuSection[] = [
     {
@@ -102,9 +212,8 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   // Generate avatar initials from firstName and lastName
   const getAvatarInitials = (firstName: string, lastName: string): string => {
-    const initials = `${firstName?.charAt(0) || ""}${
-      lastName?.charAt(0) || ""
-    }`;
+    const initials = `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""
+      }`;
     return initials.toUpperCase() || "??";
   };
 
@@ -185,116 +294,67 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 className="relative p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
               >
                 <Bell className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                )}
               </Button>
 
               {/* Notification Dropdown */}
               {isNotificationOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border z-50"
+                  className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-[80vh] flex flex-col"
                   ref={modalRef}
                 >
-                  <div className="p-4 border-b bg-transparent">
+                  <div className="p-4 border-b bg-transparent flex-shrink-0">
                     <div className="flex justify-between items-center">
                       <h6 className="font-semibold m-0">
                         Notifications{" "}
-                        <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
-                          2 new
-                        </span>
+                        {unreadCount > 0 && (
+                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
+                            {unreadCount} new
+                          </span>
+                        )}
                       </h6>
                       <button className="text-sm text-blue-600 hover:underline">
-                        Clear all
+                        Mark all as read
                       </button>
                     </div>
                   </div>
-                  <div className="p-0">
+                  <div className="p-0 overflow-y-auto flex-1">
                     <ul className="list-none">
-                      {/* Notification items */}
-                      <li>
-                        <div className="p-3 border-b hover:bg-gray-50 flex">
-                          <div className="mr-3">
-                            <img
-                              src="/placeholder.svg?height=40&width=40&text=JW"
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-sm m-0">
-                              Congratulate <strong>Joan Wallace</strong> for
-                              graduating from{" "}
-                              <strong>Microverse university</strong>
-                            </p>
-                            <span className="text-xs text-blue-600 underline">
-                              Say congrats
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="p-3 border-b hover:bg-gray-50 flex">
-                          <div className="mr-3">
-                            <img
-                              src="/placeholder.svg?height=40&width=40&text=LL"
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <h6 className="text-sm font-semibold mb-1">
-                              Larry Lawson Added a new course
-                            </h6>
-                            <p className="text-xs text-gray-600 m-0">
-                              What's new! Find out about new features
-                            </p>
-                            <span className="text-xs text-blue-600 underline">
-                              View detail
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="p-3 border-b hover:bg-gray-50 flex">
-                          <div className="mr-3">
-                            <img
-                              src="/placeholder.svg?height=40&width=40&text=NR"
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <h6 className="text-sm font-semibold mb-1">
-                              New request to apply for Instructor
-                            </h6>
-                            <span className="text-xs text-blue-600 underline">
-                              View detail
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="p-3 border-b hover:bg-gray-50 flex">
-                          <div className="mr-3">
-                            <img
-                              src="/placeholder.svg?height=40&width=40&text=UP"
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <h6 className="text-sm font-semibold mb-1">
-                              Update v2.3 completed successfully
-                            </h6>
-                            <p className="text-xs text-gray-600 m-0">
-                              What's new! Find out about new features
-                            </p>
-                            <small className="text-gray-600">5 min ago</small>
-                          </div>
-                        </div>
-                      </li>
+                      {notifications.length === 0 ? (
+                        <li className="p-4 text-center text-gray-500">No notifications</li>
+                      ) : (
+                        notifications.map((notif, idx) => (
+                          <li key={idx}>
+                            <div className={`p-3 border-b hover:bg-gray-50 flex ${!notif.isRead ? 'bg-blue-50' : ''}`}>
+                              <div className="mr-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                  <BellRing size={20} />
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-sm m-0 text-gray-800">
+                                  {notif.content}
+                                </p>
+                                <div className="flex justify-between items-center mt-1">
+                                  <span className="text-xs text-gray-500">
+                                    {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
+                                  </span>
+                                  {notif.link && (
+                                    <a href={notif.link} className="text-xs text-blue-600 underline ml-2">
+                                      View
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        ))
+                      )}
                     </ul>
                   </div>
-                  <div className="p-3 text-center border-t bg-transparent relative">
+                  <div className="p-3 text-center border-t bg-transparent relative flex-shrink-0">
                     <button className="text-blue-600 hover:underline">
                       See all incoming activity
                     </button>

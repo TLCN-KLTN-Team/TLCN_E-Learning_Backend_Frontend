@@ -27,7 +27,6 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("SELECT COUNT(c) > 0 FROM Course c WHERE c.courseName = :courseName AND c.educationalUnit.id = :institutionId")
     boolean existsByCourseNameAndEducationalUnit(@Param("courseName") String courseName, @Param("institutionId") int institutionId);
 
-    // Public courses methods - query through PublishedCourse
     @Query("SELECT c FROM Course c WHERE c.idTeacher = :teacherId AND " +
             "c.publishedCourse IS NOT NULL AND " +
             "c.publishedCourse.coursePrice > :price")
@@ -57,6 +56,12 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     Long countActiveCoursesInPeriod(@Param("educationType") String educationType,
                                      @Param("startDate") java.util.Date startDate,
                                      @Param("endDate") java.util.Date endDate);
+
+    @Query("SELECT c FROM Course c WHERE c.expertId = :expertId AND " +
+            "(:search IS NULL OR :search = '' OR " +
+            "LOWER(c.courseName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(c.description) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Course> findByExpertIdWithSearch(@Param("expertId") String expertId, @Param("search") String search, Pageable pageable);
     
     @Query("SELECT COUNT(c) FROM Course c WHERE c.publishedCourse IS NOT NULL AND " +
             "(:educationType IS NULL OR :educationType = 'ALL' OR c.educationalUnit.type = :educationType)")

@@ -113,15 +113,27 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   // Generate avatar initials from firstName and lastName
   const getAvatarInitials = (firstName: string, lastName: string): string => {
-    const initials = `${firstName?.charAt(0) || ""}${
-      lastName?.charAt(0) || ""
-    }`;
+    const initials = `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""
+      }`;
     return initials.toUpperCase() || "??";
   };
 
   // Get full name from firstName and lastName
   const getFullName = (firstName: string, lastName: string): string => {
     return `${firstName || ""} ${lastName || ""}`.trim() || "Admin User";
+  };
+
+  const getRoleName = () => {
+    // Check singular role first (backend field)
+    if (user?.role) {
+      if (user.role === "ADMIN") return "Admin";
+      return user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase();
+    }
+
+    if (!user?.roles || user.roles.length === 0) return "User";
+    if (user.roles.includes("ADMIN")) return "Admin";
+    const role = user.roles[0]; // Assuming single/primary role
+    return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
   };
 
   const handleLogout = (e: React.MouseEvent) => {
@@ -197,13 +209,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
           {/* Center - Search */}
           <div className="flex-1 flex justify-center md:justify-start max-w-lg mx-2 md:mx-4">
             <div
-              className={`relative ${
-                isMobile
-                  ? isSearchExpanded
-                    ? "search-expanded"
-                    : "search-collapsed"
-                  : "w-full max-w-md"
-              }`}
+              className={`relative ${isMobile
+                ? isSearchExpanded
+                  ? "search-expanded"
+                  : "search-collapsed"
+                : "w-full max-w-md"
+                }`}
             >
               {isMobile && !isSearchExpanded ? (
                 // Mobile collapsed search - just icon
@@ -234,11 +245,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                         }
                       }
                     }}
-                    className={`w-full pl-4 ml-4 pr-12 py-2 text-gray-900 bg-opacity-60 border-2 rounded-lg focus:outline-none hover:none text-sm md:text-base ${
-                      isMobile && isSearchExpanded
-                        ? "search-input-expanded"
-                        : ""
-                    }`}
+                    className={`w-full pl-4 ml-4 pr-12 py-2 text-gray-900 bg-opacity-60 border-2 rounded-lg focus:outline-none hover:none text-sm md:text-base ${isMobile && isSearchExpanded
+                      ? "search-input-expanded"
+                      : ""
+                      }`}
                     onBlur={() => {
                       if (isMobile) {
                         setTimeout(() => setIsSearchExpanded(false), 150);
@@ -433,7 +443,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                       <div className="text-sm font-medium text-gray-900">
                         {getFullName(user.firstName, user.lastName)}
                       </div>
-                      <div className="text-xs text-gray-500">Admin</div>
+                      <div className="text-xs text-gray-500">{getRoleName()}</div>
                     </div>
                   </div>
                 </button>
@@ -463,7 +473,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                             {user.email}
                           </div>
                           <div className="text-xs text-gray-400">
-                            Administrator
+                            {getRoleName()}
                           </div>
                         </div>
                       </div>

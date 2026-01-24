@@ -36,7 +36,7 @@ export const getCourseQuizDiscussion = async (
   size: number = 20
 ): Promise<DiscussionPageResponse> => {
   const response = await axiosInstance.get<DiscussionPageResponse>(
-    `/server/api/course-discussions/quiz/${publishedCourseId}/${quizId}/messages`,
+    `/server/course-discussions/quiz/${publishedCourseId}/${quizId}/messages`,
     {
       params: { page, size },
     }
@@ -53,7 +53,7 @@ export const postCourseQuizDiscussionMessage = async (
   request: DiscussionMessageRequest
 ): Promise<DiscussionMessage> => {
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/course-discussions/quiz/${publishedCourseId}/${quizId}/messages`,
+    `/server/course-discussions/quiz/${publishedCourseId}/${quizId}/messages`,
     request
   );
   return response.data;
@@ -63,7 +63,7 @@ export const postCourseQuizDiscussionMessage = async (
  * Delete a discussion message
  */
 export const deleteCourseQuizDiscussionMessage = async (messageId: string): Promise<void> => {
-  await axiosInstance.delete(`/server/api/course-discussions/quiz/messages/${messageId}`);
+  await axiosInstance.delete(`/server/course-discussions/quiz/messages/${messageId}`);
 };
 
 /**
@@ -71,7 +71,7 @@ export const deleteCourseQuizDiscussionMessage = async (messageId: string): Prom
  */
 export const toggleCourseQuizDiscussionLike = async (messageId: string): Promise<DiscussionMessage> => {
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/course-discussions/quiz/messages/${messageId}/like`
+    `/server/course-discussions/quiz/messages/${messageId}/like`
   );
   return response.data;
 };
@@ -80,7 +80,7 @@ export const toggleCourseQuizDiscussionLike = async (messageId: string): Promise
  * Mark discussion as read
  */
 export const markCourseQuizDiscussionAsRead = async (publishedCourseId: number, quizId: number): Promise<void> => {
-  await axiosInstance.post(`/server/api/course-discussions/quiz/${publishedCourseId}/${quizId}/mark-read`);
+  await axiosInstance.post(`/server/course-discussions/quiz/${publishedCourseId}/${quizId}/mark-read`);
 };
 
 /**
@@ -88,7 +88,7 @@ export const markCourseQuizDiscussionAsRead = async (publishedCourseId: number, 
  */
 export const getCourseQuizUnreadCount = async (publishedCourseId: number, quizId: number): Promise<number> => {
   const response = await axiosInstance.get<number>(
-    `/server/api/course-discussions/quiz/${publishedCourseId}/${quizId}/unread-count`
+    `/server/course-discussions/quiz/${publishedCourseId}/${quizId}/unread-count`
   );
   return response.data;
 };
@@ -101,7 +101,7 @@ export const getCourseBatchQuizUnreadCounts = async (
   quizIds: number[]
 ): Promise<Record<number, number>> => {
   const response = await axiosInstance.get<Record<number, number>>(
-    `/server/api/course-discussions/quiz/${publishedCourseId}/batch-unread-counts`,
+    `/server/course-discussions/quiz/${publishedCourseId}/batch-unread-counts`,
     {
       params: { quizIds: quizIds.join(',') }
     }

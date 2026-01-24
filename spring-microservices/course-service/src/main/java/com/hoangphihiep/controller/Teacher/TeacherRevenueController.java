@@ -18,9 +18,8 @@ public class TeacherRevenueController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<TeacherRevenueResponse>> getTeacherRevenue() {
-        log.info("Getting revenue for current teacher");
+
         TeacherRevenueResponse revenue = payoutOrderItemService.getTeacherRevenue();
-        System.out.println ("Kết quả trả về: " + revenue);
         return ResponseEntity.ok(ApiResponse.success(revenue, "Get teacher revenue successfully"));
     }
 
@@ -28,7 +27,7 @@ public class TeacherRevenueController {
     public ResponseEntity<ApiResponse<TeacherRevenueResponse>> getTeacherRevenueByRange(
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        log.info("Getting teacher revenue from {} to {}", startDate, endDate);
+
         TeacherRevenueResponse revenue = payoutOrderItemService.getTeacherRevenueByRange(startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(revenue, "Get teacher revenue successfully"));
     }

@@ -16,6 +16,9 @@ import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.repository.httpclient.UserRepository;
+import com.hoangphihiep.repository.httpclient.ExpertRepository;
+import com.hoangphihiep.repository.httpclient.NotificationRepository;
+import com.hoangphihiep.dto.request.NotificationMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -44,6 +47,7 @@ public class CourseService {
     private final UserRepository userRepository;
     private final CourseEnrollmentRepository courseEnrollmentRepository;
     private final CourseEventProducer eventProducer;
+    private final NotificationRepository notificationRepository;
 
     // Constants for validation
     private static final int MIN_COURSE_NAME_LENGTH = 3;
@@ -115,6 +119,11 @@ public class CourseService {
             Course course = new Course();
             course.setCourseName(request.getCourseName());
             course.setEducationalUnit(educationalUnit);
+            
+            // Set expertId from current logged in user
+            String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
+            course.setExpertId(currentExpertId);
+            
             course.setCreatedAt(new Date());
             course.setUpdatedAt(new Date());
 
@@ -172,7 +181,9 @@ public class CourseService {
         }
     }
 
-    // Lấy danh sách giáo viên của đơn vị đào tạo
+    private final ExpertRepository expertRepository;
+
+    // Lấy danh sách giáo viên của đơn vị đào tạo (Admin)
     public Page<TeacherResponse> getTeachersByEducationalUnit(int educationalUnitId, int page, int size, String search) {
         validateEducationalUnitAccess(educationalUnitId);
 
@@ -187,6 +198,43 @@ public class CourseService {
             Page<TeacherResponse> teacherPage = response.getResult();
 
             // Batch populate để tối ưu hiệu suất
+            List<TeacherResponse> populatedTeachers = batchPopulateTeacherDetails(teacherPage.getContent());
+
+            return new PageImpl<>(populatedTeachers, teacherPage.getPageable(), teacherPage.getTotalElements());
+
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    // Lấy danh sách giáo viên của đơn vị đào tạo (Expert)
+    public Page<TeacherResponse> getTeachersForExpert(int educationalUnitId, int page, int size, String search) {
+        // Validate expert access
+        String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
+        try {
+            ApiResponse<ExpertResponse> expertResponse = expertRepository.getExpertByUserId(currentExpertId);
+            if (expertResponse.getResult() == null) {
+                throw new AppException(ErrorCode.ACCESS_DENIED);
+            }
+            ExpertResponse expert = expertResponse.getResult();
+            if (expert.getEducationalUnitId() == null || !expert.getEducationalUnitId().equals(String.valueOf(educationalUnitId))) {
+                 throw new AppException(ErrorCode.ACCESS_DENIED);
+            }
+        } catch (Exception e) {
+             throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+
+        try {
+            ApiResponse<Page<TeacherResponse>> response = teacherRepository.getTeachersByEducationalUnit(
+                    educationalUnitId, page, size, search);
+
+            if (response.getResult() == null) {
+                throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
+            }
+
+            Page<TeacherResponse> teacherPage = response.getResult();
+
+            // Reuse batch populate logic
             List<TeacherResponse> populatedTeachers = batchPopulateTeacherDetails(teacherPage.getContent());
 
             return new PageImpl<>(populatedTeachers, teacherPage.getPageable(), teacherPage.getTotalElements());
@@ -404,6 +452,21 @@ public class CourseService {
         // Publish event lên Kafka
         eventProducer.publishCourseCreatedEvent(event);
 
+        // Send notification to teacher
+        try {
+            notificationRepository.sendNotification(NotificationMessage.builder()
+                    .userId(teacher.getId()) // Teacher UUID
+                    // .senderId(currentExpertId) // Assuming we have it locally or can get from context
+                    .type("ASSIGNMENT")
+                    .message("Bạn được phân công dạy môn học: " + updatedCourse.getCourseName())
+                    .link("/teacher/courses/" + updatedCourse.getId())
+                    .data(Map.of("courseId", updatedCourse.getId(), "courseName", updatedCourse.getCourseName()))
+                    .build());
+        } catch (Exception e) {
+            log.error("Failed to send notification to teacher {}", teacher.getId(), e);
+            // Non-blocking, continue
+        }
+
         // use kafka send event to create a workspace
 
         return courseMapper.toCourseResponse(updatedCourse);
@@ -427,15 +490,32 @@ public class CourseService {
     }
 
     private void validateEducationalUnitAccess(int educationalUnitId) {
-        // Get current admin user from security context
-        String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
+        // Get current user from security context
+        String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
         EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
-        if (!currentAdminId.equals(educationalUnit.getIdAdmin())) {
-            throw new AppException(ErrorCode.ACCESS_DENIED);
+        // 1. Check if user is Admin of the Educational Unit
+        if (currentUserId.equals(educationalUnit.getIdAdmin())) {
+            return;
         }
+
+        // 2. Check if user is an Expert belonging to the Educational Unit
+        try {
+            ApiResponse<ExpertResponse> response = expertRepository.getExpertByUserId(currentUserId);
+            if (response != null && response.getResult() != null) {
+                 ExpertResponse expert = response.getResult();
+                 if (expert.getEducationalUnitId() != null 
+                     && expert.getEducationalUnitId().equals(String.valueOf(educationalUnitId))) {
+                     return;
+                 }
+            }
+        } catch (Exception e) {
+            // User is not an expert or other error -> proceed to Access Denied
+        }
+
+        throw new AppException(ErrorCode.ACCESS_DENIED);
     }
 
     private void validateTeacherBelongsToEducationalUnit(String teacherId, int educationalUnitId) {
@@ -646,6 +726,46 @@ public class CourseService {
             throw e;
         } catch (Exception e) {
             log.error("Error occurred while fetching paginated courses for teacher: {}", teacherId, e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    // Lấy danh sách khóa học theo Expert ID
+    public Page<CourseResponse> getCoursesByExpertId(String expertId, int page, int size, String search) {
+        validatePaginationParameters(page, size);
+
+        if (expertId == null || expertId.trim().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        if (search != null && search.trim().isEmpty()) {
+            search = null;
+        }
+
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<Course> coursePage = courseRepository.findByExpertIdWithSearch(expertId, search, pageable);
+
+            return coursePage.map(course -> {
+                CourseResponse courseResponse = courseMapper.toCourseResponse(course);
+
+                // Fetch teacher info if idTeacher exists
+                if (course.getIdTeacher() != null && !course.getIdTeacher().trim().isEmpty()) {
+                    try {
+                        ApiResponse<TeacherResponse> teacherApiResponse = teacherRepository.getTeacherByTeacherId(course.getIdTeacher());
+                        if (teacherApiResponse != null && teacherApiResponse.getResult() != null) {
+                            courseResponse.setTeacher(teacherApiResponse.getResult());
+                        }
+                    } catch (Exception e) {
+                        // Log and ignore teacher fetch error, don't break the course list
+                        log.warn("Failed to fetch teacher info for course {}", course.getId(), e);
+                    }
+                }
+
+                return courseResponse;
+            });
+        } catch (Exception e) {
+            log.error("Error fetching courses for expert {}: {}", expertId, e.getMessage());
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }

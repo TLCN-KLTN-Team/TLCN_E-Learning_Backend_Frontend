@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/course-discussions/lesson")
+@RequestMapping("/course-discussions/lesson")
 @RequiredArgsConstructor
 public class LessonPublishedController {
 

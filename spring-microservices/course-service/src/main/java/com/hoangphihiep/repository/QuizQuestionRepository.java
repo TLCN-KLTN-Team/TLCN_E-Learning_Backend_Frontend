@@ -21,8 +21,4 @@ public interface QuizQuestionRepository extends JpaRepository<QuizQuestion, Quiz
     
     @Query("SELECT COUNT(qq) FROM QuizQuestion qq WHERE qq.quizId = :quizId")
     int countByQuizId(@Param("quizId") Integer quizId);
-    
-    @Modifying
-    @Query("DELETE FROM QuizQuestion qq WHERE qq.questionId = :questionId")
-    void deleteByQuestionId(@Param("questionId") Integer questionId);
 }

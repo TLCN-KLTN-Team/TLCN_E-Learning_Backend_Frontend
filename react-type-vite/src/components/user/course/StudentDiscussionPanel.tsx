@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, ThumbsUp, Clock, User, Loader2, AlertCircle, Trash2, Image as ImageIcon, X, ChevronDown, Users, Smile } from "lucide-react";
+import { MessageSquare, Send, ThumbsUp, Clock, User, Loader2, AlertCircle, Trash2, Image as ImageIcon, X } from "lucide-react";
 import { courseQuizDiscussionWS, type DiscussionMessage as QuizDiscussionMessage } from "@/services/websocket/courseQuizDiscussionWebSocket";
 import { courseAssignmentDiscussionWS, type DiscussionMessage as AssignmentDiscussionMessage } from "@/services/websocket/courseAssignmentDiscussionWebSocket";
 import { courseLessonDiscussionWS, type DiscussionMessage as LessonDiscussionMessage } from "@/services/websocket/courseLessonDiscussionWebSocket";
-import { 
-  getCourseQuizDiscussion, 
-  postCourseQuizDiscussionMessage, 
+import {
+  getCourseQuizDiscussion,
+  postCourseQuizDiscussionMessage,
   deleteCourseQuizDiscussionMessage,
   toggleCourseQuizDiscussionLike,
   markCourseQuizDiscussionAsRead
@@ -39,7 +39,7 @@ interface StudentDiscussionPanelProps {
   user?: UserType | null;
 }
 
-const StudentDiscussionPanel = ({ itemType, itemId, itemTitle, publishedCourseId, user }: StudentDiscussionPanelProps) => {
+const StudentDiscussionPanel = ({ itemType, itemId, publishedCourseId, user }: StudentDiscussionPanelProps) => {
   const [messages, setMessages] = useState<DiscussionMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -139,11 +139,11 @@ const StudentDiscussionPanel = ({ itemType, itemId, itemTitle, publishedCourseId
           itemId,
           (event) => {
             if (event.type === "NEW_MESSAGE") {
-              handleNewMessage(event.data);
+              handleNewMessage(event.message);
             } else if (event.type === "DELETE_MESSAGE") {
-              handleMessageDelete(event.data.id);
+              handleMessageDelete(event.message.id);
             } else if (event.type === "UPDATE_MESSAGE") {
-              handleMessageUpdate(event.data);
+              handleMessageUpdate(event.message);
             }
           }
         );
@@ -163,7 +163,7 @@ const StudentDiscussionPanel = ({ itemType, itemId, itemTitle, publishedCourseId
     setMessages((prev) => [...prev, message]);
   };
 
-  const handleMessageDelete = (messageId: number) => {
+  const handleMessageDelete = (messageId: string) => {
     setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
   };
 
@@ -182,22 +182,23 @@ const StudentDiscussionPanel = ({ itemType, itemId, itemTitle, publishedCourseId
 
       let imageUrl: string | undefined;
       if (selectedImage) {
-        imageUrl = await uploadImage(selectedImage);
+        const uploadResponse = await uploadImage(selectedImage);
+        imageUrl = uploadResponse.url;
       }
 
       if (itemType === "quiz") {
         await postCourseQuizDiscussionMessage(publishedCourseId, itemId, {
-          content: newMessage.trim() || undefined,
+          content: newMessage.trim() || " ",
           imageUrl,
         });
       } else if (itemType === "assignment") {
         await postCourseAssignmentDiscussionMessage(publishedCourseId, itemId, {
-          content: newMessage.trim() || undefined,
+          content: newMessage.trim() || " ",
           imageUrl,
         });
       } else if (itemType === "lesson") {
         await postCourseLessonDiscussionMessage(publishedCourseId, itemId, {
-          content: newMessage.trim() || undefined,
+          content: newMessage.trim() || " ",
           imageUrl,
         });
       }
@@ -213,7 +214,7 @@ const StudentDiscussionPanel = ({ itemType, itemId, itemTitle, publishedCourseId
     }
   };
 
-  const handleDelete = async (messageId: number) => {
+  const handleDelete = async (messageId: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) return;
 
     try {
@@ -230,7 +231,7 @@ const StudentDiscussionPanel = ({ itemType, itemId, itemTitle, publishedCourseId
     }
   };
 
-  const handleLike = async (messageId: number) => {
+  const handleLike = async (messageId: string) => {
     try {
       if (itemType === "quiz") {
         await toggleCourseQuizDiscussionLike(messageId);
@@ -337,9 +338,9 @@ const StudentDiscussionPanel = ({ itemType, itemId, itemTitle, publishedCourseId
                   {/* Avatar */}
                   <div className="flex-shrink-0">
                     {message.userAvatar ? (
-                      <img 
-                        src={message.userAvatar} 
-                        alt={message.userName || "User"} 
+                      <img
+                        src={message.userAvatar}
+                        alt={message.userName || "User"}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
@@ -382,11 +383,10 @@ const StudentDiscussionPanel = ({ itemType, itemId, itemTitle, publishedCourseId
                     <div className="flex items-center gap-3 mt-2">
                       <button
                         onClick={() => handleLike(message.id)}
-                        className={`flex items-center gap-1 text-sm transition-colors ${
-                          hasLiked
+                        className={`flex items-center gap-1 text-sm transition-colors ${hasLiked
                             ? "text-blue-600 font-medium"
                             : "text-gray-600 hover:text-blue-600"
-                        }`}
+                          }`}
                       >
                         <ThumbsUp
                           className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`}

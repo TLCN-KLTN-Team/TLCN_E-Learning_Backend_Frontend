@@ -55,9 +55,6 @@ public class PublishedCourse {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private Set<OrderItem> orderItems = new HashSet<>();
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
-    private Set<Discussion> discussions = new HashSet<>();
-
     @OneToMany(mappedBy = "sourceCourse", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<CreditTransfer> sourceCreditTransfers = new HashSet<>();
 
@@ -91,10 +88,4 @@ public class PublishedCourse {
 
     @ElementCollection
     private List<String> courseTarget;
-
-    public void addDiscussion(Discussion discussion) {
-        if (discussion != null && !discussions.contains(discussion)) {
-            discussions.add(discussion);
-        }
-    }
 }

@@ -20,15 +20,9 @@ public class TeacherQuizController {
 
     private final TeacherQuizService teacherQuizService;
 
-    /**
-     * Get all quizzes for a class (for discussion view)
-     * GET /api/teacher/quizzes/class/{classId}
-     */
     @GetMapping("/class/{classId}")
     public ApiResponse<List<QuizResponse>> getQuizzesByClass(
             @PathVariable Integer classId) {
-
-        log.info("GET quizzes for class: {}", classId);
 
         List<QuizResponse> quizzes =
                 teacherQuizService.getQuizzesByClass(classId);
@@ -38,15 +32,9 @@ public class TeacherQuizController {
                 .build();
     }
 
-    /**
-     * Get all quiz results for a class
-     * GET /api/teacher/quizzes/class/{classId}/results
-     */
     @GetMapping("/class/{classId}/results")
     public ApiResponse<List<QuizResultResponse>> getQuizResultsForClass(
             @PathVariable Integer classId) {
-
-        log.info("GET quiz results for class: {}", classId);
 
         List<QuizResultResponse> results =
                 teacherQuizService.getQuizResultsForClass(classId);
@@ -56,16 +44,10 @@ public class TeacherQuizController {
                 .build();
     }
 
-    /**
-     * Get results for a specific quiz
-     * GET /api/teacher/quizzes/{quizId}/class/{classId}/results
-     */
     @GetMapping("/{quizId}/class/{classId}/results")
     public ApiResponse<List<QuizResultResponse>> getResultsByQuiz(
             @PathVariable Integer quizId,
             @PathVariable Integer classId) {
-
-        log.info("GET results for quiz {} in class {}", quizId, classId);
 
         List<QuizResultResponse> results =
                 teacherQuizService.getResultsByQuiz(quizId, classId);
@@ -75,15 +57,9 @@ public class TeacherQuizController {
                 .build();
     }
 
-    /**
-     * Get quiz statistics for a class
-     * GET /api/teacher/quizzes/class/{classId}/statistics
-     */
     @GetMapping("/class/{classId}/statistics")
     public ApiResponse<Map<String, Object>> getQuizStatistics(
             @PathVariable Integer classId) {
-
-        log.info("GET quiz statistics for class: {}", classId);
 
         Map<String, Object> statistics =
                 teacherQuizService.getQuizStatistics(classId);
@@ -93,15 +69,9 @@ public class TeacherQuizController {
                 .build();
     }
 
-    /**
-     * Get detailed result for a specific attempt
-     * GET /api/teacher/quizzes/attempts/{attemptId}
-     */
     @GetMapping("/attempts/{attemptId}")
     public ApiResponse<QuizResultResponse> getAttemptDetail(
             @PathVariable Integer attemptId) {
-
-        log.info("GET attempt detail: {}", attemptId);
 
         QuizResultResponse result =
                 teacherQuizService.getAttemptDetail(attemptId);
@@ -111,16 +81,10 @@ public class TeacherQuizController {
                 .build();
     }
 
-    /**
-     * Add library questions to a quiz
-     * POST /api/teacher/quizzes/{quizId}/add-library-questions
-     */
     @PostMapping("/{quizId}/add-library-questions")
     public ApiResponse<Map<String, Object>> addLibraryQuestionsToQuiz(
             @PathVariable Integer quizId,
             @RequestBody List<Integer> libraryQuestionIds) {
-
-        log.info("POST add {} library questions to quiz {}", libraryQuestionIds.size(), quizId);
 
         List<com.hoangphihiep.entity.Question> addedQuestions =
                 teacherQuizService.addLibraryQuestionsToQuiz(quizId, libraryQuestionIds);

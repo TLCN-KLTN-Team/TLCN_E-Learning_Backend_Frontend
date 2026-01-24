@@ -2,6 +2,7 @@ import type {
   CompletionSuggestionResponse,
   PublishedCourseDetailResponse,
   PublishedCourseResponse,
+  PublishedCourseCardResponse,
 } from "@/types/course.types";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import axiosInstance from "../httpClient/axiosInstance";
@@ -87,8 +88,16 @@ const getPublishedCourseDetails = async (
   return response.data.result;
 };
 
+const getRecommendedCourses = async (): Promise<PublishedCourseCardResponse[]> => {
+  const response = await axiosInstance.get<
+    ApiResponse<PublishedCourseCardResponse[]>
+  >(`${PUBLISHED_COURSES_ENDPOINT}/recommend`);
+  return response.data.result;
+};
+
 export default {
   searchAndFiltersPublishedCourses,
   autoCompletion,
   getPublishedCourseDetails,
+  getRecommendedCourses,
 };
