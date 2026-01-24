@@ -320,6 +320,7 @@ public class CourseEnrollmentService {
                     // Non-blocking, continue with other students
                 }
             }
+        }
 
             log.info("Successfully enrolled {} students to class {}", studentsToEnroll.size(), classId);
 
