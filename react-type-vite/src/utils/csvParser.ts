@@ -50,12 +50,12 @@ export const parseCSV = (file: File): Promise<string[][]> => {
     reader.onload = (e) => {
       try {
         let text = e.target?.result as string;
-        
+
         // Remove BOM if present
         if (text.charCodeAt(0) === 0xFEFF) {
           text = text.slice(1);
         }
-        
+
         // Split by line (handle both \r\n and \n)
         let rows = text.split("\r\n");
         if (rows.length === 1) {
@@ -96,8 +96,8 @@ export const parseCSV = (file: File): Promise<string[][]> => {
         const delimiter = header.includes("\t")
           ? "\t"
           : header.includes(";")
-          ? ";"
-          : ",";
+            ? ";"
+            : ",";
 
         const data: string[][] = rows.map((row) => splitWithDelimiter(row, delimiter));
 
@@ -168,6 +168,22 @@ export interface TeacherImportData {
 }
 
 /**
+ * Validate expert data
+ */
+export interface ExpertImportData {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  expertId: string;
+  password?: string;
+  dob?: string;
+  description?: string;
+  phoneNumber?: string;
+  bio?: string;
+}
+
+/**
  * Validate student data
  */
 export interface StudentImportData {
@@ -199,7 +215,7 @@ export interface ClassImportData {
 // Normalize header to map Vietnamese labels to canonical keys
 const normalizeHeader = (header: string): string => {
   if (!header) return "";
-  
+
   // Vietnamese character mapping
   const vietnameseMap: Record<string, string> = {
     'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
@@ -216,7 +232,7 @@ const normalizeHeader = (header: string): string => {
     'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
     'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
   };
-  
+
   return header
     .trim()
     .toLowerCase()
@@ -242,6 +258,9 @@ const headerAliases: Record<string, string> = {
   teacherid: "teacherId",
   "ma giang vien": "teacherId",
 
+  expertid: "expertId",
+  "ma chuyen gia": "expertId",
+
   studentid: "studentId",
   "ma sinh vien": "studentId",
 
@@ -265,6 +284,12 @@ const headerAliases: Record<string, string> = {
   bankaccountnumber: "bankAccountNumber",
   "so tai khoan": "bankAccountNumber",
   "so tai khoan ngan hang": "bankAccountNumber",
+
+  phonenumber: "phoneNumber",
+  "so dien thoai": "phoneNumber",
+
+  bio: "bio",
+  "tieu su": "bio",
 
   classname: "className",
   "lop": "className",
@@ -352,6 +377,65 @@ export const validateTeacherRow = (
     errors: [],
   };
 };
+export const validateExpertRow = (
+  row: string[],
+  headers: string[],
+  rowIndex: number
+): { isValid: boolean; data?: ExpertImportData; errors: string[] } => {
+  const errors: string[] = [];
+  const data: Record<string, string> = {};
+
+  // Map row data to headers
+  row.forEach((value, index) => {
+    if (index < headers.length) {
+      const originalHeader = headers[index];
+      const normalized = normalizeHeader(originalHeader);
+      const canonical = headerAliases[normalized] || originalHeader;
+      data[canonical] = value;
+    }
+  });
+
+  // Required field validation
+  const required = ["username", "email", "firstName", "lastName", "expertId"];
+
+  required.forEach((field) => {
+    if (!data[field] || !data[field].trim()) {
+      errors.push(`Row ${rowIndex}: Field "${field}" is required`);
+    }
+  });
+
+  // Email validation
+  if (data["email"] && !isValidEmail(data["email"])) {
+    errors.push(`Row ${rowIndex}: Invalid email format`);
+  }
+
+  // Username validation (alphanumeric and underscore)
+  if (data["username"] && !/^[a-zA-Z0-9_]{3,}$/.test(data["username"])) {
+    errors.push(`Row ${rowIndex}: Username must be 3+ characters (alphanumeric and underscore)`);
+  }
+
+  if (errors.length > 0) {
+    return { isValid: false, errors };
+  }
+
+  return {
+    isValid: true,
+    data: {
+      username: data["username"],
+      email: data["email"],
+      firstName: data["firstName"],
+      lastName: data["lastName"],
+      expertId: data["expertId"],
+      password: data["password"] || "DefaultPass@123", // Default password
+      dob: data["dob"] || undefined,
+      description: data["description"] || undefined,
+      phoneNumber: data["phoneNumber"] || undefined,
+      bio: data["bio"] || undefined,
+    },
+    errors: [],
+  };
+};
+
 export const validateStudentRow = (
   row: string[],
   headers: string[],
@@ -519,13 +603,13 @@ export const downloadTeacherTemplateXLSX = async (
   departments: Array<{ id?: string | number; name?: string; departmentId?: string | number; departmentName?: string }> = []
 ): Promise<void> => {
   const workbook = new ExcelJS.Workbook();
-  
+
   // Update department map with real data
   updateDepartmentMap(departments);
-  
+
   // Create Teachers sheet
   const teachersSheet = workbook.addWorksheet("Teachers");
-  
+
   // Add headers (Vietnamese display, canonical keys preserved via mapping)
   teachersSheet.columns = [
     { header: "Tên đăng nhập", key: "username", width: 18 },
@@ -539,7 +623,7 @@ export const downloadTeacherTemplateXLSX = async (
     { header: "Mô tả", key: "description", width: 20 },
     { header: "Số tài khoản ngân hàng", key: "bankAccountNumber", width: 26 },
   ];
-  
+
   // Add example row
   const exampleDept = departments.length > 0 ? (departments[0].name || departments[0].departmentName) : "Khoa Công nghệ Thông tin";
   teachersSheet.addRow({
@@ -554,14 +638,14 @@ export const downloadTeacherTemplateXLSX = async (
     description: "Giảng viên cao cấp",
     bankAccountNumber: "",
   });
-  
+
   // Create Departments reference sheet
   const deptSheet = workbook.addWorksheet("Departments");
   deptSheet.columns = [
     { header: "Mã phòng ban", key: "departmentId", width: 18 },
     { header: "Tên phòng ban", key: "departmentName", width: 32 },
   ];
-  
+
   // Add real departments from API
   departments.forEach((dept) => {
     deptSheet.addRow({
@@ -569,7 +653,7 @@ export const downloadTeacherTemplateXLSX = async (
       departmentName: dept.name || dept.departmentName,
     });
   });
-  
+
   // Add data validation for department column (column H)
   const deptNames = departments.map((d) => (d.name || d.departmentName) as string).filter(Boolean);
   const deptDropdownFormula = deptNames.length ? `"${deptNames.join(",")}"` : undefined;
@@ -606,7 +690,7 @@ export const downloadTeacherTemplateXLSX = async (
       prompt: "Chọn từ lịch hoặc nhập YYYY-MM-DD",
     };
   }
-  
+
   // Style headers
   teachersSheet.getRow(1).font = { bold: true };
   teachersSheet.getRow(1).fill = {
@@ -614,14 +698,14 @@ export const downloadTeacherTemplateXLSX = async (
     pattern: "solid",
     fgColor: { argb: "FFE0E0E0" },
   };
-  
+
   deptSheet.getRow(1).font = { bold: true };
   deptSheet.getRow(1).fill = {
     type: "pattern",
     pattern: "solid",
     fgColor: { argb: "FFE0E0E0" },
   };
-  
+
   // Generate buffer and download
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
@@ -638,6 +722,67 @@ export const downloadTeacherTemplateXLSX = async (
 };
 
 /**
+ * Download XLSX template for expert import
+ */
+export const downloadExpertTemplateXLSX = async (): Promise<void> => {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Experts");
+
+  sheet.columns = [
+    { header: "Tên đăng nhập", key: "username", width: 18 },
+    { header: "Email", key: "email", width: 28 },
+    { header: "Tên", key: "firstName", width: 15 },
+    { header: "Họ", key: "lastName", width: 15 },
+    { header: "Mã chuyên gia", key: "expertId", width: 14 },
+    { header: "Mật khẩu", key: "password", width: 15 },
+    { header: "Ngày sinh", key: "dob", width: 15 },
+    { header: "Số điện thoại", key: "phoneNumber", width: 15 },
+    { header: "Mô tả", key: "description", width: 20 },
+    { header: "Tiểu sử", key: "bio", width: 20 },
+  ];
+
+  sheet.addRow({
+    username: "alex_expert",
+    email: "alex.expert@example.com",
+    firstName: "Alex",
+    lastName: "Taylor",
+    expertId: "E001",
+    password: "Pass@123",
+    dob: "1985-05-20",
+    phoneNumber: "0901234567",
+    description: "Chuyên gia AI",
+    bio: "Tiến sĩ KHMT",
+  });
+
+  for (let row = 2; row <= 1001; row++) {
+    const dobCell = sheet.getCell(`G${row}`);
+    dobCell.numFmt = "yyyy-mm-dd";
+    dobCell.dataValidation = {
+      type: "date",
+      operator: "between",
+      allowBlank: true,
+      formulae: ["1900-01-01", "9999-12-31"],
+      showInputMessage: true,
+      promptTitle: "Chọn ngày sinh",
+      prompt: "Chọn từ lịch hoặc nhập YYYY-MM-DD",
+    };
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "expert_import_template.xlsx";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+/**
  * Download XLSX template for student import with department dropdown using ExcelJS
  * @param departments - Array of departments from API
  */
@@ -645,13 +790,13 @@ export const downloadStudentTemplateXLSX = async (
   departments: Array<{ id?: string | number; name?: string; departmentId?: string | number; departmentName?: string }> = []
 ): Promise<void> => {
   const workbook = new ExcelJS.Workbook();
-  
+
   // Update department map with real data
   updateDepartmentMap(departments);
-  
+
   // Create Students sheet
   const studentsSheet = workbook.addWorksheet("Students");
-  
+
   // Add headers (Vietnamese display, canonical keys preserved via mapping)
   studentsSheet.columns = [
     { header: "Tên đăng nhập", key: "username", width: 18 },
@@ -665,7 +810,7 @@ export const downloadStudentTemplateXLSX = async (
     { header: "Mô tả", key: "description", width: 20 },
     { header: "Lớp", key: "className", width: 20 },
   ];
-  
+
   // Add example row
   const exampleDept = departments.length > 0 ? (departments[0].name || departments[0].departmentName) : "Khoa Công nghệ Thông tin";
   studentsSheet.addRow({
@@ -680,14 +825,14 @@ export const downloadStudentTemplateXLSX = async (
     description: "Sinh viên xuất sắc",
     className: "CNTT-K15",
   });
-  
+
   // Create Departments reference sheet
   const deptSheet = workbook.addWorksheet("Departments");
   deptSheet.columns = [
     { header: "Mã phòng ban", key: "departmentId", width: 18 },
     { header: "Tên phòng ban", key: "departmentName", width: 32 },
   ];
-  
+
   // Add real departments from API
   departments.forEach((dept) => {
     deptSheet.addRow({
@@ -695,7 +840,7 @@ export const downloadStudentTemplateXLSX = async (
       departmentName: dept.name || dept.departmentName,
     });
   });
-  
+
   // Add data validation for department column (column H)
   const deptNames = departments.map((d) => (d.name || d.departmentName) as string).filter(Boolean);
   const deptDropdownFormula = deptNames.length ? `"${deptNames.join(",")}"` : undefined;
@@ -732,7 +877,7 @@ export const downloadStudentTemplateXLSX = async (
       prompt: "Chọn từ lịch hoặc nhập YYYY-MM-DD",
     };
   }
-  
+
   // Style headers
   studentsSheet.getRow(1).font = { bold: true };
   studentsSheet.getRow(1).fill = {
@@ -740,14 +885,14 @@ export const downloadStudentTemplateXLSX = async (
     pattern: "solid",
     fgColor: { argb: "FFE0E0E0" },
   };
-  
+
   deptSheet.getRow(1).font = { bold: true };
   deptSheet.getRow(1).fill = {
     type: "pattern",
     pattern: "solid",
     fgColor: { argb: "FFE0E0E0" },
   };
-  
+
   // Generate buffer and download
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {

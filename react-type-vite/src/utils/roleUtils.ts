@@ -10,6 +10,7 @@ export const getRoleBasedRedirectPath = (role: string): string => {
   const roleRedirectMap: Record<string, string> = {
     SUPER_ADMIN: "/system-admin",
     ADMIN: "/admin",
+    EXPERT: "/expert/published-courses",
     TEACHER: "/teacher/home",
     STUDENT: "/",
     USER: "/",
@@ -45,7 +46,7 @@ export const canAccessSystemAdmin = (role: string): boolean => {
 };
 
 export const canAccessAdmin = (role: string): boolean => {
-  return role === "SUPER_ADMIN" || role === "ADMIN";
+  return role === "SUPER_ADMIN" || role === "ADMIN" || role === "EXPERT";
 };
 
 export const canAccessTeacher = (role: string): boolean => {

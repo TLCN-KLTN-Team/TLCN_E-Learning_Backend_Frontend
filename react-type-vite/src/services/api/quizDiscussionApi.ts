@@ -1,5 +1,4 @@
 import axiosInstance from "@/services/api/httpClient/axiosInstance";
-import type { ApiResponse } from "@/services/api/response/apiResponse";
 import type { DiscussionMessage, DiscussionMessageRequest } from "@/services/websocket/quizDiscussionWebSocket";
 
 export interface DiscussionPageResponse {
@@ -19,7 +18,7 @@ export const getQuizDiscussion = async (
   size: number = 20
 ): Promise<DiscussionPageResponse> => {
   const response = await axiosInstance.get<any>(
-    `/server/api/discussions/quiz/${quizId}/messages`,
+    `/server/discussions/quiz/${quizId}/messages`,
     {
       params: { page, size },
     }
@@ -36,7 +35,7 @@ export const postDiscussionMessage = async (
 ): Promise<DiscussionMessage> => {
   console.log('POST message request:', { quizId, request });
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/discussions/quiz/${quizId}/messages`,
+    `/server/discussions/quiz/${quizId}/messages`,
     request
   );
   console.log('POST message response:', response.data);
@@ -49,7 +48,7 @@ export const postDiscussionMessage = async (
  */
 export const deleteDiscussionMessage = async (messageId: string): Promise<void> => {
   console.log('DELETE message:', messageId);
-  await axiosInstance.delete(`/server/api/discussions/quiz/messages/${messageId}`);
+  await axiosInstance.delete(`/server/discussions/quiz/messages/${messageId}`);
 };
 
 /**
@@ -58,7 +57,7 @@ export const deleteDiscussionMessage = async (messageId: string): Promise<void> 
 export const toggleDiscussionLike = async (messageId: string): Promise<DiscussionMessage> => {
   console.log('LIKE message:', messageId);
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/discussions/quiz/messages/${messageId}/like`
+    `/server/discussions/quiz/messages/${messageId}/like`
   );
   console.log('LIKE message response:', response.data);
   return response.data;
@@ -69,7 +68,7 @@ export const toggleDiscussionLike = async (messageId: string): Promise<Discussio
  */
 export const markDiscussionAsRead = async (quizId: number): Promise<void> => {
   console.log('Mark discussion as read:', quizId);
-  await axiosInstance.post(`/server/api/discussions/quiz/${quizId}/mark-read`);
+  await axiosInstance.post(`/server/discussions/quiz/${quizId}/mark-read`);
 };
 
 /**
@@ -78,7 +77,7 @@ export const markDiscussionAsRead = async (quizId: number): Promise<void> => {
 export const getUnreadCount = async (quizId: number): Promise<number> => {
   console.log('Get unread count for quiz:', quizId);
   const response = await axiosInstance.get<number>(
-    `/server/api/discussions/quiz/${quizId}/unread-count`
+    `/server/discussions/quiz/${quizId}/unread-count`
   );
   return response.data;
 };

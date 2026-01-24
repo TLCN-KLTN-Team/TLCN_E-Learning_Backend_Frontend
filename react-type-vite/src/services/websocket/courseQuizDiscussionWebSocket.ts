@@ -7,6 +7,7 @@ export interface DiscussionMessage {
   publishedCourseId: number;
   userId: string;
   userName: string;
+  userAvatar?: string;
   content: string;
   imageUrl?: string;
   likes: number;
@@ -16,7 +17,7 @@ export interface DiscussionMessage {
 
 class CourseQuizDiscussionWebSocket {
   private client: Client | null = null;
-  private subscriptions: Map<string, StompSubscription> = new Map();
+  private subscriptions: Map<string, StompSubscription[]> = new Map();
   private isConnected: boolean = false;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
@@ -87,38 +88,69 @@ class CourseQuizDiscussionWebSocket {
 
     // Unsubscribe if already subscribed
     if (this.subscriptions.has(topicKey)) {
-      this.subscriptions.get(topicKey)?.unsubscribe();
+      this.subscriptions.get(topicKey)?.forEach((sub) => sub.unsubscribe());
+      this.subscriptions.delete(topicKey);
     }
 
-    const subscription = this.client.subscribe(
-      `/topic/course/quiz/${publishedCourseId}/${quizId}/discussion`,
+    const subs: StompSubscription[] = [];
+
+    // Subscription for new messages
+    const newMsgSub = this.client.subscribe(
+      `/topic/course/quiz/${publishedCourseId}/${quizId}/discussion/new`,
       (message) => {
         try {
           const data = JSON.parse(message.body);
-
-          if (data.type === "NEW_MESSAGE") {
+          if (data && data.type === "NEW_MESSAGE") {
             onMessage(data.message);
-          } else if (data.type === "DELETE_MESSAGE") {
-            onDelete(data.messageId);
-          } else if (data.type === "UPDATE_MESSAGE") {
-            onUpdate(data.message);
+          } else {
+            onMessage(data);
           }
         } catch (error) {
-          console.error("Error parsing course quiz discussion message:", error);
+          console.error("Error parsing new message:", error);
         }
       }
     );
+    subs.push(newMsgSub);
 
-    this.subscriptions.set(topicKey, subscription);
+    // Subscription for deleted messages
+    const deleteSub = this.client.subscribe(
+      `/topic/course/quiz/${publishedCourseId}/${quizId}/discussion/delete`,
+      (message) => {
+        try {
+          const body = JSON.parse(message.body);
+          const messageId = body.id || body.messageId || body;
+          onDelete(messageId);
+        } catch (error) {
+          console.error("Error parsing delete message:", error);
+        }
+      }
+    );
+    subs.push(deleteSub);
+
+    // Subscription for updated messages
+    const updateSub = this.client.subscribe(
+      `/topic/course/quiz/${publishedCourseId}/${quizId}/discussion/update`,
+      (message) => {
+        try {
+          const body = JSON.parse(message.body);
+          onUpdate(body);
+        } catch (error) {
+          console.error("Error parsing update message:", error);
+        }
+      }
+    );
+    subs.push(updateSub);
+
+    this.subscriptions.set(topicKey, subs);
     console.log(`Subscribed to course quiz discussion: ${publishedCourseId}/${quizId}`);
   }
 
   unsubscribeFromQuizDiscussion(publishedCourseId: number, quizId: number): void {
     const topicKey = `course-quiz-${publishedCourseId}-${quizId}`;
-    const subscription = this.subscriptions.get(topicKey);
+    const subs = this.subscriptions.get(topicKey);
 
-    if (subscription) {
-      subscription.unsubscribe();
+    if (subs) {
+      subs.forEach((sub) => sub.unsubscribe());
       this.subscriptions.delete(topicKey);
       console.log(`Unsubscribed from course quiz discussion: ${publishedCourseId}/${quizId}`);
     }
@@ -126,7 +158,9 @@ class CourseQuizDiscussionWebSocket {
 
   disconnect(): void {
     if (this.client) {
-      this.subscriptions.forEach((sub) => sub.unsubscribe());
+      this.subscriptions.forEach((subs) => {
+        subs.forEach((sub) => sub.unsubscribe());
+      });
       this.subscriptions.clear();
       this.client.deactivate();
       this.isConnected = false;

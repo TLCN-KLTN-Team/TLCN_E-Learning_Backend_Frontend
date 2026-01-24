@@ -145,7 +145,19 @@ const QuizItem: React.FC<QuizItemProps> = ({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => setIsVisibilityModalOpen(true)}
+              onClick={(e) => {
+                e.stopPropagation()
+                // Check for temporary ID (timestamp)
+                if (quiz.id > 2000000000) {
+                  // Import toast if checking scope, assume it's available or use alert if component doesn't import toast?
+                  // QuizItem doesn't import toast currently.
+                  // I must import toast from react-toastify or similar. 
+                  // Wait, I need to check imports.
+                  alert("Vui lòng lưu thay đổi của khóa học trước khi cài đặt hiển thị cho bài kiểm tra mới.")
+                  return
+                }
+                setIsVisibilityModalOpen(true)
+              }}
               title="Quản lý hiển thị cho các lớp"
             >
               <Eye className="h-4 w-4 text-purple-600" />
@@ -245,8 +257,8 @@ const QuizItem: React.FC<QuizItemProps> = ({
                                   <div
                                     key={answer.id}
                                     className={`flex items-center gap-2 text-sm p-2 rounded ${answer.isCorrect
-                                        ? "bg-green-50 border border-green-200"
-                                        : "bg-gray-50 border border-gray-200"
+                                      ? "bg-green-50 border border-green-200"
+                                      : "bg-gray-50 border border-gray-200"
                                       }`}
                                   >
                                     {answer.isCorrect ? (
@@ -283,7 +295,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                   </>
                 )}
               </span>
-              <span>Số lần làm: {quiz.attemptsCount || 0}</span>
+              {quiz.attemptLimit > 0 && <span>Số lần làm: {quiz.attemptLimit}</span>}
               <span>Tạo: {new Date(quiz.createdAt).toLocaleDateString("vi-VN")}</span>
               {quiz.updateAt && <span>Cập nhật: {new Date(quiz.updateAt).toLocaleDateString("vi-VN")}</span>}
             </div>

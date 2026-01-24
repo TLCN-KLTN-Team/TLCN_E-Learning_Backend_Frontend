@@ -4,6 +4,17 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, Save, Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { toast } from "react-toastify"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import AddSectionModal from "./AddSectionModal"
 import SectionItem from "./SectionItem"
 import { createOrUpdateSections } from "@/services/api/teacher/sectionApi"
@@ -20,12 +31,13 @@ interface CourseBuilderProps {
   onBack: () => void
 }
 
-const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections,educationalUnitId, onSectionsChange, onBack }) => {
+const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, educationalUnitId, onSectionsChange, onBack }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [sectionToDelete, setSectionToDelete] = useState<number | null>(null)
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -83,12 +95,36 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections,educat
   const handleDeleteSection = (sectionId: number) => {
     if (!sectionId) return
 
-    if (
-      window.confirm("Bạn có chắc chắn muốn xóa section này? Tất cả bài học và bài kiểm tra bên trong cũng sẽ bị xóa.")
-    ) {
-      onSectionsChange(sections.filter((s) => s.id !== sectionId))
+    const section = sections.find(s => s.id === sectionId);
+    if (section) {
+      // Helper to safely get size of collection (Set or Array)
+      const getSize = (collection: any) => {
+        if (!collection) return 0;
+        if (typeof collection.size === 'number') return collection.size;
+        if (Array.isArray(collection)) return collection.length;
+        if (collection instanceof Set) return collection.size;
+        return 0;
+      };
+
+      const hasLessons = getSize(section.lessons) > 0;
+      const hasQuizzes = getSize(section.quizs) > 0;
+      const hasAssignments = getSize(section.assignments) > 0;
+
+      if (hasLessons || hasQuizzes || hasAssignments) {
+        toast.error("Không thể xóa section này vì có chứa bài học, bài kiểm tra hoặc bài tập. Vui lòng xóa nội dung bên trong trước.");
+        return;
+      }
+    }
+
+    setSectionToDelete(sectionId)
+  }
+
+  const confirmDeleteSection = () => {
+    if (sectionToDelete) {
+      onSectionsChange(sections.filter((s) => s.id !== sectionToDelete))
       setHasUnsavedChanges(true)
       setError(null)
+      setSectionToDelete(null)
     }
   }
 
@@ -248,6 +284,27 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections,educat
         courseId={courseId}
         sections={sections}
       />
+
+      <AlertDialog open={!!sectionToDelete} onOpenChange={(open) => !open && setSectionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa section</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa section này? Tất cả bài học và bài kiểm tra bên trong cũng sẽ bị xóa.
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteSection}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Xóa Section
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="flex justify-between mt-8 pt-6 border-t">
         <Button variant="outline" onClick={onBack}>

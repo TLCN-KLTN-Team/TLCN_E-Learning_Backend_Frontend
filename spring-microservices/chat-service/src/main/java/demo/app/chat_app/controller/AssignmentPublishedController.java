@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/course-discussions/assignment")
+@RequestMapping("/course-discussions/assignment")
 @RequiredArgsConstructor
 @Slf4j
 public class AssignmentPublishedController {

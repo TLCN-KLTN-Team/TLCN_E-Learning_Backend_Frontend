@@ -1,0 +1,30 @@
+import { Route } from "react-router-dom";
+import ProtectedRoute from "./protected/ProtectedRoute";
+import PendingCoursesPage from "@/pages/expert/PendingCoursesPage";
+import CourseApprovalDetailPage from "@/pages/expert/CourseApprovalDetailPage";
+import CourseListPage from "@/pages/expert/CourseListPage";
+import ExpertLayout from "@/components/expert/home/ExpertLayout";
+
+// Expert routes - protected routes for expert roles
+const ExpertRoutes = [
+    <Route
+        key="expert-layout"
+        path="/expert/*"
+        element={
+            <ProtectedRoute allowedRoles={["EXPERT", "SUPER_ADMIN"]}>
+                <ExpertLayout />
+            </ProtectedRoute>
+        }
+    >
+        {/* Default route - could be PendingCoursesPage or dedicated dashboard */}
+        <Route index element={<PendingCoursesPage />} />
+        <Route path="courses" element={<CourseListPage />} />
+        <Route path="published-courses" element={<PendingCoursesPage />} />
+        <Route
+            path="published-courses/:publishedCourseId"
+            element={<CourseApprovalDetailPage />}
+        />
+    </Route>,
+];
+
+export default ExpertRoutes;

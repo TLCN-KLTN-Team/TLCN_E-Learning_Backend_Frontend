@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import Modal from "@/components/ui/modal"
 import { Loader2, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react"
 import { getQuizVisibility, updateQuizVisibility } from "@/services/api/teacher/contentVisibilityApi"
-import { getClassesByCourse } from "@/services/api/admin/classApi"
+import { getClassesByCourse } from "@/services/api/teacher/classManagementApi"
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
 
 interface QuizVisibilityModalProps {
@@ -60,7 +60,7 @@ const QuizVisibilityModal: React.FC<QuizVisibilityModalProps> = ({
       const visibleIds = visibilityData.classVisibilities
         .filter((cv) => cv.isVisible)
         .map((cv) => cv.classId)
-      
+
       setSelectedClassIds(visibleIds)
       setInitialClassIds(visibleIds)
     } catch (err) {
@@ -167,21 +167,19 @@ const QuizVisibilityModal: React.FC<QuizVisibilityModalProps> = ({
                     return (
                       <div
                         key={courseClass.id}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          isSelected
+                        className={`p-4 border rounded-lg cursor-pointer transition-all ${isSelected
                             ? "border-purple-500 bg-purple-50"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }`}
+                          }`}
                         onClick={() => handleToggleClass(courseClass.id)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div
-                              className={`h-5 w-5 rounded border-2 flex items-center justify-center ${
-                                isSelected
+                              className={`h-5 w-5 rounded border-2 flex items-center justify-center ${isSelected
                                   ? "border-purple-600 bg-purple-600"
                                   : "border-gray-300"
-                              }`}
+                                }`}
                             >
                               {isSelected && (
                                 <svg

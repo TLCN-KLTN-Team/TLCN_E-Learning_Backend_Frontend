@@ -87,4 +87,7 @@ public class Course implements Serializable {
     private PublishedCourse publishedCourse;
 
     private String workspaceId;
+
+    @Column(name = "expert_id")
+    private String expertId;
 }

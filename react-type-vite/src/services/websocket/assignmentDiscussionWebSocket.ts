@@ -31,7 +31,7 @@ export interface DiscussionMessageRequest {
 
 class AssignmentDiscussionWebSocketService {
   private client: Client | null = null;
-  private subscriptions: Map<number, StompSubscription> = new Map();
+  private subscriptions: Map<number, StompSubscription[]> = new Map();
   private messageCallbacks: Map<number, (message: DiscussionMessage) => void> = new Map();
   private deleteCallbacks: Map<number, (messageId: string) => void> = new Map();
   private updateCallbacks: Map<number, (message: DiscussionMessage) => void> = new Map();
@@ -54,13 +54,13 @@ class AssignmentDiscussionWebSocketService {
 
     console.log('Starting new Assignment WebSocket connection...');
     this.isConnecting = true;
-    
+
     this.connectionPromise = new Promise((resolve, reject) => {
       try {
         // Connect via API Gateway
         const wsUrl = `${import.meta.env.VITE_BASE_URL || 'http://localhost:8888/api/v1'}/server/ws?token=${token}`;
         console.log('Connecting to Assignment WebSocket:', wsUrl);
-        
+
         const socket = new SockJS(wsUrl);
 
         this.client = new Client({
@@ -136,6 +136,8 @@ class AssignmentDiscussionWebSocketService {
     // Unsubscribe if already subscribed
     this.unsubscribeFromAssignmentDiscussion(assignmentId);
 
+    const subs: StompSubscription[] = [];
+
     // Subscribe to new messages
     const messageSub = this.client.subscribe(
       `/topic/assignment/${assignmentId}/discussion`,
@@ -149,6 +151,7 @@ class AssignmentDiscussionWebSocketService {
         }
       }
     );
+    subs.push(messageSub);
 
     // Subscribe to deletions
     const deleteSub = this.client.subscribe(
@@ -163,6 +166,7 @@ class AssignmentDiscussionWebSocketService {
         }
       }
     );
+    subs.push(deleteSub);
 
     // Subscribe to updates (likes, etc.)
     const updateSub = this.client.subscribe(
@@ -177,9 +181,10 @@ class AssignmentDiscussionWebSocketService {
         }
       }
     );
+    subs.push(updateSub);
 
     // Store subscription and callbacks
-    this.subscriptions.set(assignmentId, messageSub);
+    this.subscriptions.set(assignmentId, subs);
     this.messageCallbacks.set(assignmentId, onMessage);
     this.deleteCallbacks.set(assignmentId, onDelete);
     this.updateCallbacks.set(assignmentId, onUpdate);
@@ -191,9 +196,9 @@ class AssignmentDiscussionWebSocketService {
    * Unsubscribe from assignment discussion
    */
   unsubscribeFromAssignmentDiscussion(assignmentId: number): void {
-    const subscription = this.subscriptions.get(assignmentId);
-    if (subscription) {
-      subscription.unsubscribe();
+    const subs = this.subscriptions.get(assignmentId);
+    if (subs) {
+      subs.forEach(s => s.unsubscribe());
       this.subscriptions.delete(assignmentId);
       this.messageCallbacks.delete(assignmentId);
       this.deleteCallbacks.delete(assignmentId);

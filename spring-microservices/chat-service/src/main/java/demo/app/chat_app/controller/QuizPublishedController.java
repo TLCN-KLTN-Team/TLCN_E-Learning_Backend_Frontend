@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/course-discussions/quiz")
+@RequestMapping("/course-discussions/quiz")
 @RequiredArgsConstructor
 @Slf4j
 public class QuizPublishedController {

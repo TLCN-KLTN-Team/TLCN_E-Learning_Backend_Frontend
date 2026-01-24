@@ -86,6 +86,7 @@ app:
   services:
     identity: ${IDENTITY_SERVICE_URL:http://localhost:8080/identity}
     file: ${FILE_SERVICE_URL:http://localhost:8084/file-handler}
+    notification: ${NOTIFICATION_SERVICE_URI:http://localhost:8092}
 
 # Logging Configuration
 logging:

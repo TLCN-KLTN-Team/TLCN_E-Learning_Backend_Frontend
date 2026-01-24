@@ -8,7 +8,8 @@ public enum Role {
     STUDENT("STUDENT"),
     TEACHER("TEACHER"),
     ADMIN("ADMIN"),
-    SUPER_ADMIN("SUPER_ADMIN");
+    SUPER_ADMIN("SUPER_ADMIN"),
+    EXPERT("EXPERT");
 
     private final String name;
 

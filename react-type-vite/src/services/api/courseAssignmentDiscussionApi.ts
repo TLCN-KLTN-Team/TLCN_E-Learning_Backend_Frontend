@@ -36,7 +36,7 @@ export const getCourseAssignmentDiscussion = async (
   size: number = 20
 ): Promise<DiscussionPageResponse> => {
   const response = await axiosInstance.get<DiscussionPageResponse>(
-    `/server/api/course-discussions/assignment/${publishedCourseId}/${assignmentId}/messages`,
+    `/server/course-discussions/assignment/${publishedCourseId}/${assignmentId}/messages`,
     {
       params: { page, size },
     }
@@ -53,7 +53,7 @@ export const postCourseAssignmentDiscussionMessage = async (
   request: DiscussionMessageRequest
 ): Promise<DiscussionMessage> => {
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/course-discussions/assignment/${publishedCourseId}/${assignmentId}/messages`,
+    `/server/course-discussions/assignment/${publishedCourseId}/${assignmentId}/messages`,
     request
   );
   return response.data;
@@ -63,7 +63,7 @@ export const postCourseAssignmentDiscussionMessage = async (
  * Delete a discussion message
  */
 export const deleteCourseAssignmentDiscussionMessage = async (messageId: string): Promise<void> => {
-  await axiosInstance.delete(`/server/api/course-discussions/assignment/messages/${messageId}`);
+  await axiosInstance.delete(`/server/course-discussions/assignment/messages/${messageId}`);
 };
 
 /**
@@ -71,7 +71,7 @@ export const deleteCourseAssignmentDiscussionMessage = async (messageId: string)
  */
 export const toggleCourseAssignmentDiscussionLike = async (messageId: string): Promise<DiscussionMessage> => {
   const response = await axiosInstance.post<DiscussionMessage>(
-    `/server/api/course-discussions/assignment/messages/${messageId}/like`
+    `/server/course-discussions/assignment/messages/${messageId}/like`
   );
   return response.data;
 };
@@ -80,7 +80,7 @@ export const toggleCourseAssignmentDiscussionLike = async (messageId: string): P
  * Mark discussion as read
  */
 export const markCourseAssignmentDiscussionAsRead = async (publishedCourseId: number, assignmentId: number): Promise<void> => {
-  await axiosInstance.post(`/server/api/course-discussions/assignment/${publishedCourseId}/${assignmentId}/mark-read`);
+  await axiosInstance.post(`/server/course-discussions/assignment/${publishedCourseId}/${assignmentId}/mark-read`);
 };
 
 /**
@@ -88,7 +88,7 @@ export const markCourseAssignmentDiscussionAsRead = async (publishedCourseId: nu
  */
 export const getCourseAssignmentUnreadCount = async (publishedCourseId: number, assignmentId: number): Promise<number> => {
   const response = await axiosInstance.get<number>(
-    `/server/api/course-discussions/assignment/${publishedCourseId}/${assignmentId}/unread-count`
+    `/server/course-discussions/assignment/${publishedCourseId}/${assignmentId}/unread-count`
   );
   return response.data;
 };
@@ -101,7 +101,7 @@ export const getCourseBatchAssignmentUnreadCounts = async (
   assignmentIds: number[]
 ): Promise<Record<number, number>> => {
   const response = await axiosInstance.get<Record<number, number>>(
-    `/server/api/course-discussions/assignment/${publishedCourseId}/batch-unread-counts`,
+    `/server/course-discussions/assignment/${publishedCourseId}/batch-unread-counts`,
     {
       params: { assignmentIds: assignmentIds.join(',') }
     }

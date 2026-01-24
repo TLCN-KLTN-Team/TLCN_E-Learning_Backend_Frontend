@@ -70,6 +70,12 @@ spring:
               filters:
                 - StripPrefix=2
 
+            # Notification Service
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8092}
+              predicates:
+                - Path=${app.api-prefix}/notifications/**
+
 springdoc:
   swagger-ui:
     urls:

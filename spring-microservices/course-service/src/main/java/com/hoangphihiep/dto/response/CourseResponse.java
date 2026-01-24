@@ -34,4 +34,6 @@ public class CourseResponse {
     private TeacherResponse teacher;
 
     private Integer idEducationalUnit;
+
+    private String expertId;
 }

@@ -34,6 +34,88 @@ public class TeacherCourseController {
     private final ContentVisibilityService contentVisibilityService;
 
     private final ContentPublishService contentPublishService;
+    private final CourseClassService classService;
+    private final CourseEnrollmentService enrollmentService;
+
+    @GetMapping("/{courseId}/classes")
+    public ApiResponse<Page<CourseClassResponse>> getClassesByCourse(
+            @PathVariable int courseId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<CourseClassResponse> classes = classService.getClassesByCourse(courseId, pageable);
+
+        return ApiResponse.<Page<CourseClassResponse>>builder()
+                .result(classes)
+                .build();
+    }
+
+    @GetMapping("/classes/{classId}/students")
+    public ApiResponse<List<StudentResponse>> getStudentsInClass(
+            @PathVariable Integer classId) {
+
+        List<StudentResponse> students = enrollmentService.getStudentsInClass(classId);
+
+        return ApiResponse.<List<StudentResponse>>builder()
+                .result(students)
+                .build();
+    }
+
+
+    @GetMapping("/classes/{classId}/available-students")
+    public ApiResponse<List<StudentResponse>> getAvailableStudentsForClass(
+            @PathVariable Integer classId,
+            @RequestParam(required = false, defaultValue = "0") Integer educationalUnitId) { // accept it from frontend
+
+        List<StudentResponse> students = enrollmentService.getAvailableStudentsForClass(classId, educationalUnitId);
+
+        return ApiResponse.<List<StudentResponse>>builder()
+                .result(students)
+                .build();
+    }
+
+    @PostMapping("/classes/{classId}/enroll-students")
+    public ApiResponse<String> enrollStudentsInClass(
+            @PathVariable Integer classId,
+            @RequestBody List<String> studentIds) {
+        try {
+            enrollmentService.enrollStudentsToClass(classId, studentIds);
+
+            String message = String.format("Successfully enrolled %d students to class", studentIds.size());
+
+            return ApiResponse.<String>builder()
+                    .result(message)
+                    .build();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Enrollment failed: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/classes/{classId}/students/{studentId}")
+    public ApiResponse<Void> unenrollStudentFromClass(
+            @PathVariable Integer classId,
+            @PathVariable String studentId) {
+
+        enrollmentService.unenrollStudentFromClass(classId, studentId);
+
+        return ApiResponse.<Void>builder()
+                .message("Student successfully unenrolled from class")
+                .build();
+    }
+
+    @GetMapping("/classes/{classId}/statistics")
+    public ApiResponse<ClassStudentStatsResponse> getClassStatistics(
+            @PathVariable Integer classId) {
+
+        ClassStudentStatsResponse stats = enrollmentService.getClassStatistics(classId);
+
+        return ApiResponse.<ClassStudentStatsResponse>builder()
+                .result(stats)
+                .build();
+    }
+
     @GetMapping("/{teacherId}")
     public ApiResponse<List<CourseResponse>> getCoursesByTeacher(
             @PathVariable String teacherId) {

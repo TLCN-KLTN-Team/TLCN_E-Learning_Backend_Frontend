@@ -97,7 +97,7 @@ const StudentListPage: React.FC = () => {
       setCurrentPage(page);
     } catch (error: any) {
       console.error("Error loading students:", error);
-      toast.error("Không thể tải danh sách học sinh");
+      toast.error("Không thể tải danh sách sinh viên");
     } finally {
       setLoading(false);
     }
@@ -130,16 +130,16 @@ const StudentListPage: React.FC = () => {
   ) => {
     if (
       window.confirm(
-        `Bạn có chắc chắn muốn xóa học sinh "${studentName}"? Hành động này không thể hoàn tác.`
+        `Bạn có chắc chắn muốn xóa sinh viên "${studentName}"? Hành động này không thể hoàn tác.`
       )
     ) {
       try {
         await studentApi.deleteStudent(educationalUnitId!, studentId);
-        toast.success("Xóa học sinh thành công!");
+        toast.success("Xóa sinh viên thành công!");
         handleSuccess();
       } catch (error: any) {
         console.error("Error deleting student:", error);
-        toast.error(error?.response?.data?.message || "Không thể xóa học sinh");
+        toast.error(error?.response?.data?.message || "Không thể xóa sinh viên");
       }
     }
   };
@@ -176,8 +176,7 @@ const StudentListPage: React.FC = () => {
           newStatus
         );
         toast.success(
-          `${
-            action.charAt(0).toUpperCase() + action.slice(1)
+          `${action.charAt(0).toUpperCase() + action.slice(1)
           } tài khoản thành công!`
         );
         handleSuccess();
@@ -279,27 +278,27 @@ const StudentListPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <GraduationCap className="mr-3 text-blue-600" size={32} />
-            Quản lý Học sinh
+            Quản lý Sinh viên
           </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý tài khoản học sinh cho{" "}
+            Quản lý tài khoản sinh viên cho{" "}
             {currentEducationalUnit?.name || "cơ sở giáo dục của bạn"}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            onClick={() => setShowStudentModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
-          >
-            <UserPlus className="mr-2" size={18} />
-            Tạo Học sinh Mới
-          </Button>
           <Button
             onClick={() => setShowImportModal(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 text-lg"
           >
             <Upload className="mr-2" size={18} />
             Import từ File
+          </Button>
+          <Button
+            onClick={() => setShowStudentModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
+          >
+            <UserPlus className="mr-2" size={18} />
+            Tạo Sinh Viên Mới
           </Button>
         </div>
       </div>
@@ -314,7 +313,7 @@ const StudentListPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">
-                  Tổng Học sinh
+                  Tổng Sinh viên
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
                   {totalElements}
@@ -331,7 +330,7 @@ const StudentListPage: React.FC = () => {
               size={20}
             />
             <Input
-              placeholder="Tìm kiếm học sinh theo tên, tên đăng nhập, email, mã học sinh hoặc lớp..."
+              placeholder="Tìm kiếm sinh viên theo tên, tên đăng nhập, email, mã sinh viên hoặc lớp..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg"
@@ -353,24 +352,24 @@ const StudentListPage: React.FC = () => {
                   size={48}
                 />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Không tìm thấy học sinh nào
+                  Không tìm thấy sinh viên nào
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  Bắt đầu bằng cách tạo tài khoản học sinh đầu tiên
+                  Bắt đầu bằng cách tạo tài khoản sinh viên đầu tiên
                 </p>
                 <Button
                   onClick={() => setShowStudentModal(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
                 >
                   <UserPlus className="mr-2" size={16} />
-                  Tạo Học sinh
+                  Tạo Sinh viên
                 </Button>
               </>
             ) : (
               <>
                 <Search className="mx-auto text-gray-400 mb-4" size={48} />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Không có học sinh nào phù hợp với tìm kiếm
+                  Không có sinh viên nào phù hợp với tìm kiếm
                 </h3>
                 <p className="text-gray-500">
                   Thử điều chỉnh từ khóa tìm kiếm của bạn
@@ -385,7 +384,7 @@ const StudentListPage: React.FC = () => {
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      HỌC SINH
+                      SINH VIÊN
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       LIÊN HỆ
@@ -476,11 +475,10 @@ const StudentListPage: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleToggleAccountStatus(student)}
-                            className={`${
-                              student.accountStatus === "ACTIVE"
-                                ? "text-orange-600 border-orange-200 hover:bg-orange-50"
-                                : "text-green-600 border-green-200 hover:bg-green-50"
-                            }`}
+                            className={`${student.accountStatus === "ACTIVE"
+                              ? "text-orange-600 border-orange-200 hover:bg-orange-50"
+                              : "text-green-600 border-green-200 hover:bg-green-50"
+                              }`}
                             title={
                               student.accountStatus === "ACTIVE"
                                 ? "Khóa tài khoản"
@@ -531,7 +529,7 @@ const StudentListPage: React.FC = () => {
                   <option value={50}>50</option>
                 </select>
                 <span className="text-sm text-gray-700">
-                  trên tổng số {totalElements} học sinh
+                  trên tổng số {totalElements} sinh viên
                 </span>
               </div>
 
@@ -866,11 +864,10 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
           <Button
             variant="outline"
             onClick={onToggleStatus}
-            className={`${
-              student.accountStatus === "ACTIVE"
-                ? "text-orange-600 border-orange-300 hover:bg-orange-50"
-                : "text-green-600 border-green-300 hover:bg-green-50"
-            }`}
+            className={`${student.accountStatus === "ACTIVE"
+              ? "text-orange-600 border-orange-300 hover:bg-orange-50"
+              : "text-green-600 border-green-300 hover:bg-green-50"
+              }`}
           >
             {student.accountStatus === "ACTIVE" ? (
               <>

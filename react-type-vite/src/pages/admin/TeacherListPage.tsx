@@ -96,7 +96,7 @@ const TeacherListPage: React.FC = () => {
       setCurrentPage(page);
     } catch (error: any) {
       console.error("Error loading teachers:", error);
-      toast.error("Không thể tải danh sách giáo viên");
+      toast.error("Không thể tải danh sách giảng viên");
     } finally {
       setLoading(false);
     }
@@ -129,17 +129,17 @@ const TeacherListPage: React.FC = () => {
   ) => {
     if (
       window.confirm(
-        `Bạn có chắc chắn muốn xóa giáo viên "${teacherName}"? Hành động này không thể hoàn tác.`
+        `Bạn có chắc chắn muốn xóa giảng viên "${teacherName}"? Hành động này không thể hoàn tác.`
       )
     ) {
       try {
         await teacherApi.deleteTeacher(educationalUnitId!, teacherId);
-        toast.success("Xóa giáo viên thành công!");
+        toast.success("Xóa giảng viên thành công!");
         handleSuccess();
       } catch (error: any) {
         console.error("Error deleting teacher:", error);
         toast.error(
-          error?.response?.data?.message || "Không thể xóa giáo viên"
+          error?.response?.data?.message || "Không thể xóa giảng viên"
         );
       }
     }
@@ -177,8 +177,7 @@ const TeacherListPage: React.FC = () => {
           newStatus
         );
         toast.success(
-          `${
-            action.charAt(0).toUpperCase() + action.slice(1)
+          `${action.charAt(0).toUpperCase() + action.slice(1)
           } tài khoản thành công!`
         );
         handleSuccess();
@@ -280,10 +279,10 @@ const TeacherListPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <Users className="mr-3 text-green-600" size={32} />
-            Quản lý Giáo viên
+            Quản lý Giảng viên
           </h1>
           <p className="text-gray-600 mt-1">
-            Quản lý tài khoản giáo viên cho{" "}
+            Quản lý tài khoản giảng viên cho{" "}
             {currentEducationalUnit?.name || "cơ sở giáo dục của bạn"}
           </p>
         </div>
@@ -300,7 +299,7 @@ const TeacherListPage: React.FC = () => {
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 text-lg"
           >
             <UserPlus className="mr-2" size={18} />
-            Tạo Giáo viên Mới
+            Tạo Giảng viên Mới
           </Button>
         </div>
       </div>
@@ -315,7 +314,7 @@ const TeacherListPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">
-                  Tổng Giáo viên
+                  Tổng Giảng viên
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
                   {totalElements}
@@ -332,7 +331,7 @@ const TeacherListPage: React.FC = () => {
               size={20}
             />
             <Input
-              placeholder="Tìm kiếm giáo viên theo tên, tên đăng nhập, email, mã giáo viên hoặc khoa..."
+              placeholder="Tìm kiếm giảng viên theo tên, tên đăng nhập, email, mã giảng viên hoặc khoa..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg"
@@ -351,24 +350,24 @@ const TeacherListPage: React.FC = () => {
               <>
                 <Users className="mx-auto text-gray-400 mb-4" size={48} />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Không tìm thấy giáo viên nào
+                  Không tìm thấy giảng viên nào
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  Bắt đầu bằng cách tạo tài khoản giáo viên đầu tiên
+                  Bắt đầu bằng cách tạo tài khoản giảng viên đầu tiên
                 </p>
                 <Button
                   onClick={() => setShowTeacherModal(true)}
                   className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 text-lg"
                 >
                   <UserPlus className="mr-2" size={16} />
-                  Tạo Giáo viên
+                  Tạo Giảng viên
                 </Button>
               </>
             ) : (
               <>
                 <Search className="mx-auto text-gray-400 mb-4" size={48} />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Không có giáo viên nào phù hợp với tìm kiếm
+                  Không có giảng viên nào phù hợp với tìm kiếm
                 </h3>
                 <p className="text-gray-500">
                   Thử điều chỉnh từ khóa tìm kiếm của bạn
@@ -383,13 +382,13 @@ const TeacherListPage: React.FC = () => {
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      GIÁO VIÊN
+                      GIẢNG VIÊN
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       LIÊN HỆ
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      MÃ GIÁO VIÊN
+                      MÃ GIẢNG VIÊN
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       KHOA
@@ -469,11 +468,10 @@ const TeacherListPage: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleToggleAccountStatus(teacher)}
-                            className={`${
-                              teacher.accountStatus === "ACTIVE"
+                            className={`${teacher.accountStatus === "ACTIVE"
                                 ? "text-orange-600 border-orange-200 hover:bg-orange-50"
                                 : "text-green-600 border-green-200 hover:bg-green-50"
-                            }`}
+                              }`}
                             title={
                               teacher.accountStatus === "ACTIVE"
                                 ? "Khóa tài khoản"
@@ -524,7 +522,7 @@ const TeacherListPage: React.FC = () => {
                   <option value={50}>50</option>
                 </select>
                 <span className="text-sm text-gray-700">
-                  trên tổng số {totalElements} giáo viên
+                  trên tổng số {totalElements} giảng viên
                 </span>
               </div>
 
@@ -850,11 +848,10 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({
           <Button
             variant="outline"
             onClick={onToggleStatus}
-            className={`${
-              teacher.accountStatus === "ACTIVE"
+            className={`${teacher.accountStatus === "ACTIVE"
                 ? "text-orange-600 border-orange-300 hover:bg-orange-50"
                 : "text-green-600 border-green-300 hover:bg-green-50"
-            }`}
+              }`}
           >
             {teacher.accountStatus === "ACTIVE" ? (
               <>
@@ -884,7 +881,7 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({
         </div>
       </div>
     </div>
-      
+
   );
 };
 

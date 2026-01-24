@@ -53,7 +53,6 @@ public class TeacherPublishedCourseController {
             @RequestParam(defaultValue = "10") int size) {
 
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("Getting published courses for teacher: {}, status: {}", teacherId, status);
 
         Page<PublishedCourseResponse> response = publishedCourseTeacherService.getPublishedCoursesByTeacher(
                 teacherId, status, page, size);
@@ -66,7 +65,7 @@ public class TeacherPublishedCourseController {
 
     @GetMapping("/course/{courseId}")
     public ApiResponse<PublishedCourseResponse> getPublishedCourseByCourseId(@PathVariable Integer courseId) {
-        log.info("Getting published course for course ID: {}", courseId);
+
         PublishedCourseResponse response = publishedCourseTeacherService.getPublishedCourseByCourseId(courseId);
 
         return ApiResponse.<PublishedCourseResponse>builder()
@@ -77,7 +76,7 @@ public class TeacherPublishedCourseController {
 
     @GetMapping("/{id}")
     public ApiResponse<PublishedCourseResponse> getPublishedCourseById(@PathVariable Integer id) {
-        log.info("Getting published course by ID: {}", id);
+
         PublishedCourseResponse response = publishedCourseTeacherService.getPublishedCourseById(id);
 
         return ApiResponse.<PublishedCourseResponse>builder()

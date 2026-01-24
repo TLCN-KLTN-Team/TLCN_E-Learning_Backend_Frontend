@@ -20,7 +20,6 @@ public class PublicTeacherController {
 
     @GetMapping("/{teacherId}")
     public ApiResponse<TeacherDetailResponse> getTeacherDetail(@PathVariable String teacherId) {
-        log.info("REST request to get teacher detail for ID: {}", teacherId);
         
         TeacherDetailResponse teacher = teacherPublicService.getTeacherDetail(teacherId);
         
@@ -32,8 +31,6 @@ public class PublicTeacherController {
             @PathVariable String teacherId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        log.info("REST request to get courses for teacher ID: {} (page: {}, size: {})", 
-                teacherId, page, size);
         
         Pageable pageable = PageRequest.of(page, size);
         PaginatedResponse<TeacherCourseResponse> courses = 

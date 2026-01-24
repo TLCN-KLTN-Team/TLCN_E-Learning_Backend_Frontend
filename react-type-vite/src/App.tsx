@@ -10,6 +10,7 @@ import TeacherRoutes from "./routes/TeacherRoute";
 import AdminRoutes from "./routes/AdminRoute";
 import SystemAdminRoutes from "./routes/SystemAdminRoute";
 import UserRoutes from "./routes/UserRoute";
+import ExpertRoutes from "./routes/ExpertRoute";
 import { getAuthInfo, isTokenValid } from "./utils/auth.utils";
 import { getRoleBasedRedirectPath } from "./utils/roleUtils";
 import { useEffect } from "react";
@@ -71,6 +72,8 @@ function AppContent() {
       {StudentRoutes}
       {/* Teacher Routes */}
       {TeacherRoutes}
+      {/* Expert Routes */}
+      {ExpertRoutes}
       {/* Admin Routes */}
       {AdminRoutes}
       {/* System Admin Routes */}

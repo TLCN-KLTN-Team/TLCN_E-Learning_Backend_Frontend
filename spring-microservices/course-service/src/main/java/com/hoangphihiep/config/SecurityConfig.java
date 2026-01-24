@@ -66,6 +66,7 @@ public class SecurityConfig {
                         .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/course-management/super-admin/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/course-management/expert/**").hasAnyRole("EXPERT", "SUPER_ADMIN")
                         .requestMatchers("/course-management/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/course-management/teacher/**").hasRole("TEACHER")
                         .requestMatchers("/course-management/student/**").hasRole("STUDENT")

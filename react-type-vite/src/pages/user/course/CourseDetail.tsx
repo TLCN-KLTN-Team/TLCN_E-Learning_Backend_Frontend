@@ -19,6 +19,7 @@ import CartService from "@/services/api/user/cart.api";
 import WishlistService from "@/services/api/user/wishlist.api";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
+import RecommendedCourses from "./RecommendedCourses";
 
 const CourseDetail: React.FC = () => {
   const { user } = useAuth();
@@ -100,11 +101,10 @@ const CourseDetail: React.FC = () => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`${starSize} ${
-          i < Math.floor(rating)
-            ? "text-yellow-400 fill-current"
-            : "text-gray-300"
-        }`}
+        className={`${starSize} ${i < Math.floor(rating)
+          ? "text-yellow-400 fill-current"
+          : "text-gray-300"
+          }`}
       />
     ));
   };
@@ -901,11 +901,10 @@ const CourseDetail: React.FC = () => {
                         }
                       >
                         <svg
-                          className={`w-6 h-6 ${
-                            isInWishlist
-                              ? "fill-red-500 text-red-500"
-                              : "text-gray-900"
-                          }`}
+                          className={`w-6 h-6 ${isInWishlist
+                            ? "fill-red-500 text-red-500"
+                            : "text-gray-900"
+                            }`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1008,6 +1007,22 @@ const CourseDetail: React.FC = () => {
             </Card>
           </div>
         </div>
+        {(() => {
+          console.log("CourseDetail Render:", {
+            category: course?.category,
+            courseType: course?.courseType,
+            courseTypeName: (course?.courseType as any)?.courseTypeName
+          });
+          return null;
+        })()}
+        <RecommendedCourses
+          currentCourseId={courseId}
+          category={
+            course?.category ||
+            (course?.courseType as any)?.courseTypeName ||
+            (typeof course?.courseType === 'string' ? course?.courseType : "")
+          }
+        />
       </div>
 
       {/* Footer */}

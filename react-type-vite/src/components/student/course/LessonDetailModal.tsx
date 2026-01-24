@@ -4,7 +4,7 @@ import type { LessonResponse } from "@/services/api/response/lessonResponse";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 import DiscussionSection from "./DiscussionSection";
 import { useAuth } from "@/context/auth-context/useAuth";
-import { getUnreadCount, markDiscussionAsRead } from "@/services/api/lessonDiscussionApi";
+import { getLessonUnreadCount, markLessonDiscussionAsRead } from "@/services/api/lessonDiscussionApi";
 
 interface LessonDetailModalProps {
   isOpen: boolean;
@@ -45,7 +45,7 @@ const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }:
     setActiveTab(tab);
     if (tab === "discussion" && lessonId) {
       try {
-        await markDiscussionAsRead(lessonId);
+        await markLessonDiscussionAsRead(lessonId);
         setUnreadCount(0);
       } catch (err) {
         console.error("Error marking discussion as read:", err);
@@ -56,7 +56,7 @@ const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }:
   const fetchUnreadCount = async () => {
     if (!lessonId) return;
     try {
-      const count = await getUnreadCount(lessonId);
+      const count = await getLessonUnreadCount(lessonId);
       setUnreadCount(count);
     } catch (err) {
       console.error("Error fetching unread count:", err);
@@ -162,22 +162,20 @@ const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }:
             <nav className="flex -mb-px">
               <button
                 onClick={() => handleTabChange("info")}
-                className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
-                  activeTab === "info"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === "info"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
               >
                 <FileText className="w-4 h-4" />
                 Nội dung bài học
               </button>
               <button
                 onClick={() => handleTabChange("discussion")}
-                className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
-                  activeTab === "discussion"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === "discussion"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
               >
                 <MessageSquare className="w-4 h-4" />
                 Thảo luận
@@ -194,146 +192,146 @@ const LessonDetailModal = ({ isOpen, onClose, lessonId, lesson: initialLesson }:
           <div className="p-6">
             {activeTab === "info" && (
               <div className="space-y-6">{/* Lesson Info Summary */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <h3 className="font-semibold text-lg mb-4">Thông tin bài học</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-gray-600">Ngày tạo</p>
-                  <p className="font-medium">
-                    {new Date(lesson.createdAt).toLocaleDateString("vi-VN")}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-gray-600">Cập nhật</p>
-                  <p className="font-medium">
-                    {new Date(lesson.updateAt).toLocaleDateString("vi-VN")}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="h-5 w-5 flex items-center justify-center flex-shrink-0">
-                  {lesson.isPublished ? (
-                    <span className="text-green-600 text-lg">✓</span>
-                  ) : (
-                    <span className="text-orange-600 text-lg">⏳</span>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Trạng thái</p>
-                  <p className="font-medium">
-                    {lesson.isPublished ? "Đã công bố" : "Chưa công bố"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="h-5 w-5 flex items-center justify-center flex-shrink-0">
-                  {lesson.isFreeLesson ? (
-                    <span className="text-green-600 text-lg">✓</span>
-                  ) : (
-                    <span className="text-gray-600 text-lg">✗</span>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Bài học miễn phí</p>
-                  <p className="font-medium">
-                    {lesson.isFreeLesson ? "Có" : "Không"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          {lesson.description && (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-3">Mô tả</h3>
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                <p className="text-gray-700 whitespace-pre-wrap">{lesson.description}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Video Section */}
-          {lesson.videoUrl && (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Play className="w-5 h-5 text-red-600" />
-                Video bài học
-              </h3>
-              {embedUrl ? (
-                <div className="relative w-full rounded-lg overflow-hidden" style={{ paddingBottom: "56.25%" }}>
-                  <iframe
-                    src={embedUrl}
-                    title={lesson.title}
-                    className="absolute top-0 left-0 w-full h-full"
-                    allowFullScreen
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  />
-                </div>
-              ) : (
-                <div className="bg-gray-50 rounded-lg p-4 border">
-                  <a
-                    href={lesson.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline break-all"
-                  >
-                    {lesson.videoUrl}
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Content */}
-          {lesson.content && (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-3">Nội dung bài học</h3>
-              <div className="bg-gray-50 border rounded-lg p-6">
-                <MarkdownRenderer 
-                  content={lesson.content} 
-                  className="text-gray-700"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Attachments */}
-          {lesson.attachments && lesson.attachments.length > 0 && (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Tài liệu đính kèm ({lesson.attachments.length})
-              </h3>
-              <div className="space-y-2">
-                {lesson.attachments.map((attachment, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <FileText className="w-5 h-5 text-gray-600 flex-shrink-0" />
-                      <span className="text-gray-700 break-all">{attachment}</span>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                  <h3 className="font-semibold text-lg mb-4">Thông tin bài học</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm text-gray-600">Ngày tạo</p>
+                        <p className="font-medium">
+                          {new Date(lesson.createdAt).toLocaleDateString("vi-VN")}
+                        </p>
+                      </div>
                     </div>
-                    <a
-                      href={attachment}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors ml-3 flex-shrink-0"
-                    >
-                      <Download className="w-4 h-4" />
-                      Tải xuống
-                    </a>
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm text-gray-600">Cập nhật</p>
+                        <p className="font-medium">
+                          {new Date(lesson.updateAt).toLocaleDateString("vi-VN")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-5 w-5 flex items-center justify-center flex-shrink-0">
+                        {lesson.isPublished ? (
+                          <span className="text-green-600 text-lg">✓</span>
+                        ) : (
+                          <span className="text-orange-600 text-lg">⏳</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Trạng thái</p>
+                        <p className="font-medium">
+                          {lesson.isPublished ? "Đã công bố" : "Chưa công bố"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-5 w-5 flex items-center justify-center flex-shrink-0">
+                        {lesson.isFreeLesson ? (
+                          <span className="text-green-600 text-lg">✓</span>
+                        ) : (
+                          <span className="text-gray-600 text-lg">✗</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Bài học miễn phí</p>
+                        <p className="font-medium">
+                          {lesson.isFreeLesson ? "Có" : "Không"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
+
+                {/* Description */}
+                {lesson.description && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold mb-3">Mô tả</h3>
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                      <p className="text-gray-700 whitespace-pre-wrap">{lesson.description}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Video Section */}
+                {lesson.videoUrl && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Play className="w-5 h-5 text-red-600" />
+                      Video bài học
+                    </h3>
+                    {embedUrl ? (
+                      <div className="relative w-full rounded-lg overflow-hidden" style={{ paddingBottom: "56.25%" }}>
+                        <iframe
+                          src={embedUrl}
+                          title={lesson.title}
+                          className="absolute top-0 left-0 w-full h-full"
+                          allowFullScreen
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        />
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-lg p-4 border">
+                        <a
+                          href={lesson.videoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline break-all"
+                        >
+                          {lesson.videoUrl}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Content */}
+                {lesson.content && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold mb-3">Nội dung bài học</h3>
+                    <div className="bg-gray-50 border rounded-lg p-6">
+                      <MarkdownRenderer
+                        content={lesson.content}
+                        className="text-gray-700"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Attachments */}
+                {lesson.attachments && lesson.attachments.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Tài liệu đính kèm ({lesson.attachments.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {lesson.attachments.map((attachment, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <FileText className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                            <span className="text-gray-700 break-all">{attachment}</span>
+                          </div>
+                          <a
+                            href={attachment}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors ml-3 flex-shrink-0"
+                          >
+                            <Download className="w-4 h-4" />
+                            Tải xuống
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

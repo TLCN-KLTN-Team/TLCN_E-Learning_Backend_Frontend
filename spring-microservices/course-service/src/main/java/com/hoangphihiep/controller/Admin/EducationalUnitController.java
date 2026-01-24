@@ -27,7 +27,7 @@ public class EducationalUnitController {
     public ApiResponse<EducationalUnitResponse> getMyEducationalUnit() {
         String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        EducationalUnitResponse institution = educationalUnitService.getEducationalUnitByAdminId(currentAdminId);
+        EducationalUnitResponse institution = educationalUnitService.getEducationalUnitByMemberId(currentAdminId);
 
         if (institution == null) {
             return ApiResponse.<EducationalUnitResponse>builder()

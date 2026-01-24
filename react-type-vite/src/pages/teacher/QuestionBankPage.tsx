@@ -13,7 +13,6 @@ import {
   BookOpen,
   Tag,
   FileText,
-  Filter,
   Upload,
 } from "lucide-react"
 import {
@@ -106,9 +105,15 @@ const QuestionBankPage: React.FC = () => {
       await deleteLibraryQuestion(questionToDelete)
       toast.success("Xóa câu hỏi thành công")
       fetchQuestions()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting question:", error)
-      toast.error("Không thể xóa câu hỏi")
+      const errorMessage = error?.response?.data?.message || error?.message || ""
+
+      if (errorMessage.includes("foreign key constraint fails") || errorMessage.includes("Cannot delete or update a parent row")) {
+        toast.error("Không thể xóa câu hỏi này vì đã có sinh viên làm bài (dữ liệu đang được sử dụng).")
+      } else {
+        toast.error("Không thể xóa câu hỏi")
+      }
     } finally {
       setDeleteDialogOpen(false)
       setQuestionToDelete(null)
@@ -180,18 +185,18 @@ const QuestionBankPage: React.FC = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="outline"
-              className="gap-2 border-green-600 text-green-600 hover:bg-green-50" 
+              className="gap-2 border-green-600 text-green-600 hover:bg-green-50"
               onClick={() => setImportModalOpen(true)}
             >
               <Upload className="h-5 w-5" />
               Import từ Excel
             </Button>
-            <Button 
-              size="lg" 
-              className="gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm" 
+            <Button
+              size="lg"
+              className="gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
               onClick={handleCreateQuestion}
             >
               <Plus className="h-5 w-5" />
@@ -416,7 +421,7 @@ const QuestionBankPage: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa câu hỏi</AlertDialogTitle>
             <AlertDialogDescription>
@@ -424,8 +429,8 @@ const QuestionBankPage: React.FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="bg-white border-gray-300 hover:bg-gray-100 text-gray-700">Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-700 border-red-600">
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -89,7 +89,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
   useEffect(() => {
     const previews = imageFiles.map(file => URL.createObjectURL(file))
     setImagePreviews(previews)
-    
+
     // Cleanup URLs on unmount
     return () => {
       previews.forEach(url => URL.revokeObjectURL(url))
@@ -174,9 +174,15 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
 
       onSuccess()
       onClose()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving question:", error)
-      toast.error("Có lỗi xảy ra khi lưu câu hỏi")
+      const errorMessage = error?.response?.data?.message || error?.message || ""
+
+      if (errorMessage.includes("foreign key constraint fails") || errorMessage.includes("Cannot delete or update a parent row")) {
+        toast.error("Không thể sửa đáp án vì câu hỏi này đã có người làm bài. Vui lòng tạo câu hỏi mới.")
+      } else {
+        toast.error("Có lỗi xảy ra khi lưu câu hỏi")
+      }
     } finally {
       setLoading(false)
     }
@@ -256,11 +262,11 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={handleBackdropClick}
       ></div>
-      
+
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className={`${isEditMode ? 'bg-gradient-to-r from-orange-600 to-orange-700' : 'bg-gradient-to-r from-blue-600 to-blue-700'} px-6 py-4`}>
@@ -273,9 +279,9 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                 {isEditMode ? 'Chỉnh Sửa Câu Hỏi' : 'Tạo Câu Hỏi Mới'}
               </h2>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onClose}
               className="text-white hover:bg-white/20 h-8 w-8 p-0"
             >
@@ -286,7 +292,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
             {isEditMode ? 'Cập nhật thông tin câu hỏi trong ngân hàng' : 'Thêm câu hỏi mới vào ngân hàng để tái sử dụng'}
           </p>
         </div>
-        
+
         {/* Form Content */}
         <div className="flex flex-col h-[calc(90vh-120px)]">
           <div className="flex-1 p-6 overflow-y-auto">
@@ -318,7 +324,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                     <ImageIcon size={14} className="mr-2" />
                     Ảnh minh họa (Tùy chọn)
                   </Label>
-                  
+
                   {/* Upload Button */}
                   <div className="flex items-center gap-2">
                     <label className="cursor-pointer">
@@ -356,7 +362,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                           </button>
                         </div>
                       ))}
-                      
+
                       {/* New images to be uploaded */}
                       {imagePreviews.map((preview, index) => (
                         <div key={`new-${index}`} className="relative group">
@@ -480,11 +486,11 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                       <CheckSquare size={16} className="mr-2" />
                       Đáp Án <span className="text-red-500 ml-1">*</span>
                     </h3>
-                    <Button 
-                      type="button" 
-                      onClick={addAnswer} 
-                      size="sm" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      onClick={addAnswer}
+                      size="sm"
+                      variant="outline"
                       className="gap-1 bg-white hover:bg-green-100 border-green-300"
                     >
                       <Plus className="h-4 w-4" />
@@ -494,13 +500,12 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
 
                   <div className="space-y-3">
                     {formData.answers.map((answer, index) => (
-                      <div 
-                        key={index} 
-                        className={`flex items-center gap-3 p-3 bg-white border-2 rounded-lg transition-all cursor-pointer ${
-                          answer.isCorrect 
-                            ? 'border-green-500 bg-green-50' 
+                      <div
+                        key={index}
+                        className={`flex items-center gap-3 p-3 bg-white border-2 rounded-lg transition-all cursor-pointer ${answer.isCorrect
+                            ? 'border-green-500 bg-green-50'
                             : 'border-gray-200 hover:border-green-300'
-                        }`}
+                          }`}
                         onClick={() => {
                           // Set this as correct and others as incorrect (single choice)
                           const newAnswers = formData.answers.map((a, i) => ({
@@ -511,11 +516,10 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                         }}
                       >
                         <div className="flex items-center gap-3 flex-1">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            answer.isCorrect 
-                              ? 'border-green-500 bg-green-500' 
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${answer.isCorrect
+                              ? 'border-green-500 bg-green-500'
                               : 'border-gray-300'
-                          }`}>
+                            }`}>
                             {answer.isCorrect && (
                               <div className="w-2.5 h-2.5 bg-white rounded-full" />
                             )}
@@ -567,11 +571,11 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                       <CheckSquare size={16} className="mr-2" />
                       Đáp Án <span className="text-red-500 ml-1">*</span>
                     </h3>
-                    <Button 
-                      type="button" 
-                      onClick={addAnswer} 
-                      size="sm" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      onClick={addAnswer}
+                      size="sm"
+                      variant="outline"
                       className="gap-1 bg-white hover:bg-green-100 border-green-300"
                     >
                       <Plus className="h-4 w-4" />
@@ -581,8 +585,8 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
 
                   <div className="space-y-3">
                     {formData.answers.map((answer, index) => (
-                      <div 
-                        key={index} 
+                      <div
+                        key={index}
                         className="flex items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-green-300 transition-colors"
                       >
                         <div className="flex items-center gap-2">
@@ -637,13 +641,12 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                   </h3>
                   <div className="space-y-3">
                     {formData.answers.map((answer, index) => (
-                      <div 
-                        key={index} 
-                        className={`flex items-center gap-3 p-4 bg-white border-2 rounded-lg transition-all cursor-pointer ${
-                          answer.isCorrect 
-                            ? 'border-green-500 bg-green-50' 
+                      <div
+                        key={index}
+                        className={`flex items-center gap-3 p-4 bg-white border-2 rounded-lg transition-all cursor-pointer ${answer.isCorrect
+                            ? 'border-green-500 bg-green-50'
                             : 'border-gray-200 hover:border-green-300'
-                        }`}
+                          }`}
                         onClick={() => {
                           // Set this as correct and others as incorrect
                           const newAnswers = formData.answers.map((a, i) => ({
@@ -654,11 +657,10 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                         }}
                       >
                         <div className="flex items-center gap-3 flex-1">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            answer.isCorrect 
-                              ? 'border-green-500 bg-green-500' 
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${answer.isCorrect
+                              ? 'border-green-500 bg-green-500'
                               : 'border-gray-300'
-                          }`}>
+                            }`}>
                             {answer.isCorrect && (
                               <CheckSquare size={14} className="text-white" />
                             )}
@@ -683,11 +685,11 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                       <CheckSquare size={16} className="mr-2" />
                       Đáp án kéo thả <span className="text-red-500 ml-1">*</span>
                     </h3>
-                    <Button 
-                      type="button" 
-                      onClick={addAnswer} 
-                      size="sm" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      onClick={addAnswer}
+                      size="sm"
+                      variant="outline"
                       className="gap-1 bg-white hover:bg-green-100 border-green-300"
                     >
                       <Plus className="h-4 w-4" />
@@ -706,8 +708,8 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
 
                   <div className="space-y-3">
                     {formData.answers.map((answer, index) => (
-                      <div 
-                        key={index} 
+                      <div
+                        key={index}
                         className="flex items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-green-300 transition-colors"
                       >
                         <div className="flex items-center gap-2">
@@ -755,28 +757,27 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
               )}
             </form>
           </div>
-          
+
           {/* Footer */}
           <div className="border-t bg-gray-50 px-6 py-4 mt-auto">
             <div className="flex justify-end space-x-3">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={onClose}
                 className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
                 disabled={loading}
               >
                 Hủy
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 disabled={loading}
                 onClick={handleSubmit}
-                className={`px-6 py-2 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isEditMode 
-                    ? 'bg-orange-600 hover:bg-orange-700' 
+                className={`px-6 py-2 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isEditMode
+                    ? 'bg-orange-600 hover:bg-orange-700'
                     : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                  }`}
               >
                 {loading ? (
                   <div className="flex items-center">

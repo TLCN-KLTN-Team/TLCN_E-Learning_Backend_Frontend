@@ -79,6 +79,11 @@ public enum ErrorCode {
     FILE_UPLOAD_FAILED("FILE_5003", "Tải file lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
     PAYLOAD_TO_LARGE("FILE_5004", "Kích thước file vượt quá giới hạn cho phép", HttpStatus.BAD_REQUEST),
 
+    // Expert Management Errors (EXPERT_xxxx)
+    EXPERT_ALREADY_EXISTS("EXPERT_6001", "Chuyên gia đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
+    EXPERT_ID_ALREADY_EXISTS("EXPERT_6002", "ID chuyên gia đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
+    EXPERT_NOT_FOUND("EXPERT_6003", "Không tìm thấy thông tin chuyên gia", HttpStatus.NOT_FOUND),
+
     // Teacher Management Errors (TEACHER_xxxx)
     TEACHER_ALREADY_EXISTS("TEACHER_6001", "Giảng viên đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
     TEACHERID_ALREADY_EXISTS("TEACHER_6003", "ID giảng viên đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),

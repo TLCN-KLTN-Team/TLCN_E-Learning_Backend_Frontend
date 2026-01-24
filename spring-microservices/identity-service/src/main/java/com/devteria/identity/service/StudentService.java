@@ -74,9 +74,14 @@ public class StudentService {
                 .lastName(request.getLastName())
                 .role(Role.STUDENT)
                 .studentId(request.getStudentId())
-                .idDepartment(request.getDepartmentId() != null && !request.getDepartmentId().isEmpty() ? Integer.parseInt(request.getDepartmentId()) : null)
+                .idDepartment(
+                        request.getDepartmentId() != null
+                                        && !request.getDepartmentId().isEmpty()
+                                ? Integer.parseInt(request.getDepartmentId())
+                                : null)
                 .idEducational(
-                        request.getEducationalUnitId() != null && !request.getEducationalUnitId().isEmpty()
+                        request.getEducationalUnitId() != null
+                                        && !request.getEducationalUnitId().isEmpty()
                                 ? Integer.parseInt(request.getEducationalUnitId())
                                 : null)
                 .description(request.getDescription())

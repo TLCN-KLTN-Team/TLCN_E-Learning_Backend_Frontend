@@ -16,7 +16,17 @@ import AssignmentItem from "./AssignmentItem"
 import AddAssignmentModal from "./AddAssignmentModal"
 import EditAssignmentModal from "./EditAssignmentModal"
 import SectionVisibilityModal from "./SectionVisibilityModal"
-import Modal from "@/components/ui/modal"
+// import Modal from "@/components/ui/modal"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { SectionResponse } from "@/services/api/response/sectionResponse"
 import type { LessonResponse } from "@/services/api/response/lessonResponse"
 import type { QuizResponse } from "@/services/api/response/quizResponse"
@@ -143,7 +153,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
     // Get questions from quizData if available, otherwise create empty set
     const questionsToAdd = quizData.questions && quizData.questions.length > 0
       ? new Set(quizData.questions)
-      : new Set()
+      : new Set<any>()
 
     const newQuiz: QuizResponse = {
       id: Date.now(),
@@ -605,48 +615,42 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
         educationalUnitId={educationalUnitId}
       />
 
-      <Modal
-        isOpen={deleteConfirmation.type !== null}
-        onClose={() => setDeleteConfirmation({ type: null, id: null, name: "" })}
-        maxWidth="max-w-md"
+      <AlertDialog
+        open={deleteConfirmation.type !== null}
+        onOpenChange={(open) => !open && setDeleteConfirmation({ type: null, id: null, name: "" })}
       >
-        <div className="p-6">
-          <div className="flex items-start gap-4">
-            <AlertCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Xóa{" "}
-                {deleteConfirmation.type === "lesson"
-                  ? "Bài Học"
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Xóa{" "}
+              {deleteConfirmation.type === "lesson"
+                ? "Bài Học"
+                : deleteConfirmation.type === "quiz"
+                  ? "Bài Kiểm Tra"
+                  : "Bài Tập"}
+              ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa "{deleteConfirmation.name}"? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={
+                deleteConfirmation.type === "lesson"
+                  ? handleConfirmDeleteLesson
                   : deleteConfirmation.type === "quiz"
-                    ? "Bài Kiểm Tra"
-                    : "Bài Tập"}
-                ?
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Bạn có chắc chắn muốn xóa "{deleteConfirmation.name}"? Hành động này không thể hoàn tác.
-              </p>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setDeleteConfirmation({ type: null, id: null, name: "" })}>
-                  Hủy
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={
-                    deleteConfirmation.type === "lesson"
-                      ? handleConfirmDeleteLesson
-                      : deleteConfirmation.type === "quiz"
-                        ? handleConfirmDeleteQuiz
-                        : handleConfirmDeleteAssignment
-                  }
-                >
-                  Xóa
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
+                    ? handleConfirmDeleteQuiz
+                    : handleConfirmDeleteAssignment
+              }
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

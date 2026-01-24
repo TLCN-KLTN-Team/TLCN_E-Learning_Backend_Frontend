@@ -28,7 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @Controller
 @RestController
-@RequestMapping("/api/discussions/assignment")
+@RequestMapping("/discussions/assignment")
 @RequiredArgsConstructor
 @Slf4j
 public class AssignmentController {

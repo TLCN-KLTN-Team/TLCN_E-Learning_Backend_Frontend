@@ -19,7 +19,6 @@ public class StudentCourseController {
     private final CourseEnrollmentService enrollmentService;
     private final CourseClassService classService;
 
-    // get all paging courses
     @GetMapping("/catalog")
     public ApiResponse<PaginatedResponse<?>> getCatalogCourses(@RequestParam int page,
                                                               @RequestParam int size,
@@ -30,7 +29,6 @@ public class StudentCourseController {
                 .build();
     }
 
-    // get contents
     @GetMapping("/class/{classId}/contents")
     public ApiResponse<?> getEnrolledCourseContents(@PathVariable Integer classId) {
         var contents = enrollmentService.getEnrolledCourseContentByClassIdStrict(classId);

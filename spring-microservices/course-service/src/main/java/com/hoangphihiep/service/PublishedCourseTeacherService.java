@@ -10,7 +10,11 @@ import com.hoangphihiep.mapper.PublishedCourseMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
-import com.hoangphihiep.service.searchandfilter.PublishedCourseSearchService;
+import com.hoangphihiep.repository.httpclient.ExpertRepository;
+import com.hoangphihiep.dto.response.ExpertResponse;
+import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.repository.httpclient.NotificationRepository;
+import com.hoangphihiep.dto.request.NotificationMessage;
 import com.hoangphihiep.utils.ElasticSearchIndexInitializer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +42,8 @@ public class PublishedCourseTeacherService {
     private final FileHandlerRepository fileHandlerRepository;
     private final ElasticSearchIndexInitializer elasticSearchIndexInitializer;
     private final TeacherRepository teacherRepository;
+    private final NotificationRepository notificationRepository;
+    private final ExpertRepository expertRepository;
 
     public Page<PublishedCourseResponse> getPublishedCoursesForAdmin(
             Integer educationalUnitId, Integer status, int page, int size) {
@@ -64,9 +70,6 @@ public class PublishedCourseTeacherService {
         }
     }
 
-    /**
-     * Giảng viên tạo hoặc cập nhật thông tin đóng gói khóa học (Draft)
-     */
     @Transactional
     public PublishedCourseResponse createOrUpdateDraft(PublishCourseRequest request, MultipartFile courseImage, MultipartFile courseVideo) {
         // Validate course exists and belongs to teacher
@@ -77,7 +80,6 @@ public class PublishedCourseTeacherService {
         CourseType courseType = courseTypeRepository.findById(request.getCourseTypeId())
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_TYPE_NOT_FOUND));
 
-        // Validate có ít nhất 1 section published
         boolean hasPublishedContent = course.getSections().stream()
                 .anyMatch(section -> Boolean.TRUE.equals(section.getIsPublished()));
 
@@ -92,8 +94,6 @@ public class PublishedCourseTeacherService {
             publishedCourse = publishedCourseRepository.findByCourseId(request.getCourseId())
                     .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
 
-            // Chỉ cho phép update nếu đang ở trạng thái Draft, Rejected, hoặc Approved
-            // Khi update Approved course, sẽ reset về Draft để admin xét duyệt lại
             if (publishedCourse.getStatus() != 0 && publishedCourse.getStatus() != 2 && publishedCourse.getStatus() != 3) {
                 throw new AppException(ErrorCode.PUBLISHED_COURSE_CANNOT_UPDATE);
             }
@@ -153,20 +153,14 @@ public class PublishedCourseTeacherService {
         return publishedCourseMapper.toPublishedCourseResponse(saved);
     }
 
-    /**
-     * Giảng viên gửi duyệt khóa học
-     */
     @Transactional
     public PublishedCourseResponse submitForApproval(Integer courseId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
         String currentTeacherId = SecurityContextHolder.getContext().getAuthentication().getName();
 
         PublishedCourse publishedCourse = publishedCourseRepository.findByCourseId(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
 
-        // Chỉ cho phép gửi duyệt nếu đang ở trạng thái Draft hoặc Rejected
         if (publishedCourse.getStatus() != 0 && publishedCourse.getStatus() != 3) {
             throw new AppException(ErrorCode.PUBLISHED_COURSE_ALREADY_SUBMITTED);
         }
@@ -183,17 +177,24 @@ public class PublishedCourseTeacherService {
         return publishedCourseMapper.toPublishedCourseResponse(saved);
     }
 
-    /**
-     * Admin duyệt khóa học
-     */
     @Transactional
     public PublishedCourseResponse approveCourse(Integer publishedCourseId) {
         PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
 
-        // Validate admin có quyền duyệt (cùng educational unit)
-        String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!currentAdminId.equals(publishedCourse.getCourse().getEducationalUnit().getIdAdmin())) {
+        String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean isAuthorized = false;
+
+        ApiResponse<ExpertResponse> response = expertRepository.getExpertByUserId(currentUserId);
+        if (response != null && response.getResult() != null) {
+            ExpertResponse expert = response.getResult();
+            String eduUnitIdStr = String.valueOf(publishedCourse.getCourse().getEducationalUnit().getId());
+            if (expert.getEducationalUnitId() != null && expert.getEducationalUnitId().equals(eduUnitIdStr)) {
+                isAuthorized = true;
+            }
+        }
+
+        if (!isAuthorized) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -207,21 +208,55 @@ public class PublishedCourseTeacherService {
         PublishedCourse saved = publishedCourseRepository.save(publishedCourse);
         // indexing
         this.indexingForPublishedCourse(saved);
-        log.info("Admin {} approved published course ID: {}", currentAdminId, publishedCourseId);
+        this.indexingForPublishedCourse(saved);
+
+        // Send notification to teacher
+        try {
+            String teacherCode = saved.getCourse().getIdTeacher();
+            // Fetch teacher details to get UUID
+            var teacherResponse = teacherRepository.getTeacherByTeacherId(teacherCode).getResult();
+            
+            if (teacherResponse != null) {
+                notificationRepository.sendNotification(NotificationMessage.builder()
+                        .userId(teacherResponse.getId()) // Use UUID from teacher response
+                        .type("COURSE_APPROVED")
+                        .message("Khóa học \"" + saved.getCourseName() + "\" của bạn đã được phê duyệt thành công.")
+                        .link("/teacher/published-courses/" + saved.getId())
+                        .data(Map.of("courseId", saved.getCourse().getId()))
+                        .build());
+            }
+        } catch (Exception e) {
+            log.error("Failed to send approval notification to teacher", e);
+        }
 
         return publishedCourseMapper.toPublishedCourseResponse(saved);
     }
 
-    /**
-     * Admin từ chối khóa học
-     */
     @Transactional
     public PublishedCourseResponse rejectCourse(Integer publishedCourseId, String reason) {
         PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
 
-        String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!currentAdminId.equals(publishedCourse.getCourse().getEducationalUnit().getIdAdmin())) {
+        String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean isAuthorized = false;
+
+        log.info("Checking expert permission for user: {}", currentUserId);
+        ApiResponse<ExpertResponse> response = expertRepository.getExpertByUserId(currentUserId);
+        log.info("Expert response: {}", response);
+
+        if (response != null && response.getResult() != null) {
+            ExpertResponse expert = response.getResult();
+            String eduUnitIdStr = String.valueOf(publishedCourse.getCourse().getEducationalUnit().getId());
+            log.info("Comparing Expert EduUnitId: {} with Course EduUnitId: {}",
+                    expert.getEducationalUnitId(), eduUnitIdStr);
+
+            if (expert.getEducationalUnitId() != null && expert.getEducationalUnitId().equals(eduUnitIdStr)) {
+                isAuthorized = true;
+                log.info("Expert authorized!");
+            }
+        }
+
+        if (!isAuthorized) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -233,14 +268,30 @@ public class PublishedCourseTeacherService {
         publishedCourse.setUpdatedAt(new Date());
 
         PublishedCourse saved = publishedCourseRepository.save(publishedCourse);
-        log.info("Admin {} rejected published course ID: {} with reason: {}", currentAdminId, publishedCourseId, reason);
+
+        // Send notification to teacher
+        // Send notification to teacher
+        try {
+            String teacherCode = saved.getCourse().getIdTeacher();
+            // Fetch teacher details to get UUID
+            var teacherResponse = teacherRepository.getTeacherByTeacherId(teacherCode).getResult();
+            
+            if (teacherResponse != null) {
+                notificationRepository.sendNotification(NotificationMessage.builder()
+                        .userId(teacherResponse.getId()) // Use UUID from teacher response
+                        .type("COURSE_REJECTED")
+                        .message("Khóa học \"" + saved.getCourseName() + "\" của bạn đã bị từ chối phê duyệt. Lý do: " + reason)
+                        .link("/teacher/published-courses/" + saved.getId())
+                        .data(Map.of("courseId", saved.getCourse().getId(), "reason", reason))
+                        .build());
+            }
+        } catch (Exception e) {
+            log.error("Failed to send rejection notification to teacher", e);
+        }
 
         return publishedCourseMapper.toPublishedCourseResponse(saved);
     }
 
-    /**
-     * Lấy danh sách khóa học đã đóng gói của giảng viên
-     */
     public Page<PublishedCourseResponse> getPublishedCoursesByTeacher(String teacherId, Integer status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
 
@@ -254,9 +305,6 @@ public class PublishedCourseTeacherService {
         return publishedCourses.map(publishedCourseMapper::toPublishedCourseResponse);
     }
 
-    /**
-     * Lấy danh sách khóa học cần duyệt của educational unit
-     */
     public Page<PublishedCourseResponse> getPendingCoursesForAdmin(Integer educationalUnitId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
         Page<PublishedCourse> publishedCourses = publishedCourseRepository.findByEducationalUnitIdAndStatus(
@@ -265,9 +313,6 @@ public class PublishedCourseTeacherService {
         return publishedCourses.map(publishedCourseMapper::toPublishedCourseResponse);
     }
 
-    /**
-     * Lấy chi tiết published course
-     */
     public PublishedCourseResponse getPublishedCourseById(Integer id) {
         PublishedCourse publishedCourse = publishedCourseRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
@@ -291,8 +336,7 @@ public class PublishedCourseTeacherService {
         publishedCourse.setCourse(course);
         publishedCourse.setCourseType(courseType);
         publishedCourse.setCoursePrice(request.getCoursePrice());
-        
-        // Auto-populate courseName and authorName from Course entity
+
         publishedCourse.setCourseName(request.getCourseName() != null ? request.getCourseName() : course.getCourseName());
 
         TeacherResponse teacher = teacherRepository.getTeacherByTeacherId(course.getIdTeacher()).getResult();
@@ -315,14 +359,11 @@ public class PublishedCourseTeacherService {
         publishedCourse.setAuthorName(teacher.getUsername());
         
         publishedCourse.setUpdatedAt(new Date());
-        // Chỉ reset về Draft nếu đang ở trạng thái Draft hoặc Rejected
-        // Nếu đã Approved (status=2), giữ nguyên trạng thái
         if (publishedCourse.getStatus() == 0 || publishedCourse.getStatus() == 3) {
             publishedCourse.setStatus(0);
         }
     }
     private void validatePublishedCourseForSubmission(PublishedCourse publishedCourse) {
-        // Validate có ít nhất 1 section published
         boolean hasPublishedSection = publishedCourse.getCourse().getSections().stream()
                 .anyMatch(section -> Boolean.TRUE.equals(section.getIsPublished()) &&
                         (hasPublishedContent(section)));

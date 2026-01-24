@@ -29,7 +29,6 @@ type ContentItem = {
 };
 
 const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> = ({
-  courseId,
   publishedCourseId,
   courseName,
   user,
@@ -41,12 +40,12 @@ const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> 
   const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-  
+
   const stompClientRef = useRef<Client | null>(null);
 
   useEffect(() => {
     loadCourseContent();
-    
+
     // Cleanup WebSocket on unmount
     return () => {
       if (stompClientRef.current) {
@@ -64,7 +63,7 @@ const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> 
 
       // Flatten all content items
       const items: ContentItem[] = [];
-      
+
       sectionsData.forEach((section) => {
         // Add lessons
         if (section.lessons) {
@@ -120,7 +119,7 @@ const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> 
       });
 
       setContentItems(items);
-      
+
       // Expand first section by default
       if (sectionsData.length > 0) {
         setExpandedSections(new Set([sectionsData[0].id]));
@@ -128,7 +127,7 @@ const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> 
 
       // Fetch unread counts for all items
       await fetchUnreadCounts(items);
-      
+
       // Setup WebSocket to listen for new messages
       setupWebSocket(items);
     } catch (error) {
@@ -146,11 +145,11 @@ const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> 
       const assignmentIds = items.filter(item => item.type === 'assignment').map(item => item.id);
       const lessonIds = items.filter(item => item.type === 'lesson').map(item => item.id);
 
-      console.log("📊 Fetching unread counts for:", { 
-        publishedCourseId, 
-        quizIds, 
-        assignmentIds, 
-        lessonIds 
+      console.log("📊 Fetching unread counts for:", {
+        publishedCourseId,
+        quizIds,
+        assignmentIds,
+        lessonIds
       });
 
       // Fetch counts in parallel
@@ -164,16 +163,16 @@ const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> 
 
       // Merge all counts with type prefix
       const allCounts: Record<string, number> = {};
-      
-      Object.entries(quizCounts).forEach(([id, count]) => {
+
+      Object.entries(quizCounts as Record<string, number>).forEach(([id, count]) => {
         allCounts[`quiz-${id}`] = count;
       });
-      
-      Object.entries(assignmentCounts).forEach(([id, count]) => {
+
+      Object.entries(assignmentCounts as Record<string, number>).forEach(([id, count]) => {
         allCounts[`assignment-${id}`] = count;
       });
-      
-      Object.entries(lessonCounts).forEach(([id, count]) => {
+
+      Object.entries(lessonCounts as Record<string, number>).forEach(([id, count]) => {
         allCounts[`lesson-${id}`] = count;
       });
 
@@ -309,7 +308,7 @@ const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> 
             <div className="w-80 border-r overflow-y-auto">
               <div className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-4">Nội dung khóa học</h3>
-                
+
                 {sections.map((section) => {
                   const sectionItems = contentItems.filter(item => item.sectionId === section.id);
                   const isExpanded = expandedSections.has(section.id);
@@ -331,21 +330,20 @@ const TeacherCourseDiscussionModal: React.FC<TeacherCourseDiscussionModalProps> 
                           {sectionItems.map((item) => {
                             const countKey = `${item.type}-${item.id}`;
                             const unreadCount = unreadCounts[countKey] || 0;
-                            
+
                             // Debug log
                             if (unreadCount > 0) {
                               console.log(`🔔 Badge for ${countKey}: ${unreadCount}`);
                             }
-                            
+
                             return (
                               <button
                                 key={`${item.type}-${item.id}`}
                                 onClick={() => setSelectedItem(item)}
-                                className={`w-full flex items-center gap-2 p-2 rounded text-left transition-colors ${
-                                  selectedItem?.id === item.id && selectedItem?.type === item.type
-                                    ? "bg-blue-50 border border-blue-200"
-                                    : "hover:bg-gray-50"
-                                }`}
+                                className={`w-full flex items-center gap-2 p-2 rounded text-left transition-colors ${selectedItem?.id === item.id && selectedItem?.type === item.type
+                                  ? "bg-blue-50 border border-blue-200"
+                                  : "hover:bg-gray-50"
+                                  }`}
                               >
                                 {getItemIcon(item.type)}
                                 <span className="text-sm text-gray-700 flex-1">{item.title}</span>

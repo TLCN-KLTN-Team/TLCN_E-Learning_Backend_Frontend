@@ -55,7 +55,6 @@ public class StudentController {
             @PathVariable String studentId,
             @Valid @RequestBody StudentRequest request) {
 
-        // Đảm bảo educationalUnitId khớp với institutionId
         request.setEducationalUnitId(String.valueOf(educationalUnitId));
 
         StudentResponse response = studentService.updateStudent(studentId, request);

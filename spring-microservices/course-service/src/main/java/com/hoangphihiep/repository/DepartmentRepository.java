@@ -14,9 +14,6 @@ import java.util.Optional;
 @Repository
 public interface DepartmentRepository extends JpaRepository<Department, Integer> {
 
-    @Query("SELECT d FROM Department d WHERE LOWER(d.name) LIKE LOWER(CONCAT('%', :name, '%'))")
-    List<Department> findByDepartmentNameContaining(@Param("name") String name);
-
     @Query("SELECT d FROM Department d WHERE d.educationalUnit.id = :institutionId " +
             "AND (:search IS NULL OR LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Department> findByEducationalUnitWithSearch(@Param("institutionId") int institutionId,

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Users, Plus, Search, AlertCircle, Loader2, Eye, Info } from 'lucide-react'
-import * as classApi from "@/services/api/admin/classApi";
+import * as classApi from "@/services/api/teacher/classManagementApi";
 import type { ClassStudentStatsResponse } from "@/services/api/response/studentEnrollmentResponse"
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
 import AddStudentsToClassModal from "./AddStudentsToClassModal"
@@ -25,14 +25,14 @@ const getStudentProgress = (student: StudentResponse): number => {
   const assignmentProgress = student.totalAssignments > 0
     ? (student.submittedAssignments / student.totalAssignments) * 100
     : 0
-  
+
   const quizProgress = student.totalQuizzes > 0
     ? (student.completedQuizzes / student.totalQuizzes) * 100
     : 0
 
-  const lessonProgress = student.totalLessons > 0 ? 
+  const lessonProgress = student.totalLessons > 0 ?
     (student.viewedLessons / student.totalLessons) * 100 : 0
-  
+
   // Trung bình của bài tập và quiz
   return (assignmentProgress + quizProgress + lessonProgress) / 3
 }
@@ -49,7 +49,7 @@ const getPerformanceCategory = (progress: number) => {
 // Hàm lấy màu cho từng hàng dựa trên tiến độ
 const getRowColorClass = (progress: number) => {
   const category = getPerformanceCategory(progress)
-  
+
   switch (category) {
     case 'excellent':
       return 'bg-green-50 hover:bg-green-100 border-l-4 border-l-green-500'
@@ -69,7 +69,7 @@ const getRowColorClass = (progress: number) => {
 // Hàm lấy badge tiến độ
 const getProgressBadge = (progress: number) => {
   const category = getPerformanceCategory(progress)
-  
+
   const configs = {
     excellent: { label: 'Xuất Sắc', color: 'bg-green-100 text-green-800 border-green-300' },
     good: { label: 'Tốt', color: 'bg-blue-100 text-blue-800 border-blue-300' },
@@ -77,9 +77,9 @@ const getProgressBadge = (progress: number) => {
     'below-average': { label: 'Yếu', color: 'bg-orange-100 text-orange-800 border-orange-300' },
     poor: { label: 'Kém', color: 'bg-red-100 text-red-800 border-red-300' }
   }
-  
+
   const config = configs[category]
-  
+
   return (
     <div className="flex items-center gap-2 justify-center">
       <Badge className={`${config.color} border font-medium`}>
@@ -221,7 +221,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
       )}
 
       {/* Performance Distribution */}
-      
+
 
       {/* Error Message */}
       {error && (
