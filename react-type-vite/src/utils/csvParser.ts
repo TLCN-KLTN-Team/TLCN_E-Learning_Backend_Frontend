@@ -4,6 +4,9 @@
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 
+// Default password for CSV imports - from environment variable
+const DEFAULT_USER_PASSWORD = import.meta.env.VITE_DEFAULT_USER_PASSWORD || "ChangeMe@123";
+
 // Department mapping - will be built dynamically from API data
 export let DEPARTMENT_MAP: Record<string, string> = {};
 
@@ -367,7 +370,7 @@ export const validateTeacherRow = (
       firstName: data["firstName"],
       lastName: data["lastName"],
       teacherId: data["teacherId"],
-      password: data["password"] || "DefaultPass@123", // Default password
+      password: data["password"] || DEFAULT_USER_PASSWORD, // Default password from env
       dob: data["dob"] || undefined,
       department: data["department"] || undefined,
       departmentId: data["departmentId"] || undefined,
@@ -426,7 +429,7 @@ export const validateExpertRow = (
       firstName: data["firstName"],
       lastName: data["lastName"],
       expertId: data["expertId"],
-      password: data["password"] || "DefaultPass@123", // Default password
+      password: data["password"] || DEFAULT_USER_PASSWORD, // Default password from env
       dob: data["dob"] || undefined,
       description: data["description"] || undefined,
       phoneNumber: data["phoneNumber"] || undefined,
@@ -485,7 +488,7 @@ export const validateStudentRow = (
       firstName: data["firstName"],
       lastName: data["lastName"],
       studentId: data["studentId"],
-      password: data["password"] || "DefaultPass@123", // Default password
+      password: data["password"] || DEFAULT_USER_PASSWORD, // Default password from env
       dob: data["dob"] || undefined,
       department: data["department"] || undefined,
       departmentId: data["departmentId"] || undefined,
@@ -569,7 +572,7 @@ export const generateTeacherImportTemplate = (): string => {
 
   // Use semicolon delimiter for better Excel compatibility in many locales
   const template = headers.join(";");
-  const example = `john_doe;john.doe@example.com;John;Doe;T001;Pass@123;1990-01-15;1;"Senior Teacher";"https://example.com";`;
+  const example = `john_doe;john.doe@example.com;John;Doe;T001;${DEFAULT_USER_PASSWORD};1990-01-15;1;"Senior Teacher";"https://example.com";`;
 
   // Use CRLF for line ending
   return `${template}\r\n${example}`;
@@ -632,7 +635,7 @@ export const downloadTeacherTemplateXLSX = async (
     firstName: "John",
     lastName: "Doe",
     teacherId: "T001",
-    password: "Pass@123",
+    password: DEFAULT_USER_PASSWORD,
     dob: "1990-01-15",
     department: exampleDept,
     description: "Giảng viên cao cấp",
@@ -747,7 +750,7 @@ export const downloadExpertTemplateXLSX = async (): Promise<void> => {
     firstName: "Alex",
     lastName: "Taylor",
     expertId: "E001",
-    password: "Pass@123",
+    password: DEFAULT_USER_PASSWORD,
     dob: "1985-05-20",
     phoneNumber: "0901234567",
     description: "Chuyên gia AI",
@@ -819,7 +822,7 @@ export const downloadStudentTemplateXLSX = async (
     firstName: "Jane",
     lastName: "Doe",
     studentId: "S001",
-    password: "Pass@123",
+    password: DEFAULT_USER_PASSWORD,
     dob: "2000-01-15",
     department: exampleDept,
     description: "Sinh viên xuất sắc",
