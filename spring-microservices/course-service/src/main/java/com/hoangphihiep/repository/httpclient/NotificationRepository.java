@@ -9,6 +9,6 @@ import com.hoangphihiep.config.FeignClientConfig;
 
 @FeignClient(name = "notification-service", url = "${app.services.notification}", configuration = FeignClientConfig.class)
 public interface NotificationRepository {
-    @PostMapping("/api/v1/notifications/push")
+    @PostMapping("/notifications/push")
     void sendNotification(@RequestBody NotificationMessage notificationMessage);
 }

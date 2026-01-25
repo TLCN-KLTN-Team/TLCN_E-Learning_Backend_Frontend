@@ -89,6 +89,7 @@ const UserRoutes = [
       </ProtectedRoute>
     }
   />,
+
 ];
 
 export default UserRoutes;
