@@ -68,7 +68,8 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             "/profile/users/.*",
             "/identity/forgot-password/.*",
             "/server/ws/.*",
-            "/notifications/subscribe/.*"
+            "/notifications/subscribe/.*",
+            "/chat/forum/.*"
     ));
 
     @Value("${app.api-prefix}")

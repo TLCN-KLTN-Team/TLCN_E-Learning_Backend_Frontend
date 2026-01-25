@@ -11,6 +11,11 @@ import CourseDetail from "@/pages/user/course/CourseDetail";
 import TeacherDetail from "@/pages/user/course/TeacherDetail";
 import DetailEducationalUnit from "@/pages/user/universitry/DetailEducationalUnit";
 import AboutUs from "@/pages/user/home/AboutUs";
+import ForumHome from "@/pages/forum/ForumHome";
+import ForumCreatePost from "@/pages/forum/ForumCreatePost";
+import ForumPostDetail from "@/pages/forum/ForumPostDetail";
+
+import ForumLayout from "@/layouts/ForumLayout";
 
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
@@ -61,6 +66,13 @@ const PublicRoutes = [
     path="/educational-units/:id"
     element={<DetailEducationalUnit />}
   />,
+
+  // Forum Routes
+  <Route key="forum-layout" element={<ForumLayout />}>
+    <Route path="/forum" element={<ForumHome />} />
+    <Route path="/forum/create" element={<ForumCreatePost />} />
+    <Route path="/forum/posts/:id" element={<ForumPostDetail />} />
+  </Route>,
 ];
 
 export default PublicRoutes;

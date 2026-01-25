@@ -70,11 +70,22 @@ spring:
               filters:
                 - StripPrefix=2
 
+            # Forum Service (integrated in chat-service)
+            - id: chat-service-forum
+              uri: ${CHAT_SERVICE_URI:http://localhost:8090}
+              predicates:
+                - Path=${app.api-prefix}/chat/forum/**
+              filters:
+                - StripPrefix=3
+                - PrefixPath=/server
+
             # Notification Service
             - id: notification-service
               uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8092}
               predicates:
                 - Path=${app.api-prefix}/notifications/**
+              filters:
+                - StripPrefix=2
 
 springdoc:
   swagger-ui:

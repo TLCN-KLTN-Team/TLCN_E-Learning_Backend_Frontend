@@ -20,5 +20,5 @@ export const getUserNotifications = async (userId: string) => {
 
 export const subscribeToNotifications = (userId: string) => {
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8888';
-    return new EventSource(`${baseUrl}/api/v1/notifications/subscribe/${userId}`);
+    return new EventSource(`${baseUrl}/notifications/subscribe/${userId}`);
 };
