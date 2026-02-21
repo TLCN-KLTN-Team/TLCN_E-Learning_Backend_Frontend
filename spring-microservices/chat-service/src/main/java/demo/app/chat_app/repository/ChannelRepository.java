@@ -30,7 +30,7 @@ public interface ChannelRepository extends MongoRepository<Channel, String> {
     List<Channel> findChannelsByParticipantUserId(String userId);
     
     // Find channels in workspace where user is participant
-    @Query("{ 'workspaceId': ?0, 'participants.userId': ?1 }")
+    @Query("{ 'workspaceId': ?0, 'memberIds.userId': ?1 }")
     List<Channel> findByWorkspaceIdAndParticipantUserId(String workspaceId, String userId);
 
     Optional<Channel> findByChannelNameContainingIgnoreCase(String channelName);
