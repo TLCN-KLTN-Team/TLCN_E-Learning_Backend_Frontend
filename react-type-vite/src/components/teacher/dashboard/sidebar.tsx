@@ -12,6 +12,7 @@ import {
   ChevronRight,
   EarthLock,
   Brain,
+  BrainCircuit,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -33,6 +34,11 @@ const menuItems = [
     name: "Ngân hàng câu hỏi", 
     icon: Brain, 
     path: "/teacher/question-bank" 
+  },
+  { 
+    name: "Tạo câu hỏi bằng AI", 
+    icon: BrainCircuit, 
+    path: "/teacher/generate-questions" 
   },
   { name: "Theo dõi doanh thu", icon: TrendingUp, path: "/teacher/revenue" },
   {

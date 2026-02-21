@@ -2,6 +2,107 @@
 @import "./styles/typography.css";
 @import "./styles/bootstrap-utilities.css";
 
+/* Tailwind Base Layer - Quiz Component Variables */
+@layer base {
+  :root {
+    --background: 0 0% 97%;
+    --foreground: 220 20% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+
+    --primary: 172 66% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 170 30% 94%;
+    --secondary-foreground: 172 66% 20%;
+
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 38 92% 14%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 89%;
+    --input: 220 13% 89%;
+    --ring: 172 66% 30%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom tokens */
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 14%;
+    --info: 210 80% 52%;
+    --info-foreground: 0 0% 100%;
+
+    --section-gap: 2rem;
+    --card-shadow:
+      0 1px 3px 0 hsl(220 20% 10% / 0.04),
+      0 1px 2px -1px hsl(220 20% 10% / 0.04);
+    --card-shadow-hover: 0 4px 12px 0 hsl(220 20% 10% / 0.08);
+  }
+
+  .dark {
+    --background: 220 20% 7%;
+    --foreground: 0 0% 95%;
+    --card: 220 20% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 172 60% 45%;
+    --primary-foreground: 220 20% 7%;
+    --secondary: 172 20% 15%;
+    --secondary-foreground: 172 40% 80%;
+    --muted: 220 15% 16%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 38 80% 55%;
+    --accent-foreground: 38 80% 10%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 172 60% 45%;
+
+    --sidebar-background: 220 20% 9%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 220 20% 9%;
+    --sidebar-accent: 220 15% 16%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 172 60% 45%;
+
+    /* Custom tokens */
+    --success: 152 55% 50%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 85% 60%;
+    --warning-foreground: 38 85% 10%;
+    --info: 210 75% 60%;
+    --info-foreground: 0 0% 100%;
+
+    --card-shadow:
+      0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+    --card-shadow-hover: 0 4px 12px 0 hsl(0 0% 0% / 0.3);
+  }
+}
+
 /* Bootstrap Theme Variables */
 :root,
 [data-bs-theme="light"] {
@@ -77,11 +178,13 @@
   --bs-dark-border-subtle: #a7a9ab;
   --bs-white-rgb: 255, 255, 255;
   --bs-black-rgb: 0, 0, 0;
-  --bs-font-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --bs-font-monospace: SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  --bs-font-sans-serif:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans",
+    "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --bs-font-monospace:
+    SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
   --bs-gradient: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.15),
@@ -138,9 +241,11 @@
   --bs-form-invalid-border-color: #dc3545;
 
   /* Custom radius for compatibility */
-  --radius: 0.325rem;
+  /* --radius: 0.325rem; */
 
   /* Compatibility mapping for existing components - Updated for Tailwind */
+  /* These are now defined in @layer base at the top of the file */
+  /*
   --background: 255 255 255;
   --foreground: 116 117 121;
   --card: 255 255 255;
@@ -160,6 +265,7 @@
   --border: 221 224 227;
   --input: 239 241 242;
   --ring: 6 106 201;
+  */
 
   /* Education theme colors - adapted to Bootstrap variables */
   --education-primary: var(--bs-primary);
@@ -226,6 +332,8 @@
   --bs-form-invalid-border-color: #ea868f;
 
   /* Compatibility mapping for dark theme - Updated for Tailwind */
+  /* These are now defined in @layer base at the top of the file */
+  /*
   --background: 33 37 41;
   --foreground: 222 226 230;
   --card: 52 58 64;
@@ -245,9 +353,12 @@
   --border: 73 80 87;
   --input: 52 58 64;
   --ring: 6 106 201;
+  */
 }
 
 /* Legacy dark theme support - Updated for Tailwind */
+/* Now defined in @layer base .dark selector at the top of the file */
+/*
 .dark {
   --background: 33 37 41;
   --foreground: 222 226 230;
@@ -269,6 +380,7 @@
   --input: 52 58 64;
   --ring: 6 106 201;
 }
+*/
 
 /* Base Styles */
 * {
@@ -282,7 +394,9 @@ body {
   font-size: var(--bs-body-font-size);
   font-weight: var(--bs-body-font-weight);
   line-height: var(--bs-body-line-height);
-  font-feature-settings: "rlig" 1, "calt" 1;
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
 }
 
 /* Smooth Scrolling */
@@ -534,7 +648,9 @@ input[type="number"],
 input[type="range"],
 textarea,
 select {
-  transition: border-color 0.3s ease, box-shadow 0.3s ease,
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
     background-color 0.3s ease !important;
 }
 
@@ -712,7 +828,8 @@ input[type="radio"]:checked:hover {
 
 /* Pulse animation for loading states */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -758,4 +875,95 @@ button[variant="ghost"]:hover,
 .btn-ghost:hover {
   background-color: rgba(6, 106, 201, 0.08) !important;
   color: var(--bs-primary, #066ac9) !important;
+}
+
+/* Quiz Generator Styles */
+.section-card {
+  border-radius: 0.75rem;
+  border-width: 1px;
+  background-color: hsl(var(--card));
+  padding: 1.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.badge-easy {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background-color: rgb(220 252 231);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: rgb(22 101 52);
+}
+
+.dark .badge-easy {
+  background-color: rgb(20 83 45 / 0.3);
+  color: rgb(134 239 172);
+}
+
+.badge-medium {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background-color: rgb(254 249 195);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: rgb(113 63 18);
+}
+
+.dark .badge-medium {
+  background-color: rgb(113 63 18 / 0.3);
+  color: rgb(253 224 71);
+}
+
+.badge-hard {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background-color: rgb(254 226 226);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: rgb(127 29 29);
+}
+
+.dark .badge-hard {
+  background-color: rgb(127 29 29 / 0.3);
+  color: rgb(252 165 165);
+}
+
+/* Slide up animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Gentle pulse animation */
+@keyframes pulseGentle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-gentle {
+  animation: pulseGentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

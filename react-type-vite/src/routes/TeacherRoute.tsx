@@ -12,6 +12,7 @@ import StudentAssignmentsPage from "@/pages/teacher/public/UserAssignmentsPage";
 import TeacherRevenuePage from "@/pages/teacher/revenue/TeacherRevenuePage";
 import TeacherProfilePage from "@/pages/teacher/TeacherProfilePage";
 import QuestionBankPage from "@/pages/teacher/QuestionBankPage";
+import QuestionGenerationPage from "@/pages/teacher/sidebar/QuestionGenerationPage";
 
 // Teacher routes - protected routes for teacher role
 const TeacherRoutes = [
@@ -73,6 +74,12 @@ const TeacherRoutes = [
       key="teacher-question-bank"
       path="question-bank"
       element={<QuestionBankPage />}
+    />
+    {/* Question Bank Route */}
+    <Route
+      key="teacher-generate-questions"
+      path="generate-questions"
+      element={<QuestionGenerationPage />}
     />
 
     {/* Revenue Route */}
