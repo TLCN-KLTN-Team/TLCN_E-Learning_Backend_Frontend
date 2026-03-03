@@ -11,8 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   EarthLock,
-  Brain,
   BrainCircuit,
+  Box,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -32,7 +32,7 @@ const menuItems = [
   },
   { 
     name: "Ngân hàng câu hỏi", 
-    icon: Brain, 
+    icon: Box, 
     path: "/teacher/question-bank" 
   },
   { 

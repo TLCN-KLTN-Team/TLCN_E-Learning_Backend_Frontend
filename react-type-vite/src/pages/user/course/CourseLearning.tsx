@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect, useRef } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import type React from "react";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
   ChevronRight,
@@ -26,233 +26,289 @@ import {
   Link as LinkIcon,
   Loader2,
   Trash2,
-  MessageSquare
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { getSectionsByCourseId } from "@/services/api/user/sectionApi"
-import { CourseApiService } from "@/services/api/user/courseApi"
-import type { SectionResponse } from "@/services/api/response/sectionResponse"
-import type { LessonResponse } from "@/services/api/response/lessonResponse"
-import type { QuizResponse } from "@/services/api/response/quizResponse"
-import type { AssignmentResponse } from "@/services/api/response/assignmentResponse"
-import { toast } from "react-toastify"
-import UserQuizAttempt from "@/components/user/course/UserQuizAttempt"
-import userQuizApi from "@/services/api/user/userQuizApi"
-import assignmentApi from "@/services/api/student/assignmentApi"
-import progressApi from "@/services/api/user/progressApi"
-import reviewApi from "@/services/api/user/reviewApi"
-import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse"
-import MarkdownRenderer from "@/components/shared/MarkdownRenderer"
-import StudentDiscussionPanel from "@/components/user/course/StudentDiscussionPanel"
-import { useAuth } from "@/context/auth-context/useAuth"
-import { getCourseQuizUnreadCount } from "@/services/api/courseQuizDiscussionApi"
-import { getCourseAssignmentUnreadCount } from "@/services/api/courseAssignmentDiscussionApi"
-import { getCourseLessonDiscussionUnreadCount } from "@/services/api/courseLessonDiscussionApi"
+  MessageSquare,
+  Bot,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { getSectionsByCourseId } from "@/services/api/user/sectionApi";
+import { CourseApiService } from "@/services/api/user/courseApi";
+import type { SectionResponse } from "@/services/api/response/sectionResponse";
+import type { LessonResponse } from "@/services/api/response/lessonResponse";
+import type { QuizResponse } from "@/services/api/response/quizResponse";
+import type { AssignmentResponse } from "@/services/api/response/assignmentResponse";
+import { toast } from "react-toastify";
+import UserQuizAttempt from "@/components/user/course/UserQuizAttempt";
+import userQuizApi from "@/services/api/user/userQuizApi";
+import assignmentApi from "@/services/api/student/assignmentApi";
+import progressApi from "@/services/api/user/progressApi";
+import reviewApi from "@/services/api/user/reviewApi";
+import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
+import StudentDiscussionPanel from "@/components/user/course/StudentDiscussionPanel";
+import { useAuth } from "@/context/auth-context/useAuth";
+import { getCourseQuizUnreadCount } from "@/services/api/courseQuizDiscussionApi";
+import { getCourseAssignmentUnreadCount } from "@/services/api/courseAssignmentDiscussionApi";
+import { getCourseLessonDiscussionUnreadCount } from "@/services/api/courseLessonDiscussionApi";
+import AIQuizPracticeModeComponent from "@/components/user/course/AIQuizPracticeModeComponent";
+
+import { ACTIVE_COURSE_NAVIGATION_CLASS } from "@/constants/couseStyle";
 
 type ContentItem = {
-  id: number
-  type: "lesson" | "quiz" | "assignment"
-  title: string
-  orderIndex: number
-  sectionId: number
-  sectionTitle: string
-  data: LessonResponse | QuizResponse | AssignmentResponse
-  isCompleted: boolean
-}
+  id: number;
+  type: "lesson" | "quiz" | "assignment";
+  title: string;
+  orderIndex: number;
+  sectionId: number;
+  sectionTitle: string;
+  data: LessonResponse | QuizResponse | AssignmentResponse;
+  isCompleted: boolean;
+};
 
 const CourseLearning: React.FC = () => {
-  const { courseId } = useParams<{ courseId: string }>()
-  const navigate = useNavigate()
+  const { courseId } = useParams<{ courseId: string }>();
+  const navigate = useNavigate();
 
-  const [courseName, setCourseName] = useState<string>("")
-  const [courseData, setCourseData] = useState<any>(null)
-  const [sections, setSections] = useState<SectionResponse[]>([])
-  const [contentItems, setContentItems] = useState<ContentItem[]>([])
-  const [currentItemIndex, setCurrentItemIndex] = useState<number>(0)
-  const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set())
-  const [activeTab, setActiveTab] = useState<"overview" | "about" | "notes" | "announcements" | "reviews" | "tools" | "discussion">("overview")
-  const [contentDisplayMode, setContentDisplayMode] = useState<'normal' | 'quiz' | 'assignment'>('normal')
-  const { user } = useAuth()
+  const [courseName, setCourseName] = useState<string>("");
+  const [courseData, setCourseData] = useState<any>(null);
+  const [sections, setSections] = useState<SectionResponse[]>([]);
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
+  const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(
+    new Set(),
+  );
+  const [activeTab, setActiveTab] = useState<
+    | "overview"
+    | "about"
+    | "notes"
+    | "announcements"
+    | "reviews"
+    | "tools"
+    | "discussion"
+    | "practice"
+  >("overview");
+  const [contentDisplayMode, setContentDisplayMode] = useState<
+    "normal" | "quiz" | "assignment"
+  >("normal");
+  const { user } = useAuth();
 
   // Progress tracking states
-  const [progressStats, setProgressStats] = useState<ProgressStatsResponse | null>(null)
-  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set())
-  const [completedQuizzes, setCompletedQuizzes] = useState<Set<number>>(new Set())
-  const [completedAssignments, setCompletedAssignments] = useState<Set<number>>(new Set())
-  const [isMarkingComplete, setIsMarkingComplete] = useState<Set<number>>(new Set())
+  const [progressStats, setProgressStats] =
+    useState<ProgressStatsResponse | null>(null);
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
+    new Set(),
+  );
+  const [completedQuizzes, setCompletedQuizzes] = useState<Set<number>>(
+    new Set(),
+  );
+  const [completedAssignments, setCompletedAssignments] = useState<Set<number>>(
+    new Set(),
+  );
+  const [isMarkingComplete, setIsMarkingComplete] = useState<Set<number>>(
+    new Set(),
+  );
 
   // Assignment submission modal
-  const [showSubmissionModal, setShowSubmissionModal] = useState(false)
-  const [submissionContent, setSubmissionContent] = useState('')
-  const [submissionFiles, setSubmissionFiles] = useState<File[]>([])
-  const [submissionLink, setSubmissionLink] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [submissionContent, setSubmissionContent] = useState("");
+  const [submissionFiles, setSubmissionFiles] = useState<File[]>([]);
+  const [submissionLink, setSubmissionLink] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Unread discussion count
-  const [unreadDiscussionCount, setUnreadDiscussionCount] = useState<number>(0)
+  const [unreadDiscussionCount, setUnreadDiscussionCount] = useState<number>(0);
+
+  // AI Study Mode state
+  const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
 
   // Current item - must be declared before useEffect hooks
-  const currentItem = contentItems[currentItemIndex]
+  const currentItem = contentItems[currentItemIndex];
 
   // Fetch progress stats
   const fetchProgressStats = async () => {
-    if (!courseId) return
+    if (!courseId) return;
 
     try {
-      const stats = await progressApi.getPublishedCourseProgress(Number(courseId))
-      setProgressStats(stats)
-      console.log("📊 Progress Stats:", stats)
+      const stats = await progressApi.getPublishedCourseProgress(
+        Number(courseId),
+      );
+      setProgressStats(stats);
+      console.log("📊 Progress Stats:", stats);
 
       // Fetch completed lessons detail
-      const detail = await progressApi.getPublishedCourseProgressDetail(Number(courseId))
-      console.log("📋 Progress Detail Full:", detail)
-      console.log("📋 Lesson Progresses:", detail.courseProgress.lessonProgresses)
+      const detail = await progressApi.getPublishedCourseProgressDetail(
+        Number(courseId),
+      );
+      console.log("📋 Progress Detail Full:", detail);
+      console.log(
+        "📋 Lesson Progresses:",
+        detail.courseProgress.lessonProgresses,
+      );
 
       // If lessonProgress exists, consider it completed (even if isCompleted is false)
       // This is because the backend creates lessonProgress when user completes a lesson
       const completedLessonIds = new Set(
-        detail.courseProgress.lessonProgresses.map(lp => lp.lessonId)
-      )
-      console.log("✅ Completed Lesson IDs:", Array.from(completedLessonIds))
-      setCompletedLessons(completedLessonIds)
+        detail.courseProgress.lessonProgresses.map((lp) => lp.lessonId),
+      );
+      console.log("✅ Completed Lesson IDs:", Array.from(completedLessonIds));
+      setCompletedLessons(completedLessonIds);
 
       // Fetch completed quizzes and assignments (check from sections which items have attempts/submissions)
-      const sectionsData = await getSectionsByCourseId(Number(courseId))
+      const sectionsData = await getSectionsByCourseId(Number(courseId));
 
       // Collect all quiz and assignment IDs
-      const allQuizIds: number[] = []
-      const allAssignmentIds: number[] = []
+      const allQuizIds: number[] = [];
+      const allAssignmentIds: number[] = [];
 
-      sectionsData.forEach(section => {
+      sectionsData.forEach((section) => {
         if (section.quizs) {
-          section.quizs.forEach(quiz => allQuizIds.push(quiz.id))
+          section.quizs.forEach((quiz) => allQuizIds.push(quiz.id));
         }
         if (section.assignments) {
-          section.assignments.forEach(assignment => allAssignmentIds.push(assignment.id))
+          section.assignments.forEach((assignment) =>
+            allAssignmentIds.push(assignment.id),
+          );
         }
-      })
+      });
 
       // Fetch all quiz attempts in parallel
       const quizPromises = allQuizIds.map(async (quizId) => {
         try {
-          const attempts = await userQuizApi.getQuizAttemptHistory(quizId)
-          return attempts && attempts.length > 0 ? quizId : null
+          const attempts = await userQuizApi.getQuizAttemptHistory(quizId);
+          return attempts && attempts.length > 0 ? quizId : null;
         } catch (error) {
-          return null
+          return null;
         }
-      })
+      });
 
       // Fetch all assignment submissions in parallel
       const assignmentPromises = allAssignmentIds.map(async (assignmentId) => {
         try {
-          const submission = await assignmentApi.getMySubmission(assignmentId)
-          return submission ? assignmentId : null
+          const submission = await assignmentApi.getMySubmission(assignmentId);
+          return submission ? assignmentId : null;
         } catch (error) {
-          return null
+          return null;
         }
-      })
+      });
 
-      const [completedQuizResults, completedAssignmentResults] = await Promise.all([
-        Promise.all(quizPromises),
-        Promise.all(assignmentPromises)
-      ])
+      const [completedQuizResults, completedAssignmentResults] =
+        await Promise.all([
+          Promise.all(quizPromises),
+          Promise.all(assignmentPromises),
+        ]);
 
-      const completedQuizIds = new Set(completedQuizResults.filter((id): id is number => id !== null))
-      const completedAssignmentIds = new Set(completedAssignmentResults.filter((id): id is number => id !== null))
+      const completedQuizIds = new Set(
+        completedQuizResults.filter((id): id is number => id !== null),
+      );
+      const completedAssignmentIds = new Set(
+        completedAssignmentResults.filter((id): id is number => id !== null),
+      );
 
-      setCompletedQuizzes(completedQuizIds)
-      setCompletedAssignments(completedAssignmentIds)
-
+      setCompletedQuizzes(completedQuizIds);
+      setCompletedAssignments(completedAssignmentIds);
     } catch (error) {
-      console.error("Error fetching progress stats:", error)
+      console.error("Error fetching progress stats:", error);
     }
-  }
+  };
 
   // Mark lesson as complete
   const handleMarkLessonComplete = async (lessonId: number) => {
-    if (!courseId || completedLessons.has(lessonId)) return
+    if (!courseId || completedLessons.has(lessonId)) return;
 
-    setIsMarkingComplete(prev => new Set(prev).add(lessonId))
+    setIsMarkingComplete((prev) => new Set(prev).add(lessonId));
 
     try {
       await progressApi.markLessonComplete({
         lessonId,
         publishedCourseId: Number(courseId),
-      })
+      });
 
       // Update local state - this will trigger the useEffect to update contentItems
-      setCompletedLessons(prev => {
-        const newSet = new Set(prev)
-        newSet.add(lessonId)
-        return newSet
-      })
+      setCompletedLessons((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(lessonId);
+        return newSet;
+      });
 
       // Refresh progress stats
-      await fetchProgressStats()
+      await fetchProgressStats();
 
-      toast.success("Đã đánh dấu bài học hoàn thành!")
+      toast.success("Đã đánh dấu bài học hoàn thành!");
     } catch (error) {
-      console.error("Error marking lesson complete:", error)
-      toast.error("Không thể đánh dấu bài học đã hoàn thành. Vui lòng thử lại.")
+      console.error("Error marking lesson complete:", error);
+      toast.error(
+        "Không thể đánh dấu bài học đã hoàn thành. Vui lòng thử lại.",
+      );
     } finally {
-      setIsMarkingComplete(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(lessonId)
-        return newSet
-      })
+      setIsMarkingComplete((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(lessonId);
+        return newSet;
+      });
     }
-  }
+  };
 
   // Restore contentDisplayMode and currentItemIndex from localStorage on mount
   useEffect(() => {
     if (courseId) {
-      const savedState = localStorage.getItem(`course-learning-${courseId}`)
+      const savedState = localStorage.getItem(`course-learning-${courseId}`);
       if (savedState) {
         try {
-          const { displayMode, itemIndex, timestamp } = JSON.parse(savedState)
-          const elapsed = Date.now() - timestamp
+          const { displayMode, itemIndex, timestamp } = JSON.parse(savedState);
+          const elapsed = Date.now() - timestamp;
           // Only restore if within 24 hours (86400000 ms)
           if (elapsed < 86400000) {
-            console.log('🔄 Restoring saved state:', { displayMode, itemIndex })
-            setContentDisplayMode(displayMode)
-            setCurrentItemIndex(itemIndex)
+            console.log("🔄 Restoring saved state:", {
+              displayMode,
+              itemIndex,
+            });
+            setContentDisplayMode(displayMode);
+            setCurrentItemIndex(itemIndex);
           } else {
-            localStorage.removeItem(`course-learning-${courseId}`)
+            localStorage.removeItem(`course-learning-${courseId}`);
           }
         } catch (err) {
-          console.error('Error restoring state:', err)
+          console.error("Error restoring state:", err);
         }
       }
     }
-    loadCourseData()
-    fetchProgressStats()
-  }, [courseId])
+    loadCourseData();
+    fetchProgressStats();
+  }, [courseId]);
 
   // Fetch unread count for current item
   useEffect(() => {
     const fetchUnreadCount = async () => {
-      if (!currentItem || !courseId) return
+      if (!currentItem || !courseId) return;
 
       try {
-        let count = 0
-        if (currentItem.type === 'quiz') {
-          count = await getCourseQuizUnreadCount(Number(courseId), currentItem.id)
-        } else if (currentItem.type === 'assignment') {
-          count = await getCourseAssignmentUnreadCount(Number(courseId), currentItem.id)
-        } else if (currentItem.type === 'lesson') {
-          count = await getCourseLessonDiscussionUnreadCount(Number(courseId), currentItem.id)
+        let count = 0;
+        if (currentItem.type === "quiz") {
+          count = await getCourseQuizUnreadCount(
+            Number(courseId),
+            currentItem.id,
+          );
+        } else if (currentItem.type === "assignment") {
+          count = await getCourseAssignmentUnreadCount(
+            Number(courseId),
+            currentItem.id,
+          );
+        } else if (currentItem.type === "lesson") {
+          count = await getCourseLessonDiscussionUnreadCount(
+            Number(courseId),
+            currentItem.id,
+          );
         }
-        setUnreadDiscussionCount(count)
+        setUnreadDiscussionCount(count);
       } catch (error) {
-        console.error('Error fetching unread count:', error)
-        setUnreadDiscussionCount(0)
+        console.error("Error fetching unread count:", error);
+        setUnreadDiscussionCount(0);
       }
-    }
+    };
 
-    fetchUnreadCount()
-  }, [currentItem, courseId])
+    fetchUnreadCount();
+  }, [currentItem, courseId]);
 
   // Sync completedLessons with contentItems
   useEffect(() => {
@@ -261,77 +317,92 @@ const CourseLearning: React.FC = () => {
         lessons: Array.from(completedLessons),
         quizzes: Array.from(completedQuizzes),
         assignments: Array.from(completedAssignments),
-        totalItems: contentItems.length
-      })
+        totalItems: contentItems.length,
+      });
 
-      let hasChanges = false
-      const updatedItems = contentItems.map(item => {
-        let shouldBeCompleted = false
+      let hasChanges = false;
+      const updatedItems = contentItems.map((item) => {
+        let shouldBeCompleted = false;
 
-        if (item.type === 'lesson') {
-          shouldBeCompleted = completedLessons.has(item.id)
-        } else if (item.type === 'quiz') {
-          shouldBeCompleted = completedQuizzes.has(item.id)
-        } else if (item.type === 'assignment') {
-          shouldBeCompleted = completedAssignments.has(item.id)
+        if (item.type === "lesson") {
+          shouldBeCompleted = completedLessons.has(item.id);
+        } else if (item.type === "quiz") {
+          shouldBeCompleted = completedQuizzes.has(item.id);
+        } else if (item.type === "assignment") {
+          shouldBeCompleted = completedAssignments.has(item.id);
         }
 
         if (shouldBeCompleted !== item.isCompleted) {
-          hasChanges = true
-          console.log(`${shouldBeCompleted ? '✅' : '❌'} ${item.type} #${item.id} "${item.title}" completed=${shouldBeCompleted}`)
+          hasChanges = true;
+          console.log(
+            `${shouldBeCompleted ? "✅" : "❌"} ${item.type} #${item.id} "${item.title}" completed=${shouldBeCompleted}`,
+          );
         }
 
-        return { ...item, isCompleted: shouldBeCompleted }
-      })
+        return { ...item, isCompleted: shouldBeCompleted };
+      });
 
       if (hasChanges) {
-        console.log("📝 Updating contentItems with new completion status")
-        setContentItems(updatedItems)
+        console.log("📝 Updating contentItems with new completion status");
+        setContentItems(updatedItems);
       }
     }
-  }, [completedLessons, completedQuizzes, completedAssignments])
+  }, [completedLessons, completedQuizzes, completedAssignments]);
 
   // Auto-hide sidebar when entering quiz/assignment mode and save state to localStorage
   useEffect(() => {
-    if (contentDisplayMode === 'quiz' || contentDisplayMode === 'assignment') {
-      setSidebarOpen(false)
+    if (contentDisplayMode === "quiz" || contentDisplayMode === "assignment") {
+      setSidebarOpen(false);
       // Save state to localStorage
       if (courseId) {
         const state = {
           displayMode: contentDisplayMode,
           itemIndex: currentItemIndex,
-          timestamp: Date.now()
-        }
-        localStorage.setItem(`course-learning-${courseId}`, JSON.stringify(state))
-        console.log('💾 Saved state to localStorage:', state)
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(
+          `course-learning-${courseId}`,
+          JSON.stringify(state),
+        );
+        console.log("💾 Saved state to localStorage:", state);
       }
-    } else if (contentDisplayMode === 'normal' && courseId) {
+    } else if (contentDisplayMode === "normal" && courseId) {
       // Clear localStorage when returning to normal mode
-      localStorage.removeItem(`course-learning-${courseId}`)
-      console.log('🗑️ Cleared saved state from localStorage')
+      localStorage.removeItem(`course-learning-${courseId}`);
+      console.log("🗑️ Cleared saved state from localStorage");
     }
-  }, [contentDisplayMode, currentItemIndex, courseId])
+  }, [contentDisplayMode, currentItemIndex, courseId]);
+
+  // Auto-open sidebar and expand all sections when entering practice mode
+  useEffect(() => {
+    if (activeTab === "practice") {
+      setSidebarOpen(true);
+      // Expand all sections for easy chapter selection
+      const allSectionIds = sections.map((s) => s.id);
+      setExpandedSections(new Set(allSectionIds));
+    }
+  }, [activeTab, sections]);
 
   const loadCourseData = async () => {
-    if (!courseId) return
+    if (!courseId) return;
 
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Load course basic info
-      const courseData = await CourseApiService.getCourseById(courseId)
+      const courseData = await CourseApiService.getCourseById(courseId);
       if (courseData) {
-        setCourseName(courseData.courseName)
-        setCourseData(courseData)
+        setCourseName(courseData.courseName);
+        setCourseData(courseData);
       }
 
       // Load sections with content
-      const sectionsData = await getSectionsByCourseId(Number(courseId))
-      sectionsData.sort((a, b) => a.orderIndex - b.orderIndex)
-      setSections(sectionsData)
+      const sectionsData = await getSectionsByCourseId(Number(courseId));
+      sectionsData.sort((a, b) => a.orderIndex - b.orderIndex);
+      setSections(sectionsData);
 
       // Flatten all content items
-      const items: ContentItem[] = []
+      const items: ContentItem[] = [];
 
       sectionsData.forEach((section) => {
         // Add lessons
@@ -346,8 +417,8 @@ const CourseLearning: React.FC = () => {
               sectionTitle: section.title,
               data: lesson,
               isCompleted: false, // TODO: Track from backend
-            })
-          })
+            });
+          });
         }
 
         // Add quizzes
@@ -362,8 +433,8 @@ const CourseLearning: React.FC = () => {
               sectionTitle: section.title,
               data: quiz,
               isCompleted: false, // TODO: Track from progress
-            })
-          })
+            });
+          });
         }
 
         // Add assignments
@@ -378,164 +449,174 @@ const CourseLearning: React.FC = () => {
               sectionTitle: section.title,
               data: assignment,
               isCompleted: false, // TODO: Track from progress
-            })
-          })
+            });
+          });
         }
-      })
+      });
 
       // Sort by section order and item order
       items.sort((a, b) => {
-        const sectionA = sectionsData.find(s => s.id === a.sectionId)
-        const sectionB = sectionsData.find(s => s.id === b.sectionId)
-        if (sectionA && sectionB && sectionA.orderIndex !== sectionB.orderIndex) {
-          return sectionA.orderIndex - sectionB.orderIndex
+        const sectionA = sectionsData.find((s) => s.id === a.sectionId);
+        const sectionB = sectionsData.find((s) => s.id === b.sectionId);
+        if (
+          sectionA &&
+          sectionB &&
+          sectionA.orderIndex !== sectionB.orderIndex
+        ) {
+          return sectionA.orderIndex - sectionB.orderIndex;
         }
-        return a.orderIndex - b.orderIndex
-      })
+        return a.orderIndex - b.orderIndex;
+      });
 
-      setContentItems(items)
+      setContentItems(items);
 
       // Expand first section by default
       if (sectionsData.length > 0) {
-        setExpandedSections(new Set([sectionsData[0].id]))
+        setExpandedSections(new Set([sectionsData[0].id]));
       }
-
     } catch (error) {
-      console.error("Error loading course data:", error)
-      toast.error("Không thể tải nội dung khóa học")
+      console.error("Error loading course data:", error);
+      toast.error("Không thể tải nội dung khóa học");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handlePrevious = () => {
     if (currentItemIndex > 0) {
-      setCurrentItemIndex(currentItemIndex - 1)
-      setContentDisplayMode('normal')
+      setCurrentItemIndex(currentItemIndex - 1);
+      setContentDisplayMode("normal");
     }
-  }
+  };
 
   const handleNext = () => {
     if (currentItemIndex < contentItems.length - 1) {
       // Mark current as completed
-      const updatedItems = [...contentItems]
-      updatedItems[currentItemIndex].isCompleted = true
-      setContentItems(updatedItems)
+      const updatedItems = [...contentItems];
+      updatedItems[currentItemIndex].isCompleted = true;
+      setContentItems(updatedItems);
 
-      setCurrentItemIndex(currentItemIndex + 1)
-      setContentDisplayMode('normal')
+      setCurrentItemIndex(currentItemIndex + 1);
+      setContentDisplayMode("normal");
     }
-  }
+  };
 
   const handleItemClick = (index: number) => {
-    setCurrentItemIndex(index)
-    setContentDisplayMode('normal')
-  }
+    setCurrentItemIndex(index);
+    setContentDisplayMode("normal");
+  };
 
   const toggleSection = (sectionId: number) => {
-    const newExpanded = new Set(expandedSections)
+    const newExpanded = new Set(expandedSections);
     if (newExpanded.has(sectionId)) {
-      newExpanded.delete(sectionId)
+      newExpanded.delete(sectionId);
     } else {
-      newExpanded.add(sectionId)
+      newExpanded.add(sectionId);
     }
-    setExpandedSections(newExpanded)
-  }
+    setExpandedSections(newExpanded);
+  };
 
   const getItemIcon = (type: string) => {
     switch (type) {
       case "lesson":
-        return <PlayCircle className="w-4 h-4" />
+        return <PlayCircle className="w-4 h-4" />;
       case "quiz":
-        return <ClipboardCheck className="w-4 h-4" />
+        return <ClipboardCheck className="w-4 h-4" />;
       case "assignment":
-        return <FileText className="w-4 h-4" />
+        return <FileText className="w-4 h-4" />;
       default:
-        return <BookOpen className="w-4 h-4" />
+        return <BookOpen className="w-4 h-4" />;
     }
-  }
+  };
 
   const handleOpenSubmissionModal = () => {
-    setShowSubmissionModal(true)
-    setSubmissionContent('')
-    setSubmissionFiles([])
-    setSubmissionLink('')
-  }
+    setShowSubmissionModal(true);
+    setSubmissionContent("");
+    setSubmissionFiles([]);
+    setSubmissionLink("");
+  };
 
   const handleSubmitAssignment = async () => {
-    if (!currentItem || currentItem.type !== 'assignment') return
+    if (!currentItem || currentItem.type !== "assignment") return;
 
-    const assignment = currentItem.data as AssignmentResponse
-    const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "")
-    const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "")
-    const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "")
+    const assignment = currentItem.data as AssignmentResponse;
+    const canSubmitText = ["TEXT", "BOTH"].includes(
+      assignment.submissionType || "",
+    );
+    const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(
+      assignment.submissionType || "",
+    );
+    const canSubmitLink = ["LINK", "BOTH"].includes(
+      assignment.submissionType || "",
+    );
 
     try {
-      setSubmitting(true)
+      setSubmitting(true);
 
       // Validate
-      const hasContent = submissionContent || submissionFiles.length > 0 || submissionLink
+      const hasContent =
+        submissionContent || submissionFiles.length > 0 || submissionLink;
       if (!hasContent) {
-        toast.error('Vui lòng nhập nội dung bài làm')
-        setSubmitting(false)
-        return
+        toast.error("Vui lòng nhập nội dung bài làm");
+        setSubmitting(false);
+        return;
       }
 
       const submitData = {
         assignmentId: currentItem.id,
         submissionText: canSubmitText ? submissionContent : undefined,
         submissionLink: canSubmitLink ? submissionLink : undefined,
-      }
+      };
 
       await assignmentApi.submitAssignment(
         currentItem.id,
         submitData,
-        canSubmitFile ? submissionFiles : undefined
-      )
+        canSubmitFile ? submissionFiles : undefined,
+      );
 
-      toast.success('Nộp bài thành công!')
-      setShowSubmissionModal(false)
+      toast.success("Nộp bài thành công!");
+      setShowSubmissionModal(false);
 
       // Reset form
-      setSubmissionContent('')
-      setSubmissionFiles([])
-      setSubmissionLink('')
+      setSubmissionContent("");
+      setSubmissionFiles([]);
+      setSubmissionLink("");
 
       // Update completed assignments immediately
-      setCompletedAssignments(prev => new Set(prev).add(currentItem.id))
+      setCompletedAssignments((prev) => new Set(prev).add(currentItem.id));
 
       // Reload assignment data to show new submission
-      loadCourseData()
+      loadCourseData();
 
       // Refresh progress stats
-      fetchProgressStats()
+      fetchProgressStats();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể nộp bài')
+      toast.error(error.response?.data?.message || "Không thể nộp bài");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const renderContent = () => {
     // Show Quiz Attempt
-    if (contentDisplayMode === 'quiz' && currentItem?.type === 'quiz') {
+    if (contentDisplayMode === "quiz" && currentItem?.type === "quiz") {
       return (
         <UserQuizAttempt
           quizIdProp={currentItem.id}
           onQuizCompleted={() => {
             // Mark quiz as completed
-            setCompletedQuizzes(prev => new Set(prev).add(currentItem.id))
+            setCompletedQuizzes((prev) => new Set(prev).add(currentItem.id));
             // Refresh progress stats
-            fetchProgressStats()
+            fetchProgressStats();
           }}
           onExit={() => {
-            setContentDisplayMode('normal')
+            setContentDisplayMode("normal");
             if (courseId) {
-              localStorage.removeItem(`course-learning-${courseId}`)
+              localStorage.removeItem(`course-learning-${courseId}`);
             }
           }}
         />
-      )
+      );
     }
     // Normal content
     if (!currentItem) {
@@ -543,23 +624,29 @@ const CourseLearning: React.FC = () => {
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Chọn nội dung từ danh sách bên phải</p>
+            <p className="text-gray-500 text-lg">
+              Chọn nội dung từ danh sách bên phải
+            </p>
           </div>
         </div>
-      )
+      );
     }
 
     switch (currentItem.type) {
       case "lesson":
-        return <LessonContent lesson={currentItem.data as LessonResponse} />
+        return <LessonContent lesson={currentItem.data as LessonResponse} />;
       case "quiz":
-        return <QuizContent quiz={currentItem.data as QuizResponse} />
+        return <QuizContent quiz={currentItem.data as QuizResponse} />;
       case "assignment":
-        return <AssignmentContent assignment={currentItem.data as AssignmentResponse} />
+        return (
+          <AssignmentContent
+            assignment={currentItem.data as AssignmentResponse}
+          />
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -569,13 +656,13 @@ const CourseLearning: React.FC = () => {
           <p className="text-gray-600">Đang tải khóa học...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Top Navigation Bar - Hide in quiz/assignment mode */}
-      {contentDisplayMode === 'normal' && (
+      {contentDisplayMode === "normal" && (
         <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-4">
             <Button
@@ -587,7 +674,9 @@ const CourseLearning: React.FC = () => {
               <ChevronLeft className="w-5 h-5" />
             </Button>
 
-            <h1 className="text-white font-medium text-sm max-w-md truncate">{courseName}</h1>
+            <h1 className="text-white font-medium text-sm max-w-md truncate">
+              {courseName}
+            </h1>
           </div>
 
           <div className="flex items-center gap-3">
@@ -597,7 +686,10 @@ const CourseLearning: React.FC = () => {
                 size="sm"
                 className="text-white hover:bg-gray-800 gap-2"
               >
-                <span className="text-sm">Your progress: {(progressStats?.overallProgress || 0).toFixed(2)}%</span>
+                <span className="text-sm">
+                  Your progress:{" "}
+                  {(progressStats?.overallProgress || 0).toFixed(2)}%
+                </span>
                 <ChevronDown className="w-4 h-4" />
               </Button>
 
@@ -605,18 +697,24 @@ const CourseLearning: React.FC = () => {
               {progressStats && (
                 <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3">Tiến độ học tập</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">
+                      Tiến độ học tập
+                    </h3>
 
                     {/* Overall Progress */}
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Tổng quan</span>
-                        <span className="text-sm font-semibold text-blue-600">{(progressStats.overallProgress).toFixed(2)}%</span>
+                        <span className="text-sm font-semibold text-blue-600">
+                          {progressStats.overallProgress.toFixed(2)}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
                         <div
                           className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                          style={{ width: `${(progressStats.overallProgress).toFixed(2)}%` }}
+                          style={{
+                            width: `${progressStats.overallProgress.toFixed(2)}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -629,7 +727,8 @@ const CourseLearning: React.FC = () => {
                           <span className="text-gray-700">Bài học</span>
                         </div>
                         <span className="font-medium">
-                          {progressStats.completedLessons}/{progressStats.totalLessons}
+                          {progressStats.completedLessons}/
+                          {progressStats.totalLessons}
                         </span>
                       </div>
 
@@ -639,7 +738,8 @@ const CourseLearning: React.FC = () => {
                           <span className="text-gray-700">Bài kiểm tra</span>
                         </div>
                         <span className="font-medium">
-                          {progressStats.completedQuizzes}/{progressStats.totalQuizzes}
+                          {progressStats.completedQuizzes}/
+                          {progressStats.totalQuizzes}
                         </span>
                       </div>
 
@@ -649,7 +749,8 @@ const CourseLearning: React.FC = () => {
                           <span className="text-gray-700">Bài tập</span>
                         </div>
                         <span className="font-medium">
-                          {progressStats.completedAssignments}/{progressStats.totalAssignments}
+                          {progressStats.completedAssignments}/
+                          {progressStats.totalAssignments}
                         </span>
                       </div>
                     </div>
@@ -686,25 +787,25 @@ const CourseLearning: React.FC = () => {
             {/* Content with fade transition */}
             <div className="animate-fadeIn">
               {/* Quiz/Assignment Display - uses contentDisplayMode */}
-              {contentDisplayMode === 'quiz' && currentItem?.type === "quiz" && (
-                <div className="bg-white">
-                  {renderContent()}
-                </div>
-              )}
+              {contentDisplayMode === "quiz" &&
+                currentItem?.type === "quiz" && (
+                  <div className="bg-white">{renderContent()}</div>
+                )}
 
-              {contentDisplayMode === 'assignment' && currentItem?.type === "assignment" && (
-                <div className="bg-white">
-                  {renderContent()}
-                </div>
-              )}
+              {contentDisplayMode === "assignment" &&
+                currentItem?.type === "assignment" && (
+                  <div className="bg-white">{renderContent()}</div>
+                )}
 
               {/* Normal Content View */}
-              {contentDisplayMode === 'normal' && (
+              {contentDisplayMode === "normal" && (
                 <>
                   {/* Video Player Area - Only show for lessons with video */}
                   {currentItem?.type === "lesson" && (
                     <div className="bg-black w-full flex-shrink-0 h-[570px]">
-                      <LessonVideoPlayer lesson={currentItem.data as LessonResponse} />
+                      <LessonVideoPlayer
+                        lesson={currentItem.data as LessonResponse}
+                      />
                     </div>
                   )}
 
@@ -724,17 +825,27 @@ const CourseLearning: React.FC = () => {
                         <div className="flex items-center justify-center gap-8 mb-8 text-white">
                           <div className="flex items-center gap-2">
                             <FileText className="w-5 h-5" />
-                            <span>{Array.from((currentItem.data as QuizResponse).questions || []).length} câu hỏi</span>
+                            <span>
+                              {
+                                Array.from(
+                                  (currentItem.data as QuizResponse)
+                                    .questions || [],
+                                ).length
+                              }{" "}
+                              câu hỏi
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock className="w-5 h-5" />
-                            <span>{(currentItem.data as QuizResponse).duration} phút</span>
+                            <span>
+                              {(currentItem.data as QuizResponse).duration} phút
+                            </span>
                           </div>
                         </div>
                         <Button
                           size="lg"
                           className="bg-white text-purple-700 hover:bg-purple-50 px-8 py-6 text-lg font-semibold rounded-xl shadow-xl"
-                          onClick={() => setContentDisplayMode('quiz')}
+                          onClick={() => setContentDisplayMode("quiz")}
                         >
                           <PlayCircle className="w-6 h-6 mr-2" />
                           Bắt đầu làm bài
@@ -756,10 +867,13 @@ const CourseLearning: React.FC = () => {
                         {(currentItem.data as AssignmentResponse).deadline && (
                           <p className="text-xl text-green-100 mb-8 flex items-center justify-center gap-2">
                             <Clock className="w-5 h-5" />
-                            Hạn nộp: {new Date((currentItem.data as AssignmentResponse).deadline).toLocaleDateString("vi-VN", {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
+                            Hạn nộp:{" "}
+                            {new Date(
+                              (currentItem.data as AssignmentResponse).deadline,
+                            ).toLocaleDateString("vi-VN", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
                             })}
                           </p>
                         )}
@@ -780,67 +894,75 @@ const CourseLearning: React.FC = () => {
                     <div className="flex gap-8 px-6">
                       <button
                         onClick={() => setActiveTab("overview")}
-                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "overview"
-                            ? "border-gray-900 text-gray-900"
+                        className={`py-4 text-sm font-medium transition-colors ${
+                          activeTab === "overview"
+                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
                             : "border-transparent text-gray-600 hover:text-gray-900"
-                          }`}
+                        }`}
                       >
                         Overview
                       </button>
                       <button
                         onClick={() => setActiveTab("about")}
-                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "about"
-                            ? "border-gray-900 text-gray-900"
+                        className={`py-4 text-sm font-medium  transition-colors ${
+                          activeTab === "about"
+                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
                             : "border-transparent text-gray-600 hover:text-gray-900"
-                          }`}
+                        }`}
                       >
                         {currentItem?.type === "lesson" && "About this lecture"}
                         {currentItem?.type === "quiz" && "About this quiz"}
-                        {currentItem?.type === "assignment" && "About this assignment"}
+                        {currentItem?.type === "assignment" &&
+                          "About this assignment"}
                       </button>
                       <button
                         onClick={() => setActiveTab("notes")}
-                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "notes"
-                            ? "border-gray-900 text-gray-900"
+                        className={`py-4 text-sm font-medium transition-colors ${
+                          activeTab === "notes"
+                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
                             : "border-transparent text-gray-600 hover:text-gray-900"
-                          }`}
+                        }`}
                       >
                         Notes
                       </button>
                       <button
                         onClick={() => setActiveTab("announcements")}
-                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "announcements"
-                            ? "border-gray-900 text-gray-900"
+                        className={`py-4 text-sm font-medium transition-colors ${
+                          activeTab === "announcements"
+                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
                             : "border-transparent text-gray-600 hover:text-gray-900"
-                          }`}
+                        }`}
                       >
                         Announcements
                       </button>
                       <button
                         onClick={() => setActiveTab("reviews")}
-                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "reviews"
-                            ? "border-gray-900 text-gray-900"
+                        className={`py-4 text-sm font-medium transition-colors ${
+                          activeTab === "reviews"
+                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
                             : "border-transparent text-gray-600 hover:text-gray-900"
-                          }`}
+                        }`}
                       >
                         Reviews
                       </button>
                       <button
                         onClick={() => setActiveTab("tools")}
-                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "tools"
-                            ? "border-gray-900 text-gray-900"
+                        className={`py-4 text-sm font-medium transition-colors ${
+                          activeTab === "tools"
+                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
                             : "border-transparent text-gray-600 hover:text-gray-900"
-                          }`}
+                        }`}
                       >
                         Learning tools
                       </button>
                       {currentItem && (
                         <button
                           onClick={() => setActiveTab("discussion")}
-                          className={`py-4 text-sm font-medium border-b-2 transition-colors relative ${activeTab === "discussion"
-                              ? "border-gray-900 text-gray-900"
+                          className={`py-4 text-sm font-medium transition-colors relative ${
+                            activeTab === "discussion"
+                              ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
                               : "border-transparent text-gray-600 hover:text-gray-900"
-                            }`}
+                          }`}
                         >
                           <MessageSquare className="w-4 h-4 inline mr-2" />
                           Thảo luận
@@ -851,30 +973,63 @@ const CourseLearning: React.FC = () => {
                           )}
                         </button>
                       )}
+                      {/* Chuyển hướng tới Chế độ ôn tập bằng AI */}
+                      <button
+                        onClick={() => setActiveTab("practice")}
+                        className={`flex items-center py-4 text-sm font-medium transition-colors relative ${
+                          activeTab === "practice"
+                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
+                            : "border-transparent text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        <Bot className="w-4 h-4 inline mr-2" />
+                        Chế độ ôn tập bằng AI
+                      </button>
                     </div>
                   </div>
 
                   {/* Tab Content */}
                   <div className="bg-white">
-                    <div className="max-w-4xl mx-auto px-6 py-8">
-                      {activeTab === "overview" && courseData && <CourseOverview course={courseData} />}
+                    <div className="px-6 py-8">
+                      {activeTab === "overview" && courseData && (
+                        <CourseOverview course={courseData} />
+                      )}
                       {activeTab === "about" && renderContent()}
                       {activeTab === "notes" && <NotesTab />}
                       {activeTab === "announcements" && <AnnouncementsTab />}
                       {activeTab === "reviews" && <ReviewsTab />}
                       {activeTab === "tools" && (
                         <div className="text-center py-12">
-                          <p className="text-gray-500">Công cụ học tập đang phát triển</p>
+                          <p className="text-gray-500">
+                            Công cụ học tập đang phát triển
+                          </p>
                         </div>
                       )}
-                      {activeTab === "discussion" && currentItem && courseId && (
-                        <StudentDiscussionPanel
-                          key={`${currentItem.type}-${currentItem.id}`}
-                          itemType={currentItem.type}
-                          itemId={currentItem.id}
-                          itemTitle={currentItem.title}
-                          publishedCourseId={Number(courseId)}
-                          user={user}
+                      {activeTab === "discussion" &&
+                        currentItem &&
+                        courseId && (
+                          <StudentDiscussionPanel
+                            key={`${currentItem.type}-${currentItem.id}`}
+                            itemType={currentItem.type}
+                            itemId={currentItem.id}
+                            itemTitle={currentItem.title}
+                            publishedCourseId={Number(courseId)}
+                            user={user}
+                          />
+                        )}
+                      {activeTab === "practice" && courseId && (
+                        <AIQuizPracticeModeComponent
+                          chapters={sections.map((section) => ({
+                            id: section.id.toString(),
+                            title: section.title,
+                            description: section.description || "",
+                            order: section.orderIndex,
+                            completed: false,
+                          }))}
+                          selectedChapterIds={selectedChapterIds}
+                          onOpenSidebar={() => setSidebarOpen(true)}
+                          courseTitle={courseName}
+                          courseProgress={progressStats?.overallProgress || 0}
                         />
                       )}
                     </div>
@@ -908,20 +1063,54 @@ const CourseLearning: React.FC = () => {
         </div>
 
         {/* Sidebar - Course Content - Hide in quiz/assignment mode */}
-        {contentDisplayMode === 'normal' && (
+        {contentDisplayMode === "normal" && (
           <div
-            className={`${sidebarOpen ? "w-full md:w-[500px]" : "w-0"
-              } bg-white border-l overflow-hidden transition-all duration-300 flex-shrink-0`}
+            className={`${
+              sidebarOpen ? "w-full md:w-[500px]" : "w-0"
+            } bg-white border-l overflow-hidden transition-all duration-300 flex-shrink-0`}
           >
             <div className="h-full flex flex-col">
               {/* Sidebar Header */}
               <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
-                <h2 className="font-semibold text-base">Course content</h2>
+                <div className="flex-1">
+                  <h2 className="font-semibold text-base">
+                    {activeTab === "practice"
+                      ? "Chọn chương để ôn tập"
+                      : "Course content"}
+                  </h2>
+                  {activeTab === "practice" && (
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-gray-500">
+                        {selectedChapterIds.length} / {sections.length} chương
+                        đã chọn
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            setSelectedChapterIds(
+                              sections.map((s) => s.id.toString()),
+                            )
+                          }
+                          className="text-xs text-primary hover:underline font-medium"
+                        >
+                          Chọn tất cả
+                        </button>
+                        <span className="text-xs text-gray-400">|</span>
+                        <button
+                          onClick={() => setSelectedChapterIds([])}
+                          className="text-xs text-primary hover:underline font-medium"
+                        >
+                          Bỏ chọn
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSidebarOpen(false)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 ml-2"
                 >
                   <X className="w-5 h-5" />
                 </Button>
@@ -930,10 +1119,14 @@ const CourseLearning: React.FC = () => {
               {/* Sidebar Content */}
               <div className="flex-1 overflow-y-auto">
                 {sections.map((section) => {
-                  const sectionItems = contentItems.filter(item => item.sectionId === section.id)
-                  const completedCount = sectionItems.filter(item => item.isCompleted).length
-                  const isExpanded = expandedSections.has(section.id)
-                  const totalMinutes = sectionItems.reduce((sum) => sum + 3, 0) // Mock duration
+                  const sectionItems = contentItems.filter(
+                    (item) => item.sectionId === section.id,
+                  );
+                  const completedCount = sectionItems.filter(
+                    (item) => item.isCompleted,
+                  ).length;
+                  const isExpanded = expandedSections.has(section.id);
+                  const totalMinutes = sectionItems.reduce((sum) => sum + 3, 0); // Mock duration
 
                   return (
                     <div key={section.id} className="border-b">
@@ -942,15 +1135,37 @@ const CourseLearning: React.FC = () => {
                         onClick={() => toggleSection(section.id)}
                         className="w-full flex items-center justify-between p-4 hover:bg-gray-50 text-left transition-colors"
                       >
+                        {activeTab === "practice" && (
+                          <input
+                            type="checkbox"
+                            checked={selectedChapterIds.includes(
+                              section.id.toString(),
+                            )}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              const sectionIdStr = section.id.toString();
+                              setSelectedChapterIds((prev) =>
+                                prev.includes(sectionIdStr)
+                                  ? prev.filter((id) => id !== sectionIdStr)
+                                  : [...prev, sectionIdStr],
+                              );
+                            }}
+                            className="mr-3 h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary flex-shrink-0"
+                          />
+                        )}
                         <div className="flex-1 pr-2">
-                          <h3 className="font-medium text-sm mb-1">{section.title}</h3>
+                          <h3 className="font-medium text-sm mb-1">
+                            {section.title}
+                          </h3>
                           <p className="text-xs text-gray-600">
-                            {completedCount}/{sectionItems.length} | {totalMinutes}min
+                            {completedCount}/{sectionItems.length} |{" "}
+                            {totalMinutes}min
                           </p>
                         </div>
                         <ChevronDown
-                          className={`w-5 h-5 text-gray-600 transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""
-                            }`}
+                          className={`w-5 h-5 text-gray-600 transition-transform flex-shrink-0 ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
                         />
                       </button>
 
@@ -958,44 +1173,62 @@ const CourseLearning: React.FC = () => {
                       {isExpanded && (
                         <div className="bg-gray-50">
                           {/* Lessons Group */}
-                          {sectionItems.filter(item => item.type === "lesson").length > 0 && (
+                          {sectionItems.filter((item) => item.type === "lesson")
+                            .length > 0 && (
                             <div className="mb-2">
                               <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
                                 Lessons
                               </div>
                               {sectionItems
-                                .filter(item => item.type === "lesson")
+                                .filter((item) => item.type === "lesson")
                                 .map((item) => {
-                                  const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
-                                  const isActive = itemIndex === currentItemIndex
+                                  const itemIndex = contentItems.findIndex(
+                                    (i) =>
+                                      i.id === item.id && i.type === item.type,
+                                  );
+                                  const isActive =
+                                    itemIndex === currentItemIndex;
                                   // Get the actual item from contentItems to ensure we have latest isCompleted
-                                  const actualItem = contentItems[itemIndex] || item
+                                  const actualItem =
+                                    contentItems[itemIndex] || item;
 
                                   return (
                                     <div
                                       key={`${item.type}-${item.id}`}
-                                      className={`w-full flex items-start gap-3 px-4 py-3 transition-colors group ${isActive
+                                      className={`w-full flex items-start gap-3 px-4 py-3 transition-colors group ${
+                                        isActive
                                           ? "bg-blue-50 border-l-4 border-blue-600"
                                           : "hover:bg-gray-100 border-l-4 border-transparent"
-                                        }`}
+                                      }`}
                                     >
                                       <div className="flex-shrink-0 pt-0.5">
                                         {actualItem.isCompleted ? (
                                           <CheckCircle className="w-4 h-4 text-blue-600" />
                                         ) : (
-                                          <div className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-blue-600" : "border-gray-400"
-                                            }`} />
+                                          <div
+                                            className={`w-4 h-4 rounded-full border-2 ${
+                                              isActive
+                                                ? "border-blue-600"
+                                                : "border-gray-400"
+                                            }`}
+                                          />
                                         )}
                                       </div>
                                       <div
                                         className="flex-1 min-w-0 cursor-pointer"
-                                        onClick={() => handleItemClick(itemIndex)}
+                                        onClick={() =>
+                                          handleItemClick(itemIndex)
+                                        }
                                       >
                                         <div className="flex items-center gap-2 mb-1">
-                                          <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                                          <span
+                                            className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}
+                                          >
                                             {item.orderIndex}.
                                           </span>
-                                          <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
+                                          <span
+                                            className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}
+                                          >
                                             {item.title}
                                           </span>
                                         </div>
@@ -1007,10 +1240,12 @@ const CourseLearning: React.FC = () => {
                                       {!actualItem.isCompleted && isActive && (
                                         <button
                                           onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleMarkLessonComplete(item.id)
+                                            e.stopPropagation();
+                                            handleMarkLessonComplete(item.id);
                                           }}
-                                          disabled={isMarkingComplete.has(item.id)}
+                                          disabled={isMarkingComplete.has(
+                                            item.id,
+                                          )}
                                           className="flex-shrink-0 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                           {isMarkingComplete.has(item.id) ? (
@@ -1021,47 +1256,63 @@ const CourseLearning: React.FC = () => {
                                         </button>
                                       )}
                                     </div>
-                                  )
+                                  );
                                 })}
                             </div>
                           )}
 
                           {/* Quizzes Group */}
-                          {sectionItems.filter(item => item.type === "quiz").length > 0 && (
+                          {sectionItems.filter((item) => item.type === "quiz")
+                            .length > 0 && (
                             <div className="mb-2">
                               <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
                                 Quizzes
                               </div>
                               {sectionItems
-                                .filter(item => item.type === "quiz")
+                                .filter((item) => item.type === "quiz")
                                 .map((item) => {
-                                  const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
-                                  const isActive = itemIndex === currentItemIndex
-                                  const actualItem = contentItems[itemIndex] || item
+                                  const itemIndex = contentItems.findIndex(
+                                    (i) =>
+                                      i.id === item.id && i.type === item.type,
+                                  );
+                                  const isActive =
+                                    itemIndex === currentItemIndex;
+                                  const actualItem =
+                                    contentItems[itemIndex] || item;
 
                                   return (
                                     <button
                                       key={`${item.type}-${item.id}`}
                                       onClick={() => handleItemClick(itemIndex)}
-                                      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${isActive
+                                      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
+                                        isActive
                                           ? "bg-blue-50 border-l-4 border-blue-600"
                                           : "hover:bg-gray-100 border-l-4 border-transparent"
-                                        }`}
+                                      }`}
                                     >
                                       <div className="flex-shrink-0 pt-0.5">
                                         {actualItem.isCompleted ? (
                                           <CheckCircle className="w-4 h-4 text-purple-600" />
                                         ) : (
-                                          <div className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-blue-600" : "border-gray-400"
-                                            }`} />
+                                          <div
+                                            className={`w-4 h-4 rounded-full border-2 ${
+                                              isActive
+                                                ? "border-blue-600"
+                                                : "border-gray-400"
+                                            }`}
+                                          />
                                         )}
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                          <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                                          <span
+                                            className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}
+                                          >
                                             {item.orderIndex}.
                                           </span>
-                                          <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
+                                          <span
+                                            className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}
+                                          >
                                             {item.title}
                                           </span>
                                         </div>
@@ -1071,47 +1322,64 @@ const CourseLearning: React.FC = () => {
                                         </div>
                                       </div>
                                     </button>
-                                  )
+                                  );
                                 })}
                             </div>
                           )}
 
                           {/* Assignments Group */}
-                          {sectionItems.filter(item => item.type === "assignment").length > 0 && (
+                          {sectionItems.filter(
+                            (item) => item.type === "assignment",
+                          ).length > 0 && (
                             <div className="mb-2">
                               <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
                                 Assignments
                               </div>
                               {sectionItems
-                                .filter(item => item.type === "assignment")
+                                .filter((item) => item.type === "assignment")
                                 .map((item) => {
-                                  const itemIndex = contentItems.findIndex(i => i.id === item.id && i.type === item.type)
-                                  const isActive = itemIndex === currentItemIndex
-                                  const actualItem = contentItems[itemIndex] || item
+                                  const itemIndex = contentItems.findIndex(
+                                    (i) =>
+                                      i.id === item.id && i.type === item.type,
+                                  );
+                                  const isActive =
+                                    itemIndex === currentItemIndex;
+                                  const actualItem =
+                                    contentItems[itemIndex] || item;
 
                                   return (
                                     <button
                                       key={`${item.type}-${item.id}`}
                                       onClick={() => handleItemClick(itemIndex)}
-                                      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${isActive
+                                      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
+                                        isActive
                                           ? "bg-blue-50 border-l-4 border-blue-600"
                                           : "hover:bg-gray-100 border-l-4 border-transparent"
-                                        }`}
+                                      }`}
                                     >
                                       <div className="flex-shrink-0 pt-0.5">
                                         {actualItem.isCompleted ? (
                                           <CheckCircle className="w-4 h-4 text-green-600" />
                                         ) : (
-                                          <div className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-blue-600" : "border-gray-400"
-                                            }`} />
+                                          <div
+                                            className={`w-4 h-4 rounded-full border-2 ${
+                                              isActive
+                                                ? "border-blue-600"
+                                                : "border-gray-400"
+                                            }`}
+                                          />
                                         )}
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                          <span className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                                          <span
+                                            className={`text-xs ${isActive ? "text-gray-900" : "text-gray-600"}`}
+                                          >
                                             {item.orderIndex}.
                                           </span>
-                                          <span className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}>
+                                          <span
+                                            className={`text-sm ${isActive ? "text-gray-900 font-medium" : "text-gray-700"}`}
+                                          >
                                             {item.title}
                                           </span>
                                         </div>
@@ -1121,14 +1389,14 @@ const CourseLearning: React.FC = () => {
                                         </div>
                                       </div>
                                     </button>
-                                  )
+                                  );
                                 })}
                             </div>
                           )}
                         </div>
                       )}
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -1137,164 +1405,202 @@ const CourseLearning: React.FC = () => {
       </div>
 
       {/* Assignment Submission Modal */}
-      {showSubmissionModal && currentItem?.type === 'assignment' && (() => {
-        const assignment = currentItem.data as AssignmentResponse
-        const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "")
-        const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "")
-        const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "")
+      {showSubmissionModal &&
+        currentItem?.type === "assignment" &&
+        (() => {
+          const assignment = currentItem.data as AssignmentResponse;
+          const canSubmitText = ["TEXT", "BOTH"].includes(
+            assignment.submissionType || "",
+          );
+          const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(
+            assignment.submissionType || "",
+          );
+          const canSubmitLink = ["LINK", "BOTH"].includes(
+            assignment.submissionType || "",
+          );
 
-        return (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              {/* Header */}
-              <div className="p-6 border-b">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">Nộp bài tập</h3>
-                    <p className="text-sm text-gray-600 mt-1">{assignment.title}</p>
-                  </div>
-                  <button
-                    onClick={() => setShowSubmissionModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-full"
-                    aria-label="Đóng"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                {/* Text Submission */}
-                {canSubmitText && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nội dung bài làm
-                    </label>
-                    <textarea
-                      value={submissionContent}
-                      onChange={(e) => setSubmissionContent(e.target.value)}
-                      rows={8}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Nhập nội dung bài làm của bạn..."
-                    />
-                  </div>
-                )}
-
-                {/* File Upload */}
-                {canSubmitFile && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tệp đính kèm
-                    </label>
-
-                    {/* Upload Button */}
-                    <div className="mb-3">
-                      <label htmlFor="assignment-file-upload" className="cursor-pointer">
-                        <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
-                          <Upload className="h-5 w-5 text-gray-600" />
-                          <span className="text-sm text-gray-600">
-                            Chọn file để upload (Tối đa 10MB/file)
-                          </span>
-                        </div>
-                        <input
-                          type="file"
-                          multiple
-                          onChange={(e) => setSubmissionFiles(Array.from(e.target.files || []))}
-                          className="hidden"
-                          id="assignment-file-upload"
-                          disabled={submitting}
-                          accept="*/*"
-                        />
-                      </label>
+          return (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="p-6 border-b">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        Nộp bài tập
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {assignment.title}
+                      </p>
                     </div>
-
-                    {/* File List */}
-                    {submissionFiles.length > 0 && (
-                      <div>
-                        <p className="text-xs text-gray-500 mb-2">File mới:</p>
-                        <div className="space-y-2">
-                          {submissionFiles.map((file, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between p-3 bg-gray-50 border rounded"
-                            >
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm truncate">{file.name}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {file.size < 1024 ? file.size + ' B'
-                                      : file.size < 1024 * 1024 ? (file.size / 1024).toFixed(1) + ' KB'
-                                        : (file.size / (1024 * 1024)).toFixed(1) + ' MB'}
-                                  </p>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => setSubmissionFiles(submissionFiles.filter((_, i) => i !== idx))}
-                                className="p-1 hover:bg-gray-200 rounded ml-2"
-                                disabled={submitting}
-                                aria-label="Xóa file"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <button
+                      onClick={() => setShowSubmissionModal(false)}
+                      className="p-2 hover:bg-gray-100 rounded-full"
+                      aria-label="Đóng"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
-                )}
+                </div>
 
-                {/* Link Submission */}
-                {canSubmitLink && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Link bài làm
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <LinkIcon className="h-5 w-5 text-gray-400" />
-                      <input
-                        type="url"
-                        value={submissionLink}
-                        onChange={(e) => setSubmissionLink(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                <div className="p-6 space-y-4">
+                  {/* Text Submission */}
+                  {canSubmitText && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nội dung bài làm
+                      </label>
+                      <textarea
+                        value={submissionContent}
+                        onChange={(e) => setSubmissionContent(e.target.value)}
+                        rows={8}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nhập nội dung bài làm của bạn..."
                       />
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 p-6 pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowSubmissionModal(false)} disabled={submitting}>
-                  Hủy
-                </Button>
-                <Button
-                  onClick={handleSubmitAssignment}
-                  disabled={submitting}
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Đang nộp...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Nộp bài
-                    </>
                   )}
-                </Button>
+
+                  {/* File Upload */}
+                  {canSubmitFile && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tệp đính kèm
+                      </label>
+
+                      {/* Upload Button */}
+                      <div className="mb-3">
+                        <label
+                          htmlFor="assignment-file-upload"
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
+                            <Upload className="h-5 w-5 text-gray-600" />
+                            <span className="text-sm text-gray-600">
+                              Chọn file để upload (Tối đa 10MB/file)
+                            </span>
+                          </div>
+                          <input
+                            type="file"
+                            multiple
+                            onChange={(e) =>
+                              setSubmissionFiles(
+                                Array.from(e.target.files || []),
+                              )
+                            }
+                            className="hidden"
+                            id="assignment-file-upload"
+                            disabled={submitting}
+                            accept="*/*"
+                          />
+                        </label>
+                      </div>
+
+                      {/* File List */}
+                      {submissionFiles.length > 0 && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-2">
+                            File mới:
+                          </p>
+                          <div className="space-y-2">
+                            {submissionFiles.map((file, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between p-3 bg-gray-50 border rounded"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm truncate">
+                                      {file.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {file.size < 1024
+                                        ? file.size + " B"
+                                        : file.size < 1024 * 1024
+                                          ? (file.size / 1024).toFixed(1) +
+                                            " KB"
+                                          : (file.size / (1024 * 1024)).toFixed(
+                                              1,
+                                            ) + " MB"}
+                                    </p>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() =>
+                                    setSubmissionFiles(
+                                      submissionFiles.filter(
+                                        (_, i) => i !== idx,
+                                      ),
+                                    )
+                                  }
+                                  className="p-1 hover:bg-gray-200 rounded ml-2"
+                                  disabled={submitting}
+                                  aria-label="Xóa file"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Link Submission */}
+                  {canSubmitLink && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Link bài làm
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="h-5 w-5 text-gray-400" />
+                        <input
+                          type="url"
+                          value={submissionLink}
+                          onChange={(e) => setSubmissionLink(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="https://..."
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 p-6 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSubmissionModal(false)}
+                    disabled={submitting}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    onClick={handleSubmitAssignment}
+                    disabled={submitting}
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Đang nộp...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Nộp bài
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        )
-      })()}
+          );
+        })()}
     </div>
-  )
-}
+  );
+};
 
 // Course Overview Component
 const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
@@ -1317,7 +1623,9 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
             <BookOpen className="w-5 h-5 text-blue-600" />
             <span className="text-sm text-gray-600">Cấp độ</span>
           </div>
-          <p className="text-lg font-bold text-gray-900">{course.level || "Tất cả"}</p>
+          <p className="text-lg font-bold text-gray-900">
+            {course.level || "Tất cả"}
+          </p>
         </div>
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -1325,7 +1633,9 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
             <Clock className="w-5 h-5 text-green-600" />
             <span className="text-sm text-gray-600">Thời lượng</span>
           </div>
-          <p className="text-lg font-bold text-gray-900">{course.duration || "N/A"}</p>
+          <p className="text-lg font-bold text-gray-900">
+            {course.duration || "N/A"}
+          </p>
         </div>
 
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
@@ -1333,7 +1643,9 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
             <Star className="w-5 h-5 text-purple-600" />
             <span className="text-sm text-gray-600">Đánh giá</span>
           </div>
-          <p className="text-lg font-bold text-gray-900">{course.rating || "5.0"} ⭐</p>
+          <p className="text-lg font-bold text-gray-900">
+            {course.rating || "5.0"} ⭐
+          </p>
         </div>
 
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
@@ -1341,7 +1653,9 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
             <FileText className="w-5 h-5 text-orange-600" />
             <span className="text-sm text-gray-600">Học viên</span>
           </div>
-          <p className="text-lg font-bold text-gray-900">{course.enrolledCount || "0"}</p>
+          <p className="text-lg font-bold text-gray-900">
+            {course.enrolledCount || "0"}
+          </p>
         </div>
       </div>
 
@@ -1391,13 +1705,13 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 // Notes Tab Component
 const NotesTab: React.FC = () => {
-  const [selectedLecture, setSelectedLecture] = useState("all")
-  const [sortBy, setSortBy] = useState("recent")
+  const [selectedLecture, setSelectedLecture] = useState("all");
+  const [sortBy, setSortBy] = useState("recent");
 
   return (
     <div>
@@ -1445,12 +1759,13 @@ const NotesTab: React.FC = () => {
       {/* Empty State */}
       <div className="text-center py-12">
         <p className="text-gray-600">
-          Click the "Create a new note" box, the "+" button, or press "B" to make your first note.
+          Click the "Create a new note" box, the "+" button, or press "B" to
+          make your first note.
         </p>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Announcements Tab Component
 const AnnouncementsTab: React.FC = () => {
@@ -1458,158 +1773,173 @@ const AnnouncementsTab: React.FC = () => {
     <div className="text-center py-12">
       <h2 className="text-2xl font-bold mb-4">No announcements posted yet</h2>
       <p className="text-gray-600 max-w-2xl mx-auto">
-        The teacher hasn't added any announcements to this course yet. Announcements are used to inform you of updates or additions to the course.
+        The teacher hasn't added any announcements to this course yet.
+        Announcements are used to inform you of updates or additions to the
+        course.
       </p>
     </div>
-  )
-}
+  );
+};
 
-// Reviews Tab Component  
+// Reviews Tab Component
 /* eslint-disable react/forbid-dom-props */
 const ReviewsTab: React.FC = () => {
-  const { courseId } = useParams<{ courseId: string }>()
-  const [reviews, setReviews] = useState<any[]>([])
-  const [reviewStats, setReviewStats] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterRating, setFilterRating] = useState("all")
-  const [showReviewForm, setShowReviewForm] = useState(false)
-  const [userReview, setUserReview] = useState<any>(null)
-  const [reviewForm, setReviewForm] = useState({ rate: 5, content: "" })
-  const [submitting, setSubmitting] = useState(false)
+  const { courseId } = useParams<{ courseId: string }>();
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewStats, setReviewStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterRating, setFilterRating] = useState("all");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [userReview, setUserReview] = useState<any>(null);
+  const [reviewForm, setReviewForm] = useState({ rate: 5, content: "" });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadReviews()
-  }, [courseId])
+    loadReviews();
+  }, [courseId]);
 
   const loadReviews = async () => {
-    if (!courseId) return
+    if (!courseId) return;
 
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Load reviews and stats in parallel
       const [reviewsData, statsData, userReviewData] = await Promise.all([
         reviewApi.getCourseReviews(Number(courseId)),
         reviewApi.getCourseReviewStats(Number(courseId)),
-        reviewApi.getUserReviewForCourse(Number(courseId))
-      ])
+        reviewApi.getUserReviewForCourse(Number(courseId)),
+      ]);
 
-      setReviews(reviewsData)
-      setReviewStats(statsData)
-      setUserReview(userReviewData)
+      setReviews(reviewsData);
+      setReviewStats(statsData);
+      setUserReview(userReviewData);
     } catch (error) {
-      console.error("Error loading reviews:", error)
-      toast.error("Không thể tải đánh giá")
+      console.error("Error loading reviews:", error);
+      toast.error("Không thể tải đánh giá");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSubmitReview = async () => {
     if (!courseId || !reviewForm.content.trim()) {
-      toast.error("Vui lòng nhập nội dung đánh giá")
-      return
+      toast.error("Vui lòng nhập nội dung đánh giá");
+      return;
     }
 
     if (reviewForm.content.trim().length < 3) {
-      toast.error("Nội dung đánh giá phải có ít nhất 3 ký tự")
-      return
+      toast.error("Nội dung đánh giá phải có ít nhất 3 ký tự");
+      return;
     }
 
     if (reviewForm.content.trim().length > 1000) {
-      toast.error("Nội dung đánh giá không được vượt quá 1000 ký tự")
-      return
+      toast.error("Nội dung đánh giá không được vượt quá 1000 ký tự");
+      return;
     }
 
     try {
-      setSubmitting(true)
+      setSubmitting(true);
 
       if (userReview) {
         // Update existing review
-        console.log("Updating review:", userReview.id, reviewForm)
+        console.log("Updating review:", userReview.id, reviewForm);
         await reviewApi.updateReview(userReview.id, {
           rate: reviewForm.rate,
-          content: reviewForm.content.trim()
-        })
-        toast.success("Cập nhật đánh giá thành công!")
+          content: reviewForm.content.trim(),
+        });
+        toast.success("Cập nhật đánh giá thành công!");
       } else {
         // Create new review
-        console.log("Creating new review for course:", courseId, reviewForm)
+        console.log("Creating new review for course:", courseId, reviewForm);
         await reviewApi.createReview({
           courseId: Number(courseId),
           rate: reviewForm.rate,
-          content: reviewForm.content.trim()
-        })
-        toast.success("Gửi đánh giá thành công!")
+          content: reviewForm.content.trim(),
+        });
+        toast.success("Gửi đánh giá thành công!");
       }
 
-      setShowReviewForm(false)
-      setReviewForm({ rate: 5, content: "" })
-      await loadReviews()
+      setShowReviewForm(false);
+      setReviewForm({ rate: 5, content: "" });
+      await loadReviews();
     } catch (error: any) {
-      console.error("Submit review error:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Không thể gửi đánh giá"
-      toast.error(errorMessage)
+      console.error("Submit review error:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể gửi đánh giá";
+      toast.error(errorMessage);
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const handleDeleteReview = async () => {
-    if (!userReview) return
+    if (!userReview) return;
 
-    if (!window.confirm("Bạn có chắc chắn muốn xóa đánh giá này? Hành động này không thể hoàn tác.")) return
+    if (
+      !window.confirm(
+        "Bạn có chắc chắn muốn xóa đánh giá này? Hành động này không thể hoàn tác.",
+      )
+    )
+      return;
 
     try {
-      console.log("Deleting review with ID:", userReview.id)
-      await reviewApi.deleteReview(userReview.id)
-      toast.success("Đã xóa đánh giá thành công!")
-      setShowReviewForm(false)
-      setReviewForm({ rate: 5, content: "" })
-      await loadReviews()
+      console.log("Deleting review with ID:", userReview.id);
+      await reviewApi.deleteReview(userReview.id);
+      toast.success("Đã xóa đánh giá thành công!");
+      setShowReviewForm(false);
+      setReviewForm({ rate: 5, content: "" });
+      await loadReviews();
     } catch (error: any) {
-      console.error("Delete review error:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Không thể xóa đánh giá"
-      toast.error(errorMessage)
+      console.error("Delete review error:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể xóa đánh giá";
+      toast.error(errorMessage);
     }
-  }
+  };
 
   const handleEditReview = () => {
     if (userReview) {
       setReviewForm({
         rate: userReview.rate,
-        content: userReview.content
-      })
-      setShowReviewForm(true)
+        content: userReview.content,
+      });
+      setShowReviewForm(true);
     }
-  }
+  };
 
   // Filter reviews
-  const filteredReviews = reviews.filter(review => {
-    const matchesSearch = review.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.createdByName?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesRating = filterRating === "all" || review.rate === Number(filterRating)
-    return matchesSearch && matchesRating
-  })
+  const filteredReviews = reviews.filter((review) => {
+    const matchesSearch =
+      review.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.createdByName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRating =
+      filterRating === "all" || review.rate === Number(filterRating);
+    return matchesSearch && matchesRating;
+  });
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
-    )
+    );
   }
 
-  const averageRating = reviewStats?.averageRating || 0
-  const totalReviews = reviewStats?.totalReviews || 0
+  const averageRating = reviewStats?.averageRating || 0;
+  const totalReviews = reviewStats?.totalReviews || 0;
   const distribution = reviewStats?.ratingDistribution || {
     fiveStar: 0,
     fourStar: 0,
     threeStar: 0,
     twoStar: 0,
-    oneStar: 0
-  }
+    oneStar: 0,
+  };
 
   return (
     <div>
@@ -1629,19 +1959,24 @@ const ReviewsTab: React.FC = () => {
             <div className="space-y-4">
               {/* Rating Stars */}
               <div>
-                <label className="block text-sm font-medium mb-2">Đánh giá của bạn</label>
+                <label className="block text-sm font-medium mb-2">
+                  Đánh giá của bạn
+                </label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
-                      onClick={() => setReviewForm({ ...reviewForm, rate: star })}
+                      onClick={() =>
+                        setReviewForm({ ...reviewForm, rate: star })
+                      }
                       className="focus:outline-none"
                     >
                       <Star
-                        className={`w-8 h-8 ${star <= reviewForm.rate
+                        className={`w-8 h-8 ${
+                          star <= reviewForm.rate
                             ? "fill-orange-500 text-orange-500"
                             : "text-gray-300"
-                          }`}
+                        }`}
                       />
                     </button>
                   ))}
@@ -1650,10 +1985,14 @@ const ReviewsTab: React.FC = () => {
 
               {/* Content */}
               <div>
-                <label className="block text-sm font-medium mb-2">Nội dung đánh giá</label>
+                <label className="block text-sm font-medium mb-2">
+                  Nội dung đánh giá
+                </label>
                 <textarea
                   value={reviewForm.content}
-                  onChange={(e) => setReviewForm({ ...reviewForm, content: e.target.value })}
+                  onChange={(e) =>
+                    setReviewForm({ ...reviewForm, content: e.target.value })
+                  }
                   rows={4}
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
@@ -1679,8 +2018,8 @@ const ReviewsTab: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setShowReviewForm(false)
-                    setReviewForm({ rate: 5, content: "" })
+                    setShowReviewForm(false);
+                    setReviewForm({ rate: 5, content: "" });
                   }}
                   disabled={submitting}
                 >
@@ -1721,17 +2060,18 @@ const ReviewsTab: React.FC = () => {
             {[1, 2, 3, 4, 5].map((star) => (
               <Star
                 key={star}
-                className={`w-5 h-5 ${star <= userReview.rate
+                className={`w-5 h-5 ${
+                  star <= userReview.rate
                     ? "fill-orange-500 text-orange-500"
                     : "text-gray-300"
-                  }`}
+                }`}
               />
             ))}
           </div>
 
           <p className="text-gray-700">{userReview.content}</p>
           <p className="text-sm text-gray-500 mt-2">
-            {new Date(userReview.createdAt).toLocaleDateString('vi-VN')}
+            {new Date(userReview.createdAt).toLocaleDateString("vi-VN")}
           </p>
 
           {/* Edit Form */}
@@ -1739,19 +2079,24 @@ const ReviewsTab: React.FC = () => {
             <div className="mt-4 pt-4 border-t space-y-4">
               {/* Rating Stars */}
               <div>
-                <label className="block text-sm font-medium mb-2">Đánh giá</label>
+                <label className="block text-sm font-medium mb-2">
+                  Đánh giá
+                </label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
-                      onClick={() => setReviewForm({ ...reviewForm, rate: star })}
+                      onClick={() =>
+                        setReviewForm({ ...reviewForm, rate: star })
+                      }
                       className="focus:outline-none"
                     >
                       <Star
-                        className={`w-8 h-8 ${star <= reviewForm.rate
+                        className={`w-8 h-8 ${
+                          star <= reviewForm.rate
                             ? "fill-orange-500 text-orange-500"
                             : "text-gray-300"
-                          }`}
+                        }`}
                       />
                     </button>
                   ))}
@@ -1760,10 +2105,14 @@ const ReviewsTab: React.FC = () => {
 
               {/* Content */}
               <div>
-                <label className="block text-sm font-medium mb-2">Nội dung</label>
+                <label className="block text-sm font-medium mb-2">
+                  Nội dung
+                </label>
                 <textarea
                   value={reviewForm.content}
-                  onChange={(e) => setReviewForm({ ...reviewForm, content: e.target.value })}
+                  onChange={(e) =>
+                    setReviewForm({ ...reviewForm, content: e.target.value })
+                  }
                   rows={4}
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -1788,8 +2137,11 @@ const ReviewsTab: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setShowReviewForm(false)
-                    setReviewForm({ rate: userReview.rate, content: userReview.content })
+                    setShowReviewForm(false);
+                    setReviewForm({
+                      rate: userReview.rate,
+                      content: userReview.content,
+                    });
                   }}
                   disabled={submitting}
                 >
@@ -1812,13 +2164,14 @@ const ReviewsTab: React.FC = () => {
               {averageRating.toFixed(1)}
             </div>
             <div className="flex gap-1 justify-center mb-2">
-              {[1, 2, 3, 4, 5].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Star
                   key={i}
-                  className={`w-4 h-4 ${i <= Math.round(averageRating)
+                  className={`w-4 h-4 ${
+                    i <= Math.round(averageRating)
                       ? "fill-orange-500 text-orange-500"
                       : "text-gray-300"
-                    }`}
+                  }`}
                 />
               ))}
             </div>
@@ -1834,9 +2187,10 @@ const ReviewsTab: React.FC = () => {
               { stars: 4, count: distribution.fourStar },
               { stars: 3, count: distribution.threeStar },
               { stars: 2, count: distribution.twoStar },
-              { stars: 1, count: distribution.oneStar }
+              { stars: 1, count: distribution.oneStar },
             ].map(({ stars, count }) => {
-              const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0
+              const percentage =
+                totalReviews > 0 ? (count / totalReviews) * 100 : 0;
               return (
                 <div key={stars} className="flex items-center gap-3">
                   <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -1847,14 +2201,17 @@ const ReviewsTab: React.FC = () => {
                   </div>
                   <div className="flex gap-1">
                     {[...Array(stars)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 fill-orange-500 text-orange-500" />
+                      <Star
+                        key={i}
+                        className="w-3 h-3 fill-orange-500 text-orange-500"
+                      />
                     ))}
                   </div>
                   <span className="text-sm text-gray-600 font-medium w-16">
                     {percentage.toFixed(0)}% ({count})
                   </span>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -1862,7 +2219,9 @@ const ReviewsTab: React.FC = () => {
 
       {/* Reviews Section */}
       <div>
-        <h2 className="text-2xl font-bold mb-6">Reviews ({filteredReviews.length})</h2>
+        <h2 className="text-2xl font-bold mb-6">
+          Reviews ({filteredReviews.length})
+        </h2>
 
         {/* Search and Filter */}
         <div className="flex gap-3 mb-6">
@@ -1904,29 +2263,30 @@ const ReviewsTab: React.FC = () => {
                 <div className="flex items-start gap-4">
                   {/* Avatar */}
                   <div className="w-12 h-12 rounded-full bg-gray-800 text-white flex items-center justify-center font-semibold text-lg flex-shrink-0">
-                    {(review.createdByName || 'U').charAt(0).toUpperCase()}
+                    {(review.createdByName || "U").charAt(0).toUpperCase()}
                   </div>
 
                   <div className="flex-1">
                     {/* Header */}
                     <div className="mb-2">
-                      <h3 className="font-semibold">
-                        {review.createdByName}
-                      </h3>
+                      <h3 className="font-semibold">{review.createdByName}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex gap-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-4 h-4 ${i < review.rate
-                                  ? 'fill-orange-500 text-orange-500'
-                                  : 'text-gray-300'
-                                }`}
+                              className={`w-4 h-4 ${
+                                i < review.rate
+                                  ? "fill-orange-500 text-orange-500"
+                                  : "text-gray-300"
+                              }`}
                             />
                           ))}
                         </div>
                         <span className="text-sm text-gray-600">
-                          {new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                          {new Date(review.createdAt).toLocaleDateString(
+                            "vi-VN",
+                          )}
                         </span>
                       </div>
                     </div>
@@ -1941,22 +2301,24 @@ const ReviewsTab: React.FC = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Lesson Video Player Component (just video, no other content)
-const LessonVideoPlayer: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
-  const videoContainerRef = useRef<HTMLDivElement>(null)
+const LessonVideoPlayer: React.FC<{ lesson: LessonResponse }> = ({
+  lesson,
+}) => {
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const handleFullscreen = () => {
     if (videoContainerRef.current) {
       if (document.fullscreenElement) {
-        document.exitFullscreen()
+        document.exitFullscreen();
       } else {
-        videoContainerRef.current.requestFullscreen()
+        videoContainerRef.current.requestFullscreen();
       }
     }
-  }
+  };
 
   if (!lesson.videoUrl) {
     return (
@@ -1966,7 +2328,7 @@ const LessonVideoPlayer: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => 
           <p className="text-white text-lg">Không có video</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -1988,8 +2350,8 @@ const LessonVideoPlayer: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => 
         <Maximize className="w-5 h-5" />
       </button>
     </div>
-  )
-}
+  );
+};
 
 // Lesson Content Component (for Overview tab)
 const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
@@ -2000,7 +2362,9 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
         <h1 className="text-3xl font-bold mb-3">{lesson.title}</h1>
 
         {lesson.description && (
-          <p className="text-lg text-gray-600 leading-relaxed">{lesson.description}</p>
+          <p className="text-lg text-gray-600 leading-relaxed">
+            {lesson.description}
+          </p>
         )}
 
         {/* Lesson Meta Info */}
@@ -2022,7 +2386,9 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
       {lesson.content && (
         <div className="mb-8">
           <div className="border-l-4 border-blue-500 pl-6">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-900">Nội dung bài học</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-gray-900">
+              Nội dung bài học
+            </h2>
             <div className="prose prose-lg max-w-none">
               <MarkdownRenderer content={lesson.content} />
             </div>
@@ -2094,27 +2460,27 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
         </ul>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Quiz Content Component
 const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
-  const [quizHistory, setQuizHistory] = useState<any[]>([])
-  const [loadingHistory, setLoadingHistory] = useState(true)
+  const [quizHistory, setQuizHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const history = await userQuizApi.getQuizAttemptHistory(quiz.id)
-        setQuizHistory(history)
+        const history = await userQuizApi.getQuizAttemptHistory(quiz.id);
+        setQuizHistory(history);
       } catch (error) {
-        console.error('Error loading quiz history:', error)
+        console.error("Error loading quiz history:", error);
       } finally {
-        setLoadingHistory(false)
+        setLoadingHistory(false);
       }
-    }
-    loadHistory()
-  }, [quiz.id])
+    };
+    loadHistory();
+  }, [quiz.id]);
 
   return (
     <div>
@@ -2122,13 +2488,17 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-4">{quiz.title}</h1>
         {quiz.description && (
-          <p className="text-lg text-gray-600 leading-relaxed mb-6">{quiz.description}</p>
+          <p className="text-lg text-gray-600 leading-relaxed mb-6">
+            {quiz.description}
+          </p>
         )}
       </div>
 
       {/* Quiz Details */}
       <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4 text-purple-900">Thông tin bài kiểm tra</h2>
+        <h2 className="text-xl font-semibold mb-4 text-purple-900">
+          Thông tin bài kiểm tra
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
@@ -2136,7 +2506,9 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Số câu hỏi</p>
-              <p className="text-xl font-bold text-gray-900">{Array.from(quiz.questions || []).length} câu</p>
+              <p className="text-xl font-bold text-gray-900">
+                {Array.from(quiz.questions || []).length} câu
+              </p>
             </div>
           </div>
 
@@ -2146,7 +2518,9 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Thời gian làm bài</p>
-              <p className="text-xl font-bold text-gray-900">{quiz.duration} phút</p>
+              <p className="text-xl font-bold text-gray-900">
+                {quiz.duration} phút
+              </p>
             </div>
           </div>
 
@@ -2156,7 +2530,9 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Điểm đạt yêu cầu</p>
-              <p className="text-xl font-bold text-gray-900">{quiz.passingScore}%</p>
+              <p className="text-xl font-bold text-gray-900">
+                {quiz.passingScore}%
+              </p>
             </div>
           </div>
 
@@ -2167,7 +2543,10 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
             <div>
               <p className="text-sm text-gray-600">Số lần làm bài</p>
               <p className="text-xl font-bold text-gray-900">
-                {loadingHistory ? '...' : `${quizHistory.length}/${quiz.attemptLimit}`} lần
+                {loadingHistory
+                  ? "..."
+                  : `${quizHistory.length}/${quiz.attemptLimit}`}{" "}
+                lần
               </p>
             </div>
           </div>
@@ -2200,20 +2579,25 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
           </div>
         ) : quizHistory.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">Chưa có lịch sử làm bài</p>
+          <p className="text-gray-500 text-center py-4">
+            Chưa có lịch sử làm bài
+          </p>
         ) : (
           <div className="space-y-3">
             {quizHistory.map((attempt: any, index: number) => (
               <div
                 key={attempt.id}
-                className={`p-4 rounded-lg border-l-4 ${attempt.isPassed
-                    ? 'bg-green-50 border-green-500'
-                    : 'bg-red-50 border-red-500'
-                  }`}
+                className={`p-4 rounded-lg border-l-4 ${
+                  attempt.isPassed
+                    ? "bg-green-50 border-green-500"
+                    : "bg-red-50 border-red-500"
+                }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">Lần {quizHistory.length - index}</span>
+                    <span className="font-semibold text-gray-900">
+                      Lần {quizHistory.length - index}
+                    </span>
                     {attempt.isPassed ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                         <CheckCircle className="w-3 h-3" />
@@ -2227,12 +2611,23 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
                     )}
                   </div>
                   <span className="text-sm text-gray-500">
-                    {new Date(attempt.submittedAt).toLocaleString('vi-VN')}
+                    {new Date(attempt.submittedAt).toLocaleString("vi-VN")}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 text-sm">
-                  <span className="text-gray-700">Điểm: <strong>{attempt.score}/{attempt.totalScore}</strong></span>
-                  <span className="text-gray-700">Thời gian: <strong>{Math.floor(attempt.timeSpent / 60)}:{String(attempt.timeSpent % 60).padStart(2, '0')}</strong></span>
+                  <span className="text-gray-700">
+                    Điểm:{" "}
+                    <strong>
+                      {attempt.score}/{attempt.totalScore}
+                    </strong>
+                  </span>
+                  <span className="text-gray-700">
+                    Thời gian:{" "}
+                    <strong>
+                      {Math.floor(attempt.timeSpent / 60)}:
+                      {String(attempt.timeSpent % 60).padStart(2, "0")}
+                    </strong>
+                  </span>
                 </div>
               </div>
             ))}
@@ -2240,111 +2635,126 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Assignment Content Component
-const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assignment }) => {
-  const [submission, setSubmission] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [submissionContent, setSubmissionContent] = useState('')
-  const [submissionFiles, setSubmissionFiles] = useState<File[]>([])
-  const [submissionLink, setSubmissionLink] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
+  assignment,
+}) => {
+  const [submission, setSubmission] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [submissionContent, setSubmissionContent] = useState("");
+  const [submissionFiles, setSubmissionFiles] = useState<File[]>([]);
+  const [submissionLink, setSubmissionLink] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadSubmission()
-  }, [assignment.id])
+    loadSubmission();
+  }, [assignment.id]);
 
   const loadSubmission = async () => {
     try {
-      setLoading(true)
-      const data = await assignmentApi.getMySubmission(assignment.id)
-      setSubmission(data)
+      setLoading(true);
+      const data = await assignmentApi.getMySubmission(assignment.id);
+      setSubmission(data);
 
       // Pre-fill form if editing
       if (data) {
-        setSubmissionContent(data.submissionText || '')
-        setSubmissionLink(data.submissionLink || '')
+        setSubmissionContent(data.submissionText || "");
+        setSubmissionLink(data.submissionLink || "");
       }
     } catch (error) {
-      console.error('Error loading submission:', error)
+      console.error("Error loading submission:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleEdit = () => {
     if (submission) {
-      setSubmissionContent(submission.submissionText || '')
-      setSubmissionLink(submission.submissionLink || '')
-      setSubmissionFiles([])
+      setSubmissionContent(submission.submissionText || "");
+      setSubmissionLink(submission.submissionLink || "");
+      setSubmissionFiles([]);
     }
-    setShowEditModal(true)
-  }
+    setShowEditModal(true);
+  };
 
   const handleDelete = async () => {
-    if (!submission || !window.confirm('Bạn có chắc chắn muốn xóa bài nộp này?')) return
+    if (
+      !submission ||
+      !window.confirm("Bạn có chắc chắn muốn xóa bài nộp này?")
+    )
+      return;
 
     try {
-      await assignmentApi.deleteSubmission(submission.id)
-      toast.success('Đã xóa bài nộp')
-      loadSubmission()
+      await assignmentApi.deleteSubmission(submission.id);
+      toast.success("Đã xóa bài nộp");
+      loadSubmission();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể xóa bài nộp')
+      toast.error(error.response?.data?.message || "Không thể xóa bài nộp");
     }
-  }
+  };
 
   const handleUpdate = async () => {
-    if (!submission) return
+    if (!submission) return;
 
-    const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "")
-    const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "")
-    const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "")
+    const canSubmitText = ["TEXT", "BOTH"].includes(
+      assignment.submissionType || "",
+    );
+    const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(
+      assignment.submissionType || "",
+    );
+    const canSubmitLink = ["LINK", "BOTH"].includes(
+      assignment.submissionType || "",
+    );
 
     try {
-      setSubmitting(true)
+      setSubmitting(true);
 
-      const hasContent = submissionContent || submissionFiles.length > 0 || submissionLink
+      const hasContent =
+        submissionContent || submissionFiles.length > 0 || submissionLink;
       if (!hasContent) {
-        toast.error('Vui lòng nhập nội dung bài làm')
-        setSubmitting(false)
-        return
+        toast.error("Vui lòng nhập nội dung bài làm");
+        setSubmitting(false);
+        return;
       }
 
       const updateData = {
         assignmentId: assignment.id,
         submissionText: canSubmitText ? submissionContent : undefined,
         submissionLink: canSubmitLink ? submissionLink : undefined,
-      }
+      };
 
-      const existingFiles = submission.submissionFiles || []
+      const existingFiles = submission.submissionFiles || [];
 
       await assignmentApi.updateSubmission(
         submission.id,
         updateData,
         canSubmitFile ? submissionFiles : undefined,
-        canSubmitFile ? existingFiles : undefined
-      )
+        canSubmitFile ? existingFiles : undefined,
+      );
 
-      toast.success('Đã cập nhật bài nộp')
-      setShowEditModal(false)
-      setSubmissionFiles([])
-      loadSubmission()
+      toast.success("Đã cập nhật bài nộp");
+      setShowEditModal(false);
+      setSubmissionFiles([]);
+      loadSubmission();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể cập nhật bài nộp')
+      toast.error(
+        error.response?.data?.message || "Không thể cập nhật bài nộp",
+      );
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -2356,12 +2766,13 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
           <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-300 px-4 py-2 rounded-lg mb-4">
             <Clock className="w-5 h-5 text-orange-600" />
             <span className="font-semibold text-orange-900">
-              Hạn nộp: {new Date(assignment.deadline).toLocaleDateString("vi-VN", {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+              Hạn nộp:{" "}
+              {new Date(assignment.deadline).toLocaleDateString("vi-VN", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
               })}
             </span>
           </div>
@@ -2380,7 +2791,9 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
               {submission.score !== null && (
                 <div className="flex items-center gap-2 bg-blue-100 px-3 py-1.5 rounded-lg">
                   <CheckCircle className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Điểm: {submission.score}/{assignment.maxScore}</span>
+                  <span className="text-sm font-medium text-blue-900">
+                    Điểm: {submission.score}/{assignment.maxScore}
+                  </span>
                 </div>
               )}
               <Button
@@ -2407,36 +2820,60 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
             {/* Content */}
             {submission.submissionText && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Nội dung:</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Nội dung:
+                </h3>
                 <div className="bg-white border border-green-300 rounded-lg p-4">
-                  <p className="text-gray-700 whitespace-pre-wrap">{submission.submissionText}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap">
+                    {submission.submissionText}
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Files */}
-            {submission.submissionFiles && submission.submissionFiles.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">File đính kèm:</h3>
-                <div className="bg-green-100 border border-green-300 rounded-lg p-3 space-y-2">
-                  {submission.submissionFiles.map((file: string, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                      <FileText className="w-4 h-4 text-green-600" />
-                      <a href={file} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                        {file.split('/').pop() || `File ${idx + 1}`}
-                      </a>
-                    </div>
-                  ))}
+            {submission.submissionFiles &&
+              submission.submissionFiles.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    File đính kèm:
+                  </h3>
+                  <div className="bg-green-100 border border-green-300 rounded-lg p-3 space-y-2">
+                    {submission.submissionFiles.map(
+                      (file: string, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 text-sm text-gray-700"
+                        >
+                          <FileText className="w-4 h-4 text-green-600" />
+                          <a
+                            href={file}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline"
+                          >
+                            {file.split("/").pop() || `File ${idx + 1}`}
+                          </a>
+                        </div>
+                      ),
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Link */}
             {submission.submissionLink && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Link:</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Link:
+                </h3>
                 <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                  <a href={submission.submissionLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-2">
+                  <a
+                    href={submission.submissionLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline flex items-center gap-2"
+                  >
                     <LinkIcon className="w-4 h-4" />
                     {submission.submissionLink}
                   </a>
@@ -2447,15 +2884,22 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
             {/* Submission time */}
             <div className="flex items-center gap-2 text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
               <Clock className="w-4 h-4 text-blue-600" />
-              <span>Nộp lúc: {new Date(submission.submittedAt).toLocaleString('vi-VN')}</span>
+              <span>
+                Nộp lúc:{" "}
+                {new Date(submission.submittedAt).toLocaleString("vi-VN")}
+              </span>
             </div>
 
             {/* Feedback if graded */}
             {submission.feedback && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Nhận xét của giảng viên:</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Nhận xét của giảng viên:
+                </h3>
                 <div className="bg-blue-50 border border-blue-300 rounded-lg p-4">
-                  <p className="text-gray-700 whitespace-pre-wrap">{submission.feedback}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap">
+                    {submission.feedback}
+                  </p>
                 </div>
               </div>
             )}
@@ -2467,9 +2911,13 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
       {assignment.description && (
         <div className="mb-8">
           <div className="border-l-4 border-green-500 pl-6">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-900">Mô tả bài tập</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-gray-900">
+              Mô tả bài tập
+            </h2>
             <div className="prose prose-lg max-w-none">
-              <p className="whitespace-pre-wrap text-gray-700 leading-relaxed text-lg">{assignment.description}</p>
+              <p className="whitespace-pre-wrap text-gray-700 leading-relaxed text-lg">
+                {assignment.description}
+              </p>
             </div>
           </div>
         </div>
@@ -2477,7 +2925,9 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
 
       {/* Assignment Info */}
       <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4 text-green-900">Thông tin nộp bài</h2>
+        <h2 className="text-xl font-semibold mb-4 text-green-900">
+          Thông tin nộp bài
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
@@ -2500,7 +2950,9 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
               </div>
               <div>
                 <p className="text-sm text-gray-600">Điểm tối đa</p>
-                <p className="text-lg font-semibold text-gray-900">{assignment.maxScore} điểm</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {assignment.maxScore} điểm
+                </p>
               </div>
             </div>
           )}
@@ -2550,156 +3002,198 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({ assig
           <li>• Tải xuống và xem tài liệu đính kèm (nếu có)</li>
           <li>• Kiểm tra kỹ bài làm trước khi nộp</li>
           <li>• Nộp bài trước hạn để tránh bị trễ deadline</li>
-          <li>• Nhấn vào nút "Xem chi tiết & Nộp bài" ở phía trên để bắt đầu</li>
+          <li>
+            • Nhấn vào nút "Xem chi tiết & Nộp bài" ở phía trên để bắt đầu
+          </li>
         </ul>
       </div>
 
       {/* Edit Modal */}
-      {showEditModal && (() => {
-        const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "")
-        const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "")
-        const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "")
+      {showEditModal &&
+        (() => {
+          const canSubmitText = ["TEXT", "BOTH"].includes(
+            assignment.submissionType || "",
+          );
+          const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(
+            assignment.submissionType || "",
+          );
+          const canSubmitLink = ["LINK", "BOTH"].includes(
+            assignment.submissionType || "",
+          );
 
-        return (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">Chỉnh sửa bài nộp</h3>
-                    <p className="text-sm text-gray-600 mt-1">{assignment.title}</p>
-                  </div>
-                  <button
-                    onClick={() => setShowEditModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-full"
-                    aria-label="Đóng"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                {canSubmitText && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nội dung bài làm
-                    </label>
-                    <textarea
-                      value={submissionContent}
-                      onChange={(e) => setSubmissionContent(e.target.value)}
-                      rows={8}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Nhập nội dung bài làm của bạn..."
-                    />
-                  </div>
-                )}
-
-                {canSubmitFile && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tệp đính kèm
-                    </label>
-                    <div className="mb-3">
-                      <label htmlFor="edit-file-upload" className="cursor-pointer">
-                        <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
-                          <Upload className="h-5 w-5 text-gray-600" />
-                          <span className="text-sm text-gray-600">
-                            Chọn file để upload (Tối đa 10MB/file)
-                          </span>
-                        </div>
-                        <input
-                          type="file"
-                          multiple
-                          onChange={(e) => setSubmissionFiles(Array.from(e.target.files || []))}
-                          className="hidden"
-                          id="edit-file-upload"
-                          disabled={submitting}
-                          accept="*/*"
-                        />
-                      </label>
+          return (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        Chỉnh sửa bài nộp
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {assignment.title}
+                      </p>
                     </div>
-
-                    {submissionFiles.length > 0 && (
-                      <div>
-                        <p className="text-xs text-gray-500 mb-2">File mới:</p>
-                        <div className="space-y-2">
-                          {submissionFiles.map((file, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 border rounded">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm truncate">{file.name}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {file.size < 1024 ? file.size + ' B'
-                                      : file.size < 1024 * 1024 ? (file.size / 1024).toFixed(1) + ' KB'
-                                        : (file.size / (1024 * 1024)).toFixed(1) + ' MB'}
-                                  </p>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => setSubmissionFiles(submissionFiles.filter((_, i) => i !== idx))}
-                                className="p-1 hover:bg-gray-200 rounded ml-2"
-                                disabled={submitting}
-                                aria-label="Xóa file"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className="p-2 hover:bg-gray-100 rounded-full"
+                      aria-label="Đóng"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
-                )}
+                </div>
 
-                {canSubmitLink && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Link bài làm
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <LinkIcon className="h-5 w-5 text-gray-400" />
-                      <input
-                        type="url"
-                        value={submissionLink}
-                        onChange={(e) => setSubmissionLink(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                <div className="p-6 space-y-4">
+                  {canSubmitText && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nội dung bài làm
+                      </label>
+                      <textarea
+                        value={submissionContent}
+                        onChange={(e) => setSubmissionContent(e.target.value)}
+                        rows={8}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nhập nội dung bài làm của bạn..."
                       />
                     </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-3 p-6 pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowEditModal(false)} disabled={submitting}>
-                  Hủy
-                </Button>
-                <Button
-                  onClick={handleUpdate}
-                  disabled={submitting}
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Đang cập nhật...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Cập nhật
-                    </>
                   )}
-                </Button>
+
+                  {canSubmitFile && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tệp đính kèm
+                      </label>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="edit-file-upload"
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg transition border-gray-300 hover:border-blue-500 hover:bg-blue-50">
+                            <Upload className="h-5 w-5 text-gray-600" />
+                            <span className="text-sm text-gray-600">
+                              Chọn file để upload (Tối đa 10MB/file)
+                            </span>
+                          </div>
+                          <input
+                            type="file"
+                            multiple
+                            onChange={(e) =>
+                              setSubmissionFiles(
+                                Array.from(e.target.files || []),
+                              )
+                            }
+                            className="hidden"
+                            id="edit-file-upload"
+                            disabled={submitting}
+                            accept="*/*"
+                          />
+                        </label>
+                      </div>
+
+                      {submissionFiles.length > 0 && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-2">
+                            File mới:
+                          </p>
+                          <div className="space-y-2">
+                            {submissionFiles.map((file, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between p-3 bg-gray-50 border rounded"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm truncate">
+                                      {file.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {file.size < 1024
+                                        ? file.size + " B"
+                                        : file.size < 1024 * 1024
+                                          ? (file.size / 1024).toFixed(1) +
+                                            " KB"
+                                          : (file.size / (1024 * 1024)).toFixed(
+                                              1,
+                                            ) + " MB"}
+                                    </p>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() =>
+                                    setSubmissionFiles(
+                                      submissionFiles.filter(
+                                        (_, i) => i !== idx,
+                                      ),
+                                    )
+                                  }
+                                  className="p-1 hover:bg-gray-200 rounded ml-2"
+                                  disabled={submitting}
+                                  aria-label="Xóa file"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {canSubmitLink && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Link bài làm
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="h-5 w-5 text-gray-400" />
+                        <input
+                          type="url"
+                          value={submissionLink}
+                          onChange={(e) => setSubmissionLink(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="https://..."
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 p-6 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowEditModal(false)}
+                    disabled={submitting}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    onClick={handleUpdate}
+                    disabled={submitting}
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Đang cập nhật...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Cập nhật
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        )
-      })()}
+          );
+        })()}
     </div>
-  )
-}
+  );
+};
 
-export default CourseLearning
+export default CourseLearning;

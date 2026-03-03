@@ -1,0 +1,1 @@
+export const ACTIVE_COURSE_NAVIGATION_CLASS = "border-gray-900 text-gray-900 border-b-2 font-bold";

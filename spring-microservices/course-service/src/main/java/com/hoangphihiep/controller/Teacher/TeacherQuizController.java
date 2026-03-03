@@ -97,4 +97,10 @@ public class TeacherQuizController {
                 .result(response)
                 .build();
     }
+
+    @PostMapping("/save-quiz-down-db")
+    public ApiResponse<?> saveGenerationQuizDownToDatabase() {
+
+        return null;
+    }
 }
