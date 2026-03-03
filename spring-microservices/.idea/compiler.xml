@@ -9,6 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="api-gateway" />
         <module name="notification-service" />
+        <module name="ai-service" />
       </profile>
       <profile name="Annotation profile for chat-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -78,6 +79,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="ai-serivce" target="21" />
       <module name="course-management" target="21" />
       <module name="file-handler (1)" target="21" />
       <module name="profile-service" target="21" />
@@ -86,6 +88,8 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="ai-serivce" options="-parameters" />
+      <module name="ai-service" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
       <module name="chat-app" options="-parameters -Amapstruct.suppressGeneratorTimestamp=true -Amapstruct.defaultComponentModel=spring -Amapstruct.verbose=true" />
       <module name="chat-service" options="-parameters -Amapstruct.suppressGeneratorTimestamp=true -Amapstruct.defaultComponentModel=spring -Amapstruct.verbose=true" />

@@ -1,4 +1,4 @@
-package com.hoangphihiep.exception;
+package com.hcmute.ai_service.exception;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -217,6 +217,12 @@ public enum ErrorCode {
 
     // Educational Unit Status related errors (EDU_STATUS_xxxx)
     CHANGE_EDUCATIONAL_UNIT_STATUS_FAILED("EDU_STATUS_9002", "Change educationalUnit status failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // AI Service related errors (AI_xxxx)
+    AI_SERVICE_UNAVAILABLE("AI_9001", "AI service không khả dụng", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_QUIZ_GENERATION_FAILED("AI_9002", "Không thể tạo quiz từ AI service", HttpStatus.INTERNAL_SERVER_ERROR),
+    AI_SERVICE_TIMEOUT("AI_9003", "AI service timeout", HttpStatus.REQUEST_TIMEOUT),
+    AI_INVALID_RESPONSE("AI_9004", "Phản hồi từ AI service không hợp lệ", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {

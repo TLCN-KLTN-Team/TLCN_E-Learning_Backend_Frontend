@@ -81,15 +81,15 @@ const QuestionGenerationPage = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="mx-auto max-w-3xl px-4 py-4 flex items-center gap-3">
+        <div className="px-4 py-4 flex items-center gap-3 font-bold text-black">
           <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-            <Brain className="h-5 w-5 text-primary-foreground" />
+            <Brain className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-xl font-bold">
               AI Quiz Generator
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm">
               Tạo bài kiểm tra thông minh từ tài liệu hoặc chủ đề
             </p>
           </div>
@@ -97,7 +97,7 @@ const QuestionGenerationPage = () => {
       </header>
 
       {/* Main content */}
-      <main className="mx-auto max-w-3xl px-4 py-6 space-y-6">
+      <main className="py-6 space-y-6">
         <SourceSelection
           sourceType={state.sourceType}
           summary={state.summary}
@@ -123,7 +123,7 @@ const QuestionGenerationPage = () => {
         <button
           onClick={handleGenerate}
           disabled={totalQuestions === 0 || state.loading}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3.5 text-sm text-white disabled:cursor-not-allowed"
         >
           {state.loading ? (
             <>

@@ -1,7 +1,6 @@
-package com.hoangphihiep.exception;
+package com.hcmute.ai_service.exception;
 
-import com.hoangphihiep.dto.response.ApiResponse;
-import jakarta.validation.ConstraintViolation;
+import com.hcmute.ai_service.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

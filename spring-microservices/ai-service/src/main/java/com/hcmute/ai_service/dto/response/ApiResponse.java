@@ -1,7 +1,7 @@
-package com.hoangphihiep.dto.response;
+package com.hcmute.ai_service.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hoangphihiep.exception.ErrorCode;
+import com.hcmute.ai_service.exception.ErrorCode;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
