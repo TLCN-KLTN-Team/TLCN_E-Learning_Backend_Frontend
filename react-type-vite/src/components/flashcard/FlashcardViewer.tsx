@@ -6,11 +6,13 @@ import {
   Save,
   Edit3,
   Sparkles,
+  BookOpen,
 } from "lucide-react";
-import type { Flashcard } from "@/lib/flashcardMockData";
+import type { UIFlashcard } from "@/types/flashcard.type";
+import "@/styles/flashcard.css";
 
 interface Props {
-  cards: Flashcard[];
+  cards: UIFlashcard[];
   onRegenerate: () => void;
   onSave: () => void;
   loading: boolean;
@@ -34,11 +36,6 @@ export default function FlashcardViewer({
   }
 
   const currentCard = cards[currentIndex];
-  const difficultyColors = {
-    easy: "bg-green-500/10 text-green-600 dark:text-green-400",
-    medium: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
-    hard: "bg-red-500/10 text-red-600 dark:text-red-400",
-  };
 
   const handleNext = () => {
     if (currentIndex < cards.length - 1) {
@@ -54,91 +51,92 @@ export default function FlashcardViewer({
     }
   };
 
+  const handleDotClick = (idx: number) => {
+    setCurrentIndex(idx);
+    setFlipped(false);
+  };
+
+  const getDifficultyLabel = (difficulty: string) => {
+    switch (difficulty) {
+      case "easy":
+        return "Dễ";
+      case "medium":
+        return "Trung bình";
+      case "hard":
+        return "Khó";
+      default:
+        return difficulty;
+    }
+  };
+
   return (
-    <div className="section-card space-y-4">
+    <div className="flashcard-container">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">
-            Thẻ {currentIndex + 1} / {cards.length}
-          </span>
+      <div className="flashcard-header">
+        <div className="flashcard-title">
+          <div className="flashcard-title-icon">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <span>Học Flashcards ({cards.length} thẻ)</span>
           <span
-            className={`text-xs px-2 py-0.5 rounded-full font-medium ${difficultyColors[currentCard.difficulty]}`}
+            className={`flashcard-difficulty difficulty-${currentCard.difficulty}`}
           >
-            {currentCard.difficulty === "easy" && "Dễ"}
-            {currentCard.difficulty === "medium" && "Trung bình"}
-            {currentCard.difficulty === "hard" && "Khó"}
+            {getDifficultyLabel(currentCard.difficulty)}
           </span>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={onEdit}
-            disabled={editing}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-40"
-          >
-            <Edit3 className="h-3 w-3 inline mr-1" />
-            Chỉnh sửa
+        <div className="flashcard-actions">
+          <button onClick={onEdit} disabled={editing} className="flashcard-btn">
+            <Edit3 className="h-4 w-4" />
+            Sửa
           </button>
-          <button
-            onClick={onRegenerate}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-          >
-            <RotateCcw className="h-3 w-3 inline mr-1" />
+          <button onClick={onRegenerate} className="flashcard-btn">
+            <RotateCcw className="h-4 w-4" />
             Tạo lại
           </button>
           <button
             onClick={onSave}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flashcard-btn flashcard-btn-primary"
           >
-            <Save className="h-3 w-3 inline mr-1" />
+            <Save className="h-4 w-4" />
             Lưu bộ thẻ
           </button>
         </div>
       </div>
 
       {/* Flashcard */}
-      <div
-        onClick={() => setFlipped(!flipped)}
-        className="relative min-h-[280px] cursor-pointer perspective-1000"
-      >
+      <div className="flashcard-flip-container">
         <div
-          className={`relative w-full h-full transition-all duration-500 transform-style-3d ${flipped ? "rotate-y-180" : ""}`}
+          className={`flashcard-flip-inner ${flipped ? "flipped" : ""}`}
+          onClick={() => setFlipped(!flipped)}
         >
           {/* Front */}
-          <div
-            className={`absolute inset-0 flex flex-col items-center justify-center p-8 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/60 backface-hidden ${flipped ? "invisible" : "visible"}`}
-          >
-            <Sparkles className="h-8 w-8 text-primary mb-4" />
-            <p className="text-lg font-semibold text-center text-foreground">
-              {currentCard.front}
-            </p>
-            <p className="text-xs text-muted-foreground mt-4">
-              Nhấn để lật thẻ
-            </p>
+          <div className="flashcard-face flashcard-face-front">
+            <div className="flashcard-label">Mặt trước</div>
+            <div className="flashcard-content">
+              <Sparkles className="flashcard-icon" />
+              <p className="flashcard-text">{currentCard.front}</p>
+            </div>
+            <p className="flashcard-hint">Click để lật thẻ</p>
           </div>
 
           {/* Back */}
-          <div
-            className={`absolute inset-0 flex flex-col items-center justify-center p-8 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-secondary/60 to-primary/5 backface-hidden rotate-y-180 ${flipped ? "visible" : "invisible"}`}
-          >
-            <p className="text-base text-center text-foreground leading-relaxed">
-              {currentCard.back}
-            </p>
-            <p className="text-xs text-muted-foreground mt-4">
-              Nhấn để lật lại
-            </p>
+          <div className="flashcard-face flashcard-face-back">
+            <div className="flashcard-label">Mặt sau</div>
+            <div className="flashcard-content">
+              <p className="flashcard-text flashcard-text-back">
+                {currentCard.back}
+              </p>
+            </div>
+            <p className="flashcard-hint">Click để lật lại</p>
           </div>
         </div>
       </div>
 
       {/* Tags */}
       {currentCard.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flashcard-tags">
           {currentCard.tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-xs px-2 py-1 rounded-md bg-secondary text-secondary-foreground"
-            >
+            <span key={tag} className="flashcard-tag">
               #{tag}
             </span>
           ))}
@@ -146,39 +144,40 @@ export default function FlashcardViewer({
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-2">
-        <button
-          onClick={handlePrev}
-          disabled={currentIndex === 0}
-          className="flex items-center gap-1 px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Trước</span>
-        </button>
-        <div className="flex gap-1">
+      <div className="flashcard-navigation">
+        <div className="flashcard-nav-controls">
+          <button
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            className="flashcard-nav-btn"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>Trước</span>
+          </button>
+          <div className="flashcard-counter">
+            {currentIndex + 1} / {cards.length}
+          </div>
+          <button
+            onClick={handleNext}
+            disabled={currentIndex === cards.length - 1}
+            className="flashcard-nav-btn"
+          >
+            <span>Tiếp</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Progress Dots */}
+        <div className="flashcard-progress">
           {cards.map((_, idx) => (
             <button
               key={idx}
-              onClick={() => {
-                setCurrentIndex(idx);
-                setFlipped(false);
-              }}
-              className={`h-2 w-2 rounded-full transition-all ${
-                idx === currentIndex
-                  ? "w-6 bg-primary"
-                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-              }`}
+              onClick={() => handleDotClick(idx)}
+              className={`flashcard-dot ${idx === currentIndex ? "active" : ""}`}
+              aria-label={`Đi tới thẻ ${idx + 1}`}
             />
           ))}
         </div>
-        <button
-          onClick={handleNext}
-          disabled={currentIndex === cards.length - 1}
-          className="flex items-center gap-1 px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <span className="text-sm font-medium">Tiếp</span>
-          <ChevronRight className="h-4 w-4" />
-        </button>
       </div>
     </div>
   );

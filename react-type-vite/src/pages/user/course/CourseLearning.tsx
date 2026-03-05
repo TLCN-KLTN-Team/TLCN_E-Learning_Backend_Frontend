@@ -1028,8 +1028,6 @@ const CourseLearning: React.FC = () => {
                           }))}
                           selectedChapterIds={selectedChapterIds}
                           onOpenSidebar={() => setSidebarOpen(true)}
-                          courseTitle={courseName}
-                          courseProgress={progressStats?.overallProgress || 0}
                         />
                       )}
                     </div>

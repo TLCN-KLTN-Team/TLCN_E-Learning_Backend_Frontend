@@ -5,7 +5,6 @@ import {
   BookOpen,
   Brain,
   Layers,
-  Menu,
   Upload,
   FileText,
   CheckCircle,
@@ -21,10 +20,18 @@ import FlashcardViewer from "@/components/flashcard/FlashcardViewer";
 import FlashcardEditor from "@/components/flashcard/FlashcardEditor";
 import QuizConfiguration from "@/components/quiz/QuizConfiguration";
 import QuizEditor from "@/components/quiz/QuizEditor";
+import DocumentUpload from "@/components/quiz/DocumentUpload";
+import { 
+  generateFlashcards,
+  saveFlashcardSet
+ } from "@/services/api/user/flashcard.api";
 import {
-  generateMockFlashcards,
-  type Flashcard,
-} from "@/lib/flashcardMockData";
+  type UIFlashcard,
+  toUIFlashcard,
+  DifficultyLevel,
+  type FlashCardRequest,
+  type SaveFlashcardSetRequest,
+} from "@/types/flashcard.type";
 import {
   generateMockQuiz,
   type QuizQuestion,
@@ -40,6 +47,7 @@ import {
   type AIStudySubmitResponse,
 } from "@/services/api/aiStudyApi";
 import { AppError } from "@/errors";
+import { toast } from "react-toastify";
 
 interface SavedSet {
   id: string;
@@ -47,7 +55,7 @@ interface SavedSet {
   name: string;
   count: number;
   createdAt: Date;
-  flashcards?: Flashcard[];
+  flashcards?: UIFlashcard[];
   quizQuestions?: QuizQuestion[];
 }
 
@@ -55,16 +63,12 @@ interface Props {
   chapters: Chapter[];
   selectedChapterIds: string[];
   onOpenSidebar: () => void;
-  courseTitle: string;
-  courseProgress: number;
 }
 
 export default function ReviewMain({
   chapters,
   selectedChapterIds,
   onOpenSidebar,
-  courseTitle,
-  courseProgress,
 }: Props) {
   const [mode, setMode] = useState<ReviewMode>("flashcard");
   const [generating, setGenerating] = useState(false);
@@ -118,9 +122,10 @@ export default function ReviewMain({
   const [savedSets, setSavedSets] = useState<SavedSet[]>([]);
 
   // Flashcard state
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const [flashcards, setFlashcards] = useState<UIFlashcard[]>([]);
   const [editingFlashcards, setEditingFlashcards] = useState(false);
-  const [flashcardCount, setFlashcardCount] = useState(10);
+  const [flashcardEasyCount, setFlashcardEasyCount] = useState(5);
+  const [flashcardDefaultCount, setFlashcardDefaultCount] = useState(0);
 
   // Quiz state
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -147,15 +152,53 @@ export default function ReviewMain({
     [quizConfig],
   );
 
-  const handleGenerateFlashcards = useCallback(() => {
+  const handleGenerateFlashcards = useCallback(async () => {
     setGenerating(true);
-    setTimeout(() => {
-      const cards = generateMockFlashcards(flashcardCount);
-      setFlashcards(cards);
+    setAiError(null);
+
+    try {
+      const request: FlashCardRequest = {
+        internalDocument: internalInfo,
+        externalDocument: externalInfo || null,
+        cardsPerDifficulty: [
+          {
+            difficulty: DifficultyLevel.EASY,
+            numberOfCards: flashcardEasyCount,
+          },
+          {
+            difficulty: DifficultyLevel.MEDIUM,
+            numberOfCards: flashcardDefaultCount,
+          },
+          {
+            difficulty: DifficultyLevel.HARD,
+            numberOfCards: flashcardDefaultCount,
+          },
+        ],
+        language: "vietnamese",
+      };
+
+      const response = await generateFlashcards(request);
+      console.log("Flashcards generated:", response);
+
+      // Convert backend flashcards to UI format with generated IDs
+      let idCounter = 0;
+      const uiFlashcards = response.cards.map((card) =>
+        toUIFlashcard(card, `fc_${++idCounter}_${Date.now()}`),
+      );
+
+      setFlashcards(uiFlashcards);
       setEditingFlashcards(false);
+    } catch (err) {
+      console.error("Error generating flashcards:", err);
+      setAiError(
+        err instanceof Error
+          ? err.message
+          : "Không thể tạo flashcards. Vui lòng thử lại.",
+      );
+    } finally {
       setGenerating(false);
-    }, 2000);
-  }, [flashcardCount]);
+    }
+  }, [flashcardEasyCount, flashcardDefaultCount, internalInfo, externalInfo]);
 
   const handleGenerateQuiz = useCallback(() => {
     setGenerating(true);
@@ -192,7 +235,7 @@ export default function ReviewMain({
   );
 
   const handleUpdateFlashcard = useCallback(
-    (id: string, updated: Partial<Flashcard>) => {
+    (id: string, updated: Partial<UIFlashcard>) => {
       setFlashcards((prev) =>
         prev.map((c) => (c.id === id ? { ...c, ...updated } : c)),
       );
@@ -209,33 +252,38 @@ export default function ReviewMain({
     [],
   );
 
-  const handleFileUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        setUploadedFileName(file.name);
-        // Mock: simulate text extraction
-        setTimeout(() => {
-          setExternalInfo(
-            `Nội dung trích xuất từ "${file.name}":\n\nĐây là nội dung mô phỏng được trích xuất từ tài liệu. Trong thực tế, hệ thống sẽ sử dụng AI để phân tích và trích xuất nội dung từ file PDF, DOC, hoặc các định dạng khác.`,
-          );
-        }, 600);
-      }
-    },
-    [],
-  );
-
-  const handleSaveFlashcardSet = useCallback(() => {
+  const handleSaveFlashcardSet = useCallback(async () => {
     if (flashcards.length === 0) return;
-    const newSet: SavedSet = {
-      id: `fc_${Date.now()}`,
-      type: "flashcard",
-      name: `Flashcards - ${selectedChapterNames.slice(0, 2).join(", ")}${selectedChapterNames.length > 2 ? "..." : ""}`,
-      count: flashcards.length,
-      createdAt: new Date(),
-      flashcards: [...flashcards],
+
+    const newSet: SaveFlashcardSetRequest = {
+      flashcards: flashcards.map((c) => ({
+        front: c.front,
+        back: c.back,
+        tags: c.tags,
+        difficulty: c.difficulty.toUpperCase() as DifficultyLevel
+      })),
+      internalDocument: internalInfo,
+      externalDocument: externalInfo || null,
+      language: "vietnamese",
     };
-    setSavedSets((prev) => [newSet, ...prev]);
+
+    const savedSet = await saveFlashcardSet(newSet);
+    console.log("Saved flashcard set:", savedSet);
+
+    if (savedSet) {
+      toast.success("Đã lưu bộ flashcards vào kho!");
+      // Optionally add to local saved sets list
+      const uiFlashcards = flashcards.map((c) => ({
+        id: c.id,
+        front: c.front,
+        back: c.back,
+        tags: c.tags,
+        difficulty: c.difficulty,
+      }));
+    } else {
+      toast.error("Lưu bộ flashcards thất bại. Vui lòng thử lại.");
+    }
+    
   }, [flashcards, selectedChapterNames]);
 
   const handleSaveQuizSet = useCallback(() => {
@@ -315,7 +363,7 @@ export default function ReviewMain({
       setAiRequestId(null);
       setAiSubmitting(false);
       setAiError("Đã hủy yêu cầu");
-    } catch (error) {
+    } catch {
       setAiError("Không thể hủy yêu cầu");
     }
   }, [aiRequestId]);
@@ -367,67 +415,17 @@ export default function ReviewMain({
 
         {/* External Information - Upload */}
         {canGenerate && (
-          <div className="ai-section-card space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="ai-header-icon">
-                <Upload className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">
-                  Thông tin bổ sung
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  External Information — tài liệu từ bên ngoài
-                </p>
-              </div>
-            </div>
-
-            <label
-              className={`ai-upload-area ${uploadedFileName ? "uploaded" : ""}`}
-            >
-              {uploadedFileName ? (
-                <>
-                  <CheckCircle className="h-7 w-7 text-primary" />
-                  <span className="text-sm font-medium text-foreground">
-                    {uploadedFileName}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Đã chọn file — nhấn để đổi
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Upload className="h-7 w-7 text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground">
-                    Upload tài liệu bổ sung
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    PDF, DOC, DOCX, TXT
-                  </span>
-                </>
-              )}
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
-
-            {externalInfo && (
-              <div className="space-y-2 animate-slide-up">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Nội dung trích xuất (có thể chỉnh sửa)
-                </label>
-                <textarea
-                  value={externalInfo}
-                  onChange={(e) => setExternalInfo(e.target.value)}
-                  rows={5}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
-                />
-              </div>
-            )}
-          </div>
+          <DocumentUpload
+            fileName={uploadedFileName}
+            summary={externalInfo}
+            onFileSelect={setUploadedFileName}
+            onSummaryChange={setExternalInfo}
+            title="Thông tin bổ sung"
+            description="External Information — tài liệu từ bên ngoài"
+            icon={<Upload className="h-4 w-4" />}
+            showTextarea={true}
+            textareaRows={5}
+          />
         )}
 
         {/* Mode selector - NOW WITH 3 OPTIONS */}
@@ -692,25 +690,70 @@ export default function ReviewMain({
                   <Layers className="h-4 w-4" />
                 </div>
                 <h2 className="text-lg font-semibold text-foreground">
-                  Cấu hình Flashcards
+                  Cấu hình độ khó cho bộ Flashcards
                 </h2>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Số lượng thẻ
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={30}
-                  value={flashcardCount}
-                  onChange={(e) =>
-                    setFlashcardCount(
-                      Math.max(1, Math.min(30, parseInt(e.target.value) || 1)),
-                    )
-                  }
-                  className="w-24 rounded-lg border bg-background px-3 py-2 text-sm text-center text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
+              <div className="space-y-2 flex justify-between gap-4">
+                <div className="space-x-2 ">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Dễ
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={flashcardEasyCount}
+                    onChange={(e) =>
+                      setFlashcardEasyCount(
+                        Math.max(
+                          1,
+                          Math.min(30, parseInt(e.target.value) || 1),
+                        ),
+                      )
+                    }
+                    className="w-24 rounded-lg border bg-background px-3 py-1 text-sm text-center text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="space-x-2 ">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Trung bình
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={flashcardDefaultCount}
+                    onChange={(e) =>
+                      setFlashcardDefaultCount(
+                        Math.max(
+                          1,
+                          Math.min(30, parseInt(e.target.value) || 1),
+                        ),
+                      )
+                    }
+                    className="w-24 rounded-lg border bg-background px-3 py-1 text-sm text-center text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="space-x-2 ">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Khó
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={flashcardDefaultCount}
+                    onChange={(e) =>
+                      setFlashcardDefaultCount(
+                        Math.max(
+                          1,
+                          Math.min(30, parseInt(e.target.value) || 1),
+                        ),
+                      )
+                    }
+                    className="w-24 rounded-lg border bg-background px-3 py-1 text-sm text-center text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
               </div>
             </div>
 
@@ -727,7 +770,7 @@ export default function ReviewMain({
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Tạo Flashcards ({flashcardCount} thẻ)
+                  Tạo Flashcards
                 </>
               )}
             </button>
@@ -741,17 +784,19 @@ export default function ReviewMain({
             )}
 
             {!editingFlashcards && (
-              <FlashcardViewer
-                cards={flashcards}
-                onRegenerate={handleGenerateFlashcards}
-                onSave={() => {
-                  handleSaveFlashcardSet();
-                  alert("Đã lưu bộ flashcards vào kho!");
-                }}
-                loading={generating}
-                onEdit={() => setEditingFlashcards(true)}
-                editing={editingFlashcards}
-              />
+              <div className="ai-section-card space-y-2">
+                <FlashcardViewer
+                  cards={flashcards}
+                  onRegenerate={handleGenerateFlashcards}
+                  onSave={() => {
+                    handleSaveFlashcardSet();
+                    alert("Đã lưu bộ flashcards vào kho!");
+                  }}
+                  loading={generating}
+                  onEdit={() => setEditingFlashcards(true)}
+                  editing={editingFlashcards}
+                />
+              </div>
             )}
 
             {editingFlashcards && (

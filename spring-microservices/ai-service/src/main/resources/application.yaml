@@ -1,6 +1,9 @@
 spring:
   application:
     name: ai-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/ai_db
 
 server:
   port: 8000
