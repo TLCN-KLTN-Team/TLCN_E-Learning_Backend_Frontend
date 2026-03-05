@@ -1,9 +1,9 @@
 import { Edit3 } from "lucide-react";
-import type { Flashcard } from "@/lib/flashcardMockData";
+import type { UIFlashcard } from "@/types/flashcard.type";
 
 interface Props {
-  cards: Flashcard[];
-  onUpdateCard: (id: string, updates: Partial<Flashcard>) => void;
+  cards: UIFlashcard[];
+  onUpdateCard: (id: string, updates: Partial<UIFlashcard>) => void;
 }
 
 export default function FlashcardEditor({ cards, onUpdateCard }: Props) {
