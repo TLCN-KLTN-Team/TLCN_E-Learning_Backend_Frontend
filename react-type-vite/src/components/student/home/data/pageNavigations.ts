@@ -1,15 +1,22 @@
+import {
+  PUBLIC_ROUTES,
+  STUDENT_ROUTES,
+  FORUM_ROUTES,
+  WORKSPACE_ROUTES,
+} from "@/constants/routes";
+
 export const navigation = [
-  { name: "Trang chủ", href: "/" },
+  { name: "Trang chủ", href: PUBLIC_ROUTES.HOME },
   {
     name: "Khóa học",
     href: "#courses",
     features: [
-      { name: "Tất cả khóa học", href: "/courses" },
-      { name: "Trang học tập số", href: "/student/dashboard" },
-      { name: "Không gian học tập", href: "/student/workspace" },
+      { name: "Tất cả khóa học", href: PUBLIC_ROUTES.COURSES },
+      { name: "Trang học tập số", href: STUDENT_ROUTES.DASHBOARD },
+      { name: "Không gian học tập", href: WORKSPACE_ROUTES.BASE },
     ],
   },
-  { name: "Diễn đàn", href: "/forum" },
-  { name: "Về chúng tôi", href: "/about-us" },
-  { name: "Liên hệ", href: "/contact" },
+  { name: "Diễn đàn", href: FORUM_ROUTES.HOME },
+  { name: "Về chúng tôi", href: PUBLIC_ROUTES.ABOUT_US },
+  { name: "Liên hệ", href: PUBLIC_ROUTES.CONTACT },
 ];

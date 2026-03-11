@@ -21,10 +21,10 @@ import FlashcardEditor from "@/components/flashcard/FlashcardEditor";
 import QuizConfiguration from "@/components/quiz/QuizConfiguration";
 import QuizEditor from "@/components/quiz/QuizEditor";
 import DocumentUpload from "@/components/quiz/DocumentUpload";
-import { 
+import {
   generateFlashcards,
-  saveFlashcardSet
- } from "@/services/api/user/flashcard.api";
+  saveFlashcardSet,
+} from "@/services/api/user/flashcard.api";
 import {
   type UIFlashcard,
   toUIFlashcard,
@@ -48,6 +48,43 @@ import {
 } from "@/services/api/aiStudyApi";
 import { AppError } from "@/errors";
 import { toast } from "react-toastify";
+import { useAuth } from "@/context/auth-context/useAuth";
+
+// Utility function to generate content-based hash ID
+function generateContentHash(content: string): string {
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
+// Generate unique ID based on flashcard content
+function generateFlashcardSetId(flashcards: UIFlashcard[]): string {
+  const content = flashcards
+    .map((card) => `${card.front}|${card.back}|${card.difficulty}`)
+    .sort() // Sort to ensure consistent ordering
+    .join("::");
+
+  const hash = generateContentHash(content);
+  return `fc_${hash}_${flashcards.length}`;
+}
+
+// Generate unique ID based on quiz content
+function generateQuizSetId(questions: QuizQuestion[]): string {
+  const content = questions
+    .map(
+      (q) =>
+        `${q.question}|${q.type}|${q.correctAnswer}|${JSON.stringify(q.options || [])}`,
+    )
+    .sort() // Sort to ensure consistent ordering
+    .join("::");
+
+  const hash = generateContentHash(content);
+  return `qz_${hash}_${questions.length}`;
+}
 
 interface SavedSet {
   id: string;
@@ -70,6 +107,8 @@ export default function ReviewMain({
   selectedChapterIds,
   onOpenSidebar,
 }: Props) {
+  const { user } = useAuth();
+
   const [mode, setMode] = useState<ReviewMode>("flashcard");
   const [generating, setGenerating] = useState(false);
 
@@ -255,15 +294,20 @@ export default function ReviewMain({
   const handleSaveFlashcardSet = useCallback(async () => {
     if (flashcards.length === 0) return;
 
+    // Generate content-based unique ID
+    const contentBasedId = generateFlashcardSetId(flashcards);
+
     const newSet: SaveFlashcardSetRequest = {
+      id: contentBasedId, // Content-based unique ID
       flashcards: flashcards.map((c) => ({
         front: c.front,
         back: c.back,
         tags: c.tags,
-        difficulty: c.difficulty.toUpperCase() as DifficultyLevel
+        difficulty: c.difficulty.toUpperCase() as DifficultyLevel,
       })),
       internalDocument: internalInfo,
       externalDocument: externalInfo || null,
+      authorId: user?.id,
       language: "vietnamese",
     };
 
@@ -283,13 +327,17 @@ export default function ReviewMain({
     } else {
       toast.error("Lưu bộ flashcards thất bại. Vui lòng thử lại.");
     }
-    
-  }, [flashcards, selectedChapterNames]);
+  }, [flashcards, internalInfo, externalInfo, user]);
 
   const handleSaveQuizSet = useCallback(() => {
     if (quizQuestions.length === 0) return;
+
+    // Generate content-based unique ID
+    const contentBasedId = generateQuizSetId(quizQuestions);
+    console.log("Generated quiz set ID:", contentBasedId);
+
     const newSet: SavedSet = {
-      id: `qz_${Date.now()}`,
+      id: contentBasedId, // Use content-based ID instead of timestamp
       type: "quiz",
       name: `Quiz - ${selectedChapterNames.slice(0, 2).join(", ")}${selectedChapterNames.length > 2 ? "..." : ""}`,
       count: quizQuestions.length,
@@ -297,6 +345,7 @@ export default function ReviewMain({
       quizQuestions: [...quizQuestions],
     };
     setSavedSets((prev) => [newSet, ...prev]);
+    toast.success("Đã lưu bộ quiz vào kho!");
   }, [quizQuestions, selectedChapterNames]);
 
   const handleDeleteSet = useCallback((id: string) => {

@@ -48,7 +48,7 @@ public class FlashcardConverter {
      * @param flashcardSet FlashcardSet entity
      * @return FlashcardSetResponse
      */
-    public FlashcardSetResponse toResponse(FlashcardSet flashcardSet) {
+    public FlashcardSetResponse toFlashcardSetResponse(FlashcardSet flashcardSet) {
         List<FlashcardDto> flashcardDtos = flashcardSet.getFlashcards().stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());

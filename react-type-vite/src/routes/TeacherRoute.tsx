@@ -13,12 +13,13 @@ import TeacherRevenuePage from "@/pages/teacher/revenue/TeacherRevenuePage";
 import TeacherProfilePage from "@/pages/teacher/TeacherProfilePage";
 import QuestionBankPage from "@/pages/teacher/QuestionBankPage";
 import QuestionGenerationPage from "@/pages/teacher/sidebar/QuestionGenerationPage";
+import { TEACHER_ROUTES } from "@/constants/routes";
 
 // Teacher routes - protected routes for teacher role
 const TeacherRoutes = [
   <Route
     key="teacher-layout"
-    path="/teacher/*"
+    path={`${TEACHER_ROUTES.BASE}/*`}
     element={
       <ProtectedRoute allowedRoles={["TEACHER"]}>
         <TeacherLayout />

@@ -15,6 +15,7 @@ import java.util.List;
 public class FlashcardSetResponse {
     
     private String id;
+    private String name;
     private List<FlashcardDto> flashcards;
     private String internalDocument;
     private String externalDocument;
@@ -22,4 +23,5 @@ public class FlashcardSetResponse {
     private String language;
     private Instant createdAt;
     private Instant updatedAt;
+    private Integer number;
 }

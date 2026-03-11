@@ -22,6 +22,13 @@ public class FlashcardSet {
     
     @MongoId
     String id;
+
+    /**
+     * Nối chuỗi các order chương trình học để tạo thành ID duy nhất cho bộ flashcard
+     */
+    String flashcardSetId;
+
+    String flashcardSetName;
     
     /**
      * Danh sách các flashcard trong bộ

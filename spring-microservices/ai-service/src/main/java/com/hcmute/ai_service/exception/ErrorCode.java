@@ -223,6 +223,9 @@ public enum ErrorCode {
     AI_QUIZ_GENERATION_FAILED("AI_9002", "Không thể tạo quiz từ AI service", HttpStatus.INTERNAL_SERVER_ERROR),
     AI_SERVICE_TIMEOUT("AI_9003", "AI service timeout", HttpStatus.REQUEST_TIMEOUT),
     AI_INVALID_RESPONSE("AI_9004", "Phản hồi từ AI service không hợp lệ", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    FLASHCARD_EXISTING("FLASHCARD_1001", "Bộ flashcard đã tồn tại", HttpStatus.CONFLICT),
+    FLASHCARD_NOT_FOUND("FLASHCARD_1002", "Không tìm thấy bộ flashcard", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {

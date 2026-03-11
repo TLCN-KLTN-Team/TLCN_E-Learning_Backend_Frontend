@@ -1,8 +1,12 @@
-package com.hcmute.ai_service.service;
+package com.hcmute.ai_service.service.impl;
 
 import com.hcmute.ai_service.converter.FlashcardConverter;
 import com.hcmute.ai_service.dto.request.SaveFlashcardSetRequest;
+import com.hcmute.ai_service.dto.request.UpdateFlashcardSetRequest;
+import com.hcmute.ai_service.dto.response.FlashCardResponse;
 import com.hcmute.ai_service.dto.response.FlashcardSetResponse;
+import com.hcmute.ai_service.exception.AppException;
+import com.hcmute.ai_service.exception.ErrorCode;
 import com.hcmute.ai_service.model.Flashcard;
 import com.hcmute.ai_service.model.FlashcardSet;
 import com.hcmute.ai_service.repository.FlashcardSetRepository;
@@ -35,6 +39,10 @@ public class FlashcardService {
                 request.getFlashcards().size(), request.getAuthorId());
         
         try {
+            // Check if Are saved flashcard set?
+            FlashcardSet existingSet = flashcardSetRepository.findByFlashcardSetId(request.getFlashcardSetId())
+                    .orElseThrow(() -> new AppException(ErrorCode.FLASHCARD_EXISTING));
+
             // Convert từ DTO sang Entity
             List<Flashcard> flashcards = request.getFlashcards().stream()
                     .map(flashcardConverter::toEntity)
@@ -57,12 +65,34 @@ public class FlashcardService {
             log.info("Successfully saved flashcard set with ID: {}", savedFlashcardSet.getId());
             
             // Convert từ Entity sang DTO để trả về
-            return flashcardConverter.toResponse(savedFlashcardSet);
+            return flashcardConverter.toFlashcardSetResponse(savedFlashcardSet);
                     
         } catch (Exception e) {
             log.error("Error saving flashcard set: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to save flashcard set", e);
         }
+    }
+
+    public FlashcardSetResponse updateFlashcardSet(UpdateFlashcardSetRequest request) {
+        log.info("Updating flashcard set with ID: {}", request.getFlashcardSetId());
+
+        FlashcardSet existingSet = flashcardSetRepository.findByFlashcardSetId(request.getFlashcardSetId())
+                .orElseThrow(() -> new AppException(ErrorCode.FLASHCARD_NOT_FOUND));
+
+        List<Flashcard> flashcards = request.getFlashcards().stream()
+                .map(flashcardConverter::toEntity)
+                .collect(Collectors.toList());
+
+        existingSet.setFlashcards(flashcards);
+        existingSet.setInternalDocument(request.getInternalDocument());
+        existingSet.setExternalDocument(request.getExternalDocument());
+        existingSet.setLanguage(existingSet.getLanguage());
+        existingSet.setCreatedAt(existingSet.getCreatedAt());
+        existingSet.setUpdatedAt(Instant.now());
+
+        FlashcardSet updatedFlashcardSet = flashcardSetRepository.save(existingSet);
+
+        return flashcardConverter.toFlashcardSetResponse(updatedFlashcardSet);
     }
 
     /**
@@ -71,13 +101,21 @@ public class FlashcardService {
      * @param authorId ID của tác giả
      * @return Danh sách FlashcardSetResponse
      */
-    public List<FlashcardSetResponse> getFlashcardSetsByAuthor(String authorId) {
+    public List<FlashcardSetResponse> getListFlashcardSetByAuthor(String authorId) {
         log.info("Getting flashcard sets for author: {}", authorId);
         
         List<FlashcardSet> flashcardSets = flashcardSetRepository.findByAuthorId(authorId);
         
         return flashcardSets.stream()
-                .map(flashcardConverter::toResponse)
+                .map(flashcardConverter::toFlashcardSetResponse)
                 .collect(Collectors.toList());
+    }
+
+    public FlashcardSetResponse getFlashcardSetById(String id) {
+
+        FlashcardSet flashcardSet = flashcardSetRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.FLASHCARD_NOT_FOUND));
+
+        return flashcardConverter.toFlashcardSetResponse(flashcardSet);
     }
 }

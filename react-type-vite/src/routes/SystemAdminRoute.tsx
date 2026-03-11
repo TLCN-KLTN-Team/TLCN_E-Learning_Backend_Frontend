@@ -8,11 +8,12 @@ import CategoryManagementPage from "@/pages/system-admin/CategoryManagementPage"
 import RevenueManagementPage from "@/pages/system-admin/RevenueManagementPage";
 import SystemStatisticsPage from "@/pages/system-admin/SystemStatisticsPage";
 import SystemAdminProfilePage from "@/pages/system-admin/SystemAdminProfilePage";
+import { SYSTEM_ADMIN_ROUTES } from "@/constants/routes";
 
 const SystemAdminRoutes = [
   <Route
     key="system-admin-layout"
-    path="/system-admin/*"
+    path={`${SYSTEM_ADMIN_ROUTES.BASE}/*`}
     element={
       <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
         <SystemAdminLayout />

@@ -1,13 +1,14 @@
 import { Route } from "react-router-dom";
 import ProtectedRoute from "./protected/ProtectedRoute";
 import WorkspacePage from "@/pages/workspace/WorkspacePage";
+import { WORKSPACE_ROUTES, ROUTE_PATTERNS } from "@/constants/routes";
 
 // Main routes - shared routes between multiple roles
 const MainRoutes = [
   // Workspace routes - accessible by both STUDENT and TEACHER
   <Route
     key="workspace"
-    path="/workspaces"
+    path={WORKSPACE_ROUTES.BASE}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
         <WorkspacePage />
@@ -17,7 +18,7 @@ const MainRoutes = [
 
   <Route
     key="workspace-with-params"
-    path="/workspaces/:workspaceId"
+    path={ROUTE_PATTERNS.WORKSPACE_WITH_ID}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
         <WorkspacePage />
@@ -27,7 +28,7 @@ const MainRoutes = [
 
   <Route
     key="workspace-with-channel"
-    path="/workspaces/:workspaceId/:channelId"
+    path={ROUTE_PATTERNS.WORKSPACE_WITH_CHANNEL}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
         <WorkspacePage />

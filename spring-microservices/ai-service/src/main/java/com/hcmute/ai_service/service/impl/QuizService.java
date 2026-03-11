@@ -1,8 +1,9 @@
-package com.hcmute.ai_service.service;
+package com.hcmute.ai_service.service.impl;
 
 import com.hcmute.ai_service.dto.request.GenerateQuizRequest;
 import com.hcmute.ai_service.dto.response.AIServiceResponse;
 import com.hcmute.ai_service.dto.response.GenerateQuizResponse;
+import com.hcmute.ai_service.dto.response.QuizSetResponse;
 import com.hcmute.ai_service.exception.AiServiceException;
 import com.hcmute.ai_service.exception.AppException;
 import com.hcmute.ai_service.exception.ErrorCode;
@@ -15,6 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -97,5 +99,9 @@ public class QuizService {
             log.error("Unexpected error calling AI service", e);
             throw new AppException(ErrorCode.AI_QUIZ_GENERATION_FAILED);
         }
+    }
+
+    public List<QuizSetResponse> getListQuizSetByUserId(String userId) {
+        return null;
     }
 }

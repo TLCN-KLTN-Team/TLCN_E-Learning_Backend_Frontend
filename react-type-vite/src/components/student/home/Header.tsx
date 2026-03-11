@@ -14,6 +14,7 @@ import {
   UserCircle,
   BookOpen,
   Heart,
+  LibraryBig,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
@@ -101,6 +102,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
       section: "Học tập",
       items: [
         { name: "Khóa học của tôi", icon: BookOpen, href: "/my-courses" },
+        {name: "Thư viện tài liệu của tôi", icon: LibraryBig, href: "/document-library"},
         { name: "Giỏ hàng của tôi", icon: ShoppingCart, href: "/cart" },
         { name: "Danh sách yêu thích", icon: Heart, href: "/wishlist" },
         { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
@@ -132,7 +134,6 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
           href: "/payment-methods",
         },
         { name: "Gói đăng ký", icon: CreditCard, href: "/subscriptions" },
-        { name: "Ưu đãi Udemy", icon: Settings, href: "/offers" },
         { name: "Lịch sử mua", icon: ShoppingCart, href: "/purchase-history" },
       ],
     },
