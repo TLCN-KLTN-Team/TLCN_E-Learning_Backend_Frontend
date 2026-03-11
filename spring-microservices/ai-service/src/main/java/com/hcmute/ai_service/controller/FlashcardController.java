@@ -3,7 +3,7 @@ package com.hcmute.ai_service.controller;
 import com.hcmute.ai_service.dto.request.SaveFlashcardSetRequest;
 import com.hcmute.ai_service.dto.response.ApiResponse;
 import com.hcmute.ai_service.dto.response.FlashcardSetResponse;
-import com.hcmute.ai_service.service.FlashcardService;
+import com.hcmute.ai_service.service.impl.FlashcardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,11 +56,21 @@ public class FlashcardController {
         
         log.info("Received request to get flashcard sets for author: {}", authorId);
         
-        List<FlashcardSetResponse> flashcardSets = flashcardService.getFlashcardSetsByAuthor(authorId);
+        List<FlashcardSetResponse> flashcardSets = flashcardService.getListFlashcardSetByAuthor(authorId);
         
         return ApiResponse.success(
                 flashcardSets,
                 "Flashcard sets retrieved successfully"
+        );
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<FlashcardSetResponse> getFlashcardSetsById(@PathVariable String id) {
+        FlashcardSetResponse flashcardSetResponse = flashcardService.getFlashcardSetById(id);
+
+        return ApiResponse.success(
+                flashcardSetResponse,
+                "Flashcard set retrieved successfully"
         );
     }
 }

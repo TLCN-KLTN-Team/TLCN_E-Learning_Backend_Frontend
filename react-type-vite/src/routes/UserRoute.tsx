@@ -8,11 +8,13 @@ import Wishlist from "@/pages/user/wishlist/Wishlist";
 import MyCourses from "@/pages/user/personal/MyCourses";
 import CourseLearning from "@/pages/user/course/CourseLearning";
 import UserQuizAttempt from "@/components/user/course/UserQuizAttempt";
+import MyDocumentLibraryPage from "@/pages/student/document-library/MyDocumentLibraryPage";
+import { USER_ROUTES, ROUTE_PATTERNS } from "@/constants/routes";
 
 const UserRoutes = [
   <Route
     key="payment"
-    path="/payment/checkout/express/course"
+    path={USER_ROUTES.PAYMENT_CHECKOUT}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <Payment />
@@ -22,7 +24,7 @@ const UserRoutes = [
 
   <Route
     key="vnpay-return"
-    path="/payment/checkout/express/vnpay/return"
+    path={USER_ROUTES.VNPAY_RETURN}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <VNPayReturn />
@@ -32,7 +34,7 @@ const UserRoutes = [
 
   <Route
     key="paypal-return"
-    path="/payment/checkout/express/paypal/return"
+    path={USER_ROUTES.PAYPAL_RETURN}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <PaypalReturn />
@@ -42,7 +44,7 @@ const UserRoutes = [
 
   <Route
     key="cart"
-    path="/cart"
+    path={USER_ROUTES.CART}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <Cart />
@@ -52,7 +54,7 @@ const UserRoutes = [
 
   <Route
     key="wishlist"
-    path="/wishlist"
+    path={USER_ROUTES.WISHLIST}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <Wishlist />
@@ -62,7 +64,7 @@ const UserRoutes = [
 
   <Route
     key="my-courses"
-    path="/my-courses"
+    path={USER_ROUTES.MY_COURSES}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <MyCourses />
@@ -71,8 +73,18 @@ const UserRoutes = [
   />,
 
   <Route
+    key="document-library"
+    path={USER_ROUTES.DOCUMENT_LIBRARY}
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <MyDocumentLibraryPage />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
     key="course-learning"
-    path="/course/:courseId/learn"
+    path={ROUTE_PATTERNS.COURSE_LEARNING}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <CourseLearning />
@@ -82,14 +94,13 @@ const UserRoutes = [
 
   <Route
     key="user-quiz"
-    path="/user/quiz/:quizId"
+    path={ROUTE_PATTERNS.USER_QUIZ}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <UserQuizAttempt />
       </ProtectedRoute>
     }
   />,
-
 ];
 
 export default UserRoutes;

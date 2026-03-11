@@ -3,7 +3,7 @@ package com.hcmute.ai_service.controller;
 import com.hcmute.ai_service.dto.request.GenerateQuizRequest;
 import com.hcmute.ai_service.dto.response.ApiResponse;
 import com.hcmute.ai_service.dto.response.GenerateQuizResponse;
-import com.hcmute.ai_service.service.QuizService;
+import com.hcmute.ai_service.service.impl.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,5 +37,12 @@ public class QuizController {
                 response,
                 "Quiz generated successfully"
         );
+    }
+
+
+    @GetMapping("/user/{userId}")
+    public ApiResponse<?> getListQuizSetByUserId(@PathVariable String userId) {
+
+        return null;
     }
 }

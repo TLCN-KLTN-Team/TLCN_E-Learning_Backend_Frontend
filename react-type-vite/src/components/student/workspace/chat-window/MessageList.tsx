@@ -1,9 +1,10 @@
-import { Hash, Edit } from "lucide-react";
+import { Hash, Edit, ArrowDown } from "lucide-react";
 import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { hasRole } from "@/utils/roleUtils";
 import MessageItem from "./MessageItem";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { getMessagesByChannelId } from "@/services/api/workspace/messageApi";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -86,34 +87,50 @@ const MessageList = ({
   isConnected,
   wsErrors,
 }: MessageListProps) => {
-  const [allMessages, setAllMessages] = useState<ChatMessageResponse[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "nearest",
-      });
-    }
-  };
+  const [allMessages, setAllMessages] = useState<ChatMessageResponse[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const prevLengthRef = useRef(allMessages.length);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [hasNewMessage, setHasNewMessage] = useState(false);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setHasNewMessage(false);
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    setIsNearBottom(nearBottom);
+    if (nearBottom) setHasNewMessage(false);
+  }, []);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      scrollToBottom();
-    }, 100);
+    if (allMessages.length > prevLengthRef.current) {
+      if (isNearBottom) {
+        setTimeout(() => scrollToBottom(), 50);
+      } else {
+        setHasNewMessage(true);
+      }
+    }
+    prevLengthRef.current = allMessages.length;
+  }, [allMessages.length, isNearBottom, scrollToBottom]);
 
-    return () => clearTimeout(timeoutId);
-  }, [allMessages]);
+  // Initial scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView();
+  }, []);
 
   // Function to determine if messages should be grouped
   const shouldGroupMessages = (
     currentMessage: ChatMessageResponse,
     previousMessage: ChatMessageResponse | null,
-    timeDifferenceThreshold = 5 * 60 * 1000 // 5 minutes
+    timeDifferenceThreshold = 5 * 60 * 1000, // 5 minutes
   ): boolean => {
     if (!previousMessage) return false;
 
@@ -159,7 +176,7 @@ const MessageList = ({
 
     // Filter WebSocket messages for current channel
     const currentChannelWsMessages = wsMessages.filter(
-      (msg) => msg.channelId === selectedChannel.id
+      (msg) => msg.channelId === selectedChannel.id,
     );
 
     if (currentChannelWsMessages.length > 0) {
@@ -169,7 +186,7 @@ const MessageList = ({
 
         // Filter out WebSocket messages that are already in the list
         const newMessages = currentChannelWsMessages.filter(
-          (wsMsg) => !existingIds.has(wsMsg.id)
+          (wsMsg) => !existingIds.has(wsMsg.id),
         );
 
         if (newMessages.length === 0) {
@@ -187,7 +204,7 @@ const MessageList = ({
         return combinedMessages.sort(
           (a, b) =>
             new Date(a.createdDate).getTime() -
-            new Date(b.createdDate).getTime()
+            new Date(b.createdDate).getTime(),
         );
       });
     }
@@ -196,7 +213,7 @@ const MessageList = ({
   // Function to check if time separator should be shown (1 hour difference)
   const shouldShowTimeSeparator = (
     currentMessage: ChatMessageResponse,
-    previousMessage: ChatMessageResponse | null
+    previousMessage: ChatMessageResponse | null,
   ): boolean => {
     if (!previousMessage) return true;
 
@@ -217,7 +234,7 @@ const MessageList = ({
       const shouldGroup = shouldGroupMessages(message, previousMessage);
       const showTimeSeparator = shouldShowTimeSeparator(
         message,
-        previousMessage
+        previousMessage,
       );
 
       // Add time separator if needed
@@ -226,7 +243,7 @@ const MessageList = ({
           <TimeSeparator
             key={`separator-${message.id}`}
             date={new Date(message.createdDate)}
-          />
+          />,
         );
       }
 
@@ -237,7 +254,7 @@ const MessageList = ({
           message={message}
           showAvatar={!shouldGroup}
           showTimestamp={!shouldGroup}
-        />
+        />,
       );
     });
 
@@ -286,8 +303,12 @@ const MessageList = ({
   }
 
   return (
-    <>
-      <div className="p-4 space-y-4">
+    <div className="relative flex-1 min-h-0">
+      <div
+        ref={containerRef}
+        className="h-full overflow-y-auto custom-scrollbar px-4 py-4 space-y-1"
+        onScroll={handleScroll}
+      >
         {/* Channel description header - shown even when messages exist */}
         <div className="pb-4 border-gray-700">
           <div className="flex items-center mb-3">
@@ -316,6 +337,20 @@ const MessageList = ({
         <div ref={messagesEndRef} />
       </div>
 
+      <AnimatePresence>
+        {hasNewMessage && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={scrollToBottom}
+            className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:brightness-110 transition-all"
+          >
+            <ArrowDown size={18} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* WebSocket connection status */}
       {!isConnected && (
         <div className="px-4 py-2 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 text-sm">
@@ -330,7 +365,7 @@ const MessageList = ({
           {wsErrors.length > 1 && ` (+${wsErrors.length - 1} more)`}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

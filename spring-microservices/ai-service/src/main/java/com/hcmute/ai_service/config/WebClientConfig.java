@@ -14,18 +14,36 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
+    @Value("${ai.service.document-parser}")
+    private String documentParserUrl;
+
     @Value("${ai.service.quiz}")
     private String quizServiceUrl;
 
     @Bean
+    public WebClient documentParserWebClient() {
+        HttpClient httpClient = this.httpClientConfig();
+
+        return WebClient.builder()
+                .baseUrl(documentParserUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
+    @Bean
     public WebClient quizWebClient() {
-        HttpClient httpClient = HttpClient.create()
-                .responseTimeout(Duration.ofSeconds(60));
+        HttpClient httpClient = this.httpClientConfig();
 
         return WebClient.builder()
                 .baseUrl(quizServiceUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
+    }
+
+    private HttpClient httpClientConfig() {
+        return HttpClient.create()
+                .responseTimeout(Duration.ofSeconds(60));
     }
 }

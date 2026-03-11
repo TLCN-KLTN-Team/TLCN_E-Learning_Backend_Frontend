@@ -6,12 +6,17 @@ import StudentEditProfile from "@/pages/student/dashboard/EditProfile";
 import EditProfile from "@/pages/student/home/EditProfile";
 import QuizTakingPage from "@/pages/student/quiz/QuizTakingPage";
 import QuizResultPage from "@/pages/student/quiz/QuizResultPage";
+import {
+  USER_ROUTES,
+  STUDENT_ROUTES,
+  ROUTE_PATTERNS,
+} from "@/constants/routes";
 
 // Student routes - protected routes for student role
 const StudentRoutes = [
   <Route
     key="edit-profile"
-    path="/edit-profile"
+    path={USER_ROUTES.EDIT_PROFILE}
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <EditProfile />
@@ -21,7 +26,7 @@ const StudentRoutes = [
 
   <Route
     key="student-edit-profile"
-    path="/student/edit-profile"
+    path={STUDENT_ROUTES.EDIT_PROFILE}
     element={
       <ProtectedRoute allowedRoles={["STUDENT"]}>
         <StudentEditProfile />
@@ -31,7 +36,7 @@ const StudentRoutes = [
 
   <Route
     key="dashboard"
-    path="/student/dashboard"
+    path={STUDENT_ROUTES.DASHBOARD}
     element={
       <ProtectedRoute allowedRoles={["STUDENT"]}>
         <StudentDashboard />
@@ -41,7 +46,7 @@ const StudentRoutes = [
 
   <Route
     key="course-detail"
-    path="/student/dashboard/course/classes/:id"
+    path={ROUTE_PATTERNS.COURSE_DETAIL_STUDENT}
     element={
       <ProtectedRoute allowedRoles={["STUDENT"]}>
         <CourseDetail />
@@ -50,7 +55,7 @@ const StudentRoutes = [
   />,
 
   <Route
-    path="/student/quiz/:quizId/attempt/:attemptId"
+    path={ROUTE_PATTERNS.QUIZ_ATTEMPT}
     element={
       <ProtectedRoute allowedRoles={["STUDENT"]}>
         <QuizTakingPage />
@@ -59,7 +64,7 @@ const StudentRoutes = [
   />,
 
   <Route
-    path="/student/quiz/:quizId/result/:attemptId"
+    path={ROUTE_PATTERNS.QUIZ_RESULT}
     element={
       <ProtectedRoute allowedRoles={["STUDENT"]}>
         <QuizResultPage />

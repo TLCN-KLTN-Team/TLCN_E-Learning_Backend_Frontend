@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import * as notificationApi from "@/services/api/notificationApi";
 import { toast } from "react-toastify";
+import { PUBLIC_ROUTES, STUDENT_ROUTES } from "@/constants/routes";
 
 interface Notification {
   id?: string;
@@ -20,10 +21,9 @@ interface Notification {
   link?: string;
 }
 
-
 const profileMenu = [
-  { name: "Hồ sơ", href: "/student/edit-profile" },
-  { name: "Về trang home", href: "/" },
+  { name: "Hồ sơ", href: STUDENT_ROUTES.EDIT_PROFILE },
+  { name: "Về trang home", href: PUBLIC_ROUTES.HOME },
 ];
 
 const Header = () => {
@@ -38,16 +38,17 @@ const Header = () => {
   useEffect(() => {
     if (user?.id) {
       // 1. Fetch notification history
-      notificationApi.getUserNotifications(user.id)
-        .then(res => {
+      notificationApi
+        .getUserNotifications(user.id)
+        .then((res) => {
           // @ts-ignore
           const data = res.data?.result || res.data || [];
           // @ts-ignore
           setNotifications(data);
           // @ts-ignore
-          setUnreadCount(data.filter(n => !n.isRead).length);
+          setUnreadCount(data.filter((n) => !n.isRead).length);
         })
-        .catch(err => console.error("Failed to fetch notifications", err));
+        .catch((err) => console.error("Failed to fetch notifications", err));
 
       // 2. Subscribe to SSE notifications
       const eventSource = notificationApi.subscribeToNotifications(user.id);
@@ -63,11 +64,11 @@ const Header = () => {
           type: newNotif.type,
           isRead: false,
           createdAt: new Date().toISOString(),
-          link: newNotif.link
+          link: newNotif.link,
         };
 
-        setNotifications(prev => [notifObj, ...prev]);
-        setUnreadCount(prev => prev + 1);
+        setNotifications((prev) => [notifObj, ...prev]);
+        setUnreadCount((prev) => prev + 1);
         toast.info(`Thông báo mới: ${notifObj.content}`);
       });
 
@@ -80,10 +81,10 @@ const Header = () => {
           type: newNotif.type,
           isRead: false,
           createdAt: new Date().toISOString(),
-          link: newNotif.link
+          link: newNotif.link,
         };
-        setNotifications(prev => [notifObj, ...prev]);
-        setUnreadCount(prev => prev + 1);
+        setNotifications((prev) => [notifObj, ...prev]);
+        setUnreadCount((prev) => prev + 1);
         toast.info(`Thông báo mới: ${notifObj.content}`);
       });
 
@@ -120,22 +121,26 @@ const Header = () => {
           {/* Logo */}
           <NavLink
             className="flex items-center h-20 w-32"
-            to="/student/dashboard"
+            to={STUDENT_ROUTES.DASHBOARD}
           >
-            <img src={uteLogoDark} alt="" className="w-full h-full object-contain" />
+            <img
+              src={uteLogoDark}
+              alt=""
+              className="w-full h-full object-contain"
+            />
           </NavLink>
 
           {/* Navigation */}
           <nav className="hidden md:flex space-x-8">
             <Link
-              to="/"
+              to={PUBLIC_ROUTES.HOME}
               className="student-dashboard-nav-link px-3 py-2 text-md font-bold"
             >
               Trang chủ
             </Link>
             <span className="student-dashboard-nav-active px-3 py-2 text-md font-bold">
               <Link
-                to="/student/dashboard"
+                to={STUDENT_ROUTES.DASHBOARD}
                 className="student-dashboard-nav-link px-3 py-2 text-md font-bold"
               >
                 Khóa học của tôi
@@ -147,7 +152,7 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             {/* Notifications */}
             <div className="relative" ref={notificationRef}>
-              <button 
+              <button
                 className="student-dashboard-icon-btn relative"
                 onClick={() => setIsNotificationOpen(!isNotificationOpen)}
               >
@@ -156,7 +161,7 @@ const Header = () => {
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
                 )}
               </button>
-              
+
               {/* Notification Dropdown */}
               {isNotificationOpen && (
                 <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-[80vh] flex flex-col">
@@ -178,11 +183,15 @@ const Header = () => {
                   <div className="p-0 overflow-y-auto flex-1">
                     <ul className="list-none">
                       {notifications.length === 0 ? (
-                        <li className="p-4 text-center text-gray-500">Không có thông báo</li>
+                        <li className="p-4 text-center text-gray-500">
+                          Không có thông báo
+                        </li>
                       ) : (
                         notifications.map((notif, idx) => (
                           <li key={idx}>
-                            <div className={`p-3 border-b hover:bg-gray-50 flex ${!notif.isRead ? 'bg-blue-50' : ''}`}>
+                            <div
+                              className={`p-3 border-b hover:bg-gray-50 flex ${!notif.isRead ? "bg-blue-50" : ""}`}
+                            >
                               <div className="mr-3">
                                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                                   <BellRing size={20} />
@@ -194,10 +203,17 @@ const Header = () => {
                                 </p>
                                 <div className="flex justify-between items-center mt-1">
                                   <span className="text-xs text-gray-500">
-                                    {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Vừa xong'}
+                                    {notif.createdAt
+                                      ? new Date(
+                                          notif.createdAt,
+                                        ).toLocaleString()
+                                      : "Vừa xong"}
                                   </span>
                                   {notif.link && (
-                                    <a href={notif.link} className="text-xs text-blue-600 underline ml-2">
+                                    <a
+                                      href={notif.link}
+                                      className="text-xs text-blue-600 underline ml-2"
+                                    >
                                       Xem
                                     </a>
                                   )}
@@ -217,7 +233,7 @@ const Header = () => {
                 </div>
               )}
             </div>
-            
+
             <span
               className="student-dashboard-icon-btn"
               onClick={() => {

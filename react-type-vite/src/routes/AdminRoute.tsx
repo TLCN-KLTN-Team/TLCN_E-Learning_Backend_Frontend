@@ -10,12 +10,13 @@ import AdminProfilePage from "@/pages/admin/AdminProfilePage";
 
 import ExpertListPage from "@/pages/admin/ExpertListPage";
 import StudentListPage from "@/pages/admin/StudentListPage";
+import { ADMIN_ROUTES } from "@/constants/routes";
 
 // Admin routes - protected routes for admin roles
 const AdminRoutes = [
   <Route
     key="admin-layout"
-    path="/admin/*"
+    path={`${ADMIN_ROUTES.BASE}/*`}
     element={
       <ProtectedRoute allowedRoles={["ADMIN", "EXPERT"]}>
         <AdminLayout />

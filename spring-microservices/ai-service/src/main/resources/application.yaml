@@ -11,5 +11,5 @@ server:
 ai:
   service:
     document-parser: http://localhost:8001/api/v1/parser
-    flashcard: http://localhost:8002/api/v1/parser
+    flashcard: http://localhost:8002/api/v1/flashcard
     quiz: http://localhost:8003/api/v1/quiz

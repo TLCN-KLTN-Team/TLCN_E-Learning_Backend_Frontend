@@ -16,62 +16,74 @@ import ForumCreatePost from "@/pages/forum/ForumCreatePost";
 import ForumPostDetail from "@/pages/forum/ForumPostDetail";
 
 import ForumLayout from "@/layouts/ForumLayout";
+import {
+  PUBLIC_ROUTES,
+  FORUM_ROUTES,
+  ROUTE_PATTERNS,
+} from "@/constants/routes";
 
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
-  <Route key="home" path="/" element={<Home />} />,
-  <Route key="login" path="/login" element={<AuthPage isLoggin={true} />} />,
+  <Route key="home" path={PUBLIC_ROUTES.HOME} element={<Home />} />,
+  <Route
+    key="login"
+    path={PUBLIC_ROUTES.LOGIN}
+    element={<AuthPage isLoggin={true} />}
+  />,
   <Route
     key="register"
-    path="/register"
+    path={PUBLIC_ROUTES.REGISTER}
     element={<AuthPage isLoggin={false} />}
   />,
   <Route
     key="google-auth-callback"
-    path="/auth/google/callback/"
+    path={PUBLIC_ROUTES.GOOGLE_AUTH_CALLBACK}
     element={<GoogleAuthenticate />}
   />,
   <Route
     key="facebook-auth-callback"
-    path="/auth/facebook/callback/"
+    path={PUBLIC_ROUTES.FACEBOOK_AUTH_CALLBACK}
     element={<FacebookAuthenticate />}
   />,
   <Route
     key="forgot-password"
-    path="/forgot-password"
+    path={PUBLIC_ROUTES.FORGOT_PASSWORD}
     element={<ForgotPasswordPage />}
   />,
-  <Route key="about-us" path="/about-us" element={<AboutUs />} />,
-  <Route key="contact" path="/contact" element={<Contact />} />,
+  <Route key="about-us" path={PUBLIC_ROUTES.ABOUT_US} element={<AboutUs />} />,
+  <Route key="contact" path={PUBLIC_ROUTES.CONTACT} element={<Contact />} />,
   <Route
     key="education-unit-registration"
-    path="/register-education-unit"
+    path={PUBLIC_ROUTES.REGISTER_EDUCATION_UNIT}
     element={<EducationUnitRegistration />}
   />,
 
   // All user accessible routes can be added here
-  <Route key="courses" path={`/courses`} element={<Courses />} />,
+  <Route key="courses" path={PUBLIC_ROUTES.COURSES} element={<Courses />} />,
   <Route
     key="course-detail-alt"
-    path="/courses/:courseId"
+    path={ROUTE_PATTERNS.COURSE_DETAIL}
     element={<CourseDetail />}
   />,
   <Route
     key="teacher-detail"
-    path="/teacher/:teacherId"
+    path={ROUTE_PATTERNS.TEACHER_DETAIL}
     element={<TeacherDetail />}
   />,
   <Route
     key="educational-unit-detail"
-    path="/educational-units/:id"
+    path={ROUTE_PATTERNS.EDUCATIONAL_UNIT_DETAIL}
     element={<DetailEducationalUnit />}
   />,
 
   // Forum Routes
   <Route key="forum-layout" element={<ForumLayout />}>
-    <Route path="/forum" element={<ForumHome />} />
-    <Route path="/forum/create" element={<ForumCreatePost />} />
-    <Route path="/forum/posts/:id" element={<ForumPostDetail />} />
+    <Route path={FORUM_ROUTES.HOME} element={<ForumHome />} />
+    <Route path={FORUM_ROUTES.CREATE} element={<ForumCreatePost />} />
+    <Route
+      path={ROUTE_PATTERNS.FORUM_POST_DETAIL}
+      element={<ForumPostDetail />}
+    />
   </Route>,
 ];
 

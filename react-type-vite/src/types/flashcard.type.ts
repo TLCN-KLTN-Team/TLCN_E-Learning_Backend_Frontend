@@ -33,9 +33,11 @@ export interface FlashCardResponse {
 }
 
 export interface SaveFlashcardSetRequest {
+  id: string;
   flashcards: Flashcard[];
   internalDocument: string;
   externalDocument?: string | null;
+  authorId?: string;
   language?: string; // Default: "vietnamese"
 }
 
