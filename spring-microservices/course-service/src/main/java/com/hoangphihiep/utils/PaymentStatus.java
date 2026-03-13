@@ -3,5 +3,7 @@ package com.hoangphihiep.utils;
 public enum PaymentStatus {
         PENDING,
         PAID,
-        REFUNDED
+        PENDING_REFUND,
+        REFUNDED,
+        FAILED
 }

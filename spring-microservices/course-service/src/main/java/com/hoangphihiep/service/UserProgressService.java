@@ -34,6 +34,7 @@ public class UserProgressService {
     private final CourseProgressMapper courseProgressMapper;
     private final PublishedCourseRepository publishedCourseRepository;
     private final OrderItemRepository orderItemRepository;
+    private final CertificateService certificateService;
 
     public ProgressStatsResponse getPublishedCourseProgressStats(Integer publishedCourseId) {
         String userId = getCurrentUserId();
@@ -222,6 +223,8 @@ public class UserProgressService {
             if (courseProgress.getCompleteDate() == null) {
                 courseProgress.setCompleteDate(new Date(System.currentTimeMillis()));
             }
+            // Trigger Blockchain Certificate Issuance (Idempotent check in service)
+            certificateService.issueCertificateAsync(courseProgress.getIdUser(), publishedCourseId);
         }
 
         courseProgressRepository.save(courseProgress);

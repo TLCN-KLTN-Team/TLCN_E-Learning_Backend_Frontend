@@ -29,6 +29,7 @@ public class CreditTransferService {
 
     private final CreditTransferRepository creditTransferRepository;
     private final CourseProgressRepository courseProgressRepository; // To update progress
+    private final com.hoangphihiep.repository.EquivalentCourseRepository equivalentCourseRepository;
     private final CreditTransferMapper creditTransferMapper;
 
     public Page<CreditTransferResponse> searchCreditTransfers(String status, String keyword, Pageable pageable) {
@@ -107,5 +108,47 @@ public class CreditTransferService {
 
         courseProgressRepository.save(progress);
         log.info("Updated progress for student {} course {} via Credit Transfer", studentId, targetCourse.getId());
+    }
+
+    @Transactional
+    public void createCreditTransfer(com.hoangphihiep.dto.request.CreateCreditTransferRequest request, String studentId, String studentName) {
+        // 1. Validate Equivalent Course
+        EquivalentCourse equivalentCourse = equivalentCourseRepository.findById(request.getEquivalentCourseId())
+                .orElseThrow(() -> new RuntimeException("Khóa học quy đổi không tồn tại"));
+
+        Course targetCourse = equivalentCourse.getTargetCourse();
+
+        // 2. Guard Clause: Check if already completed
+        CourseProgress progress = courseProgressRepository.findByCourseIdAndUserId(targetCourse.getId(), studentId);
+        if (progress != null && progress.isCompleted()) {
+             throw new RuntimeException("Bạn đã hoàn thành môn học " + targetCourse.getCourseName() + ", không thể yêu cầu quy đổi.");
+        }
+
+        // 3. Guard Clause: Anti-Spam (Max 3 Pending Requests)
+        long pendingCount = creditTransferRepository.countByIdStudentAndStatus(studentId, "PENDING");
+        if (pendingCount >= 3) {
+             throw new RuntimeException("Bạn đang có quá nhiều yêu cầu chờ duyệt (" + pendingCount + "). Vui lòng đợi xử lý trước khi gửi thêm.");
+        }
+
+        // 4. Create Entity
+        CreditTransfer creditTransfer = new CreditTransfer();
+        creditTransfer.setIdStudent(studentId);
+        creditTransfer.setStudentName(studentName); // Snapshot
+        creditTransfer.setEquivalentCourse(equivalentCourse);
+        creditTransfer.setDescription(request.getDescription());
+        creditTransfer.setAttachmentUrl(request.getAttachmentUrl());
+        creditTransfer.setEducationalUnitName(request.getEducationalUnitName() != null ? request.getEducationalUnitName() : 
+            (equivalentCourse.getSourceCourse() != null && equivalentCourse.getSourceCourse().getCourse() != null && equivalentCourse.getSourceCourse().getCourse().getEducationalUnit() != null) 
+            ? equivalentCourse.getSourceCourse().getCourse().getEducationalUnit().getName() : "Unknown"); // Snapshot or Override
+        
+        creditTransfer.setStatus("PENDING");
+        creditTransfer.setRequestDate(LocalDateTime.now());
+
+        creditTransferRepository.save(creditTransfer);
+    }
+
+    public Page<CreditTransferResponse> getMyCreditTransfers(String studentId, Pageable pageable) {
+        return creditTransferRepository.findByIdStudent(studentId, pageable)
+                .map(creditTransferMapper::toResponse);
     }
 }

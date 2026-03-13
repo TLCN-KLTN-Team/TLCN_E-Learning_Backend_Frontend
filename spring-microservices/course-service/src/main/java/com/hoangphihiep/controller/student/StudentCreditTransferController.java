@@ -4,6 +4,9 @@ import com.hoangphihiep.dto.request.CreateCreditTransferRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.CreditTransferResponse;
 import com.hoangphihiep.dto.response.EquivalentCourseResponse;
+import com.hoangphihiep.dto.response.UserResponse;
+import com.hoangphihiep.repository.httpclient.UserInfoApi;
+import com.hoangphihiep.repository.httpclient.UserRepository;
 import com.hoangphihiep.service.CreditTransferService;
 import com.hoangphihiep.service.EquivalentCourseService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ public class StudentCreditTransferController {
 
     private final CreditTransferService creditTransferService;
     private final EquivalentCourseService equivalentCourseService;
+    private final UserInfoApi userInfoApi;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CreditTransferResponse>>> getMyRequests(
@@ -37,17 +41,12 @@ public class StudentCreditTransferController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createRequest(@RequestBody CreateCreditTransferRequest request) {
         String studentId = SecurityContextHolder.getContext().getAuthentication().getName();
-        // Ideally get name from Profile/User Service, but for now we might leave it null or try to get from somewhere.
-        // In the service, we marked it as Snapshot.
-        // For simple implementation, we can pass studentId as name if name is not available in JWT.
-        // Or updated Service to fetch name?
-        // Let's assume the FE sends the name or we create a user service call.
-        // Checking Plan... Plan said "studentName (String) - Optional (snapshotted)".
-        // I will pass studentId as name for now, or "Sinh viên " + studentId.
-        // Better: Authenticated user principal might have details?
-        // Let's keep it simple: studentName = studentId for now, or handle in Service if we had UserRepository.
         
-        creditTransferService.createCreditTransfer(request, studentId, studentId); 
+        // Fetch user info to get name
+        UserResponse userResponse = userInfoApi.getUserInfo(studentId).getResult();
+        String studentName = userResponse.getLastName() + " " + userResponse.getFirstName();
+
+        creditTransferService.createCreditTransfer(request, studentId, studentName); 
         
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .message("Gửi yêu cầu quy đổi thành công")

@@ -94,6 +94,13 @@ public class UserController {
         return ApiResponse.<Integer>builder().result(count).build();
     }
 
+    @GetMapping("/by-role")
+    ApiResponse<List<UserResponse>> getUsersByRole(@RequestParam String role) {
+        return ApiResponse.<List<UserResponse>>builder()
+                .result(userService.getUsersByRole(role))
+                .build();
+    }
+
     @DeleteMapping("/{userId}")
     ApiResponse<String> deleteUser(@PathVariable String userId) {
         userService.deleteUser(userId);

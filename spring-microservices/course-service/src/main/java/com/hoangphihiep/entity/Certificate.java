@@ -21,8 +21,9 @@ public class Certificate {
     @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "course_id", nullable = false)
-    private Integer courseId;
+    @ManyToOne
+    @JoinColumn(name = "published_course_id", nullable = false)
+    private PublishedCourse publishedCourse;
 
     @Column(name = "certificate_code", unique = true, nullable = false)
     private String certificateCode;
@@ -43,6 +44,12 @@ public class Certificate {
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private CertificateStatus status;
+
+    @Column(name = "final_score")
+    private Double finalScore;
+
+    @Column(name = "grade")
+    private String grade;
 
     public enum CertificateStatus {
         PENDING,

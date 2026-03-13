@@ -1,18 +1,17 @@
 package com.hoangphihiep.scheduler;
 
-import com.hoangphihiep.entity.OrderItem;
 import com.hoangphihiep.entity.PayoutOrderItem;
 import com.hoangphihiep.repository.PayoutOrderItemRepository;
 import com.hoangphihiep.service.PayoutOrderItemService;
-import com.hoangphihiep.utils.PaymentStatus;
 import com.hoangphihiep.utils.PayoutOrderItemStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -31,58 +30,52 @@ public class RevenueReleaseScheduler {
      * Chạy mỗi ngày lúc 2:00 AM
      * Cron format: second minute hour day month weekday
      */
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 0 2 * * *", zone = "Asia/Ho_Chi_Minh")
     @Transactional
     public void releaseHeldRevenue() {
+        processRelease("daily-cron-2am");
+    }
+
+    /**
+     * Chạy 1 lần khi service đã startup xong để catch-up các escrow quá hạn
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void releaseHeldRevenueOnStartup() {
+        processRelease("startup-catchup");
+    }
+
+    @Transactional
+    public void processRelease(String triggerSource) {
         log.info("======================================");
-        log.info("Starting revenue release batch job...");
+        log.info("Starting revenue release batch job (trigger: {})...", triggerSource);
         log.info("======================================");
         
-        LocalDateTime now = LocalDateTime.now();
         int totalReleased = 0;
         int totalFailed = 0;
         
         try {
             // 1. Tìm các item HELD đã hết thời gian giữ
             List<PayoutOrderItem> heldItems = payoutOrderItemRepository
-                    .findByStatusAndHoldUntilBefore(
-                        PayoutOrderItemStatus.HELD, 
-                        now
-                    );
+                    .findReadyToReleaseByDbTime(PayoutOrderItemStatus.HELD);
             
             log.info("Found {} escrow items ready to release", heldItems.size());
             
             // 2. Xử lý từng item
             for (PayoutOrderItem escrowItem : heldItems) {
                 try {
-                    // Kiểm tra OrderItem không bị refund
-                    OrderItem orderItem = escrowItem.getOrderItem();
-                    
-                    if (orderItem.getPaymentStatus() != PaymentStatus.PAID) {
-                        log.warn("OrderItem {} status is {}, skipping release", 
-                                orderItem.getId(), 
-                                orderItem.getPaymentStatus());
-                        totalFailed++;
-                        continue;
-                    }
-                    
-                    // Kiểm tra canRefund
-                    if (!escrowItem.getCanRefund()) {
-                        log.warn("Escrow item {} has canRefund=false, skipping", 
-                                escrowItem.getId());
-                        totalFailed++;
-                        continue;
-                    }
-                    
                     // Release và chia tiền
                     log.info("Releasing escrow item {} - Amount: {} VND", 
                             escrowItem.getId(), 
                             escrowItem.getAmount());
-                    
-                    payoutOrderItemService.releaseEscrowAndSplit(escrowItem);
-                    
-                    totalReleased++;
-                    log.info("Successfully released escrow item {}", escrowItem.getId());
+
+                    boolean released = payoutOrderItemService.releaseEscrowAndSplitById(escrowItem.getId());
+                    if (released) {
+                        totalReleased++;
+                        log.info("Successfully released escrow item {}", escrowItem.getId());
+                    } else {
+                        totalFailed++;
+                        log.warn("Escrow item {} not released due to current business conditions", escrowItem.getId());
+                    }
                     
                 } catch (Exception e) {
                     totalFailed++;
@@ -99,6 +92,7 @@ public class RevenueReleaseScheduler {
         
         log.info("======================================");
         log.info("Revenue release batch job completed");
+        log.info("Trigger source: {}", triggerSource);
         log.info("Total released: {}", totalReleased);
         log.info("Total failed: {}", totalFailed);
         log.info("======================================");
@@ -110,6 +104,6 @@ public class RevenueReleaseScheduler {
      */
     public void manualTriggerRelease() {
         log.info("Manual trigger: Revenue release started");
-        releaseHeldRevenue();
+        processRelease("manual-trigger");
     }
 }

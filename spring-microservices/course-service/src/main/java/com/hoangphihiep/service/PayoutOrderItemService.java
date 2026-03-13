@@ -7,10 +7,12 @@ import com.hoangphihiep.entity.*;
 import com.hoangphihiep.repository.PayoutOrderItemRepository;
 import com.hoangphihiep.repository.RevenueShareConfigRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
+import com.hoangphihiep.utils.PaymentStatus;
 import com.hoangphihiep.utils.PayoutOrderItemStatus;
 import com.hoangphihiep.utils.RecipientType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,25 +31,123 @@ public class PayoutOrderItemService {
     private final RevenueShareConfigRepository revenueShareConfigRepository;
     private final RevenueService revenueService;
     private final TeacherRepository teacherRepository;
+
+    @Value("${app.revenue.escrow-hold-days:0}")
+    private int escrowHoldDays;
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public PayoutOrderItem createPayoutOrderItems(OrderItem orderItem) {
+        
+        try {
+            BigDecimal totalAmount = orderItem.getFinishedFee();
+            
+            // Get SUPER_ADMIN config for escrow (cần có để satisfy nullable=false)
+            RevenueShareConfig superAdminConfig = revenueShareConfigRepository
+                    .findByRecipientTypeAndIsActiveTrue(RecipientType.SUPER_ADMIN)
+                    .orElseThrow(() -> new RuntimeException("SUPER_ADMIN revenue config not found"));
+            
+            log.info("🔵 Found SUPER_ADMIN config with share: {}%", superAdminConfig.getSharePercentage());
+            
+            // Tạo 1 item duy nhất cho SUPER_ADMIN (escrow/tạm giữ)
+            log.info("🔵 Building escrow item...");
+            PayoutOrderItem escrowItem = PayoutOrderItem.builder()
+                    .orderItem(orderItem)
+                    .revenueShareConfig(superAdminConfig)  // Set config thay vì null
+                    .recipientType(RecipientType.SUPER_ADMIN)
+                    .recipientId("SYSTEM")
+                    .amount(totalAmount)  // 100% tiền
+                    .sharePercentageSnapshot(100.0)  // 100% trong escrow, sẽ chia sau
+                    .status(PayoutOrderItemStatus.HELD)  // ⏳ Đang tạm giữ
+                    .accruedAt(LocalDateTime.now())
+                    .holdUntil(LocalDateTime.now().plusDays(escrowHoldDays))  // Config được, mặc định giữ 7 ngày
+                    .canRefund(true)  // Cho phép refund trong 7 ngày
+                    .build();
+            
+            log.info("🔵 Built escrow item successfully");
+            log.info("🔵 Saving to database...");
+            
+            PayoutOrderItem saved = payoutOrderItemRepository.save(escrowItem);
+            
+            log.info("✅ Created ESCROW payout - ID: {}, Amount: {} VND, holdUntil: {}, OrderItem ID: {}", 
+                    saved.getId(), totalAmount, saved.getHoldUntil(), orderItem.getId());
+            
+            return saved;
+            
+        } catch (Exception e) {
+            log.error("❌ ERROR creating escrow payout for OrderItem ID: {}", orderItem.getId(), e);
+            throw e;
+        }
+    }
     
     /**
-     * Tính toán và tạo PayoutOrderItem cho tất cả recipients (Teacher, Admin, System)
-     * dựa trên RevenueShareConfig khi OrderItem được thanh toán thành công
+     * Release escrow và chia tiền cho 3 bên (gọi bởi Scheduler)
      */
     @Transactional
-    public List<PayoutOrderItem> createPayoutOrderItems(OrderItem orderItem) {
-        List<PayoutOrderItem> payoutOrderItems = new ArrayList<>();
+    public boolean releaseEscrowAndSplitById(Integer escrowItemId) {
+        PayoutOrderItem escrowItem = payoutOrderItemRepository.findById(escrowItemId)
+                .orElseThrow(() -> new RuntimeException("Escrow item not found: " + escrowItemId));
+
+        if (escrowItem.getStatus() != PayoutOrderItemStatus.HELD) {
+            log.warn("Escrow item {} status is {}, skipping", escrowItemId, escrowItem.getStatus());
+            return false;
+        }
+
+        OrderItem orderItem = escrowItem.getOrderItem();
+        if (orderItem.getPaymentStatus() != PaymentStatus.PAID) {
+            log.warn("OrderItem {} status is {}, skipping release",
+                    orderItem.getId(),
+                    orderItem.getPaymentStatus());
+            return false;
+        }
+
+        if (!Boolean.TRUE.equals(escrowItem.getCanRefund())) {
+            log.warn("Escrow item {} has canRefund=false, skipping", escrowItemId);
+            return false;
+        }
+
+        releaseEscrowAndSplit(escrowItem);
+        return true;
+    }
+
+    /**
+     * Release escrow và chia tiền cho 3 bên (gọi bởi Scheduler)
+     */
+    @Transactional
+    public void releaseEscrowAndSplit(PayoutOrderItem escrowItem) {
+
+        if (escrowItem.getStatus() == PayoutOrderItemStatus.RELEASED) {
+            log.info("Escrow item {} already released, skipping...", escrowItem.getId());
+            return;
+        }
+
+        OrderItem orderItem = escrowItem.getOrderItem();
+
+        long existingAccruedCount = payoutOrderItemRepository.findByOrderItemId(orderItem.getId())
+                .stream()
+                .filter(item -> item.getStatus() == PayoutOrderItemStatus.ACCRUED)
+                .count();
         
-        // Get course and related entities
+        if (existingAccruedCount >= 3) {
+            log.warn("Payout items already created for order_item {}, marking escrow as RELEASED", orderItem.getId());
+            escrowItem.setStatus(PayoutOrderItemStatus.RELEASED);
+            escrowItem.setReleasedAt(LocalDateTime.now());
+            escrowItem.setCanRefund(false);
+            payoutOrderItemRepository.save(escrowItem);
+            return;
+        }
+        
         PublishedCourse course = orderItem.getCourse();
-        BigDecimal totalAmount = orderItem.getFinishedFee();
+        BigDecimal totalAmount = escrowItem.getAmount();
+        
+        // ⭐ LẤY THỜI GIAN MUA BAN ĐẦU từ escrow item thay vì dùng NOW
+        LocalDateTime originalAccruedAt = escrowItem.getAccruedAt();
         
         // Get all active revenue share configs
         List<RevenueShareConfig> activeConfigs = revenueShareConfigRepository.findByIsActiveTrue();
         
         if (activeConfigs.isEmpty()) {
             log.warn("No active revenue share configs found!");
-            return payoutOrderItems;
+            return;
         }
         
         // Tính toán phần tiền cho từng recipient
@@ -71,26 +171,28 @@ public class PayoutOrderItemService {
                     .amount(shareAmount)
                     .sharePercentageSnapshot(config.getSharePercentage())
                     .status(PayoutOrderItemStatus.ACCRUED)
-                    .accruedAt(LocalDateTime.now())
+                    .accruedAt(originalAccruedAt)  // ⭐ Dùng thời điểm MUA, không phải NOW
+                    .canRefund(false)  // Không thể refund sau khi đã release
                     .build();
             
-            payoutOrderItems.add(payoutOrderItem);
+            payoutOrderItemRepository.save(payoutOrderItem);
             
-            log.info("Created payout for {} (ID: {}): {} ({}% of {})", 
+            log.info("Released to {} (ID: {}): {} VND ({}% of {}) - Original accrued: {}", 
                     config.getRecipientType(), 
                     recipientId, 
                     shareAmount, 
                     config.getSharePercentage(), 
-                    totalAmount);
+                    totalAmount,
+                    originalAccruedAt);
         }
         
-        // Save all payout order items
-        List<PayoutOrderItem> savedItems = payoutOrderItemRepository.saveAll(payoutOrderItems);
+        // Update escrow item to RELEASED
+        escrowItem.setStatus(PayoutOrderItemStatus.RELEASED);
+        escrowItem.setReleasedAt(LocalDateTime.now());
+        escrowItem.setCanRefund(false);
+        payoutOrderItemRepository.save(escrowItem);
         
-        log.info("Successfully created {} payout items for OrderItem ID: {}", 
-                savedItems.size(), orderItem.getId());
-        
-        return savedItems;
+        log.info("Successfully released escrow item {} and split revenue", escrowItem.getId());
     }
     
     /**
@@ -118,6 +220,35 @@ public class PayoutOrderItemService {
         return payoutOrderItemRepository.findByOrderItemId(orderItemId);
     }
     
+    public PayoutOrderItemRepository getPayoutOrderItemRepository() {
+        return payoutOrderItemRepository;
+    }
+
+    /**
+     * Hoàn tác các khoản chia doanh thu của một OrderItem đã hoàn tiền
+     */
+    @Transactional
+    public void refundPayoutItems(Integer orderItemId) {
+        List<PayoutOrderItem> payoutItems = payoutOrderItemRepository.findByOrderItemId(orderItemId);
+
+        for (PayoutOrderItem item : payoutItems) {
+            // Only reverse if not already reversed or settled
+            // Note: If SETTLED, we might need a different handling (e.g. REVERSED_AFTER_SETTLEMENT),
+            // but for now assumming we catch it before settlement or simple REVERSED is enough.
+            if (item.getStatus() != PayoutOrderItemStatus.REVERSED &&
+                    item.getStatus() != PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT) {
+
+                if(item.getStatus() == PayoutOrderItemStatus.SETTLED) {
+                    item.setStatus(PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT);
+                } else {
+                    item.setStatus(PayoutOrderItemStatus.REVERSED);
+                }
+                log.info("Reversed payout item {} (Recipient: {}) due to refund", item.getId(), item.getRecipientType());
+            }
+        }
+        payoutOrderItemRepository.saveAll(payoutItems);
+    }
+    
     // ========== Revenue API Methods ==========
 
     public TeacherRevenueResponse getTeacherRevenue() {
@@ -127,10 +258,7 @@ public class PayoutOrderItemService {
     public TeacherRevenueResponse getTeacherRevenueByRange(String startDate, String endDate) {
         return revenueService.getTeacherRevenueByRange(startDate, endDate);
     }
-    
-    /**
-     * Get admin revenue statistics
-     */
+
     public AdminRevenueResponse getAdminRevenue() {
         return revenueService.getAdminRevenue();
     }
@@ -138,10 +266,7 @@ public class PayoutOrderItemService {
     public AdminRevenueResponse getAdminRevenueByRange(String startDate, String endDate) {
         return revenueService.getAdminRevenueByRange(startDate, endDate);
     }
-    
-    /**
-     * Get system revenue statistics
-     */
+
     public SystemRevenueResponse getSystemRevenue() {
         return revenueService.getSystemRevenue();
     }

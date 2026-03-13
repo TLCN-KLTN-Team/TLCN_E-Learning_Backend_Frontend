@@ -25,4 +25,8 @@ public class EquivalentCourseRequest {
     private Boolean status;
     private LocalDateTime validFrom;
     private LocalDateTime validUntil;
+
+    private Double minQuizScore;
+    private Double minAssignmentScore;
+    private String requiredRank;
 }

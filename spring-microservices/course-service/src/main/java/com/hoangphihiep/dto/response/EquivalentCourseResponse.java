@@ -17,12 +17,16 @@ public class EquivalentCourseResponse {
     // Source Course Info (PublishedCourse)
     private Integer sourceCourseId;
     private String sourceCourseName;
+    private String sourceCourseCode; // Added
+    private Integer sourceCourseCredits; // Added
     private String sourceCourseImage;
     private String sourceEducationalUnit;
 
     // Target Course Info (Internal Course)
     private Integer targetCourseId;
     private String targetCourseName;
+    private String targetCourseCode; // Added
+    private Integer targetCourseCredits; // Added
     
     private String requirements;
     private String description;
@@ -30,6 +34,10 @@ public class EquivalentCourseResponse {
     private Boolean status;
     private LocalDateTime validFrom;
     private LocalDateTime validUntil;
+
+    private Double minQuizScore;
+    private Double minAssignmentScore;
+    private String requiredRank;
     
     private String createdBy;
     private LocalDateTime createdAt;

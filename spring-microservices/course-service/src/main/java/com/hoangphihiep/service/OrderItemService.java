@@ -9,6 +9,7 @@ import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.OrderItemRepository;
 import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.utils.JwtUtils;
+import com.hoangphihiep.utils.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +48,10 @@ public class OrderItemService {
         for (Integer orderId : orderIds) {
             List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
             for (OrderItem item : items) {
-                courseIds.add(item.getCourse().getId());
+                // Only include courses that are PAID (exclude REFUNDED, PENDING_REFUND, etc.)
+                if (item.getPaymentStatus() == PaymentStatus.PAID) {
+                    courseIds.add(item.getCourse().getId());
+                }
             }
         }
         return courseIds;

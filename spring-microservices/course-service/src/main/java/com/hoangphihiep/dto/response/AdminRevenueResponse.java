@@ -22,7 +22,12 @@ public class AdminRevenueResponse {
     private Integer totalCourses; // Tổng số khóa học của unit
     private Integer totalTeachers; // Tổng số giảng viên
     private Integer totalStudents; // Tổng số học viên
-    private Integer totalOrders; // Tổng số đơn hàng
+    private Integer totalOrders; // Tổng số đơn hàng có doanh thu
+    private Integer totalRefundedOrders; // Tổng số đơn hàng có chứa refund
+    private Integer totalPartiallyRefundedOrders; // Số đơn hàng refund 1 phần
+    private Integer totalFullyRefundedOrders; // Số đơn hàng refund toàn bộ
+    private Integer totalOrderItems; // Tổng số order items đã bán
+    private Integer totalRefundedItems; // Tổng số order items bị refund
     
     private Double sharePercentage; // Tỉ lệ chiết khấu (%)
     

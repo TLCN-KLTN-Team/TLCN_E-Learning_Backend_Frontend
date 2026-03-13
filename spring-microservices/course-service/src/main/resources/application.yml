@@ -9,6 +9,9 @@ server:
 spring:
   profiles:
     default: default
+  task:
+    scheduling:
+      time-zone: Asia/Ho_Chi_Minh
   application:
     name: course-management
   doc:
@@ -83,6 +86,8 @@ app:
   email:
     from: ${APP_EMAIL_FROM}
     from-name: ${APP_EMAIL_FROM_NAME}
+  revenue:
+    escrow-hold-days: ${ESCROW_HOLD_DAYS:7}
   services:
     identity: ${IDENTITY_SERVICE_URL:http://localhost:8080/identity}
     file: ${FILE_SERVICE_URL:http://localhost:8084/file-handler}
@@ -143,3 +148,10 @@ management:
   health:
     mail:
       enabled: false  # Tắt mail health check tạm thời
+
+# Blockchain Configuration
+blockchain:
+  rpc-url: ${BLOCKCHAIN_RPC_URL:http://localhost:7545}
+  private-key: ${BLOCKCHAIN_PRIVATE_KEY:}
+  contract-address: ${BLOCKCHAIN_CONTRACT_ADDRESS:}
+  chain-id: ${BLOCKCHAIN_CHAIN_ID:1337}

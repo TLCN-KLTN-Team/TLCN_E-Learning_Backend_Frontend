@@ -27,16 +27,16 @@ public class EducationalUnitController {
     public ApiResponse<EducationalUnitResponse> getMyEducationalUnit() {
         String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        EducationalUnitResponse institution = educationalUnitService.getEducationalUnitByMemberId(currentAdminId);
+        EducationalUnitResponse educational = educationalUnitService.getEducationalUnitByMemberId(currentAdminId);
 
-        if (institution == null) {
+        if (educational == null) {
             return ApiResponse.<EducationalUnitResponse>builder()
                     .message("Không tìm thấy đơn vị đào tạo")
                     .build();
         }
-        System.out.println ("Kết quả cuối cùng: " + institution);
+        System.out.println ("Kết quả cuối cùng: " + educational);
         return ApiResponse.<EducationalUnitResponse>builder()
-                .result(institution)
+                .result(educational)
                 .build();
     }
     

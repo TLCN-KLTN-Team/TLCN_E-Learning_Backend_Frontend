@@ -1,5 +1,6 @@
 package com.devteria.identity.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -54,4 +55,7 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :roleEnum")
     int countByRole(Role roleEnum);
+
+    @Query("SELECT u FROM User u WHERE u.role = :role")
+    List<User> findAllByRole(@Param("role") Role role);
 }

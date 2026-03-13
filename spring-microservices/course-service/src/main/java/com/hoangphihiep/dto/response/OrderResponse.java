@@ -13,9 +13,12 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderResponse {
+    Integer id;
     String orderId;
     String orderDate;
-    String amount;
+    BigDecimal amount;
+    String currency;
     String orderStatus;
+    String paymentMethod;
     List<OrderItemResponse> orderItems;
 }

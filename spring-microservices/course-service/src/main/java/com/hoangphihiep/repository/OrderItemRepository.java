@@ -19,13 +19,24 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
             "FROM OrderItem oi " +
             "WHERE oi.course.id = :courseId " +
             "AND oi.order.idUser = :userId " +
-            "AND oi.order.orderStatus = 'COMPLETED'")
+            "AND oi.order.orderStatus = 'COMPLETED' " +
+            "AND oi.paymentStatus = 'PAID'")
     boolean existsByUserIdAndCourseIdAndOrderCompleted(
             @Param("userId") String userId, 
             @Param("courseId") Integer courseId);
 
     @Query("SELECT oi FROM OrderItem oi " +
             "WHERE oi.course.course.id = :courseId " +
-            "AND oi.order.orderStatus = 'COMPLETED'")
+            "AND oi.order.orderStatus = 'COMPLETED' " +
+            "AND oi.paymentStatus = 'PAID'")
     List<OrderItem> findByOriginalCourseId(@Param("courseId") Integer courseId);
+
+    @Query("SELECT oi FROM OrderItem oi " +
+            "WHERE oi.course.course.idTeacher = :teacherId " +
+            "AND oi.order.orderStatus = 'COMPLETED' " +
+            "AND oi.paymentStatus = 'PAID' " +
+            "ORDER BY oi.order.orderDate DESC")
+    List<OrderItem> findAllByCourse_Course_IdTeacher(@Param("teacherId") String teacherId);
+
+    List<OrderItem> findByPaymentStatus(com.hoangphihiep.utils.PaymentStatus paymentStatus);
 }

@@ -21,6 +21,8 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
 
     boolean existsByCourseClassIdAndStudentId(Integer classId, String studentId);
 
+    Optional<CourseEnrollment> findByCourseClassIdAndStudentId(Integer classId, String studentId);
+
     int countByCourseClassId(Integer classId);
 
     @Query("SELECT ce.studentId FROM CourseEnrollment ce WHERE ce.courseClass.id = :classId")
