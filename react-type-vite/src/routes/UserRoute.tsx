@@ -82,7 +82,6 @@ const UserRoutes = [
       </ProtectedRoute>
     }
   />,
-
   <Route
     key="purchase-history"
     path="/purchase-history"

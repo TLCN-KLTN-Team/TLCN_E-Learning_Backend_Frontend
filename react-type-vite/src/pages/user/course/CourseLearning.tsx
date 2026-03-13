@@ -147,7 +147,6 @@ const CourseLearning: React.FC = () => {
       const stats = await progressApi.getPublishedCourseProgress(Number(courseId))
       setProgressStats(stats)
       console.log("📊 Progress Stats:", stats)
-
       // Fetch completed lessons detail
       const detail = await progressApi.getPublishedCourseProgressDetail(
         Number(courseId),
@@ -1001,6 +1000,7 @@ const CourseLearning: React.FC = () => {
                             ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
                             : "border-transparent text-gray-600 hover:text-gray-900"
                         }`}
+                        
                       >
                         Tổng quan
                       </button>

@@ -23,15 +23,6 @@ const ExpertRoutes = [
     <Route index element={<PendingCoursesPage />} />
     <Route path="courses" element={<CourseListPage />} />
     <Route path="published-courses" element={<PendingCoursesPage />} />
-    <Route
-        key="expert-layout"
-        path="/expert/*"
-        element={
-            <ProtectedRoute allowedRoles={["EXPERT", "SUPER_ADMIN"]}>
-                <ExpertLayout />
-            </ProtectedRoute>
-        }
-    >
         {/* Default route */}
         <Route index element={<PendingCoursesPage />} />
 
@@ -47,7 +38,6 @@ const ExpertRoutes = [
         />
     </Route>,
 
-  </Route>,
 ];
 
 export default ExpertRoutes;
