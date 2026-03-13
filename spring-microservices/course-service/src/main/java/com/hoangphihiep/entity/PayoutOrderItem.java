@@ -70,6 +70,17 @@ public class PayoutOrderItem implements Serializable {
     @Column(name = "transaction_reference")
     private String transactionReference;
 
+    // Escrow mechanism fields
+    @Column(name = "hold_until")
+    private LocalDateTime holdUntil;
+
+    @Column(name = "released_at")
+    private LocalDateTime releasedAt;
+
+    @Column(name = "can_refund")
+    @Builder.Default
+    private Boolean canRefund = false;
+
     @PrePersist
     protected void onCreate() {
         if (accruedAt == null) {
@@ -77,6 +88,9 @@ public class PayoutOrderItem implements Serializable {
         }
         if (status == null) {
             status = PayoutOrderItemStatus.ACCRUED;
+        }
+        if (canRefund == null) {
+            canRefund = false;
         }
     }
 }

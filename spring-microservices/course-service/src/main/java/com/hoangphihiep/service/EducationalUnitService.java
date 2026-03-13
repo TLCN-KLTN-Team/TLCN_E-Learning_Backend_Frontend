@@ -170,11 +170,8 @@ public class EducationalUnitService {
         }
 
         try {
-            // 1. Try finding by Admin ID first (most common for Admin role)
             Optional<EducationalUnit> educationalUnit = educationalUnitRepository.findByIdAdmin(userId);
 
-            // 2. If not found, try finding via Teacher Profile (for Teachers acting as Admin/Expert)
-            // Or if user is a Teacher/Expert accessing shared resources
             if (educationalUnit.isEmpty()) {
                 try {
                 ApiResponse<TeacherResponse> teacherResponse = teacherRepository.getTeacherByUserId(userId);

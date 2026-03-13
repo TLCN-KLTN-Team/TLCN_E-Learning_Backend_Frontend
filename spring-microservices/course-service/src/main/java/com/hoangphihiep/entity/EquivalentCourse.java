@@ -53,6 +53,15 @@ public class EquivalentCourse implements Serializable {
     @Column(name = "valid_until")
     private LocalDateTime validUntil;
 
+    @Column(name = "min_quiz_score")
+    private Double minQuizScore;
+
+    @Column(name = "min_assignment_score")
+    private Double minAssignmentScore;
+
+    @Column(name = "required_rank")
+    private String requiredRank; // EXCELLENT, GOOD, MERIT...
+
     @Column(name = "created_by")
     @CreatedBy
     private String createdBy;

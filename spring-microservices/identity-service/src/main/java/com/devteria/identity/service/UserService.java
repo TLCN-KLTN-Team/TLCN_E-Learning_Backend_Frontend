@@ -53,6 +53,17 @@ public class UserService {
     OTPService otpService;
     EmailVerificationService emailVerificationService;
 
+    public List<UserResponse> getUsersByRole(String roleName) {
+        try {
+            Role role = Role.valueOf(roleName.toUpperCase());
+            return userRepository.findAllByRole(role).stream()
+                    .map(userMapper::toUserResponse)
+                    .toList();
+        } catch (IllegalArgumentException e) {
+            return List.of();
+        }
+    }
+
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void adminVerifyAccount(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));

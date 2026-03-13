@@ -16,20 +16,22 @@ import java.util.Date;
 public class CertificateResponse {
     private Integer id;
     private String userId;
-    private Integer publishedCourseId;
+    private Integer courseId;
     private String courseName;
     private String certificateCode;
     private Date issueDate;
     private String transactionHash;
     private String contractAddress;
     private BigInteger blockNumber;
+    private Double finalScore;
+    private String grade;
     private Certificate.CertificateStatus status;
 
     public static CertificateResponse fromEntity(Certificate certificate) {
         return CertificateResponse.builder()
                 .id(certificate.getId())
                 .userId(certificate.getUserId())
-                .publishedCourseId(certificate.getPublishedCourse().getId())
+                .courseId(certificate.getPublishedCourse().getId())
                 .courseName(certificate.getPublishedCourse().getCourseName())
                 .certificateCode(certificate.getCertificateCode())
                 .issueDate(certificate.getIssueDate())
@@ -37,6 +39,8 @@ public class CertificateResponse {
                 .contractAddress(certificate.getContractAddress())
                 .blockNumber(certificate.getBlockNumber())
                 .status(certificate.getStatus())
+                .finalScore(certificate.getFinalScore())
+                .grade(certificate.getGrade())
                 .build();
     }
 }

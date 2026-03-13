@@ -154,6 +154,22 @@ public class CourseEnrollmentService {
 
         log.info("Found course: {} (id: {})", course.getCourseName(), course.getId());
 
+        // CHECK: Verify student has ACTIVE enrollment or auto-enroll if possible
+        Optional<CourseEnrollment> enrollmentOpt = enrollmentRepository.findByCourseClassIdAndStudentId(classId, userId);
+        CourseEnrollment enrollment;
+        
+        if (enrollmentOpt.isEmpty()) {
+            // Auto-enroll logic: Create enrollment if user doesn't have one
+            log.info("User {} not enrolled in class {}. Attempting auto-enrollment...", userId, classId);
+            enrollment = autoEnrollUserToClass(userId, courseClass, course);
+        } else {
+            enrollment = enrollmentOpt.get();
+            if (!"ACTIVE".equals(enrollment.getStatus())) {
+                log.warn("User {} has invalid enrollment status: {} for class {}", userId, enrollment.getStatus(), classId);
+                throw new AppException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+
         try {
             List<Section> sections = sectionRepository.findByCourseIdOrderByOrderIndex(course.getId());
             log.info("Found {} sections", sections.size());
@@ -228,6 +244,62 @@ public class CourseEnrollmentService {
     private boolean isContentVisibleToClass(Integer classId, String contentType, Integer contentId) {
         return visibilityRepository.existsByCourseClassIdAndContentTypeAndContentIdAndIsVisible(
                 classId, contentType, contentId, true);
+    }
+
+    /**
+     * Auto-enroll user to a class they are trying to access
+     * Creates enrollment and initializes course progress
+     */
+    @Transactional
+    public CourseEnrollment autoEnrollUserToClass(String userId, CourseClass courseClass, Course course) {
+        try {
+            log.info("Auto-enrolling user {} to class {} (course: {})", userId, courseClass.getId(), course.getId());
+            
+            // Check if class has available slots
+            if (courseClass.getCurrentStudents() >= courseClass.getMaxStudents()) {
+                log.warn("Cannot auto-enroll user {} to class {} - class is full ({}/{})", 
+                        userId, courseClass.getId(), courseClass.getCurrentStudents(), courseClass.getMaxStudents());
+                throw new AppException(ErrorCode.COURSE_ENROLLMENT_CAPACITY_EXCEEDED);
+            }
+            
+            // Create enrollment
+            CourseEnrollment enrollment = new CourseEnrollment();
+            enrollment.setCourse(course);
+            enrollment.setCourseClass(courseClass);
+            enrollment.setStudentId(userId);
+            enrollment.setEnrolledAt(new Date());
+            enrollment.setStatus(ENROLLMENT_STATUS_ACTIVE);
+            enrollmentRepository.save(enrollment);
+            
+            // Create course progress if not exists
+            Optional<CourseProgress> existingProgress = courseProgressRepository
+                    .findByUserIdAndCourseId(userId, course.getId());
+            
+            if (existingProgress.isEmpty()) {
+                CourseProgress courseProgress = new CourseProgress();
+                courseProgress.setIdUser(userId);
+                courseProgress.setCourse(course);
+                courseProgress.setProgressPercentage(0.0);
+                courseProgress.setStartDate((java.sql.Date) new Date());
+                courseProgress.setCompleted(false);
+                courseProgressRepository.save(courseProgress);
+                log.info("Created course progress for user {} in course {}", userId, course.getId());
+            }
+            
+            // Update class current students count
+            courseClass.setCurrentStudents(courseClass.getCurrentStudents() + 1);
+            courseClassRepository.save(courseClass);
+            
+            // Update course total students count
+            updateCourseTotalStudents(course.getId());
+            
+            log.info("Successfully auto-enrolled user {} to class {}", userId, courseClass.getId());
+            return enrollment;
+            
+        } catch (Exception e) {
+            log.error("Failed to auto-enroll user {} to class {}: {}", userId, courseClass.getId(), e.getMessage(), e);
+            throw new AppException(ErrorCode.COURSE_ENROLLMENT_FAILED);
+        }
     }
 
     /**

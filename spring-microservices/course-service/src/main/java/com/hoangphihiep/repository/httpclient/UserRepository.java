@@ -7,6 +7,8 @@ import com.hoangphihiep.dto.response.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @FeignClient(
         name = "identity-service",
         url = "${app.services.identity}",
@@ -17,10 +19,16 @@ public interface UserRepository {
     @PostMapping("/admin")
     ApiResponse<UserResponse> createUser(@RequestBody UserRequest request);
 
-    @GetMapping("/me")
+    @GetMapping("/users/me")
     ApiResponse<UserResponse> getCurrentUser();
+
+    @GetMapping("/users/{userId}")
+    ApiResponse<UserResponse> getUserById(@PathVariable("userId") String userId);
 
     @GetMapping("/users/countUsers")
     ApiResponse<Integer> countUsersByRole(@RequestParam("role") String role);
+
+    @GetMapping("/users/by-role")
+    ApiResponse<List<UserResponse>> getUsersByRole(@RequestParam("role") String role);
 
 }

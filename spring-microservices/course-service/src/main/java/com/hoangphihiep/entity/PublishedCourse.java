@@ -55,8 +55,7 @@ public class PublishedCourse {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private Set<OrderItem> orderItems = new HashSet<>();
 
-    @OneToMany(mappedBy = "sourceCourse", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<CreditTransfer> sourceCreditTransfers = new HashSet<>();
+
 
     @Column(name = "status")
     private int status;

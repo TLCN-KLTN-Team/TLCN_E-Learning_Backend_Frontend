@@ -14,8 +14,12 @@ public interface EquivalentCourseMapper {
     @Mapping(source = "sourceCourse.courseName", target = "sourceCourseName")
     @Mapping(source = "sourceCourse.courseImage", target = "sourceCourseImage")
     @Mapping(source = "sourceCourse.course.educationalUnit.name", target = "sourceEducationalUnit")
+    @Mapping(source = "sourceCourse.course.credits", target = "sourceCourseCredits") // Added
+    // @Mapping(source = "sourceCourse.course.courseCode", target = "sourceCourseCode") // Field not exists
     @Mapping(source = "targetCourse.id", target = "targetCourseId")
     @Mapping(source = "targetCourse.courseName", target = "targetCourseName")
+    @Mapping(source = "targetCourse.credits", target = "targetCourseCredits") // Added
+    // @Mapping(source = "targetCourse.courseCode", target = "targetCourseCode") // Field not exists
     EquivalentCourseResponse toResponse(EquivalentCourse entity);
 
     @Mapping(target = "id", ignore = true)

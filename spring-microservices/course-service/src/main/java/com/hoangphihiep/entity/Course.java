@@ -63,8 +63,7 @@ public class Course implements Serializable {
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     private Set<CourseEnrollment> enrollments = new HashSet<>();
 
-    @OneToMany(mappedBy = "targetCourse", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<CreditTransfer> targetCreditTransfers = new HashSet<>();
+
 
     private Date createdAt;
 

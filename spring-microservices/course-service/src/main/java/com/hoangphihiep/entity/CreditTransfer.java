@@ -31,15 +31,26 @@ public class CreditTransfer implements Serializable {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_course_id", nullable = false)
-    private PublishedCourse sourceCourse;
+    @JoinColumn(name = "equivalent_course_id")
+    private EquivalentCourse equivalentCourse;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "target_course_id", nullable = false)
-    private Course targetCourse;
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "attachment_url", columnDefinition = "TEXT")
+    private String attachmentUrl;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    @Column(name = "student_name")
+    private String studentName;
+
+    @Column(name = "educational_unit_name")
+    private String educationalUnitName;
 
     @Column(name = "status", length = 50)
-    private String status;
+    private String status; // PENDING, APPROVED, REJECTED
 
     @Column(name = "request_date")
     private LocalDateTime requestDate;

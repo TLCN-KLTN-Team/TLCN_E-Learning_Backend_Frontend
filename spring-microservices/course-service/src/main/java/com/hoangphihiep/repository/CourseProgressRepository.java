@@ -25,4 +25,6 @@ public interface CourseProgressRepository extends JpaRepository<CourseProgress, 
     Double getAverageCompletionRateInPeriod(@Param("educationType") String educationType,
                                              @Param("startDate") Date startDate,
                                              @Param("endDate") Date endDate);
+    @Query("SELECT cp FROM CourseProgress cp WHERE cp.course.id = :courseId AND cp.idUser = :userId")
+    CourseProgress findByCourseIdAndUserId(@Param("courseId") Integer courseId, @Param("userId") String userId);
 }

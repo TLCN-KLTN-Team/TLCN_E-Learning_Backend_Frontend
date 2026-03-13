@@ -58,6 +58,9 @@ public class CourseProgress implements Serializable {
     @Column(name = "is_completed")
     private boolean isCompleted;
 
+    @Column(name = "is_completed_via_credit_transfer")
+    private Boolean completedViaCreditTransfer = false;
+
     @OneToMany(mappedBy = "courseProgress", cascade = CascadeType.ALL)
     private Set<LessonProgress> lessonProgresses = new HashSet<>();
 }

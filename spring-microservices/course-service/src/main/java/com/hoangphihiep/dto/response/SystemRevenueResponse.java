@@ -22,7 +22,12 @@ public class SystemRevenueResponse {
     private BigDecimal totalTeacherRevenue; // Tổng doanh thu của teachers
     private BigDecimal totalAdminRevenue; // Tổng doanh thu của admins
     
-    private Integer totalOrders; // Tổng số đơn hàng
+    private Integer totalOrders; // Tổng số đơn hàng có doanh thu (có ≥1 item hợp lệ)
+    private Integer totalRefundedOrders; // Tổng số đơn hàng có chứa ít nhất 1 item bị refund
+    private Integer totalPartiallyRefundedOrders; // Số đơn hàng refund 1 phần (còn items hợp lệ)
+    private Integer totalFullyRefundedOrders; // Số đơn hàng refund toàn bộ (tất cả items đều refund)
+    private Integer totalOrderItems; // Tổng số order items đã thanh toán
+    private Integer totalRefundedItems; // Tổng số order items bị refund
     private Integer totalCourses; // Tổng số khóa học
     private Integer totalStudents; // Tổng số học viên
     private Integer totalTeachers; // Tổng số giảng viên
@@ -44,6 +49,7 @@ public class SystemRevenueResponse {
         private BigDecimal teacherRevenue; // Teacher share
         private BigDecimal adminRevenue; // Admin share
         private Integer orders;
+        private Integer refunds; // Số đơn hàng đã hoàn tiền trong tháng
     }
     
     @Data

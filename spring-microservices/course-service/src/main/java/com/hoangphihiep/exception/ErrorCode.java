@@ -200,6 +200,12 @@ public enum ErrorCode {
 
     // Order related errors (ORDER_xxxx)
     ORDER_NOT_FOUND("ORDER_5001", "Order not found", HttpStatus.NOT_FOUND),
+    ORDER_ITEM_NOT_FOUND("ORDER_5002", "Order item not found", HttpStatus.NOT_FOUND),
+    REFUND_WINDOW_EXPIRED("ORDER_5003", "Refund window expired (7 days)", HttpStatus.BAD_REQUEST),
+    REFUND_PROGRESS_TOO_HIGH("ORDER_5004", "Course progress too high (> 30%)", HttpStatus.BAD_REQUEST),
+    REFUND_ALREADY_PROCESSED("ORDER_5005", "Refund already processed for this item", HttpStatus.BAD_REQUEST),
+    ESCROW_NOT_FOUND("ORDER_5006", "Escrow payout not found for this order", HttpStatus.NOT_FOUND),
+    REFUND_NOT_ALLOWED("ORDER_5007", "Refund not allowed for this order", HttpStatus.BAD_REQUEST),
 
     // Cart related errors (CART_xxxx)
     CART_NOT_FOUND("CART_6001", "Cart not found", HttpStatus.NOT_FOUND),
