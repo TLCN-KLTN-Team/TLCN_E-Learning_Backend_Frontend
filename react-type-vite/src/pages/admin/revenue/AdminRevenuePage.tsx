@@ -21,7 +21,8 @@ import {
   GraduationCap,
   AlertCircle,
 } from "lucide-react";
-import { getAdminRevenue, getAdminRevenueByDateRange, type AdminRevenueResponse } from "@/services/api/admin/revenueApi";
+import { getAdminRevenue, getAdminRevenueByDateRange } from "@/services/api/admin/revenueApi";
+import type { AdminRevenueResponse } from "@/services/api/response/revenueResponse";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import type { TimeRange } from "@/types/revenue.types";
 import { TIME_RANGE_OPTIONS } from "@/types/revenue.types";
@@ -85,9 +86,9 @@ const AdminRevenuePage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       let response: AdminRevenueResponse;
-      
+
       if (timeRange === "all") {
         response = await getAdminRevenue();
       } else if (timeRange === "custom") {
@@ -99,7 +100,7 @@ const AdminRevenuePage: React.FC = () => {
         const { startDate, endDate } = getDateRange(timeRange);
         response = await getAdminRevenueByDateRange(startDate, endDate);
       }
-      
+
       console.log("=== ADMIN REVENUE DATA DEBUG ===");
       console.log("Time range:", timeRange);
       console.log("Full response:", response);
@@ -202,7 +203,7 @@ const AdminRevenuePage: React.FC = () => {
             ))}
           </select>
         </div>
-        
+
         {/* Month Picker */}
         {timeRange === "select-month" && (
           <div className="flex justify-end">
@@ -213,7 +214,7 @@ const AdminRevenuePage: React.FC = () => {
             />
           </div>
         )}
-        
+
         {/* Year Picker */}
         {timeRange === "select-year" && (
           <div className="flex justify-end">
@@ -224,7 +225,7 @@ const AdminRevenuePage: React.FC = () => {
             />
           </div>
         )}
-        
+
         {/* Custom Date Range Picker */}
         {timeRange === "custom" && (
           <div className="flex justify-end">

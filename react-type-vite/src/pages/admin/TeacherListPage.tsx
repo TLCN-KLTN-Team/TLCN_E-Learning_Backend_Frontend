@@ -26,7 +26,7 @@ import { toast } from "react-toastify";
 import TeacherFormModal from "@/components/admin/teacher/TeacherFormModal";
 import ImportTeachersModal from "@/components/admin/teacher/ImportTeachersModal";
 import * as teacherApi from "@/services/api/admin/teacherApi";
-import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { TeacherResponse } from "@/services/api/response/teacherResponse";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import type { PaginatedResponse } from "@/services/api/response/apiResponse";
@@ -469,8 +469,8 @@ const TeacherListPage: React.FC = () => {
                             variant="outline"
                             onClick={() => handleToggleAccountStatus(teacher)}
                             className={`${teacher.accountStatus === "ACTIVE"
-                                ? "text-orange-600 border-orange-200 hover:bg-orange-50"
-                                : "text-green-600 border-green-200 hover:bg-green-50"
+                              ? "text-orange-600 border-orange-200 hover:bg-orange-50"
+                              : "text-green-600 border-green-200 hover:bg-green-50"
                               }`}
                             title={
                               teacher.accountStatus === "ACTIVE"
@@ -849,8 +849,8 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({
             variant="outline"
             onClick={onToggleStatus}
             className={`${teacher.accountStatus === "ACTIVE"
-                ? "text-orange-600 border-orange-300 hover:bg-orange-50"
-                : "text-green-600 border-green-300 hover:bg-green-50"
+              ? "text-orange-600 border-orange-300 hover:bg-orange-50"
+              : "text-green-600 border-green-300 hover:bg-green-50"
               }`}
           >
             {teacher.accountStatus === "ACTIVE" ? (

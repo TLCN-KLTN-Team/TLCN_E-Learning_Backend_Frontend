@@ -9,7 +9,7 @@ import PublishedCourseService from "@/services/api/anonymous/course.api";
 import Header from "../../../components/student/home/Header";
 import Footer from "../../../components/student/home/Footer";
 import { decodeHTMLEntities } from "@/utils/htmlCleaner";
-import reviewApi from "@/services/api/user/reviewApi";
+import * as reviewApi from "@/services/api/user/reviewApi";
 import type {
   ReviewResponse,
   ReviewStatsResponse,

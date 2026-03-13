@@ -19,7 +19,7 @@ import {
   deleteDepartment,
   getDepartmentsByEducationalUnit,
 } from "@/services/api/admin/departmentApi";
-import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import DepartmentFormModal from "@/components/admin/department/DepartmentFormModal";
 
 const DepartmentManagementPage: React.FC = () => {

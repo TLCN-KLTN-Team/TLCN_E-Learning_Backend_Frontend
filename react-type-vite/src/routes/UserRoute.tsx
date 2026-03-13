@@ -6,6 +6,7 @@ import PaypalReturn from "@/pages/user/payment/PaypalReturn";
 import Cart from "@/pages/user/cart/Cart";
 import Wishlist from "@/pages/user/wishlist/Wishlist";
 import MyCourses from "@/pages/user/personal/MyCourses";
+import OrderHistoryPage from "@/pages/user/personal/OrderHistoryPage";
 import CourseLearning from "@/pages/user/course/CourseLearning";
 import UserQuizAttempt from "@/components/user/course/UserQuizAttempt";
 import MyDocumentLibraryPage from "@/pages/student/document-library/MyDocumentLibraryPage";
@@ -78,6 +79,16 @@ const UserRoutes = [
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <MyDocumentLibraryPage />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="purchase-history"
+    path="/purchase-history"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <OrderHistoryPage />
       </ProtectedRoute>
     }
   />,

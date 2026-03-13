@@ -13,6 +13,8 @@ import {
   EarthLock,
   BrainCircuit,
   Box,
+  Brain,
+  ShoppingBag,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -41,6 +43,7 @@ const menuItems = [
     path: "/teacher/generate-questions" 
   },
   { name: "Theo dõi doanh thu", icon: TrendingUp, path: "/teacher/revenue" },
+  { name: "Danh sách đơn hàng", icon: ShoppingBag, path: "/teacher/orders" },
   {
     name: "Không gian lớp học",
     icon: EarthLock,
@@ -91,11 +94,10 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
             return (
               <Link
                 key={item.name}
-                className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group relative ${
-                  isActive
-                    ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-                }`}
+                className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group relative ${isActive
+                  ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
+                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
                 to={item.path}
                 title={collapsed ? item.name : undefined}
               >
@@ -103,9 +105,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-800 rounded-r-full" />
                 )}
                 <item.icon
-                  className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} ${
-                    isActive ? "text-white" : ""
-                  }`}
+                  className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} ${isActive ? "text-white" : ""
+                    }`}
                 />
                 {!collapsed && <span>{item.name}</span>}
               </Link>

@@ -16,7 +16,7 @@ import {
 import * as expertPublishedCourseApi from "@/services/api/expert/expertPublishedCourseApi";
 import type { PublishedCourseResponse } from "@/services/api/response/publishedCourseResponse";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
-import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 const PendingCoursesPage = () => {

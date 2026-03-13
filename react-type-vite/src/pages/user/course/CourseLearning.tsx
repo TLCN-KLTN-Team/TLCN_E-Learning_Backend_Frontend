@@ -27,28 +27,32 @@ import {
   Loader2,
   Trash2,
   MessageSquare,
-  Bot,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { getSectionsByCourseId } from "@/services/api/user/sectionApi";
-import { CourseApiService } from "@/services/api/user/courseApi";
-import type { SectionResponse } from "@/services/api/response/sectionResponse";
-import type { LessonResponse } from "@/services/api/response/lessonResponse";
-import type { QuizResponse } from "@/services/api/response/quizResponse";
-import type { AssignmentResponse } from "@/services/api/response/assignmentResponse";
-import { toast } from "react-toastify";
-import UserQuizAttempt from "@/components/user/course/UserQuizAttempt";
-import userQuizApi from "@/services/api/user/userQuizApi";
-import assignmentApi from "@/services/api/student/assignmentApi";
-import progressApi from "@/services/api/user/progressApi";
-import reviewApi from "@/services/api/user/reviewApi";
-import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
-import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
-import StudentDiscussionPanel from "@/components/user/course/StudentDiscussionPanel";
-import { useAuth } from "@/context/auth-context/useAuth";
-import { getCourseQuizUnreadCount } from "@/services/api/courseQuizDiscussionApi";
-import { getCourseAssignmentUnreadCount } from "@/services/api/courseAssignmentDiscussionApi";
-import { getCourseLessonDiscussionUnreadCount } from "@/services/api/courseLessonDiscussionApi";
+  Bot
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { getSectionsByCourseId } from "@/services/api/user/sectionApi"
+import { CourseApiService } from "@/services/api/user/courseApi"
+import type { SectionResponse } from "@/services/api/response/sectionResponse"
+import type { LessonResponse } from "@/services/api/response/lessonResponse"
+import type { QuizResponse } from "@/services/api/response/quizResponse"
+import type { AssignmentResponse } from "@/services/api/response/assignmentResponse"
+import { toast } from "react-toastify"
+import UserQuizAttempt from "@/components/user/course/UserQuizAttempt"
+import userQuizApi from "@/services/api/user/userQuizApi"
+import assignmentApi from "@/services/api/student/assignmentApi"
+import * as progressApi from "@/services/api/user/progressApi"
+import * as reviewApi from "@/services/api/user/reviewApi"
+import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse"
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer"
+import StudentDiscussionPanel from "@/components/user/course/StudentDiscussionPanel"
+import { useAuth } from "@/context/auth-context/useAuth"
+import { getCourseQuizUnreadCount } from "@/services/api/courseQuizDiscussionApi"
+import { getCourseAssignmentUnreadCount } from "@/services/api/courseAssignmentDiscussionApi"
+import { getCourseLessonDiscussionUnreadCount } from "@/services/api/courseLessonDiscussionApi"
+import * as certificateApi from "@/services/api/user/certificateApi"
+import type { CertificateResponse } from "@/services/api/response/certificateResponse"
+import CertificateModal from "@/components/user/course/CertificateModal"
+import { Award } from "lucide-react"
 import AIQuizPracticeModeComponent from "@/components/user/course/AIQuizPracticeModeComponent";
 
 import { ACTIVE_COURSE_NAVIGATION_CLASS } from "@/constants/couseStyle";
@@ -122,19 +126,27 @@ const CourseLearning: React.FC = () => {
   // AI Study Mode state
   const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
 
+  // Certificate
+  const [certificate, setCertificate] = useState<CertificateResponse | null>(null)
+  const [showCertificateModal, setShowCertificateModal] = useState(false)
+  const [isCheckingCertificate, setIsCheckingCertificate] = useState(false)
+
   // Current item - must be declared before useEffect hooks
   const currentItem = contentItems[currentItemIndex];
+
+  console.log("RENDER CourseLearning:", { showCertificateModal, certificate });
 
   // Fetch progress stats
   const fetchProgressStats = async () => {
     if (!courseId) return;
 
     try {
-      const stats = await progressApi.getPublishedCourseProgress(
-        Number(courseId),
-      );
-      setProgressStats(stats);
-      console.log("📊 Progress Stats:", stats);
+      // Log for Debugging State
+      console.log("🔄 CourseLearning Render State:", { showCertificateModal, certificate });
+
+      const stats = await progressApi.getPublishedCourseProgress(Number(courseId))
+      setProgressStats(stats)
+      console.log("📊 Progress Stats:", stats)
 
       // Fetch completed lessons detail
       const detail = await progressApi.getPublishedCourseProgressDetail(
@@ -206,11 +218,61 @@ const CourseLearning: React.FC = () => {
       );
 
       setCompletedQuizzes(completedQuizIds);
-      setCompletedAssignments(completedAssignmentIds);
+      setCompletedAssignments(completedAssignmentIds)
+
+      // Check for certificate if progress is 100%
+      if (stats.overallProgress >= 100) {
+        checkCertificate()
+      }
+
     } catch (error) {
       console.error("Error fetching progress stats:", error);
     }
   };
+
+  const checkCertificate = async () => {
+    if (!courseId) return
+    setIsCheckingCertificate(true)
+    try {
+      const cert = await certificateApi.getMyCertificate(Number(courseId))
+      setCertificate(cert)
+      // If certificate is pending, poll for it (simple implementation)
+      if (cert && cert.status === 'PENDING') {
+        setTimeout(checkCertificate, 5000)
+      }
+    } catch (e) {
+      console.error("Error checking certificate", e)
+    } finally {
+      setIsCheckingCertificate(false)
+    }
+  }
+
+  const handleClaimCertificate = async () => {
+    if (!courseId) return
+    try {
+      await certificateApi.claimCertificate(Number(courseId))
+      toast.success("Đang xử lý cấp chứng chỉ...")
+
+      // Poll for certificate update (retry 5 times, every 2 seconds)
+      let retries = 5;
+      const poll = setInterval(async () => {
+        const cert = await certificateApi.getMyCertificate(Number(courseId))
+        if (cert) {
+          setCertificate(cert)
+          clearInterval(poll)
+          toast.success("Chứng chỉ đã được cấp thành công!")
+        } else {
+          retries--;
+          if (retries <= 0) clearInterval(poll)
+        }
+      }, 2000)
+
+    } catch (error) {
+      console.error("Error claiming certificate:", error)
+      toast.error("Lỗi khi yêu cầu cấp chứng chỉ")
+    }
+  }
+
 
   // Mark lesson as complete
   const handleMarkLessonComplete = async (lessonId: number) => {
@@ -661,6 +723,15 @@ const CourseLearning: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-white">
+      {/* GLOBAL MODAL LOCATION - HIGH Z-INDEX */}
+      <CertificateModal
+        open={showCertificateModal}
+        onClose={() => setShowCertificateModal(false)}
+        certificate={certificate}
+        courseName={courseName || "Khóa học"}
+        studentName={user?.fullName || user?.username || "Học viên"}
+      />
+
       {/* Top Navigation Bar - Hide in quiz/assignment mode */}
       {contentDisplayMode === "normal" && (
         <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between flex-shrink-0">
@@ -767,6 +838,37 @@ const CourseLearning: React.FC = () => {
               <Share2 className="w-4 h-4" />
               <span className="text-sm">Share</span>
             </Button>
+
+            {/* Certificate Button Logic */}
+            {certificate ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-yellow-500 hover:bg-yellow-600 text-white border-none gap-2"
+                onClick={() => {
+                  console.log("Certificate Button Clicked! Showing modal...");
+                  setShowCertificateModal(true);
+                }}
+              >
+                <Award className="w-4 h-4" />
+                <span className="text-sm font-semibold">
+                  {certificate.status === 'PENDING' ? 'Processing...' : 'Certificate'}
+                </span>
+              </Button>
+            ) : (
+              progressStats && progressStats.overallProgress >= 100 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white border-none gap-2 animate-pulse"
+                  onClick={handleClaimCertificate}
+                  disabled={isCheckingCertificate}
+                >
+                  <Award className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Nhận chứng chỉ</span>
+                </Button>
+              )
+            )}
 
             <Button
               variant="ghost"
@@ -900,7 +1002,7 @@ const CourseLearning: React.FC = () => {
                             : "border-transparent text-gray-600 hover:text-gray-900"
                         }`}
                       >
-                        Overview
+                        Tổng quan
                       </button>
                       <button
                         onClick={() => setActiveTab("about")}
@@ -923,7 +1025,7 @@ const CourseLearning: React.FC = () => {
                             : "border-transparent text-gray-600 hover:text-gray-900"
                         }`}
                       >
-                        Notes
+                        Ghi chú
                       </button>
                       <button
                         onClick={() => setActiveTab("announcements")}
@@ -933,7 +1035,7 @@ const CourseLearning: React.FC = () => {
                             : "border-transparent text-gray-600 hover:text-gray-900"
                         }`}
                       >
-                        Announcements
+                        Thông báo
                       </button>
                       <button
                         onClick={() => setActiveTab("reviews")}
@@ -943,7 +1045,7 @@ const CourseLearning: React.FC = () => {
                             : "border-transparent text-gray-600 hover:text-gray-900"
                         }`}
                       >
-                        Reviews
+                        Đánh giá
                       </button>
                       <button
                         onClick={() => setActiveTab("tools")}
@@ -953,7 +1055,7 @@ const CourseLearning: React.FC = () => {
                             : "border-transparent text-gray-600 hover:text-gray-900"
                         }`}
                       >
-                        Learning tools
+                        Công cụ
                       </button>
                       {currentItem && (
                         <button

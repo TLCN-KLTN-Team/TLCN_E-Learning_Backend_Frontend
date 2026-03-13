@@ -12,7 +12,7 @@ import {
   X,
   Save,
 } from "lucide-react";
-import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import type { EducationalUnitRequest } from "@/services/api/request/educationUnitRequest";
 
@@ -51,7 +51,7 @@ const AdminEducationalUnitInfo: React.FC = () => {
 
   const openEditModal = () => {
     if (!educationalUnit) return;
-    
+
     setFormData({
       name: educationalUnit.name || "",
       type: educationalUnit.type || "",

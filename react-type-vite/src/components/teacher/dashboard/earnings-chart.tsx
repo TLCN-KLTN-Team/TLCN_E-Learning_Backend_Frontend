@@ -5,7 +5,7 @@ import { ArrowUp, ArrowDown } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useAuth } from "../../../context/auth-context/useAuth"
 import { getTeacherRevenue } from "../../../services/api/teacher/revenueApi"
-import type { TeacherRevenueResponse } from "../../../services/api/teacher/revenueApi"
+import type { TeacherRevenueResponse } from "../../../services/api/response/revenueResponse"
 
 // Format currency helper
 const formatCurrency = (value: number) => {
@@ -97,12 +97,11 @@ const EarningsChart: React.FC = () => {
             </h4>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {!loading && (
-                <span className={`font-semibold inline-flex items-center ${
-                  percentChange >= 0 ? "text-green-600" : "text-red-600"
-                }`}>
+                <span className={`font-semibold inline-flex items-center ${percentChange >= 0 ? "text-green-600" : "text-red-600"
+                  }`}>
                   {percentChange >= 0 ? "+" : ""}{percentChange.toFixed(1)}%
-                  {percentChange >= 0 ? 
-                    <ArrowUp className="w-4 h-4 ml-1" /> : 
+                  {percentChange >= 0 ?
+                    <ArrowUp className="w-4 h-4 ml-1" /> :
                     <ArrowDown className="w-4 h-4 ml-1" />
                   }
                 </span>
@@ -138,13 +137,13 @@ const EarningsChart: React.FC = () => {
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="monthLabel" 
+                <XAxis
+                  dataKey="monthLabel"
                   stroke="#64748b"
                   tick={{ fill: '#64748b', fontSize: 12 }}
                   tickFormatter={(value) => `T${value}`}
                 />
-                <YAxis 
+                <YAxis
                   stroke="#64748b"
                   tick={{ fill: '#64748b', fontSize: 12 }}
                   tickFormatter={(value) => {
@@ -153,10 +152,10 @@ const EarningsChart: React.FC = () => {
                   }}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="#2563eb" 
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#2563eb"
                   strokeWidth={3}
                   dot={{ fill: '#2563eb', r: 5 }}
                   activeDot={{ r: 7, fill: '#1d4ed8' }}

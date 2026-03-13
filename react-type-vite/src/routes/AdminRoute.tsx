@@ -11,6 +11,7 @@ import AdminProfilePage from "@/pages/admin/AdminProfilePage";
 import ExpertListPage from "@/pages/admin/ExpertListPage";
 import StudentListPage from "@/pages/admin/StudentListPage";
 import { ADMIN_ROUTES } from "@/constants/routes";
+import AdminRefundPage from "@/pages/admin/revenue/AdminRefundPage";
 
 // Admin routes - protected routes for admin roles
 const AdminRoutes = [
@@ -35,6 +36,7 @@ const AdminRoutes = [
 
     <Route path="departments" element={<DepartmentManagementPage />} />
     <Route path="revenue" element={<AdminRevenuePage />} />
+    <Route path="refunds" element={<AdminRefundPage />} />
     <Route path="info" element={<AdminProfilePage />} />
   </Route>,
 ];

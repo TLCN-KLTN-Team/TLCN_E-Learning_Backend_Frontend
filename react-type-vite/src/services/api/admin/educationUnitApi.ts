@@ -5,21 +5,21 @@ import type { EducationalUnitResponse } from "../response/educationalUnitRespons
 
 const PREFIX = "/course-management/educational-unit";
 
-const getMyEducationalUnit = async (): Promise<EducationalUnitResponse> => {
+export const getMyEducationalUnit = async (): Promise<EducationalUnitResponse> => {
   const response = await axiosInstance.get<ApiResponse<EducationalUnitResponse>>(
     `${PREFIX}/my-educationalUnit`
   );
   return response.data.result;
 };
 
-const getInternalStudentRatio = async (): Promise<number> => {
+export const getInternalStudentRatio = async (): Promise<number> => {
   const response = await axiosInstance.get<ApiResponse<number>>(
     `${PREFIX}/internal-student-ratio`
   );
   return response.data.result || 0;
 };
 
-const updateEducationalUnit = async (
+export const updateEducationalUnit = async (
   data: EducationalUnitRequest
 ): Promise<EducationalUnitResponse> => {
   const response = await axiosInstance.put<ApiResponse<EducationalUnitResponse>>(
@@ -27,10 +27,4 @@ const updateEducationalUnit = async (
     data
   );
   return response.data.result;
-};
-
-export default {
-  getMyEducationalUnit,
-  getInternalStudentRatio,
-  updateEducationalUnit,
 };

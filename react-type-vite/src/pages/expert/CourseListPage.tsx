@@ -19,7 +19,7 @@ import CourseFormModal from "@/components/expert/course/CourseFormModal";
 import AssignTeacherModal from "@/components/expert/course/AssignTeacherModal";
 import ClassManagementModal from "@/components/expert/course/ClassManagementModal";
 import * as expertCourseApi from "@/services/api/expert/expertCourseApi";
-import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import * as expertClassApi from "@/services/api/expert/expertClassApi";
 import type { CourseResponse } from "@/services/api/response/courseResponse";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";

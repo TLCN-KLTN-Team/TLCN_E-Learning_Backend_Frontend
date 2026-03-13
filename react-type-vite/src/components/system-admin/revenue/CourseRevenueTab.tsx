@@ -13,7 +13,8 @@ import {
 import { Users, Loader2, Star } from "lucide-react";
 import type { TimeRange } from "@/types/revenue.types";
 import { TIME_RANGE_OPTIONS } from "@/types/revenue.types";
-import { getAllCoursesRevenue, getAllCoursesRevenueByDateRange, type CourseRevenueDetail } from "@/services/api/superadmin/revenueApi";
+import { getAllCoursesRevenue, getAllCoursesRevenueByDateRange } from "@/services/api/superadmin/revenueApi";
+import type { CourseRevenueDetail } from "@/services/api/response/revenueResponse";
 import DateRangePicker from "@/components/shared/DateRangePicker";
 import MonthYearPicker from "@/components/shared/MonthYearPicker";
 import { getDateRange, getCurrentMonth, getCurrentYear } from "@/utils/revenueUtils";
@@ -38,7 +39,7 @@ const CourseRevenueTab: React.FC = () => {
       setError(null);
       try {
         let data: CourseRevenueDetail[];
-        
+
         if (timeRange === "all") {
           data = await getAllCoursesRevenue();
         } else if (timeRange === "custom") {
@@ -50,7 +51,7 @@ const CourseRevenueTab: React.FC = () => {
           const { startDate, endDate } = getDateRange(timeRange);
           data = await getAllCoursesRevenueByDateRange(startDate, endDate);
         }
-        
+
         setCoursesData(data);
         console.log("Courses Revenue Data:", data);
       } catch (err) {
@@ -122,7 +123,7 @@ const CourseRevenueTab: React.FC = () => {
             ))}
           </select>
         </div>
-        
+
         {/* Month Picker */}
         {timeRange === "select-month" && (
           <MonthYearPicker
@@ -131,7 +132,7 @@ const CourseRevenueTab: React.FC = () => {
             onChange={setSelectedMonth}
           />
         )}
-        
+
         {/* Year Picker */}
         {timeRange === "select-year" && (
           <MonthYearPicker
@@ -140,7 +141,7 @@ const CourseRevenueTab: React.FC = () => {
             onChange={setSelectedYear}
           />
         )}
-        
+
         {/* Custom Date Range Picker */}
         {timeRange === "custom" && (
           <DateRangePicker

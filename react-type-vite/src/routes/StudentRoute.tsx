@@ -11,6 +11,7 @@ import {
   STUDENT_ROUTES,
   ROUTE_PATTERNS,
 } from "@/constants/routes";
+import StudentCreditTransferPage from "@/pages/student/StudentCreditTransferPage";
 
 // Student routes - protected routes for student role
 const StudentRoutes = [
@@ -68,6 +69,15 @@ const StudentRoutes = [
     element={
       <ProtectedRoute allowedRoles={["STUDENT"]}>
         <QuizResultPage />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    path="/student/credit-transfers"
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT"]}>
+        <StudentCreditTransferPage />
       </ProtectedRoute>
     }
   />,

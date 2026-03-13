@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import Modal from "@/components/ui/modal"
 import type { QuizResponse } from "@/services/api/response/quizResponse"
-import quizApi from "@/services/api/student/quizApi"
+import * as quizApi from "@/services/api/student/quizApi"
 import type { QuizAttemptHistoryResponse } from "@/services/api/response/quizAttemptHistoryResponse"
 import DiscussionSection from "./DiscussionSection"
 import { useAuth } from "@/context/auth-context/useAuth"
@@ -156,8 +156,8 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
             <button
               onClick={() => setActiveTab("info")}
               className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === "info"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
             >
               <FileText className="w-4 h-4" />
@@ -176,8 +176,8 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
                 }
               }}
               className={`px-4 py-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === "discussion"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
             >
               <MessageSquare className="w-4 h-4" />

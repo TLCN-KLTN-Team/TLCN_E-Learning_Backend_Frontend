@@ -23,7 +23,8 @@ export const getDateRange = (
       start.setDate(start.getDate() - 7);
       break;
     case "month":
-      start.setDate(start.getDate() - 30);
+      // First day of current month
+      start.setDate(1);
       break;
     case "select-month":
       if (selectedMonth) {
@@ -38,7 +39,9 @@ export const getDateRange = (
       }
       break;
     case "year":
-      start.setDate(start.getDate() - 365);
+      // First day and last day of current year
+      start.setMonth(0, 1);
+      end.setMonth(11, 31);
       break;
     case "select-year":
       if (selectedYear) {
@@ -80,4 +83,203 @@ export const getCurrentMonth = (): string => {
  */
 export const getCurrentYear = (): string => {
   return new Date().getFullYear().toString();
+};
+
+/**
+ * Chart granularity type
+ */
+export type ChartGranularity = 'day' | 'month' | 'year';
+
+/**
+ * Determine chart granularity based on date range
+ * @param startDate - Start date in "yyyy-MM-dd" format
+ * @param endDate - End date in "yyyy-MM-dd" format
+ * @param timeRange - Time range selection
+ * @returns Granularity type: 'day', 'month', or 'year'
+ */
+export const determineChartGranularity = (
+  startDate: string,
+  endDate: string,
+  timeRange: TimeRange
+): ChartGranularity => {
+  // For specific time range selections, use predetermined granularity
+  if (timeRange === 'today' || timeRange === 'week') {
+    return 'day';
+  }
+  if (timeRange === 'select-month' || timeRange === 'month') {
+    return 'day';
+  }
+  if (timeRange === 'select-year') {
+    return 'month';
+  }
+  if (timeRange === 'all') {
+    return 'year';
+  }
+  
+  // For custom ranges, calculate based on day difference
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (diffDays <= 31) {
+    return 'day';
+  } else if (diffDays <= 365) {
+    return 'month';
+  } else {
+    return 'year';
+  }
+};
+
+/**
+ * Transform monthly revenue data based on granularity
+ * Backend always returns monthly data (yyyy-MM format)
+ * This function aggregates or expands data as needed
+ */
+export const transformRevenueDataByGranularity = <T extends { month: string; [key: string]: any }>(
+  monthlyData: T[],
+  granularity: ChartGranularity,
+  startDate: string,
+  endDate: string
+): (Omit<T, 'month'> & { period: string })[] => {
+  if (granularity === 'month') {
+    // Keep as-is, just rename 'month' to 'period'
+    return monthlyData.map(item => {
+      const { month, ...rest } = item;
+      return { ...rest, period: month } as any;
+    });
+  }
+  
+  if (granularity === 'year') {
+    // Group by year
+    const yearMap = new Map<string, any>();
+    
+    monthlyData.forEach(item => {
+      const year = item.month.split('-')[0];
+      
+      if (!yearMap.has(year)) {
+        const { month, ...rest } = item;
+        yearMap.set(year, { ...rest, period: year });
+      } else {
+        const existing = yearMap.get(year);
+        const { month, ...rest } = item;
+        
+        // Sum up numeric values
+        Object.keys(rest).forEach(key => {
+          if (typeof rest[key] === 'number') {
+            existing[key] = (existing[key] || 0) + rest[key];
+          }
+        });
+      }
+    });
+    
+    return Array.from(yearMap.values()).sort((a, b) => a.period.localeCompare(b.period));
+  }
+  
+  if (granularity === 'day') {
+    // Expand monthly data to daily data
+    // Since backend only provides monthly aggregates, we'll distribute evenly
+    // For a more accurate implementation, backend should support daily granularity
+    const result: any[] = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Get monthly data as a map
+    const monthlyMap = new Map<string, T>();
+    monthlyData.forEach(item => {
+      monthlyMap.set(item.month, item);
+    });
+    
+    // Generate daily entries
+    const current = new Date(start);
+    while (current <= end) {
+      const monthKey = current.toISOString().slice(0, 7); // yyyy-MM
+      const dayKey = current.toISOString().slice(0, 10); // yyyy-MM-dd
+      
+      const monthData = monthlyMap.get(monthKey);
+      
+      if (monthData) {
+        // Calculate number of days in this month
+        const daysInMonth = new Date(
+          current.getFullYear(),
+          current.getMonth() + 1,
+          0
+        ).getDate();
+        
+        const { month, ...rest } = monthData;
+        const dailyData: any = { period: dayKey };
+        
+        // Divide monthly values by days in month
+        Object.keys(rest).forEach(key => {
+          if (typeof rest[key] === 'number') {
+            dailyData[key] = Math.round(rest[key] / daysInMonth);
+          } else {
+            dailyData[key] = rest[key];
+          }
+        });
+        
+        result.push(dailyData);
+      } else {
+        // No data for this day, use zeros
+        const { month, ...template } = monthlyData[0] || {};
+        const emptyData: any = { period: dayKey };
+        
+        if (template) {
+          Object.keys(template).forEach(key => {
+            emptyData[key] = typeof template[key] === 'number' ? 0 : null;
+          });
+        }
+        
+        result.push(emptyData);
+      }
+      
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return result;
+  }
+  
+  return monthlyData.map(item => {
+    const { month, ...rest } = item;
+    return { ...rest, period: month } as any;
+  });
+};
+
+/**
+ * Format chart label based on granularity
+ */
+export const formatChartLabel = (period: string, granularity: ChartGranularity): string => {
+  if (granularity === 'day') {
+    // yyyy-MM-dd -> dd/MM
+    const [year, month, day] = period.split('-');
+    return `${day}/${month}`;
+  }
+  
+  if (granularity === 'month') {
+    // yyyy-MM -> MM/yyyy
+    const [year, month] = period.split('-');
+    return `${month}/${year}`;
+  }
+  
+  if (granularity === 'year') {
+    // yyyy -> yyyy
+    return period;
+  }
+  
+  return period;
+};
+
+/**
+ * Get chart title based on granularity
+ */
+export const getChartTitle = (granularity: ChartGranularity): string => {
+  switch (granularity) {
+    case 'day':
+      return 'Biểu đồ doanh thu theo ngày';
+    case 'month':
+      return 'Biểu đồ doanh thu theo tháng';
+    case 'year':
+      return 'Biểu đồ doanh thu theo năm';
+    default:
+      return 'Biểu đồ doanh thu';
+  }
 };

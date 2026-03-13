@@ -5,7 +5,7 @@ import Modal from "@/components/ui/modal"
 import { Button } from "@/components/ui/button"
 import DiscussionSection from "../../student/course/DiscussionSection"
 import { useAuth } from "@/context/auth-context/useAuth"
-import quizApi from "@/services/api/student/quizApi"
+import * as quizApi from "@/services/api/student/quizApi"
 import assignmentApi from "@/services/api/student/assignmentApi"
 import courseEnrollmentApi from "@/services/api/student/courseEnrollmentApi"
 import { getUnreadCount } from "@/services/api/quizDiscussionApi"
@@ -61,7 +61,7 @@ const ClassDiscussionModal: React.FC<ClassDiscussionModalProps> = ({
       ])
 
       // Extract lessons from sections
-      const allLessons = sections.flatMap(section => 
+      const allLessons = sections.flatMap(section =>
         section.lessons ? Array.from(section.lessons) : []
       )
 

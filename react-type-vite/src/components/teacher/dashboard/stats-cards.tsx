@@ -7,7 +7,7 @@ import { useAuth } from "../../../context/auth-context/useAuth"
 import { getTeacherByUserId } from "../../../services/api/teacher/teacherApi"
 import { getTeacherRevenue } from "../../../services/api/teacher/revenueApi"
 import { getTeacherStatistics } from "../../../services/api/teacher/teacherStatisticsApi"
-import type { TeacherRevenueResponse } from "../../../services/api/teacher/revenueApi"
+import type { TeacherRevenueResponse } from "../../../services/api/response/revenueResponse"
 import type { TeacherPublicStatisticsResponse } from "../../../services/api/teacher/teacherStatisticsApi"
 
 const StatsCards: React.FC = () => {
@@ -27,14 +27,14 @@ const StatsCards: React.FC = () => {
         console.log("Stats: Loading data for user:", user.id)
         const teacherData = await getTeacherByUserId(user.id)
         console.log("Stats: Teacher data:", teacherData)
-        
+
         const [revenueData, statsData] = await Promise.all([
           getTeacherRevenue(),
           getTeacherStatistics(teacherData.teacherId),
         ])
         console.log("Stats: Revenue data:", revenueData)
         console.log("Stats: Statistics data:", statsData)
-        
+
         setRevenue(revenueData)
         setStats(statsData)
       } catch (error) {

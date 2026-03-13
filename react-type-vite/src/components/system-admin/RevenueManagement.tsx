@@ -25,10 +25,12 @@ import {
   getSystemRevenue,
   getAllTeachersRevenue,
   getAllCoursesRevenue,
-  type SystemRevenueResponse,
-  type TeacherRevenueResponse,
-  type CourseRevenueDetail,
 } from "../../services/api/superadmin/revenueApi";
+import type {
+  SystemRevenueResponse,
+  TeacherRevenueResponse,
+  CourseRevenueDetail,
+} from "@/services/api/response/revenueResponse";
 
 type TabType = "system" | "teachers" | "courses";
 
@@ -39,10 +41,10 @@ const RevenueManagement: React.FC = () => {
 
   // System revenue data
   const [systemRevenue, setSystemRevenue] = useState<SystemRevenueResponse | null>(null);
-  
+
   // Teachers revenue data
   const [teachersRevenue, setTeachersRevenue] = useState<TeacherRevenueResponse[]>([]);
-  
+
   // Courses revenue data
   const [coursesRevenue, setCoursesRevenue] = useState<CourseRevenueDetail[]>([]);
 
@@ -51,7 +53,7 @@ const RevenueManagement: React.FC = () => {
     const loadData = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         if (activeTab === "system") {
           const data = await getSystemRevenue();
@@ -116,10 +118,9 @@ const RevenueManagement: React.FC = () => {
                 onClick={() => setActiveTab(tab.key)}
                 className={`
                   py-4 px-6 text-sm font-medium border-b-2 transition-colors
-                  ${
-                    activeTab === tab.key
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ${activeTab === tab.key
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }
                 `}
               >
@@ -265,10 +266,10 @@ const TeachersRevenueTab: React.FC<{
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topTeachers}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="teacherName" 
-                angle={-45} 
-                textAnchor="end" 
+              <XAxis
+                dataKey="teacherName"
+                angle={-45}
+                textAnchor="end"
                 height={100}
               />
               <YAxis />

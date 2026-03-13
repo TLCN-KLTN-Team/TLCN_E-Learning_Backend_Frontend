@@ -8,53 +8,49 @@ import type { QuizResponse } from "../response/quizResponse"
 
 const QUIZ_API_BASE = "/course-management/student/quizzes"
 
-export const quizApi = {
-  getQuizDetail: async (quizId: number): Promise<QuizResponse> => {
-    const response = await axiosInstance.get<ApiResponse<QuizResponse>>(
-      `${QUIZ_API_BASE}/${quizId}`
-    )
-    return response.data.result
-  },
-
-  getQuizAttemptHistory: async (quizId: number): Promise<QuizAttemptHistoryResponse[]> => {
-    const response = await axiosInstance.get<ApiResponse<QuizAttemptHistoryResponse[]>>(
-      `${QUIZ_API_BASE}/${quizId}/attempts`
-    )
-    return response.data.result
-  },
-
-  startQuizAttempt: async (quizId: number): Promise<{ attemptId: number }> => {
-    const response = await axiosInstance.post<ApiResponse<{ attemptId: number }>>(
-      `${QUIZ_API_BASE}/${quizId}/start`
-    )
-    return response.data.result
-  },
-
-  submitQuizAttempt: async (
-    quizId: number, 
-    data: QuizAttemptRequest
-  ): Promise<QuizAttemptResponse> => {
-    const response = await axiosInstance.post<ApiResponse<QuizAttemptResponse>>(
-      `${QUIZ_API_BASE}/${quizId}/submit`,
-      data
-    )
-    return response.data.result
-  },
-
-  getAttemptResult: async (attemptId: number): Promise<QuizAttemptResponse> => {
-    const response = await axiosInstance.get<ApiResponse<QuizAttemptResponse>>(
-      `${QUIZ_API_BASE}/attempts/${attemptId}`
-    )
-    return response.data.result
-  },
-
-  // Get all quizzes for a class (for teacher discussion view)
-  getQuizzesByClass: async (classId: number): Promise<QuizResponse[]> => {
-    const response = await axiosInstance.get<ApiResponse<QuizResponse[]>>(
-      `/course-management/teacher/quizzes/class/${classId}`
-    )
-    return response.data.result
-  }
+export const getQuizDetail = async (quizId: number): Promise<QuizResponse> => {
+  const response = await axiosInstance.get<ApiResponse<QuizResponse>>(
+    `${QUIZ_API_BASE}/${quizId}`
+  )
+  return response.data.result
 }
 
-export default quizApi
+export const getQuizAttemptHistory = async (quizId: number): Promise<QuizAttemptHistoryResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<QuizAttemptHistoryResponse[]>>(
+    `${QUIZ_API_BASE}/${quizId}/attempts`
+  )
+  return response.data.result
+}
+
+export const startQuizAttempt = async (quizId: number): Promise<{ attemptId: number }> => {
+  const response = await axiosInstance.post<ApiResponse<{ attemptId: number }>>(
+    `${QUIZ_API_BASE}/${quizId}/start`
+  )
+  return response.data.result
+}
+
+export const submitQuizAttempt = async (
+  quizId: number,
+  data: QuizAttemptRequest
+): Promise<QuizAttemptResponse> => {
+  const response = await axiosInstance.post<ApiResponse<QuizAttemptResponse>>(
+    `${QUIZ_API_BASE}/${quizId}/submit`,
+    data
+  )
+  return response.data.result
+}
+
+export const getAttemptResult = async (attemptId: number): Promise<QuizAttemptResponse> => {
+  const response = await axiosInstance.get<ApiResponse<QuizAttemptResponse>>(
+    `${QUIZ_API_BASE}/attempts/${attemptId}`
+  )
+  return response.data.result
+}
+
+// Get all quizzes for a class (for teacher discussion view)
+export const getQuizzesByClass = async (classId: number): Promise<QuizResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<QuizResponse[]>>(
+    `/course-management/teacher/quizzes/class/${classId}`
+  )
+  return response.data.result
+}

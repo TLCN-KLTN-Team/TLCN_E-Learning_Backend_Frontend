@@ -6,36 +6,7 @@ import type { ApiResponse } from "../response/apiResponse";
  * Handles all revenue-related endpoints for teachers
  */
 
-// ==================== Types ====================
-
-export interface CourseRevenueDetail {
-  courseId: string;
-  courseName: string;
-  courseThumbnail: string;
-  totalSales: number;
-  totalStudents: number;
-  averageRating: number;
-  revenue: number;
-}
-
-export interface MonthlyRevenueDetail {
-  month: string; // Format: "yyyy-MM"
-  revenue: number;
-  orderCount: number;
-}
-
-export interface TeacherRevenueResponse {
-  totalRevenue: number;
-  totalAccrued: number;
-  totalSettled: number;
-  totalPending: number;
-  totalCoursesSold: number;
-  totalStudents: number;
-  totalOrders: number;
-  sharePercentage: number;
-  courseRevenueDetails: CourseRevenueDetail[];
-  monthlyRevenueDetails: MonthlyRevenueDetail[];
-}
+import type { TeacherRevenueResponse } from "../response/revenueResponse";
 
 // ==================== API Functions ====================
 

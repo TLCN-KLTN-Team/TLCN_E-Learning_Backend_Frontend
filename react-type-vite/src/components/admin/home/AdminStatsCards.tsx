@@ -7,7 +7,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 
 const AdminStatsCards: React.FC = () => {
@@ -120,9 +120,8 @@ const AdminStatsCards: React.FC = () => {
                     <TrendingDown className="w-3 h-3 text-red-500" />
                   )}
                   <span
-                    className={`text-xs font-medium ${
-                      stat.trending === "up" ? "text-green-600" : "text-red-600"
-                    }`}
+                    className={`text-xs font-medium ${stat.trending === "up" ? "text-green-600" : "text-red-600"
+                      }`}
                   >
                     {stat.change}
                   </span>

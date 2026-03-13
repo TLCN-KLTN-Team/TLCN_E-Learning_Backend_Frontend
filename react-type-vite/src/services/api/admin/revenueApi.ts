@@ -1,43 +1,7 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
 
-/**
- * Admin Revenue API
- * Handles all revenue-related endpoints for educational unit admins
- */
-
-// ==================== Types ====================
-
-export interface TeacherRevenueDetail {
-  teacherId: string;
-  teacherName: string;
-  courseCount: number;
-  studentCount: number;
-  averageRating: number;
-  revenue: number;
-}
-
-export interface MonthlyRevenueDetail {
-  month: string; // Format: "yyyy-MM"
-  revenue: number;
-  orderCount: number;
-}
-
-export interface AdminRevenueResponse {
-  educationalUnitId: string;
-  educationalUnitName: string;
-  totalRevenue: number;
-  totalAccrued: number;
-  totalSettled: number;
-  totalPending: number;
-  totalTeachers: number;
-  totalCourses: number;
-  totalStudents: number;
-  totalOrders: number;
-  sharePercentage: number;
-  teacherRevenueDetails: TeacherRevenueDetail[];
-  monthlyRevenueDetails: MonthlyRevenueDetail[];
-}
+import type { AdminRevenueResponse } from "../response/revenueResponse";
 
 // ==================== API Functions ====================
 
