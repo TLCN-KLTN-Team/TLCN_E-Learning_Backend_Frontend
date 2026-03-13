@@ -13,7 +13,8 @@ import {
 import { Users, BookOpen, Loader2 } from "lucide-react";
 import type { TimeRange } from "@/types/revenue.types";
 import { TIME_RANGE_OPTIONS } from "@/types/revenue.types";
-import { getAllTeachersRevenue, getAllTeachersRevenueByDateRange, type TeacherRevenueResponse } from "@/services/api/superadmin/revenueApi";
+import { getAllTeachersRevenue, getAllTeachersRevenueByDateRange } from "@/services/api/superadmin/revenueApi";
+import type { TeacherRevenueResponse } from "@/services/api/response/revenueResponse";
 import DateRangePicker from "@/components/shared/DateRangePicker";
 import MonthYearPicker from "@/components/shared/MonthYearPicker";
 import { getDateRange, getCurrentMonth, getCurrentYear } from "@/utils/revenueUtils";
@@ -38,7 +39,7 @@ const TeacherRevenueTab: React.FC = () => {
       setError(null);
       try {
         let data: TeacherRevenueResponse[];
-        
+
         if (timeRange === "all") {
           data = await getAllTeachersRevenue();
         } else if (timeRange === "custom") {
@@ -50,7 +51,7 @@ const TeacherRevenueTab: React.FC = () => {
           const { startDate, endDate } = getDateRange(timeRange);
           data = await getAllTeachersRevenueByDateRange(startDate, endDate);
         }
-        
+
         setTeachersData(data);
         console.log("Teachers Revenue Data:", data);
       } catch (err) {
@@ -122,7 +123,7 @@ const TeacherRevenueTab: React.FC = () => {
             ))}
           </select>
         </div>
-        
+
         {/* Month Picker */}
         {timeRange === "select-month" && (
           <MonthYearPicker
@@ -131,7 +132,7 @@ const TeacherRevenueTab: React.FC = () => {
             onChange={setSelectedMonth}
           />
         )}
-        
+
         {/* Year Picker */}
         {timeRange === "select-year" && (
           <MonthYearPicker
@@ -140,7 +141,7 @@ const TeacherRevenueTab: React.FC = () => {
             onChange={setSelectedYear}
           />
         )}
-        
+
         {/* Custom Date Range Picker */}
         {timeRange === "custom" && (
           <DateRangePicker

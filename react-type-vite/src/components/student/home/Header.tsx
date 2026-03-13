@@ -15,13 +15,27 @@ import {
   BookOpen,
   Heart,
   LibraryBig,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
+import * as notificationApi from "@/services/api/notificationApi";
 import { toast } from "react-toastify";
 import lightLogo from "@/assets/open-edu-light.png";
 import darkLogo from "@/assets/open-edu-dark.png";
 
 import { navigation } from "./data/pageNavigations";
+
+interface Notification {
+  id?: string;
+  senderId?: string;
+  recipientId: string;
+  content: string;
+  message?: string;
+  type: string;
+  isRead: boolean;
+  createdAt?: string;
+  link?: string;
+}
 
 interface MenuItem {
   name: string;
@@ -43,13 +57,17 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const { theme } = useTheme();
   const profileRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Close profile dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -58,11 +76,77 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
       ) {
         setIsProfileOpen(false);
       }
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Fetch notifications history + SSE subscription
+  useEffect(() => {
+    if (!user?.id) return;
+
+    notificationApi.getUserNotifications(user.id)
+      .then(res => {
+        // @ts-ignore
+        const data: Notification[] = res.data?.result || res.data || [];
+        setNotifications(data);
+        setUnreadCount(data.filter(n => !n.isRead).length);
+      })
+      .catch(err => console.error("Failed to fetch notifications", err));
+
+    const eventSource = notificationApi.subscribeToNotifications(user.id);
+    eventSource.onopen = () => console.log("SSE Connected");
+
+    const makeNotif = (raw: any): Notification => ({
+      recipientId: raw.userId || user.id,
+      content: raw.message || raw.content || "",
+      type: raw.type || "NOTIFICATION",
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      link: raw.link,
+    });
+
+    eventSource.addEventListener("REFUND_REQUESTED", (event) => {
+      const notifObj = makeNotif(JSON.parse(event.data));
+      setNotifications(prev => [notifObj, ...prev]);
+      setUnreadCount(prev => prev + 1);
+      toast.info(`Hoàn tiền: ${notifObj.content}`);
+    });
+
+    eventSource.addEventListener("REFUND_APPROVED", (event) => {
+      const notifObj = makeNotif(JSON.parse(event.data));
+      setNotifications(prev => [notifObj, ...prev]);
+      setUnreadCount(prev => prev + 1);
+      toast.success(`Hoàn tiền được duyệt: ${notifObj.content}`);
+    });
+
+    eventSource.addEventListener("PAYMENT_SUCCESS", (event) => {
+      const notifObj = makeNotif(JSON.parse(event.data));
+      setNotifications(prev => [notifObj, ...prev]);
+      setUnreadCount(prev => prev + 1);
+      toast.success(`Thanh toán thành công: ${notifObj.content}`);
+    });
+
+    eventSource.addEventListener("NOTIFICATION", (event) => {
+      const notifObj = makeNotif(JSON.parse(event.data));
+      setNotifications(prev => [notifObj, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    });
+
+    eventSource.onerror = (err) => {
+      console.error("SSE Error", err);
+      eventSource.close();
+    };
+
+    return () => { eventSource.close(); };
+  }, [user?.id]);
 
   // Handle scroll effect
   useEffect(() => {
@@ -86,9 +170,8 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
 
   // Generate avatar initials from firstName and lastName
   const getAvatarInitials = (firstName: string, lastName: string): string => {
-    const initials = `${firstName?.charAt(0) || ""}${
-      lastName?.charAt(0) || ""
-    }`;
+    const initials = `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""
+      }`;
     return initials.toUpperCase() || "??";
   };
 
@@ -106,6 +189,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
         { name: "Giỏ hàng của tôi", icon: ShoppingCart, href: "/cart" },
         { name: "Danh sách yêu thích", icon: Heart, href: "/wishlist" },
         { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
+        { name: "Lịch sử đơn hàng", icon: ShoppingCart, href: "/purchase-history" },
       ],
     },
     {
@@ -135,6 +219,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
         },
         { name: "Gói đăng ký", icon: CreditCard, href: "/subscriptions" },
         { name: "Lịch sử mua", icon: ShoppingCart, href: "/purchase-history" },
+        { name: "Ưu đãi Udemy", icon: Settings, href: "/offers" },
       ],
     },
     {
@@ -153,13 +238,12 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
-        variant === 'course-detail'
-          ? 'bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800'
-          : isScrolled
+      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${variant === 'course-detail'
+        ? 'bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800'
+        : isScrolled
           ? "bg-background backdrop-blur-md shadow-bs border-b border-border"
           : "bg-background border-b border-border/50"
-      }`}
+        }`}
     >
       <div className="px-4">
         <div className="flex items-center justify-between h-16 lg:h-20">
@@ -206,11 +290,10 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                           <NavLink
                             key={feature.name}
                             to={feature.href}
-                            className={`block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200 font-medium ${
-                              index > 0
-                                ? "border-t border-gray-100 dark:border-gray-700"
-                                : ""
-                            }`}
+                            className={`block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200 font-medium ${index > 0
+                              ? "border-t border-gray-100 dark:border-gray-700"
+                              : ""
+                              }`}
                           >
                             {feature.name}
                           </NavLink>
@@ -255,6 +338,110 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                 <ShoppingCart className="w-5 h-5" />
               </button>
             )}
+
+            {/* Notification Bell - Desktop */}
+            {user && (
+              <div className="relative" ref={modalRef}>
+                <button
+                  onClick={() => {
+                    setIsNotificationOpen(!isNotificationOpen);
+                    setIsProfileOpen(false);
+                  }}
+                  className="relative p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-4 h-4 md:w-5 md:h-5 text-gray-600 dark:text-gray-300" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                  )}
+                </button>
+
+                {isNotificationOpen && (
+                  <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-[80vh] flex flex-col">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                      <div className="flex justify-between items-center">
+                        <h6 className="font-semibold m-0 text-gray-900 dark:text-gray-100">
+                          Thông báo{" "}
+                          {unreadCount > 0 && (
+                            <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
+                              {unreadCount} mới
+                            </span>
+                          )}
+                        </h6>
+                        <button
+                          onClick={() => {
+                            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                            setUnreadCount(0);
+                          }}
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          Đọc tất cả
+                        </button>
+                      </div>
+                    </div>
+                    <div className="overflow-y-auto flex-1">
+                      <ul className="list-none m-0 p-0">
+                        {notifications.length === 0 ? (
+                          <li className="p-4 text-center text-gray-500 text-sm">Chưa có thông báo</li>
+                        ) : (
+                          notifications.slice(0, 20).map((notif, idx) => (
+                            <li key={notif.id ?? idx}>
+                              <div
+                                className={`p-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 flex cursor-pointer ${
+                                  !notif.isRead ? "bg-blue-50 dark:bg-blue-950/30" : ""
+                                }`}
+                                onClick={() => {
+                                  if (!notif.isRead) {
+                                    setNotifications(prev =>
+                                      prev.map((n, i) => i === idx ? { ...n, isRead: true } : n)
+                                    );
+                                    setUnreadCount(prev => Math.max(0, prev - 1));
+                                  }
+                                  if (notif.link) navigate(notif.link);
+                                  setIsNotificationOpen(false);
+                                }}
+                              >
+                                <div className="mr-3 flex-shrink-0">
+                                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600">
+                                    <BellRing size={20} />
+                                  </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm m-0 text-gray-800 dark:text-gray-200">
+                                    {notif.content}
+                                  </p>
+                                  <div className="flex justify-between items-center mt-1">
+                                    <span className="text-xs text-gray-500">
+                                      {notif.createdAt
+                                        ? new Date(notif.createdAt).toLocaleString("vi-VN")
+                                        : "Vừa xong"}
+                                    </span>
+                                    {notif.link && (
+                                      <a href={notif.link} className="text-xs text-blue-600 underline ml-2">
+                                        Xem
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                    </div>
+                    <div className="p-3 text-center border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+                      <button
+                        onClick={() => { navigate("/notifications"); setIsNotificationOpen(false); }}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        Xem tất cả thông báo
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {user ? (
               // User Profile Dropdown
               <div className="relative" ref={profileRef}>
@@ -451,6 +638,20 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                 aria-label="Cart"
               >
                 <ShoppingCart className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Notification Bell - Mobile */}
+            {user && (
+              <button
+                onClick={() => navigate("/notifications")}
+                className="relative p-2 text-foreground hover:text-bs-primary transition-colors"
+                aria-label="Notifications"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                )}
               </button>
             )}
 

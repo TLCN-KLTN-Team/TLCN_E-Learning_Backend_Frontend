@@ -85,10 +85,7 @@ export const bulkImportExperts = async (
             `${BASE_URL}/${educationalUnitId}/experts/bulk-import`,
             { experts }
         );
-        return response.data; // Assuming API returns ApiResponse<BulkImportResult> and axios interceptor returns data.result or data directly. 
-        // Based on teacherApi, it returns response.data.result. 
-        // But getExperts returns response.data which is ApiResponse. 
-        // Let's check axiosInstance.
+        return response.data;
     } catch (error: any) {
         console.error("Bulk import error:", error);
         throw error;

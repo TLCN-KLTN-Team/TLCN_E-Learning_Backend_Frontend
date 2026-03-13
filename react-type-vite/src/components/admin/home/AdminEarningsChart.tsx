@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
-import educationUnitApi from "../../../services/api/admin/educationUnitApi"
+import * as educationUnitApi from "../../../services/api/admin/educationUnitApi"
 
 const AdminEarningsChart: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)

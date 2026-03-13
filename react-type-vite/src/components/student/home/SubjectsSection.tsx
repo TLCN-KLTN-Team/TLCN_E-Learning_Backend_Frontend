@@ -44,9 +44,8 @@ const SubjectsSection = ({
         {/* Section Header */}
         <div className="mb-8">
           <h2
-            className={`text-2xl lg:text-4xl font-bold mb-2 ${
-              theme === "dark" ? "text-white" : "text-gray-900"
-            }`}
+            className={`text-2xl lg:text-4xl font-bold mb-2 ${theme === "dark" ? "text-white" : "text-gray-900"
+              }`}
           >
             {title || "Lĩnh vực bạn sẽ học tiếp theo"}
           </h2>
@@ -54,16 +53,14 @@ const SubjectsSection = ({
           <div className="flex items-center justify-between mt-6">
             <div>
               <p
-                className={`text-lg lg:text-xl font-semibold ${
-                  theme === "dark" ? "text-gray-200" : "text-gray-700"
-                }`}
+                className={`text-lg lg:text-xl font-semibold ${theme === "dark" ? "text-gray-200" : "text-gray-700"
+                  }`}
               >
                 {subtitle || "Được đề xuất cho bạn"}
               </p>
               <p
-                className={`text-sm mt-1 ${
-                  theme === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}
+                className={`text-sm mt-1 ${theme === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}
               >
                 Khám phá các khóa học phù hợp với bạn
               </p>
@@ -73,22 +70,20 @@ const SubjectsSection = ({
             <div className="hidden sm:flex gap-3">
               <button
                 onClick={scrollPrev}
-                className={`p-3 rounded-full border transition-all duration-200 hover:scale-105 ${
-                  theme === "dark"
+                className={`p-3 rounded-full border transition-all duration-200 hover:scale-105 ${theme === "dark"
                     ? "border-gray-600 bg-gray-800 hover:bg-gray-700 text-white"
                     : "border-gray-200 bg-white hover:bg-gray-50 text-gray-600 shadow-sm hover:shadow-md"
-                }`}
+                  }`}
                 aria-label="Previous courses"
               >
                 <ChevronLeftIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={scrollNext}
-                className={`p-3 rounded-full border transition-all duration-200 hover:scale-105 ${
-                  theme === "dark"
+                className={`p-3 rounded-full border transition-all duration-200 hover:scale-105 ${theme === "dark"
                     ? "border-gray-600 bg-gray-800 hover:bg-gray-700 text-white"
                     : "border-gray-200 bg-white hover:bg-gray-50 text-gray-600 shadow-sm hover:shadow-md"
-                }`}
+                  }`}
                 aria-label="Next courses"
               >
                 <ChevronRightIcon className="w-5 h-5" />
@@ -115,9 +110,8 @@ const SubjectsSection = ({
         {/* Mobile scroll indicator */}
         <div className="flex justify-center mt-6 sm:hidden">
           <p
-            className={`text-sm ${
-              theme === "dark" ? "text-gray-400" : "text-gray-500"
-            } flex items-center gap-2`}
+            className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"
+              } flex items-center gap-2`}
           >
             <span>←</span>
             <span>Vuốt để xem thêm</span>

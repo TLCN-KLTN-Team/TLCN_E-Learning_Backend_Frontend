@@ -28,13 +28,11 @@ const CourseDetail = ({ course, variant = "carousel" }: CourseDetailProps) => {
   return (
     <div
       onClick={handleCourseClick}
-      className={`${widthClass} ${
-        theme === "dark" ? "bg-gray-800" : "bg-white"
-      } rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border ${
-        theme === "dark"
+      className={`${widthClass} ${theme === "dark" ? "bg-gray-800" : "bg-white"
+        } rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border ${theme === "dark"
           ? "border-gray-700 hover:border-gray-600"
           : "border-gray-100 hover:border-gray-200"
-      }`}
+        }`}
     >
       {/* Thumbnail Section */}
       <div className="relative w-full h-40 overflow-hidden">
@@ -70,18 +68,16 @@ const CourseDetail = ({ course, variant = "carousel" }: CourseDetailProps) => {
       <div className="p-4 space-y-2">
         {/* Title */}
         <h3
-          className={`text-base font-semibold leading-snug line-clamp-2 min-h-[2rem] ${
-            theme === "dark" ? "text-white" : "text-gray-900"
-          }`}
+          className={`text-base font-semibold leading-snug line-clamp-2 min-h-[2rem] ${theme === "dark" ? "text-white" : "text-gray-900"
+            }`}
         >
           {course.courseName}
         </h3>
 
         {/* Instructor */}
         <p
-          className={`text-sm font-medium ${
-            theme === "dark" ? "text-gray-300" : "text-gray-600"
-          }`}
+          className={`text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-600"
+            }`}
         >
           {course.authorName || "Đang cập nhật"}
         </p>
@@ -95,11 +91,10 @@ const CourseDetail = ({ course, variant = "carousel" }: CourseDetailProps) => {
             {[...Array(5)].map((_, i) => (
               <svg
                 key={i}
-                className={`w-3.5 h-3.5 ${
-                  i < Math.floor(course.rating)
+                className={`w-3.5 h-3.5 ${i < Math.floor(course.rating)
                     ? "fill-current"
                     : "fill-gray-300"
-                }`}
+                  }`}
                 viewBox="0 0 20 20"
               >
                 <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
@@ -107,9 +102,8 @@ const CourseDetail = ({ course, variant = "carousel" }: CourseDetailProps) => {
             ))}
           </div>
           <span
-            className={`text-xs ${
-              theme === "dark" ? "text-gray-400" : "text-gray-500"
-            }`}
+            className={`text-xs ${theme === "dark" ? "text-gray-400" : "text-gray-500"
+              }`}
           >
             ({course.reviewCount.toLocaleString()})
           </span>
@@ -118,9 +112,8 @@ const CourseDetail = ({ course, variant = "carousel" }: CourseDetailProps) => {
         {/* Price Section */}
         <div className="flex items-center gap-2 pt-1">
           <span
-            className={`text-lg font-bold ${
-              theme === "dark" ? "text-white" : "text-gray-900"
-            }`}
+            className={`text-lg font-bold ${theme === "dark" ? "text-white" : "text-gray-900"
+              }`}
           >
             {course.coursePrice}
           </span>

@@ -32,7 +32,7 @@ import QuizDetailModal from "@/components/student/course/QuizDetailModal";
 import AssignmentDetailModal from "@/components/student/course/AssignmentDetailModal";
 import LessonDiscussionModal from "@/components/student/course/LessonDiscussionModal";
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
-import progressApi from "@/services/api/student/progressApi";
+import * as progressApi from "@/services/api/student/progressApi";
 import {
   fixCloudinaryVideoUrl,
   isYouTubeUrl,
@@ -406,8 +406,8 @@ const CourseDetail = () => {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                 >
                   <tab.icon className="w-4 h-4 mr-2" />
@@ -541,8 +541,8 @@ const CourseDetail = () => {
                                             {/* Lesson Header */}
                                             <div
                                               className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${expandedLessonId === lesson.id
-                                                  ? "bg-blue-100 border-blue-400 shadow-md"
-                                                  : "hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm"
+                                                ? "bg-blue-100 border-blue-400 shadow-md"
+                                                : "hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm"
                                                 } ${isCompleted
                                                   ? "border-green-400 bg-green-50"
                                                   : ""
@@ -554,9 +554,9 @@ const CourseDetail = () => {
                                                 ) : (
                                                   <Circle
                                                     className={`w-5 h-5 ${expandedLessonId ===
-                                                        lesson.id
-                                                        ? "text-blue-600"
-                                                        : "text-gray-400"
+                                                      lesson.id
+                                                      ? "text-blue-600"
+                                                      : "text-gray-400"
                                                       }`}
                                                   />
                                                 )}
@@ -906,8 +906,8 @@ const CourseDetail = () => {
                                           <div
                                             key={quiz.id}
                                             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${isCompleted
-                                                ? "border-green-400 bg-green-50"
-                                                : "border-purple-200 bg-purple-50 hover:bg-purple-100"
+                                              ? "border-green-400 bg-green-50"
+                                              : "border-purple-200 bg-purple-50 hover:bg-purple-100"
                                               }`}
                                           >
                                             <div className="flex-shrink-0">
@@ -934,8 +934,8 @@ const CourseDetail = () => {
                                             </div>
                                             <button
                                               className={`px-3 py-1.5 text-sm rounded flex items-center gap-1 transition-colors ${isCompleted
-                                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                                  : "bg-purple-600 text-white hover:bg-purple-700"
+                                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                : "bg-purple-600 text-white hover:bg-purple-700"
                                                 }`}
                                               onClick={() => {
                                                 setSelectedQuizId(quiz.id);
@@ -980,8 +980,8 @@ const CourseDetail = () => {
                                           <div
                                             key={assignment.id}
                                             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${isCompleted
-                                                ? "border-green-400 bg-green-50"
-                                                : "border-orange-200 bg-orange-50 hover:bg-orange-100"
+                                              ? "border-green-400 bg-green-50"
+                                              : "border-orange-200 bg-orange-50 hover:bg-orange-100"
                                               }`}
                                           >
                                             <div className="flex-shrink-0">
@@ -1012,8 +1012,8 @@ const CourseDetail = () => {
                                             </div>
                                             <button
                                               className={`px-3 py-1.5 text-sm rounded flex items-center gap-1 transition-colors ${isCompleted
-                                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                                  : "bg-orange-600 text-white hover:bg-orange-700"
+                                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                : "bg-orange-600 text-white hover:bg-orange-700"
                                                 }`}
                                               onClick={(e) => {
                                                 e.stopPropagation();

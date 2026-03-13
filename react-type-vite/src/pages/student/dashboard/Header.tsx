@@ -146,6 +146,13 @@ const Header = () => {
                 Khóa học của tôi
               </Link>
             </span>
+
+            <Link
+              to="/student/credit-transfers"
+              className="student-dashboard-nav-link px-3 py-2 text-md font-bold"
+            >
+              Quy đổi tín chỉ
+            </Link>
           </nav>
 
           {/* User Actions */}

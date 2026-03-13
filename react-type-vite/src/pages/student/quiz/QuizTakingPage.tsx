@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button"
 import type { QuizResponse } from "@/services/api/response/quizResponse"
 import type { QuestionResponse } from "@/services/api/response/questionResponse"
-import quizApi from "@/services/api/student/quizApi"
+import * as quizApi from "@/services/api/student/quizApi"
 import type { QuizAnswerSubmission } from "@/services/api/request/quizAttemptRequest"
 
 const QuizTakingPage: React.FC = () => {

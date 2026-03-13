@@ -48,9 +48,3 @@ export const isLessonCompleted = async (
   return response.data.result;
 };
 
-export default {
-  getClassProgress,
-  getCourseProgressDetail,
-  markLessonComplete,
-  isLessonCompleted,
-};

@@ -10,6 +10,7 @@ import {
   LogOut,
   X,
   UserCog,
+  Undo2,
 } from "lucide-react";
 import type React from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -59,6 +60,12 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
       path: "/system-admin/revenue",
     },
     {
+      id: "refunds",
+      label: "Yêu cầu hoàn tiền",
+      icon: Undo2,
+      path: "/system-admin/refunds",
+    },
+    {
       id: "edit-profile",
       label: "Chỉnh sửa hồ sơ",
       icon: UserCog,
@@ -89,9 +96,8 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 h-full w-64 bg-gray-900 text-white overflow-y-auto z-50 transform transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:static lg:block`}
+        className={`fixed left-0 top-0 h-full w-64 bg-gray-900 text-white overflow-y-auto z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0 lg:static lg:block`}
       >
         <div className="p-6">
           {/* Close button for mobile */}
@@ -129,11 +135,10 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
                       setIsSidebarOpen(false);
                     }
                   }}
-                  className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
-                    isActiveItem(item.path)
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                  }`}
+                  className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${isActiveItem(item.path)
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    }`}
                 >
                   <IconComponent className="mr-3 w-5 h-5" />
                   <span className="font-medium">{item.label}</span>

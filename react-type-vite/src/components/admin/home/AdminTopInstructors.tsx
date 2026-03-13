@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react"
-import educationUnitApi from "../../../services/api/admin/educationUnitApi"
+import * as educationUnitApi from "../../../services/api/admin/educationUnitApi"
 import { getPublishedCourses } from "../../../services/api/expert/expertPublishedCourseApi"
 import type { PublishedCourseResponse } from "../../../services/api/response/publishedCourseResponse"
 

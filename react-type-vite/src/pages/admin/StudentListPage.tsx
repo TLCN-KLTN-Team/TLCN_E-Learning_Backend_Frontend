@@ -27,7 +27,7 @@ import { toast } from "react-toastify";
 import StudentFormModal from "@/components/admin/student/StudentFormModal";
 import ImportStudentsModal from "@/components/admin/student/ImportStudentsModal";
 import * as studentApi from "@/services/api/admin/studentApi";
-import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { StudentResponse } from "@/services/api/response/studentResponse";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import type { PaginatedResponse } from "@/services/api/response/apiResponse";

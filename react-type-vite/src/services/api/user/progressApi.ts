@@ -5,9 +5,6 @@ import type { ApiResponse } from "../response/apiResponse";
 
 const API_PREFIX = "/course-management/user/progress";
 
-/**
- * Get progress stats for a published course (user's enrolled course)
- */
 export const getPublishedCourseProgress = async (
   publishedCourseId: number
 ): Promise<ProgressStatsResponse> => {
@@ -17,9 +14,6 @@ export const getPublishedCourseProgress = async (
   return response.data.result;
 };
 
-/**
- * Get detailed progress for a published course
- */
 export const getPublishedCourseProgressDetail = async (
   publishedCourseId: number
 ): Promise<CourseProgressDetailResponse> => {
@@ -29,9 +23,6 @@ export const getPublishedCourseProgressDetail = async (
   return response.data.result;
 };
 
-/**
- * Mark a lesson as complete
- */
 export const markLessonComplete = async (data: {
   lessonId: number;
   publishedCourseId: number;
@@ -39,9 +30,6 @@ export const markLessonComplete = async (data: {
   await axiosInstance.post(`${API_PREFIX}/lesson/complete`, data);
 };
 
-/**
- * Check if a lesson is completed
- */
 export const isLessonCompleted = async (
   lessonId: number,
   publishedCourseId: number
@@ -52,9 +40,4 @@ export const isLessonCompleted = async (
   return response.data.result;
 };
 
-export default {
-  getPublishedCourseProgress,
-  getPublishedCourseProgressDetail,
-  markLessonComplete,
-  isLessonCompleted,
-};
+

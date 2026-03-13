@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { QuizResponse } from "@/services/api/response/quizResponse"
-import quizApi from "@/services/api/student/quizApi"
+import * as quizApi from "@/services/api/student/quizApi"
 import type { QuizAttemptResponse } from "@/services/api/response/quizAttemptResponse"
 
 const QuizResultPage: React.FC = () => {

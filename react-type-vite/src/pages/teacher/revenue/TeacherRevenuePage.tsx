@@ -19,7 +19,8 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import { getTeacherRevenue, getTeacherRevenueByDateRange, type TeacherRevenueResponse } from "@/services/api/teacher/revenueApi";
+import { getTeacherRevenue, getTeacherRevenueByDateRange } from "@/services/api/teacher/revenueApi";
+import type { TeacherRevenueResponse, RefundDetail } from "@/services/api/response/revenueResponse";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import type { TimeRange } from "@/types/revenue.types";
 import { TIME_RANGE_OPTIONS } from "@/types/revenue.types";
@@ -30,7 +31,7 @@ import MonthYearPicker from "@/components/shared/MonthYearPicker";
 const getDateRange = (range: TimeRange, selectedMonth?: string, selectedYear?: string): { startDate: string; endDate: string } => {
   const end = new Date();
   const start = new Date();
-  
+
   switch (range) {
     case "today":
       // Same day
@@ -73,11 +74,11 @@ const getDateRange = (range: TimeRange, selectedMonth?: string, selectedYear?: s
       // For "all" or "custom", handled separately
       break;
   }
-  
+
   const formatDate = (date: Date): string => {
     return date.toISOString().split('T')[0];
   };
-  
+
   return {
     startDate: formatDate(start),
     endDate: formatDate(end)
@@ -89,12 +90,15 @@ interface TeacherRevenueData {
   totalAccrued: number;
   totalSettled: number;
   totalPending: number;
+  totalReversed: number;
   totalCoursesSold: number;
   totalStudents: number;
   totalOrders: number;
+  totalRefundedOrders: number;
   sharePercentage: number;
   courseRevenueDetails: CourseRevenueDetail[];
   monthlyRevenueDetails: MonthlyRevenueDetail[];
+  refundDetails: RefundDetail[];
 }
 
 interface CourseRevenueDetail {
@@ -142,9 +146,9 @@ const TeacherRevenuePage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       let response: TeacherRevenueResponse;
-      
+
       if (timeRange === "all") {
         response = await getTeacherRevenue();
       } else if (timeRange === "custom") {
@@ -156,7 +160,7 @@ const TeacherRevenuePage: React.FC = () => {
         const { startDate, endDate } = getDateRange(timeRange);
         response = await getTeacherRevenueByDateRange(startDate, endDate);
       }
-      
+
       console.log("=== REVENUE DATA DEBUG ===");
       console.log("Time range:", timeRange);
       console.log("Full response:", response);
@@ -249,7 +253,7 @@ const TeacherRevenuePage: React.FC = () => {
             ))}
           </select>
         </div>
-        
+
         {/* Month Picker */}
         {timeRange === "select-month" && (
           <div className="flex justify-end">
@@ -260,7 +264,7 @@ const TeacherRevenuePage: React.FC = () => {
             />
           </div>
         )}
-        
+
         {/* Year Picker */}
         {timeRange === "select-year" && (
           <div className="flex justify-end">
@@ -271,7 +275,7 @@ const TeacherRevenuePage: React.FC = () => {
             />
           </div>
         )}
-        
+
         {/* Custom Date Range Picker */}
         {timeRange === "custom" && (
           <div className="flex justify-end">
@@ -367,6 +371,46 @@ const TeacherRevenuePage: React.FC = () => {
         </div>
       </div>
 
+      {/* Refund Stats Card */}
+      {revenueData.totalReversed > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Thông tin hoàn tiền
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    Tổng tiền đã hoàn trả
+                  </p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatShortCurrency(revenueData.totalReversed)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formatCurrency(revenueData.totalReversed)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    Số đơn hàng hoàn tiền
+                  </p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {revenueData.totalRefundedOrders}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {((revenueData.totalRefundedOrders / revenueData.totalOrders) * 100).toFixed(1)}% tổng đơn hàng
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-red-100 p-3 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Revenue Chart */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -456,6 +500,105 @@ const TeacherRevenuePage: React.FC = () => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Refund Details Table */}
+      {revenueData.refundDetails && revenueData.refundDetails.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Chi tiết các đơn hàng hoàn tiền
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Khóa học
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Người mua
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Số tiền hoàn trả
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ngày hoàn tiền
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Trạng thái
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {revenueData.refundDetails.map((refund) => (
+                  <tr
+                    key={refund.orderItemId}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <img
+                          src={refund.courseThumbnail}
+                          alt={refund.courseName}
+                          className="w-12 h-12 rounded object-cover"
+                        />
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {refund.courseName}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Đơn hàng #{refund.orderId}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {refund.buyerName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Mã: {refund.buyerId}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-red-600">
+                        -{formatCurrency(refund.refundedAmount)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {refund.refundedAt
+                          ? new Date(refund.refundedAt).toLocaleDateString("vi-VN", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          refund.refundStatus === "REVERSED"
+                            ? "bg-orange-100 text-orange-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {refund.refundStatus === "REVERSED"
+                          ? "Đã hoàn tiền"
+                          : "Hoàn sau thanh toán"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Course Details Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">

@@ -6,7 +6,9 @@ import {
     Globe,
     X,
     Settings,
-    Tv
+    Tv,
+    BookOpen,
+    CheckCircle
 } from "lucide-react";
 import type React from "react";
 // import { useState } from "react"; // Removed unused import
@@ -53,7 +55,18 @@ const ExpertSidebar: React.FC<ExpertSidebarProps> = ({
             icon: Package,
             path: "/expert/published-courses",
         },
-        // Add other Expert specific menus here if needed in future
+        {
+            id: "equivalent-courses-list",
+            label: "Quản lý Quy đổi",
+            icon: BookOpen,
+            path: "/expert/equivalent-courses",
+        },
+        {
+            id: "credit-transfers",
+            label: "Phê duyệt Tín chỉ",
+            icon: CheckCircle,
+            path: "/expert/credit-transfers",
+        },
     ];
 
     const isActive = (path: string) => {

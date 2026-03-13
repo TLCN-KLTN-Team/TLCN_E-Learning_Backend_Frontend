@@ -25,7 +25,7 @@ import ImportExpertsModal from "@/components/admin/expert/ImportExpertsModal";
 import ExpertFormModal from "@/components/admin/expert/ExpertFormModal";
 import * as expertApi from "@/services/api/expert/expertApi";
 
-import educationUnitApi from "@/services/api/admin/educationUnitApi";
+import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { ExpertResponse } from "@/services/api/response/expertResponse";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 

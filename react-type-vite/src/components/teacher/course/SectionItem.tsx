@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { GripVertical, Edit, Trash, ChevronUp, ChevronDown, PlusCircle, BookOpen, AlertCircle, Eye } from "lucide-react"
+import { GripVertical, Edit, Trash, ChevronUp, ChevronDown, PlusCircle, BookOpen, Eye } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import LessonItem from "./LessonItem"
 import QuizItem from "./QuizItem"

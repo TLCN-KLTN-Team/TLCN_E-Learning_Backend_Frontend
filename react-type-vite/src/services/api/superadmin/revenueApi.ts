@@ -6,58 +6,11 @@ import type { ApiResponse } from "../response/apiResponse";
  * Handles all revenue-related endpoints for system administrators
  */
 
-// ==================== Types ====================
-
-export interface MonthlyRevenueDetail {
-  month: string; // Format: "yyyy-MM"
-  revenue: number;
-  orderCount: number;
-}
-
-export interface TeacherRevenueDetail {
-  teacherId: string;
-  teacherName: string;
-  revenue: number;
-  courseCount: number;
-  orderCount: number;
-}
-
-export interface CourseRevenueDetail {
-  courseId: string;
-  courseName: string;
-  courseThumbnail: string;
-  totalSales: number;
-  totalStudents: number;
-  averageRating: number;
-  revenue: number;
-}
-
-export interface SystemRevenueResponse {
-  totalRevenue: number;
-  totalAccrued: number;
-  totalSettled: number;
-  totalPending: number;
-  totalCoursesSold: number;
-  totalStudents: number;
-  totalOrders: number;
-  sharePercentage: number;
-  monthlyRevenueDetails: MonthlyRevenueDetail[];
-}
-
-export interface TeacherRevenueResponse {
-  teacherId?: string;
-  teacherName?: string;
-  totalRevenue: number;
-  totalAccrued: number;
-  totalSettled: number;
-  totalPending: number;
-  totalCoursesSold: number;
-  totalStudents: number;
-  totalOrders: number;
-  sharePercentage: number;
-  courseRevenueDetails: CourseRevenueDetail[];
-  monthlyRevenueDetails: MonthlyRevenueDetail[];
-}
+import type {
+  SystemRevenueResponse,
+  TeacherRevenueResponse,
+  CourseRevenueDetail
+} from "../response/revenueResponse";
 
 // ==================== API Functions ====================
 
@@ -129,15 +82,15 @@ export const getAllTeachersRevenueByDateRange = async (
 export const getAllCoursesRevenue = async (): Promise<CourseRevenueDetail[]> => {
   // Get all teachers revenue, then flatten their courseRevenueDetails
   const teachersRevenue = await getAllTeachersRevenue();
-  
+
   // Flatten all courses from all teachers
   const allCourses = teachersRevenue.flatMap(
     teacher => teacher.courseRevenueDetails || []
   );
-  
+
   // Group by courseId and aggregate
   const courseMap = new Map<string, CourseRevenueDetail>();
-  
+
   allCourses.forEach(course => {
     if (courseMap.has(course.courseId)) {
       const existing = courseMap.get(course.courseId)!;
@@ -150,7 +103,7 @@ export const getAllCoursesRevenue = async (): Promise<CourseRevenueDetail[]> => 
       courseMap.set(course.courseId, { ...course });
     }
   });
-  
+
   return Array.from(courseMap.values());
 };
 
@@ -166,15 +119,15 @@ export const getAllCoursesRevenueByDateRange = async (
 ): Promise<CourseRevenueDetail[]> => {
   // Get all teachers revenue by date range, then flatten their courseRevenueDetails
   const teachersRevenue = await getAllTeachersRevenueByDateRange(startDate, endDate);
-  
+
   // Flatten all courses from all teachers
   const allCourses = teachersRevenue.flatMap(
     teacher => teacher.courseRevenueDetails || []
   );
-  
+
   // Group by courseId and aggregate
   const courseMap = new Map<string, CourseRevenueDetail>();
-  
+
   allCourses.forEach(course => {
     if (courseMap.has(course.courseId)) {
       const existing = courseMap.get(course.courseId)!;
@@ -187,6 +140,6 @@ export const getAllCoursesRevenueByDateRange = async (
       courseMap.set(course.courseId, { ...course });
     }
   });
-  
+
   return Array.from(courseMap.values());
 };

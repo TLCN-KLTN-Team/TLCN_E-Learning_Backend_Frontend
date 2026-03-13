@@ -20,7 +20,7 @@ const QuestionList: React.FC<{
     const newQuestions = selectedQuestions.map((libQ, idx) => ({
       id: libQ.id, // Keep library question ID for many-to-many relationship
       questionText: libQ.questionText,
-      questionType: libQ.questionType as "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SINGLE_CHOICE" | "SHORT_ANSWER" | "ESSAY",
+      questionType: libQ.questionType as "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SINGLE_CHOICE" | "SHORT_ANSWER" | "ESSAY" | "FILL_IN_THE_BLANK",
       score: libQ.score || 10,
       difficultyLevel: libQ.difficultyLevel,
       tags: libQ.tags,

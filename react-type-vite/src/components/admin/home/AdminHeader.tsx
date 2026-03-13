@@ -21,6 +21,7 @@ import { useResponsive } from "../../../hooks/useResponsive";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
+import * as notificationApi from "@/services/api/notificationApi";
 
 import openEduIcon from "@/assets/open-edu-dark.png";
 
@@ -41,6 +42,18 @@ interface MenuSection {
   items: MenuItem[];
 }
 
+interface Notification {
+  id?: string;
+  senderId?: string;
+  recipientId: string;
+  content: string;
+  message?: string;
+  type: string;
+  isRead: boolean;
+  createdAt?: string;
+  link?: string;
+}
+
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
@@ -49,6 +62,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const modalRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -143,6 +158,66 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
     logout();
     toast.success("Đăng xuất thành công!");
   };
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    notificationApi
+      .getUserNotifications(user.id)
+      .then((res) => {
+        // @ts-ignore
+        const data: Notification[] = res.data?.result || res.data || [];
+        setNotifications(data);
+        setUnreadCount(data.filter((n) => !n.isRead).length);
+      })
+      .catch((err) => console.error("Failed to fetch notifications", err));
+
+    const eventSource = notificationApi.subscribeToNotifications(user.id);
+
+    const pushNotification = (raw: any) => {
+      const notifObj: Notification = {
+        recipientId: raw.userId || user.id,
+        content: raw.message || raw.content || "",
+        type: raw.type || "NOTIFICATION",
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        link: raw.link,
+      };
+      setNotifications((prev) => [notifObj, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+    };
+
+    const handleEvent = (event: MessageEvent) => {
+      try {
+        const payload = JSON.parse(event.data);
+        pushNotification(payload);
+      } catch {
+      }
+    };
+
+    const eventTypes = [
+      "NOTIFICATION",
+      "REFUND_REQUESTED",
+      "REFUND_APPROVED",
+      "PAYMENT_SUCCESS",
+      "COURSE_APPROVED",
+      "COURSE_REJECTED",
+      "ASSIGNMENT",
+      "message",
+    ];
+
+    eventTypes.forEach((type) => {
+      eventSource.addEventListener(type, handleEvent as EventListener);
+    });
+
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -296,121 +371,103 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
             {/* Notifications */}
             <div className="relative">
               <Button
-                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                onClick={() => {
+                  setIsNotificationOpen(!isNotificationOpen);
+                  setIsProfileOpen(false);
+                }}
                 className="relative p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
               >
                 <Bell className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </Button>
 
               {/* Notification Dropdown */}
               {isNotificationOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border z-50"
+                  className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-[80vh] flex flex-col"
                   ref={modalRef}
                 >
                   <div className="p-4 border-b bg-transparent">
                     <div className="flex justify-between items-center">
                       <h6 className="font-semibold m-0">
                         Notifications{" "}
-                        <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
-                          2 new
-                        </span>
+                        {unreadCount > 0 && (
+                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
+                            {unreadCount} new
+                          </span>
+                        )}
                       </h6>
-                      <button className="text-sm text-blue-600 hover:underline">
-                        Clear all
+                      <button
+                        className="text-sm text-blue-600 hover:underline"
+                        onClick={() => {
+                          setNotifications((prev) =>
+                            prev.map((n) => ({ ...n, isRead: true }))
+                          );
+                          setUnreadCount(0);
+                        }}
+                      >
+                        Mark all as read
                       </button>
                     </div>
                   </div>
-                  <div className="p-0">
-                    <ul className="list-none">
-                      {/* Notification items */}
-                      <li>
-                        <div className="p-3 border-b hover:bg-gray-50 flex">
-                          <div className="mr-3">
-                            <img
-                              src="/placeholder.svg?height=40&width=40&text=JW"
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-sm m-0">
-                              Congratulate <strong>Joan Wallace</strong> for
-                              graduating from{" "}
-                              <strong>Microverse university</strong>
-                            </p>
-                            <span className="text-xs text-blue-600 underline">
-                              Say congrats
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="p-3 border-b hover:bg-gray-50 flex">
-                          <div className="mr-3">
-                            <img
-                              src="/placeholder.svg?height=40&width=40&text=LL"
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <h6 className="text-sm font-semibold mb-1">
-                              Larry Lawson Added a new course
-                            </h6>
-                            <p className="text-xs text-gray-600 m-0">
-                              What's new! Find out about new features
-                            </p>
-                            <span className="text-xs text-blue-600 underline">
-                              View detail
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="p-3 border-b hover:bg-gray-50 flex">
-                          <div className="mr-3">
-                            <img
-                              src="/placeholder.svg?height=40&width=40&text=NR"
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <h6 className="text-sm font-semibold mb-1">
-                              New request to apply for Instructor
-                            </h6>
-                            <span className="text-xs text-blue-600 underline">
-                              View detail
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="p-3 border-b hover:bg-gray-50 flex">
-                          <div className="mr-3">
-                            <img
-                              src="/placeholder.svg?height=40&width=40&text=UP"
-                              alt="Avatar"
-                              className="w-10 h-10 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <h6 className="text-sm font-semibold mb-1">
-                              Update v2.3 completed successfully
-                            </h6>
-                            <p className="text-xs text-gray-600 m-0">
-                              What's new! Find out about new features
-                            </p>
-                            <small className="text-gray-600">5 min ago</small>
-                          </div>
-                        </div>
-                      </li>
+                  <div className="p-0 overflow-y-auto">
+                    <ul className="list-none m-0 p-0">
+                      {notifications.length === 0 ? (
+                        <li className="p-4 text-center text-gray-500 text-sm">
+                          No notifications
+                        </li>
+                      ) : (
+                        notifications.slice(0, 20).map((notif, idx) => (
+                          <li key={notif.id ?? idx}>
+                            <div
+                              className={`p-3 border-b hover:bg-gray-50 flex cursor-pointer ${
+                                !notif.isRead ? "bg-blue-50" : ""
+                              }`}
+                              onClick={() => {
+                                if (!notif.isRead) {
+                                  setNotifications((prev) =>
+                                    prev.map((n, i) =>
+                                      i === idx ? { ...n, isRead: true } : n
+                                    )
+                                  );
+                                  setUnreadCount((prev) => Math.max(0, prev - 1));
+                                }
+                                if (notif.link) {
+                                  window.location.href = notif.link;
+                                }
+                                setIsNotificationOpen(false);
+                              }}
+                            >
+                              <div className="mr-3 mt-1">
+                                <BellRing className="w-4 h-4 text-blue-500" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm m-0 text-gray-800 break-words">
+                                  {notif.content || notif.message}
+                                </p>
+                                <small className="text-gray-600">
+                                  {notif.createdAt
+                                    ? new Date(notif.createdAt).toLocaleString()
+                                    : "Just now"}
+                                </small>
+                              </div>
+                            </div>
+                          </li>
+                        ))
+                      )}
                     </ul>
                   </div>
                   <div className="p-3 text-center border-t bg-transparent relative">
-                    <button className="text-blue-600 hover:underline">
+                    <button
+                      className="text-blue-600 hover:underline"
+                      onClick={() => {
+                        setIsNotificationOpen(false);
+                      }}
+                    >
                       See all incoming activity
                     </button>
                   </div>
