@@ -219,8 +219,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
         },
         { name: "Gói đăng ký", icon: CreditCard, href: "/subscriptions" },
         { name: "Lịch sử mua", icon: ShoppingCart, href: "/purchase-history" },
-        { name: "Ưu đãi Udemy", icon: Settings, href: "/offers" },
-      ],
+        { name: "Ưu đãi Udemy", icon: Settings, href: "/offers" },      ],
     },
     {
       section: "Khác",
