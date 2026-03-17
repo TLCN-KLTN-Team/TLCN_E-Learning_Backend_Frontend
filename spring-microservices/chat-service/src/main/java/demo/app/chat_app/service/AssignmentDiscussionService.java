@@ -2,7 +2,7 @@ package demo.app.chat_app.service;
 
 import demo.app.chat_app.dto.request.DiscussionMessageRequest;
 import demo.app.chat_app.dto.response.DiscussionMessageResponse;
-import demo.app.chat_app.model.AssignmentMessage;
+import demo.app.chat_app.model.workspace.AssignmentMessage;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.model.DiscussionReadStatus;

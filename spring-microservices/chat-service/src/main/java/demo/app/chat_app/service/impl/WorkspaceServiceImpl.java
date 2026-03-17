@@ -1,6 +1,5 @@
 package demo.app.chat_app.service.impl;
 
-import demo.app.chat_app.dto.request.CreateWorkspacesRequest;
 import demo.app.chat_app.dto.request.WorkspaceCreationRequest;
 import demo.app.chat_app.dto.response.PageResponse;
 import demo.app.chat_app.dto.response.WorkspaceResponse;
@@ -8,18 +7,18 @@ import demo.app.chat_app.events.CourseCreatedEvent;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.WorkspaceMapper;
-import demo.app.chat_app.model.Channel;
-import demo.app.chat_app.model.Section;
-import demo.app.chat_app.model.Workspace;
+import demo.app.chat_app.model.workspace.Channel;
+import demo.app.chat_app.model.workspace.Section;
+import demo.app.chat_app.model.workspace.Workspace;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.WorkspaceService;
 import demo.app.chat_app.utils.JwtUtils;
-import feign.FeignException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,26 +27,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WorkspaceServiceImpl implements WorkspaceService {
     WorkspaceRepository workspaceRepository;
+    SectionServiceImpl sectionService;
     ChannelRepository channelRepository;
     GetUserClient getUserClient;
     WorkspaceMapper workspaceMapper;
     ChannelServiceImpl channelService;
-    SectionServiceImpl sectionService;
-
-    @Override
-    public void createWorkspacesWhenRegisteredForCourses(CreateWorkspacesRequest request) {
-
-    }
 
     @Override
     public WorkspaceResponse createWorkspace(WorkspaceCreationRequest request) {
@@ -73,34 +66,25 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 //                .courseId(request.getCourseId())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
-                .isActive(true)
                 .build();
 
         workspace = workspaceRepository.save(workspace);
 
         // Create default "general" channel
         Channel channel = Channel.builder()
-                .channelName("general")
+                .name("general")
                 .description("This is the start of the #general channel.")
                 .createdAt(Instant.now())
                 .build();
+        channelRepository.save(channel);
         
-        channel = channelRepository.save(channel);
-
-        // Add channel to workspace
-        workspace.addChannel(channel.getId());
-        workspace = workspaceRepository.save(workspace);
-
-        WorkspaceResponse workspaceResponse = workspaceMapper.toResponse(workspace);
-        return workspaceResponse;
+        return workspaceMapper.toResponse(workspace);
     }
 
     public void createWorkspaceWhenCourseCreatedAndAssignForATeacher(CourseCreatedEvent event) {
         if (workspaceRepository.existsByCourseId(event.getCourseId())) {
             return; // Workspace already exists for this course
         }
-
-        // add members for workspace
 
         Workspace workspace = Workspace.builder()
                 .courseId(event.getCourseId())
@@ -109,42 +93,12 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 .ownerId(event.getTeacherId())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
-//                .endedAt(event.getEndedAt())
-                .isActive(true)
-                .participants(Collections.singletonList(event.getTeacherId()))
                 .build();
 
         Workspace savedWorkspace = workspaceRepository.save(workspace);
 
-        Section section = sectionService.createGeneralSection(workspace.getParticipants(), savedWorkspace.getId(), savedWorkspace);
-        savedWorkspace.addSectionId(section.getId());
-        workspaceRepository.save(savedWorkspace);
+        sectionService.createGeneralSection(event.getTeacherId(), savedWorkspace.getId(), savedWorkspace);
     }
-
-    // Method add members and check if user exists in the system
-//    private List<Participant> getExistingMembersFromCourseCreated(List<String> memberIds) {
-//        List<Participant> existingMembers = new ArrayList<>();
-//        memberIds.forEach(id -> {
-//            try{
-//                var user = getUserClient.getUser(id).getResult();
-//                Participant participant = Participant.builder()
-//                        .userId(user.getId())
-//                        .firstName(user.getFirstName())
-//                        .lastName(user.getLastName())
-//                        .avatarUrl(user.getAvatar())
-//                        .joinedAt(Instant.now())
-//                        .build();
-//                if (participant==null) {
-//                    throw new AppException(ErrorCode.USER_NOT_EXISTED);
-//                }
-//                existingMembers.add(participant);
-//            }
-//            catch (FeignException fe) {
-//                throw new AppException(ErrorCode.USER_NOT_FOUND_FROM_FEIGN_CLIENT);
-//            }
-//        });
-//        return existingMembers;
-//    }
 
     @Override
     public WorkspaceResponse updateWorkspace(WorkspaceCreationRequest request) {
@@ -159,12 +113,21 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     }
 
     @Override
-    public PageResponse<WorkspaceResponse> getWorkspaces(int page, int size) {
+    public PageResponse<WorkspaceResponse> getWorkspacesWhenUserAccess(int page, int size) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Getting workspaces for userId: {} (page: {}, size: {})", userId, page, size);
 
         // Use repository method with pagination
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Workspace> workspacePage = workspaceRepository.findByParticipants(userId, pageable);
+
+        // Find sections where user is a participant -> get workspaceIds
+        List<String> workspaceIdsOfUser = sectionService.getWorkspaceIdsByUserId(userId);
+        log.debug("Found {} workspace IDs for user {}: {}", workspaceIdsOfUser.size(), userId, workspaceIdsOfUser);
+
+        Page<Workspace> workspacePage = workspaceRepository.findAllByIdIn(
+                workspaceIdsOfUser, pageable
+        );
+        log.info("Retrieved {} workspaces for user {}", workspacePage.getContent().size(), userId);
 
         return toPageResponse(workspacePage);
     }
@@ -196,12 +159,32 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     @Override
     public List<WorkspaceResponse> getWorkspacesByUser(int page, int size) {
-        String userId = JwtUtils.getUserId();
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Getting workspaces by user: {} (page: {}, size: {})", userId, page, size);
 
+        // Use pagination
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Workspace> workspaces = workspaceRepository.findByParticipants(userId, pageable);
 
-        return List.of();
+        // Find sections where user is a participant -> get workspaceIds
+        List<String> workspaceIdsOfUser = sectionService.getWorkspaceIdsByUserId(userId);
+        log.debug("Found {} workspace IDs for user {}: {}", workspaceIdsOfUser.size(), userId, workspaceIdsOfUser);
+
+        // If user has no workspaces, return empty list
+        if (workspaceIdsOfUser.isEmpty()) {
+            log.info("No workspaces found for user {}", userId);
+            return List.of();
+        }
+
+        Page<Workspace> workspacePage = workspaceRepository.findAllByIdIn(
+                workspaceIdsOfUser, pageable
+        );
+
+        log.info("Retrieved {} workspaces for user {}", workspacePage.getContent().size(), userId);
+
+        return workspacePage.getContent()
+                .stream()
+                .map(workspaceMapper::toResponse)
+                .toList();
     }
 
 

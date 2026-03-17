@@ -32,7 +32,7 @@ public class WebClientConfiguration {
                 "http://127.0.0.1:*",
                 "https://openedu-six.vercel.app",
                 "https://yourdomain.com",
-                "https://*.yourdomain.com"
+                "http://localhost:8888"
         ));
 
         corsConfiguration.setAllowedMethods(Arrays.asList(

@@ -2,7 +2,7 @@ package demo.app.chat_app.mapper;
 
 import demo.app.chat_app.dto.response.BasicChannelResponse;
 import demo.app.chat_app.dto.response.ChannelResponse;
-import demo.app.chat_app.model.Channel;
+import demo.app.chat_app.model.workspace.Channel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

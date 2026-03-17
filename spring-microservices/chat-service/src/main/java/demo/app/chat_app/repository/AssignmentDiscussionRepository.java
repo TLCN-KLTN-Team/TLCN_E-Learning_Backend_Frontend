@@ -1,6 +1,6 @@
 package demo.app.chat_app.repository;
 
-import demo.app.chat_app.model.AssignmentMessage;
+import demo.app.chat_app.model.workspace.AssignmentMessage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

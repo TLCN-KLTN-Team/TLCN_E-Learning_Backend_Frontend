@@ -1,6 +1,6 @@
 package demo.app.chat_app.repository;
 
-import demo.app.chat_app.model.Channel;
+import demo.app.chat_app.model.workspace.Channel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -12,46 +12,38 @@ import java.util.Optional;
 
 @Repository
 public interface ChannelRepository extends MongoRepository<Channel, String> {
-    
-    // Find channels by workspace
-    @Query("{ 'workspaceId': ?0 }")
-    List<Channel> findByWorkspaceId(String workspaceId);
-    
-    // Find channels by workspace with pagination
-    @Query("{ 'workspaceId': ?0 }")
-    Page<Channel> findByWorkspaceId(String workspaceId, Pageable pageable);
-    
-    // Find channel by name in workspace
-    @Query("{ 'workspaceId': ?0, 'channelName': ?1 }")
-    Optional<Channel> findByWorkspaceIdAndChannelName(String workspaceId, String channelName);
-    
-    // Find channels where user is participant
-    @Query("{ 'participants.userId': ?0 }")
-    List<Channel> findChannelsByParticipantUserId(String userId);
-    
-    // Find channels in workspace where user is participant
-    @Query("{ 'workspaceId': ?0, 'memberIds.userId': ?1 }")
-    List<Channel> findByWorkspaceIdAndParticipantUserId(String workspaceId, String userId);
 
-    Optional<Channel> findByChannelNameContainingIgnoreCase(String channelName);
-    
-    // Check if user is in channel
-    @Query(value = "{ 'id': ?0, 'participants.userId': ?1 }", exists = true)
-    boolean existsByIdAndParticipantUserId(String channelId, String userId);
-    
-    // Count channels in workspace
-    @Query(value = "{ 'workspaceId': ?0 }", count = true)
-    long countByWorkspaceId(String workspaceId);
-    
-    // Find channels by participant hash (for direct messages)
-    @Query("{ 'participantHash': ?0 }")
-    Optional<Channel> findByParticipantHash(String participantHash);
-    
-    // Search channels by name pattern
-    @Query("{ 'workspaceId': ?0, 'channelName': { $regex: ?1, $options: 'i' } }")
-    List<Channel> findByWorkspaceIdAndChannelNameContaining(String workspaceId, String namePattern);
+    // Find channels by section
+    List<Channel> findBySectionId(String sectionId);
 
-    @Query("{ 'classId': ?0 }")
-    Optional<Channel> findByClassId(Integer classId);
+    // Find channels by section with pagination
+    Page<Channel> findBySectionId(String sectionId, Pageable pageable);
 
+    // Find channel by name in section
+    Optional<Channel> findBySectionIdAndName(String sectionId, String name);
+
+    // Find channels where user is a channel member
+    @Query("{ 'channelMembers.userId': ?0 }")
+    List<Channel> findChannelsByMemberUserId(String userId);
+
+    // Find channels in section where user is a member
+    @Query("{ 'sectionId': ?0, 'channelMembers.userId': ?1 }")
+    List<Channel> findBySectionIdAndMemberUserId(String sectionId, String userId);
+
+    // Search channels by name (case-insensitive)
+    Optional<Channel> findByNameContainingIgnoreCase(String name);
+
+    // Check if a user is an active member of a channel
+    @Query(value = "{ '_id': ?0, 'channelMembers': { $elemMatch: { 'userId': ?1, 'status': 'ACTIVE' } } }", exists = true)
+    boolean existsByIdAndActiveMemberUserId(String channelId, String userId);
+
+    // Count channels in a section
+    long countBySectionId(String sectionId);
+
+    // Search channels by name pattern in section
+    @Query("{ 'sectionId': ?0, 'name': { $regex: ?1, $options: 'i' } }")
+    List<Channel> findBySectionIdAndNameContaining(String sectionId, String namePattern);
+
+    // Find the public (MAIN) channel of a section
+    Optional<Channel> findBySectionIdAndIsPublicTrue(String sectionId);
 }

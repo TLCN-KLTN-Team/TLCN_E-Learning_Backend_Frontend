@@ -1,6 +1,6 @@
 package demo.app.chat_app.dto.response;
 
-import demo.app.chat_app.model.MessageAttachment;
+import demo.app.chat_app.model.workspace.MessageAttachment;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

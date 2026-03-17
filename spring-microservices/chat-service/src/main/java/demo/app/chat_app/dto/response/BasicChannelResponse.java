@@ -1,5 +1,8 @@
 package demo.app.chat_app.dto.response;
 
+import demo.app.chat_app.model.workspace.ChannelScope;
+import demo.app.chat_app.model.workspace.ChannelStatus;
+import demo.app.chat_app.model.workspace.ChannelType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -10,9 +13,12 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BasicChannelResponse {
     String id;
-    String participantHash;
-    String channelName;
+    String sectionId;
+    String name;
+    String slug;
     String description;
-    long endTime;
-    boolean ended;
+    ChannelScope scope;
+    ChannelType type;
+    ChannelStatus status;
+    int memberCount;
 }
