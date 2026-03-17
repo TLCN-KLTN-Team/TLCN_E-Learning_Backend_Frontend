@@ -30,18 +30,18 @@ public class ChannelController {
                 .build();
     }
 
-    @GetMapping("/basic/{workspaceId}")
-    public ApiResponse<List<BasicChannelResponse>> getBasicChannelsByWorkspace(@PathVariable String workspaceId) {
-        List<BasicChannelResponse> channels = channelService.getBasicChannels(workspaceId);
+    @GetMapping("/basic/{sectionId}")
+    public ApiResponse<List<BasicChannelResponse>> getBasicChannelsByWorkspace(@PathVariable String sectionId) {
+        List<BasicChannelResponse> channels = channelService.getBasicChannels(sectionId);
         return ApiResponse.<List<BasicChannelResponse>>builder()
                 .result(channels)
                 .message("Basic channels retrieved successfully")
                 .build();
     }
 
-    @GetMapping("/workspace/{workspaceId}")
-    public ApiResponse<List<ChannelResponse>> getChannelsByWorkspace(@PathVariable String workspaceId) {
-        List<ChannelResponse> channels = channelService.getChannels(workspaceId);
+    @GetMapping("/section/{sectionId}")
+    public ApiResponse<List<ChannelResponse>> getChannelsByWorkspace(@PathVariable String sectionId) {
+        List<ChannelResponse> channels = channelService.getChannels(sectionId);
         return ApiResponse.<List<ChannelResponse>>builder()
                 .result(channels)
                 .message("Channels retrieved successfully")

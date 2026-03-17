@@ -64,7 +64,7 @@ const SectionList = ({
                   <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                 )}
                 <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide truncate">
-                  {section.title}
+                  {section.name}
                 </span>
               </button>
 

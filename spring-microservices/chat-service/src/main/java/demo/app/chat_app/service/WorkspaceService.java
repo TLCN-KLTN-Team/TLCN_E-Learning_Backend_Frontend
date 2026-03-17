@@ -9,11 +9,10 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface WorkspaceService {
-    void createWorkspacesWhenRegisteredForCourses(CreateWorkspacesRequest request);
     WorkspaceResponse createWorkspace(WorkspaceCreationRequest request);
     WorkspaceResponse updateWorkspace(WorkspaceCreationRequest request);
     void deleteWorkspace(String id);
-    PageResponse<WorkspaceResponse> getWorkspaces(int page, int size);
+    PageResponse<WorkspaceResponse> getWorkspacesWhenUserAccess(int page, int size);
     WorkspaceResponse getWorkspaceById(String id);
 
     List<WorkspaceResponse> getWorkspacesByUser(int page, int size);

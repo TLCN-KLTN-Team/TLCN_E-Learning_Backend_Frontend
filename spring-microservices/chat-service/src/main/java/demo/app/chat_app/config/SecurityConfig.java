@@ -82,6 +82,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:8888",
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
                 "https://openedu-six.vercel.app"

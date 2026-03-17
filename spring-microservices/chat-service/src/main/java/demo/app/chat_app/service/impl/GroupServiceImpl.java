@@ -5,7 +5,7 @@ import demo.app.chat_app.dto.response.CreateGroupResponse;
 import demo.app.chat_app.dto.response.GroupResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
-import demo.app.chat_app.model.Channel;
+import demo.app.chat_app.model.workspace.Channel;
 import demo.app.chat_app.model.Group;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;

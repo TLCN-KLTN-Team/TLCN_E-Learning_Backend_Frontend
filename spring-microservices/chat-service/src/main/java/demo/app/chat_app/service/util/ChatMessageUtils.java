@@ -5,7 +5,7 @@ import demo.app.chat_app.dto.response.UserResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChatMessageMapper;
-import demo.app.chat_app.model.ChatMessage;
+import demo.app.chat_app.model.workspace.ChatMessage;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;

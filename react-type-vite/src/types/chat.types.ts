@@ -58,7 +58,7 @@ export interface SectionChannel {
 
 export interface SectionResponse {
   id: string;
-  title: string;
+  name: string;
   isPublic: boolean;
   channels: SectionChannel[];
 }

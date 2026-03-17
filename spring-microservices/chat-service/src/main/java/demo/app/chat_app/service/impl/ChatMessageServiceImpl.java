@@ -6,17 +6,14 @@ import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChatMessageMapper;
-import demo.app.chat_app.mapper.MessageAttachmentMapper;
-import demo.app.chat_app.model.*;
-import demo.app.chat_app.model.enums.AttachmentType;
-import demo.app.chat_app.model.enums.MessageStatus;
+import demo.app.chat_app.model.workspace.Channel;
+import demo.app.chat_app.model.workspace.ChatMessage;
+import demo.app.chat_app.model.workspace.MemberStatus;
+import demo.app.chat_app.model.workspace.Section;
 import demo.app.chat_app.repository.*;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
-import demo.app.chat_app.repository.httpclient.ProfileClient;
 import demo.app.chat_app.service.ChatMessageService;
-import demo.app.chat_app.service.util.CloudinaryService;
 import demo.app.chat_app.utils.JwtUtils;
-import demo.app.chat_app.websocket.WebsocketSessionUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -27,13 +24,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -44,7 +38,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     ChatMessageRepository chatMessageRepository;
     ChatMessageMapper chatMessageMapper;
     ChannelRepository channelRepository;
-    WorkspaceRepository workspaceRepository;
     SectionRepository sectionRepository;
     GetUserClient getUserClient;
 
@@ -196,17 +189,20 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     private void checkIsMemberChannel(Channel channel, String userId) {
-        if (!channel.isGeneral()) {
+        if (channel.isPublic()) {
+            // Public channel: toàn bộ SectionMember có quyền truy cập
             Section section = sectionRepository.findById(channel.getSectionId())
                     .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
-
-            Workspace workspace = workspaceRepository.findById(section.getWorkspaceId())
-                    .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
-            if (!workspace.hasParticipant(userId)) {
+            if (section.getSectionMembers() == null || !section.getSectionMembers().contains(userId)) {
                 throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
             }
         } else {
-            if (!channel.hasMember(userId)) {
+            // Private/Group channel: chỉ ChannelMember ACTIVE mới truy cập được
+            boolean isMember = channel.getChannelMembers() != null &&
+                    channel.getChannelMembers().stream()
+                            .anyMatch(m -> m.getUserId().equals(userId)
+                                    && m.getStatus() == MemberStatus.ACTIVE);
+            if (!isMember) {
                 throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
             }
         }

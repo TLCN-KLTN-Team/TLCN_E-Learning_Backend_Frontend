@@ -6,7 +6,6 @@ import demo.app.chat_app.dto.response.PageResponse;
 import demo.app.chat_app.dto.response.WorkspaceResponse;
 import demo.app.chat_app.service.WorkspaceService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +21,7 @@ public class WorkspaceController {
     public ResponseEntity<?> getWorkspaces(@RequestParam(value = "page", defaultValue = "0") int page,
                                            @RequestParam(value = "size", defaultValue = "6") int size) {
         ApiResponse<PageResponse<WorkspaceResponse>> response = ApiResponse.<PageResponse<WorkspaceResponse>>builder()
-                .result(workspaceService.getWorkspaces(page, size))
+                .result(workspaceService.getWorkspacesWhenUserAccess(page, size))
                 .build();
 
         return ResponseEntity.ok(response);

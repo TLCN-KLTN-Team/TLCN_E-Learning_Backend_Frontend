@@ -1,5 +1,8 @@
 package demo.app.chat_app.dto.response;
 
+import demo.app.chat_app.model.workspace.ChannelScope;
+import demo.app.chat_app.model.workspace.ChannelStatus;
+import demo.app.chat_app.model.workspace.ChannelType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -13,13 +16,19 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ChannelResponse {
     String id;
-    String participantHash;
-    String channelName;
+    String sectionId;
+    String name;
+    String slug;
     String description;
-//    List<Participant> participants;
+    int position;
+    ChannelScope scope;
+    ChannelType type;
+    ChannelStatus status;
+    boolean isReadOnly;
+    boolean isPublic;
+    int memberCount;
+    String lastMessageId;
+    Instant lastActivityAt;
     List<ChatMessageResponse> messages;
-    int durationMinutes;
-    boolean isPrivate;
     Instant createdAt;
-    boolean ended;
 }

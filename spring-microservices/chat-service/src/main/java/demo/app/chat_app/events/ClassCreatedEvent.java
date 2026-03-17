@@ -16,7 +16,6 @@ public class ClassCreatedEvent {
     private String className;
     private String classCode;
     private String description;
-    private boolean isPrivate;
     private String createdAt;
     private String endedAt;
 }

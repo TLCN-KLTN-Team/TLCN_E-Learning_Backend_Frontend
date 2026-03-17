@@ -1,25 +1,25 @@
-package demo.app.chat_app.model;
+package demo.app.chat_app.model.workspace;
 
-import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-// Compound indexes for efficient queries
-@CompoundIndex(def = "{'channelId': 1, 'createdDate': -1}")
-@CompoundIndex(def = "{'channelId': 1, 'sender.userId': 1, 'createdDate': -1}")
+@CompoundIndexes({
+        @CompoundIndex(name = "channel_created_idx",        def = "{'channelId': 1, 'createdDate': -1}"),
+        @CompoundIndex(name = "channel_sender_created_idx", def = "{'channelId': 1, 'sender': 1, 'createdDate': -1}")
+})
 @Document(collection = "messages")
 public class ChatMessage {
     @MongoId

@@ -1,4 +1,4 @@
-package demo.app.chat_app.model;
+package demo.app.chat_app.model.workspace;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
