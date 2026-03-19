@@ -176,6 +176,15 @@ export const transformRevenueDataByGranularity = <T extends { month: string; [ke
   }
   
   if (granularity === 'day') {
+    // If backend already returns daily periods (yyyy-MM-dd), use directly
+    const hasDailyPeriods = monthlyData.some(item => /^\d{4}-\d{2}-\d{2}$/.test(item.month));
+    if (hasDailyPeriods) {
+      return monthlyData.map(item => {
+        const { month, ...rest } = item;
+        return { ...rest, period: month } as any;
+      }).sort((a, b) => a.period.localeCompare(b.period));
+    }
+
     // Expand monthly data to daily data
     // Since backend only provides monthly aggregates, we'll distribute evenly
     // For a more accurate implementation, backend should support daily granularity

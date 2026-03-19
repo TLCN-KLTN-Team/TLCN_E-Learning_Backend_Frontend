@@ -10,7 +10,7 @@ export const getRoleBasedRedirectPath = (role: string): string => {
   const roleRedirectMap: Record<string, string> = {
     SUPER_ADMIN: "/system-admin",
     ADMIN: "/admin",
-    EXPERT: "/expert/published-courses",
+    EXPERT: "/expert/courses",
     TEACHER: "/teacher/home",
     STUDENT: "/",
     USER: "/",

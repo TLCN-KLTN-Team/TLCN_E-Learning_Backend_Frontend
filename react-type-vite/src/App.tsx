@@ -37,6 +37,7 @@ function AppContent() {
       "/course",
       "/teacher",
       "/educational-units",
+      "/certificate/verify",
       "/auth/google/callback",
       "/auth/facebook/callback",
     ];

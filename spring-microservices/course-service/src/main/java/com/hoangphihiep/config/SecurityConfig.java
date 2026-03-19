@@ -71,6 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/course-management/teacher/**").hasRole("TEACHER")
                         .requestMatchers("/course-management/student/**").hasRole("STUDENT")
                         .requestMatchers("/course-management/user/**").hasAnyRole("USER", "STUDENT", "TEACHER")
+                        .requestMatchers("/anonymous/**").permitAll()
                         .requestMatchers("/course-management/anonymous/**").permitAll()
                         .anyRequest().authenticated());
 

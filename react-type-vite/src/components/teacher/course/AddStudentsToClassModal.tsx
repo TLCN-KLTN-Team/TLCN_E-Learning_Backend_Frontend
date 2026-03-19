@@ -10,6 +10,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, AlertCircle, Users, UserCheck, UserMinus } from "lucide-react"
@@ -41,6 +51,7 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [studentToUnenroll, setStudentToUnenroll] = useState<StudentResponse | null>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -130,18 +141,16 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
   }
 
   const handleUnenrollStudent = async (studentId: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn loại bỏ sinh viên này khỏi lớp?")) {
-      try {
-        setIsLoading(true)
-        await classApi.unenrollStudentFromClass(educationalUnitId, classId, studentId)
-        toast.success("Đã loại bỏ sinh viên khỏi lớp thành công!")
-        await loadData()
-      } catch (err: any) {
-        console.error("Error unenrolling student:", err)
-        toast.error(err?.response?.data?.message || "Không thể loại bỏ sinh viên khỏi lớp")
-      } finally {
-        setIsLoading(false)
-      }
+    try {
+      setIsLoading(true)
+      await classApi.unenrollStudentFromClass(educationalUnitId, classId, studentId)
+      toast.success("Đã loại bỏ sinh viên khỏi lớp thành công!")
+      await loadData()
+    } catch (err: any) {
+      console.error("Error unenrolling student:", err)
+      toast.error(err?.response?.data?.message || "Không thể loại bỏ sinh viên khỏi lớp")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -395,7 +404,7 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleUnenrollStudent(student.studentId)}
+                      onClick={() => setStudentToUnenroll(student)}
                       className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 flex-shrink-0 ml-3"
                     >
                       <UserMinus size={14} className="mr-1" />
@@ -455,6 +464,33 @@ const AddStudentsToClassModal: React.FC<AddStudentsToClassModalProps> = ({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={!!studentToUnenroll} onOpenChange={(open) => !open && setStudentToUnenroll(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Loại bỏ sinh viên khỏi lớp?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {studentToUnenroll
+                ? `Bạn có chắc chắn muốn loại bỏ sinh viên \"${studentToUnenroll.firstName} ${studentToUnenroll.lastName}\" khỏi lớp?`
+                : "Hành động này sẽ gỡ sinh viên khỏi lớp hiện tại."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (studentToUnenroll) {
+                  handleUnenrollStudent(studentToUnenroll.studentId)
+                  setStudentToUnenroll(null)
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Loại bỏ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }

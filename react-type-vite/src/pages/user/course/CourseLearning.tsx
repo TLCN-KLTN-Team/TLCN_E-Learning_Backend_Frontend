@@ -30,6 +30,16 @@ import {
   Bot
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { getSectionsByCourseId } from "@/services/api/user/sectionApi"
 import { CourseApiService } from "@/services/api/user/courseApi"
 import type { SectionResponse } from "@/services/api/response/sectionResponse"
@@ -728,7 +738,11 @@ const CourseLearning: React.FC = () => {
         onClose={() => setShowCertificateModal(false)}
         certificate={certificate}
         courseName={courseName || "Khóa học"}
-        studentName={user?.fullName || user?.username || "Học viên"}
+        studentName={
+          `${user?.lastName || ""} ${user?.firstName || ""}`.trim()
+          || user?.username
+          || "Học viên"
+        }
       />
 
       {/* Top Navigation Bar - Hide in quiz/assignment mode */}
@@ -757,7 +771,7 @@ const CourseLearning: React.FC = () => {
                 className="text-white hover:bg-gray-800 gap-2"
               >
                 <span className="text-sm">
-                  Your progress:{" "}
+                  Tiến độ của bạn:{" "}
                   {(progressStats?.overallProgress || 0).toFixed(2)}%
                 </span>
                 <ChevronDown className="w-4 h-4" />
@@ -835,7 +849,7 @@ const CourseLearning: React.FC = () => {
               className="text-white hover:bg-gray-800 gap-2"
             >
               <Share2 className="w-4 h-4" />
-              <span className="text-sm">Share</span>
+              <span className="text-sm">Chia sẻ</span>
             </Button>
 
             {/* Certificate Button Logic */}
@@ -851,7 +865,7 @@ const CourseLearning: React.FC = () => {
               >
                 <Award className="w-4 h-4" />
                 <span className="text-sm font-semibold">
-                  {certificate.status === 'PENDING' ? 'Processing...' : 'Certificate'}
+                  {certificate.status === 'PENDING' ? 'Đang xử lý...' : 'Chứng chỉ'}
                 </span>
               </Button>
             ) : (
@@ -1012,10 +1026,10 @@ const CourseLearning: React.FC = () => {
                             : "border-transparent text-gray-600 hover:text-gray-900"
                         }`}
                       >
-                        {currentItem?.type === "lesson" && "About this lecture"}
-                        {currentItem?.type === "quiz" && "About this quiz"}
+                        {currentItem?.type === "lesson" && "Về bài giảng này"}
+                        {currentItem?.type === "quiz" && "Về bài kiểm tra này"}
                         {currentItem?.type === "assignment" &&
-                          "About this assignment"}
+                          "Về bài tập này"}
                       </button>
                       <button
                         onClick={() => setActiveTab("notes")}
@@ -1144,7 +1158,7 @@ const CourseLearning: React.FC = () => {
                       className="gap-2"
                     >
                       <ChevronLeft className="w-4 h-4" />
-                      Previous
+                      Trước
                     </Button>
 
                     <Button
@@ -1152,7 +1166,7 @@ const CourseLearning: React.FC = () => {
                       disabled={currentItemIndex === contentItems.length - 1}
                       className="bg-gray-900 hover:bg-gray-800 text-white gap-2"
                     >
-                      Next
+                      Tiếp theo
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
@@ -1176,7 +1190,7 @@ const CourseLearning: React.FC = () => {
                   <h2 className="font-semibold text-base">
                     {activeTab === "practice"
                       ? "Chọn chương để ôn tập"
-                      : "Course content"}
+                      : "Nội dung khóa học"}
                   </h2>
                   {activeTab === "practice" && (
                     <div className="flex items-center justify-between mt-2">
@@ -1259,7 +1273,7 @@ const CourseLearning: React.FC = () => {
                           </h3>
                           <p className="text-xs text-gray-600">
                             {completedCount}/{sectionItems.length} |{" "}
-                            {totalMinutes}min
+                            {totalMinutes} phút
                           </p>
                         </div>
                         <ChevronDown
@@ -1277,7 +1291,7 @@ const CourseLearning: React.FC = () => {
                             .length > 0 && (
                             <div className="mb-2">
                               <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
-                                Lessons
+                                Bài học
                               </div>
                               {sectionItems
                                 .filter((item) => item.type === "lesson")
@@ -1334,7 +1348,7 @@ const CourseLearning: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                           {getItemIcon(item.type)}
-                                          <span>3min</span>
+                                          <span>3 phút</span>
                                         </div>
                                       </div>
                                       {!actualItem.isCompleted && isActive && (
@@ -1366,7 +1380,7 @@ const CourseLearning: React.FC = () => {
                             .length > 0 && (
                             <div className="mb-2">
                               <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
-                                Quizzes
+                                Bài kiểm tra
                               </div>
                               {sectionItems
                                 .filter((item) => item.type === "quiz")
@@ -1418,7 +1432,7 @@ const CourseLearning: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                           {getItemIcon(item.type)}
-                                          <span>3min</span>
+                                          <span>3 phút</span>
                                         </div>
                                       </div>
                                     </button>
@@ -1433,7 +1447,7 @@ const CourseLearning: React.FC = () => {
                           ).length > 0 && (
                             <div className="mb-2">
                               <div className="px-4 py-2 text-xs font-semibold text-gray-600 uppercase">
-                                Assignments
+                                Bài tập
                               </div>
                               {sectionItems
                                 .filter((item) => item.type === "assignment")
@@ -1485,7 +1499,7 @@ const CourseLearning: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                           {getItemIcon(item.type)}
-                                          <span>3min</span>
+                                          <span>3 phút</span>
                                         </div>
                                       </div>
                                     </button>
@@ -1734,7 +1748,7 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
             <span className="text-sm text-gray-600">Thời lượng</span>
           </div>
           <p className="text-lg font-bold text-gray-900">
-            {course.duration || "N/A"}
+            {course.duration || "Chưa cập nhật"}
           </p>
         </div>
 
@@ -1820,12 +1834,12 @@ const NotesTab: React.FC = () => {
         <div className="relative">
           <input
             type="text"
-            placeholder="Create a new note at 0:00"
+            placeholder="Tạo ghi chú mới tại 0:00"
             className="w-full border rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
           <button
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Add note"
+            aria-label="Thêm ghi chú"
           >
             <Plus className="w-5 h-5" />
           </button>
@@ -1838,29 +1852,28 @@ const NotesTab: React.FC = () => {
           value={selectedLecture}
           onChange={(e) => setSelectedLecture(e.target.value)}
           className="border rounded px-4 py-2 text-sm text-purple-600 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-          aria-label="Filter by lecture"
+          aria-label="Lọc theo bài giảng"
         >
-          <option value="all">All lectures</option>
-          <option value="1">Lecture 1</option>
-          <option value="2">Lecture 2</option>
+          <option value="all">Tất cả bài giảng</option>
+          <option value="1">Bài giảng 1</option>
+          <option value="2">Bài giảng 2</option>
         </select>
 
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
           className="border rounded px-4 py-2 text-sm text-purple-600 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-          aria-label="Sort notes"
+          aria-label="Sắp xếp ghi chú"
         >
-          <option value="recent">Sort by most recent</option>
-          <option value="oldest">Sort by oldest</option>
+          <option value="recent">Mới nhất</option>
+          <option value="oldest">Cũ nhất</option>
         </select>
       </div>
 
       {/* Empty State */}
       <div className="text-center py-12">
         <p className="text-gray-600">
-          Click the "Create a new note" box, the "+" button, or press "B" to
-          make your first note.
+          Nhấn vào ô "Tạo ghi chú mới", nút "+", hoặc phím "B" để tạo ghi chú đầu tiên.
         </p>
       </div>
     </div>
@@ -1871,11 +1884,11 @@ const NotesTab: React.FC = () => {
 const AnnouncementsTab: React.FC = () => {
   return (
     <div className="text-center py-12">
-      <h2 className="text-2xl font-bold mb-4">No announcements posted yet</h2>
+      <h2 className="text-2xl font-bold mb-4">Chưa có thông báo nào</h2>
       <p className="text-gray-600 max-w-2xl mx-auto">
-        The teacher hasn't added any announcements to this course yet.
-        Announcements are used to inform you of updates or additions to the
-        course.
+        Giảng viên chưa đăng thông báo cho khóa học này.
+        Thông báo sẽ được dùng để cập nhật các thay đổi hoặc nội dung mới của
+        khóa học.
       </p>
     </div>
   );
@@ -1894,6 +1907,7 @@ const ReviewsTab: React.FC = () => {
   const [userReview, setUserReview] = useState<any>(null);
   const [reviewForm, setReviewForm] = useState({ rate: 5, content: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteReviewConfirm, setShowDeleteReviewConfirm] = useState(false);
 
   useEffect(() => {
     loadReviews();
@@ -1978,13 +1992,6 @@ const ReviewsTab: React.FC = () => {
 
   const handleDeleteReview = async () => {
     if (!userReview) return;
-
-    if (
-      !window.confirm(
-        "Bạn có chắc chắn muốn xóa đánh giá này? Hành động này không thể hoàn tác.",
-      )
-    )
-      return;
 
     try {
       console.log("Deleting review with ID:", userReview.id);
@@ -2148,7 +2155,7 @@ const ReviewsTab: React.FC = () => {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleDeleteReview}
+                onClick={() => setShowDeleteReviewConfirm(true)}
                 className="text-red-600"
               >
                 Xóa
@@ -2250,12 +2257,38 @@ const ReviewsTab: React.FC = () => {
               </div>
             </div>
           )}
+
+          <AlertDialog
+            open={showDeleteReviewConfirm}
+            onOpenChange={setShowDeleteReviewConfirm}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Xóa đánh giá?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Bạn có chắc chắn muốn xóa đánh giá này? Hành động này không thể hoàn tác.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Hủy</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    handleDeleteReview();
+                    setShowDeleteReviewConfirm(false);
+                  }}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Xóa
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
 
       {/* Student Feedback Section */}
       <div className="mb-12">
-        <h2 className="text-2xl font-bold mb-6">Student feedback</h2>
+        <h2 className="text-2xl font-bold mb-6">Phản hồi từ học viên</h2>
 
         <div className="flex gap-8 items-start mb-8">
           {/* Rating Score */}
@@ -2320,7 +2353,7 @@ const ReviewsTab: React.FC = () => {
       {/* Reviews Section */}
       <div>
         <h2 className="text-2xl font-bold mb-6">
-          Reviews ({filteredReviews.length})
+          Đánh giá ({filteredReviews.length})
         </h2>
 
         {/* Search and Filter */}
@@ -2329,7 +2362,7 @@ const ReviewsTab: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search reviews"
+              placeholder="Tìm kiếm đánh giá"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full border rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
@@ -2340,14 +2373,14 @@ const ReviewsTab: React.FC = () => {
             value={filterRating}
             onChange={(e) => setFilterRating(e.target.value)}
             className="border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-            aria-label="Filter ratings"
+            aria-label="Lọc theo số sao"
           >
-            <option value="all">All ratings</option>
-            <option value="5">5 stars</option>
-            <option value="4">4 stars</option>
-            <option value="3">3 stars</option>
-            <option value="2">2 stars</option>
-            <option value="1">1 star</option>
+            <option value="all">Tất cả mức đánh giá</option>
+            <option value="5">5 sao</option>
+            <option value="4">4 sao</option>
+            <option value="3">3 sao</option>
+            <option value="2">2 sao</option>
+            <option value="1">1 sao</option>
           </select>
         </div>
 
@@ -2445,7 +2478,7 @@ const LessonVideoPlayer: React.FC<{ lesson: LessonResponse }> = ({
       <button
         onClick={handleFullscreen}
         className="absolute bottom-4 right-4 bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="Toggle fullscreen"
+        aria-label="Bật/tắt toàn màn hình"
       >
         <Maximize className="w-5 h-5" />
       </button>
@@ -2540,7 +2573,7 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
                   <p className="font-medium text-gray-900 group-hover:text-blue-600">
                     Tài liệu {index + 1}
                   </p>
-                  <p className="text-xs text-gray-500">Click để tải xuống</p>
+                  <p className="text-xs text-gray-500">Nhấn để tải xuống</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
               </a>
@@ -2554,7 +2587,7 @@ const LessonContent: React.FC<{ lesson: LessonResponse }> = ({ lesson }) => {
         <h3 className="font-semibold text-blue-900 mb-2">💡 Gợi ý học tập</h3>
         <ul className="space-y-2 text-sm text-blue-800">
           <li>• Xem video nhiều lần nếu cần để hiểu rõ nội dung</li>
-          <li>• Ghi chú những điểm quan trọng vào phần Notes</li>
+          <li>• Ghi chú những điểm quan trọng vào phần Ghi chú</li>
           <li>• Thực hành ngay sau khi học để củng cố kiến thức</li>
           <li>• Tải xuống tài liệu đính kèm để tham khảo thêm</li>
         </ul>
@@ -2749,6 +2782,8 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
   const [submissionFiles, setSubmissionFiles] = useState<File[]>([]);
   const [submissionLink, setSubmissionLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteSubmissionConfirm, setShowDeleteSubmissionConfirm] =
+    useState(false);
 
   useEffect(() => {
     loadSubmission();
@@ -2782,11 +2817,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
   };
 
   const handleDelete = async () => {
-    if (
-      !submission ||
-      !window.confirm("Bạn có chắc chắn muốn xóa bài nộp này?")
-    )
-      return;
+    if (!submission) return;
 
     try {
       await assignmentApi.deleteSubmission(submission.id);
@@ -2908,7 +2939,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteSubmissionConfirm(true)}
                 className="text-red-600 hover:bg-red-50"
               >
                 Xóa
@@ -3082,7 +3113,7 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
                   <p className="font-medium text-gray-900 group-hover:text-blue-600">
                     Tài liệu {index + 1}
                   </p>
-                  <p className="text-xs text-gray-500">Click để tải xuống</p>
+                  <p className="text-xs text-gray-500">Nhấn để tải xuống</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
               </a>
@@ -3109,6 +3140,32 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
       </div>
 
       {/* Edit Modal */}
+      <AlertDialog
+        open={showDeleteSubmissionConfirm}
+        onOpenChange={setShowDeleteSubmissionConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa bài nộp?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa bài nộp này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleDelete();
+                setShowDeleteSubmissionConfirm(false);
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {showEditModal &&
         (() => {
           const canSubmitText = ["TEXT", "BOTH"].includes(

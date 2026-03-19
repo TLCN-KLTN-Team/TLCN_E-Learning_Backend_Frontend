@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -81,5 +82,31 @@ public class SseService {
 
     public List<Notification> getUserNotifications(String userId) {
         return notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId);
+    }
+
+    public Optional<Notification> markNotificationAsRead(String notificationId, String userId) {
+        Optional<Notification> notificationOptional = notificationRepository.findByIdAndRecipientId(notificationId, userId);
+        if (notificationOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Notification notification = notificationOptional.get();
+        if (!notification.isRead()) {
+            notification.setRead(true);
+            notification = notificationRepository.save(notification);
+        }
+
+        return Optional.of(notification);
+    }
+
+    public long markAllNotificationsAsRead(String userId) {
+        List<Notification> unreadNotifications = notificationRepository.findByRecipientIdAndIsReadFalse(userId);
+        if (unreadNotifications.isEmpty()) {
+            return 0;
+        }
+
+        unreadNotifications.forEach(notification -> notification.setRead(true));
+        notificationRepository.saveAll(unreadNotifications);
+        return unreadNotifications.size();
     }
 }

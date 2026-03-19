@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -28,7 +28,16 @@ import type { TimeRange } from "@/types/revenue.types";
 import { TIME_RANGE_OPTIONS } from "@/types/revenue.types";
 import DateRangePicker from "@/components/shared/DateRangePicker";
 import MonthYearPicker from "@/components/shared/MonthYearPicker";
-import { getDateRange, getCurrentMonth, getCurrentYear } from "@/utils/revenueUtils";
+import {
+  getDateRange,
+  getCurrentMonth,
+  getCurrentYear,
+  determineChartGranularity,
+  transformRevenueDataByGranularity,
+  formatChartLabel,
+  getChartTitle,
+  type ChartGranularity,
+} from "@/utils/revenueUtils";
 
 interface AdminRevenueData {
   totalRevenue: number;
@@ -77,6 +86,62 @@ const AdminRevenuePage: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
   const [error, setError] = useState<string | null>(null);
   const { handleError } = useErrorHandler();
+
+  const chartGranularity = useMemo<ChartGranularity>(() => {
+    if (timeRange === "all") {
+      return "year";
+    }
+
+    let startDate: string;
+    let endDate: string;
+
+    if (timeRange === "custom") {
+      startDate = customStartDate;
+      endDate = customEndDate;
+    } else if (timeRange === "select-month" || timeRange === "select-year") {
+      const range = getDateRange(timeRange, selectedMonth, selectedYear);
+      startDate = range.startDate;
+      endDate = range.endDate;
+    } else {
+      const range = getDateRange(timeRange);
+      startDate = range.startDate;
+      endDate = range.endDate;
+    }
+
+    return determineChartGranularity(startDate, endDate, timeRange);
+  }, [timeRange, customStartDate, customEndDate, selectedMonth, selectedYear]);
+
+  const transformedChartData = useMemo(() => {
+    if (!revenueData?.monthlyRevenueDetails) return [];
+
+    let startDate: string;
+    let endDate: string;
+
+    if (timeRange === "custom") {
+      startDate = customStartDate;
+      endDate = customEndDate;
+    } else if (timeRange === "select-month" || timeRange === "select-year") {
+      const range = getDateRange(timeRange, selectedMonth, selectedYear);
+      startDate = range.startDate;
+      endDate = range.endDate;
+    } else if (timeRange === "all") {
+      const months = revenueData.monthlyRevenueDetails.map((d) => d.month);
+      if (months.length === 0) return [];
+      startDate = `${months[0]}-01`;
+      endDate = `${months[months.length - 1]}-31`;
+    } else {
+      const range = getDateRange(timeRange);
+      startDate = range.startDate;
+      endDate = range.endDate;
+    }
+
+    return transformRevenueDataByGranularity(
+      revenueData.monthlyRevenueDetails,
+      chartGranularity,
+      startDate,
+      endDate
+    );
+  }, [revenueData, chartGranularity, timeRange, customStartDate, customEndDate, selectedMonth, selectedYear]);
 
   useEffect(() => {
     fetchRevenueData();
@@ -330,17 +395,14 @@ const AdminRevenuePage: React.FC = () => {
       {/* Revenue Chart */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Biểu đồ doanh thu theo tháng
+          {getChartTitle(chartGranularity)}
         </h3>
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={revenueData.monthlyRevenueDetails}>
+          <LineChart data={transformedChartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
-              dataKey="month"
-              tickFormatter={(value) => {
-                const [year, month] = value.split("-");
-                return `${month}/${year}`;
-              }}
+              dataKey="period"
+              tickFormatter={(value) => formatChartLabel(value, chartGranularity)}
             />
             <YAxis
               tickFormatter={(value) => formatShortCurrency(value)}
@@ -348,24 +410,18 @@ const AdminRevenuePage: React.FC = () => {
               domain={[0, 'auto']}
             />
             <Tooltip
-              labelFormatter={(value) => {
-                const [year, month] = value.split("-");
-                return `Tháng ${month}/${year}`;
-              }}
+              labelFormatter={(value) => formatChartLabel(value, chartGranularity)}
               formatter={(value: number, name: string) => {
-                if (name === "revenue") {
+                if (name === "Doanh thu") {
                   return [formatCurrency(value), "Doanh thu"];
                 }
-                return [value, name === "orderCount" ? "Đơn hàng" : "Học viên"];
+                if (name === "Đơn hàng") {
+                  return [`${value} đơn`, "Đơn hàng"];
+                }
+                return [value, name];
               }}
             />
-            <Legend
-              formatter={(value) => {
-                if (value === "revenue") return "Doanh thu";
-                if (value === "orderCount") return "Đơn hàng";
-                return "Học viên";
-              }}
-            />
+            <Legend />
             <Line
               type="monotone"
               dataKey="revenue"
@@ -373,6 +429,15 @@ const AdminRevenuePage: React.FC = () => {
               strokeWidth={3}
               dot={{ r: 5 }}
               activeDot={{ r: 7 }}
+              name="Doanh thu"
+            />
+            <Line
+              type="monotone"
+              dataKey="orderCount"
+              stroke="#10b981"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              name="Đơn hàng"
             />
           </LineChart>
         </ResponsiveContainer>

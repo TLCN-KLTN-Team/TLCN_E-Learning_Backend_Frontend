@@ -1,5 +1,6 @@
 package com.hoangphihiep.notification_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class Notification {
     private String senderId;
     private String content; // Or JSON/Structure
     private String type; // INFO, WARNING, ASSIGNMENT, etc.
+    @JsonProperty("isRead")
     private boolean isRead;
     private LocalDateTime createdAt;
     private String link; // Optional link to navigate

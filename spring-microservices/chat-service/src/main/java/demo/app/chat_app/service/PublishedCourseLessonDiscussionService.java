@@ -107,8 +107,8 @@ public class PublishedCourseLessonDiscussionService {
                 .orElse(null);
 
         if (readStatus == null || readStatus.getLastReadAt() == null) {
-            return discussionRepository.countByPublishedCourseIdAndLessonIdAndCreatedAtAfter(
-                    publishedCourseId, lessonId, LocalDateTime.MIN);
+            return discussionRepository.countByPublishedCourseIdAndLessonId(
+                publishedCourseId, lessonId);
         }
 
         return discussionRepository.countByPublishedCourseIdAndLessonIdAndCreatedAtAfter(

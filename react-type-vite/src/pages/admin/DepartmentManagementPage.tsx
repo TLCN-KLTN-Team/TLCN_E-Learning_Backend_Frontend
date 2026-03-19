@@ -12,6 +12,16 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "react-toastify";
 import type { DepartmentResponse } from "@/services/api/response/departmentResponse";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
@@ -41,6 +51,10 @@ const DepartmentManagementPage: React.FC = () => {
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [editingDepartment, setEditingDepartment] =
     useState<DepartmentResponse | null>(null);
+  const [departmentToDelete, setDepartmentToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Detail modal state
 
@@ -112,15 +126,7 @@ const DepartmentManagementPage: React.FC = () => {
     loadDepartments(currentPage, pageSize);
   };
 
-  const handleDelete = async (departmentId: string, departmentName: string) => {
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa khoa "${departmentName}"? Hành động này không thể hoàn tác.`
-      )
-    ) {
-      return;
-    }
-
+  const handleDelete = async (departmentId: string) => {
     try {
       await deleteDepartment(educationalUnitId!, departmentId);
       toast.success("Xóa khoa thành công!");
@@ -364,7 +370,12 @@ const DepartmentManagementPage: React.FC = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDelete(dept.id, dept.name)}
+                            onClick={() =>
+                              setDepartmentToDelete({
+                                id: dept.id,
+                                name: dept.name,
+                              })
+                            }
                             className="text-red-600 border-red-200 hover:bg-red-50"
                             title="Xóa"
                           >
@@ -458,6 +469,36 @@ const DepartmentManagementPage: React.FC = () => {
         onSuccess={handleSuccess}
         editingDepartment={editingDepartment}
       />
+
+      <AlertDialog
+        open={!!departmentToDelete}
+        onOpenChange={(open) => !open && setDepartmentToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa khoa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {departmentToDelete
+                ? `Bạn có chắc chắn muốn xóa khoa "${departmentToDelete.name}"? Hành động này không thể hoàn tác.`
+                : "Hành động này không thể hoàn tác."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (departmentToDelete) {
+                  handleDelete(departmentToDelete.id);
+                  setDepartmentToDelete(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

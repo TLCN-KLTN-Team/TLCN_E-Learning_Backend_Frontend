@@ -12,6 +12,7 @@ export const PUBLIC_ROUTES = {
   LOGIN: "/login",
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",
+  CERTIFICATE_VERIFY_BASE: "/certificate/verify",
   ABOUT_US: "/about-us",
   CONTACT: "/contact",
   REGISTER_EDUCATION_UNIT: "/register-education-unit",
@@ -31,6 +32,7 @@ export const STUDENT_ROUTES = {
   DASHBOARD: "/student/dashboard",
   EDIT_PROFILE: "/student/edit-profile",
   WORKSPACE: "/student/workspace",
+  NOTIFICATIONS: "/student/notifications",
 } as const;
 
 // ============================================
@@ -40,6 +42,7 @@ export const TEACHER_ROUTES = {
   BASE: "/teacher",
   HOME: "/teacher/home",
   DASHBOARD: "/teacher/dashboard",
+  NOTIFICATIONS: "/teacher/notifications",
   ASSIGNED_COURSES: "/teacher/assigned-courses",
   PUBLIC_COURSES: "/teacher/public-courses",
   QUESTION_BANK: "/teacher/question-bank",
@@ -54,6 +57,7 @@ export const TEACHER_ROUTES = {
 export const ADMIN_ROUTES = {
   BASE: "/admin",
   DASHBOARD: "/admin/dashboard",
+  NOTIFICATIONS: "/admin/notifications",
   EXPERTS: "/admin/experts",
   STUDENTS: "/admin/students",
   INSTRUCTORS: "/admin/instructors",
@@ -77,6 +81,7 @@ export const EXPERT_ROUTES = {
 export const SYSTEM_ADMIN_ROUTES = {
   BASE: "/system-admin",
   DASHBOARD: "/system-admin/dashboard",
+  NOTIFICATIONS: "/system-admin/notifications",
   TRAINING_UNITS: "/system-admin/training-units",
   ACCOUNTS: "/system-admin/accounts",
   CATEGORIES: "/system-admin/categories",
@@ -92,6 +97,7 @@ export const SYSTEM_ADMIN_ROUTES = {
 // ============================================
 export const USER_ROUTES = {
   EDIT_PROFILE: "/edit-profile",
+  NOTIFICATIONS: "/notifications",
   CART: "/cart",
   WISHLIST: "/wishlist",
   MY_COURSES: "/my-courses",
@@ -162,6 +168,9 @@ export const createRoute = {
   // Forum Routes
   forumPostDetail: (id: string | number) => `/forum/posts/${id}`,
 
+  // Certificate Routes
+  certificateVerify: (code: string) => `/certificate/verify/${encodeURIComponent(code)}`,
+
   // Expert Routes
   publishedCourseDetail: (publishedCourseId: string | number) =>
     `/expert/published-courses/${publishedCourseId}`,
@@ -203,6 +212,9 @@ export const ROUTE_PATTERNS = {
 
   // Forum patterns
   FORUM_POST_DETAIL: "/forum/posts/:id",
+
+  // Certificate verification patterns
+  CERTIFICATE_VERIFY: "/certificate/verify/:code",
 
   // Expert patterns
   PUBLISHED_COURSE_DETAIL: "/expert/published-courses/:publishedCourseId",

@@ -5,6 +5,7 @@ import com.hoangphihiep.dto.request.CourseRequest;
 import com.hoangphihiep.dto.request.DepartmentRequest;
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.Course;
+import com.hoangphihiep.entity.CourseClass;
 import com.hoangphihiep.entity.Department;
 import com.hoangphihiep.entity.EducationalUnit;
 import com.hoangphihiep.events.CourseCreatedEvent;
@@ -48,6 +49,7 @@ public class CourseService {
     private final CourseEnrollmentRepository courseEnrollmentRepository;
     private final CourseEventProducer eventProducer;
     private final NotificationRepository notificationRepository;
+    private final CourseClassRepository courseClassRepository;
 
     // Constants for validation
     private static final int MIN_COURSE_NAME_LENGTH = 3;
@@ -432,6 +434,12 @@ public class CourseService {
         validateEducationalUnitAccess(course.getEducationalUnit().getId());
         validateTeacherBelongsToEducationalUnit(teacherId, course.getEducationalUnit().getId());
 
+        // Check if course already has classes
+        List<CourseClass> existingClasses = courseClassRepository.findByCourseId(courseId);
+        if (!existingClasses.isEmpty()) {
+            throw new AppException(ErrorCode.COURSE_HAS_EXISTING_CLASSES);
+        }
+
         course.setIdTeacher(teacherId);
         course.setUpdatedAt(new Date());
 
@@ -459,7 +467,7 @@ public class CourseService {
                     // .senderId(currentExpertId) // Assuming we have it locally or can get from context
                     .type("ASSIGNMENT")
                     .message("Bạn được phân công dạy môn học: " + updatedCourse.getCourseName())
-                    .link("/teacher/courses/" + updatedCourse.getId())
+                    .link("/teacher/assigned-courses")
                     .data(Map.of("courseId", updatedCourse.getId(), "courseName", updatedCourse.getCourseName()))
                     .build());
         } catch (Exception e) {

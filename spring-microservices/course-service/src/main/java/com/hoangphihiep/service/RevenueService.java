@@ -20,6 +20,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +39,12 @@ public class RevenueService {
         return status == PayoutOrderItemStatus.ACCRUED ||
                status == PayoutOrderItemStatus.ATTACHED_TO_PAYOUT ||
                status == PayoutOrderItemStatus.SETTLED;
+    }
+
+    private boolean isRefundedStatus(PayoutOrderItemStatus status) {
+        return status == PayoutOrderItemStatus.REFUNDED ||
+               status == PayoutOrderItemStatus.REVERSED ||
+               status == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT;
     }
     
     /**
@@ -88,8 +95,7 @@ public class RevenueService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         BigDecimal totalReversed = payoutItems.stream()
-                .filter(item -> item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                              item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT)
+            .filter(item -> isRefundedStatus(item.getStatus()))
                 .map(PayoutOrderItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
@@ -98,18 +104,17 @@ public class RevenueService {
         // Get unique orders and courses
         Set<Integer> uniqueOrders = new HashSet<>();
         Set<Integer> uniqueCourses = new HashSet<>();
-        Set<Integer> uniqueStudents = new HashSet<>();
+        Set<String> uniqueStudents = new HashSet<>();
         Set<Integer> refundedOrders = new HashSet<>();
         
         for (PayoutOrderItem item : payoutItems) {
             uniqueOrders.add(item.getOrderItem().getOrder().getId());
             uniqueCourses.add(item.getOrderItem().getCourse().getId());
             // Get student from order
-            uniqueStudents.add(item.getOrderItem().getOrder().getId()); // Simplified: using order ID as student count
+            uniqueStudents.add(item.getOrderItem().getOrder().getIdUser());
             
             // Track refunded orders
-            if (item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT) {
+            if (isRefundedStatus(item.getStatus())) {
                 refundedOrders.add(item.getOrderItem().getOrder().getId());
             }
         }
@@ -147,7 +152,7 @@ public class RevenueService {
         }
         
         // Group by month for monthly revenue details
-        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems);
+        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, false);
         
         // Get refund details
         List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems);
@@ -189,8 +194,8 @@ public class RevenueService {
 
     public TeacherRevenueResponse getTeacherRevenueByRange(String startDate, String endDate) {
         String teacherId = JwtUtils.getCurrentUserId();
-        LocalDateTime start = LocalDate.parse(startDate).atStartOfDay();
-        LocalDateTime end = LocalDate.parse(endDate).atTime(23, 59, 59);
+        LocalDate startLocalDate = LocalDate.parse(startDate);
+        LocalDate endLocalDate = LocalDate.parse(endDate);
         
         log.info("Getting revenue for teacher ID: {} from {} to {}", teacherId, startDate, endDate);
         
@@ -201,10 +206,18 @@ public class RevenueService {
         // Filter by date range
         List<PayoutOrderItem> payoutItems = allPayoutItems.stream()
                 .filter(item -> {
-                    LocalDateTime accruedAt = item.getAccruedAt();
-                    return accruedAt != null && !accruedAt.isBefore(start) && !accruedAt.isAfter(end);
+                    if (item.getOrderItem() == null ||
+                        item.getOrderItem().getOrder() == null ||
+                        item.getOrderItem().getOrder().getOrderDate() == null) {
+                        return false;
+                    }
+                    LocalDate orderDate = item.getOrderItem().getOrder().getOrderDate().toLocalDate();
+                    return !orderDate.isBefore(startLocalDate) && !orderDate.isAfter(endLocalDate);
                 })
                 .collect(Collectors.toList());
+
+        // Deduplicate to handle duplicate PayoutOrderItems in database
+        payoutItems = deduplicatePayoutItems(payoutItems);
         
         log.info("Found {} payout items for teacher {} in date range", payoutItems.size(), teacherId);
         
@@ -221,8 +234,7 @@ public class RevenueService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         BigDecimal totalReversed = payoutItems.stream()
-                .filter(item -> item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                              item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT)
+            .filter(item -> isRefundedStatus(item.getStatus()))
                 .map(PayoutOrderItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
@@ -231,17 +243,16 @@ public class RevenueService {
         // Get unique orders and courses
         Set<Integer> uniqueOrders = new HashSet<>();
         Set<Integer> uniqueCourses = new HashSet<>();
-        Set<Integer> uniqueStudents = new HashSet<>();
+        Set<String> uniqueStudents = new HashSet<>();
         Set<Integer> refundedOrders = new HashSet<>();
         
         for (PayoutOrderItem item : payoutItems) {
             uniqueOrders.add(item.getOrderItem().getOrder().getId());
             uniqueCourses.add(item.getOrderItem().getCourse().getId());
-            uniqueStudents.add(item.getOrderItem().getOrder().getId()); // Using order ID as proxy for student
+            uniqueStudents.add(item.getOrderItem().getOrder().getIdUser());
             
             // Track refunded orders
-            if (item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT) {
+            if (isRefundedStatus(item.getStatus())) {
                 refundedOrders.add(item.getOrderItem().getOrder().getId());
             }
         }
@@ -279,7 +290,8 @@ public class RevenueService {
         }
         
         // Group by month for monthly revenue details
-        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems);
+        boolean useDailyBucket = ChronoUnit.DAYS.between(startLocalDate, endLocalDate) <= 31;
+        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, useDailyBucket);
         
         // Get refund details
         List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems);
@@ -391,8 +403,7 @@ public class RevenueService {
             Integer orderId = item.getOrderItem().getOrder().getId();
             Integer orderItemId = item.getOrderItem().getId();
             
-            if (item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT) {
+            if (isRefundedStatus(item.getStatus())) {
                 refundedOrderItemIds.add(orderItemId);
                 orderToRefundedItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
             } else if (isCountableRevenue(item.getStatus())) {
@@ -448,8 +459,8 @@ public class RevenueService {
                     .map(item -> item.getOrderItem().getCourse().getId())
                     .collect(Collectors.toSet());
             
-            Set<Integer> teacherStudents = countableTeacherItems.stream()
-                    .map(item -> item.getOrderItem().getOrder().getId())
+                Set<String> teacherStudents = countableTeacherItems.stream()
+                    .map(item -> item.getOrderItem().getOrder().getIdUser())
                     .collect(Collectors.toSet());
             
             // Calculate average rating across all teacher's courses
@@ -504,7 +515,7 @@ public class RevenueService {
         teacherDetails.sort((a, b) -> b.getRevenue().compareTo(a.getRevenue()));
         
         // Group by month
-        List<AdminRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForAdmin(countableItems);
+        List<AdminRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForAdmin(countableItems, false);
         
         log.info("Admin revenue - Total: {}, Teachers: {}, Courses: {}, Students: {}", 
                 totalRevenue, uniqueTeachers.size(), uniqueCourses.size(), uniqueStudents.size());
@@ -617,8 +628,7 @@ public class RevenueService {
             Integer orderId = item.getOrderItem().getOrder().getId();
             Integer orderItemId = item.getOrderItem().getId();
             
-            if (item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT) {
+            if (isRefundedStatus(item.getStatus())) {
                 refundedOrderItemIds.add(orderItemId);
                 orderToRefundedItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
             } else if (isCountableRevenue(item.getStatus())) {
@@ -684,8 +694,8 @@ public class RevenueService {
                     .map(item -> item.getOrderItem().getCourse().getId())
                     .collect(Collectors.toSet());
             
-            Set<Integer> teacherStudents = teacherPayoutItems.stream()
-                    .map(item -> item.getOrderItem().getOrder().getId())
+                Set<String> teacherStudents = teacherPayoutItems.stream()
+                    .map(item -> item.getOrderItem().getOrder().getIdUser())
                     .collect(Collectors.toSet());
             
             // Calculate average rating across all teacher's courses
@@ -733,8 +743,9 @@ public class RevenueService {
                     .build());
         }
         
-        // Group by month for monthly revenue details (filtered)
-        List<AdminRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForAdmin(countableItems);
+        // Group by period for monthly/daily revenue details (filtered)
+        boolean useDailyBucket = ChronoUnit.DAYS.between(startLocalDate, endLocalDate) <= 31;
+        List<AdminRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForAdmin(countableItems, useDailyBucket);
         
         log.info("Admin revenue stats - Total: {}, Teachers: {}, Courses: {}, Students: {}",
                 totalRevenue, uniqueTeachers.size(), uniqueCourses.size(), uniqueStudents.size());
@@ -812,7 +823,7 @@ public class RevenueService {
                 .orElse(10.0);
         
         // Group by month
-        List<SystemRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForSystem(countableItems, allPayoutItems);
+        List<SystemRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForSystem(countableItems, allPayoutItems, false);
         
         // Count unique courses, students and orders
         Set<Integer> uniqueCourses = new HashSet<>();
@@ -842,8 +853,7 @@ public class RevenueService {
                 Integer orderId = item.getOrderItem().getOrder().getId();
                 Integer orderItemId = item.getOrderItem().getId();
                 
-                if (item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                    item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT) {
+                if (isRefundedStatus(item.getStatus())) {
                     refundedOrderItemIds.add(orderItemId);
                     orderToRefundedItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
                 } else if (isCountableRevenue(item.getStatus())) {
@@ -973,7 +983,8 @@ public class RevenueService {
                 .orElse(10.0);
         
         // Group by month
-        List<SystemRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForSystem(countableItems, allPayoutItems);
+        boolean useDailyBucket = ChronoUnit.DAYS.between(startLocalDate, endLocalDate) <= 31;
+        List<SystemRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForSystem(countableItems, allPayoutItems, useDailyBucket);
         
         // Count unique courses, students and orders from filtered items
         Set<Integer> uniqueCourses = new HashSet<>();
@@ -1003,8 +1014,7 @@ public class RevenueService {
                 Integer orderId = item.getOrderItem().getOrder().getId();
                 Integer orderItemId = item.getOrderItem().getId();
                 
-                if (item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                    item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT) {
+                if (isRefundedStatus(item.getStatus())) {
                     refundedOrderItemIds.add(orderItemId);
                     orderToRefundedItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
                 } else if (isCountableRevenue(item.getStatus())) {
@@ -1130,8 +1140,7 @@ public class RevenueService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         BigDecimal totalReversed = payoutItems.stream()
-                .filter(item -> item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                              item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT)
+            .filter(item -> isRefundedStatus(item.getStatus()))
                 .map(PayoutOrderItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
@@ -1155,8 +1164,7 @@ public class RevenueService {
             uniqueStudents.add(item.getOrderItem().getOrder().getIdUser());
             
             // Track order items and refunds
-            if (item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT) {
+            if (isRefundedStatus(item.getStatus())) {
                 refundedOrderItemIds.add(orderItemId);
                 orderToRefundedItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
             } else if (isCountableRevenue(item.getStatus())) {
@@ -1211,8 +1219,9 @@ public class RevenueService {
                     .build());
         }
         
-        // Group by month for monthly revenue details
-        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems);
+        // Group by period for revenue details
+        boolean useDailyBucket = ChronoUnit.DAYS.between(startLocalDate, endLocalDate) <= 31;
+        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, useDailyBucket);
         
         // Get refund details
         List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems);
@@ -1262,15 +1271,24 @@ public class RevenueService {
     }
     
     
-    private List<TeacherRevenueResponse.MonthlyRevenueDetail> groupByMonth(List<PayoutOrderItem> items) {
+    private List<TeacherRevenueResponse.MonthlyRevenueDetail> groupByMonth(List<PayoutOrderItem> items, boolean useDailyBucket) {
         // Filter for countable revenue items (exclude HELD, RELEASED, REFUNDED, REVERSED)
         List<PayoutOrderItem> countableItems = items.stream()
                 .filter(item -> isCountableRevenue(item.getStatus()))
                 .collect(Collectors.toList());
+
+        DateTimeFormatter periodFormatter = useDailyBucket
+                ? DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                : DateTimeFormatter.ofPattern("yyyy-MM");
         
         Map<String, List<PayoutOrderItem>> itemsByMonth = countableItems.stream()
-                .collect(Collectors.groupingBy(item -> 
-                    item.getAccruedAt().format(DateTimeFormatter.ofPattern("yyyy-MM"))));
+                .filter(item -> item.getOrderItem() != null &&
+                              item.getOrderItem().getOrder() != null &&
+                              item.getOrderItem().getOrder().getOrderDate() != null)
+                .collect(Collectors.groupingBy(item -> {
+                    LocalDate orderDate = item.getOrderItem().getOrder().getOrderDate().toLocalDate();
+                    return orderDate.format(periodFormatter);
+                }));
         
         return itemsByMonth.entrySet().stream()
                 .map(entry -> TeacherRevenueResponse.MonthlyRevenueDetail.builder()
@@ -1284,10 +1302,19 @@ public class RevenueService {
                 .collect(Collectors.toList());
     }
     
-    private List<AdminRevenueResponse.MonthlyRevenueDetail> groupByMonthForAdmin(List<PayoutOrderItem> items) {
+    private List<AdminRevenueResponse.MonthlyRevenueDetail> groupByMonthForAdmin(List<PayoutOrderItem> items, boolean useDailyBucket) {
+        DateTimeFormatter periodFormatter = useDailyBucket
+                ? DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                : DateTimeFormatter.ofPattern("yyyy-MM");
+
         Map<String, List<PayoutOrderItem>> itemsByMonth = items.stream()
-                .collect(Collectors.groupingBy(item -> 
-                    item.getAccruedAt().format(DateTimeFormatter.ofPattern("yyyy-MM"))));
+                .filter(item -> item.getOrderItem() != null &&
+                              item.getOrderItem().getOrder() != null &&
+                              item.getOrderItem().getOrder().getOrderDate() != null)
+                .collect(Collectors.groupingBy(item -> {
+                    LocalDate orderDate = item.getOrderItem().getOrder().getOrderDate().toLocalDate();
+                    return orderDate.format(periodFormatter);
+                }));
         
         return itemsByMonth.entrySet().stream()
                 .map(entry -> AdminRevenueResponse.MonthlyRevenueDetail.builder()
@@ -1301,8 +1328,16 @@ public class RevenueService {
                 .collect(Collectors.toList());
     }
     
-    private List<SystemRevenueResponse.MonthlyRevenueDetail> groupByMonthForSystem(List<PayoutOrderItem> countableItems, List<PayoutOrderItem> allItems) {
-        // Group by order date instead of accrued_at to show revenue in the correct month
+    private List<SystemRevenueResponse.MonthlyRevenueDetail> groupByMonthForSystem(
+            List<PayoutOrderItem> countableItems,
+            List<PayoutOrderItem> allItems,
+            boolean useDailyBucket
+    ) {
+        DateTimeFormatter periodFormatter = useDailyBucket
+                ? DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                : DateTimeFormatter.ofPattern("yyyy-MM");
+
+        // Group by order date instead of accrued_at to show revenue in the correct period
         Map<String, List<PayoutOrderItem>> itemsByMonth = countableItems.stream()
                 .filter(item -> item.getOrderItem() != null && 
                               item.getOrderItem().getOrder() != null && 
@@ -1310,26 +1345,31 @@ public class RevenueService {
                 .collect(Collectors.groupingBy(item -> {
                     java.sql.Date orderDate = item.getOrderItem().getOrder().getOrderDate();
                     LocalDate localDate = orderDate.toLocalDate();
-                    return localDate.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+                    return localDate.format(periodFormatter);
                 }));
         
         // Group refunded items by order date
         Map<String, List<PayoutOrderItem>> refundedItemsByMonth = allItems.stream()
-                .filter(item -> item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                              item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT)
+            .filter(item -> isRefundedStatus(item.getStatus()))
                 .filter(item -> item.getOrderItem() != null && 
                               item.getOrderItem().getOrder() != null && 
                               item.getOrderItem().getOrder().getOrderDate() != null)
                 .collect(Collectors.groupingBy(item -> {
                     java.sql.Date orderDate = item.getOrderItem().getOrder().getOrderDate();
                     LocalDate localDate = orderDate.toLocalDate();
-                    return localDate.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+                    return localDate.format(periodFormatter);
                 }));
         
-        return itemsByMonth.entrySet().stream()
-                .map(entry -> {
-                    // Deduplicate PayoutOrderItems for this month
-                    List<PayoutOrderItem> uniqueItems = deduplicatePayoutItems(entry.getValue());
+        Set<String> allPeriods = new HashSet<>();
+        allPeriods.addAll(itemsByMonth.keySet());
+        allPeriods.addAll(refundedItemsByMonth.keySet());
+
+        return allPeriods.stream()
+            .map(period -> {
+                // Deduplicate PayoutOrderItems for this period
+                List<PayoutOrderItem> uniqueItems = deduplicatePayoutItems(
+                    itemsByMonth.getOrDefault(period, Collections.emptyList())
+                );
                     
                     BigDecimal grossRevenue = uniqueItems.stream()
                             .map(PayoutOrderItem::getAmount)
@@ -1350,16 +1390,16 @@ public class RevenueService {
                             .map(PayoutOrderItem::getAmount)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
                     
-                    // Count unique orders for this month (use deduplicated items)
+                        // Count unique orders for this period (use deduplicated items)
                     Set<Integer> uniqueMonthOrders = uniqueItems.stream()
                             .filter(item -> item.getOrderItem() != null && item.getOrderItem().getOrder() != null)
                             .map(item -> item.getOrderItem().getOrder().getId())
                             .collect(Collectors.toSet());
                     
-                    // Count unique refunded orders for this month
+                        // Count unique refunded orders for this period
                     int refundCount = 0;
-                    if (refundedItemsByMonth.containsKey(entry.getKey())) {
-                        Set<Integer> refundedOrders = refundedItemsByMonth.get(entry.getKey()).stream()
+                        if (refundedItemsByMonth.containsKey(period)) {
+                        Set<Integer> refundedOrders = refundedItemsByMonth.get(period).stream()
                                 .filter(item -> item.getOrderItem() != null && item.getOrderItem().getOrder() != null)
                                 .map(item -> item.getOrderItem().getOrder().getId())
                                 .collect(Collectors.toSet());
@@ -1367,7 +1407,7 @@ public class RevenueService {
                     }
                     
                     return SystemRevenueResponse.MonthlyRevenueDetail.builder()
-                            .month(entry.getKey())
+                            .month(period)
                             .grossRevenue(grossRevenue)
                             .systemRevenue(systemRevenue)
                             .teacherRevenue(teacherRevenue)
@@ -1382,8 +1422,7 @@ public class RevenueService {
     
     private List<TeacherRevenueResponse.RefundDetail> buildRefundDetails(List<PayoutOrderItem> payoutItems) {
         return payoutItems.stream()
-                .filter(item -> item.getStatus() == PayoutOrderItemStatus.REVERSED ||
-                              item.getStatus() == PayoutOrderItemStatus.REVERSED_AFTER_SETTLEMENT)
+            .filter(item -> isRefundedStatus(item.getStatus()))
                 .map(item -> {
                     var orderItem = item.getOrderItem();
                     var order = orderItem.getOrder();

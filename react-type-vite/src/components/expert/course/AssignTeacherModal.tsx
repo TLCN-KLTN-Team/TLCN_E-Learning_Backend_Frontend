@@ -41,14 +41,32 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showRemoveAlert, setShowRemoveAlert] = useState(false);
+  const [courseHasClasses, setCourseHasClasses] = useState(false);
+  const [classCount, setClassCount] = useState(0);
 
   useEffect(() => {
     if (isOpen && educationalUnitId) {
       loadTeachers();
+      checkCourseClasses();
       setSelectedTeacher("");
       setSearchTerm("");
     }
   }, [isOpen, educationalUnitId]);
+
+  const checkCourseClasses = async () => {
+    if (!course) return;
+    
+    try {
+      const classesResponse = await expertClassApi.getClassesByCourse(educationalUnitId, course.id, 0, 100);
+      const classes = classesResponse?.content || [];
+      setCourseHasClasses(classes.length > 0);
+      setClassCount(classes.length);
+    } catch (error) {
+      console.error('Error checking course classes:', error);
+      setCourseHasClasses(false);
+      setClassCount(0);
+    }
+  };
 
   const loadTeachers = async () => {
     try {
@@ -83,10 +101,15 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
 
   const handleAssign = async () => {
     if (!selectedTeacher || !course) return;
+
+    // Check if course has classes
+    if (courseHasClasses) {
+      toast.warning('Lưu ý: Khóa học này đã có ' + classCount + ' lớp học. Thay đổi giảng viên có thể ảnh hưởng đến các lớp hiện tại.');
+    }
+
     try {
       setIsLoading(true);
       console.log('Assigning teacher:', selectedTeacher, 'to course:', course.id);
-      console.log('Selected teacher details:', selectedTeacherData);
       console.log('Selected teacher details:', selectedTeacherData);
       await expertCourseApi.assignTeacherToCourse(educationalUnitId, course.id, selectedTeacher);
 
@@ -202,6 +225,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
         <div className="flex flex-col h-[calc(90vh-180px)]">
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="space-y-6">
+
               {/* Current Teacher Section */}
               {course.teacher && (
                 <div className="bg-green-50 rounded-lg p-4">

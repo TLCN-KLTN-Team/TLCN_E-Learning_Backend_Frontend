@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 
 import openEduIcon from "@/assets/open-edu-dark.png";
 import * as notificationApi from "@/services/api/notificationApi";
+import { useNavigate } from "react-router-dom";
 
 interface Notification {
   id?: string;
@@ -58,9 +59,61 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const profileRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useResponsive();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const getNotificationTarget = (notif: Notification) => {
+    const fallback = "/teacher/home";
+    const rawLink = (notif.link || "").trim();
+
+    if (!rawLink) return fallback;
+    if (rawLink.startsWith("http://") || rawLink.startsWith("https://")) {
+      return rawLink;
+    }
+
+    const normalizedPath = rawLink.startsWith("/") ? rawLink : `/${rawLink}`;
+    if (/^\/teacher\/published-courses\/\d+$/.test(normalizedPath)) {
+      return "/teacher/public-courses";
+    }
+    if (/^\/teacher\/courses\/\d+$/.test(normalizedPath)) {
+      return "/teacher/assigned-courses";
+    }
+    if (
+      normalizedPath === "/notifications" ||
+      normalizedPath === "/teacher/notifications"
+    ) {
+      return "/teacher/notifications";
+    }
+    if (normalizedPath === "/admin/notifications") {
+      return fallback;
+    }
+
+    return normalizedPath;
+  };
+
+  const handleOpenNotification = (notif: Notification, idx: number) => {
+    if (!notif.isRead) {
+      setNotifications((prev) =>
+        prev.map((n, i) => (i === idx ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      if (notif.id && user?.id) {
+        notificationApi
+          .markNotificationAsRead(notif.id, user.id)
+          .catch((err) => console.error("Failed to mark notification as read", err));
+      }
+    }
+    const target = getNotificationTarget(notif);
+    if (target.startsWith("http://") || target.startsWith("https://")) {
+      window.location.assign(target);
+    } else {
+      navigate(target);
+    }
+    setIsNotificationOpen(false);
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -302,49 +355,73 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
               {/* Notification Dropdown */}
               {isNotificationOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border z-50 max-h-[80vh] flex flex-col"
+                  className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[80vh] flex flex-col"
                   ref={modalRef}
                 >
-                  <div className="p-4 border-b bg-transparent flex-shrink-0">
+                  <div className="p-4 border-b border-gray-200 flex-shrink-0">
                     <div className="flex justify-between items-center">
-                      <h6 className="font-semibold m-0">
-                        Notifications{" "}
+                      <h6 className="font-semibold m-0 text-gray-900">
+                        Thông báo{" "}
                         {unreadCount > 0 && (
                           <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
-                            {unreadCount} new
+                            {unreadCount} mới
                           </span>
                         )}
                       </h6>
-                      <button className="text-sm text-blue-600 hover:underline">
-                        Mark all as read
+                      <button
+                        className="text-sm text-blue-600 hover:underline"
+                        onClick={() => {
+                          setNotifications((prev) =>
+                            prev.map((n) => ({ ...n, isRead: true }))
+                          );
+                          setUnreadCount(0);
+
+                          if (user?.id) {
+                            notificationApi
+                              .markAllNotificationsAsRead(user.id)
+                              .catch((err) => console.error("Failed to mark all notifications as read", err));
+                          }
+                        }}
+                      >
+                        Đọc tất cả
                       </button>
                     </div>
                   </div>
-                  <div className="p-0 overflow-y-auto flex-1">
-                    <ul className="list-none">
+                  <div className="overflow-y-auto flex-1">
+                    <ul className="list-none m-0 p-0">
                       {notifications.length === 0 ? (
-                        <li className="p-4 text-center text-gray-500">No notifications</li>
+                        <li className="p-4 text-center text-gray-500 text-sm">Chưa có thông báo</li>
                       ) : (
-                        notifications.map((notif, idx) => (
-                          <li key={idx}>
-                            <div className={`p-3 border-b hover:bg-gray-50 flex ${!notif.isRead ? 'bg-blue-50' : ''}`}>
-                              <div className="mr-3">
+                        notifications.slice(0, 20).map((notif, idx) => (
+                          <li key={notif.id ?? idx}>
+                            <div
+                              className={`p-3 border-b border-gray-100 hover:bg-gray-50 flex cursor-pointer ${!notif.isRead ? 'bg-blue-50' : ''}`}
+                              onClick={() => handleOpenNotification(notif, idx)}
+                            >
+                              <div className="mr-3 flex-shrink-0">
                                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                                   <BellRing size={20} />
                                 </div>
                               </div>
-                              <div>
-                                <p className="text-sm m-0 text-gray-800">
-                                  {notif.content}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm m-0 text-gray-800 break-words">
+                                  {notif.content || notif.message}
                                 </p>
                                 <div className="flex justify-between items-center mt-1">
                                   <span className="text-xs text-gray-500">
-                                    {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
+                                    {notif.createdAt ? new Date(notif.createdAt).toLocaleString('vi-VN') : 'Vừa xong'}
                                   </span>
                                   {notif.link && (
-                                    <a href={notif.link} className="text-xs text-blue-600 underline ml-2">
-                                      View
-                                    </a>
+                                    <button
+                                      type="button"
+                                      className="text-xs text-blue-600 underline ml-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenNotification(notif, idx);
+                                      }}
+                                    >
+                                      Xem
+                                    </button>
                                   )}
                                 </div>
                               </div>
@@ -354,9 +431,15 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
                       )}
                     </ul>
                   </div>
-                  <div className="p-3 text-center border-t bg-transparent relative flex-shrink-0">
-                    <button className="text-blue-600 hover:underline">
-                      See all incoming activity
+                  <div className="p-3 text-center border-t border-gray-200 flex-shrink-0">
+                    <button
+                      className="text-blue-600 hover:underline text-sm"
+                      onClick={() => {
+                        navigate('/teacher/notifications');
+                        setIsNotificationOpen(false);
+                      }}
+                    >
+                      Xem tất cả thông báo
                     </button>
                   </div>
                 </div>

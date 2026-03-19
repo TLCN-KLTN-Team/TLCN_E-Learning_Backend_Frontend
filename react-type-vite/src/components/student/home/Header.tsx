@@ -67,6 +67,48 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const getNotificationTarget = (notif: Notification) => {
+    const fallback = "/notifications";
+    const rawLink = (notif.link || "").trim();
+
+    if (!rawLink) return fallback;
+    if (rawLink.startsWith("http://") || rawLink.startsWith("https://")) {
+      return rawLink;
+    }
+
+    const normalizedPath = rawLink.startsWith("/") ? rawLink : `/${rawLink}`;
+    if (normalizedPath === "/notifications") {
+      return "/notifications";
+    }
+    if (normalizedPath === "/admin/notifications") {
+      return fallback;
+    }
+
+    return normalizedPath;
+  };
+
+  const handleOpenNotification = (notif: Notification, idx: number) => {
+    if (!notif.isRead) {
+      setNotifications(prev =>
+        prev.map((n, i) => i === idx ? { ...n, isRead: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+
+      if (notif.id && user?.id) {
+        notificationApi
+          .markNotificationAsRead(notif.id, user.id)
+          .catch((err) => console.error("Failed to mark notification as read", err));
+      }
+    }
+    const target = getNotificationTarget(notif);
+    if (target.startsWith("http://") || target.startsWith("https://")) {
+      window.location.assign(target);
+    } else {
+      navigate(target);
+    }
+    setIsNotificationOpen(false);
+  };
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -371,6 +413,12 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                           onClick={() => {
                             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
                             setUnreadCount(0);
+
+                            if (user?.id) {
+                              notificationApi
+                                .markAllNotificationsAsRead(user.id)
+                                .catch((err) => console.error("Failed to mark all notifications as read", err));
+                            }
                           }}
                           className="text-sm text-blue-600 hover:underline"
                         >
@@ -389,16 +437,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                                 className={`p-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 flex cursor-pointer ${
                                   !notif.isRead ? "bg-blue-50 dark:bg-blue-950/30" : ""
                                 }`}
-                                onClick={() => {
-                                  if (!notif.isRead) {
-                                    setNotifications(prev =>
-                                      prev.map((n, i) => i === idx ? { ...n, isRead: true } : n)
-                                    );
-                                    setUnreadCount(prev => Math.max(0, prev - 1));
-                                  }
-                                  if (notif.link) navigate(notif.link);
-                                  setIsNotificationOpen(false);
-                                }}
+                                onClick={() => handleOpenNotification(notif, idx)}
                               >
                                 <div className="mr-3 flex-shrink-0">
                                   <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600">
@@ -416,9 +455,16 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                                         : "Vừa xong"}
                                     </span>
                                     {notif.link && (
-                                      <a href={notif.link} className="text-xs text-blue-600 underline ml-2">
+                                      <button
+                                        type="button"
+                                        className="text-xs text-blue-600 underline ml-2"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenNotification(notif, idx);
+                                        }}
+                                      >
                                         Xem
-                                      </a>
+                                      </button>
                                     )}
                                   </div>
                                 </div>

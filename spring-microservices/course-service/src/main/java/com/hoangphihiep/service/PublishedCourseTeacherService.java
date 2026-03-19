@@ -221,7 +221,7 @@ public class PublishedCourseTeacherService {
                         .userId(teacherResponse.getId()) // Use UUID from teacher response
                         .type("COURSE_APPROVED")
                         .message("Khóa học \"" + saved.getCourseName() + "\" của bạn đã được phê duyệt thành công.")
-                        .link("/teacher/published-courses/" + saved.getId())
+                    .link("/teacher/public-courses")
                         .data(Map.of("courseId", saved.getCourse().getId()))
                         .build());
             }
@@ -281,7 +281,7 @@ public class PublishedCourseTeacherService {
                         .userId(teacherResponse.getId()) // Use UUID from teacher response
                         .type("COURSE_REJECTED")
                         .message("Khóa học \"" + saved.getCourseName() + "\" của bạn đã bị từ chối phê duyệt. Lý do: " + reason)
-                        .link("/teacher/published-courses/" + saved.getId())
+                    .link("/teacher/public-courses")
                         .data(Map.of("courseId", saved.getCourse().getId(), "reason", reason))
                         .build());
             }

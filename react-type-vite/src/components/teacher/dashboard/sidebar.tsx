@@ -42,11 +42,6 @@ const menuItems = [
     icon: BrainCircuit, 
     path: "/teacher/generate-questions" 
   },
-  { 
-    name: "Tạo câu hỏi bằng AI", 
-    icon: BrainCircuit, 
-    path: "/teacher/generate-questions" 
-  },
   { name: "Theo dõi doanh thu", icon: TrendingUp, path: "/teacher/revenue" },
   { name: "Danh sách đơn hàng", icon: ShoppingBag, path: "/teacher/orders" },
   {

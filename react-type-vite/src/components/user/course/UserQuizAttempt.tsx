@@ -14,7 +14,7 @@ import type { AnswerResponse } from '@/services/api/response/answerResponse'
 import type { QuizAttemptHistoryResponse } from '@/services/api/response/quizAttemptHistoryResponse'
 import type { QuizAttemptResponse } from '@/services/api/response/quizAttemptResponse'
 import type { QuizAnswerSubmission } from '@/services/api/request/quizAttemptRequest'
-import { Clock, CheckCircle, XCircle, Award, History, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, X, Eye, EyeOff, Flag } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, Award, History, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, X, Eye, EyeOff, Flag, AlertTriangle } from 'lucide-react'
 
 type ViewMode = 'history' | 'taking' | 'result'
 type QuizViewMode = 'single' | 'all'
@@ -47,6 +47,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
   const [attemptResult, setAttemptResult] = useState<QuizAttemptResponse | null>(null)
   const [showAnswerReview, setShowAnswerReview] = useState(false)
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set())
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
 
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [timeSpent, setTimeSpent] = useState<number>(0)
@@ -229,22 +230,12 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
     setUserAnswers(newAnswers)
   }
 
-  const handleSubmitQuiz = async () => {
+  const submitQuiz = async () => {
     if (!quiz) return
     if (!currentAttemptId) {
       toast.error("Không tìm thấy ID bài làm. Vui lòng tải lại trang!")
       return
     }
-
-    const questionsArray = Array.from(quiz.questions)
-    const unanswered = questionsArray.filter(q => !userAnswers.has(q.id))
-    const answered = questionsArray.length - unanswered.length
-
-    const confirmMessage = unanswered.length > 0
-      ? `Bạn đã trả lời ${answered}/${questionsArray.length} câu hỏi.\nCòn ${unanswered.length} câu chưa trả lời.\n\nBạn có chắc muốn nộp bài?`
-      : `Bạn đã trả lời đầy đủ ${questionsArray.length} câu hỏi.\n\nBạn có chắc muốn nộp bài?`
-
-    if (!window.confirm(confirmMessage)) return
 
     try {
       setSubmitting(true)
@@ -284,9 +275,23 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
     }
   }
 
+  const handleSubmitQuiz = () => {
+    if (!quiz || submitting) return
+
+    const questionsArray = Array.from(quiz.questions)
+    const unanswered = questionsArray.filter(q => !userAnswers.has(q.id))
+
+    if (unanswered.length > 0) {
+      setShowSubmitConfirm(true)
+      return
+    }
+
+    submitQuiz()
+  }
+
   const handleAutoSubmit = () => {
     toast('Hết giờ! Tự động nộp bài...', { icon: '⏰' })
-    handleSubmitQuiz()
+    submitQuiz()
   }
 
   const handleViewAttemptResult = async (attemptNumber: number) => {
@@ -998,6 +1003,41 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
             </div>
           </div>
         </div>
+
+        {showSubmitConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                <div>
+                  <h3 className="font-bold text-lg mb-2">Xác nhận nộp bài</h3>
+                  <p className="text-gray-600 text-sm">
+                    Bạn đã trả lời <strong>{answeredCount}/{questionsArray.length}</strong> câu hỏi.<br />
+                    Còn <strong>{unansweredCount}</strong> câu chưa trả lời.<br /><br />
+                    Bạn có chắc chắn muốn nộp bài không?
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubmitConfirm(false)}
+                >
+                  Tiếp tục làm bài
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowSubmitConfirm(false)
+                    submitQuiz()
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Nộp bài ngay
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }

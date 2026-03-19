@@ -14,6 +14,7 @@ import AboutUs from "@/pages/user/home/AboutUs";
 import ForumHome from "@/pages/forum/ForumHome";
 import ForumCreatePost from "@/pages/forum/ForumCreatePost";
 import ForumPostDetail from "@/pages/forum/ForumPostDetail";
+import CertificateVerificationPage from "@/pages/public/CertificateVerificationPage";
 
 import ForumLayout from "@/layouts/ForumLayout";
 import {
@@ -74,6 +75,11 @@ const PublicRoutes = [
     key="educational-unit-detail"
     path={ROUTE_PATTERNS.EDUCATIONAL_UNIT_DETAIL}
     element={<DetailEducationalUnit />}
+  />,
+  <Route
+    key="certificate-verify"
+    path={ROUTE_PATTERNS.CERTIFICATE_VERIFY}
+    element={<CertificateVerificationPage />}
   />,
 
   // Forum Routes
