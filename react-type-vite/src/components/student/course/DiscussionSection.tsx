@@ -28,6 +28,16 @@ import { uploadImage } from "@/services/api/fileUploadApi";
 import { toast } from "react-toastify";
 import { getAccessToken } from "@/utils/localStorageVariables";
 import type { User as UserType } from "@/context/auth-context/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type DiscussionMessage = QuizDiscussionMessage | AssignmentDiscussionMessage | LessonDiscussionMessage;
 
@@ -47,6 +57,7 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(true);
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
@@ -269,8 +280,6 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
   };
 
   const handleDelete = async (messageId: string) => {
-    if (!window.confirm("Bạn có chắc muốn xóa tin nhắn này?")) return;
-
     try {
       if (itemType === "quiz") {
         await deleteDiscussionMessage(messageId);
@@ -457,7 +466,7 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
 
                     {message.userId === user?.id && (
                       <button
-                        onClick={() => handleDelete(message.id)}
+                        onClick={() => setMessageToDelete(message.id)}
                         className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -558,6 +567,31 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
           </div>
         </div>
       </div>
+
+      <AlertDialog open={!!messageToDelete} onOpenChange={(open) => !open && setMessageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa tin nhắn?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tin nhắn sẽ bị xóa và không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (messageToDelete) {
+                  handleDelete(messageToDelete);
+                  setMessageToDelete(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

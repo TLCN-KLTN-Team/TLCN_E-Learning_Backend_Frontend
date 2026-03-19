@@ -12,6 +12,7 @@ import SystemStatisticsPage from "@/pages/system-admin/SystemStatisticsPage";
 import SystemAdminProfilePage from "@/pages/system-admin/SystemAdminProfilePage";
 import { SYSTEM_ADMIN_ROUTES } from "@/constants/routes";
 import AdminRefundPage from "@/pages/admin/revenue/AdminRefundPage";
+import SystemAdminNotificationsPage from "@/pages/system-admin/notifications/SystemAdminNotificationsPage";
 
 const SystemAdminRoutes = [
   <Route
@@ -26,6 +27,7 @@ const SystemAdminRoutes = [
     {/* Default route - shows dashboard */}
     <Route index element={<SystemAdminDashboardPage />} />
     <Route path="dashboard" element={<SystemAdminDashboardPage />} />
+    <Route path="notifications" element={<SystemAdminNotificationsPage />} />
 
     {/* System Admin specific routes */}
     <Route path="training-units" element={<TrainingUnitsPage />} />

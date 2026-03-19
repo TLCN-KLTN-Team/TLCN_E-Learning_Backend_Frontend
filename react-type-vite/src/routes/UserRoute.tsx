@@ -10,6 +10,7 @@ import OrderHistoryPage from "@/pages/user/personal/OrderHistoryPage";
 import CourseLearning from "@/pages/user/course/CourseLearning";
 import UserQuizAttempt from "@/components/user/course/UserQuizAttempt";
 import MyDocumentLibraryPage from "@/pages/student/document-library/MyDocumentLibraryPage";
+import UserNotificationsPage from "@/pages/user/notifications/UserNotificationsPage";
 import { USER_ROUTES, ROUTE_PATTERNS } from "@/constants/routes";
 
 const UserRoutes = [
@@ -39,6 +40,16 @@ const UserRoutes = [
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <PaypalReturn />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="notifications"
+    path={USER_ROUTES.NOTIFICATIONS}
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <UserNotificationsPage />
       </ProtectedRoute>
     }
   />,

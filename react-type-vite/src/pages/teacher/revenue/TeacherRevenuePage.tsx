@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -26,64 +26,16 @@ import type { TimeRange } from "@/types/revenue.types";
 import { TIME_RANGE_OPTIONS } from "@/types/revenue.types";
 import DateRangePicker from "@/components/shared/DateRangePicker";
 import MonthYearPicker from "@/components/shared/MonthYearPicker";
-
-// Helper function to calculate date range
-const getDateRange = (range: TimeRange, selectedMonth?: string, selectedYear?: string): { startDate: string; endDate: string } => {
-  const end = new Date();
-  const start = new Date();
-
-  switch (range) {
-    case "today":
-      // Same day
-      break;
-    case "week":
-      start.setDate(start.getDate() - 7);
-      break;
-    case "month":
-      start.setDate(start.getDate() - 30);
-      break;
-    case "select-month":
-      if (selectedMonth) {
-        // selectedMonth format: "yyyy-MM"
-        const [year, month] = selectedMonth.split('-');
-        const monthStart = new Date(parseInt(year), parseInt(month) - 1, 1);
-        const monthEnd = new Date(parseInt(year), parseInt(month), 0);
-        return {
-          startDate: monthStart.toISOString().split('T')[0],
-          endDate: monthEnd.toISOString().split('T')[0]
-        };
-      }
-      break;
-    case "year":
-      start.setDate(start.getDate() - 365);
-      break;
-    case "select-year":
-      if (selectedYear) {
-        // selectedYear format: "yyyy"
-        const yearStart = new Date(parseInt(selectedYear), 0, 1);
-        const yearEnd = new Date(parseInt(selectedYear), 11, 31);
-        return {
-          startDate: yearStart.toISOString().split('T')[0],
-          endDate: yearEnd.toISOString().split('T')[0]
-        };
-      }
-      break;
-    case "all":
-    case "custom":
-    default:
-      // For "all" or "custom", handled separately
-      break;
-  }
-
-  const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
-  };
-
-  return {
-    startDate: formatDate(start),
-    endDate: formatDate(end)
-  };
-};
+import {
+  getDateRange,
+  getCurrentMonth,
+  getCurrentYear,
+  determineChartGranularity,
+  transformRevenueDataByGranularity,
+  formatChartLabel,
+  getChartTitle,
+  type ChartGranularity,
+} from "@/utils/revenueUtils";
 
 interface TeacherRevenueData {
   totalRevenue: number;
@@ -130,13 +82,69 @@ const TeacherRevenuePage: React.FC = () => {
     new Date().toISOString().split('T')[0]
   );
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7) // "yyyy-MM"
+    getCurrentMonth()
   );
   const [selectedYear, setSelectedYear] = useState(
-    new Date().getFullYear().toString() // "yyyy"
+    getCurrentYear()
   );
   const [error, setError] = useState<string | null>(null);
   const { handleError } = useErrorHandler();
+
+  const chartGranularity = useMemo<ChartGranularity>(() => {
+    if (timeRange === "all") {
+      return "year";
+    }
+
+    let startDate: string;
+    let endDate: string;
+
+    if (timeRange === "custom") {
+      startDate = customStartDate;
+      endDate = customEndDate;
+    } else if (timeRange === "select-month" || timeRange === "select-year") {
+      const range = getDateRange(timeRange, selectedMonth, selectedYear);
+      startDate = range.startDate;
+      endDate = range.endDate;
+    } else {
+      const range = getDateRange(timeRange);
+      startDate = range.startDate;
+      endDate = range.endDate;
+    }
+
+    return determineChartGranularity(startDate, endDate, timeRange);
+  }, [timeRange, customStartDate, customEndDate, selectedMonth, selectedYear]);
+
+  const transformedChartData = useMemo(() => {
+    if (!revenueData?.monthlyRevenueDetails) return [];
+
+    let startDate: string;
+    let endDate: string;
+
+    if (timeRange === "custom") {
+      startDate = customStartDate;
+      endDate = customEndDate;
+    } else if (timeRange === "select-month" || timeRange === "select-year") {
+      const range = getDateRange(timeRange, selectedMonth, selectedYear);
+      startDate = range.startDate;
+      endDate = range.endDate;
+    } else if (timeRange === "all") {
+      const months = revenueData.monthlyRevenueDetails.map((d) => d.month);
+      if (months.length === 0) return [];
+      startDate = `${months[0]}-01`;
+      endDate = `${months[months.length - 1]}-31`;
+    } else {
+      const range = getDateRange(timeRange);
+      startDate = range.startDate;
+      endDate = range.endDate;
+    }
+
+    return transformRevenueDataByGranularity(
+      revenueData.monthlyRevenueDetails,
+      chartGranularity,
+      startDate,
+      endDate
+    );
+  }, [revenueData, chartGranularity, timeRange, customStartDate, customEndDate, selectedMonth, selectedYear]);
 
   useEffect(() => {
     fetchRevenueData();
@@ -399,7 +407,9 @@ const TeacherRevenuePage: React.FC = () => {
                     {revenueData.totalRefundedOrders}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {((revenueData.totalRefundedOrders / revenueData.totalOrders) * 100).toFixed(1)}% tổng đơn hàng
+                    {revenueData.totalOrders > 0
+                      ? `${((revenueData.totalRefundedOrders / revenueData.totalOrders) * 100).toFixed(1)}% tổng đơn hàng`
+                      : "0.0% tổng đơn hàng"}
                   </p>
                 </div>
               </div>
@@ -414,17 +424,14 @@ const TeacherRevenuePage: React.FC = () => {
       {/* Revenue Chart */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Biểu đồ doanh thu theo tháng
+          {getChartTitle(chartGranularity)}
         </h3>
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={revenueData.monthlyRevenueDetails}>
+          <LineChart data={transformedChartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
-              dataKey="month"
-              tickFormatter={(value) => {
-                const [year, month] = value.split("-");
-                return `${month}/${year}`;
-              }}
+              dataKey="period"
+              tickFormatter={(value) => formatChartLabel(value, chartGranularity)}
             />
             <YAxis
               tickFormatter={(value) => formatShortCurrency(value)}
@@ -432,24 +439,18 @@ const TeacherRevenuePage: React.FC = () => {
               domain={[0, 'auto']}
             />
             <Tooltip
-              labelFormatter={(value) => {
-                const [year, month] = value.split("-");
-                return `Tháng ${month}/${year}`;
-              }}
+              labelFormatter={(value) => formatChartLabel(value, chartGranularity)}
               formatter={(value: number, name: string) => {
-                if (name === "revenue") {
+                if (name === "Doanh thu") {
                   return [formatCurrency(value), "Doanh thu"];
                 }
-                return [value, name === "orders" ? "Đơn hàng" : "Học viên"];
+                if (name === "Đơn hàng") {
+                  return [`${value} đơn`, "Đơn hàng"];
+                }
+                return [value, name];
               }}
             />
-            <Legend
-              formatter={(value) => {
-                if (value === "revenue") return "Doanh thu";
-                if (value === "orders") return "Đơn hàng";
-                return "Học viên";
-              }}
-            />
+            <Legend />
             <Line
               type="monotone"
               dataKey="revenue"
@@ -457,6 +458,7 @@ const TeacherRevenuePage: React.FC = () => {
               strokeWidth={3}
               dot={{ r: 5 }}
               activeDot={{ r: 7 }}
+              name="Doanh thu"
             />
             <Line
               type="monotone"
@@ -464,6 +466,7 @@ const TeacherRevenuePage: React.FC = () => {
               stroke="#3b82f6"
               strokeWidth={2}
               dot={{ r: 4 }}
+              name="Đơn hàng"
             />
           </LineChart>
         </ResponsiveContainer>
@@ -582,14 +585,14 @@ const TeacherRevenuePage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          refund.refundStatus === "REVERSED"
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-red-100 text-red-800"
+                          refund.refundStatus === "REVERSED_AFTER_SETTLEMENT"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-orange-100 text-orange-800"
                         }`}
                       >
-                        {refund.refundStatus === "REVERSED"
-                          ? "Đã hoàn tiền"
-                          : "Hoàn sau thanh toán"}
+                        {refund.refundStatus === "REVERSED_AFTER_SETTLEMENT"
+                          ? "Hoàn sau thanh toán"
+                          : "Đã hoàn tiền"}
                       </span>
                     </td>
                   </tr>

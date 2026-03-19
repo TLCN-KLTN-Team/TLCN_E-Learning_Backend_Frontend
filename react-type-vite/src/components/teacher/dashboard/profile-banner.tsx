@@ -81,11 +81,21 @@ const ProfileBanner: React.FC = () => {
                 {/* Avatar */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4 md:mt-0">
                   <div className="relative -mt-3">
-                    <img
-                      className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
-                      src={user?.avatarUrl || "/placeholder.svg"}
-                      alt="Teacher Profile"
-                    />
+                    {user?.avatarUrl ? (
+                      <img
+                        className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+                        src={user.avatarUrl}
+                        alt="Teacher Profile"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-[#066ac9] to-[#0555a1] flex items-center justify-center">
+                        <span className="text-white font-bold text-2xl">
+                          {teacher
+                            ? `${teacher.firstName?.[0] || ""}${teacher.lastName?.[0] || ""}`.toUpperCase()
+                            : "T"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   {/* Profile info */}
                   <div className="mt-4">

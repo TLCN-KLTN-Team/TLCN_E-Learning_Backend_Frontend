@@ -1,6 +1,7 @@
 export interface CertificateResponse {
     id: number;
     userId: string;
+    studentName?: string;
     courseId: number;
     certificateCode: string;
     issueDate: string;

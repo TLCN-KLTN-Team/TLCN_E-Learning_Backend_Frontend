@@ -15,6 +15,7 @@ import QuestionBankPage from "@/pages/teacher/QuestionBankPage";
 import QuestionGenerationPage from "@/pages/teacher/sidebar/QuestionGenerationPage";
 import { TEACHER_ROUTES } from "@/constants/routes";
 import TeacherOrderListPage from "@/pages/teacher/revenue/TeacherOrderListPage";
+import TeacherNotificationsPage from "@/pages/teacher/notifications/TeacherNotificationsPage";
 
 // Teacher routes - protected routes for teacher role
 const TeacherRoutes = [
@@ -32,6 +33,11 @@ const TeacherRoutes = [
       key="teacher-dashboard"
       path="dashboard"
       element={<TeacherHomePage />}
+    />
+    <Route
+      key="teacher-notifications"
+      path="notifications"
+      element={<TeacherNotificationsPage />}
     />
     <Route
       key="teacher-assigned-courses"

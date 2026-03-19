@@ -96,6 +96,7 @@ public enum ErrorCode {
     COURSE_TYPE_NAME_TOO_LONG("COURSE_2134", "Tên loại khóa học không được vượt quá 100 ký tự", HttpStatus.BAD_REQUEST),
     COURSE_TYPE_IN_USE("COURSE_2135", "Không thể xóa loại khóa học vì có khóa học đang sử dụng", HttpStatus.CONFLICT),
     COURSE_NOT_BELONG_TO_EDUCATIONAL_UNIT("COURSE_2136", "Course does not belong to this educational unit", HttpStatus.BAD_REQUEST),
+    COURSE_HAS_EXISTING_CLASSES("COURSE_2137", "Không thể thay đổi giảng viên vì khóa học đã có các lớp học. Hãy xóa tất cả lớp học trước.", HttpStatus.CONFLICT),
     COURSE_NOT_ENROLLED("COURSE_9001", "Bạn chưa đăng ký hoặc mua khóa học này", HttpStatus.FORBIDDEN),
 
     // Lesson related errors (LESSON_xxxx)

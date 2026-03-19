@@ -16,6 +16,7 @@ import java.util.Date;
 public class CertificateResponse {
     private Integer id;
     private String userId;
+    private String studentName;
     private Integer courseId;
     private String courseName;
     private String certificateCode;

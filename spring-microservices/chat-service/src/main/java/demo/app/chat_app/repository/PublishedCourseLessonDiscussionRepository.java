@@ -11,5 +11,6 @@ import java.time.LocalDateTime;
 @Repository
 public interface PublishedCourseLessonDiscussionRepository extends MongoRepository<PublishedLessonMessage, String> {
     Page<PublishedLessonMessage> findByPublishedCourseIdAndLessonId(Integer publishedCourseId, Integer lessonId, Pageable pageable);
+    Long countByPublishedCourseIdAndLessonId(Integer publishedCourseId, Integer lessonId);
     Long countByPublishedCourseIdAndLessonIdAndCreatedAtAfter(Integer publishedCourseId, Integer lessonId, LocalDateTime createdAt);
 }

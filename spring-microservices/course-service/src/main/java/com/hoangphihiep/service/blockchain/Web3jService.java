@@ -7,14 +7,19 @@ import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.RawTransaction;
 import org.web3j.crypto.TransactionEncoder;
-import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.methods.request.Transaction;
+import org.web3j.protocol.core.methods.response.EthCall;
+import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.utils.Numeric;
 
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -99,6 +104,66 @@ public class Web3jService {
         return transactionHash;
     }
 
+    public String getContractAddress() {
+        return contractAddress;
+    }
+
+    public OnChainCertificateData verifyCertificate(String certificateCode) throws Exception {
+        if (web3j == null) {
+            throw new RuntimeException("Web3j is not connected. Check blockchain node.");
+        }
+        if (contractAddress == null || contractAddress.isBlank()) {
+            throw new RuntimeException("Smart Contract Address is not configured!");
+        }
+
+        org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                "verifyCertificate",
+                List.of(new org.web3j.abi.datatypes.Utf8String(certificateCode)),
+                Arrays.asList(
+                        new org.web3j.abi.TypeReference<org.web3j.abi.datatypes.Bool>() {},
+                        new org.web3j.abi.TypeReference<org.web3j.abi.datatypes.Utf8String>() {},
+                        new org.web3j.abi.TypeReference<org.web3j.abi.datatypes.generated.Uint256>() {},
+                        new org.web3j.abi.TypeReference<org.web3j.abi.datatypes.generated.Uint256>() {}
+                )
+        );
+
+        String encodedFunction = org.web3j.abi.FunctionEncoder.encode(function);
+
+        EthCall response = web3j.ethCall(
+                Transaction.createEthCallTransaction(null, contractAddress, encodedFunction),
+                DefaultBlockParameterName.LATEST
+        ).send();
+
+        if (response == null || response.getValue() == null || response.getValue().equals("0x")) {
+            throw new RuntimeException("Empty blockchain response for certificate verification");
+        }
+
+        List<org.web3j.abi.datatypes.Type> decoded = org.web3j.abi.FunctionReturnDecoder.decode(
+                response.getValue(),
+                function.getOutputParameters()
+        );
+
+        if (decoded.size() < 4) {
+            throw new RuntimeException("Invalid blockchain response format for certificate verification");
+        }
+
+        boolean valid = ((org.web3j.abi.datatypes.Bool) decoded.get(0)).getValue();
+        String userId = ((org.web3j.abi.datatypes.Utf8String) decoded.get(1)).getValue();
+        Integer publishedCourseId = ((org.web3j.abi.datatypes.generated.Uint256) decoded.get(2)).getValue().intValue();
+        long issueTimestampSeconds = ((org.web3j.abi.datatypes.generated.Uint256) decoded.get(3)).getValue().longValue();
+
+        Date issueDate = issueTimestampSeconds > 0
+                ? new Date(issueTimestampSeconds * 1000L)
+                : null;
+
+        return OnChainCertificateData.builder()
+                .valid(valid)
+                .userId(userId)
+                .publishedCourseId(publishedCourseId)
+                .issueDate(issueDate)
+                .build();
+    }
+
     public BigInteger getBlockNumber(String transactionHash) {
         try {
             // Wait a bit or check immediately (assuming caller handles wait)
@@ -110,5 +175,16 @@ public class Web3jService {
             log.error("Error getting block number: {}", e.getMessage());
             return BigInteger.ZERO;
         }
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class OnChainCertificateData {
+        private boolean valid;
+        private String userId;
+        private Integer publishedCourseId;
+        private Date issueDate;
     }
 }

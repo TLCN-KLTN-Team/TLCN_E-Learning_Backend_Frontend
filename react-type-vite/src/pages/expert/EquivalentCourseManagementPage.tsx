@@ -14,12 +14,23 @@ import * as equivalentCourseApi from "@/services/api/expert/equivalentCourseApi"
 import type { EquivalentCourseResponse } from "@/services/api/response/equivalentCourseResponse";
 import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 import EquivalentCourseModal from "@/components/expert/equivalentCourses/EquivalentCourseModal";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const EquivalentCourseManagementPage: React.FC = () => {
     const [courses, setCourses] = useState<EquivalentCourseResponse[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState<EquivalentCourseResponse | null>(null);
     const [loading, setLoading] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState<EquivalentCourseResponse | null>(null);
 
     const [keyword, setKeyword] = useState("");
     const [debouncedKeyword, setDebouncedKeyword] = useState("");
@@ -65,15 +76,13 @@ const EquivalentCourseManagementPage: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (window.confirm("Bạn có chắc chắn muốn xóa khóa học quy đổi này không?")) {
-            try {
-                await equivalentCourseApi.deleteEquivalentCourse(id);
-                toast.success("Xóa thành công");
-                loadCourses();
-            } catch (error) {
-                console.error(error);
-                toast.error("Xóa thất bại");
-            }
+        try {
+            await equivalentCourseApi.deleteEquivalentCourse(id);
+            toast.success("Xóa thành công");
+            loadCourses();
+        } catch (error) {
+            console.error(error);
+            toast.error("Xóa thất bại");
         }
     };
 
@@ -184,7 +193,7 @@ const EquivalentCourseManagementPage: React.FC = () => {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => handleDelete(course.id)}
+                                                    onClick={() => setCourseToDelete(course)}
                                                     className="text-red-600 border-red-200 hover:bg-red-50"
                                                 >
                                                     <Trash2 size={14} className="mr-1" /> Xóa
@@ -222,6 +231,31 @@ const EquivalentCourseManagementPage: React.FC = () => {
                 onSuccess={loadCourses}
                 equivalentCourse={selectedCourse}
             />
+
+            <AlertDialog open={!!courseToDelete} onOpenChange={(open) => !open && setCourseToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xóa khóa học quy đổi?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn có chắc chắn muốn xóa khóa học quy đổi này? Hành động này không thể hoàn tác.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (courseToDelete) {
+                                    handleDelete(courseToDelete.id);
+                                    setCourseToDelete(null);
+                                }
+                            }}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Xóa
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

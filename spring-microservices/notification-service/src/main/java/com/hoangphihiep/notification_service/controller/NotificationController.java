@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/notifications")
@@ -31,6 +32,22 @@ public class NotificationController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Notification>> getUserNotifications(@PathVariable String userId) {
         return ResponseEntity.ok(sseService.getUserNotifications(userId));
+    }
+
+    @PatchMapping("/{notificationId}/read")
+    public ResponseEntity<Notification> markNotificationAsRead(
+            @PathVariable String notificationId,
+            @RequestParam String userId
+    ) {
+        return sseService.markNotificationAsRead(notificationId, userId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/user/{userId}/read-all")
+    public ResponseEntity<Map<String, Long>> markAllNotificationsAsRead(@PathVariable String userId) {
+        long updated = sseService.markAllNotificationsAsRead(userId);
+        return ResponseEntity.ok(Map.of("updated", updated));
     }
 
     @PostMapping("/push")

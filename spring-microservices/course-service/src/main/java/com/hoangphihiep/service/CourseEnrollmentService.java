@@ -379,7 +379,7 @@ public class CourseEnrollmentService {
                                 .userId(userId)
                                 .type("ENROLLMENT")
                                 .message("Bạn đã được thêm vào lớp học: " + courseClass.getClassName() + " (" + courseClass.getCourse().getCourseName() + ")")
-                            .link("/student/classes/" + courseClass.getId())
+                            .link("/student/dashboard/course/classes/" + courseClass.getId())
                             .data(Map.of(
                                     "classId", courseClass.getId(),
                                     "className", courseClass.getClassName(),

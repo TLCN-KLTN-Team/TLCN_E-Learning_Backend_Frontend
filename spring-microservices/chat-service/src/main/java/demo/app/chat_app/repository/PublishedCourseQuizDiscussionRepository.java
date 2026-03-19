@@ -16,6 +16,11 @@ public interface PublishedCourseQuizDiscussionRepository extends MongoRepository
             Integer quizId, 
             Pageable pageable
     );
+
+    long countByPublishedCourseIdAndQuizId(
+            Integer publishedCourseId,
+            Integer quizId
+    );
     
     long countByPublishedCourseIdAndQuizIdAndCreatedAtAfter(
             Integer publishedCourseId,

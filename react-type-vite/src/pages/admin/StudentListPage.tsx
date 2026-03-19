@@ -2,6 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   GraduationCap,
   Search,
   UserPlus,
@@ -60,6 +70,12 @@ const StudentListPage: React.FC = () => {
   const [selectedStudent, setSelectedStudent] =
     useState<StudentResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [studentStatusTarget, setStudentStatusTarget] =
+    useState<StudentResponse | null>(null);
 
   // Initialize educationalUnit
   useEffect(() => {
@@ -124,23 +140,14 @@ const StudentListPage: React.FC = () => {
     loadStudents(currentPage, pageSize);
   };
 
-  const handleDeleteStudent = async (
-    studentId: string,
-    studentName: string
-  ) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa sinh viên "${studentName}"? Hành động này không thể hoàn tác.`
-      )
-    ) {
-      try {
-        await studentApi.deleteStudent(educationalUnitId!, studentId);
-        toast.success("Xóa sinh viên thành công!");
-        handleSuccess();
-      } catch (error: any) {
-        console.error("Error deleting student:", error);
-        toast.error(error?.response?.data?.message || "Không thể xóa sinh viên");
-      }
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      await studentApi.deleteStudent(educationalUnitId!, studentId);
+      toast.success("Xóa sinh viên thành công!");
+      handleSuccess();
+    } catch (error: any) {
+      console.error("Error deleting student:", error);
+      toast.error(error?.response?.data?.message || "Không thể xóa sinh viên");
     }
   };
 
@@ -164,26 +171,20 @@ const StudentListPage: React.FC = () => {
       student.accountStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
     const action = newStatus === "INACTIVE" ? "vô hiệu hóa" : "kích hoạt";
 
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn ${action} tài khoản của "${student.firstName} ${student.lastName}"?`
-      )
-    ) {
-      try {
-        await studentApi.updateStudentAccountStatus(
-          educationalUnitId!,
-          student.id,
-          newStatus
-        );
-        toast.success(
-          `${action.charAt(0).toUpperCase() + action.slice(1)
-          } tài khoản thành công!`
-        );
-        handleSuccess();
-      } catch (error: any) {
-        console.error("Error toggling account status:", error);
-        toast.error(`Không thể ${action} tài khoản`);
-      }
+    try {
+      await studentApi.updateStudentAccountStatus(
+        educationalUnitId!,
+        student.id,
+        newStatus
+      );
+      toast.success(
+        `${action.charAt(0).toUpperCase() + action.slice(1)
+        } tài khoản thành công!`
+      );
+      handleSuccess();
+    } catch (error: any) {
+      console.error("Error toggling account status:", error);
+      toast.error(`Không thể ${action} tài khoản`);
     }
   };
 
@@ -474,7 +475,7 @@ const StudentListPage: React.FC = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleToggleAccountStatus(student)}
+                            onClick={() => setStudentStatusTarget(student)}
                             className={`${student.accountStatus === "ACTIVE"
                               ? "text-orange-600 border-orange-200 hover:bg-orange-50"
                               : "text-green-600 border-green-200 hover:bg-green-50"
@@ -495,10 +496,10 @@ const StudentListPage: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={() =>
-                              handleDeleteStudent(
-                                student.id,
-                                `${student.firstName} ${student.lastName}`
-                              )
+                              setStudentToDelete({
+                                id: student.id,
+                                name: `${student.firstName} ${student.lastName}`,
+                              })
                             }
                             className="text-red-600 border-red-200 hover:bg-red-50"
                             title="Xóa"
@@ -598,10 +599,71 @@ const StudentListPage: React.FC = () => {
             handleEditStudent(selectedStudent);
           }}
           onToggleStatus={() => {
-            handleToggleAccountStatus(selectedStudent);
+            setStudentStatusTarget(selectedStudent);
           }}
         />
       )}
+
+      <AlertDialog
+        open={!!studentToDelete}
+        onOpenChange={(open) => !open && setStudentToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa sinh viên?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {studentToDelete
+                ? `Bạn có chắc chắn muốn xóa sinh viên \"${studentToDelete.name}\"? Hành động này không thể hoàn tác.`
+                : "Hành động này không thể hoàn tác."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (studentToDelete) {
+                  handleDeleteStudent(studentToDelete.id);
+                  setStudentToDelete(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!studentStatusTarget}
+        onOpenChange={(open) => !open && setStudentStatusTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận thay đổi trạng thái tài khoản</AlertDialogTitle>
+            <AlertDialogDescription>
+              {studentStatusTarget
+                ? `Bạn có chắc chắn muốn ${
+                    studentStatusTarget.accountStatus === "ACTIVE" ? "vô hiệu hóa" : "kích hoạt"
+                  } tài khoản của \"${studentStatusTarget.firstName} ${studentStatusTarget.lastName}\"?`
+                : "Xác nhận thay đổi trạng thái tài khoản."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (studentStatusTarget) {
+                  handleToggleAccountStatus(studentStatusTarget);
+                  setStudentStatusTarget(null);
+                }
+              }}
+            >
+              Xác nhận
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <StudentFormModal
         isOpen={showStudentModal}

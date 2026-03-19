@@ -2,6 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     Users,
     Search,
     UserPlus,
@@ -57,6 +67,12 @@ const ExpertListPage: React.FC = () => {
     const [selectedExpert, setSelectedExpert] =
         useState<ExpertResponse | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [expertToDelete, setExpertToDelete] = useState<{
+        id: string;
+        name: string;
+    } | null>(null);
+    const [expertStatusTarget, setExpertStatusTarget] =
+        useState<ExpertResponse | null>(null);
 
     // Initialize EducationalUnit
     useEffect(() => {
@@ -127,25 +143,16 @@ const ExpertListPage: React.FC = () => {
         loadExperts(currentPage, pageSize);
     };
 
-    const handleDeleteExpert = async (
-        expertId: string,
-        expertName: string
-    ) => {
-        if (
-            window.confirm(
-                `Bạn có chắc chắn muốn xóa chuyên gia "${expertName}"? Hành động này không thể hoàn tác.`
-            )
-        ) {
-            try {
-                await expertApi.deleteExpert(educationalUnitId!, expertId);
-                toast.success("Xóa chuyên gia thành công!");
-                handleSuccess();
-            } catch (error: any) {
-                console.error("Error deleting expert:", error);
-                toast.error(
-                    error?.response?.data?.message || "Không thể xóa chuyên gia"
-                );
-            }
+    const handleDeleteExpert = async (expertId: string) => {
+        try {
+            await expertApi.deleteExpert(educationalUnitId!, expertId);
+            toast.success("Xóa chuyên gia thành công!");
+            handleSuccess();
+        } catch (error: any) {
+            console.error("Error deleting expert:", error);
+            toast.error(
+                error?.response?.data?.message || "Không thể xóa chuyên gia"
+            );
         }
     };
 
@@ -169,26 +176,20 @@ const ExpertListPage: React.FC = () => {
             expert.accountStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
         const action = newStatus === "INACTIVE" ? "vô hiệu hóa" : "kích hoạt";
 
-        if (
-            window.confirm(
-                `Bạn có chắc chắn muốn ${action} tài khoản của "${expert.firstName} ${expert.lastName}"?`
-            )
-        ) {
-            try {
-                await expertApi.updateExpertAccountStatus(
-                    educationalUnitId!,
-                    expert.id,
-                    newStatus
-                );
-                toast.success(
-                    `${action.charAt(0).toUpperCase() + action.slice(1)
-                    } tài khoản thành công!`
-                );
-                handleSuccess();
-            } catch (error: any) {
-                console.error("Error toggling account status:", error);
-                toast.error(`Không thể ${action} tài khoản`);
-            }
+        try {
+            await expertApi.updateExpertAccountStatus(
+                educationalUnitId!,
+                expert.id,
+                newStatus
+            );
+            toast.success(
+                `${action.charAt(0).toUpperCase() + action.slice(1)
+                } tài khoản thành công!`
+            );
+            handleSuccess();
+        } catch (error: any) {
+            console.error("Error toggling account status:", error);
+            toast.error(`Không thể ${action} tài khoản`);
         }
     };
 
@@ -462,7 +463,7 @@ const ExpertListPage: React.FC = () => {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        onClick={() => handleToggleAccountStatus(expert)}
+                                                        onClick={() => setExpertStatusTarget(expert)}
                                                         className={`${expert.accountStatus === "ACTIVE"
                                                             ? "text-orange-600 border-orange-200 hover:bg-orange-50"
                                                             : "text-green-600 border-green-200 hover:bg-green-50"
@@ -483,10 +484,10 @@ const ExpertListPage: React.FC = () => {
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() =>
-                                                            handleDeleteExpert(
-                                                                expert.id,
-                                                                `${expert.firstName} ${expert.lastName}`
-                                                            )
+                                                            setExpertToDelete({
+                                                                id: expert.id,
+                                                                name: `${expert.firstName} ${expert.lastName}`,
+                                                            })
                                                         }
                                                         className="text-red-600 border-red-200 hover:bg-red-50"
                                                         title="Xóa"
@@ -583,6 +584,67 @@ const ExpertListPage: React.FC = () => {
                     }}
                 />
             )}
+
+            <AlertDialog
+                open={!!expertToDelete}
+                onOpenChange={(open) => !open && setExpertToDelete(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xóa chuyên gia?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {expertToDelete
+                                ? `Bạn có chắc chắn muốn xóa chuyên gia \"${expertToDelete.name}\"? Hành động này không thể hoàn tác.`
+                                : "Hành động này không thể hoàn tác."}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (expertToDelete) {
+                                    handleDeleteExpert(expertToDelete.id);
+                                    setExpertToDelete(null);
+                                }
+                            }}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Xóa
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
+                open={!!expertStatusTarget}
+                onOpenChange={(open) => !open && setExpertStatusTarget(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận thay đổi trạng thái tài khoản</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {expertStatusTarget
+                                ? `Bạn có chắc chắn muốn ${
+                                    expertStatusTarget.accountStatus === "ACTIVE" ? "vô hiệu hóa" : "kích hoạt"
+                                } tài khoản của \"${expertStatusTarget.firstName} ${expertStatusTarget.lastName}\"?`
+                                : "Xác nhận thay đổi trạng thái tài khoản."}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (expertStatusTarget) {
+                                    handleToggleAccountStatus(expertStatusTarget);
+                                    setExpertStatusTarget(null);
+                                }
+                            }}
+                        >
+                            Xác nhận
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {educationalUnitId && (
                 <>

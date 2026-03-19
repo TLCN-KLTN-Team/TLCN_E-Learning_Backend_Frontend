@@ -16,6 +16,11 @@ public interface PublishedCourseAssignmentDiscussionRepository extends MongoRepo
             Integer assignmentId,
             Pageable pageable
     );
+
+    long countByPublishedCourseIdAndAssignmentId(
+            Integer publishedCourseId,
+            Integer assignmentId
+    );
     
     long countByPublishedCourseIdAndAssignmentIdAndCreatedAtAfter(
             Integer publishedCourseId,

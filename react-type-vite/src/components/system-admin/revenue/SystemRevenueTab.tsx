@@ -285,7 +285,10 @@ const SystemRevenueTab: React.FC = () => {
                 <div className="flex justify-between items-center pl-4 border-l-2 border-blue-200">
                   <span className="text-xs text-gray-600">Không có hoàn tiền:</span>
                   <span className="text-sm font-semibold text-green-600">
-                    {((revenueData.totalOrders || 0) - (revenueData.totalRefundedOrders || 0)).toLocaleString("vi-VN")}
+                    {Math.max(
+                      0,
+                      (revenueData.totalOrders || 0) - (revenueData.totalPartiallyRefundedOrders || 0)
+                    ).toLocaleString("vi-VN")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pl-4 border-l-2 border-yellow-200">
