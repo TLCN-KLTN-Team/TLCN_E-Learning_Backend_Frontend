@@ -9,8 +9,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * TẦNG 3 — Channel (Kênh chat)
@@ -110,7 +108,6 @@ public class Channel {
     private String slug;        // "chung", "nhom-a", "thao-luan"
     private String description;
     private int position;    // Thứ tự hiển thị trong Section
-    private List<ChannelMember> channelMembers;
 
     private ChannelType type;
     /*
@@ -140,7 +137,7 @@ public class Channel {
     // ── Cache (TEXT channel) ──────────────────────────────────────
     private String  lastMessageId;
     private Instant lastActivityAt;
-    private int     memberCount;
+    private int memberCount;
     /*
      * Số ChannelMember ACTIVE hiện tại.
      * Cập nhật $inc khi add/remove ChannelMember.
@@ -152,33 +149,4 @@ public class Channel {
     private String  createdByUserId; // TEACHER tạo channel
     private Instant createdAt;
     private Instant updatedAt;
-
-    public void addChannelMember(ChannelMember member) {
-        if (channelMembers == null) {
-            channelMembers = new ArrayList<>();
-        }
-        // Ensure uniqueness: check if member already exists
-        boolean exists = channelMembers.stream()
-                .anyMatch(m -> m.getChannelId() != null && m.getUserId() != null &&
-                              m.getChannelId().equals(member.getChannelId()) &&
-                              m.getUserId().equals(member.getUserId()));
-        if (!exists) {
-            channelMembers.add(member);
-            memberCount++;
-        }
-    }
-
-    public void removeChannelMember(String userId) {
-        if (channelMembers != null) {
-            channelMembers.removeIf(m -> m.getUserId().equals(userId));
-            memberCount--;
-        }
-    }
-
-    public void addChannelMembers(List<ChannelMember> members) {
-        for (ChannelMember member : members) {
-            addChannelMember(member);
-        }
-    }
-
 }

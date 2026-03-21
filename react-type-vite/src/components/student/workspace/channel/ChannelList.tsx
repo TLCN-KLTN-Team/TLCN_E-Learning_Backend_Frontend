@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
-import type { ChannelResponse, GroupResponse } from "@/types/chat.types";
-import { ChevronDown, ChevronRight, UserPlus, Settings } from "lucide-react";
-import GroupList from "../group/GroupList";
+import { useEffect, } from "react";
+import type { BasicChannelResponse, ChannelResponse } from "@/types/chat.types";
+import { Settings, UserPlus } from "lucide-react";
+
 
 interface ChannelListProps {
-  channels: ChannelResponse[];
+  channels: BasicChannelResponse[];
   selectedChannel: ChannelResponse | null;
-  onChannelSelect: (channel: ChannelResponse) => void;
-  onInvitePeople?: (channel: ChannelResponse) => void;
-  onChannelSettings?: (channel: ChannelResponse) => void;
+  onChannelSelect: (channel: BasicChannelResponse) => void;
+  onInvitePeople?: (channel: BasicChannelResponse) => void;
+  onChannelSettings?: (channel: BasicChannelResponse) => void;
 }
 
 const ChannelList = ({
@@ -18,28 +18,9 @@ const ChannelList = ({
   onInvitePeople,
   onChannelSettings,
 }: ChannelListProps) => {
-  const [expandedChannels, setExpandedChannels] = useState<Set<string>>(
-    new Set()
-  );
-  const [selectedGroup, setSelectedGroup] = useState<GroupResponse | null>(
-    null
-  );
-
-  const toggleChannel = (channelId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedChannels((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(channelId)) {
-        newSet.delete(channelId);
-      } else {
-        newSet.add(channelId);
-      }
-      return newSet;
-    });
-  };
 
   const handleInvitePeople = (
-    channel: ChannelResponse,
+    channel: BasicChannelResponse,
     e: React.MouseEvent
   ) => {
     e.stopPropagation();
@@ -47,17 +28,11 @@ const ChannelList = ({
   };
 
   const handleChannelSettings = (
-    channel: ChannelResponse,
+    channel: BasicChannelResponse,
     e: React.MouseEvent
   ) => {
     e.stopPropagation();
     onChannelSettings?.(channel);
-  };
-
-  const handleGroupSelect = (group: GroupResponse) => {
-    setSelectedGroup(group);
-    // You can add additional logic here to handle group selection
-    // For example, loading group-specific messages or data
   };
 
   useEffect(() => {
@@ -66,30 +41,13 @@ const ChannelList = ({
 
   return (
     <div className="space-y-2">
-      {channels.map((channel: ChannelResponse) => {
-        const isExpanded = expandedChannels.has(channel.id);
-        const hasGroups = channel.groups && channel.groups.length > 0;
+      {channels.map((channel: BasicChannelResponse) => {
 
         return (
           <div key={channel.id}>
             {/* Channel Header with Arrow */}
             <div className="flex items-center justify-between px-2 py-1.5 group">
               <div className="flex items-center gap-1 flex-1 min-w-0">
-                {/* Expand/Collapse Arrow - Only visible if has groups */}
-                {hasGroups ? (
-                  <button
-                    onClick={(e) => toggleChannel(channel.id, e)}
-                    className="p-0.5 hover:bg-gray-700 rounded transition-colors flex-shrink-0"
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="w-3 h-3 text-gray-400" />
-                    ) : (
-                      <ChevronRight className="w-3 h-3 text-gray-400" />
-                    )}
-                  </button>
-                ) : (
-                  <div className="w-4 flex-shrink-0" /> // Spacer when no groups
-                )}
 
                 {/* Channel Name - Clickable */}
                 <div
@@ -102,7 +60,7 @@ const ChannelList = ({
                 >
                   <span className="text-gray-400 flex-shrink-0">#</span>
                   <span className="text-sm font-medium truncate">
-                    {channel.channelName}
+                    {channel.name}
                   </span>
                 </div>
               </div>
@@ -126,14 +84,6 @@ const ChannelList = ({
               </div>
             </div>
 
-            {/* Groups List - Show when expanded */}
-            {isExpanded && hasGroups && (
-              <GroupList
-                groups={channel.groups || []}
-                selectedGroup={selectedGroup}
-                onGroupSelect={handleGroupSelect}
-              />
-            )}
           </div>
         );
       })}

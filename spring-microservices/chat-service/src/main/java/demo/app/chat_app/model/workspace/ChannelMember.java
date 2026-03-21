@@ -1,12 +1,16 @@
 package demo.app.chat_app.model.workspace;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
 
 /**
- * ChannelMember — Thành viên của một Channel cụ thể (EMBEDDED).
+ * ChannelMember — Thành viên của một Channel cụ thể (INDEPENDENT COLLECTION).
  *
  * Là tập con của SectionMember — chỉ những ai có trong
  * SectionMember mới được là ChannelMember.
@@ -49,16 +53,31 @@ import java.time.Instant;
  *    → 1 SV có thể thuộc nhiều GROUP trong cùng Section
  *
  * ════════════════════════════════════════════════════════════════
- *  NOTE: Embedded document trong Channel.channelMembers
- *  Uniqueness được đảm bảo bởi application logic, không dùng DB index
+ *  INDEX
+ * ════════════════════════════════════════════════════════════════
+ *
+ *  (channelId, userId) UNIQUE — một user chỉ có 1 record trong 1 channel
+ *  (sectionId, userId)        — cascade BANNED từ SectionMember
+ *  (userId)                   — lấy tất cả channels của user
+ *  (channelId, status)        — lấy tất cả active members của channel
  * ════════════════════════════════════════════════════════════════
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "channel_members")
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@CompoundIndexes({
+        @CompoundIndex(name = "channel_user_unique", def = "{'channelId': 1, 'userId': 1}", unique = true),
+        @CompoundIndex(name = "section_user_idx", def = "{'sectionId': 1, 'userId': 1}"),
+        @CompoundIndex(name = "user_idx", def = "{'userId': 1}"),
+        @CompoundIndex(name = "channel_status_idx", def = "{'channelId': 1, 'status': 1}")
+})
 public class ChannelMember {
 
-    // No @Id needed for embedded documents
-    // Uniqueness enforced by (channelId, userId) in application logic
+    @MongoId
+    String id;
 
     // ── Khóa xác định ────────────────────────────────────────────
     private String channelId;

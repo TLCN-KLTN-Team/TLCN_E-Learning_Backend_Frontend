@@ -75,7 +75,6 @@ public class CourseClassService {
                 .courseId(course.getId())
                 .className(savedClass.getClassName())
                 .description(savedClass.getDescription())
-                //.isPrivate(true)
                 .createdAt(savedClass.toString())
                 .endedAt(savedClass.getEndDate().toString())
                 .build();

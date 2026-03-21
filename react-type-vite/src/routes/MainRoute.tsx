@@ -27,6 +27,16 @@ const MainRoutes = [
   />,
 
   <Route
+    key="workspace-with-params"
+    path={ROUTE_PATTERNS.WORKSPACE_SECTION_CHANNEL}
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "TEACHER"]}>
+        <WorkspacePage />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
     key="workspace-with-channel"
     path={ROUTE_PATTERNS.WORKSPACE_WITH_CHANNEL}
     element={

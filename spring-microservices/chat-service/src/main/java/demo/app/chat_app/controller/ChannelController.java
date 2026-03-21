@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ChannelController {
-    ChannelServiceImpl channelService;
+    ChannelService channelService;
 
     @GetMapping("/{channelId}")
     public ApiResponse<ChannelResponse> getChannel(@PathVariable String channelId) {
@@ -30,20 +30,19 @@ public class ChannelController {
                 .build();
     }
 
-    @GetMapping("/basic/{sectionId}")
-    public ApiResponse<List<BasicChannelResponse>> getBasicChannelsByWorkspace(@PathVariable String sectionId) {
+    @GetMapping("/list/section/{sectionId}")
+    public ApiResponse<List<BasicChannelResponse>> getListBasicChannelBySectionId(@PathVariable String sectionId) {
         List<BasicChannelResponse> channels = channelService.getBasicChannels(sectionId);
         return ApiResponse.<List<BasicChannelResponse>>builder()
                 .result(channels)
-                .message("Basic channels retrieved successfully")
+                .message("Channels retrieved successfully")
                 .build();
     }
 
     @GetMapping("/section/{sectionId}")
-    public ApiResponse<List<ChannelResponse>> getChannelsByWorkspace(@PathVariable String sectionId) {
-        List<ChannelResponse> channels = channelService.getChannels(sectionId);
-        return ApiResponse.<List<ChannelResponse>>builder()
-                .result(channels)
+    public ApiResponse<ChannelResponse> getPublicChannelBySectionId(@PathVariable String sectionId) {
+        return ApiResponse.<ChannelResponse>builder()
+                .result(channelService.getPublicChannelBySectionId(sectionId))
                 .message("Channels retrieved successfully")
                 .build();
     }

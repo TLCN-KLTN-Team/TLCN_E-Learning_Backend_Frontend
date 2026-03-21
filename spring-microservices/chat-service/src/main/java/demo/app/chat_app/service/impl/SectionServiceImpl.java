@@ -53,17 +53,19 @@ public class SectionServiceImpl implements SectionService {
         Workspace wEntity = workspaceRepository.findByCourseId(event.getCourseId())
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
-        Channel channel = channelService.createFirstChannelInSectionWhenStudentsEnrolled(event);
-
         Section section = Section.builder()
-                .name(event.getClassName())
                 .workspaceId(wEntity.getId())
                 .classId(event.getClassId())
-                .isPublic(true)
+                .name(event.getClassName())
+                .description(event.getDescription())
                 .sectionMembers(Collections.singletonList(wEntity.getOwnerId()))
+                .studentCount(1) // Giá trị ban đầu, sẽ được cập nhật khi có SV enroll
                 .build();
 
         sectionRepository.save(section);
+
+        Channel channel = channelService.createFirstChannelInSectionWhenStudentsEnrolled(event);
+
     }
 
     public Section getGeneralSectionByClassId(Integer classId) {

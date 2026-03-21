@@ -11,9 +11,12 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ChannelMapper {
     @Mapping(target = "messages", ignore = true) // Messages are fetched separately for performance
+    @Mapping(source = "public", target = "isPublic")
+    @Mapping(source = "readOnly", target = "isReadOnly")
     ChannelResponse toResponse(Channel channel);
-    
+
     List<ChannelResponse> toResponseList(List<Channel> channels);
 
+    @Mapping(source = "public", target = "isPublic")
     BasicChannelResponse toBasicChannelResponse(Channel channel);
 }

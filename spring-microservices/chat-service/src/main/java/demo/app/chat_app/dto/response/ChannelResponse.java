@@ -1,5 +1,6 @@
 package demo.app.chat_app.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import demo.app.chat_app.model.workspace.ChannelScope;
 import demo.app.chat_app.model.workspace.ChannelStatus;
 import demo.app.chat_app.model.workspace.ChannelType;
@@ -24,7 +25,9 @@ public class ChannelResponse {
     ChannelScope scope;
     ChannelType type;
     ChannelStatus status;
+    @JsonProperty("isReadOnly")
     boolean isReadOnly;
+    @JsonProperty("isPublic")
     boolean isPublic;
     int memberCount;
     String lastMessageId;

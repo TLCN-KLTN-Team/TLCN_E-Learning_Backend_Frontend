@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface WorkspaceRepository extends MongoRepository<Workspace, String> {
 
-    // Find workspaces by user access (owner or member)
+    // Find workspaces by list of IDs
     Page<Workspace> findAllByIdIn(Collection<String> ids, Pageable pageable);
     
     // Find workspace by course and owner

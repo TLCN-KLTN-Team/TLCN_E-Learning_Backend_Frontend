@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import SectionList from "../section/SectionList";
 import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
 import AddChannelModal from "@/components/student/workspace/channel/AddChannelModal";
-import { ChannelSettings } from "@/pages/workspace/settings/index.ts";
 
 import { toast } from "react-toastify";
 import type {
@@ -11,10 +10,6 @@ import type {
   SectionResponse,
 } from "@/types/chat.types";
 import type { Channel } from "@/types/channel.types";
-import {
-  ChannelType as ChannelSettingsType,
-  ChannelStatus,
-} from "@/types/channel.types";
 import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
 import { getAllGroupsByChannelId } from "@/services/api/workspace/group.api";
 import { getChannel } from "@/services/api/workspace/channel.api";
@@ -54,23 +49,6 @@ const ChannelPanel = ({
   const handleChannelSettings = (channel: ChannelResponse) => {
     setSelectedChannelForAction(channel);
     setShowSettingsModal(true);
-  };
-
-  // Convert ChannelResponse to Channel type for settings
-  const convertToChannelSettings = (channel: ChannelResponse): Channel => {
-    return {
-      id: channel.id,
-      participantHash: channel.participantHash || "",
-      channelName: channel.channelName,
-      description: channel.description || "",
-      workspaceId: selectedWorkspace?.id || "",
-      classId: null,
-      memberIds: channel.participants?.map((p) => p.id) || [],
-      isPrivate: channel.isPrivate,
-      type: ChannelSettingsType.TEXT,
-      status: channel.ended ? ChannelStatus.LOCKED : ChannelStatus.ACTIVE,
-      durationMinutes: Math.floor(channel.endTime / 60000) || 60,
-    };
   };
 
   // Handle save channel settings
@@ -141,7 +119,7 @@ const ChannelPanel = ({
         .then((sectionsData) => {
           setSections(sectionsData);
           toast.success(
-            `Kênh "${newChannel.channelName}" đã được tạo thành công!`
+            `Kênh "${newChannel.name}" đã được tạo thành công!`
           );
         })
         .catch((error) => {
@@ -251,8 +229,8 @@ const ChannelPanel = ({
         }}
         workspaceName={selectedWorkspace?.name || ""}
         channelName={
-          selectedChannelForAction?.channelName ||
-          selectedChannel?.channelName ||
+          selectedChannelForAction?.name ||
+          selectedChannel?.name ||
           "general"
         }
       />
@@ -270,14 +248,14 @@ const ChannelPanel = ({
       />
 
       {/* Channel Settings Modal */}
-      {showSettingsModal && selectedChannelForAction && (
+      {/* {showSettingsModal && selectedChannelForAction && (
         <ChannelSettings
-          channel={convertToChannelSettings(selectedChannelForAction)}
+          channel={selectedChannel}
           onClose={() => setShowSettingsModal(false)}
           onSave={handleSaveChannelSettings}
           onDelete={handleDeleteChannel}
         />
-      )}
+      )} */}
     </>
   );
 };

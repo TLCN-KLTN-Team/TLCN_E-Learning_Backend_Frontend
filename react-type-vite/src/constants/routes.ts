@@ -197,6 +197,7 @@ export const ROUTE_PATTERNS = {
 
   // Workspace patterns
   WORKSPACE_WITH_ID: "/workspaces/:workspaceId",
+  WORKSPACE_SECTION_CHANNEL: "/workspaces/:workspaceId/:sectionId/:channelId",
   WORKSPACE_WITH_CHANNEL: "/workspaces/:workspaceId/:channelId",
 
   // Quiz patterns
