@@ -12,8 +12,9 @@ import ChannelPanel from "@/components/student/workspace/channel/ChannelPanel";
 import ChatWindow from "@/components/student/workspace/chat-window/ChatWindow";
 
 const WorkspacePageContent = () => {
-  const { workspaceId, channelId } = useParams<{
+  const { workspaceId, sectionId, channelId } = useParams<{
     workspaceId: string;
+    sectionId: string;
     channelId: string;
   }>();
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const WorkspacePageContent = () => {
   // Use custom hooks for workspace management and WebSocket
   const {
     selectedWorkspace,
+    selectedSection,
     selectedChannel,
     participants,
     isLoadingMessages,
@@ -54,7 +56,7 @@ const WorkspacePageContent = () => {
     }
 
     console.log(
-      `🔗 Setting up subscriptions for channel: ${selectedChannel.id}`
+      `🔗 Setting up subscriptions for channel: ${selectedChannel.id}`,
     );
 
     // Subscribe to all channels at once
@@ -62,7 +64,7 @@ const WorkspacePageContent = () => {
     const unsubscribeDirectMessages = subscribeToDirectMessages();
     const unsubscribeErrors = subscribeToErrors();
     const unsubscribeFileUploads = subscribeToMultipleFilesUploads(
-      selectedChannel.id
+      selectedChannel.id,
     );
 
     return () => {
@@ -99,11 +101,14 @@ const WorkspacePageContent = () => {
   // Update URL when workspace or channel changes
   useEffect(() => {
     if (selectedWorkspace) {
-      if (selectedChannel) {
-        // Navigate to workspace with channel
-        navigate(`/workspaces/${selectedWorkspace.id}/${selectedChannel.id}`, {
-          replace: true,
-        });
+      if (selectedSection) {
+        // Navigate to workspace with section
+        navigate(
+          `/workspaces/${selectedWorkspace.id}/${selectedSection.id}/${selectedChannel?.id || ""}`,
+          {
+            replace: true,
+          },
+        );
       } else {
         // Navigate to workspace only
         navigate(`/workspaces/${selectedWorkspace.id}`, {
@@ -111,7 +116,7 @@ const WorkspacePageContent = () => {
         });
       }
     }
-  }, [selectedWorkspace, selectedChannel, navigate]);
+  }, [selectedWorkspace, selectedSection, selectedChannel, navigate]);
 
   // Load workspace and channel from URL params on mount
   useEffect(() => {
@@ -120,12 +125,16 @@ const WorkspacePageContent = () => {
       // This would require a new function in useWorkspace hook
       console.log("Loading workspace from URL:", workspaceId);
 
-      if (channelId) {
-        // TODO: Load channel by ID from URL
-        console.log("Loading channel from URL:", channelId);
+      if (sectionId) {
+        console.log("Loading section from URL:", sectionId);
+
+        if (channelId) {
+          // TODO: Load channel by ID from URL
+          console.log("Loading channel from URL:", channelId);
+        }
       }
     }
-  }, [workspaceId, channelId]);
+  }, [workspaceId, sectionId, channelId]);
 
   const handleSendMessage = async (content: string) => {
     console.log("🚀 handleSendMessage called", {

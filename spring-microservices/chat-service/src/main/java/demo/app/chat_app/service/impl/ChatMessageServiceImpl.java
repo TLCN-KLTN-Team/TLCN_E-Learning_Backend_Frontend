@@ -12,6 +12,7 @@ import demo.app.chat_app.model.workspace.MemberStatus;
 import demo.app.chat_app.model.workspace.Section;
 import demo.app.chat_app.repository.*;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
+import demo.app.chat_app.service.ChannelMemberService;
 import demo.app.chat_app.service.ChatMessageService;
 import demo.app.chat_app.utils.JwtUtils;
 import lombok.AccessLevel;
@@ -38,6 +39,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     ChatMessageRepository chatMessageRepository;
     ChatMessageMapper chatMessageMapper;
     ChannelRepository channelRepository;
+    ChannelMemberService channelMemberService;
     SectionRepository sectionRepository;
     GetUserClient getUserClient;
 
@@ -198,10 +200,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             }
         } else {
             // Private/Group channel: chỉ ChannelMember ACTIVE mới truy cập được
-            boolean isMember = channel.getChannelMembers() != null &&
-                    channel.getChannelMembers().stream()
-                            .anyMatch(m -> m.getUserId().equals(userId)
-                                    && m.getStatus() == MemberStatus.ACTIVE);
+            boolean isMember = channelMemberService.isActiveMember(channel.getId(), userId);
             if (!isMember) {
                 throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
             }

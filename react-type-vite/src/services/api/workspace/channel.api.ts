@@ -1,6 +1,7 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
 import type {
+  BasicChannelResponse,
   ChannelResponse,
   ChatMessageRequest,
   ChatMessageResponse,
@@ -60,3 +61,22 @@ export const getMembersInChannel = async (
   );
   return response.data.result;
 };
+
+export const getPublicChannelBySectionId = async (
+  sectionId: string
+): Promise<ChannelResponse> => {
+
+  const response = await axiosInstance.get<ApiResponse<ChannelResponse>>(
+    `${CHANNEL_API_BASE_URL}/section/${sectionId}`
+  );
+  return response.data.result;
+};
+
+export const getListBasicChannelsBySectionId = async (
+  sectionId: string
+): Promise<BasicChannelResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<BasicChannelResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/list/section/${sectionId}`
+  );
+  return response.data.result;
+}

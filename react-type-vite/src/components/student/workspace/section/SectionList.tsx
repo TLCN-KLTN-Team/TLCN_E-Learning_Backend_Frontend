@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
-import type { SectionResponse, ChannelResponse } from "@/types/chat.types";
+import type {
+  SectionResponse,
+  ChannelResponse,
+  BasicChannelResponse,
+} from "@/types/chat.types";
 import ChannelList from "../channel/ChannelList";
+
+import { getListBasicChannelsBySectionId } from "@/services/api/workspace/channel.api";
 
 interface SectionListProps {
   sections: SectionResponse[];
@@ -21,8 +27,51 @@ const SectionList = ({
   onCreateChannel,
 }: SectionListProps) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(sections.map((s) => s.id)) // Expand all by default
+    new Set(),
   );
+
+  const [publicChannels, setPublicChannels] = useState<BasicChannelResponse[]>(
+    [],
+  );
+
+  useEffect(() => {
+    const publicSection = sections.find((sec) => sec.isPublic);
+    if (publicSection) {
+      const fetchPublicChannels = async () => {
+        try {
+          const channels = await getListBasicChannelsBySectionId(
+            publicSection.id,
+          );
+          setPublicChannels(channels);
+        } catch (error) {
+          console.error("Error fetching public channels:", error);
+        }
+      };
+      fetchPublicChannels();
+    }
+  }, [sections]);
+
+  const toChannelResponse = (
+    channel: BasicChannelResponse,
+    sectionId: string,
+  ): ChannelResponse => ({
+    id: channel.id,
+    sectionId,
+    name: channel.name,
+    slug: channel.name.toLowerCase().replace(/\s+/g, "-"),
+    description: "",
+    position: 0,
+    scope: "SECTION",
+    type: "TEXT",
+    status: "ACTIVE",
+    isReadOnly: false,
+    isPublic: channel.isPublic,
+    memberCount: 0,
+    lastMessageId: null,
+    lastActivityAt: new Date(0).toISOString(),
+    messages: [],
+    createdAt: new Date(0).toISOString(),
+  });
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) => {
@@ -45,10 +94,6 @@ const SectionList = ({
     <div className="space-y-1">
       {sections.map((section) => {
         const isExpanded = expandedSections.has(section.id);
-        // Check if selected channel is in this section
-        const selectedChannelInSection = section.channels?.find(
-          (ch) => ch.id === selectedChannel?.id
-        );
 
         return (
           <div key={section.id}>
@@ -79,55 +124,58 @@ const SectionList = ({
             </div>
 
             {/* Channels in Section - When Expanded */}
-            {isExpanded && section.channels && section.channels.length > 0 && (
+            {isExpanded && publicChannels.length > 0 && (
               <div className="ml-1">
                 <ChannelList
-                  channels={section.channels.map((ch) => ({
-                    id: ch.id,
-                    channelName: ch.channelName,
-                    isPrivate: false,
-                    endTime: 0,
-                    groups: [],
-                  }))}
+                  channels={publicChannels}
                   selectedChannel={selectedChannel}
-                  onChannelSelect={onChannelSelect}
-                  onInvitePeople={onInvitePeople}
-                  onChannelSettings={onChannelSettings}
+                  onChannelSelect={(channel) =>
+                    onChannelSelect(toChannelResponse(channel, section.id))
+                  }
+                  onInvitePeople={(channel) =>
+                    onInvitePeople?.(toChannelResponse(channel, section.id))
+                  }
+                  onChannelSettings={(channel) =>
+                    onChannelSettings?.(toChannelResponse(channel, section.id))
+                  }
                 />
               </div>
             )}
 
             {/* Show Selected Channel When Collapsed */}
-            {!isExpanded && selectedChannelInSection && (
+            {!isExpanded && publicChannels.length > 0 && (
               <div className="ml-1">
                 <ChannelList
-                  channels={[
-                    {
-                      id: selectedChannelInSection.id,
-                      channelName: selectedChannelInSection.channelName,
-                      isPrivate: false,
-                      endTime: 0,
-                      groups: [],
-                    },
-                  ]}
+                  channels={publicChannels}
                   selectedChannel={selectedChannel}
-                  onChannelSelect={onChannelSelect}
-                  onInvitePeople={onInvitePeople}
-                  onChannelSettings={onChannelSettings}
+                  onChannelSelect={(channel) =>
+                    onChannelSelect(toChannelResponse(channel, section.id))
+                  }
+                  onInvitePeople={(channel) =>
+                    onInvitePeople?.(toChannelResponse(channel, section.id))
+                  }
+                  onChannelSettings={(channel) =>
+                    onChannelSettings?.(toChannelResponse(channel, section.id))
+                  }
                 />
               </div>
             )}
 
             {/* Empty State */}
-            {isExpanded &&
-              (!section.channels || section.channels.length === 0) && (
-                <div className="ml-8 py-2 text-xs text-gray-500 italic">
-                  Chưa có kênh nào
-                </div>
-              )}
+            {isExpanded && publicChannels.length === 0 && (
+              <div className="ml-8 py-2 text-xs text-gray-500 italic">
+                Chưa có kênh nào
+              </div>
+            )}
           </div>
         );
       })}
+
+      {!publicChannels && (
+        <div className="ml-2 py-2 text-xs text-gray-500 italic">
+          Không có section public
+        </div>
+      )}
     </div>
   );
 };

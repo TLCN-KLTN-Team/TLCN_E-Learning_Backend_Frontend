@@ -81,7 +81,8 @@ public class Section {
      */
 
     // ── Trạng thái ───────────────────────────────────────────────
-    private SectionStatus status;
+    @Builder.Default
+    private SectionStatus status = SectionStatus.ACTIVE;
     /*
      * ACTIVE   → Đang học
      * FINISHED → Kết thúc học kỳ
@@ -130,6 +131,13 @@ public class Section {
     public void addMembers(List<String> userIds) {
         for (String userId : userIds) {
             addMember(userId);
+        }
+    }
+
+    public void updateStudentCount(int delta) {
+        this.studentCount += delta;
+        if (this.studentCount < 0) {
+            this.studentCount = 0; // Đảm bảo không âm
         }
     }
 

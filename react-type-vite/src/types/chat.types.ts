@@ -11,6 +11,23 @@ export const ChannelType = {
 
 export type ChannelType = (typeof ChannelType)[keyof typeof ChannelType];
 
+export const ChannelScope = {
+  WORKSPACE: "WORKSPACE",
+  SECTION: "SECTION",
+  GROUP: "GROUP",
+  DIRECT: "DIRECT",
+} as const;
+
+export type ChannelScope = (typeof ChannelScope)[keyof typeof ChannelScope];
+
+export const ChannelStatus = {
+  ACTIVE: "ACTIVE",
+  LOCKED: "LOCKED",
+  ARCHIVED: "ARCHIVED",
+} as const;
+
+export type ChannelStatus = (typeof ChannelStatus)[keyof typeof ChannelStatus];
+
 export interface UserResponse {
   id: string;
   firstName: string;
@@ -60,16 +77,12 @@ export interface SectionResponse {
   id: string;
   name: string;
   isPublic: boolean;
-  channels: SectionChannel[];
 }
 
 export interface BasicChannelResponse {
   id: string;
-  channelName: string;
-  participantHash?: string | null;
-  description?: string;
-  endTime?: number;
-  ended?: boolean;
+  name: string;
+  isPublic: boolean;
 }
 
 export interface GroupResponse {
@@ -83,16 +96,21 @@ export interface GroupResponse {
 
 export interface ChannelResponse {
   id: string;
-  participantHash?: string | null;
-  channelName: string;
-  description?: string;
-  participants?: Participant[];
-  messages?: ChatMessageResponse[] | null;
-  isPrivate: boolean;
-  endTime: number;
-  ended?: boolean;
-  channelType?: ChannelType;
-  groups?: GroupResponse[];
+  sectionId: string;
+  name: string;
+  slug: string;
+  description: string;
+  position: number;
+  scope: ChannelScope;
+  type: ChannelType;
+  status: ChannelStatus;
+  isReadOnly: boolean;
+  isPublic: boolean;
+  memberCount: number;
+  lastMessageId: string | null;
+  lastActivityAt: string;
+  messages: ChatMessageResponse[];
+  createdAt: string;
 }
 
 export interface CreateChannelRequest {

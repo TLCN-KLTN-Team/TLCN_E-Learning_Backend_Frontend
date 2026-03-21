@@ -4,13 +4,15 @@ import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 import { getWorkspaces } from "@/services/api/workspace/workspace.api";
 import {
   getChannel,
-  getBasicChannelsByWorkspaceId,
+  getPublicChannelBySectionId,
 } from "@/services/api/workspace/channel.api";
 import type {
   ChannelResponse,
   Participant,
+  SectionResponse,
   WorkspaceResponse,
 } from "@/types/chat.types";
+import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
 
 export const useWorkspace = () => {
   const [workspacesData, setWorkspacesData] =
@@ -18,6 +20,8 @@ export const useWorkspace = () => {
   const [visibleWorkspaceCount, setVisibleWorkspaceCount] = useState(6);
   const [selectedWorkspace, setSelectedWorkspace] =
     useState<WorkspaceResponse | null>(null);
+  const [selectedSection, setSelectedSection] =
+    useState<SectionResponse | null>(null);
   const [selectedChannel, setSelectedChannel] =
     useState<ChannelResponse | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -29,7 +33,6 @@ export const useWorkspace = () => {
   useEffect(() => {
     getWorkspaces(0, pageSize)
       .then((data) => {
-        console.log("Fetched workspaces:", data);
         setWorkspacesData(data);
       })
       .catch((error) => {
@@ -42,23 +45,23 @@ export const useWorkspace = () => {
   useEffect(() => {
     if (selectedWorkspace) {
       // Find general channel first, otherwise use first channel
-      const fetchChannelsAndSelectGeneral = async () => {
+      const fetchChannelsAndSelectGeneralChannel = async () => {
         try {
-          const channels = await getBasicChannelsByWorkspaceId(
-            selectedWorkspace.id
-          );
-          if (channels && channels.length > 0) {
-            // Look for "general" channel first
-            const generalChannel = channels.find(
-              (ch) => ch.channelName.toLowerCase() === "general"
-            );
+          const sections = await getSectionsByWorkspaceId(selectedWorkspace.id);
 
-            const channelToSelect = generalChannel || channels[0];
-
-            // Convert BasicChannelResponse to ChannelResponse for selection
-            const fullChannel = await getChannel(channelToSelect.id);
-            setSelectedChannel(fullChannel);
+          const publicSection = sections.find((sec) => sec.isPublic);
+          if (!publicSection) {
+            return;
           }
+
+          setSelectedSection(publicSection || null);
+          const publicChannel = await getPublicChannelBySectionId(
+            publicSection.id,
+          );
+          setSelectedChannel(publicChannel);
+
+          console.log("publicSection:", publicSection);
+          console.log("publicChannel:", publicChannel);
         } catch (error) {
           console.error("Error auto-selecting channel:", error);
           toast.error("Không thể tải kênh. Vui lòng thử lại.");
@@ -66,7 +69,7 @@ export const useWorkspace = () => {
         }
       };
 
-      fetchChannelsAndSelectGeneral();
+      fetchChannelsAndSelectGeneralChannel();
     } else {
       setSelectedChannel(null);
     }
@@ -79,7 +82,6 @@ export const useWorkspace = () => {
       getChannel(selectedChannel.id)
         .then((channelData) => {
           console.log("Loaded channel data:", channelData);
-          setParticipants(channelData.participants || []);
         })
         .catch((error) => {
           console.error("Error loading channel data:", error);
@@ -116,7 +118,7 @@ export const useWorkspace = () => {
                 ...data,
                 content: [...prev.content, ...data.content],
               }
-            : data
+            : data,
         );
         setVisibleWorkspaceCount((prev) => prev + pageSize);
       })
@@ -139,6 +141,7 @@ export const useWorkspace = () => {
   return {
     workspacesData,
     selectedWorkspace,
+    selectedSection,
     selectedChannel,
     participants,
     isLoadingMessages,
