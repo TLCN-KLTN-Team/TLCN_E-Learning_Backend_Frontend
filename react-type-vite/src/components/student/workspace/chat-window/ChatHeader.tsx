@@ -8,9 +8,6 @@ import {
   Search,
   HelpCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { getMembersInChannel } from "@/services/api/workspace/channel.api";
 
 interface ChatHeaderProps {
   selectedChannel: ChannelResponse;
@@ -23,30 +20,12 @@ const ChatHeader = ({
   onToggleParticipants,
   showParticipants,
 }: ChatHeaderProps) => {
-  const [memberCount, setMemberCount] = useState<number>(
-    selectedChannel.participants?.length || 0
-  );
 
-  useEffect(() => {
-    const fetchMemberCount = async () => {
-      try {
-        const members = await getMembersInChannel(selectedChannel.id);
-        setMemberCount(members.length);
-      } catch (error) {
-        console.error("Error fetching member count:", error);
-        toast.error("Không thể tải số lượng thành viên.");
-        // Fallback to participants length if API fails
-        setMemberCount(selectedChannel.participants?.length || 0);
-      }
-    };
-
-    fetchMemberCount();
-  }, [selectedChannel.id, selectedChannel.participants?.length]);
   return (
     <div className="px-6 py-3 border-b border-gray-600 bg-gray-900 flex items-center">
       <Hash className="w-5 h-5 text-gray-400 mr-2" />
       <h3 className="text-white font-semibold">
-        {selectedChannel.channelName}
+        {selectedChannel.name}
       </h3>
       <div className="ml-auto flex items-center space-x-4">
         <button
@@ -57,7 +36,7 @@ const ChatHeader = ({
           title={`${showParticipants ? "Ẩn" : "Hiện"} danh sách thành viên`}
         >
           <Users className="w-5 h-5" />
-          <span className="text-sm font-medium">{memberCount}</span>
+          <span className="text-sm font-medium">{selectedChannel.memberCount}</span>
         </button>
         <button className="text-gray-400 hover:text-white">
           <Bell className="w-5 h-5" />

@@ -12,12 +12,12 @@ import {
 import type {
   ChannelResponse,
   ChatMessageResponse,
-  Participant,
+  UserResponse,
 } from "@/types/chat.types";
 
 interface TimeBasedChannelViewProps {
   channel: ChannelResponse;
-  participants: Participant[];
+  participants: UserResponse[];
   wsMessages: ChatMessageResponse[];
   isConnected: boolean;
   onSendMessage: (content: string) => void;
@@ -99,7 +99,7 @@ const TimeBasedChannelView = ({
   };
 
   // Get user initials for avatar
-  const getUserInitials = (participant: Participant): string => {
+  const getUserInitials = (participant: UserResponse): string => {
     const firstName = participant.firstName || "";
     const lastName = participant.lastName || "";
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "??";
@@ -150,8 +150,8 @@ const TimeBasedChannelView = ({
                 isExpired
                   ? "bg-red-100 text-red-700"
                   : isEndingSoon
-                  ? "bg-orange-100 text-orange-700 animate-pulse"
-                  : "bg-blue-100 text-blue-700"
+                    ? "bg-orange-100 text-orange-700 animate-pulse"
+                    : "bg-blue-100 text-blue-700"
               }`}
             >
               <Clock className="w-4 h-4" />
@@ -237,7 +237,7 @@ const TimeBasedChannelView = ({
                       {message.sender.firstName} {message.sender.lastName}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {message.sender.mssv}
+                      {message.sender.studentId}
                     </span>
                     <span className="text-xs text-gray-400">
                       {new Date(message.createdDate).toLocaleTimeString(
@@ -245,7 +245,7 @@ const TimeBasedChannelView = ({
                         {
                           hour: "2-digit",
                           minute: "2-digit",
-                        }
+                        },
                       )}
                     </span>
                   </div>

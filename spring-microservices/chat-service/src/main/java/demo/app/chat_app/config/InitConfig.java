@@ -64,9 +64,4 @@ public class InitConfig {
             log.error("Unexpected error while loading .env file: {}", e.getMessage(), e);
         }
     }
-    
-    @Bean
-    public AuthenticationRequestInterceptor authenticationRequestInterceptor() {
-        return new AuthenticationRequestInterceptor();
-    }
 }

@@ -286,11 +286,11 @@ const MessageList = ({
           </div>
         </div>
         <h1 className="text-3xl font-bold text-white mb-2">
-          Welcome to #{selectedChannel.channelName}!
+          Welcome to #{selectedChannel.name}!
         </h1>
         <p className="text-gray-300 mb-4">
           {selectedChannel.description ||
-            `This is the start of the #${selectedChannel.channelName} channel.`}
+            `This is the start of the #${selectedChannel.name} channel.`}
         </p>
         {hasRole("TEACHER") && (
           <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
@@ -317,11 +317,11 @@ const MessageList = ({
             </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Welcome to #{selectedChannel.channelName}!
+            Welcome to #{selectedChannel.name}!
           </h1>
           <p className="text-gray-300 mb-3">
             {selectedChannel.description ||
-              `This is the start of the #${selectedChannel.channelName} channel.`}
+              `This is the start of the #${selectedChannel.name} channel.`}
           </p>
           {hasRole("TEACHER") && (
             <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">

@@ -1,8 +1,4 @@
-import { useEffect, useState } from "react";
-import SectionList from "../section/SectionList";
-import InvitePeopleModal from "@/components/student/workspace/channel/InvitePeopleModal";
-import AddChannelModal from "@/components/student/workspace/channel/AddChannelModal";
-
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import type {
   ChannelResponse,
@@ -10,20 +6,22 @@ import type {
   WorkspaceResponse,
   SectionResponse,
 } from "@/types/chat.types";
+import { SectionList } from "../section";
+import { AddChannelModal, InvitePeopleModal } from "../channel";
 import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
 import { getChannel } from "@/services/api/workspace/channel.api";
 
-interface ChannelPanelProps {
+interface SectionChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;
   selectedChannel: ChannelResponse | null;
   onChannelSelect: (channel: ChannelResponse) => void;
 }
 
-const ChannelPanel = ({
+const SectionChannelPanel = ({
   selectedWorkspace,
   selectedChannel,
   onChannelSelect,
-}: ChannelPanelProps) => {
+}: SectionChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddChannelModal, setShowAddChannelModal] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
@@ -206,7 +204,7 @@ const ChannelPanel = ({
   return (
     <>
       <div className="w-64 bg-gray-900 flex flex-col border-l border-gray-200">
-        {/* Server Name Header */}
+        {/* Workspace Name Header */}
         <div className="p-4 border-b border-gray-600 flex items-center justify-between">
           <h2 className="text-white font-semibold">
             {selectedWorkspace?.name || "Chọn workspace"}
@@ -280,4 +278,4 @@ const ChannelPanel = ({
   );
 };
 
-export default ChannelPanel;
+export default SectionChannelPanel;

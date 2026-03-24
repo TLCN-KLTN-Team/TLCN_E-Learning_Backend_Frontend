@@ -10,8 +10,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
     String id;
-    String firstName;
-    String lastName;
+    String studentId;
+    String nickname;
     String avatarUrl;
     boolean isOwner;
 }

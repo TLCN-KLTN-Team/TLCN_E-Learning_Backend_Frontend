@@ -1,6 +1,7 @@
 package demo.app.chat_app.service;
 
 import demo.app.chat_app.dto.response.UserResponse;
+import demo.app.chat_app.events.StudentInfo;
 import demo.app.chat_app.model.workspace.ChannelMember;
 
 import java.util.List;
@@ -10,6 +11,12 @@ import java.util.List;
  * Tách riêng để dễ bảo trì và tái sử dụng logic liên quan đến membership.
  */
 public interface ChannelMemberService {
+
+    ChannelMember createChannelMember(
+            String userId,
+            String sectionId,
+            String channelId
+    );
 
     /**
      * Tạo danh sách ChannelMember cho participants mới.
@@ -21,6 +28,21 @@ public interface ChannelMemberService {
      */
     List<ChannelMember> createChannelMembersForNewParticipants(
             List<String> userIds,
+            String sectionId,
+            String channelId
+    );
+
+    /**
+     * Tạo danh sách ChannelMember từ StudentInfo (không cần gọi API)
+     * Dùng khi nhận student info từ Kafka event
+     *
+     * @param students  Danh sách StudentInfo từ event
+     * @param sectionId ID của section
+     * @param channelId ID của channel
+     * @return Danh sách ChannelMember đã tạo (chưa save)
+     */
+    List<ChannelMember> createChannelMembersFromStudentInfo(
+            List<StudentInfo> students,
             String sectionId,
             String channelId
     );

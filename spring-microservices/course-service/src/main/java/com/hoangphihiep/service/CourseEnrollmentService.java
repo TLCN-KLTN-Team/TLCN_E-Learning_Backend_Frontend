@@ -4,6 +4,7 @@ import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.*;
 import com.hoangphihiep.events.ClassCreatedEvent;
 import com.hoangphihiep.events.EnrollStudentsEvent;
+import com.hoangphihiep.events.StudentInfo;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.kafka.producer.ClassEventProducer;
@@ -354,21 +355,53 @@ public class CourseEnrollmentService {
             // Update course total students count across all classes
             updateCourseTotalStudents(courseClass.getCourse().getId());
 
-            // send event to create channel for a class
+            // Fetch student info để đưa vào event
             Map<String, List<String>> request = new HashMap<>();
             request.put("studentIds", studentIds);
             log.info("Fetching user IDs for notification. Student IDs: {}", studentIds);
-            
+
             List<String> userIdsOfStudents = studentClient.getUsersByStudentIds(request).getResult();
             log.info("Found {} user IDs for notification: {}", userIdsOfStudents != null ? userIdsOfStudents.size() : 0, userIdsOfStudents);
+
+            // Fetch full student info by userIds
+            List<com.hoangphihiep.events.StudentInfo> studentInfoList = new ArrayList<>();
+            if (userIdsOfStudents != null && !userIdsOfStudents.isEmpty()) {
+                try {
+                    Map<String, List<String>> userIdsRequest = new HashMap<>();
+                    userIdsRequest.put("userIds", userIdsOfStudents);
+
+                    List<StudentResponse> students = studentClient.getStudentsByUserIds(userIdsRequest).getResult();
+                    log.info("✅ Fetched {} student info records", students != null ? students.size() : 0);
+
+                    // Map StudentResponse sang StudentInfo
+                    if (students != null) {
+                        studentInfoList = students.stream()
+                                .map(student -> StudentInfo.builder()
+                                        .userId(student.getId())
+                                        .username(student.getUsername())
+                                        .email(student.getEmail())
+                                        .firstName(student.getFirstName())
+                                        .lastName(student.getLastName())
+                                        .avatarUrl(student.getAvatarUrl())
+                                        .studentId(student.getStudentId())
+                                        .build())
+                                .collect(Collectors.toList());
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Error fetching student info, will send event with userIds only", e);
+                    // Fallback: nếu không fetch được student info, vẫn gửi event với userIds
+                }
+            }
 
             EnrollStudentsEvent event = EnrollStudentsEvent.builder()
                     .courseId(courseClass.getCourse().getId())
                     .classId(courseClass.getId())
-                    .studentIds(userIdsOfStudents)
+                    .studentIds(userIdsOfStudents) // Backward compatible
+                    .students(studentInfoList)      // New field với full info
                     .build();
 
             producer.addMembersToClassChannel(event);
+            log.info("📨 Published STUDENTS_ENROLLED event with {} student info records", studentInfoList.size());
 
             // Send notification to each enrolled student
             if (userIdsOfStudents != null && !userIdsOfStudents.isEmpty()) {

@@ -30,9 +30,8 @@ export type ChannelStatus = (typeof ChannelStatus)[keyof typeof ChannelStatus];
 
 export interface UserResponse {
   id: string;
-  firstName: string;
-  lastName: string;
-  mssv: string;
+  nickname: string;
+  studentId: string;
   avatarUrl?: string | null;
   owner: boolean;
 }
@@ -47,18 +46,9 @@ export interface UserProfileResponse {
   id: string;
   firstName: string;
   lastName: string;
-  mssv: string;
+  studentId: string;
   avatar?: string | null;
   owner: boolean;
-}
-
-export interface Participant {
-  id: string;
-  mssv: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  avatarUrl?: string | null;
-  owner?: boolean;
 }
 
 export interface WorkspaceResponse {
@@ -90,7 +80,7 @@ export interface GroupResponse {
   groupName: string;
   channelId: string;
   description?: string;
-  participants?: Participant[];
+  participants?: UserResponse[];
   createdDate?: string;
 }
 
@@ -111,6 +101,7 @@ export interface ChannelResponse {
   lastActivityAt: string;
   messages: ChatMessageResponse[];
   createdAt: string;
+  endTime?: number; // Unix timestamp in milliseconds, optional
 }
 
 export interface CreateChannelRequest {
@@ -140,7 +131,7 @@ export interface ChatMessageResponse {
   channelId?: string | null;
   me: boolean;
   content: string;
-  sender: Participant;
+  sender: UserResponse;
   messageType: MessageType;
   fileUrl?: string | null;
   createdDate: string;
