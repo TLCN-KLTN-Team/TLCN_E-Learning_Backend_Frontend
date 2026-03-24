@@ -1,18 +1,17 @@
-import type { Participant, UserResponse } from "@/types/chat.types";
+import type { UserResponse } from "@/types/chat.types";
 import { X, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { getMembersInChannel } from "@/services/api/workspace/channel.api";
+import {channelMemberApi} from "@/services/api/workspace/channelMember.api";
 
 interface ParticipantsListProps {
-  participants: Participant[];
+  participants: UserResponse[];
   isVisible: boolean;
   onClose: () => void;
   channelId?: string;
 }
 
 const ParticipantsList = ({
-  participants,
   isVisible,
   onClose,
   channelId,
@@ -28,7 +27,7 @@ const ParticipantsList = ({
       setLoading(true);
       setError(null);
       try {
-        const data = await getMembersInChannel(channelId);
+        const data = await channelMemberApi.getActiveChannelMembers(channelId);
         setMembers(data);
         console.log("Fetched channel members:", data);
       } catch (err) {
@@ -46,21 +45,12 @@ const ParticipantsList = ({
 
   if (!isVisible) return null;
 
-  const getFullName = (participant: Participant | UserResponse) => {
-    const firstName = participant.firstName || "";
-    const lastName = participant.lastName || "";
-    return `${firstName} ${lastName}`.trim() || "Unknown User";
-  };
-
-  // Use fetched members if available, otherwise fall back to participants prop
-  const displayList = members.length > 0 ? members : participants;
-
   return (
     <div className="w-64 bg-gray-800 border-l border-gray-600 flex flex-col h-full">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-600 flex items-center justify-between">
         <h3 className="text-white font-semibold">
-          Participants ({loading ? "..." : displayList.length})
+          Danh sách thành viên
         </h3>
         <button
           onClick={onClose}
@@ -79,24 +69,24 @@ const ParticipantsList = ({
           </div>
         ) : error ? (
           <div className="p-4 text-center text-red-400">{error}</div>
-        ) : displayList.length === 0 ? (
+        ) : members.length === 0 ? (
           <div className="p-4 text-center text-gray-400">
-            No participants found
+            Không có thành viên nào
           </div>
         ) : (
           <div className="p-2">
-            {displayList.map((participant) => {
+            {members.map((member) => {
               return (
                 <div
-                  key={participant.id}
+                  key={member.id}
                   className="flex items-center p-2 hover:bg-gray-700 rounded-md transition-colors"
                 >
                   {/* Avatar */}
                   <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center mr-3">
-                    {"avatarUrl" in participant && participant.avatarUrl ? (
+                    {"avatarUrl" in member && member.avatarUrl ? (
                       <img
-                        src={participant.avatarUrl}
-                        alt={getFullName(participant)}
+                        src={member.avatarUrl}
+                        alt={member.nickname}
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
@@ -107,23 +97,23 @@ const ParticipantsList = ({
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-1">
-                      {participant.owner ? (
+                      {member.owner ? (
                         <span className="text-yellow-400 text-sm font-semibold truncate">
-                          {getFullName(participant)}
+                          {member.nickname}
                         </span>
                       ) : (
                         <span className="text-white text-sm font-medium truncate">
-                          {getFullName(participant)}
+                          {member.nickname}
                         </span>
                       )}
                     </div>
-                    {participant.owner ? (
+                    {member.owner ? (
                       <div className="text-xs text-yellow-400/80 truncate">
                         <span>Giáo viên</span>
                       </div>
                     ) : (
                       <div className="text-xs text-gray-400 truncate">
-                        <span>MSSV: {participant.id}</span>
+                        <span>MSSV: {member.studentId}</span>
                       </div>
                     )}
                   </div>
@@ -144,7 +134,7 @@ const ParticipantsList = ({
 
       {/* Footer */}
       <div className="px-4 py-2 border-t border-gray-600 text-xs text-gray-400">
-        {loading ? "Loading..." : `${displayList.length} participants`}
+        {loading ? "Loading..." : `${members.length} thành viên`}
       </div>
     </div>
   );

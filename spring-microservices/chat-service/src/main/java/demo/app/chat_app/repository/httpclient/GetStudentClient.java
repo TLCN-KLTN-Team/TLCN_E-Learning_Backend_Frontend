@@ -21,4 +21,7 @@ public interface GetStudentClient {
     ApiResponse<List<StudentResponse>> getStudentsByUserIds(
             @RequestBody Map<String, List<String>> request
     );
+
+    @GetMapping("/students/by-user-id/{id}")
+    ApiResponse<StudentResponse> getStudentByUserId(@PathVariable String id);
 }

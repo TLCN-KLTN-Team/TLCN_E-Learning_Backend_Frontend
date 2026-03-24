@@ -1,8 +1,8 @@
 import { useState } from "react";
-import ChatHeader from "./ChatHeader";
-import MessageList from "./MessageList";
-import MessageInput from "./MessageInput";
-import ParticipantsList from "./ParticipantsList";
+import ChatHeader from "../chat-window/ChatHeader";
+import MessageList from "../chat-window/MessageList";
+import MessageInput from "../chat-window/MessageInput";
+import ParticipantsList from "../chat-window/ParticipantsList";
 import ChannelWorkspace from "../channel/ChannelWorkspace";
 import TimeBasedChannelView from "../channel/TimeBasedChannelView";
 import type {
@@ -11,7 +11,7 @@ import type {
   UserResponse,
 } from "@/types/chat.types";
 
-interface ChatWindowProps {
+interface ChatPanelProps {
   selectedChannel: ChannelResponse | null;
   participants: UserResponse[];
   isLoadingMessages: boolean;
@@ -22,7 +22,7 @@ interface ChatWindowProps {
   onClearErrors: () => void;
 }
 
-const ChatWindow = ({
+const ChatPanel = ({
   selectedChannel,
   participants,
   isLoadingMessages,
@@ -31,7 +31,7 @@ const ChatWindow = ({
   wsErrors,
   onSendMessage,
   onClearErrors,
-}: ChatWindowProps) => {
+}: ChatPanelProps) => {
   const [showParticipants, setShowParticipants] = useState(false);
 
   const toggleParticipants = () => {
@@ -93,7 +93,7 @@ const ChatWindow = ({
         <ChannelWorkspace
           channelId={selectedChannel.id}
           channelName={selectedChannel.name}
-          endTime={new Date(selectedChannel.endTime!)}
+          endTime={new Date(selectedChannel.endTime).toISOString()}
           onChannelExpired={handleChannelExpired}
         />
       </div>
@@ -144,4 +144,4 @@ const ChatWindow = ({
   );
 };
 
-export default ChatWindow;
+export default ChatPanel;

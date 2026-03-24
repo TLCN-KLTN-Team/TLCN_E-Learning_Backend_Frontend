@@ -64,19 +64,6 @@ export const useChatWebSocket = () => {
         setIsConnected(true);
         isConnectingRef.current = false;
 
-        // Add user to WebSocket session using correct destination
-        // if (user?.username) {
-        //   stompClient.publish({
-        //     destination: "/app/chat.addUser",
-        //     body: JSON.stringify({
-        //       sender: user.username,
-        //       type: "JOIN",
-        //     }),
-        //     headers: {
-        //       "content-type": "application/json",
-        //     },
-        //   });
-        // }
       },
       onDisconnect: () => {
         console.log("❌ Disconnected from WebSocket");

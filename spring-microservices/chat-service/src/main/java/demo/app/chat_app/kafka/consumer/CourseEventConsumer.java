@@ -19,6 +19,10 @@ public class CourseEventConsumer {
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
 
+    /**
+     * Kafka listener cho course created events
+     * Sử dụng service token vì đây là background task (không có user context)
+     */
     @KafkaListener(
             topics = "${kafka.topic.course-events}",
             groupId = "${spring.kafka.consumer.group-id}"
@@ -35,7 +39,5 @@ public class CourseEventConsumer {
             e.printStackTrace();
         }
     }
-
-
 
 }

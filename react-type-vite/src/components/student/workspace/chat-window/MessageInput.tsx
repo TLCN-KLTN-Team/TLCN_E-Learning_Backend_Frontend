@@ -61,7 +61,6 @@ const MessageInput = ({
 
   const uploadFilesForMessage = async () => {
     setIsUploading(true);
-    console.log("📤 Starting file upload...");
 
     const formData = new FormData();
     selectedFiles.forEach((fileItem) => {
@@ -70,11 +69,8 @@ const MessageInput = ({
     formData.append("channelId", selectedChannel.id);
 
     try {
-      const uploadAtachmentsResults = await uploadMultipleFiles(formData);
-      console.log("✅ File upload completed:", uploadAtachmentsResults);
-      toast.success(`Đã tải lên ${selectedFiles.length} tệp thành công!`);
+      await uploadMultipleFiles(formData);
     } catch (error) {
-      console.error("❌ File upload failed:", error);
       toast.error("Không thể tải lên tệp. Vui lòng thử lại.");
       throw new Error("Failed to upload files: " + error);
     } finally {
@@ -117,7 +113,6 @@ const MessageInput = ({
         textareaRef.current.style.height = "auto";
       }
 
-      console.log("✅ Operation completed successfully");
     } catch (error) {
       console.error("❌ Error in handleSendMessage:", error);
       toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
@@ -138,7 +133,6 @@ const MessageInput = ({
 
     setSelectedFiles((prev) => [...prev, ...newFiles]);
 
-    console.log("Selected files:", newFiles);
     e.target.value = ""; // Reset input value
   };
 
@@ -151,14 +145,6 @@ const MessageInput = ({
         URL.revokeObjectURL(fileToRemove.preview);
       }
     }
-  };
-
-  const calculateFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   };
 
   return (
@@ -202,19 +188,6 @@ const MessageInput = ({
                 )}
               </div>
 
-              {/* File info */}
-              <div className="flex-1 min-w-0">
-                <p
-                  className="text-white text-sm font-medium truncate"
-                  title={fileItem.name}
-                >
-                  {fileItem.name}
-                </p>
-                <p className="text-gray-400 text-xs">
-                  {calculateFileSize(fileItem.size)}
-                </p>
-              </div>
-
               {/* Remove button */}
               <button
                 className="flex-shrink-0 p-1 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded transition-colors"
@@ -229,9 +202,11 @@ const MessageInput = ({
       )}
 
       {/* Message input */}
-      <div className="flex items-start gap-2 bg-gray-700 rounded-lg p-3">
+      <div className="flex items-center gap-2 rounded-lg">
         {/* Left icon */}
-        <div className={`flex-shrink-0 ${isMultiline ? "pt-0.5" : ""}`}>
+        <div
+          className={`flex-shrink-0 ${isMultiline ? "self-end" : "self-center"}`}
+        >
           <PlusCircle className="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" />
         </div>
 
@@ -241,16 +216,17 @@ const MessageInput = ({
           value={newMessage}
           onChange={handleTextareaChange}
           onKeyPress={handleKeyPress}
-          placeholder={`Message #${selectedChannel.channelName}`}
+          placeholder={`Message #${selectedChannel.name}`}
           disabled={!isConnected}
           rows={1}
-          className="flex-1 bg-transparent text-white placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed resize-none overflow-y-auto min-h-[24px] max-h-[176px] outline-none border-none focus:outline-none focus:ring-0"
+          className="flex-1 bg-transparent text-white placeholder-gray-400 disabled:cursor-not-allowed resize-none overflow-y-auto border-0 outline-none focus:outline-none focus:ring-0 focus:border-0 hover:border-0 p-0 leading-6"
+          style={{ minHeight: "24px", maxHeight: "176px" }}
         />
 
         {/* Right icons */}
         <div
           className={`flex-shrink-0 flex items-center gap-2 ${
-            isMultiline ? "pt-0.5" : ""
+            isMultiline ? "self-end" : "self-center"
           }`}
         >
           <button
@@ -299,8 +275,8 @@ const MessageInput = ({
               isUploading
                 ? "Uploading files..."
                 : selectedFiles.length > 0
-                ? `Send message with ${selectedFiles.length} files`
-                : "Send message"
+                  ? `Send message with ${selectedFiles.length} files`
+                  : "Send message"
             }
           >
             {isUploading ? (

@@ -70,18 +70,11 @@ public class ChannelServiceImpl implements ChannelService {
         Channel savedChannel = channelRepository.save(channel);
 
         // Firstly add teacher member to channel - nickname và avatarUrl sẽ được lazy load sau
-        ChannelMember teacherMember = ChannelMember.builder()
-                .channelId(savedChannel.getId())
-                .sectionId(section.getId())
-                .userId(workspace.getOwnerId())
-                .role(ChannelRole.OWNER)
-                .status(MemberStatus.ACTIVE)
-                .notificationLevel(NotificationLevel.ALL)
-                .unreadCount(0)
-                .unreadMentionCount(0)
-                .joinedAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
+        ChannelMember teacherMember = channelMemberService.createChannelMember(
+                workspace.getOwnerId(),
+                section.getId(),
+                savedChannel.getId()
+        );
 
         // Save teacher member using ChannelMemberService
         channelMemberService.addMemberToChannel(teacherMember);
@@ -93,21 +86,55 @@ public class ChannelServiceImpl implements ChannelService {
     public void addParticipantsWhenStudentsEnrolled(EnrollStudentsEvent event) {
         Section section = sectionRepository.findByClassId(event.getClassId())
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
-        section.addMembers(event.getStudentIds());
-        sectionRepository.save(section);
+
+        // Update section members (extract userIds from either studentIds or students)
+        List<String> userIds = null;
+        if (event.getStudentIds() != null && !event.getStudentIds().isEmpty()) {
+            userIds = event.getStudentIds();
+        } else if (event.getStudents() != null && !event.getStudents().isEmpty()) {
+            userIds = event.getStudents().stream()
+                    .map(demo.app.chat_app.events.StudentInfo::getUserId)
+                    .filter(Objects::nonNull)
+                    .toList();
+        }
+
+        if (userIds != null && !userIds.isEmpty()) {
+            section.addMembers(userIds);
+            sectionRepository.save(section);
+            log.info("Updated section {} with {} new members", section.getId(), userIds.size());
+        } else {
+            log.warn("No user IDs found in event to update section members");
+        }
 
         Channel generalChannelForSection = channelRepository.findBySectionIdAndIsPublicTrue(section.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        // Create and save channel members using ChannelMemberService
-        List<ChannelMember> newChannelMembers = channelMemberService.createChannelMembersForNewParticipants(
-                event.getStudentIds(),
-                section.getId(),
-                generalChannelForSection.getId()
-        );
+        List<ChannelMember> newChannelMembers;
+
+        // Ưu tiên dùng students (chứa full info) nếu có
+        if (event.getStudents() != null && !event.getStudents().isEmpty()) {
+            log.info("Using student info from event (no API calls needed)");
+            newChannelMembers = channelMemberService.createChannelMembersFromStudentInfo(
+                    event.getStudents(),
+                    section.getId(),
+                    generalChannelForSection.getId()
+            );
+        } else if (event.getStudentIds() != null && !event.getStudentIds().isEmpty()) {
+            // Fallback: dùng old way với API calls
+            log.warn("⚠Student info not found in event, falling back to API calls");
+            newChannelMembers = channelMemberService.createChannelMembersForNewParticipants(
+                    event.getStudentIds(),
+                    section.getId(),
+                    generalChannelForSection.getId()
+            );
+        } else {
+            log.error("No student information found in event (neither students nor studentIds)");
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
 
         // Save all members (this will also update channel member count)
         channelMemberService.addMembersToChannel(newChannelMembers, generalChannelForSection.getId());
+        log.info("Added {} members to channel {}", newChannelMembers.size(), generalChannelForSection.getId());
     }
 
     @Override

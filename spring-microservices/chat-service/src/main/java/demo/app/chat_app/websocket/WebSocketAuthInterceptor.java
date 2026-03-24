@@ -49,6 +49,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             // Lấy token từ header 'Authorization'
             String token = accessor.getFirstNativeHeader("Authorization");
+            log.info("Received token when socket connect: {}", token);
 
             if (token == null || !token.startsWith("Bearer ")) {
                 throw new IllegalArgumentException("Missing or invalid Authorization header");

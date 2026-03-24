@@ -6,7 +6,7 @@ import { Clock, BookOpen } from "lucide-react";
 interface ChannelWorkspaceProps {
   channelId: string;
   channelName: string;
-  endTime: string; // ISO string from backend
+  endTime: Date; // ISO string from backend
   onChannelExpired?: () => void;
 }
 
@@ -43,7 +43,7 @@ const ChannelWorkspace = ({
   useEffect(() => {
     const checkAndAutoSubmit = () => {
       const now = new Date().getTime();
-      const end = new Date(endTime).getTime();
+      const end = endTime.getTime();
       const isActive = end > now;
 
       if (!isActive && !isExerciseSubmitted) {

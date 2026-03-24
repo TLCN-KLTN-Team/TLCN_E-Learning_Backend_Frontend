@@ -65,8 +65,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info  # hoặc "*" nếu muốn expose tất cả
+        include: health,info # hoặc "*" nếu muốn expose tất cả
   endpoint:
     health:
       show-details: always
-

@@ -1,22 +1,19 @@
 import { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { useSafeChatWebSocket } from "@/hooks/useSafeChatWebSocket";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import ChatErrorBoundary from "@/components/student/workspace/ChatErrorBoundary";
 
-// Import new components
-import WorkspaceSidebar from "@/components/student/workspace/side-workspace/WorkspaceSidebar";
-import ChannelPanel from "@/components/student/workspace/channel/ChannelPanel";
-import ChatWindow from "@/components/student/workspace/chat-window/ChatWindow";
+// Import layout components
+import {
+  WorkspaceSidebar,
+  SectionChannelPanel,
+  ChatPanel,
+} from "@/components/student/workspace/layout";
 
 const WorkspacePageContent = () => {
-  const { workspaceId, sectionId, channelId } = useParams<{
-    workspaceId: string;
-    sectionId: string;
-    channelId: string;
-  }>();
   const navigate = useNavigate();
 
   // Use custom hooks for workspace management and WebSocket
@@ -104,7 +101,7 @@ const WorkspacePageContent = () => {
       if (selectedSection) {
         // Navigate to workspace with section
         navigate(
-          `/workspaces/${selectedWorkspace.id}/${selectedSection.id}/${selectedChannel?.id || ""}`,
+          `/workspaces/${selectedWorkspace?.id}/${selectedSection?.id}/${selectedChannel?.id}`,
           {
             replace: true,
           },
@@ -117,24 +114,6 @@ const WorkspacePageContent = () => {
       }
     }
   }, [selectedWorkspace, selectedSection, selectedChannel, navigate]);
-
-  // Load workspace and channel from URL params on mount
-  useEffect(() => {
-    if (workspaceId) {
-      // TODO: Load workspace by ID from URL
-      // This would require a new function in useWorkspace hook
-      console.log("Loading workspace from URL:", workspaceId);
-
-      if (sectionId) {
-        console.log("Loading section from URL:", sectionId);
-
-        if (channelId) {
-          // TODO: Load channel by ID from URL
-          console.log("Loading channel from URL:", channelId);
-        }
-      }
-    }
-  }, [workspaceId, sectionId, channelId]);
 
   const handleSendMessage = async (content: string) => {
     console.log("🚀 handleSendMessage called", {
@@ -176,7 +155,7 @@ const WorkspacePageContent = () => {
 
   return (
     <div className="h-screen flex bg-gray-800">
-      {/* Sidebar - Workspaces */}
+      {/* Left Panel - Workspaces */}
       <WorkspaceSidebar
         workspaces={getVisibleWorkspaces()}
         selectedWorkspace={selectedWorkspace}
@@ -185,15 +164,15 @@ const WorkspacePageContent = () => {
         onLoadMore={loadMoreWorkspaces}
       />
 
-      {/* Channel Panel */}
-      <ChannelPanel
+      {/* Middle Panel - Sections & Channels */}
+      <SectionChannelPanel
         selectedWorkspace={selectedWorkspace}
         selectedChannel={selectedChannel}
         onChannelSelect={handleChannelSelect}
       />
 
-      {/* Chat Area */}
-      <ChatWindow
+      {/* Right Panel - Chat Area */}
+      <ChatPanel
         selectedChannel={selectedChannel}
         participants={participants}
         isLoadingMessages={isLoadingMessages}

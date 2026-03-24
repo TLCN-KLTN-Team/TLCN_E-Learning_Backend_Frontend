@@ -8,7 +8,7 @@ import {
 } from "@/services/api/workspace/channel.api";
 import type {
   ChannelResponse,
-  Participant,
+  UserResponse,
   SectionResponse,
   WorkspaceResponse,
 } from "@/types/chat.types";
@@ -24,7 +24,7 @@ export const useWorkspace = () => {
     useState<SectionResponse | null>(null);
   const [selectedChannel, setSelectedChannel] =
     useState<ChannelResponse | null>(null);
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [participants, setParticipants] = useState<UserResponse[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
   const pageSize = 6;

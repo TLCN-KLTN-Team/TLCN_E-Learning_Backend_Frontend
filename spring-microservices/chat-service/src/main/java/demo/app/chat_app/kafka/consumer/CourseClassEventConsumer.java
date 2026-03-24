@@ -8,7 +8,6 @@ import demo.app.chat_app.events.EnrollStudentsEvent;
 import demo.app.chat_app.events.KafkaEvent;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
-import demo.app.chat_app.service.ChannelService;
 import demo.app.chat_app.service.impl.ChannelServiceImpl;
 import demo.app.chat_app.service.impl.SectionServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +23,10 @@ public class CourseClassEventConsumer {
     private final ChannelServiceImpl channelService;
     private final SectionServiceImpl sectionService;
 
+    /**
+     * Kafka listener cho class events
+     * Sử dụng service token vì đây là background task
+     */
     @KafkaListener(
             topics = "${kafka.topic.class-events}",
             groupId = "${spring.kafka.consumer.group-id}"

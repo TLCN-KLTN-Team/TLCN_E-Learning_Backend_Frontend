@@ -1,6 +1,8 @@
 package demo.app.chat_app.service.impl;
 
+import demo.app.chat_app.dto.response.StudentResponse;
 import demo.app.chat_app.dto.response.UserResponse;
+import demo.app.chat_app.events.StudentInfo;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.model.workspace.ChannelMember;
@@ -9,6 +11,7 @@ import demo.app.chat_app.model.workspace.MemberStatus;
 import demo.app.chat_app.model.workspace.NotificationLevel;
 import demo.app.chat_app.repository.ChannelMemberRepository;
 import demo.app.chat_app.repository.ChannelRepository;
+import demo.app.chat_app.repository.httpclient.GetStudentClient;
 import demo.app.chat_app.service.ChannelMemberService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,72 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
 
     ChannelMemberRepository channelMemberRepository;
     ChannelRepository channelRepository;
+    GetStudentClient getStudentClient;
+
+
+    /**
+     * Create channel member từ userId (gọi API để lấy student info)
+     * @deprecated Dùng {@link #createChannelMemberFromStudentInfo} khi có student info sẵn
+     */
+    @Override
+    @Deprecated
+    public ChannelMember createChannelMember(String userId, String sectionId, String channelId) {
+        try {
+            StudentResponse studentInfo = getStudentClient.getStudentByUserId(userId)
+                    .getResult();
+
+            return ChannelMember.builder()
+                    .channelId(channelId)
+                    .sectionId(sectionId)
+                    .userId(userId)
+                    .studentId(studentInfo.getStudentId())
+                    .role(ChannelRole.STUDENT)
+                    .status(MemberStatus.ACTIVE)
+                    .notificationLevel(NotificationLevel.ALL)
+                    .unreadCount(0)
+                    .unreadMentionCount(0)
+                    .joinedAt(Instant.now())
+                    .updatedAt(Instant.now())
+                    .nickname(studentInfo.getLastName() + " " + studentInfo.getFirstName())
+                    .build();
+        } catch (AppException ae) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    /**
+     * Create channel member từ StudentInfo (không cần gọi API)
+     * Dùng khi nhận student info từ Kafka event
+     */
+    public ChannelMember createChannelMemberFromStudentInfo(
+            StudentInfo studentInfo,
+            String sectionId,
+            String channelId
+    ) {
+        if (studentInfo == null || studentInfo.getUserId() == null) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        log.debug("Creating channel member from StudentInfo: userId={}, studentId={}",
+                studentInfo.getUserId(), studentInfo.getStudentId());
+
+        return ChannelMember.builder()
+                .channelId(channelId)
+                .sectionId(sectionId)
+                .userId(studentInfo.getUserId())
+                .studentId(studentInfo.getStudentId())
+                .role(ChannelRole.STUDENT)
+                .status(MemberStatus.ACTIVE)
+                .notificationLevel(NotificationLevel.ALL)
+                .unreadCount(0)
+                .unreadMentionCount(0)
+                .joinedAt(Instant.now())
+                .updatedAt(Instant.now())
+                .nickname((studentInfo.getLastName() != null ? studentInfo.getLastName() : "") +
+                          " " +
+                          (studentInfo.getFirstName() != null ? studentInfo.getFirstName() : ""))
+                .build();
+    }
 
     @Override
     public List<ChannelMember> createChannelMembersForNewParticipants(
@@ -36,19 +105,31 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
             String channelId
     ) {
         return userIds.stream()
-                .map(userId -> ChannelMember.builder()
-                        .channelId(channelId)
-                        .sectionId(sectionId)
-                        .userId(userId)
-                        .role(ChannelRole.STUDENT)
-                        .status(MemberStatus.ACTIVE)
-                        .notificationLevel(NotificationLevel.ALL)
-                        .unreadCount(0)
-                        .unreadMentionCount(0)
-                        .joinedAt(Instant.now())
-                        .updatedAt(Instant.now())
-                        // nickname và avatarUrl sẽ được lazy load sau khi user có token
-                        .build())
+                .map(userId -> this.createChannelMember(
+                        userId,
+                        sectionId,
+                        channelId
+                ))
+                .toList();
+    }
+
+    /**
+     * Create channel members từ StudentInfo list (không cần gọi API)
+     * Dùng khi nhận student info từ Kafka event
+     */
+    @Override
+    public List<ChannelMember> createChannelMembersFromStudentInfo(
+            List<StudentInfo> students,
+            String sectionId,
+            String channelId
+    ) {
+        log.info("Creating {} channel members from StudentInfo without API calls", students.size());
+        return students.stream()
+                .map(student -> createChannelMemberFromStudentInfo(
+                        student,
+                        sectionId,
+                        channelId
+                ))
                 .toList();
     }
 
@@ -101,7 +182,8 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
         return members.stream()
                 .map(member -> UserResponse.builder()
                         .id(member.getUserId())
-                        .firstName(member.getNickname())
+                        .nickname(member.getNickname())
+                        .studentId(member.getStudentId())
                         .avatarUrl(member.getAvatarUrl())
                         .build())
                 .toList();

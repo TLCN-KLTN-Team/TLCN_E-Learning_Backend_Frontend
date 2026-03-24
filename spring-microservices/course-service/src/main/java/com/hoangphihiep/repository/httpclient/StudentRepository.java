@@ -46,6 +46,12 @@ public interface StudentRepository {
             @RequestBody Map<String, List<String>> request
     );
 
+    // Fetch full student info by userIds
+    @PostMapping("/students/students-by-user-ids")
+    ApiResponse<List<StudentResponse>> getStudentsByUserIds(
+            @RequestBody Map<String, List<String>> request
+    );
+
     @PutMapping("/students/{id}")
     ApiResponse<StudentResponse> updateStudent(@PathVariable String id, @RequestBody StudentRequest request);
 

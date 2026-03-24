@@ -98,6 +98,7 @@ public class ChannelMember {
      * Phải tồn tại trong SectionMember với:
      *   sectionId = this.sectionId, status = ACTIVE
      */
+    private String studentId; // Denormalized từ User.studentId, phục vụ hiển thị
 
     // ── Vai trò ──────────────────────────────────────────────────
     private ChannelRole role;
