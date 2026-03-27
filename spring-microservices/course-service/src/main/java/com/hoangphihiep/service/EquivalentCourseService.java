@@ -19,6 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class EquivalentCourseService {
 
+    private static final double DEFAULT_CERTIFICATE_WEIGHT = 0.4;
+    private static final double DEFAULT_INTERVIEW_WEIGHT = 0.6;
+    private static final double DEFAULT_APPROVAL_THRESHOLD = 7.0;
+
     private final EquivalentCourseRepository equivalentCourseRepository;
     private final PublishedCourseRepository publishedCourseRepository;
     private final CourseRepository courseRepository;
@@ -46,6 +50,7 @@ public class EquivalentCourseService {
         EquivalentCourse equivalentCourse = equivalentCourseMapper.toEntity(request);
         equivalentCourse.setSourceCourse(sourceCourse);
         equivalentCourse.setTargetCourse(targetCourse);
+        applyDecisionRuleDefaultsAndValidation(equivalentCourse);
 
         EquivalentCourse savedCourse = equivalentCourseRepository.save(equivalentCourse);
         return equivalentCourseMapper.toResponse(savedCourse);
@@ -72,6 +77,7 @@ public class EquivalentCourseService {
         equivalentCourseMapper.updateEntity(equivalentCourse, request);
         equivalentCourse.setSourceCourse(sourceCourse);
         equivalentCourse.setTargetCourse(targetCourse);
+        applyDecisionRuleDefaultsAndValidation(equivalentCourse);
 
         EquivalentCourse updatedCourse = equivalentCourseRepository.save(equivalentCourse);
         return equivalentCourseMapper.toResponse(updatedCourse);
@@ -83,5 +89,40 @@ public class EquivalentCourseService {
             throw new RuntimeException("Equivalent course not found with id: " + id);
         }
         equivalentCourseRepository.deleteById(id);
+    }
+
+    private void applyDecisionRuleDefaultsAndValidation(EquivalentCourse equivalentCourse) {
+        Double certificateWeight = equivalentCourse.getCertificateWeight() != null
+                ? equivalentCourse.getCertificateWeight()
+                : DEFAULT_CERTIFICATE_WEIGHT;
+
+        Double interviewWeight = equivalentCourse.getInterviewWeight() != null
+                ? equivalentCourse.getInterviewWeight()
+                : DEFAULT_INTERVIEW_WEIGHT;
+
+        Double approvalThreshold = equivalentCourse.getApprovalThreshold() != null
+                ? equivalentCourse.getApprovalThreshold()
+                : DEFAULT_APPROVAL_THRESHOLD;
+
+        validateWeight(certificateWeight, "certificateWeight");
+        validateWeight(interviewWeight, "interviewWeight");
+
+        if (Math.abs((certificateWeight + interviewWeight) - 1.0) > 0.0001) {
+            throw new RuntimeException("Tổng certificateWeight và interviewWeight phải bằng 1.0");
+        }
+
+        if (approvalThreshold < 0 || approvalThreshold > 10) {
+            throw new RuntimeException("approvalThreshold phải nằm trong khoảng 0 đến 10");
+        }
+
+        equivalentCourse.setCertificateWeight(certificateWeight);
+        equivalentCourse.setInterviewWeight(interviewWeight);
+        equivalentCourse.setApprovalThreshold(approvalThreshold);
+    }
+
+    private void validateWeight(Double value, String field) {
+        if (value < 0 || value > 1) {
+            throw new RuntimeException(field + " phải nằm trong khoảng 0 đến 1");
+        }
     }
 }

@@ -3,6 +3,20 @@ import type { CourseRequest } from "../request/courseRequest";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import type { CourseResponse } from "../response/courseResponse";
 
+export interface CourseObjectivePayload {
+  code: string;
+  description?: string;
+}
+
+export interface CourseObjectiveResponse {
+  id: number;
+  courseId: number;
+  courseName?: string;
+  code: string;
+  description?: string;
+  isActive: boolean;
+}
+
 export const createCourse = async (
   educationalUnitId: number,
   courseData: CourseRequest
@@ -73,4 +87,60 @@ export const updateCourse = async (
     courseData
   );
   return response.data.result;
+};
+
+export const getCourseObjectives = async (
+  educationalUnitId: number,
+  courseId: number,
+  activeOnly: boolean = true
+): Promise<CourseObjectiveResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<CourseObjectiveResponse[]>>(
+    `/course-management/expert/educational-unit/${educationalUnitId}/courses/${courseId}/clos?activeOnly=${activeOnly}`
+  );
+  return response.data.result;
+};
+
+export const createCourseObjective = async (
+  educationalUnitId: number,
+  courseId: number,
+  payload: CourseObjectivePayload
+): Promise<CourseObjectiveResponse> => {
+  const response = await axiosInstance.post<ApiResponse<CourseObjectiveResponse>>(
+    `/course-management/expert/educational-unit/${educationalUnitId}/courses/${courseId}/clos`,
+    payload
+  );
+  return response.data.result;
+};
+
+export const updateCourseObjective = async (
+  educationalUnitId: number,
+  courseId: number,
+  cloId: number,
+  payload: CourseObjectivePayload
+): Promise<CourseObjectiveResponse> => {
+  const response = await axiosInstance.put<ApiResponse<CourseObjectiveResponse>>(
+    `/course-management/expert/educational-unit/${educationalUnitId}/courses/${courseId}/clos/${cloId}`,
+    payload
+  );
+  return response.data.result;
+};
+
+export const deactivateCourseObjective = async (
+  educationalUnitId: number,
+  courseId: number,
+  cloId: number
+): Promise<void> => {
+  await axiosInstance.put(
+    `/course-management/expert/educational-unit/${educationalUnitId}/courses/${courseId}/clos/${cloId}/deactivate`
+  );
+};
+
+export const reactivateCourseObjective = async (
+  educationalUnitId: number,
+  courseId: number,
+  cloId: number
+): Promise<void> => {
+  await axiosInstance.put(
+    `/course-management/expert/educational-unit/${educationalUnitId}/courses/${courseId}/clos/${cloId}/reactivate`
+  );
 };

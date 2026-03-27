@@ -15,12 +15,28 @@ export interface CreditTransferResponse {
 
     description: string;
     attachmentUrl: string;
-    status: string; // PENDING, APPROVED, REJECTED
+    status: "PENDING" | "INTERVIEW_SCHEDULED" | "INTERVIEW_SCORED" | "PENDING_EXPERT_REVIEW" | "APPROVED" | "REJECTED";
     requestDate: string;
 
-    approvedById: string;
-    approvedDate: string;
-    rejectionReason: string;
+    interviewTeacherId?: string;
+    interviewScheduledAt?: string;
+    interviewMode?: "ONLINE" | "OFFLINE";
+    interviewMeetingLink?: string;
+    interviewLocation?: string;
+    interviewFeedback?: string;
+    interviewScoredAt?: string;
+
+    certificateScore?: number;
+    interviewScore?: number;
+    decisionScore?: number;
+    certificateWeightApplied?: number;
+    interviewWeightApplied?: number;
+    approvalThresholdApplied?: number;
+    decisionReason?: string;
+
+    approvedById?: string;
+    approvedDate?: string;
+    rejectionReason?: string;
 }
 
 

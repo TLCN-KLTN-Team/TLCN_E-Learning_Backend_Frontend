@@ -14,6 +14,8 @@ export interface QuestionLibraryResponse {
   tags?: string
   teacherId: string
   educationalUnitId?: number
+  cloId?: number
+  cloCode?: string
   attachments?: string[]
   answers: AnswerResponse[]
 }
@@ -31,6 +33,7 @@ export interface QuestionLibraryRequest {
   difficultyLevel?: string
   tags?: string
   educationalUnitId?: number
+  cloId: number
   attachments?: string[]
   answers: AnswerRequest[]
 }

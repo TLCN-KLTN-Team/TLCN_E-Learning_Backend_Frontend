@@ -19,6 +19,7 @@ contract CertificateRegistry {
     mapping(bytes32 => bool) public userCourseClaims;
 
     event CertificateIssued(string certificateCode, string userId, uint256 publishedCourseId, uint256 timestamp);
+    event CertificateRevoked(string userId, uint256 publishedCourseId, uint256 timestamp);
 
     address public owner;
 
@@ -62,6 +63,23 @@ contract CertificateRegistry {
     }
 
     /**
+     * @dev Revokes/resets a certificate issuance so it can be re-issued (for test/recovery scenarios)
+     * @param _userId The ID of the user.
+     * @param _publishedCourseId The ID of the course.
+     */
+    function revokeCertificateClaim(
+        string memory _userId,
+        uint256 _publishedCourseId
+    ) public onlyOwner {
+        bytes32 claimKey = keccak256(abi.encodePacked(_userId, _publishedCourseId));
+        require(userCourseClaims[claimKey], "No certificate claim found for this user and course");
+        
+        userCourseClaims[claimKey] = false;
+        
+        emit CertificateRevoked(_userId, _publishedCourseId, block.timestamp);
+    }
+
+    /**
      * @dev Verifies if a certificate is valid.
      */
     function verifyCertificate(string memory _certificateCode) public view returns (bool, string memory, uint256, uint256) {
@@ -69,3 +87,4 @@ contract CertificateRegistry {
         return (cert.isValid, cert.userId, cert.publishedCourseId, cert.issueDate);
     }
 }
+

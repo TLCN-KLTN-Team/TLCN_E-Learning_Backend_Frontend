@@ -15,6 +15,7 @@ import {
   Box,
   Brain,
   ShoppingBag,
+  FileCheck2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -44,6 +45,11 @@ const menuItems = [
   },
   { name: "Theo dõi doanh thu", icon: TrendingUp, path: "/teacher/revenue" },
   { name: "Danh sách đơn hàng", icon: ShoppingBag, path: "/teacher/orders" },
+  {
+    name: "Vấn đáp quy đổi",
+    icon: FileCheck2,
+    path: "/teacher/credit-transfers",
+  },
   {
     name: "Không gian lớp học",
     icon: EarthLock,

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { EquivalentCourseResponse } from "@/types/course.types";
 import * as studentCreditTransferApi from "@/services/api/student/studentCreditTransferApi";
-import { toast } from "react-hot-toast";
-import { uploadMultipleFiles } from "@/services/api/fileUploadApi";
+import { toast } from "react-toastify";
 import { Loader2, Upload, FileText, ArrowRight, AlertTriangle, CheckCircle2, CircleX } from "lucide-react";
 import * as certificateApi from "@/services/api/user/certificateApi";
+import { AppError } from "@/errors";
 
 interface SubmitCreditTransferModalProps {
     isOpen: boolean;
@@ -28,8 +28,6 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
     const [linkUrl, setLinkUrl] = useState("");
     const [isLinkMode, setIsLinkMode] = useState(false);
 
-    const [formErrors, setFormErrors] = useState<{ description?: string, file?: string, link?: string }>({});
-
     const [isUploading, setIsUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,7 +45,6 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
             setEligibilityError(null);
             setDescription("");
             setFile(null);
-            setFormErrors({});
         }
     }, [isOpen, equivalentCourse]);
 
@@ -106,34 +103,22 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
-            setFormErrors(prev => ({ ...prev, file: undefined }));
         }
     };
 
     const handleSubmit = async () => {
-        // Reset errors
-        setFormErrors({});
-        let hasError = false;
-        const newErrors: { description?: string, file?: string, link?: string } = {};
-
         if (!description.trim()) {
             toast.error("Vui lòng nhập mô tả hoặc ghi chú");
             return;
         }
 
         if (!isLinkMode && !file) {
-            newErrors.file = "Vui lòng tải ảnh hoặc file chứng chỉ!";
-            hasError = true;
+            toast.error("Vui lòng tải ảnh hoặc file chứng chỉ!");
+            return;
         }
 
         if (isLinkMode && !linkUrl.trim()) {
-            newErrors.link = "Vui lòng nhập đường dẫn chứng chỉ!";
-            hasError = true;
-        }
-
-        if (hasError) {
-            setFormErrors(newErrors);
-            toast.error("Vui lòng kiểm tra lại thông tin còn thiếu");
+            toast.error("Vui lòng nhập đường dẫn chứng chỉ!");
             return;
         }
 
@@ -142,32 +127,20 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
 
         try {
             setIsSubmitting(true);
-            let attachmentUrl = "";
 
             if (!isLinkMode && file) {
-                // 1. Upload File
                 setIsUploading(true);
-                const formData = new FormData();
-                formData.append("files", file); // API expects 'files'
-
-                const uploadRes = await uploadMultipleFiles(formData);
-                if (uploadRes && uploadRes.length > 0) {
-                    attachmentUrl = uploadRes[0].fileUrl;
-                } else {
-                    throw new Error("Upload file thất bại");
-                }
-                setIsUploading(false);
+                await studentCreditTransferApi.createRequestWithAttachment({
+                    equivalentCourseId: equivalentCourse.id,
+                    description: description,
+                }, file);
             } else {
-                // Use Link
-                attachmentUrl = linkUrl;
+                await studentCreditTransferApi.createRequest({
+                    equivalentCourseId: equivalentCourse.id,
+                    description: description,
+                    attachmentUrl: linkUrl,
+                });
             }
-
-            // 2. Submit Request
-            await studentCreditTransferApi.createRequest({
-                equivalentCourseId: equivalentCourse.id,
-                description: description,
-                attachmentUrl: attachmentUrl,
-            });
 
             toast.success("Gửi yêu cầu quy đổi thành công!");
             onSuccess();
@@ -177,10 +150,12 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
             setFile(null);
             setLinkUrl("");
             setIsLinkMode(false);
-        } catch (error: any) {
-            console.error("Submit error:", error);
-            const msg = error.response?.data?.message || error.message || "Có lỗi xảy ra";
-            toast.error(msg);
+        } catch (error: unknown) {
+            const message =
+                error instanceof AppError
+                    ? error.getDisplayMessage()
+                    : (error as any)?.response?.data?.message || (error as any)?.message || "Có lỗi xảy ra";
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
             setIsUploading(false);
@@ -192,6 +167,9 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Đăng ký Quy đổi tín chỉ</DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Điền mô tả và gửi minh chứng bằng tệp hoặc liên kết để tạo yêu cầu quy đổi tín chỉ.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
@@ -281,6 +259,7 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
                                     type="radio"
                                     id="proof-file"
                                     name="proofType"
+                                    aria-label="Chọn minh chứng bằng tệp"
                                     checked={!isLinkMode}
                                     onChange={() => setIsLinkMode(false)}
                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
@@ -292,6 +271,7 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
                                     type="radio"
                                     id="proof-link"
                                     name="proofType"
+                                    aria-label="Chọn minh chứng bằng liên kết"
                                     checked={isLinkMode}
                                     onChange={() => setIsLinkMode(true)}
                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
@@ -314,6 +294,7 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
                                     <input
                                         id="file-upload"
                                         type="file"
+                                        aria-label="Tải tệp minh chứng"
                                         className="hidden"
                                         accept=".pdf,.jpg,.jpeg,.png"
                                         onChange={handleFileChange}

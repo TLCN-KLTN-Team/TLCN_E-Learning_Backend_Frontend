@@ -4,9 +4,10 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import Modal from "@/components/ui/modal"
 import { Button } from "@/components/ui/button"
-import { Loader2, Save } from "lucide-react"
+import { AlertCircle, Loader2, Save } from "lucide-react"
 import QuizSettings from "./QuizSettings"
 import QuestionList from "./QuestionList"
+import QuizBlueprintConfig from "./QuizBlueprintConfig"
 import { convertQuestionsResponseToRequest } from "@/utils/converters"
 import type { QuizRequest } from "@/services/api/request/quizRequest"
 import type { QuestionRequest } from "@/services/api/request/questionRequest"
@@ -21,7 +22,7 @@ const EditQuizModal: React.FC<{
   section: SectionResponse
   sectionId: number
   courseId: number
-}> = ({ isOpen, onClose, onUpdate, quiz, sectionId }) => {
+}> = ({ isOpen, onClose, onUpdate, quiz, sectionId, courseId }) => {
   const [formData, setFormData] = useState<QuizRequest>({
     title: "Bài Kiểm Tra Mới",
     description: "",
@@ -116,11 +117,17 @@ const EditQuizModal: React.FC<{
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
-              <p className="text-sm text-destructive">{error}</p>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
             </div>
           )}
           <QuizSettings settings={formData} onSettingsChange={handleSettingsChange} />
+          {quiz?.id && (
+            <QuizBlueprintConfig quizId={quiz.id} courseId={courseId} />
+          )}
           <QuestionList questions={formData.questions ?? []} onQuestionsChange={handleQuestionsChange} />
         </div>
 

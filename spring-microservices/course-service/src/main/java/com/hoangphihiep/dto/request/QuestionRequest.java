@@ -39,6 +39,8 @@ public class QuestionRequest {
     private String difficultyLevel; // EASY, MEDIUM, HARD
     private String tags; // Comma-separated tags
     private Integer educationalUnitId;
+    @NotNull(message = "CLO id is required")
+    private Integer cloId;
 
     private Date createdAt;
 

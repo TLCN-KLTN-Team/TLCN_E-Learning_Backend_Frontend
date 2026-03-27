@@ -171,6 +171,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
       createdAt: new Date(),
       updateAt: new Date(),
       questions: questionsToAdd,
+      blueprintDraft: quizData.blueprintDraft,
       ...(quizData.startTime && { startTime: quizData.startTime }),
       ...(quizData.endTime && { endTime: quizData.endTime }),
     }

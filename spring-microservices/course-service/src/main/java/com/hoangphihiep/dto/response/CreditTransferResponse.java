@@ -33,6 +33,24 @@ public class CreditTransferResponse {
     private String attachmentUrl;
     private String status;
     private LocalDateTime requestDate;
+
+    // Interview
+    private String interviewTeacherId;
+    private LocalDateTime interviewScheduledAt;
+    private String interviewMode;
+    private String interviewMeetingLink;
+    private String interviewLocation;
+    private String interviewFeedback;
+    private LocalDateTime interviewScoredAt;
+
+    // Decision
+    private Double certificateScore;
+    private Double interviewScore;
+    private Double decisionScore;
+    private Double certificateWeightApplied;
+    private Double interviewWeightApplied;
+    private Double approvalThresholdApplied;
+    private String decisionReason;
     
     // Audit
     private String approvedById;

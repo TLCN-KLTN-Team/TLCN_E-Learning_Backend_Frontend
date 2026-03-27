@@ -48,6 +48,7 @@ export const TEACHER_ROUTES = {
   QUESTION_BANK: "/teacher/question-bank",
   GENERATE_QUESTIONS: "/teacher/generate-questions",
   REVENUE: "/teacher/revenue",
+  CREDIT_TRANSFERS: "/teacher/credit-transfers",
   INFO: "/teacher/info",
 } as const;
 

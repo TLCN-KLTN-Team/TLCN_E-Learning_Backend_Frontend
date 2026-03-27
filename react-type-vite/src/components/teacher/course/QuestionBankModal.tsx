@@ -21,6 +21,7 @@ import {
   type QuestionLibraryRequest,
   type AnswerRequest,
 } from "@/services/api/teacher/questionLibraryApi"
+import { getTeacherActiveClos, type CourseObjectiveResponse } from "@/services/api/teacher/courseObjectiveApi"
 import { toast } from "react-toastify"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -46,11 +47,14 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
     difficultyLevel: "MEDIUM",
     tags: "",
     educationalUnitId,
+    cloId: 0,
     answers: [
       { content: "", isCorrect: false },
       { content: "", isCorrect: false },
     ],
   })
+  const [availableClos, setAvailableClos] = useState<CourseObjectiveResponse[]>([])
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [imageFiles, setImageFiles] = useState<File[]>([]) // Store File objects
   const [imagePreviews, setImagePreviews] = useState<string[]>([]) // Store preview URLs
@@ -64,11 +68,13 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
         difficultyLevel: question.difficultyLevel || "MEDIUM",
         tags: question.tags || "",
         educationalUnitId: question.educationalUnitId,
+        cloId: question.cloId || 0,
         answers: question.answers.map((a) => ({
           content: a.content,
           isCorrect: a.isCorrect,
         })),
       })
+      setSelectedCourseId(null)
     } else {
       setFormData({
         questionText: "",
@@ -77,13 +83,51 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
         difficultyLevel: "MEDIUM",
         tags: "",
         educationalUnitId,
+        cloId: 0,
         answers: [
           { content: "", isCorrect: false },
           { content: "", isCorrect: false },
         ],
       })
+      setSelectedCourseId(null)
     }
   }, [question, isOpen, educationalUnitId])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const loadClos = async () => {
+      try {
+        const clos = await getTeacherActiveClos()
+        setAvailableClos(clos)
+
+        if (question?.cloId) {
+          const selected = clos.find((item) => item.id === question.cloId)
+          setSelectedCourseId(selected?.courseId ?? null)
+        } else if (clos.length > 0 && !selectedCourseId) {
+          setSelectedCourseId(clos[0].courseId)
+        }
+      } catch (error) {
+        console.error("Error loading CLOs:", error)
+        toast.error("Không thể tải danh sách CLO")
+      }
+    }
+
+    loadClos()
+  }, [isOpen, question?.cloId])
+
+  const availableCourses = Array.from(
+    new Map(
+      availableClos.map((item) => [item.courseId, {
+        courseId: item.courseId,
+        courseName: item.courseName || `Khóa học #${item.courseId}`,
+      }])
+    ).values()
+  )
+
+  const filteredClos = selectedCourseId
+    ? availableClos.filter((item) => item.courseId === selectedCourseId)
+    : []
 
   // Create preview URLs from File objects
   useEffect(() => {
@@ -125,6 +169,16 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
     // Validation
     if (!formData.questionText.trim()) {
       toast.error("Vui lòng nhập nội dung câu hỏi")
+      return
+    }
+
+    if (!selectedCourseId) {
+      toast.error("Vui lòng chọn khóa học cho câu hỏi")
+      return
+    }
+
+    if (!formData.cloId || formData.cloId <= 0) {
+      toast.error("Vui lòng chọn CĐR cho câu hỏi")
       return
     }
 
@@ -318,6 +372,53 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                   />
                 </div>
 
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="courseSelect" className="flex items-center text-sm font-medium text-gray-700">
+                    Khóa học <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={selectedCourseId ? String(selectedCourseId) : ""}
+                    onValueChange={(value) => {
+                      const nextCourseId = Number(value)
+                      setSelectedCourseId(nextCourseId)
+                      setFormData({ ...formData, cloId: 0 })
+                    }}
+                  >
+                    <SelectTrigger id="courseSelect" className="w-full bg-white">
+                      <SelectValue placeholder="Chọn khóa học" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50 shadow-lg border-gray-200">
+                      {availableCourses.map((course) => (
+                        <SelectItem key={course.courseId} value={String(course.courseId)}>
+                          {course.courseName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="cloSelect" className="flex items-center text-sm font-medium text-gray-700">
+                    CĐR đánh giá <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={formData.cloId ? String(formData.cloId) : ""}
+                    onValueChange={(value) => setFormData({ ...formData, cloId: Number(value) })}
+                    disabled={!selectedCourseId}
+                  >
+                    <SelectTrigger id="cloSelect" className="w-full bg-white">
+                      <SelectValue placeholder={selectedCourseId ? "Chọn CĐR" : "Vui lòng chọn khóa học trước"} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50 shadow-lg border-gray-200">
+                      {filteredClos.map((clo) => (
+                        <SelectItem key={clo.id} value={String(clo.id)}>
+                          {clo.code} - {clo.description || (clo.courseName || `Khóa học #${clo.courseId}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Image Attachments */}
                 <div className="space-y-2 mt-4">
                   <Label className="flex items-center text-sm font-medium text-gray-700">
@@ -356,6 +457,8 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                           <button
                             type="button"
                             onClick={() => removeImage(index, true)}
+                            aria-label="Xóa ảnh đính kèm"
+                            title="Xóa ảnh đính kèm"
                             className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
                           >
                             <X size={14} />
@@ -377,6 +480,8 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                           <button
                             type="button"
                             onClick={() => removeImage((formData.attachments?.length || 0) + index, false)}
+                            aria-label="Xóa ảnh mới"
+                            title="Xóa ảnh mới"
                             className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
                           >
                             <X size={14} />
