@@ -1,15 +1,20 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.QuestionRequest;
+import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.AnswerResponse;
 import com.hoangphihiep.dto.response.QuestionResponse;
+import com.hoangphihiep.dto.response.TeacherResponse;
 import com.hoangphihiep.entity.Answer;
+import com.hoangphihiep.entity.CourseObjective;
 import com.hoangphihiep.entity.Question;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.AnswerRepository;
+import com.hoangphihiep.repository.CourseObjectiveRepository;
 import com.hoangphihiep.repository.QuestionRepository;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
+import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -32,7 +37,9 @@ public class QuestionLibraryService {
 
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
+    private final CourseObjectiveRepository courseObjectiveRepository;
     private final FileHandlerRepository fileHandlerRepository;
+    private final TeacherRepository teacherRepository;
 
     /**
      * Get all library questions for current teacher (paginated)
@@ -81,6 +88,7 @@ public class QuestionLibraryService {
     @Transactional
     public QuestionResponse createLibraryQuestion(QuestionRequest request, List<MultipartFile> imageFiles) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String mappedTeacherId = resolveMappedTeacherId(teacherId);
         log.info("Creating library question for teacher: {}", teacherId);
 
         // Upload images if provided
@@ -105,6 +113,12 @@ public class QuestionLibraryService {
         }
         allAttachments.addAll(uploadedUrls);
 
+        CourseObjective courseObjective = courseObjectiveRepository.findById(request.getCloId())
+            .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
+        if (courseObjective.getCourse() == null || !mappedTeacherId.equals(courseObjective.getCourse().getIdTeacher())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         Question question = new Question();
         question.setQuestionText(request.getQuestionText());
         question.setQuestionType(request.getQuestionType());
@@ -114,6 +128,7 @@ public class QuestionLibraryService {
         question.setAttachments(allAttachments.isEmpty() ? null : allAttachments);
         question.setTeacherId(teacherId);
         question.setEducationalUnitId(request.getEducationalUnitId());
+        question.setCourseObjective(courseObjective);
         question.setCreatedAt(new Date());
         question.setUpdateAt(new Date());
         question.setAnswers(new HashSet<>());
@@ -146,6 +161,7 @@ public class QuestionLibraryService {
     @Transactional
     public QuestionResponse updateLibraryQuestion(Integer id, QuestionRequest request, List<MultipartFile> imageFiles) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String mappedTeacherId = resolveMappedTeacherId(teacherId);
         log.info("Updating library question {} for teacher: {}", id, teacherId);
 
         Question question = questionRepository.findByIdWithAnswers(id)
@@ -180,6 +196,12 @@ public class QuestionLibraryService {
         }
         allAttachments.addAll(uploadedUrls);
 
+        CourseObjective courseObjective = courseObjectiveRepository.findById(request.getCloId())
+            .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
+        if (courseObjective.getCourse() == null || !mappedTeacherId.equals(courseObjective.getCourse().getIdTeacher())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         // Update question fields
         question.setQuestionText(request.getQuestionText());
         question.setQuestionType(request.getQuestionType());
@@ -188,6 +210,7 @@ public class QuestionLibraryService {
         question.setTags(request.getTags());
         question.setAttachments(allAttachments.isEmpty() ? null : allAttachments);
         question.setEducationalUnitId(request.getEducationalUnitId());
+        question.setCourseObjective(courseObjective);
         question.setUpdateAt(new Date());
 
         // Update answers - remove old answers and add new ones
@@ -393,6 +416,34 @@ public class QuestionLibraryService {
         };
     }
 
+    private String resolveMappedTeacherId(String principalId) {
+        try {
+            ApiResponse<TeacherResponse> teacherByTeacherId = teacherRepository.getTeacherByTeacherId(principalId);
+            if (teacherByTeacherId != null
+                    && teacherByTeacherId.getResult() != null
+                    && teacherByTeacherId.getResult().getTeacherId() != null
+                    && !teacherByTeacherId.getResult().getTeacherId().isBlank()) {
+                return teacherByTeacherId.getResult().getTeacherId();
+            }
+        } catch (Exception ex) {
+            log.debug("Principal {} is not a teacherId, fallback to userId", principalId);
+        }
+
+        try {
+            ApiResponse<TeacherResponse> teacherByUserId = teacherRepository.getTeacherByUserId(principalId);
+            if (teacherByUserId != null
+                    && teacherByUserId.getResult() != null
+                    && teacherByUserId.getResult().getTeacherId() != null
+                    && !teacherByUserId.getResult().getTeacherId().isBlank()) {
+                return teacherByUserId.getResult().getTeacherId();
+            }
+        } catch (Exception ex) {
+            log.warn("Cannot resolve teacher mapping for principal {}", principalId);
+        }
+
+        throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
+    }
+
     // Helper method to convert Question to QuestionResponse
     private QuestionResponse toQuestionResponse(Question question) {
         QuestionResponse response = new QuestionResponse();
@@ -405,6 +456,10 @@ public class QuestionLibraryService {
         response.setTags(question.getTags());
         response.setTeacherId(question.getTeacherId());
         response.setEducationalUnitId(question.getEducationalUnitId());
+        if (question.getCourseObjective() != null) {
+            response.setCloId(question.getCourseObjective().getId());
+            response.setCloCode(question.getCourseObjective().getCode());
+        }
         response.setAttachments(question.getAttachments());
         response.setCreatedAt(question.getCreatedAt());
         response.setUpdateAt(question.getUpdateAt());

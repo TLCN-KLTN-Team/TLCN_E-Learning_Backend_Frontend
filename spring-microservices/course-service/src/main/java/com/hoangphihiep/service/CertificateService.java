@@ -12,16 +12,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class CertificateService {
+
+    private final ConcurrentMap<String, Object> issuanceLocks = new ConcurrentHashMap<>();
 
     private final CertificateRepository certificateRepository;
     private final PublishedCourseRepository publishedCourseRepository;
@@ -38,64 +44,102 @@ public class CertificateService {
     public void issueCertificateAsync(String userId, Integer publishedCourseId) {
         log.info("Starting Async Certificate Issuance for User: {} - PublishedCourse: {}", userId, publishedCourseId);
 
-        // 1. Check if certificate exists
-        if (certificateRepository.findByUserIdAndPublishedCourse_Id(userId, publishedCourseId).isPresent()) {
-            log.info("Certificate already exists for User {} PublishedCourse {}", userId, publishedCourseId);
-            return;
+        String lockKey = userId + ":" + publishedCourseId;
+        Object lock = issuanceLocks.computeIfAbsent(lockKey, key -> new Object());
+
+        synchronized (lock) {
+            try {
+                // 1. Check if certificate exists
+                var existingCert = certificateRepository.findByUserIdAndPublishedCourse_Id(userId, publishedCourseId);
+                
+                if (existingCert.isPresent()) {
+                    Certificate cert = existingCert.get();
+                    // Allow retry if previous attempt failed
+                    if (cert.getStatus() == Certificate.CertificateStatus.FAILED) {
+                        log.info("Previous certificate issuance FAILED for User {} PublishedCourse {}. Deleting and retrying...", userId, publishedCourseId);
+                        certificateRepository.delete(cert);
+                    } else {
+                        log.info("Certificate already exists with status {} for User {} PublishedCourse {}", cert.getStatus(), userId, publishedCourseId);
+                        return;
+                    }
+                }
+
+                PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId)
+                        .orElseThrow(() -> new RuntimeException("Published Course not found"));
+
+                Integer courseId = publishedCourse.getCourse().getId();
+                Double finalScore = calculateStudentGrade(userId, courseId);
+                String grade = determineGrade(finalScore);
+
+                // 2. Create Pending Certificate
+                Certificate certificate = Certificate.builder()
+                        .userId(userId)
+                        .publishedCourse(publishedCourse)
+                        .certificateCode(UUID.randomUUID().toString())
+                        .issueDate(new Date())
+                        .status(Certificate.CertificateStatus.PENDING)
+                        .finalScore(finalScore)
+                        .grade(grade)
+                        .build();
+
+                certificate = certificateRepository.save(certificate);
+
+                // 3. Interact with Blockchain
+                try {
+                    String payload = certificate.getCertificateCode() + ":" + userId + ":" + publishedCourseId + ":" + certificate.getIssueDate().getTime();
+                    String certificateHash = generateSha256Hex(payload);
+
+                    String txHash = issueCertificateWithRecovery(certificate.getCertificateCode(), userId, publishedCourseId, certificateHash);
+
+                    // 4. Update Certificate on confirmed success
+                    certificate.setTransactionHash(txHash);
+                    certificate.setContractAddress(web3jService.getContractAddress());
+                    certificate.setStatus(Certificate.CertificateStatus.ISSUED);
+
+                    BigInteger blockParam = web3jService.getBlockNumber(txHash);
+                    certificate.setBlockNumber(blockParam);
+
+                    certificateRepository.save(certificate);
+
+                    log.info("Certificate Issued Successfully! Tx: {}", txHash);
+
+                } catch (Exception e) {
+                    log.error("Failed to issue blockchain certificate after all retries", e);
+                    certificate.setStatus(Certificate.CertificateStatus.FAILED);
+                    certificateRepository.save(certificate);
+                }
+            } finally {
+                issuanceLocks.remove(lockKey, lock);
+            }
         }
+    }
 
-        PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId)
-                .orElseThrow(() -> new RuntimeException("Published Course not found"));
-        
-        // Let's implement a helper to calculate score.
-        Integer courseId = publishedCourse.getCourse().getId();
-        Double finalScore = calculateStudentGrade(userId, courseId);
-        String grade = determineGrade(finalScore);
-        // --- GRADING LOGIC END ---
-
-        // 2. Create Pending Certificate
-        Certificate certificate = Certificate.builder()
-                .userId(userId)
-                .publishedCourse(publishedCourse)
-                .certificateCode(UUID.randomUUID().toString())
-                .issueDate(new Date())
-                .status(Certificate.CertificateStatus.PENDING)
-                .finalScore(finalScore)
-                .grade(grade)
-                .build();
-        
-        certificate = certificateRepository.save(certificate);
-
-        // 3. Interact with Blockchain
+    /**
+     * Attempts to issue a certificate with recovery logic for "already issued" errors
+     */
+    private String issueCertificateWithRecovery(String certificateCode, String userId, Integer publishedCourseId, String certificateHash) throws Exception {
         try {
-            // Generate content to hash (Code + UserId + CourseId + Date)
-            // Generate content to hash (Code + UserId + PublishedCourseId + Date)
-            String contentToHash = certificate.getCertificateCode() + ":" + userId + ":" + publishedCourseId + ":" + certificate.getIssueDate().getTime();
-            
-            // Send to Blockchain
-            String txHash = web3jService.issueCertificateTransaction(
-                    certificate.getCertificateCode(), 
-                    userId, 
-                    publishedCourseId, 
-                    contentToHash
-            );
-            
-            // 4. Update Certificate on Success
-            certificate.setTransactionHash(txHash);
-            certificate.setStatus(Certificate.CertificateStatus.ISSUED);
-            
-            // Try to get block number immediately (might be null if pending, can be updated later or ignored for now)
-            BigInteger blockParam = web3jService.getBlockNumber(txHash);
-            certificate.setBlockNumber(blockParam);
-
-            certificateRepository.save(certificate);
-            
-            log.info("Certificate Issued Successfully! Tx: {}", txHash);
-
+            // First attempt
+            return web3jService.issueCertificateTransaction(certificateCode, userId, publishedCourseId, certificateHash);
         } catch (Exception e) {
-            log.error("Failed to issue blockchain certificate", e);
-            certificate.setStatus(Certificate.CertificateStatus.FAILED);
-            certificateRepository.save(certificate);
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "";
+            
+            // If certificate already issued on-chain, try to revoke and retry
+            if (errorMsg.contains("Certificate already issued")) {
+                log.warn("Certificate already issued on-chain for User {} Course {}. Attempting to revoke and retry...", userId, publishedCourseId);
+                try {
+                    web3jService.revokeCertificateClaim(userId, publishedCourseId);
+                    log.info("Successfully revoked certificate claim. Retrying issuance...");
+                    Thread.sleep(2000); // Wait briefly for state consistency
+                    return web3jService.issueCertificateTransaction(certificateCode, userId, publishedCourseId, certificateHash);
+                } catch (Exception revokeException) {
+                    log.error("Failed to revoke certificate claim", revokeException);
+                    throw new RuntimeException("Failed to recover from 'already issued' status and could not revoke claim: " + revokeException.getMessage());
+                }
+            }
+            
+            // For other errors, just rethrow
+            throw e;
         }
     }
 
@@ -160,11 +204,51 @@ public class CertificateService {
         CertificateResponse certificate = getCertificateByCode(code);
 
         if (certificate == null) {
-            return PublicCertificateVerificationResponse.builder()
-                    .found(false)
-                    .onChainChecked(false)
-                    .message("Certificate not found")
+            try {
+            Web3jService.OnChainCertificateData onChainData = web3jService.verifyCertificate(code);
+
+            if (onChainData.isValid()) {
+                CertificateResponse onChainCertificate = CertificateResponse.builder()
+                    .userId(maskUserId(onChainData.getUserId()))
+                    .courseId(onChainData.getPublishedCourseId())
+                    .courseName("N/A")
+                    .certificateCode(code)
+                    .issueDate(onChainData.getIssueDate())
+                    .contractAddress(web3jService.getContractAddress())
+                    .status(Certificate.CertificateStatus.ISSUED)
                     .build();
+
+                return PublicCertificateVerificationResponse.builder()
+                    .found(true)
+                    .certificate(onChainCertificate)
+                    .onChainChecked(true)
+                    .onChainValid(true)
+                    .dataMatched(null)
+                    .onChainUserId(maskUserId(onChainData.getUserId()))
+                    .onChainPublishedCourseId(onChainData.getPublishedCourseId())
+                    .onChainIssueDate(onChainData.getIssueDate())
+                    .message("Certificate found and validated from on-chain records")
+                    .build();
+            }
+
+            return PublicCertificateVerificationResponse.builder()
+                .found(false)
+                .onChainChecked(true)
+                .onChainValid(false)
+                .dataMatched(null)
+                .onChainUserId(maskUserId(onChainData.getUserId()))
+                .onChainPublishedCourseId(onChainData.getPublishedCourseId())
+                .onChainIssueDate(onChainData.getIssueDate())
+                .message("Certificate not found in platform records and is invalid on-chain")
+                .build();
+            } catch (Exception exception) {
+            log.warn("Certificate not found in DB and on-chain check failed. code={}", code, exception);
+            return PublicCertificateVerificationResponse.builder()
+                .found(false)
+                .onChainChecked(false)
+                .message("Certificate not found")
+                .build();
+            }
         }
 
         boolean onChainChecked = false;
@@ -201,6 +285,18 @@ public class CertificateService {
             message = "Certificate found in platform records. On-chain check is temporarily unavailable";
         }
 
+        boolean txFailed = false;
+        if (certificate.getTransactionHash() != null && !certificate.getTransactionHash().isBlank()) {
+            Boolean txSuccess = web3jService.isTransactionSuccessful(certificate.getTransactionHash());
+            if (Boolean.FALSE.equals(txSuccess)) {
+                txFailed = true;
+                onChainChecked = true;
+                onChainValid = false;
+                dataMatched = false;
+                message = "Giao dịch cấp chứng chỉ trên blockchain đã thất bại (reverted).";
+            }
+        }
+
         CertificateResponse sanitizedCertificate = CertificateResponse.builder()
                 .id(certificate.getId())
                 .userId(maskedUserId)
@@ -213,7 +309,7 @@ public class CertificateService {
                 .blockNumber(certificate.getBlockNumber())
                 .finalScore(certificate.getFinalScore())
                 .grade(certificate.getGrade())
-                .status(certificate.getStatus())
+                .status(txFailed ? Certificate.CertificateStatus.FAILED : certificate.getStatus())
                 .build();
 
         return PublicCertificateVerificationResponse.builder()
@@ -242,6 +338,21 @@ public class CertificateService {
         int visibleTail = Math.min(3, Math.max(1, length / 3));
         String tail = userId.substring(length - visibleTail);
         return "***" + tail;
+    }
+
+    private String generateSha256Hex(String content) {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = messageDigest.digest(content.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hex = new StringBuilder(hashBytes.length * 2);
+            for (byte hashByte : hashBytes) {
+                hex.append(String.format("%02x", hashByte));
+            }
+            return hex.toString();
+        } catch (Exception exception) {
+            throw new RuntimeException("Unable to generate certificate hash", exception);
+        }
     }
 
     private Double calculateStudentGrade(String userId, Integer courseId) {

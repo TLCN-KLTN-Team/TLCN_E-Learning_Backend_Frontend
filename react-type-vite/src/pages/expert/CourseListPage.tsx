@@ -13,10 +13,12 @@ import {
   Calendar,
   FileText,
   Hash,
+  GraduationCap,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import CourseFormModal from "@/components/expert/course/CourseFormModal";
 import AssignTeacherModal from "@/components/expert/course/AssignTeacherModal";
+import CourseObjectiveModal from "@/components/expert/course/CourseObjectiveModal";
 import ClassManagementModal from "@/components/expert/course/ClassManagementModal";
 import * as expertCourseApi from "@/services/api/expert/expertCourseApi";
 import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
@@ -29,6 +31,7 @@ const CourseListPage: React.FC = () => {
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [showAssignTeacher, setShowAssignTeacher] = useState(false);
+  const [showCloManagement, setShowCloManagement] = useState(false);
   const [showClassManagement, setShowClassManagement] = useState(false);
   const [showCourseDetail, setShowCourseDetail] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -188,6 +191,11 @@ const CourseListPage: React.FC = () => {
   const handleManageClasses = (course: CourseResponse) => {
     setSelectedCourse(course);
     setShowClassManagement(true);
+  };
+
+  const handleManageClo = (course: CourseResponse) => {
+    setSelectedCourse(course);
+    setShowCloManagement(true);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -637,6 +645,15 @@ const CourseListPage: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => handleManageClo(course)}
+                              className="text-violet-600 border-violet-200 hover:bg-violet-50"
+                            >
+                              <GraduationCap size={14} className="mr-1" />
+                              CĐR
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => handleManageClasses(course)}
                               className="text-green-600 border-green-200 hover:bg-green-50"
                             >
@@ -980,6 +997,14 @@ const CourseListPage: React.FC = () => {
       <AssignTeacherModal
         isOpen={showAssignTeacher}
         onClose={() => setShowAssignTeacher(false)}
+        course={selectedCourse}
+        educationalUnitId={educationalUnitId}
+        onSuccess={handleSuccess}
+      />
+
+      <CourseObjectiveModal
+        isOpen={showCloManagement}
+        onClose={() => setShowCloManagement(false)}
         course={selectedCourse}
         educationalUnitId={educationalUnitId}
         onSuccess={handleSuccess}

@@ -56,6 +56,11 @@ public class Question implements Serializable {
     @Column(name = "educational_unit_id")
     private Integer educationalUnitId;
 
+    // CLO (Course Learning Objective) linking
+    @ManyToOne
+    @JoinColumn(name = "course_objective_id")
+    private CourseObjective courseObjective;
+
     private Date createdAt;
 
     private Date updateAt;

@@ -18,6 +18,7 @@ import {
 import AddSectionModal from "./AddSectionModal"
 import SectionItem from "./SectionItem"
 import { createOrUpdateSections } from "@/services/api/teacher/sectionApi"
+import { addBlueprintEntry } from "@/services/api/teacher/quizBlueprintApi"
 import { convertSectionResponseToRequest } from "@/utils/converters"
 import type { SectionResponse } from "@/services/api/response/sectionResponse"
 import { getNextSectionOrderIndex } from "@/utils/orderIndexUtils"
@@ -38,6 +39,11 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, educa
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [sectionToDelete, setSectionToDelete] = useState<number | null>(null)
+
+  const isTemporaryId = (id?: number): boolean => {
+    if (!id) return false
+    return id > 1000000000000
+  }
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -179,6 +185,54 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, educa
         courseId: Number.parseInt(courseId),
         sections: sectionsToSave,
       })
+
+      const blueprintDraftTasks = sections.flatMap((originalSection) => {
+        const savedSection = response.find(
+          (saved) => saved.orderIndex === originalSection.orderIndex && saved.title === originalSection.title
+        )
+        if (!savedSection) return [] as Array<{ quizId: number; rows: { cloId: number; percentage: number }[] }>
+
+        const originalQuizzes = originalSection.quizs ? Array.from(originalSection.quizs) : []
+        const savedQuizzes = savedSection.quizs ? Array.from(savedSection.quizs) : []
+
+        return originalQuizzes
+          .filter((quiz) => isTemporaryId(quiz.id) && quiz.blueprintDraft && quiz.blueprintDraft.length > 0)
+          .map((quiz) => {
+            const savedQuiz = savedQuizzes.find(
+              (target) => target.numberItem === quiz.numberItem && target.title === quiz.title
+            )
+            if (!savedQuiz) return null
+            return {
+              quizId: savedQuiz.id,
+              rows: quiz.blueprintDraft || [],
+            }
+          })
+          .filter((item): item is { quizId: number; rows: { cloId: number; percentage: number }[] } => item !== null)
+      })
+
+      if (blueprintDraftTasks.length > 0) {
+        let failedBlueprintCount = 0
+
+        for (const task of blueprintDraftTasks) {
+          for (const row of task.rows) {
+            try {
+              await addBlueprintEntry(task.quizId, {
+                cloId: row.cloId,
+                percentage: row.percentage,
+              })
+            } catch (error) {
+              failedBlueprintCount++
+              console.error(`Cannot save blueprint row for quiz ${task.quizId}`, error)
+            }
+          }
+        }
+
+        if (failedBlueprintCount > 0) {
+          toast.warning(`Đã lưu khóa học, nhưng có ${failedBlueprintCount} dòng blueprint chưa lưu được.`)
+        } else {
+          toast.success("Đã lưu ma trận CĐR cho các quiz mới tạo.")
+        }
+      }
 
       console.log("Course structure saved successfully:", {
         courseId,

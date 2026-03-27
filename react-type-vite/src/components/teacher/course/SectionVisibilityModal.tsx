@@ -98,14 +98,17 @@ const SectionVisibilityModal: React.FC<SectionVisibilityModalProps> = ({
     }
   }
 
-  const hasChanges = JSON.stringify(selectedClassIds.sort()) !== JSON.stringify(initialClassIds.sort())
+  const hasChanges =
+    JSON.stringify([...selectedClassIds].sort((a, b) => a - b)) !==
+    JSON.stringify([...initialClassIds].sort((a, b) => a - b))
+  const isSaveDisabled = isSaving || !hasChanges || isLoading
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
       <div className="flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-6 border-b">
           <div>
-            <h2 className="text-2xl font-bold">Quản Lý Hiển Thị Section</h2>
+            <h2 className="text-2xl font-bold">Quản Lý Hiển Thị Phần Học</h2>
             <p className="text-sm text-gray-500 mt-1">{sectionTitle}</p>
           </div>
         </div>
@@ -133,7 +136,7 @@ const SectionVisibilityModal: React.FC<SectionVisibilityModalProps> = ({
             <>
               <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-gray-700">
-                  Chọn các lớp học được xem section này. Nếu không chọn lớp nào, mặc định tất cả lớp đều được xem.
+                  Chọn các lớp học được xem phần này. Nếu không chọn lớp nào, mặc định tất cả lớp đều được xem.
                 </p>
               </div>
 
@@ -216,7 +219,24 @@ const SectionVisibilityModal: React.FC<SectionVisibilityModalProps> = ({
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Hủy
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !hasChanges || isLoading}>
+          <Button
+            onClick={handleSave}
+            disabled={isSaveDisabled}
+            variant="default"
+            className="disabled:!opacity-100"
+            style={
+              isSaveDisabled
+                ? {
+                    backgroundColor: "hsl(var(--muted))",
+                    color: "hsl(var(--foreground))",
+                    border: "1px solid hsl(var(--border))",
+                  }
+                : {
+                    backgroundColor: "var(--bs-primary)",
+                    color: "var(--bs-white)",
+                  }
+            }
+          >
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

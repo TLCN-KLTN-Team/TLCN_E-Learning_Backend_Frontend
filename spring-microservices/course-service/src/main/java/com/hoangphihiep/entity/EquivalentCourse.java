@@ -62,6 +62,15 @@ public class EquivalentCourse implements Serializable {
     @Column(name = "required_rank")
     private String requiredRank; // EXCELLENT, GOOD, MERIT...
 
+    @Column(name = "certificate_weight")
+    private Double certificateWeight;
+
+    @Column(name = "interview_weight")
+    private Double interviewWeight;
+
+    @Column(name = "approval_threshold")
+    private Double approvalThreshold;
+
     @Column(name = "created_by")
     @CreatedBy
     private String createdBy;

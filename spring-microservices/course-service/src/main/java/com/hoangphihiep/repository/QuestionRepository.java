@@ -45,4 +45,17 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
 
     @Query("SELECT COUNT(q) FROM Question q WHERE q.teacherId = :teacherId")
     long countLibraryQuestionsByTeacher(@Param("teacherId") String teacherId);
+
+    // CLO-related queries
+    @Query("SELECT q FROM Question q WHERE q.courseObjective.id = :courseObjectiveId")
+    Page<Question> findByCourseObjectiveId(@Param("courseObjectiveId") Integer courseObjectiveId, Pageable pageable);
+
+    @Query("SELECT q FROM Question q WHERE q.courseObjective.id = :courseObjectiveId")
+    List<Question> findQuestionsByCourseObjectiveId(@Param("courseObjectiveId") Integer courseObjectiveId);
+
+    // Exam generation - get questions for a CLO with optional difficulty filter
+    @Query("SELECT q FROM Question q WHERE q.courseObjective.id = :courseObjectiveId " +
+           "AND (:difficultyLevel IS NULL OR q.difficultyLevel = :difficultyLevel)")
+    List<Question> findForExamGeneration(@Param("courseObjectiveId") Integer courseObjectiveId,
+                                         @Param("difficultyLevel") String difficultyLevel);
 }

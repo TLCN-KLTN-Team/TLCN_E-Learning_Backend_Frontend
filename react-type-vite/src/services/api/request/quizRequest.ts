@@ -16,6 +16,7 @@ export interface QuizRequest {
   endTime?: string;
   questions?: QuestionRequest[]; // For frontend display only
   questionIds?: number[]; // IDs for many-to-many relationship
+  blueprintDraft?: { cloId: number; percentage: number }[]; // Local draft before persisted quizId exists
   createdAt?: string;
   updateAt?: string;
 }

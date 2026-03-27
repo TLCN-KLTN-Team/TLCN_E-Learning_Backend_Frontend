@@ -332,6 +332,9 @@ const QuestionBankPage: React.FC = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="outline">{getQuestionTypeLabel(question.questionType)}</Badge>
                       {getDifficultyBadge(question.difficultyLevel)}
+                      {question.cloCode && (
+                        <Badge className="bg-blue-100 text-blue-800">{question.cloCode}</Badge>
+                      )}
                       {question.score && (
                         <Badge variant="secondary">{question.score} điểm</Badge>
                       )}

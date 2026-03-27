@@ -105,7 +105,10 @@ const AssignmentVisibilityModal: React.FC<AssignmentVisibilityModalProps> = ({
     }
   }
 
-  const hasChanges = JSON.stringify(selectedClassIds.sort()) !== JSON.stringify(initialClassIds.sort())
+  const hasChanges =
+    JSON.stringify([...selectedClassIds].sort((a, b) => a - b)) !==
+    JSON.stringify([...initialClassIds].sort((a, b) => a - b))
+  const isSaveDisabled = isSaving || !hasChanges || isLoading
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
@@ -223,7 +226,24 @@ const AssignmentVisibilityModal: React.FC<AssignmentVisibilityModalProps> = ({
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Hủy
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !hasChanges || isLoading}>
+          <Button
+            onClick={handleSave}
+            disabled={isSaveDisabled}
+            variant="default"
+            className="disabled:!opacity-100"
+            style={
+              isSaveDisabled
+                ? {
+                    backgroundColor: "hsl(var(--muted))",
+                    color: "hsl(var(--foreground))",
+                    border: "1px solid hsl(var(--border))",
+                  }
+                : {
+                    backgroundColor: "var(--bs-primary)",
+                    color: "var(--bs-white)",
+                  }
+            }
+          >
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

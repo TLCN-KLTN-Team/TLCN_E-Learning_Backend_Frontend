@@ -15,6 +15,7 @@ interface QuizResponse {
   startTime?: string;
   endTime?: string;
   questions: Set<QuestionResponse>
+  blueprintDraft?: { cloId: number; percentage: number }[]
   attemptsCount: number
   createdAt: Date
   updateAt: Date

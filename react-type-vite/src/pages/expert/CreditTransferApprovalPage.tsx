@@ -51,7 +51,22 @@ const CreditTransferApprovalPage: React.FC = () => {
             case 'APPROVED': return 'bg-green-100 text-green-800';
             case 'REJECTED': return 'bg-red-100 text-red-800';
             case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+            case 'INTERVIEW_SCHEDULED': return 'bg-indigo-100 text-indigo-800';
+            case 'INTERVIEW_SCORED': return 'bg-purple-100 text-purple-800';
+            case 'PENDING_EXPERT_REVIEW': return 'bg-blue-100 text-blue-800';
             default: return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'PENDING': return 'Chờ xếp vấn đáp';
+            case 'INTERVIEW_SCHEDULED': return 'Đã xếp lịch';
+            case 'INTERVIEW_SCORED': return 'Đã chấm vấn đáp';
+            case 'PENDING_EXPERT_REVIEW': return 'Chờ expert duyệt';
+            case 'APPROVED': return 'Đã duyệt';
+            case 'REJECTED': return 'Từ chối';
+            default: return status;
         }
     };
 
@@ -68,14 +83,17 @@ const CreditTransferApprovalPage: React.FC = () => {
                     <div className="relative">
                         <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <select
+                            aria-label="Lọc trạng thái hồ sơ quy đổi"
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
                             className="pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-white"
                         >
                             <option value="all">Tất cả trạng thái</option>
-                            <option value="PENDING">Chờ duyệt (Pending)</option>
-                            <option value="APPROVED">Đã duyệt (Approved)</option>
-                            <option value="REJECTED">Đã từ chối (Rejected)</option>
+                            <option value="PENDING">Chờ xếp vấn đáp</option>
+                            <option value="INTERVIEW_SCHEDULED">Đã xếp lịch</option>
+                            <option value="PENDING_EXPERT_REVIEW">Chờ expert duyệt</option>
+                            <option value="APPROVED">Đã duyệt</option>
+                            <option value="REJECTED">Đã từ chối</option>
                         </select>
                     </div>
                 </div>
@@ -138,7 +156,7 @@ const CreditTransferApprovalPage: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(req.status)}`}>
-                                                {req.status}
+                                                {getStatusLabel(req.status)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

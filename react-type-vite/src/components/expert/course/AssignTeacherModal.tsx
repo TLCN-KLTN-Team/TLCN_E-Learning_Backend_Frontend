@@ -434,6 +434,7 @@ const AssignTeacherModal: React.FC<AssignTeacherModalProps> = ({
                   </div>
                 </div>
               )}
+
             </div>
           </div>
 

@@ -201,4 +201,7 @@ export interface EquivalentCourseResponse {
   minQuizScore?: number;
   minAssignmentScore?: number;
   requiredRank?: string;
+  certificateWeight?: number;
+  interviewWeight?: number;
+  approvalThreshold?: number;
 }

@@ -32,6 +32,8 @@ public class QuestionResponse {
     private String tags; // Comma-separated tags
     private String teacherId;
     private Integer educationalUnitId;
+    private Integer cloId;
+    private String cloCode;
 
     private Date createdAt;
 

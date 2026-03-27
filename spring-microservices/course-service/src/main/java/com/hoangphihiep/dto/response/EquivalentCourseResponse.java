@@ -38,6 +38,10 @@ public class EquivalentCourseResponse {
     private Double minQuizScore;
     private Double minAssignmentScore;
     private String requiredRank;
+
+    private Double certificateWeight;
+    private Double interviewWeight;
+    private Double approvalThreshold;
     
     private String createdBy;
     private LocalDateTime createdAt;

@@ -57,7 +57,8 @@ const CreditTransferDetailModal: React.FC<CreditTransferDetailModalProps> = ({
         }
     };
 
-    const isPending = creditTransfer.status === "PENDING";
+    const isPendingExpertReview = creditTransfer.status === "PENDING_EXPERT_REVIEW";
+    const canShowTeacherResult = creditTransfer.interviewScore !== undefined || creditTransfer.certificateScore !== undefined;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -74,7 +75,7 @@ const CreditTransferDetailModal: React.FC<CreditTransferDetailModalProps> = ({
                             {creditTransfer.status}
                         </span>
                     </h2>
-                    <button onClick={onClose} className="text-white hover:text-gray-200">
+                    <button aria-label="Đóng" title="Đóng" onClick={onClose} className="text-white hover:text-gray-200">
                         <X size={24} />
                     </button>
                 </div>
@@ -179,10 +180,33 @@ const CreditTransferDetailModal: React.FC<CreditTransferDetailModalProps> = ({
                             <div className="text-xs text-green-600 mt-1 ml-6">Người duyệt: {creditTransfer.approvedById}</div>
                         </div>
                     )}
+
+                    {canShowTeacherResult && (
+                        <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <div className="font-semibold text-blue-900 mb-2">Kết quả vấn đáp & điểm tổng hợp</div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-blue-900">
+                                <div>Điểm chứng chỉ: <b>{creditTransfer.certificateScore ?? "-"}</b></div>
+                                <div>Điểm vấn đáp: <b>{creditTransfer.interviewScore ?? "-"}</b></div>
+                                <div>Điểm tổng hợp: <b>{creditTransfer.decisionScore ?? "-"}</b></div>
+                                <div>Ngưỡng đạt: <b>{creditTransfer.approvalThresholdApplied ?? "-"}</b></div>
+                            </div>
+                            {creditTransfer.interviewFeedback && (
+                                <div className="mt-2 text-sm text-blue-800">
+                                    Nhận xét giáo viên: {creditTransfer.interviewFeedback}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {!isPendingExpertReview && creditTransfer.status !== 'APPROVED' && creditTransfer.status !== 'REJECTED' && (
+                        <div className="mt-6 bg-amber-50 p-4 rounded-xl border border-amber-200 text-amber-800 text-sm">
+                            Hồ sơ chưa đến bước expert duyệt. Vui lòng chờ giáo viên hoàn tất vấn đáp và chấm điểm.
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer Actions */}
-                {isPending && (
+                {isPendingExpertReview && (
                     <div className="p-4 border-t bg-gray-50 flex justify-end space-x-3">
                         {showRejectInput ? (
                             <div className="flex-1 flex space-x-2 animate-in slide-in-from-right duration-300">
@@ -212,7 +236,7 @@ const CreditTransferDetailModal: React.FC<CreditTransferDetailModalProps> = ({
                         )}
                     </div>
                 )}
-                {!isPending && (
+                {!isPendingExpertReview && (
                     <div className="p-4 border-t bg-gray-50 flex justify-end">
                         <Button variant="outline" onClick={onClose}>Đóng</Button>
                     </div>

@@ -36,21 +36,22 @@ const StudentCreditTransferPage = () => {
         }
     };
 
-    const fetchMyRequests = async () => {
+    const fetchMyRequests = async (showLoading = true) => {
         try {
-            setIsLoading(true);
+            if (showLoading) setIsLoading(true);
             const res = await studentCreditTransferApi.getMyRequests();
             setMyRequests(res.content);
         } catch (error) {
             console.error("Failed to fetch my requests", error);
         } finally {
-            setIsLoading(false);
+            if (showLoading) setIsLoading(false);
         }
     };
 
     useEffect(() => {
         if (activeTab === "available") {
             fetchEquivalentCourses();
+            fetchMyRequests(false);
         } else {
             fetchMyRequests();
         }
@@ -61,15 +62,103 @@ const StudentCreditTransferPage = () => {
         setIsModalOpen(true);
     };
 
+    const getLatestRequestByEquivalentCourse = (equivalentCourseId: number) => {
+        const matched = myRequests.filter((request) => request.equivalentCourseId === equivalentCourseId);
+        if (matched.length === 0) return null;
+
+        return matched.sort((a, b) => {
+            const timeA = a.requestDate ? new Date(a.requestDate).getTime() : 0;
+            const timeB = b.requestDate ? new Date(b.requestDate).getTime() : 0;
+            return timeB - timeA;
+        })[0];
+    };
+
+    const getActionState = (course: EquivalentCourseResponse) => {
+        if (!course.status) {
+            return {
+                actionable: false,
+                label: "Ngưng áp dụng",
+                variant: "outline" as const,
+                className: "text-foreground",
+            };
+        }
+
+        const latestRequest = getLatestRequestByEquivalentCourse(course.id);
+        if (!latestRequest) {
+            return {
+                actionable: true,
+                label: "Đăng ký quy đổi",
+                variant: "default" as const,
+                className: "",
+            };
+        }
+
+        switch (latestRequest.status) {
+            case "APPROVED":
+                return {
+                    actionable: false,
+                    label: "Đã được miễn",
+                    variant: "secondary" as const,
+                    className: "text-foreground font-medium",
+                };
+            case "PENDING":
+                return {
+                    actionable: false,
+                    label: "Đã gửi yêu cầu",
+                    variant: "outline" as const,
+                    className: "text-foreground",
+                };
+            case "INTERVIEW_SCHEDULED":
+                return {
+                    actionable: false,
+                    label: "Đã xếp vấn đáp",
+                    variant: "outline" as const,
+                    className: "text-foreground",
+                };
+            case "PENDING_EXPERT_REVIEW":
+                return {
+                    actionable: false,
+                    label: "Chờ expert duyệt",
+                    variant: "outline" as const,
+                    className: "text-foreground",
+                };
+            default:
+                return {
+                    actionable: true,
+                    label: "Đăng ký quy đổi",
+                    variant: "default" as const,
+                    className: "",
+                };
+        }
+    };
+
     const renderStatusBadge = (status: string) => {
         switch (status) {
             case "APPROVED":
-                return <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" /> Đã duyệt</Badge>;
+                return <Badge className="bg-green-600 text-white border-transparent"><CheckCircle className="w-3 h-3 mr-1" /> Đã duyệt</Badge>;
             case "REJECTED":
                 return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> Từ chối</Badge>;
+            case "INTERVIEW_SCHEDULED":
+                return <Badge className="bg-indigo-600 text-white border-transparent"><Clock className="w-3 h-3 mr-1" /> Đã xếp vấn đáp</Badge>;
+            case "INTERVIEW_SCORED":
+                return <Badge className="bg-purple-600 text-white border-transparent"><Clock className="w-3 h-3 mr-1" /> Đã chấm vấn đáp</Badge>;
+            case "PENDING_EXPERT_REVIEW":
+                return <Badge className="bg-blue-600 text-white border-transparent"><Clock className="w-3 h-3 mr-1" /> Chờ expert duyệt</Badge>;
             default:
-                return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> Chờ duyệt</Badge>;
+                return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> Chờ xếp vấn đáp</Badge>;
         }
+    };
+
+    const renderExpertFeedback = (request: CreditTransferResponse) => {
+        if (request.rejectionReason) {
+            return <span className="text-red-500 italic">{request.rejectionReason}</span>;
+        }
+
+        if (request.status === "APPROVED") {
+            return <span className="text-green-600">Đã được chấp nhận</span>;
+        }
+
+        return <span className="text-muted-foreground">Chưa có phản hồi</span>;
     };
 
     return (
@@ -82,9 +171,19 @@ const StudentCreditTransferPage = () => {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="mb-4">
-                        <TabsTrigger value="available">Chương trình quy đổi khả dụng</TabsTrigger>
-                        <TabsTrigger value="history">Lịch sử yêu cầu của tôi</TabsTrigger>
+                    <TabsList className="mb-4 bg-muted/60 p-1 rounded-lg border">
+                        <TabsTrigger
+                            value="available"
+                            className="font-medium text-muted-foreground px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                        >
+                            Chương trình quy đổi khả dụng
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="history"
+                            className="font-medium text-muted-foreground px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                        >
+                            Lịch sử yêu cầu của tôi
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="available">
@@ -125,9 +224,27 @@ const StudentCreditTransferPage = () => {
                                                     {course.requirements || course.description}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button size="sm" onClick={() => handleOpenModal(course)}>
-                                                        Đăng ký quy đổi
-                                                    </Button>
+                                                    {(() => {
+                                                        const actionState = getActionState(course);
+                                                        if (actionState.actionable) {
+                                                            return (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant={actionState.variant}
+                                                                    className={actionState.className}
+                                                                    onClick={() => handleOpenModal(course)}
+                                                                >
+                                                                    {actionState.label}
+                                                                </Button>
+                                                            );
+                                                        }
+
+                                                        return (
+                                                            <Badge variant={actionState.variant} className={actionState.className}>
+                                                                {actionState.label}
+                                                            </Badge>
+                                                        );
+                                                    })()}
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -147,7 +264,7 @@ const StudentCreditTransferPage = () => {
                                         <TableHead>Môn học được miễn</TableHead>
                                         <TableHead>Ghi chú của tôi</TableHead>
                                         <TableHead>Trạng thái</TableHead>
-                                        <TableHead>Phản hồi từ Experts</TableHead>
+                                        <TableHead>Phản hồi từ Chuyên gia</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -171,9 +288,7 @@ const StudentCreditTransferPage = () => {
                                                 <TableCell>{req.targetCourseName || "N/A"}</TableCell>
                                                 <TableCell className="max-w-[200px] truncate" title={req.description}>{req.description}</TableCell>
                                                 <TableCell>{renderStatusBadge(req.status)}</TableCell>
-                                                <TableCell className="text-red-500 italic">
-                                                    {req.rejectionReason || (req.status === "APPROVED" ? "Đã được chấp nhận" : "")}
-                                                </TableCell>
+                                                <TableCell>{renderExpertFeedback(req)}</TableCell>
                                             </TableRow>
                                         ))
                                     )}

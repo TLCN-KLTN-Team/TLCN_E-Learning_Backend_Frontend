@@ -4,8 +4,10 @@ import type { CreditTransferResponse } from "../response/creditTransferResponse"
 
 const BASE_URL = "/course-management/expert/credit-transfers";
 
+export type CreditTransferStatus = "PENDING" | "INTERVIEW_SCHEDULED" | "INTERVIEW_SCORED" | "PENDING_EXPERT_REVIEW" | "APPROVED" | "REJECTED";
+
 export const searchCreditTransfers = async (
-    status?: string,
+    status?: CreditTransferStatus,
     keyword?: string,
     page: number = 0,
     size: number = 10
