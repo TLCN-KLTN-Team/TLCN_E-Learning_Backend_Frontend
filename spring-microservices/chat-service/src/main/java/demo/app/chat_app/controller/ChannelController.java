@@ -1,12 +1,8 @@
 package demo.app.chat_app.controller;
 
-import demo.app.chat_app.dto.request.ChannelCreationRequest;
-import demo.app.chat_app.dto.response.ApiResponse;
-import demo.app.chat_app.dto.response.BasicChannelResponse;
-import demo.app.chat_app.dto.response.ChannelResponse;
-import demo.app.chat_app.dto.response.UserResponse;
+import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
+import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.service.ChannelService;
-import demo.app.chat_app.service.impl.ChannelServiceImpl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -70,8 +66,24 @@ public class ChannelController {
         }
     }
 
+    @PostMapping("/bulk-random")
+    public ApiResponse<?> bulkRandomChannels(@RequestBody BulkRandomChannelRequest request) {
+
+        try {
+            BulkRandomChannelResponse response = channelService.bulkRandomlyCreateChannels(request);
+            return ApiResponse.<BulkRandomChannelResponse>builder()
+                    .result(response)
+                    .message("Channels created successfully")
+                    .build();
+        } catch (Exception e) {
+            return ApiResponse.builder()
+                    .message("Failed to bulk create channels: " + e.getMessage())
+                    .build();
+        }
+    }
+
     @PutMapping("/update/{channelId}")
-    public ApiResponse<ChannelResponse> updateChannel(@RequestBody ChannelCreationRequest request,
+    public ApiResponse<ChannelResponse> updateChannel(@RequestBody BulkRandomChannelRequest request,
                                                       @PathVariable String channelId){
         try{
             ChannelResponse channelResponse = channelService.updateChannel(channelId, request);

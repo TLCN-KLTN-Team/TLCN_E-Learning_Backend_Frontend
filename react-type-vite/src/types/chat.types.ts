@@ -4,9 +4,7 @@ import type { MessageType } from "./chat.enums";
 export const ChannelType = {
   TEXT: "TEXT",
   GROUP: "GROUP",
-  ANNOUNCEMENT: "ANNOUNCEMENT",
-  VOICE_LIVE: "VOICE_LIVE",
-  POST: "POST",
+  VOICE: "VOICE",
 } as const;
 
 export type ChannelType = (typeof ChannelType)[keyof typeof ChannelType];
@@ -75,15 +73,6 @@ export interface BasicChannelResponse {
   isPublic: boolean;
 }
 
-export interface GroupResponse {
-  id: string;
-  groupName: string;
-  channelId: string;
-  description?: string;
-  participants?: UserResponse[];
-  createdDate?: string;
-}
-
 export interface ChannelResponse {
   id: string;
   sectionId: string;
@@ -104,22 +93,32 @@ export interface ChannelResponse {
   endTime?: number; // Unix timestamp in milliseconds, optional
 }
 
+export interface BulkRandomChannelResponse {
+  channels: BasicChannelResponse[];
+}
+
 export interface CreateChannelRequest {
   workspaceId: string;
   sectionId?: string;
   channelName: string;
   description?: string;
   memberIds?: string[];
-  isPrivate: boolean;
   channelType?: ChannelType;
-  durationInMinutes?: number; // Duration in minutes
+  endTime?: string; // ISO-8601 string for backend Instant parsing
+  // GROUP channel specific fields
+  numberOfGroups?: number; // Số lượng nhóm
+  membersPerGroup?: number; // Số lượng thành viên trong một nhóm
+  allowCrossReview?: boolean; // Cho phép chấm bài chéo
 }
 
-export interface CreateGroupRequest {
-  channelId: string;
-  name: string;
+export interface BulkRandomChannelRequest {
+  sectionId: string;
+  channelType: ChannelType;
+  channelName: string;
   description?: string;
-  memberIds?: string[];
+  endTime: string; // ISO-8601 string for backend Instant parsing
+  membersPerGroup: number; // Số lượng thành viên trong một nhóm
+  allowCrossReview: boolean; // Cho phép chấm bài chéo
 }
 
 export interface ChatMessageRequest {

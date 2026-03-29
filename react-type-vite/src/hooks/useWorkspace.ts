@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 import { getWorkspaces } from "@/services/api/workspace/workspace.api";
@@ -12,9 +13,15 @@ import type {
   SectionResponse,
   WorkspaceResponse,
 } from "@/types/chat.types";
-import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
+import {
+  getSectionById,
+  getSectionsByWorkspaceId,
+} from "@/services/api/workspace/section.api";
 
 export const useWorkspace = () => {
+  const navigate = useNavigate();
+  const initializedWorkspaceIdRef = useRef<string | null>(null);
+
   const [workspacesData, setWorkspacesData] =
     useState<PaginatedResponse<WorkspaceResponse> | null>(null);
   const [visibleWorkspaceCount, setVisibleWorkspaceCount] = useState(6);
@@ -24,10 +31,55 @@ export const useWorkspace = () => {
     useState<SectionResponse | null>(null);
   const [selectedChannel, setSelectedChannel] =
     useState<ChannelResponse | null>(null);
-  const [participants, setParticipants] = useState<UserResponse[]>([]);
+  const [participants] = useState<UserResponse[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
   const pageSize = 6;
+
+  const navigateToWorkspacePath = useCallback(
+    (workspaceId?: string, sectionId?: string, channelId?: string) => {
+      if (!workspaceId) {
+        navigate("/workspaces", { replace: true });
+        return;
+      }
+
+      if (sectionId && channelId) {
+        navigate(`/workspaces/${workspaceId}/${sectionId}/${channelId}`, {
+          replace: true,
+        });
+        return;
+      }
+
+      navigate(`/workspaces/${workspaceId}`, { replace: true });
+    },
+    [navigate],
+  );
+
+  const handleChannelSelect = useCallback(
+    async (channel: ChannelResponse) => {
+      setIsLoadingMessages(true);
+
+      try {
+        const fullChannel = await getChannel(channel.id);
+        const sectionResponse = await getSectionById(fullChannel.sectionId);
+
+        setSelectedChannel(fullChannel);
+        setSelectedSection(sectionResponse);
+
+        navigateToWorkspacePath(
+          selectedWorkspace?.id,
+          sectionResponse.id,
+          fullChannel.id,
+        );
+      } catch (error) {
+        console.error("Error fetching channel details:", error);
+        toast.error("Không thể tải thông tin kênh. Vui lòng thử lại.");
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    },
+    [navigateToWorkspacePath, selectedWorkspace?.id],
+  );
 
   // Load initial workspaces
   useEffect(() => {
@@ -44,6 +96,10 @@ export const useWorkspace = () => {
   // Auto select general channel when workspace changes
   useEffect(() => {
     if (selectedWorkspace) {
+      if (initializedWorkspaceIdRef.current === selectedWorkspace.id) {
+        return;
+      }
+
       // Find general channel first, otherwise use first channel
       const fetchChannelsAndSelectGeneralChannel = async () => {
         try {
@@ -51,59 +107,53 @@ export const useWorkspace = () => {
 
           const publicSection = sections.find((sec) => sec.isPublic);
           if (!publicSection) {
+            initializedWorkspaceIdRef.current = selectedWorkspace.id;
+            navigateToWorkspacePath(selectedWorkspace.id);
             return;
           }
 
-          setSelectedSection(publicSection || null);
           const publicChannel = await getPublicChannelBySectionId(
             publicSection.id,
           );
-          setSelectedChannel(publicChannel);
 
-          console.log("publicSection:", publicSection);
-          console.log("publicChannel:", publicChannel);
+          if (!publicChannel) {
+            setSelectedSection(publicSection);
+            initializedWorkspaceIdRef.current = selectedWorkspace.id;
+            navigateToWorkspacePath(selectedWorkspace.id);
+            return;
+          }
+
+          await handleChannelSelect(publicChannel);
+          initializedWorkspaceIdRef.current = selectedWorkspace.id;
         } catch (error) {
           console.error("Error auto-selecting channel:", error);
           toast.error("Không thể tải kênh. Vui lòng thử lại.");
+          setSelectedSection(null);
           setSelectedChannel(null);
+          initializedWorkspaceIdRef.current = null;
         }
       };
 
       fetchChannelsAndSelectGeneralChannel();
     } else {
+      setSelectedSection(null);
       setSelectedChannel(null);
+      initializedWorkspaceIdRef.current = null;
+      navigateToWorkspacePath();
     }
-  }, [selectedWorkspace]);
-
-  // Load channel data when channel changes
-  useEffect(() => {
-    if (selectedChannel) {
-      setIsLoadingMessages(true);
-      getChannel(selectedChannel.id)
-        .then((channelData) => {
-          console.log("Loaded channel data:", channelData);
-        })
-        .catch((error) => {
-          console.error("Error loading channel data:", error);
-          toast.error("Không thể tải thông tin kênh. Vui lòng thử lại.");
-          setParticipants([]);
-        })
-        .finally(() => {
-          setIsLoadingMessages(false);
-        });
-    } else {
-      setParticipants([]);
-    }
-  }, [selectedChannel]);
+  }, [handleChannelSelect, navigateToWorkspacePath, selectedWorkspace]);
 
   const handleWorkspaceSelect = (workspace: WorkspaceResponse) => {
-    console.log("Selecting workspace:", workspace.name);
-    setSelectedWorkspace(workspace);
-    // Channel will be auto-selected by the useEffect above
-  };
+    if (selectedWorkspace?.id === workspace.id) {
+      return;
+    }
 
-  const handleChannelSelect = (channel: ChannelResponse) => {
-    setSelectedChannel(channel);
+    console.log("Selecting workspace:", workspace.name);
+    initializedWorkspaceIdRef.current = null;
+    setSelectedSection(null);
+    setSelectedChannel(null);
+    setSelectedWorkspace(workspace);
+    navigateToWorkspacePath(workspace.id);
   };
 
   const loadMoreWorkspaces = () => {

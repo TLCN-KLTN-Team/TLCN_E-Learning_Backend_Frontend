@@ -26,9 +26,6 @@ const ChannelPanel = ({
 }: ChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddChannelModal, setShowAddChannelModal] = useState(false);
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
-    null,
-  );
   const [sections, setSections] = useState<SectionResponse[]>([]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(),
@@ -107,12 +104,6 @@ const ChannelPanel = ({
   //     throw error;
   //   }
   // };
-
-  // Handle create channel in section
-  const handleCreateChannel = (sectionId: string) => {
-    setSelectedSectionId(sectionId);
-    setShowAddChannelModal(true);
-  };
 
   // Handle toggle section expand
   const handleToggleSection = (sectionId: string) => {
@@ -233,7 +224,6 @@ const ChannelPanel = ({
                 onChannelSelect={handleChannelSelectInternal}
                 onInvitePeople={handleInvitePeople}
                 onChannelSettings={handleChannelSettings}
-                onCreateChannel={handleCreateChannel}
                 expandedSections={expandedSections}
                 onToggleSection={handleToggleSection}
               />
@@ -260,10 +250,7 @@ const ChannelPanel = ({
         isOpen={showAddChannelModal}
         onClose={() => {
           setShowAddChannelModal(false);
-          setSelectedSectionId(null);
         }}
-        workspace={selectedWorkspace}
-        sectionId={selectedSectionId}
         onChannelCreated={handleChannelCreated}
       />
 

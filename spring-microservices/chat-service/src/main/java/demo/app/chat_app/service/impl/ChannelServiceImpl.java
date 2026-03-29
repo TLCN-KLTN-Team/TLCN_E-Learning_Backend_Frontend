@@ -1,6 +1,6 @@
 package demo.app.chat_app.service.impl;
 
-import demo.app.chat_app.dto.request.ChannelCreationRequest;
+import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
 import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.events.ClassCreatedEvent;
 import demo.app.chat_app.events.EnrollStudentsEvent;
@@ -13,6 +13,7 @@ import demo.app.chat_app.repository.SectionRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.service.ChannelMemberService;
 import demo.app.chat_app.service.ChannelService;
+import demo.app.chat_app.service.util.DateTimeUtils;
 import demo.app.chat_app.utils.JwtUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -181,7 +182,6 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public BasicChannelResponse createChannel(ChannelCreationRequest request) {
-        String userId = JwtUtils.getUserId();
 
         Section section = sectionRepository.findById(request.getSectionId())
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
@@ -193,20 +193,96 @@ public class ChannelServiceImpl implements ChannelService {
             throw new AppException(ErrorCode.CHANNEL_ALREADY_EXISTS);
         }
 
+        // convert endTime ISO form to Instant
+        Instant expiresAt = DateTimeUtils.parseIsoToInstant(request.getEndTime());
+
+        // Create channel entity
         Channel channel = Channel.builder()
                 .sectionId(section.getId())
+                .scope(ChannelScope.valueOf(request.getScope().toUpperCase()))
+                .type(ChannelType.valueOf(request.getChannelType().toUpperCase()))
                 .name(request.getChannelName())
+                .slug(request.getChannelName().toLowerCase()
+                        .replaceAll("[^a-z0-9-]", "-")
+                        .replaceAll("-+", "-"))
                 .description(request.getDescription())
                 .createdAt(Instant.now())
+                .expiresAt(expiresAt)
                 .build();
 
-        channel = channelRepository.save(channel);
+        Channel savedChannel = channelRepository.save(channel);
+        // Create channel members with the saved channel ID using ChannelMemberService
+        List<ChannelMember> channelMembers = channelMemberService.createChannelMembersForNewParticipants(
+                request.getMemberIds(), section.getId(), savedChannel.getId()
+        );
+
+        // Save all members (this will also update member count)
+        if (!channelMembers.isEmpty()) {
+            channelMemberService.addMembersToChannel(channelMembers, savedChannel.getId());
+        }
 
         return channelMapper.toBasicChannelResponse(channel);
     }
 
     @Override
-    public ChannelResponse updateChannel(String id, ChannelCreationRequest request) {
+    public BulkRandomChannelResponse bulkRandomlyCreateChannels(BulkRandomChannelRequest request) {
+
+        List<BasicChannelResponse> bulkChannelResponses = new ArrayList<>();
+        // Randomly assign members to groups
+        Map<Integer, List<String>> groupAssignments = randomlyAssignMembersToGroups(
+                new ArrayList<>(request.getMemberIds()),
+                request.getMembersPerGroup());
+
+        groupAssignments.forEach((groupNum, memberIds) -> {
+            String channelName = String.format("%s - Nhóm %d", request.getChannelName(), groupNum);
+            ChannelCreationRequest groupChannelRequest = ChannelCreationRequest.builder()
+                    .sectionId(request.getSectionId())
+                    .scope(ChannelScope.GROUP.getCode())
+                    .channelType(ChannelType.GROUP.getCode())
+                    .channelName(channelName)
+                    .description(request.getDescription() + " (Nhóm " + groupNum + ")")
+                    .memberIds(memberIds)
+                    .endTime(request.getEndTime())
+                    .build();
+            BasicChannelResponse channelResponse = createChannel(groupChannelRequest);
+            bulkChannelResponses.add(channelResponse);
+        });
+
+        return BulkRandomChannelResponse.builder()
+                .channels(bulkChannelResponses)
+                .build();
+    }
+
+
+    private Map<Integer, List<String>> randomlyAssignMembersToGroups(List<String> memberIds, int membersPerGroup) {
+        Map<Integer, List<String>> groupAssignments = new HashMap<>();
+
+        int groupNum = 1;
+        while (!memberIds.isEmpty()) {
+            List<String> groupMembersOfGroupI = new ArrayList<>();
+
+            if (memberIds.size() <= membersPerGroup) {
+                groupMembersOfGroupI.addAll(memberIds);
+                memberIds.clear();
+                groupAssignments.put(groupNum, groupMembersOfGroupI);
+                break;
+            }
+
+            for (int i = 0; i < membersPerGroup; i++) {
+                int randomIndex = new Random().nextInt(memberIds.size());
+                String memberId = memberIds.remove(randomIndex);
+                groupMembersOfGroupI.add(memberId);
+            }
+
+            groupAssignments.put(groupNum, groupMembersOfGroupI);
+            groupNum++;
+        }
+
+        return groupAssignments;
+    }
+
+    @Override
+    public ChannelResponse updateChannel(String id, BulkRandomChannelRequest request) {
         return null;
     }
 
