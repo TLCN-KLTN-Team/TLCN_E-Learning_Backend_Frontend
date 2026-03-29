@@ -2,6 +2,8 @@ import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
 import type {
   BasicChannelResponse,
+  BulkRandomChannelRequest,
+  BulkRandomChannelResponse,
   ChannelResponse,
   ChatMessageRequest,
   ChatMessageResponse,
@@ -38,6 +40,16 @@ export const createChannel = async (
   );
   return response.data.result;
 };
+
+export const bulkRandomCreateChannels = async (
+  request: BulkRandomChannelRequest
+): Promise<BulkRandomChannelResponse> => {
+  const response = await axiosInstance.post<ApiResponse<BulkRandomChannelResponse>>(
+    `${CHANNEL_API_BASE_URL}/bulk-random`,
+    request
+  );
+  return response.data.result;
+}
 
 export const sendMessage = async (
   request: ChatMessageRequest

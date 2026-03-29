@@ -25,6 +25,7 @@ public class SectionServiceImpl implements SectionService {
     private final WorkspaceRepository workspaceRepository;
     private final ChannelServiceImpl channelService;
 
+    @Override
     public List<SectionResponse> getSectionsByWorkspaceId(String workspaceId) {
         List<Section> sections = sectionRepository.findAllByWorkspaceId(workspaceId);
 
@@ -97,5 +98,33 @@ public class SectionServiceImpl implements SectionService {
 
         log.info("User {} belongs to {} unique workspaces", userId, workspaceIds.size());
         return workspaceIds;
+    }
+
+    @Override
+    public List<String> getMemberIdsBySectionId(String sectionId) {
+        Section section = this.getSectionById(sectionId);
+        return section.getSectionMembers();
+    }
+
+    @Override
+    public int getStudentCountBySectionId(String sectionId) {
+        Section section = this.getSectionById(sectionId);
+        return section.getStudentCount();
+    }
+
+    @Override
+    public Section getSectionById(String sectionId) {
+        return sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
+    }
+
+    @Override
+    public SectionResponse getSectionResponseById(String sectionId) {
+        Section section = this.getSectionById(sectionId);
+        return SectionResponse.builder()
+                .id(section.getId())
+                .name(section.getName())
+                .isPublic(section.isPublic())
+                .build();
     }
 }

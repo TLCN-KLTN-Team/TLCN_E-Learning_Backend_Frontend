@@ -12,6 +12,7 @@ import lombok.Getter;
 @Getter
 public enum ChannelType {
     TEXT("TEXT", "Kênh văn bản"),
+    GROUP("GROUP", "Kênh nhóm làm bài tập"),
     VOICE("VOICE", "Kênh thoại");
 
     @JsonValue

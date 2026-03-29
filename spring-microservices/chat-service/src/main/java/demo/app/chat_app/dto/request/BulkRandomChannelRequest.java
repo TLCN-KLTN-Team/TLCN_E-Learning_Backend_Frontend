@@ -10,14 +10,15 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ChannelCreationRequest {
+public class BulkRandomChannelRequest {
     String sectionId;
     String workspaceId;
     String channelType;
     String channelName;
     String description;
     List<String> memberIds;
-    int durationInMinutes;
-    boolean isPrivate;
-    long endTime;
+    String endTime;
+    boolean allowCrossReview;
+    // For Group type
+    int membersPerGroup;
 }

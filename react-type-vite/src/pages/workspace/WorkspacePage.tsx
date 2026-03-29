@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { useSafeChatWebSocket } from "@/hooks/useSafeChatWebSocket";
@@ -14,12 +13,9 @@ import {
 } from "@/components/student/workspace/layout";
 
 const WorkspacePageContent = () => {
-  const navigate = useNavigate();
-
   // Use custom hooks for workspace management and WebSocket
   const {
     selectedWorkspace,
-    selectedSection,
     selectedChannel,
     participants,
     isLoadingMessages,
@@ -94,26 +90,6 @@ const WorkspacePageContent = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Intentionally empty to prevent re-connections on every render
-
-  // Update URL when workspace or channel changes
-  useEffect(() => {
-    if (selectedWorkspace) {
-      if (selectedSection) {
-        // Navigate to workspace with section
-        navigate(
-          `/workspaces/${selectedWorkspace?.id}/${selectedSection?.id}/${selectedChannel?.id}`,
-          {
-            replace: true,
-          },
-        );
-      } else {
-        // Navigate to workspace only
-        navigate(`/workspaces/${selectedWorkspace.id}`, {
-          replace: true,
-        });
-      }
-    }
-  }, [selectedWorkspace, selectedSection, selectedChannel, navigate]);
 
   const handleSendMessage = async (content: string) => {
     console.log("🚀 handleSendMessage called", {

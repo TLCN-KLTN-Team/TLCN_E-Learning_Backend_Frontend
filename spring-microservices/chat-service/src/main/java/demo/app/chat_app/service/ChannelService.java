@@ -1,10 +1,7 @@
 package demo.app.chat_app.service;
 
-import demo.app.chat_app.dto.request.ChannelCreationRequest;
-import demo.app.chat_app.dto.response.BasicChannelResponse;
-import demo.app.chat_app.dto.response.ChannelResponse;
-import demo.app.chat_app.dto.response.SectionResponse;
-import demo.app.chat_app.dto.response.UserResponse;
+import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
+import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.events.ClassCreatedEvent;
 import demo.app.chat_app.events.EnrollStudentsEvent;
 import demo.app.chat_app.model.workspace.Channel;
@@ -30,6 +27,8 @@ public interface ChannelService {
      */
     BasicChannelResponse createChannel(ChannelCreationRequest request);
 
+    BulkRandomChannelResponse bulkRandomlyCreateChannels(BulkRandomChannelRequest request);
+
     /**
      * Update an existing channel.
      *
@@ -37,7 +36,7 @@ public interface ChannelService {
      * @param request Updated channel information
      * @return Updated channel information
      */
-    ChannelResponse updateChannel(String id, ChannelCreationRequest request);
+    ChannelResponse updateChannel(String id, BulkRandomChannelRequest request);
 
     /**
      * Permanently delete a channel.

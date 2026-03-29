@@ -145,8 +145,49 @@ public class Channel {
      * mà không cần COUNT query.
      */
 
+    // ── Thời hạn ─────────────────────────────────────────────────
+    private Instant expiresAt;
+    /*
+     * Thời điểm Channel hết hạn. Null = không giới hạn (mặc định).
+     *
+     * Khi Instant.now() >= expiresAt:
+     *   - Mọi hành vi gửi tin, reaction, pin đều bị từ chối
+     *   - Scheduler job tự động set status = ARCHIVED
+     *
+     * Enforce ở Service trước khi xử lý bất kỳ action nào:
+     *   if (channel.expiresAt != null
+     *       && Instant.now().isAfter(channel.expiresAt)) {
+     *       throw new ChannelExpiredException();
+     *   }
+     *
+     * Scheduler query (chạy định kỳ, VD: mỗi phút):
+     *   db.channels.find({
+     *     expiresAt: { $lte: now },
+     *     status: "ACTIVE"
+     *   }) → batch update status = "ARCHIVED", expiredAt = now
+     */
+
     // ── Audit ────────────────────────────────────────────────────
     private String  createdByUserId; // TEACHER tạo channel
     private Instant createdAt;
     private Instant updatedAt;
+    private Instant expiredAt;
+    /*
+     * Thời điểm Channel THỰC TẾ chuyển sang ARCHIVED.
+     * Null nếu channel vẫn còn ACTIVE.
+     *
+     * Phân biệt với expiresAt:
+     *   expiresAt → thời hạn DỰ KIẾN do TEACHER đặt
+     *   expiredAt → thời điểm THỰC TẾ hết hạn
+     *               (scheduler chạy muộn vài giây, hoặc
+     *                TEACHER archive thủ công trước hạn)
+     */
+
+    public void positionUp() {
+        this.position -= 1;
+    }
+
+    public void positionDown() {
+        this.position += 1;
+    }
 }
