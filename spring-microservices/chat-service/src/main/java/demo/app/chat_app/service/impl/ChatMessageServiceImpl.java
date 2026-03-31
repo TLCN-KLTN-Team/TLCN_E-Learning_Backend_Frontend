@@ -6,10 +6,7 @@ import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChatMessageMapper;
-import demo.app.chat_app.model.workspace.Channel;
-import demo.app.chat_app.model.workspace.ChatMessage;
-import demo.app.chat_app.model.workspace.MemberStatus;
-import demo.app.chat_app.model.workspace.Section;
+import demo.app.chat_app.model.workspace.*;
 import demo.app.chat_app.repository.*;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.ChannelMemberService;
@@ -191,20 +188,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     private void checkIsMemberChannel(Channel channel, String userId) {
-        if (channel.isPublic()) {
-            // Public channel: toàn bộ SectionMember có quyền truy cập
-            Section section = sectionRepository.findById(channel.getSectionId())
-                    .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
-            if (section.getSectionMembers() == null || !section.getSectionMembers().contains(userId)) {
-                throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
-            }
-        } else {
-            // Private/Group channel: chỉ ChannelMember ACTIVE mới truy cập được
-            boolean isMember = channelMemberService.isActiveMember(channel.getId(), userId);
-            if (!isMember) {
-                throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
-            }
-        }
+        ChannelMember channelMember = channelMemberService.getChannelMemberByChannelIdAndUserId(channel.getId(), userId);
     }
 
     private ChatMessageResponse toUploadedResponse(ChatMessage chatMessage, String userId) {

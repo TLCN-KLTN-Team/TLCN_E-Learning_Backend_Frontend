@@ -1,6 +1,7 @@
 package demo.app.chat_app.service.impl;
 
 import demo.app.chat_app.dto.response.StudentResponse;
+import demo.app.chat_app.dto.response.TeacherResponse;
 import demo.app.chat_app.dto.response.UserResponse;
 import demo.app.chat_app.events.StudentInfo;
 import demo.app.chat_app.exception.AppException;
@@ -12,6 +13,7 @@ import demo.app.chat_app.model.workspace.NotificationLevel;
 import demo.app.chat_app.repository.ChannelMemberRepository;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.httpclient.GetStudentClient;
+import demo.app.chat_app.repository.httpclient.TeacherClient;
 import demo.app.chat_app.service.ChannelMemberService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,14 +34,15 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
     ChannelMemberRepository channelMemberRepository;
     ChannelRepository channelRepository;
     GetStudentClient getStudentClient;
-
+    TeacherClient teacherClient;
 
     /**
      * Create channel member từ userId (gọi API để lấy student info)
-     * @deprecated Dùng {@link #createChannelMemberFromStudentInfo} khi có student info sẵn
+     *
+     * Chỉ dùng được khi HTTP request gọi hàm, chứ không gọi thông qua Kafka event (vì đã có hàm createChannelMemberFromStudentInfo để dùng trong trường hợp đó)
      */
     @Override
-    @Deprecated
+    @Transactional
     public ChannelMember createChannelMember(String userId, String sectionId, String channelId) {
         try {
             StudentResponse studentInfo = getStudentClient.getStudentByUserId(userId)
@@ -162,6 +165,31 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
     }
 
     @Override
+    public ChannelMember addTeacherMemberToChannel(String teacherId, String sectionId, String channelId) {
+        try {
+            TeacherResponse teacherInfo = teacherClient.getTeacherById(teacherId)
+                    .getResult();
+            ChannelMember channelMember = ChannelMember.builder()
+                    .channelId(channelId)
+                    .sectionId(sectionId)
+                    .userId(teacherId)
+                    .studentId(teacherInfo.getTeacherId())
+                    .role(ChannelRole.STUDENT)
+                    .status(MemberStatus.ACTIVE)
+                    .notificationLevel(NotificationLevel.ALL)
+                    .unreadCount(0)
+                    .unreadMentionCount(0)
+                    .joinedAt(Instant.now())
+                    .updatedAt(Instant.now())
+                    .nickname(teacherInfo.getLastName() + " " + teacherInfo.getFirstName())
+                    .build();
+            return addMemberToChannel(channelMember);
+        } catch (AppException ae) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    @Override
     @Transactional
     public void removeMemberFromChannel(String channelId, String userId) {
         channelMemberRepository.deleteByChannelIdAndUserId(channelId, userId);
@@ -238,6 +266,12 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
             channel.setMemberCount((int) activeCount);
             channelRepository.save(channel);
         });
+    }
+
+    @Override
+    public ChannelMember getChannelMemberByChannelIdAndUserId(String channelId, String userId) {
+        return channelMemberRepository.findByChannelIdAndUserId(channelId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     /**

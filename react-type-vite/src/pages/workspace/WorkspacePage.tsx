@@ -48,10 +48,6 @@ const WorkspacePageContent = () => {
       return;
     }
 
-    console.log(
-      `🔗 Setting up subscriptions for channel: ${selectedChannel.id}`,
-    );
-
     // Subscribe to all channels at once
     const unsubscribeChannel = subscribeToChannel(selectedChannel.id);
     const unsubscribeDirectMessages = subscribeToDirectMessages();
@@ -61,7 +57,6 @@ const WorkspacePageContent = () => {
     );
 
     return () => {
-      console.log(`🔗 Cleaning up subscriptions`);
       unsubscribeChannel?.();
       unsubscribeDirectMessages?.();
       unsubscribeErrors?.();
@@ -92,11 +87,6 @@ const WorkspacePageContent = () => {
   }, []); // Intentionally empty to prevent re-connections on every render
 
   const handleSendMessage = async (content: string) => {
-    console.log("🚀 handleSendMessage called", {
-      content,
-      selectedChannel,
-      isConnected,
-    });
 
     if (!selectedChannel) {
       toast.warning("Vui lòng chọn kênh trước khi gửi tin nhắn.");
@@ -109,8 +99,6 @@ const WorkspacePageContent = () => {
     }
 
     try {
-      console.log("📤 Sending message via WebSocket...");
-
       // Send via WebSocket directly to broker
       sendWebSocketMessage({
         channelId: selectedChannel.id,
@@ -120,8 +108,6 @@ const WorkspacePageContent = () => {
       // Clear any previous errors
       clearError();
     } catch (error) {
-      console.error("❌ Error sending message:", error);
-
       // Show user-friendly error
       const errorMessage =
         error instanceof Error ? error.message : "Lỗi không xác định";

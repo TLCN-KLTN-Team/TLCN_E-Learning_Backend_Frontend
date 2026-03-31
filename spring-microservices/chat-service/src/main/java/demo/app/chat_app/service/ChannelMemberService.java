@@ -64,6 +64,9 @@ public interface ChannelMemberService {
      */
     List<ChannelMember> addMembersToChannel(List<ChannelMember> channelMembers, String channelId);
 
+    ChannelMember addTeacherMemberToChannel(String teacherId, String sectionId, String channelId);
+
+
     /**
      * Xóa một member khỏi channel.
      *
@@ -132,4 +135,6 @@ public interface ChannelMemberService {
 
 
     void updateChannelMemberCount(String channelId);
+
+    ChannelMember getChannelMemberByChannelIdAndUserId(String channelId, String userId);
 }

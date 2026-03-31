@@ -14,13 +14,13 @@ import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.service.ChannelMemberService;
 import demo.app.chat_app.service.ChannelService;
 import demo.app.chat_app.service.util.DateTimeUtils;
-import demo.app.chat_app.utils.JwtUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
@@ -71,11 +71,11 @@ public class ChannelServiceImpl implements ChannelService {
         Channel savedChannel = channelRepository.save(channel);
 
         // Firstly add teacher member to channel - nickname và avatarUrl sẽ được lazy load sau
-        ChannelMember teacherMember = channelMemberService.createChannelMember(
-                workspace.getOwnerId(),
-                section.getId(),
-                savedChannel.getId()
-        );
+        ChannelMember teacherMember = ChannelMember.builder()
+                .sectionId(section.getId())
+                .channelId(savedChannel.getId())
+                .userId(workspace.getOwnerId())
+                .build();
 
         // Save teacher member using ChannelMemberService
         channelMemberService.addMemberToChannel(teacherMember);
@@ -139,7 +139,7 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     @Override
-    public Channel createGeneralChannel(String sectionId, Workspace workspace) {
+    public Channel createGeneralChannelInGeneralSection(String sectionId, Workspace workspace) {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
 
@@ -166,14 +166,25 @@ public class ChannelServiceImpl implements ChannelService {
         // Save channel first to get the ID
         Channel savedChannel = channelRepository.save(channel);
 
-        // Create channel members with the saved channel ID using ChannelMemberService
-        List<ChannelMember> channelMembers = channelMemberService.createChannelMembersForNewParticipants(
-                section.getSectionMembers(), sectionId, savedChannel.getId()
-        );
+        // add teacher member to channel - nickname và avatarUrl sẽ được lazy load sau
+        ChannelMember teacherMember = ChannelMember.builder()
+                .sectionId(sectionId)
+                .channelId(savedChannel.getId())
+                .userId(workspace.getOwnerId())
+                .build();
+        channelMemberService.addMemberToChannel(teacherMember);
 
-        // Save all members (this will also update member count)
-        if (!channelMembers.isEmpty()) {
-            channelMemberService.addMembersToChannel(channelMembers, savedChannel.getId());
+        // Create channel members with the saved channel ID using ChannelMemberService
+        if (section.getSectionMembers() != null || !section.getSectionMembers().isEmpty()){
+
+            List<ChannelMember> channelMembers = channelMemberService.createChannelMembersForNewParticipants(
+                    section.getSectionMembers(), sectionId, savedChannel.getId()
+            );
+
+            // Save all members (this will also update member count)
+            if (!channelMembers.isEmpty()) {
+                channelMemberService.addMembersToChannel(channelMembers, savedChannel.getId());
+            }
         }
 
         return channelRepository.findById(savedChannel.getId())
@@ -185,6 +196,8 @@ public class ChannelServiceImpl implements ChannelService {
 
         Section section = sectionRepository.findById(request.getSectionId())
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
+        Workspace workspace = workspaceRepository.findById(section.getWorkspaceId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
         // Check if channel name already exists in section
         Optional<Channel> existingChannel = channelRepository
@@ -211,6 +224,12 @@ public class ChannelServiceImpl implements ChannelService {
                 .build();
 
         Channel savedChannel = channelRepository.save(channel);
+        // Create teacher member
+        ChannelMember teacherMember = channelMemberService.addTeacherMemberToChannel(
+                workspace.getOwnerId(),
+                section.getId(),
+                savedChannel.getId()
+        );
         // Create channel members with the saved channel ID using ChannelMemberService
         List<ChannelMember> channelMembers = channelMemberService.createChannelMembersForNewParticipants(
                 request.getMemberIds(), section.getId(), savedChannel.getId()
@@ -225,12 +244,17 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     @Override
+    @Transactional
     public BulkRandomChannelResponse bulkRandomlyCreateChannels(BulkRandomChannelRequest request) {
+
+        // Get list members from section
+        Section section = sectionRepository.findById(request.getSectionId())
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
 
         List<BasicChannelResponse> bulkChannelResponses = new ArrayList<>();
         // Randomly assign members to groups
         Map<Integer, List<String>> groupAssignments = randomlyAssignMembersToGroups(
-                new ArrayList<>(request.getMemberIds()),
+                new ArrayList<>(section.getSectionMembers()),
                 request.getMembersPerGroup());
 
         groupAssignments.forEach((groupNum, memberIds) -> {
@@ -244,7 +268,7 @@ public class ChannelServiceImpl implements ChannelService {
                     .memberIds(memberIds)
                     .endTime(request.getEndTime())
                     .build();
-            BasicChannelResponse channelResponse = createChannel(groupChannelRequest);
+            BasicChannelResponse channelResponse = this.createChannel(groupChannelRequest);
             bulkChannelResponses.add(channelResponse);
         });
 
@@ -252,7 +276,6 @@ public class ChannelServiceImpl implements ChannelService {
                 .channels(bulkChannelResponses)
                 .build();
     }
-
 
     private Map<Integer, List<String>> randomlyAssignMembersToGroups(List<String> memberIds, int membersPerGroup) {
         Map<Integer, List<String>> groupAssignments = new HashMap<>();
