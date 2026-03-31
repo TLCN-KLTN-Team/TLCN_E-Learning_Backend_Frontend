@@ -74,7 +74,7 @@ public class Section {
     String description;
     String schedule; // "Thứ 3, 7h30 - 10h00"
     String room;         // "B4-301" hoặc "Online - Meet
-    List<String> sectionMembers;
+    List<String> sectionMembers = new ArrayList<>();
     /*
      * Danh sách thành viên để cho phép truy vấn nhanh "Ai thuộc lớp này?".
      * Để giúp thêm/xóa thành viên nhanh chóng mà không cần cập nhật SectionMember.

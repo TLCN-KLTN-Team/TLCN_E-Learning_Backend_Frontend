@@ -37,5 +37,5 @@ public interface WorkspaceRepository extends MongoRepository<Workspace, String> 
 
     Optional<Workspace> findByCourseId(Integer courseId);
 
-
+    List<Workspace> findAllByOwnerId(String userId);
 }

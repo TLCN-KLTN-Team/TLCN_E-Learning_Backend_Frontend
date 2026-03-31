@@ -129,7 +129,7 @@ public interface ChannelService {
      * @param workspace Workspace information
      * @return Created channel
      */
-    Channel createGeneralChannel(String sectionId, Workspace workspace);
+    Channel createGeneralChannelInGeneralSection(String sectionId, Workspace workspace);
 
     // ══════════════════════════════════════════════════════════════════
     // Other Operations

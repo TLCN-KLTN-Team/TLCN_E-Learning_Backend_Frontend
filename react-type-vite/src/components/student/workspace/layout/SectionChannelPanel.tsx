@@ -24,9 +24,9 @@ const SectionChannelPanel = ({
 }: SectionChannelPanelProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddChannelModal, setShowAddChannelModal] = useState(false);
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
-    null,
-  );
+  const [selectedSectionIdForCreate, setSelectedSectionIdForCreate] = useState<
+    string | null
+  >(null);
   const [sections, setSections] = useState<SectionResponse[]>([]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(),
@@ -108,7 +108,7 @@ const SectionChannelPanel = ({
 
   // Handle create channel in section
   const handleCreateChannel = (sectionId: string) => {
-    setSelectedSectionId(sectionId);
+    setSelectedSectionIdForCreate(sectionId);
     setShowAddChannelModal(true);
   };
 
@@ -144,9 +144,7 @@ const SectionChannelPanel = ({
   };
 
   // Handle channel select - fetch full details if needed
-  const handleChannelSelectInternal = async (
-    channel: BasicChannelResponse,
-  ) => {
+  const handleChannelSelectInternal = async (channel: BasicChannelResponse) => {
     try {
       // If we already have full details, use them
       const cachedDetails = channelDetailsMap.get(channel.id);
@@ -258,10 +256,9 @@ const SectionChannelPanel = ({
         isOpen={showAddChannelModal}
         onClose={() => {
           setShowAddChannelModal(false);
-          setSelectedSectionId(null);
+          setSelectedSectionIdForCreate(null);
         }}
-        workspace={selectedWorkspace}
-        sectionId={selectedSectionId}
+        sectionId={selectedSectionIdForCreate ?? undefined}
         onChannelCreated={handleChannelCreated}
       />
 

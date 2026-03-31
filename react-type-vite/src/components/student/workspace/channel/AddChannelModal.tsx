@@ -21,10 +21,16 @@ interface AddChannelModalProps {
   isOpen: boolean;
   onClose: () => void;
   onChannelCreated?: (newChannel: ChannelResponse) => void;
+  sectionId?: string;
 }
 
-const AddChannelModal = ({ isOpen, onClose }: AddChannelModalProps) => {
-  const { workspaceId, sectionId } = useParams(); // Get workspace and section IDs from URL params
+const AddChannelModal = ({
+  isOpen,
+  onClose,
+  sectionId,
+}: AddChannelModalProps) => {
+  const { sectionId: sectionIdFromParams } = useParams();
+  const targetSectionId = sectionId ?? sectionIdFromParams;
 
   const [selectedType, setSelectedType] = useState<ChannelType>(
     ChannelType.GROUP,
@@ -118,14 +124,14 @@ const AddChannelModal = ({ isOpen, onClose }: AddChannelModalProps) => {
     }
 
     try {
-      if (!sectionId) {
+      if (!targetSectionId) {
         toast.error("Không xác định được phần học. Vui lòng thử lại.");
         return;
       }
 
       // Prepare request data based on channel type
       const requestData: BulkRandomChannelRequest = {
-        sectionId: sectionId,
+        sectionId: targetSectionId,
         description: channelDescription.trim(),
         channelName: channelName.trim(),
         channelType: selectedType,
@@ -178,15 +184,15 @@ const AddChannelModal = ({ isOpen, onClose }: AddChannelModalProps) => {
 
   useEffect(() => {
     const fetchStudentCount = async () => {
-      if (sectionId) {
-        const studentCount = await getStudentCountBySectionId(sectionId);
+      if (targetSectionId) {
+        const studentCount = await getStudentCountBySectionId(targetSectionId);
         console.log("Fetched student count for section:", studentCount);
         setTotalStudents(studentCount);
       }
     };
 
     fetchStudentCount();
-  }, [sectionId]);
+  }, [targetSectionId]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

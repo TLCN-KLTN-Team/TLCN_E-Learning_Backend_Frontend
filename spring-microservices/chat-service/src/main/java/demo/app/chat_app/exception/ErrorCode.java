@@ -81,6 +81,7 @@ public enum ErrorCode {
     SECTION_NOT_EXISTED("CHAT_7002", "Không tìm thấy section", HttpStatus.NOT_FOUND),
     END_TIME_INVALID("CHAT_7003", "Thời gian kết thúc phải là thời điểm trong tương lai", HttpStatus.BAD_REQUEST),
 
+    MEMBER_NOT_FOUND("CHAT_8001", "Không tìm thấy thành viên trong kênh", HttpStatus.NOT_FOUND),
 
     ;
 

@@ -38,16 +38,15 @@ public class SectionServiceImpl implements SectionService {
                 .toList();
     }
 
-    public void createGeneralSection(String teacherId, String workspaceId, Workspace workspace) {
+    public void createGeneralSection(String workspaceId, Workspace workspace) {
         Section section = Section.builder()
                 .name("Thông báo chung")
                 .workspaceId(workspaceId)
                 .isPublic(true)
                 .build();
-        section.addMember(teacherId);
         Section savedSection = sectionRepository.save(section);
 
-        Channel channel = channelService.createGeneralChannel(savedSection.getId(), workspace);
+        Channel channel = channelService.createGeneralChannelInGeneralSection(savedSection.getId(), workspace);
     }
 
     public void createSectionWhenClassCreated(ClassCreatedEvent event){
@@ -59,7 +58,6 @@ public class SectionServiceImpl implements SectionService {
                 .classId(event.getClassId())
                 .name(event.getClassName())
                 .description(event.getDescription())
-                .sectionMembers(Collections.singletonList(wEntity.getOwnerId()))
                 .studentCount(1) // Giá trị ban đầu, sẽ được cập nhật khi có SV enroll
                 .build();
 
@@ -86,16 +84,23 @@ public class SectionServiceImpl implements SectionService {
     public List<String> getWorkspaceIdsByUserId(String userId) {
         log.debug("Finding workspaces for userId: {}", userId);
 
-        // Find all sections where user is a member
-        List<Section> sections = sectionRepository.findAllBySectionMembersContaining(userId);
-        log.debug("Found {} sections containing user {}", sections.size(), userId);
-
-        // Extract unique workspaceIds from sections
-        List<String> workspaceIds = sections.stream()
-                .map(Section::getWorkspaceId)
-                .distinct()
+        // Find all workspace where user is owner
+        List<String> workspaceIds = workspaceRepository.findAllByOwnerId(userId)
+                .stream()
+                .map(Workspace::getId)
                 .toList();
 
+        if (workspaceIds.isEmpty()) {
+            // Find all sections where user is a member
+            List<Section> sections = sectionRepository.findAllBySectionMembersContaining(userId);
+            log.debug("Found {} sections containing user {}", sections.size(), userId);
+
+            // Extract unique workspaceIds from sections
+            workspaceIds = sections.stream()
+                    .map(Section::getWorkspaceId)
+                    .distinct()
+                    .toList();
+        }
         log.info("User {} belongs to {} unique workspaces", userId, workspaceIds.size());
         return workspaceIds;
     }

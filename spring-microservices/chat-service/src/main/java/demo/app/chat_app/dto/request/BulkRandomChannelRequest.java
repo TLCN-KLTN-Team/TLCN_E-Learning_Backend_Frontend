@@ -16,7 +16,6 @@ public class BulkRandomChannelRequest {
     String channelType;
     String channelName;
     String description;
-    List<String> memberIds;
     String endTime;
     boolean allowCrossReview;
     // For Group type

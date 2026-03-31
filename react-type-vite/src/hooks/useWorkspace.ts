@@ -86,6 +86,7 @@ export const useWorkspace = () => {
     getWorkspaces(0, pageSize)
       .then((data) => {
         setWorkspacesData(data);
+        console.log("Fetched workspaces:", data.content);
       })
       .catch((error) => {
         console.error("Error fetching workspaces:", error);
