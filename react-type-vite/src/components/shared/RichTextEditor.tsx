@@ -54,13 +54,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           menubar: 'file edit view insert format tools table help',
           plugins: [
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'codesample', 'fullscreen',
             'insertdatetime', 'media', 'table', 'help', 'wordcount'
           ],
           toolbar: 'undo redo | blocks | ' +
             'bold italic forecolor backcolor | alignleft aligncenter ' +
             'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | link image media | code fullscreen | help',
+            'removeformat | link image media | codesample code fullscreen | help',
           content_style: `
             body { 
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 

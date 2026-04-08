@@ -67,6 +67,74 @@ public class RevenueService {
         return new ArrayList<>(deduplicatedMap.values());
     }
 
+    private List<PayoutOrderItem> getSystemPayoutItems() {
+        List<PayoutOrderItem> systemItems = payoutOrderItemRepository
+                .findByRecipientIdAndRecipientType("SYSTEM", RecipientType.SUPER_ADMIN);
+        return deduplicatePayoutItems(systemItems);
+    }
+
+    private List<PayoutOrderItem> getSystemPayoutItemsByOrderDateRange(LocalDate startDate, LocalDate endDate) {
+        List<PayoutOrderItem> systemItems = payoutOrderItemRepository
+                .findByRecipientIdAndRecipientType("SYSTEM", RecipientType.SUPER_ADMIN)
+                .stream()
+                .filter(item -> {
+                    if (item.getOrderItem() == null ||
+                        item.getOrderItem().getOrder() == null ||
+                        item.getOrderItem().getOrder().getOrderDate() == null) {
+                        return false;
+                    }
+                    LocalDate orderDate = item.getOrderItem().getOrder().getOrderDate().toLocalDate();
+                    return !orderDate.isBefore(startDate) && !orderDate.isAfter(endDate);
+                })
+                .collect(Collectors.toList());
+        return deduplicatePayoutItems(systemItems);
+    }
+
+    private String resolveTeacherCourseOwnerId(String teacherUserId) {
+        try {
+            var response = teacherRepository.getTeacherByUserId(teacherUserId);
+            if (response != null && response.getResult() != null) {
+                var teacher = response.getResult();
+                if (teacher.getTeacherId() != null && !teacher.getTeacherId().isBlank()) {
+                    return teacher.getTeacherId();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to resolve teacherId by userId {}: {}", teacherUserId, e.getMessage());
+        }
+
+        // Fallback: if caller already passes teacherId format, keep it.
+        return teacherUserId;
+    }
+
+        private List<PayoutOrderItem> getTeacherScopedRefundSourceItems(String teacherCourseOwnerId, List<PayoutOrderItem> systemItems) {
+        return systemItems.stream()
+            .filter(item -> isRefundedStatus(item.getStatus()))
+            .filter(item -> item.getOrderItem() != null &&
+                item.getOrderItem().getCourse() != null &&
+                item.getOrderItem().getCourse().getCourse() != null)
+            .filter(item -> teacherCourseOwnerId.equals(item.getOrderItem().getCourse().getCourse().getIdTeacher()))
+            .collect(Collectors.toList());
+        }
+
+        private List<PayoutOrderItem> getAdminScopedRefundSourceItems(String adminId, List<PayoutOrderItem> systemItems) {
+        return systemItems.stream()
+            .filter(item -> isRefundedStatus(item.getStatus()))
+            .filter(item -> item.getOrderItem() != null &&
+                item.getOrderItem().getCourse() != null &&
+                item.getOrderItem().getCourse().getCourse() != null &&
+                item.getOrderItem().getCourse().getCourse().getEducationalUnit() != null)
+            .filter(item -> adminId.equals(item.getOrderItem().getCourse().getCourse().getEducationalUnit().getIdAdmin()))
+            .collect(Collectors.toList());
+        }
+
+        private Set<Integer> getRefundedOrderItemIds(List<PayoutOrderItem> refundSourceItems) {
+        return refundSourceItems.stream()
+            .filter(item -> item.getOrderItem() != null)
+            .map(item -> item.getOrderItem().getId())
+            .collect(Collectors.toSet());
+        }
+
     public TeacherRevenueResponse getTeacherRevenue() {
         String teacherId = JwtUtils.getCurrentUserId();
         return getTeacherRevenueByTeacherId(teacherId);
@@ -94,10 +162,13 @@ public class RevenueService {
                 .map(PayoutOrderItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        BigDecimal totalReversed = payoutItems.stream()
-            .filter(item -> isRefundedStatus(item.getStatus()))
-                .map(PayoutOrderItem::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String teacherCourseOwnerId = resolveTeacherCourseOwnerId(teacherId);
+        List<PayoutOrderItem> systemPayoutItems = getSystemPayoutItems();
+        List<PayoutOrderItem> refundSourceItems = getTeacherScopedRefundSourceItems(teacherCourseOwnerId, systemPayoutItems);
+        Set<Integer> refundedOrderItemIds = getRefundedOrderItemIds(refundSourceItems);
+
+        // Refund states are tracked at SUPER_ADMIN level; teacher only uses this as informational metadata.
+        BigDecimal totalReversed = BigDecimal.ZERO;
         
         BigDecimal totalRevenue = totalAccrued.add(totalSettled);
         
@@ -105,7 +176,10 @@ public class RevenueService {
         Set<Integer> uniqueOrders = new HashSet<>();
         Set<Integer> uniqueCourses = new HashSet<>();
         Set<String> uniqueStudents = new HashSet<>();
-        Set<Integer> refundedOrders = new HashSet<>();
+        Set<Integer> refundedOrders = refundSourceItems.stream()
+            .filter(item -> item.getOrderItem() != null && item.getOrderItem().getOrder() != null)
+            .map(item -> item.getOrderItem().getOrder().getId())
+            .collect(Collectors.toSet());
         
         for (PayoutOrderItem item : payoutItems) {
             uniqueOrders.add(item.getOrderItem().getOrder().getId());
@@ -113,10 +187,6 @@ public class RevenueService {
             // Get student from order
             uniqueStudents.add(item.getOrderItem().getOrder().getIdUser());
             
-            // Track refunded orders
-            if (isRefundedStatus(item.getStatus())) {
-                refundedOrders.add(item.getOrderItem().getOrder().getId());
-            }
         }
         
         // Get share percentage from config
@@ -152,10 +222,10 @@ public class RevenueService {
         }
         
         // Group by month for monthly revenue details
-        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, false);
+        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, refundSourceItems, false);
         
         // Get refund details
-        List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems);
+        List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems, refundSourceItems);
         
         // Get teacher name from identity service
         String teacherName = "Teacher " + teacherId; // Default fallback
@@ -233,10 +303,13 @@ public class RevenueService {
                 .map(PayoutOrderItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        BigDecimal totalReversed = payoutItems.stream()
-            .filter(item -> isRefundedStatus(item.getStatus()))
-                .map(PayoutOrderItem::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String teacherCourseOwnerId = resolveTeacherCourseOwnerId(teacherId);
+        List<PayoutOrderItem> systemPayoutItems = getSystemPayoutItemsByOrderDateRange(startLocalDate, endLocalDate);
+        List<PayoutOrderItem> refundSourceItems = getTeacherScopedRefundSourceItems(teacherCourseOwnerId, systemPayoutItems);
+        Set<Integer> refundedOrderItemIds = getRefundedOrderItemIds(refundSourceItems);
+
+        // Refund states are tracked at SUPER_ADMIN level; teacher only uses this as informational metadata.
+        BigDecimal totalReversed = BigDecimal.ZERO;
         
         BigDecimal totalRevenue = totalAccrued.add(totalSettled);
         
@@ -244,17 +317,16 @@ public class RevenueService {
         Set<Integer> uniqueOrders = new HashSet<>();
         Set<Integer> uniqueCourses = new HashSet<>();
         Set<String> uniqueStudents = new HashSet<>();
-        Set<Integer> refundedOrders = new HashSet<>();
+        Set<Integer> refundedOrders = refundSourceItems.stream()
+            .filter(item -> item.getOrderItem() != null && item.getOrderItem().getOrder() != null)
+            .map(item -> item.getOrderItem().getOrder().getId())
+            .collect(Collectors.toSet());
         
         for (PayoutOrderItem item : payoutItems) {
             uniqueOrders.add(item.getOrderItem().getOrder().getId());
             uniqueCourses.add(item.getOrderItem().getCourse().getId());
             uniqueStudents.add(item.getOrderItem().getOrder().getIdUser());
             
-            // Track refunded orders
-            if (isRefundedStatus(item.getStatus())) {
-                refundedOrders.add(item.getOrderItem().getOrder().getId());
-            }
         }
         
         // Get share percentage
@@ -291,10 +363,10 @@ public class RevenueService {
         
         // Group by month for monthly revenue details
         boolean useDailyBucket = ChronoUnit.DAYS.between(startLocalDate, endLocalDate) <= 31;
-        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, useDailyBucket);
+        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, refundSourceItems, useDailyBucket);
         
         // Get refund details
-        List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems);
+        List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems, refundSourceItems);
         
         // Get teacher name from identity service
         String teacherName = "Teacher " + teacherId;
@@ -394,19 +466,28 @@ public class RevenueService {
             uniqueStudents.add(item.getOrderItem().getOrder().getIdUser());
         }
         
-        // Track refunds
-        Set<Integer> refundedOrderItemIds = new HashSet<>();
+        List<PayoutOrderItem> systemPayoutItems = getSystemPayoutItems();
+        List<PayoutOrderItem> refundSourceItems = getAdminScopedRefundSourceItems(adminId, systemPayoutItems);
+        Set<Integer> refundedOrderItemIds = getRefundedOrderItemIds(refundSourceItems);
+
+        // Track refunds from SUPER_ADMIN refund source for visibility metrics.
         Map<Integer, Set<Integer>> orderToRefundedItems = new HashMap<>();
         Map<Integer, Set<Integer>> orderToValidItems = new HashMap<>();
+
+        for (PayoutOrderItem refundItem : refundSourceItems) {
+            if (refundItem.getOrderItem() == null || refundItem.getOrderItem().getOrder() == null) {
+                continue;
+            }
+            Integer refundOrderId = refundItem.getOrderItem().getOrder().getId();
+            Integer refundOrderItemId = refundItem.getOrderItem().getId();
+            orderToRefundedItems.computeIfAbsent(refundOrderId, k -> new HashSet<>()).add(refundOrderItemId);
+        }
         
         for (PayoutOrderItem item : payoutItems) {
             Integer orderId = item.getOrderItem().getOrder().getId();
             Integer orderItemId = item.getOrderItem().getId();
             
-            if (isRefundedStatus(item.getStatus())) {
-                refundedOrderItemIds.add(orderItemId);
-                orderToRefundedItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
-            } else if (isCountableRevenue(item.getStatus())) {
+            if (isCountableRevenue(item.getStatus()) && !refundedOrderItemIds.contains(orderItemId)) {
                 orderToValidItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
             }
         }
@@ -515,7 +596,7 @@ public class RevenueService {
         teacherDetails.sort((a, b) -> b.getRevenue().compareTo(a.getRevenue()));
         
         // Group by month
-        List<AdminRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForAdmin(countableItems, false);
+        List<AdminRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForAdmin(countableItems, refundSourceItems, false);
         
         log.info("Admin revenue - Total: {}, Teachers: {}, Courses: {}, Students: {}", 
                 totalRevenue, uniqueTeachers.size(), uniqueCourses.size(), uniqueStudents.size());
@@ -619,19 +700,28 @@ public class RevenueService {
             uniqueStudents.add(item.getOrderItem().getOrder().getIdUser());
         }
         
-        // Track refunds
-        Set<Integer> refundedOrderItemIds = new HashSet<>();
+        List<PayoutOrderItem> systemPayoutItems = getSystemPayoutItemsByOrderDateRange(startLocalDate, endLocalDate);
+        List<PayoutOrderItem> refundSourceItems = getAdminScopedRefundSourceItems(adminId, systemPayoutItems);
+        Set<Integer> refundedOrderItemIds = getRefundedOrderItemIds(refundSourceItems);
+
+        // Track refunds from SUPER_ADMIN refund source for visibility metrics.
         Map<Integer, Set<Integer>> orderToRefundedItems = new HashMap<>();
         Map<Integer, Set<Integer>> orderToValidItems = new HashMap<>();
+
+        for (PayoutOrderItem refundItem : refundSourceItems) {
+            if (refundItem.getOrderItem() == null || refundItem.getOrderItem().getOrder() == null) {
+                continue;
+            }
+            Integer refundOrderId = refundItem.getOrderItem().getOrder().getId();
+            Integer refundOrderItemId = refundItem.getOrderItem().getId();
+            orderToRefundedItems.computeIfAbsent(refundOrderId, k -> new HashSet<>()).add(refundOrderItemId);
+        }
         
         for (PayoutOrderItem item : payoutItems) {
             Integer orderId = item.getOrderItem().getOrder().getId();
             Integer orderItemId = item.getOrderItem().getId();
             
-            if (isRefundedStatus(item.getStatus())) {
-                refundedOrderItemIds.add(orderItemId);
-                orderToRefundedItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
-            } else if (isCountableRevenue(item.getStatus())) {
+            if (isCountableRevenue(item.getStatus()) && !refundedOrderItemIds.contains(orderItemId)) {
                 orderToValidItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
             }
         }
@@ -745,7 +835,7 @@ public class RevenueService {
         
         // Group by period for monthly/daily revenue details (filtered)
         boolean useDailyBucket = ChronoUnit.DAYS.between(startLocalDate, endLocalDate) <= 31;
-        List<AdminRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForAdmin(countableItems, useDailyBucket);
+        List<AdminRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonthForAdmin(countableItems, refundSourceItems, useDailyBucket);
         
         log.info("Admin revenue stats - Total: {}, Teachers: {}, Courses: {}, Students: {}",
                 totalRevenue, uniqueTeachers.size(), uniqueCourses.size(), uniqueStudents.size());
@@ -1139,10 +1229,13 @@ public class RevenueService {
                 .map(PayoutOrderItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        BigDecimal totalReversed = payoutItems.stream()
-            .filter(item -> isRefundedStatus(item.getStatus()))
-                .map(PayoutOrderItem::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String teacherCourseOwnerId = resolveTeacherCourseOwnerId(teacherId);
+        List<PayoutOrderItem> systemPayoutItems = getSystemPayoutItemsByOrderDateRange(startLocalDate, endLocalDate);
+        List<PayoutOrderItem> refundSourceItems = getTeacherScopedRefundSourceItems(teacherCourseOwnerId, systemPayoutItems);
+        Set<Integer> refundedOrderItemIds = getRefundedOrderItemIds(refundSourceItems);
+
+        // Refund states are tracked at SUPER_ADMIN level; teacher only uses this as informational metadata.
+        BigDecimal totalReversed = BigDecimal.ZERO;
         
         BigDecimal totalRevenue = totalAccrued.add(totalSettled);
         
@@ -1151,9 +1244,17 @@ public class RevenueService {
         Set<Integer> uniqueCourses = new HashSet<>();
         Set<String> uniqueStudents = new HashSet<>();
         Set<Integer> uniqueOrderItemIds = new HashSet<>();
-        Set<Integer> refundedOrderItemIds = new HashSet<>();
         Map<Integer, Set<Integer>> orderToRefundedItems = new HashMap<>();
         Map<Integer, Set<Integer>> orderToValidItems = new HashMap<>();
+
+        for (PayoutOrderItem refundItem : refundSourceItems) {
+            if (refundItem.getOrderItem() == null || refundItem.getOrderItem().getOrder() == null) {
+                continue;
+            }
+            Integer refundOrderId = refundItem.getOrderItem().getOrder().getId();
+            Integer refundOrderItemId = refundItem.getOrderItem().getId();
+            orderToRefundedItems.computeIfAbsent(refundOrderId, k -> new HashSet<>()).add(refundOrderItemId);
+        }
         
         for (PayoutOrderItem item : payoutItems) {
             Integer orderId = item.getOrderItem().getOrder().getId();
@@ -1164,10 +1265,7 @@ public class RevenueService {
             uniqueStudents.add(item.getOrderItem().getOrder().getIdUser());
             
             // Track order items and refunds
-            if (isRefundedStatus(item.getStatus())) {
-                refundedOrderItemIds.add(orderItemId);
-                orderToRefundedItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
-            } else if (isCountableRevenue(item.getStatus())) {
+            if (isCountableRevenue(item.getStatus()) && !refundedOrderItemIds.contains(orderItemId)) {
                 uniqueOrderItemIds.add(orderItemId);
                 orderToValidItems.computeIfAbsent(orderId, k -> new HashSet<>()).add(orderItemId);
             }
@@ -1221,10 +1319,10 @@ public class RevenueService {
         
         // Group by period for revenue details
         boolean useDailyBucket = ChronoUnit.DAYS.between(startLocalDate, endLocalDate) <= 31;
-        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, useDailyBucket);
+        List<TeacherRevenueResponse.MonthlyRevenueDetail> monthlyDetails = groupByMonth(payoutItems, refundSourceItems, useDailyBucket);
         
         // Get refund details
-        List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems);
+        List<TeacherRevenueResponse.RefundDetail> refundDetails = buildRefundDetails(payoutItems, refundSourceItems);
         
         // Get teacher name from identity service
         String teacherName = "Teacher " + teacherId;
@@ -1271,7 +1369,11 @@ public class RevenueService {
     }
     
     
-    private List<TeacherRevenueResponse.MonthlyRevenueDetail> groupByMonth(List<PayoutOrderItem> items, boolean useDailyBucket) {
+        private List<TeacherRevenueResponse.MonthlyRevenueDetail> groupByMonth(
+            List<PayoutOrderItem> items,
+            List<PayoutOrderItem> refundSourceItems,
+            boolean useDailyBucket
+        ) {
         // Filter for countable revenue items (exclude HELD, RELEASED, REFUNDED, REVERSED)
         List<PayoutOrderItem> countableItems = items.stream()
                 .filter(item -> isCountableRevenue(item.getStatus()))
@@ -1290,24 +1392,48 @@ public class RevenueService {
                     return orderDate.format(periodFormatter);
                 }));
         
-        return itemsByMonth.entrySet().stream()
-                .map(entry -> TeacherRevenueResponse.MonthlyRevenueDetail.builder()
-                        .month(entry.getKey())
-                        .revenue(entry.getValue().stream()
-                                .map(PayoutOrderItem::getAmount)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add))
-                        .orderCount(entry.getValue().size()) // Changed from orders
-                        .build())
+        Map<String, Integer> refundedOrdersByMonth = refundSourceItems.stream()
+            .filter(item -> item.getOrderItem() != null &&
+                      item.getOrderItem().getOrder() != null &&
+                      item.getOrderItem().getOrder().getOrderDate() != null)
+            .collect(Collectors.groupingBy(
+                item -> {
+                    LocalDate orderDate = item.getOrderItem().getOrder().getOrderDate().toLocalDate();
+                    return orderDate.format(periodFormatter);
+                },
+                Collectors.collectingAndThen(
+                    Collectors.mapping(item -> item.getOrderItem().getOrder().getId(), Collectors.toSet()),
+                    Set::size
+                )
+            ));
+
+        Set<String> allPeriods = new HashSet<>();
+        allPeriods.addAll(itemsByMonth.keySet());
+        allPeriods.addAll(refundedOrdersByMonth.keySet());
+
+        return allPeriods.stream()
+            .map(period -> TeacherRevenueResponse.MonthlyRevenueDetail.builder()
+                .month(period)
+                .revenue(itemsByMonth.getOrDefault(period, List.of()).stream()
+                    .map(PayoutOrderItem::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add))
+                .orderCount(itemsByMonth.getOrDefault(period, List.of()).size())
+                .refundedOrders(refundedOrdersByMonth.getOrDefault(period, 0))
+                .build())
                 .sorted(Comparator.comparing(TeacherRevenueResponse.MonthlyRevenueDetail::getMonth))
                 .collect(Collectors.toList());
     }
     
-    private List<AdminRevenueResponse.MonthlyRevenueDetail> groupByMonthForAdmin(List<PayoutOrderItem> items, boolean useDailyBucket) {
+        private List<AdminRevenueResponse.MonthlyRevenueDetail> groupByMonthForAdmin(
+            List<PayoutOrderItem> countableItems,
+            List<PayoutOrderItem> allItems,
+            boolean useDailyBucket
+        ) {
         DateTimeFormatter periodFormatter = useDailyBucket
                 ? DateTimeFormatter.ofPattern("yyyy-MM-dd")
                 : DateTimeFormatter.ofPattern("yyyy-MM");
 
-        Map<String, List<PayoutOrderItem>> itemsByMonth = items.stream()
+        Map<String, List<PayoutOrderItem>> itemsByMonth = countableItems.stream()
                 .filter(item -> item.getOrderItem() != null &&
                               item.getOrderItem().getOrder() != null &&
                               item.getOrderItem().getOrder().getOrderDate() != null)
@@ -1315,14 +1441,35 @@ public class RevenueService {
                     LocalDate orderDate = item.getOrderItem().getOrder().getOrderDate().toLocalDate();
                     return orderDate.format(periodFormatter);
                 }));
+
+        Map<String, Integer> refundedOrdersByMonth = allItems.stream()
+            .filter(item -> isRefundedStatus(item.getStatus()))
+            .filter(item -> item.getOrderItem() != null &&
+                      item.getOrderItem().getOrder() != null &&
+                      item.getOrderItem().getOrder().getOrderDate() != null)
+            .collect(Collectors.groupingBy(
+                item -> {
+                    LocalDate orderDate = item.getOrderItem().getOrder().getOrderDate().toLocalDate();
+                    return orderDate.format(periodFormatter);
+                },
+                Collectors.collectingAndThen(
+                    Collectors.mapping(item -> item.getOrderItem().getOrder().getId(), Collectors.toSet()),
+                    Set::size
+                )
+            ));
+
+        Set<String> allPeriods = new HashSet<>();
+        allPeriods.addAll(itemsByMonth.keySet());
+        allPeriods.addAll(refundedOrdersByMonth.keySet());
         
-        return itemsByMonth.entrySet().stream()
-                .map(entry -> AdminRevenueResponse.MonthlyRevenueDetail.builder()
-                        .month(entry.getKey())
-                        .revenue(entry.getValue().stream()
+        return allPeriods.stream()
+            .map(period -> AdminRevenueResponse.MonthlyRevenueDetail.builder()
+                .month(period)
+                .revenue(itemsByMonth.getOrDefault(period, List.of()).stream()
                                 .map(PayoutOrderItem::getAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add))
-                        .orderCount(entry.getValue().size()) // Changed from orders
+                .orderCount(itemsByMonth.getOrDefault(period, List.of()).size()) // Changed from orders
+                .refundedOrders(refundedOrdersByMonth.getOrDefault(period, 0))
                         .build())
                 .sorted(Comparator.comparing(AdminRevenueResponse.MonthlyRevenueDetail::getMonth))
                 .collect(Collectors.toList());
@@ -1420,9 +1567,26 @@ public class RevenueService {
                 .collect(Collectors.toList());
     }
     
-    private List<TeacherRevenueResponse.RefundDetail> buildRefundDetails(List<PayoutOrderItem> payoutItems) {
-        return payoutItems.stream()
+        private List<TeacherRevenueResponse.RefundDetail> buildRefundDetails(
+            List<PayoutOrderItem> scopedPayoutItems,
+            List<PayoutOrderItem> refundSourceItems
+        ) {
+        Map<Integer, BigDecimal> scopedAmountsByOrderItem = scopedPayoutItems.stream()
+            .filter(item -> item.getOrderItem() != null)
+            .collect(Collectors.toMap(
+                item -> item.getOrderItem().getId(),
+                PayoutOrderItem::getAmount,
+                (existing, replacement) -> existing
+            ));
+
+        return refundSourceItems.stream()
             .filter(item -> isRefundedStatus(item.getStatus()))
+            .collect(Collectors.toMap(
+                item -> item.getOrderItem().getId(),
+                item -> item,
+                (a, b) -> a.getId() > b.getId() ? a : b
+            ))
+            .values().stream()
                 .map(item -> {
                     var orderItem = item.getOrderItem();
                     var order = orderItem.getOrder();
@@ -1458,7 +1622,7 @@ public class RevenueService {
                             .courseThumbnail(course.getCourseImage())
                             .buyerId(buyerId)
                             .buyerName(buyerName)
-                            .refundedAmount(item.getAmount())
+                            .refundedAmount(scopedAmountsByOrderItem.getOrDefault(orderItem.getId(), item.getAmount()))
                             .refundedAt(refundedDate != null ? refundedDate.toString() : null)
                             .refundStatus(item.getStatus().name())
                             .build();

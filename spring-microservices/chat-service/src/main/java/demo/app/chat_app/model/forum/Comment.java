@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ public class Comment {
     private String id;
     private String postId;
     private String userId;
+    private String authorUsername;
     private String authorName;
     private String authorAvatar;
     private String content;
@@ -30,4 +32,23 @@ public class Comment {
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;
+
+    @Transient
+    private long upvotes;
+
+    @Transient
+    private long downvotes;
+
+    @Transient
+    private long score;
+
+    @Transient
+    private boolean isLiked;
+    
+    // Moderation fields
+    private ModerationStatus moderationStatus; // Approval status
+    
+    // Soft delete for audit trail
+    private boolean deleted;
+    private LocalDateTime deletedAt;
 }

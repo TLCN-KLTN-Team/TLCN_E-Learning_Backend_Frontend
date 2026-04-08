@@ -9,6 +9,7 @@ import {
 import forumApi, { type Category } from '@/services/api/forumApi';
 import { useNavigate } from 'react-router-dom';
 import ForumCreatePostModal from './ForumCreatePostModal';
+import { Bookmark } from 'lucide-react';
 
 interface ForumSidebarProps {
     categories: Category[];
@@ -135,6 +136,16 @@ const ForumSidebar: React.FC<ForumSidebarProps> = ({
                         </li>
                     ))}
                 </ul>
+            </div>
+
+            <div className="pt-2 border-t">
+                <button
+                    onClick={() => navigate('/forum/bookmarks')}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition"
+                >
+                    <Bookmark size={16} />
+                    <span>Bài viết đã lưu</span>
+                </button>
             </div>
         </aside>
     );

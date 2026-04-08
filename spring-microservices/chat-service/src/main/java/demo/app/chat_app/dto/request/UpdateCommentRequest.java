@@ -6,18 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreatePostRequest {
-    String title;
+public class UpdateCommentRequest {
     String content;
-    String categoryId;
-    String authorUsername;
-    String authorName;
-    String authorAvatar;
-    List<String> tags;
 }

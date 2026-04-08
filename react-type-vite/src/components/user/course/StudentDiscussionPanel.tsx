@@ -31,6 +31,11 @@ import type { User as UserType } from "@/context/auth-context/types";
 
 type DiscussionMessage = QuizDiscussionMessage | AssignmentDiscussionMessage | LessonDiscussionMessage;
 
+const isLikelyUuid = (value?: string): boolean => {
+  if (!value) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
+};
+
 interface StudentDiscussionPanelProps {
   itemType: "quiz" | "assignment" | "lesson";
   itemId: number;
@@ -270,6 +275,44 @@ const StudentDiscussionPanel = ({ itemType, itemId, publishedCourseId, user }: S
     }
   };
 
+  const resolveDisplayName = (message: DiscussionMessage): string => {
+    const rawName = [
+      (message as any).userName,
+      (message as any).displayName,
+      (message as any).fullName,
+      (message as any).senderName,
+      (message as any).username,
+    ].find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
+
+    if (rawName && !isLikelyUuid(rawName)) {
+      return rawName;
+    }
+
+    if (user?.id && message.userId === user.id) {
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+      return fullName || user.username || "Bạn";
+    }
+
+    return rawName && !isLikelyUuid(rawName) ? rawName : "Người dùng";
+  };
+
+  const resolveAvatarUrl = (message: DiscussionMessage): string | undefined => {
+    const messageAvatar = [
+      (message as any).userAvatar,
+      (message as any).avatarUrl,
+      (message as any).profilePicture,
+      (message as any).senderAvatar,
+    ].find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
+
+    if (messageAvatar) return messageAvatar;
+
+    if (user?.id && message.userId === user.id) {
+      return user.avatarUrl;
+    }
+
+    return undefined;
+  };
+
   if (isConnecting) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
@@ -332,15 +375,17 @@ const StudentDiscussionPanel = ({ itemType, itemId, publishedCourseId, user }: S
             {messages.map((message) => {
               const isOwner = user?.id === message.userId;
               const hasLiked = message.likedBy?.includes(user?.id || "");
+              const displayName = resolveDisplayName(message);
+              const displayAvatar = resolveAvatarUrl(message);
 
               return (
                 <div key={message.id} className="flex gap-3">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
-                    {message.userAvatar ? (
+                    {displayAvatar ? (
                       <img
-                        src={message.userAvatar}
-                        alt={message.userName || "User"}
+                        src={displayAvatar}
+                        alt={displayName}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
@@ -355,7 +400,7 @@ const StudentDiscussionPanel = ({ itemType, itemId, publishedCourseId, user }: S
                     {/* Name & Time */}
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-gray-900 text-sm">
-                        {message.userName || "Người dùng"}
+                        {displayName}
                       </span>
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -425,6 +470,8 @@ const StudentDiscussionPanel = ({ itemType, itemId, publishedCourseId, user }: S
               type="button"
               onClick={handleRemoveImage}
               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+              title="Xóa ảnh đã chọn"
+              aria-label="Xóa ảnh đã chọn"
             >
               <X className="h-4 w-4" />
             </button>
@@ -437,6 +484,8 @@ const StudentDiscussionPanel = ({ itemType, itemId, publishedCourseId, user }: S
             onChange={handleImageSelect}
             accept="image/*"
             className="hidden"
+            title="Chọn ảnh đính kèm"
+            aria-label="Chọn ảnh đính kèm"
           />
           <button
             type="button"

@@ -36,6 +36,7 @@ import {
   transformRevenueDataByGranularity,
   formatChartLabel,
   getChartTitle,
+  formatDateLocal,
   type ChartGranularity,
 } from "@/utils/revenueUtils";
 
@@ -48,6 +49,11 @@ interface AdminRevenueData {
   totalTeachers: number;
   totalStudents: number;
   totalOrders: number;
+  totalRefundedOrders: number;
+  totalPartiallyRefundedOrders: number;
+  totalFullyRefundedOrders: number;
+  totalOrderItems: number;
+  totalRefundedItems: number;
   sharePercentage: number;
   educationalUnitName: string;
   educationalUnitId: string;
@@ -68,6 +74,7 @@ interface MonthlyRevenueDetail {
   month: string;
   revenue: number;
   orderCount: number;
+  refundedOrders?: number;
 }
 
 const AdminRevenuePage: React.FC = () => {
@@ -77,10 +84,10 @@ const AdminRevenuePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [customStartDate, setCustomStartDate] = useState(
-    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    formatDateLocal(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
   );
   const [customEndDate, setCustomEndDate] = useState(
-    new Date().toISOString().split('T')[0]
+    formatDateLocal(new Date())
   );
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
@@ -142,6 +149,13 @@ const AdminRevenuePage: React.FC = () => {
       endDate
     );
   }, [revenueData, chartGranularity, timeRange, customStartDate, customEndDate, selectedMonth, selectedYear]);
+
+  const chartDataWithRefunds = useMemo(() => {
+    return transformedChartData.map((item) => ({
+      ...item,
+      refundedOrders: item.refundedOrders || 0,
+    }));
+  }, [transformedChartData]);
 
   useEffect(() => {
     fetchRevenueData();
@@ -392,22 +406,80 @@ const AdminRevenuePage: React.FC = () => {
         </div>
       </div>
 
+      {/* Refund Stats Card */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Thông tin hoàn tiền
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Số đơn hoàn tiền
+                </p>
+                <p className="text-2xl font-bold text-red-600">
+                  {revenueData.totalRefundedOrders || 0}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {revenueData.totalOrders > 0
+                    ? `${(((revenueData.totalRefundedOrders || 0) / revenueData.totalOrders) * 100).toFixed(1)}% tổng đơn hàng`
+                    : "0.0% tổng đơn hàng"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Hoàn một phần / toàn bộ
+                </p>
+                <p className="text-2xl font-bold text-red-600">
+                  {revenueData.totalPartiallyRefundedOrders || 0} / {revenueData.totalFullyRefundedOrders || 0}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Theo số đơn hàng có refund
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Item đã hoàn tiền
+                </p>
+                <p className="text-2xl font-bold text-red-600">
+                  {revenueData.totalRefundedItems || 0}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  / {revenueData.totalOrderItems || 0} item đã bán
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-red-100 p-3 rounded-lg">
+            <AlertCircle className="w-6 h-6 text-red-600" />
+          </div>
+        </div>
+      </div>
+
       {/* Revenue Chart */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           {getChartTitle(chartGranularity)}
         </h3>
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={transformedChartData}>
+          <LineChart data={chartDataWithRefunds}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="period"
               tickFormatter={(value) => formatChartLabel(value, chartGranularity)}
             />
             <YAxis
+              yAxisId="left"
               tickFormatter={(value) => formatShortCurrency(value)}
               width={80}
               domain={[0, 'auto']}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[0, 'auto']}
+              width={60}
             />
             <Tooltip
               labelFormatter={(value) => formatChartLabel(value, chartGranularity)}
@@ -417,6 +489,9 @@ const AdminRevenuePage: React.FC = () => {
                 }
                 if (name === "Đơn hàng") {
                   return [`${value} đơn`, "Đơn hàng"];
+                }
+                if (name === "Đơn hoàn trả") {
+                  return [`${value} đơn`, "Đơn hoàn trả"];
                 }
                 return [value, name];
               }}
@@ -430,6 +505,7 @@ const AdminRevenuePage: React.FC = () => {
               dot={{ r: 5 }}
               activeDot={{ r: 7 }}
               name="Doanh thu"
+              yAxisId="left"
             />
             <Line
               type="monotone"
@@ -438,6 +514,17 @@ const AdminRevenuePage: React.FC = () => {
               strokeWidth={2}
               dot={{ r: 4 }}
               name="Đơn hàng"
+              yAxisId="right"
+            />
+            <Line
+              type="monotone"
+              dataKey="refundedOrders"
+              stroke="#ef4444"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              strokeDasharray="5 5"
+              name="Đơn hoàn trả"
+              yAxisId="right"
             />
           </LineChart>
         </ResponsiveContainer>

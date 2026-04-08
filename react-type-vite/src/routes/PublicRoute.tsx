@@ -13,6 +13,7 @@ import DetailEducationalUnit from "@/pages/user/universitry/DetailEducationalUni
 import AboutUs from "@/pages/user/home/AboutUs";
 import ForumHome from "@/pages/forum/ForumHome";
 import ForumCreatePost from "@/pages/forum/ForumCreatePost";
+import ForumBookmarkedPosts from "@/pages/forum/ForumBookmarkedPosts";
 import ForumPostDetail from "@/pages/forum/ForumPostDetail";
 import CertificateVerificationPage from "@/pages/public/CertificateVerificationPage";
 
@@ -86,6 +87,7 @@ const PublicRoutes = [
   <Route key="forum-layout" element={<ForumLayout />}>
     <Route path={FORUM_ROUTES.HOME} element={<ForumHome />} />
     <Route path={FORUM_ROUTES.CREATE} element={<ForumCreatePost />} />
+    <Route path={FORUM_ROUTES.BOOKMARKS} element={<ForumBookmarkedPosts />} />
     <Route
       path={ROUTE_PATTERNS.FORUM_POST_DETAIL}
       element={<ForumPostDetail />}

@@ -12,12 +12,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreatePostRequest {
+public class UpdatePostRequest {
     String title;
     String content;
     String categoryId;
-    String authorUsername;
-    String authorName;
-    String authorAvatar;
     List<String> tags;
 }

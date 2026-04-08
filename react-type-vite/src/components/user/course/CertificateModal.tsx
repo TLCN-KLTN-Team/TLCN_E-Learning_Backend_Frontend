@@ -142,10 +142,16 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
 
                         {/* Chữ ký & Badge */}
                         <div className="z-10 w-full grid grid-cols-3 items-end px-4 sm:px-10 mb-6 sm:mb-8 mt-2 sm:mt-4">
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-16 sm:w-28 md:w-36 border-b border-gray-400 mb-1 sm:mb-2"></div>
-                                <p className="text-[10px] sm:text-sm md:text-lg font-bold text-blue-900 leading-tight">OpenEdu</p>
-                                <p className="text-[8px] sm:text-xs text-gray-500">Chữ ký</p>
+                            <div className="flex flex-col items-center text-center justify-end gap-1.5 sm:gap-2.5 h-[88px] sm:h-[128px] md:h-[150px]">
+                                <img
+                                    src={qrUrl}
+                                    alt="Mã QR xác minh chứng chỉ"
+                                    className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded bg-white border border-slate-300 p-0.5 sm:p-1 shadow-sm"
+                                />
+                                <div className="w-20 sm:w-32 md:w-40">
+                                    <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-400 to-transparent"></div>
+                                    <p className="text-[8px] sm:text-xs text-gray-500 mt-0.5">QR xác minh</p>
+                                </div>
                             </div>
 
                             <div className="flex flex-col items-center justify-center">
@@ -162,10 +168,11 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-center text-center">
-                                <div className="text-[10px] sm:text-sm md:text-lg font-bold text-gray-800 mb-1 sm:mb-2 leading-tight">{issueDateStr}</div>
-                                <div className="w-16 sm:w-28 md:w-36 border-t border-gray-400 pt-1">
-                                    <p className="text-[8px] sm:text-xs text-gray-500">Ngày cấp</p>
+                            <div className="flex flex-col items-center text-center justify-end gap-1.5 sm:gap-2.5 h-[88px] sm:h-[128px] md:h-[150px]">
+                                <div className="text-[10px] sm:text-sm md:text-lg font-bold text-gray-800 leading-tight">{issueDateStr}</div>
+                                <div className="w-20 sm:w-32 md:w-40">
+                                    <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-400 to-transparent"></div>
+                                    <p className="text-[8px] sm:text-xs text-gray-500 mt-0.5">Ngày cấp</p>
                                 </div>
                             </div>
                         </div>
@@ -175,11 +182,6 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                 {/* Footer Controls */}
                 <DialogFooter className="w-full flex flex-col md:flex-row gap-3 bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-200 mt-2 shrink-0">
                     <div className="flex items-center gap-3 w-full md:w-1/2 bg-slate-50 p-2 sm:p-3 rounded-lg border border-slate-100 min-w-0">
-                        <img
-                            src={qrUrl}
-                            alt="Mã QR chứng chỉ"
-                            className="w-10 h-10 sm:w-12 sm:h-12 rounded bg-white border border-slate-200 shrink-0"
-                        />
                         <div className="flex flex-col min-w-0 w-full">
                             <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Liên kết xác minh công khai</span>
                             <a

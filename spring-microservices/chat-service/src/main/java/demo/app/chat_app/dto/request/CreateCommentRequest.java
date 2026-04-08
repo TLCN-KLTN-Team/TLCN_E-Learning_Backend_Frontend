@@ -13,6 +13,7 @@ import lombok.experimental.FieldDefaults;
 public class CreateCommentRequest {
     String postId;
     String content;
+    String authorUsername;
     String authorName;
     String authorAvatar;
     String replyToId;

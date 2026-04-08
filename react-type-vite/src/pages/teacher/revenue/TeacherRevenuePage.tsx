@@ -34,6 +34,7 @@ import {
   transformRevenueDataByGranularity,
   formatChartLabel,
   getChartTitle,
+  formatDateLocal,
   type ChartGranularity,
 } from "@/utils/revenueUtils";
 
@@ -67,6 +68,7 @@ interface MonthlyRevenueDetail {
   month: string;
   revenue: number;
   orderCount: number;
+  refundedOrders?: number;
 }
 
 const TeacherRevenuePage: React.FC = () => {
@@ -76,10 +78,10 @@ const TeacherRevenuePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [customStartDate, setCustomStartDate] = useState(
-    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    formatDateLocal(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
   );
   const [customEndDate, setCustomEndDate] = useState(
-    new Date().toISOString().split('T')[0]
+    formatDateLocal(new Date())
   );
   const [selectedMonth, setSelectedMonth] = useState(
     getCurrentMonth()
@@ -145,6 +147,38 @@ const TeacherRevenuePage: React.FC = () => {
       endDate
     );
   }, [revenueData, chartGranularity, timeRange, customStartDate, customEndDate, selectedMonth, selectedYear]);
+
+  const chartDataWithRefunds = useMemo(() => {
+    if (!transformedChartData.length) return [];
+
+    const refundsByPeriod = new Map<string, number>();
+
+    transformedChartData.forEach((item) => {
+      refundsByPeriod.set(item.period, item.refundedOrders || 0);
+    });
+
+    (revenueData?.refundDetails || []).forEach((refund) => {
+      if (!refund.refundedAt) return;
+      const date = new Date(refund.refundedAt);
+      if (Number.isNaN(date.getTime())) return;
+
+      const key =
+        chartGranularity === "day"
+          ? formatDateLocal(date)
+          : chartGranularity === "month"
+            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+            : `${date.getFullYear()}`;
+
+      if (refundsByPeriod.has(key)) {
+        refundsByPeriod.set(key, (refundsByPeriod.get(key) || 0) + 1);
+      }
+    });
+
+    return transformedChartData.map((item) => ({
+      ...item,
+      refundedOrders: refundsByPeriod.get(item.period) || 0,
+    }));
+  }, [transformedChartData, revenueData?.refundDetails, chartGranularity]);
 
   useEffect(() => {
     fetchRevenueData();
@@ -380,46 +414,44 @@ const TeacherRevenuePage: React.FC = () => {
       </div>
 
       {/* Refund Stats Card */}
-      {revenueData.totalReversed > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Thông tin hoàn tiền
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">
-                    Tổng tiền đã hoàn trả
-                  </p>
-                  <p className="text-2xl font-bold text-red-600">
-                    {formatShortCurrency(revenueData.totalReversed)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formatCurrency(revenueData.totalReversed)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">
-                    Số đơn hàng hoàn tiền
-                  </p>
-                  <p className="text-2xl font-bold text-red-600">
-                    {revenueData.totalRefundedOrders}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {revenueData.totalOrders > 0
-                      ? `${((revenueData.totalRefundedOrders / revenueData.totalOrders) * 100).toFixed(1)}% tổng đơn hàng`
-                      : "0.0% tổng đơn hàng"}
-                  </p>
-                </div>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Thông tin hoàn tiền
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Tổng tiền đã hoàn trả
+                </p>
+                <p className="text-2xl font-bold text-red-600">
+                  {formatShortCurrency(revenueData.totalReversed || 0)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formatCurrency(revenueData.totalReversed || 0)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Số đơn hàng hoàn tiền
+                </p>
+                <p className="text-2xl font-bold text-red-600">
+                  {revenueData.totalRefundedOrders || 0}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {revenueData.totalOrders > 0
+                    ? `${(((revenueData.totalRefundedOrders || 0) / revenueData.totalOrders) * 100).toFixed(1)}% tổng đơn hàng`
+                    : "0.0% tổng đơn hàng"}
+                </p>
               </div>
             </div>
-            <div className="bg-red-100 p-3 rounded-lg">
-              <AlertCircle className="w-6 h-6 text-red-600" />
-            </div>
+          </div>
+          <div className="bg-red-100 p-3 rounded-lg">
+            <AlertCircle className="w-6 h-6 text-red-600" />
           </div>
         </div>
-      )}
+      </div>
 
       {/* Revenue Chart */}
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -427,16 +459,23 @@ const TeacherRevenuePage: React.FC = () => {
           {getChartTitle(chartGranularity)}
         </h3>
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={transformedChartData}>
+          <LineChart data={chartDataWithRefunds}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="period"
               tickFormatter={(value) => formatChartLabel(value, chartGranularity)}
             />
             <YAxis
+              yAxisId="left"
               tickFormatter={(value) => formatShortCurrency(value)}
               width={80}
               domain={[0, 'auto']}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[0, 'auto']}
+              width={60}
             />
             <Tooltip
               labelFormatter={(value) => formatChartLabel(value, chartGranularity)}
@@ -446,6 +485,9 @@ const TeacherRevenuePage: React.FC = () => {
                 }
                 if (name === "Đơn hàng") {
                   return [`${value} đơn`, "Đơn hàng"];
+                }
+                if (name === "Đơn hoàn trả") {
+                  return [`${value} đơn`, "Đơn hoàn trả"];
                 }
                 return [value, name];
               }}
@@ -459,6 +501,7 @@ const TeacherRevenuePage: React.FC = () => {
               dot={{ r: 5 }}
               activeDot={{ r: 7 }}
               name="Doanh thu"
+              yAxisId="left"
             />
             <Line
               type="monotone"
@@ -467,6 +510,17 @@ const TeacherRevenuePage: React.FC = () => {
               strokeWidth={2}
               dot={{ r: 4 }}
               name="Đơn hàng"
+              yAxisId="right"
+            />
+            <Line
+              type="monotone"
+              dataKey="refundedOrders"
+              stroke="#ef4444"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              strokeDasharray="5 5"
+              name="Đơn hoàn trả"
+              yAxisId="right"
             />
           </LineChart>
         </ResponsiveContainer>
