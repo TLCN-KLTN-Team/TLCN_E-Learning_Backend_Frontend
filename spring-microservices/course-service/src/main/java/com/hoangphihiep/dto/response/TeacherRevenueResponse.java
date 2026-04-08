@@ -60,6 +60,7 @@ public class TeacherRevenueResponse {
         private String month; // Format: "2024-01"
         private BigDecimal revenue;
         private Integer orderCount; // Changed from orders
+        private Integer refundedOrders;
     }
     
     @Data

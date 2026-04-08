@@ -2,6 +2,7 @@ export interface MonthlyRevenueDetail {
     month: string; // Format: "yyyy-MM"
     revenue: number;
     orderCount: number;
+    refundedOrders?: number;
 }
 
 export interface CourseRevenueDetail {

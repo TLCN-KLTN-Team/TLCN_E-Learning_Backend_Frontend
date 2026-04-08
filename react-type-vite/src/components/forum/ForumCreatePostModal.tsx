@@ -19,8 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Check, ChevronsUpDown, Plus, X } from 'lucide-react';
-import { Editor } from '@tinymce/tinymce-react';
 import { cn } from '@/lib/utils';
+import RichTextEditor from '@/components/shared/RichTextEditor';
 
 interface ForumCreatePostModalProps {
     children: React.ReactNode;
@@ -127,6 +127,7 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                 content: formData.content,
                 categoryId: finalCategoryId,
                 tags: tags,
+                authorUsername: user?.username,
                 authorName: user ? `${user.firstName} ${user.lastName}` : 'Người dùng ẩn danh',
                 authorAvatar: user?.avatarUrl || ''
             });
@@ -155,7 +156,10 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                 {children}
             </DialogTrigger>
             {/* Thêm overflow-visible để tránh cắt dropdown nếu không dùng Portal, nhưng thường Popover dùng Portal nên z-index quan trọng hơn */}
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto z-[50]">
+            <DialogContent
+                overlayClassName="bg-transparent"
+                className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto z-[10000]"
+            >
                 <DialogHeader>
                     <DialogTitle>Tạo bài viết mới</DialogTitle>
                     <DialogDescription>
@@ -176,7 +180,7 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
 
                     <div className="grid gap-2">
                         <Label>Chủ đề</Label>
-                        <Popover open={openCombobox} onOpenChange={setOpenCombobox} modal={true}>
+                        <Popover open={openCombobox} onOpenChange={setOpenCombobox} modal={false}>
                             <PopoverTrigger asChild>
                                 <Button
                                     type="button"
@@ -201,7 +205,8 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                                 4. border & shadow: Tách biệt rõ ràng khỏi textarea
                             */}
                             <PopoverContent
-                                className="w-[--radix-popover-trigger-width] p-0 bg-white dark:bg-slate-950 z-[9999] shadow-xl border border-slate-200"
+                                portal={false}
+                                className="w-[--radix-popover-trigger-width] p-0 bg-white dark:bg-slate-950 z-[10050] shadow-xl border border-slate-200"
                                 align="start"
                                 sideOffset={4}
                             >
@@ -218,19 +223,20 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                                         className="mb-2 h-9"
                                     />
                                     <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                        {searchTerm && !categories.some(c => c.name.toLowerCase() === searchTerm.toLowerCase()) && (
+                                        {searchTerm.trim() && !categories.some(c => c.name.toLowerCase() === searchTerm.trim().toLowerCase()) && (
                                             <div
                                                 className="flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-slate-100 text-blue-600"
-                                                onMouseDown={(e) => {
+                                                onClick={(e) => {
                                                     e.stopPropagation();
-                                                    e.preventDefault();
-                                                    setNewCategoryName(searchTerm);
+                                                    const normalized = searchTerm.trim();
+                                                    if (!normalized) return;
+                                                    setNewCategoryName(normalized);
                                                     setFormData({ ...formData, categoryId: '' });
                                                     setOpenCombobox(false);
                                                 }}
                                             >
                                                 <Plus className="h-4 w-4" />
-                                                Tạo chủ đề "{searchTerm}"
+                                                Tạo chủ đề "{searchTerm.trim()}"
                                             </div>
                                         )}
 
@@ -241,9 +247,8 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                                                     "flex items-center justify-between px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-slate-100",
                                                     formData.categoryId === category.id ? "bg-slate-100" : ""
                                                 )}
-                                                onMouseDown={(e) => {
+                                                onClick={(e) => {
                                                     e.stopPropagation();
-                                                    e.preventDefault();
                                                     console.log("Selected category:", category);
                                                     setFormData({ ...formData, categoryId: category.id });
                                                     setNewCategoryName(null);
@@ -278,6 +283,8 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                                         type="button"
                                         onClick={() => removeTag(tag)}
                                         className="text-gray-400 hover:text-red-500 ml-1"
+                                        title="Xóa thẻ"
+                                        aria-label="Xóa thẻ"
                                     >
                                         <X size={14} />
                                     </button>
@@ -329,30 +336,16 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
 
                     <div className="grid gap-2">
                         <Label htmlFor="content">Nội dung</Label>
-                        <Editor
-                            apiKey={import.meta.env.VITE_API_KEY_TINY}
+                        <RichTextEditor
                             value={formData.content}
-                            init={{
-                                height: 300,
-                                menubar: false,
-                                plugins: [
-                                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                                ],
-                                toolbar: 'undo redo | blocks | ' +
-                                    'bold italic forecolor | alignleft aligncenter ' +
-                                    'alignright alignjustify | bullist numlist outdent indent | ' +
-                                    'removeformat | help',
-                                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                                placeholder: "Chia sẻ nội dung của bạn..."
-                            }}
-                            onEditorChange={(content) => {
+                            onChange={(content) => {
                                 setFormData(prev => ({
                                     ...prev,
                                     content: content
                                 }))
                             }}
+                            placeholder="Chia sẻ nội dung của bạn..."
+                            minHeight="300px"
                         />
                     </div>
 

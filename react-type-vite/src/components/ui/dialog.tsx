@@ -48,19 +48,21 @@ function DialogOverlay({
 
 function DialogContent({
   className,
+  overlayClassName,
   children,
   showCloseButton = true,
   style,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  overlayClassName?: string
 }) {
   // Extract zIndex from style if present, apply to both overlay and content
   const overlayStyle = style?.zIndex ? { zIndex: style.zIndex } : undefined
 
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay style={overlayStyle} />
+      <DialogOverlay className={overlayClassName} style={overlayStyle} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(

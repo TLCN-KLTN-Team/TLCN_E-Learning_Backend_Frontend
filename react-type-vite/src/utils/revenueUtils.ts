@@ -1,6 +1,17 @@
 import type { TimeRange } from "@/types/revenue.types";
 
 /**
+ * Format date to "yyyy-MM-dd" using local date (not UTC)
+ * Avoids timezone issues with toISOString()
+ */
+export const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Calculate date range based on time range selection
  * @param range - Time range type
  * @param selectedMonth - Selected month in "yyyy-MM" format (for select-month)
@@ -31,10 +42,12 @@ export const getDateRange = (
         // selectedMonth format: "yyyy-MM"
         const [year, month] = selectedMonth.split("-");
         const monthStart = new Date(parseInt(year), parseInt(month) - 1, 1);
-        const monthEnd = new Date(parseInt(year), parseInt(month), 0);
+        // Get last day of month: create first day of next month, then subtract 1 day
+        const firstOfNextMonth = new Date(parseInt(year), parseInt(month), 1);
+        const monthEnd = new Date(firstOfNextMonth.getTime() - 24 * 60 * 60 * 1000);
         return {
-          startDate: monthStart.toISOString().split("T")[0],
-          endDate: monthEnd.toISOString().split("T")[0],
+          startDate: formatDateLocal(monthStart),
+          endDate: formatDateLocal(monthEnd),
         };
       }
       break;
@@ -49,8 +62,8 @@ export const getDateRange = (
         const yearStart = new Date(parseInt(selectedYear), 0, 1);
         const yearEnd = new Date(parseInt(selectedYear), 11, 31);
         return {
-          startDate: yearStart.toISOString().split("T")[0],
-          endDate: yearEnd.toISOString().split("T")[0],
+          startDate: formatDateLocal(yearStart),
+          endDate: formatDateLocal(yearEnd),
         };
       }
       break;
@@ -61,13 +74,9 @@ export const getDateRange = (
       break;
   }
 
-  const formatDate = (date: Date): string => {
-    return date.toISOString().split("T")[0];
-  };
-
   return {
-    startDate: formatDate(start),
-    endDate: formatDate(end),
+    startDate: formatDateLocal(start),
+    endDate: formatDateLocal(end),
   };
 };
 
@@ -259,7 +268,7 @@ export const transformRevenueDataByGranularity = <T extends { month: string; [ke
 export const formatChartLabel = (period: string, granularity: ChartGranularity): string => {
   if (granularity === 'day') {
     // yyyy-MM-dd -> dd/MM
-    const [year, month, day] = period.split('-');
+    const [, month, day] = period.split('-');
     return `${day}/${month}`;
   }
   

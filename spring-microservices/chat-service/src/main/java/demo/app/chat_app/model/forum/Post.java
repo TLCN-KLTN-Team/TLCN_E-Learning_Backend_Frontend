@@ -23,6 +23,7 @@ public class Post {
     private String title;
     private String content; // HTML/Markdown
     private String userId;
+    private String authorUsername;
     private String authorName;
     private String authorAvatar;
     private String categoryId;
@@ -40,4 +41,14 @@ public class Post {
     // Cached counters for performance
     private long score; // upvotes - downvotes
     private long commentCount;
+    private boolean hundredUpvotesNotified;
+    
+    // Moderation fields
+    private boolean isPinned; // Pinned by SuperAdmin
+    private boolean isLocked; // Comments disabled by SuperAdmin
+    private ModerationStatus moderationStatus; // Approval status
+    
+    // Soft delete for audit trail
+    private boolean deleted;
+    private LocalDateTime deletedAt;
 }

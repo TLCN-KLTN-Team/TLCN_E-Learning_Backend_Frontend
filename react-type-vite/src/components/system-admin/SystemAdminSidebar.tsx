@@ -11,6 +11,7 @@ import {
   X,
   UserCog,
   Undo2,
+  MessageSquare,
 } from "lucide-react";
 import type React from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -64,6 +65,12 @@ const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
       label: "Yêu cầu hoàn tiền",
       icon: Undo2,
       path: "/system-admin/refunds",
+    },
+    {
+      id: "forum",
+      label: "Diễn Đàn",
+      icon: MessageSquare,
+      path: "/forum",
     },
     {
       id: "edit-profile",

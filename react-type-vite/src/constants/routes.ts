@@ -121,6 +121,7 @@ export const WORKSPACE_ROUTES = {
 export const FORUM_ROUTES = {
   HOME: "/forum",
   CREATE: "/forum/create",
+  BOOKMARKS: "/forum/bookmarks",
 } as const;
 
 // ============================================
