@@ -51,6 +51,16 @@ public class EducationUnitManagementController {
                 .build();
     }
 
+        @PutMapping("/reverify-signature/{unitId}")
+        @PreAuthorize("hasRole('SUPER_ADMIN')")
+        public ApiResponse<Void> reverifySignature(@PathVariable Integer unitId) {
+                educationalUnitService.reverifyEducationalUnitSignature(unitId);
+
+                return ApiResponse.<Void>builder()
+                                .message("Xác thực lại chữ ký số thành công")
+                                .build();
+        }
+
     @PutMapping(value = "/reject/{unitId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<Void> rejectEducationalUnit(@PathVariable Integer unitId,

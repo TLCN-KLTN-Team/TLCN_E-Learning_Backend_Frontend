@@ -17,6 +17,7 @@ import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.*;
 import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.EducationalUnitStatus;
+import com.hoangphihiep.utils.SignatureVerificationStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,7 +25,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -48,6 +52,8 @@ public class EducationalUnitService {
     private final DepartmentRepository departmentRepo;
     private final CurrencyUtils currencyUtils;
     private final ExpertRepository expertRepository;
+    private final BusinessLicenseSignatureVerificationService businessLicenseSignatureVerificationService;
+    private final RestTemplate restTemplate;
 
     public List<EducationalUnitCardResponse> getAllEducationalUnits() {
         List<EducationalUnit> educationalUnits = educationalUnitRepository.findAll();
@@ -244,6 +250,18 @@ public class EducationalUnitService {
                     .email(edu.getEmail())
                     .website(edu.getWebsite())
                     .logo(edu.getLogo())
+                    .businessLicense(edu.getBusinessLicense())
+                    .businessLicenseOriginal(edu.getBusinessLicenseOriginal())
+                    .businessLicenseSigned(edu.getBusinessLicenseSigned())
+                    .businessLicenseOriginalHash(edu.getBusinessLicenseOriginalHash())
+                    .businessLicenseSignedHash(edu.getBusinessLicenseSignedHash())
+                    .signatureStatus(edu.getSignatureStatus() != null ? edu.getSignatureStatus().getValue() : SignatureVerificationStatus.UNVERIFIED.getValue())
+                    .signatureErrorCode(edu.getSignatureErrorCode())
+                    .signatureErrorReason(edu.getSignatureErrorReason())
+                    .signatureWarning(edu.getSignatureWarning())
+                    .signatureRevocationStatus(edu.getSignatureRevocationStatus())
+                    .signatureVerifiedAt(edu.getSignatureVerifiedAt())
+                    .certificateExpiryDate(edu.getCertificateExpiryDate())
                     .description(edu.getDescription())
                     .establishedYear(edu.getEstablishedYear())
                     .status(edu.getStatus().getStatus())
@@ -339,6 +357,18 @@ public class EducationalUnitService {
                 .email(savedUnit.getEmail())
                 .website(savedUnit.getWebsite())
                 .logo(savedUnit.getLogo())
+            .businessLicense(savedUnit.getBusinessLicense())
+            .businessLicenseOriginal(savedUnit.getBusinessLicenseOriginal())
+            .businessLicenseSigned(savedUnit.getBusinessLicenseSigned())
+                .businessLicenseOriginalHash(savedUnit.getBusinessLicenseOriginalHash())
+                .businessLicenseSignedHash(savedUnit.getBusinessLicenseSignedHash())
+            .signatureStatus(savedUnit.getSignatureStatus() != null ? savedUnit.getSignatureStatus().getValue() : SignatureVerificationStatus.UNVERIFIED.getValue())
+                .signatureErrorCode(savedUnit.getSignatureErrorCode())
+                .signatureErrorReason(savedUnit.getSignatureErrorReason())
+                .signatureWarning(savedUnit.getSignatureWarning())
+                .signatureRevocationStatus(savedUnit.getSignatureRevocationStatus())
+                .signatureVerifiedAt(savedUnit.getSignatureVerifiedAt())
+                .certificateExpiryDate(savedUnit.getCertificateExpiryDate())
                 .description(savedUnit.getDescription())
                 .establishedYear(savedUnit.getEstablishedYear())
                 .status(savedUnit.getStatus().getStatus())
@@ -479,15 +509,52 @@ public class EducationalUnitService {
                 }
             }
 
-            // 3. Upload business license if provided
-            String businessLicenseUrl = null;
-            if (request.getBusinessLicense() != null && !request.getBusinessLicense().isEmpty()) {
-                log.info("Uploading business license file");
+            MultipartFile signedLicense = getSignedLicenseFile(request);
+            MultipartFile originalLicense = request.getBusinessLicenseOriginal();
+
+            if (signedLicense == null || signedLicense.isEmpty()) {
+                throw new RuntimeException("Vui lòng tải lên file PDF giấy phép hoạt động đã ký số.");
+            }
+
+            if (!isPdfFile(signedLicense)) {
+                throw new RuntimeException("Giấy phép hoạt động đã ký số phải là định dạng PDF.");
+            }
+
+            if (originalLicense != null && !originalLicense.isEmpty() && !isPdfFile(originalLicense)) {
+                throw new RuntimeException("Giấy phép hoạt động gốc phải là định dạng PDF.");
+            }
+
+                BusinessLicenseSignatureVerificationService.SignatureVerificationResult verificationResult =
+                    businessLicenseSignatureVerificationService.verify(signedLicense);
+
+                    if (verificationResult.getStatus() != SignatureVerificationStatus.VERIFIED_UNMODIFIED) {
+                throw new RuntimeException(verificationResult.getErrorReason() != null
+                    ? verificationResult.getErrorReason()
+                    : "Không thể xác thực chữ ký số trong giấy phép đã nộp.");
+                }
+
+            // 3. Upload signed/original business license files
+            String businessLicenseSignedUrl = null;
+            String businessLicenseOriginalUrl = null;
+            String businessLicenseSignedHash = computeSha256(signedLicense);
+            String businessLicenseOriginalHash = computeSha256(originalLicense);
+
+            log.info("Uploading signed business license file");
+            try {
+                Map<String, String> signedUploadResponse = fileHandlerRepository.uploadFile(signedLicense);
+                businessLicenseSignedUrl = signedUploadResponse.get("url");
+            } catch (Exception e) {
+                log.error("Error uploading signed business license: {}", e.getMessage(), e);
+                throw new RuntimeException("Không thể tải lên giấy phép đã ký số. Vui lòng thử lại.");
+            }
+
+            if (originalLicense != null && !originalLicense.isEmpty()) {
+                log.info("Uploading original business license file");
                 try {
-                    Map<String, String> licenseUploadResponse = fileHandlerRepository.uploadFile(request.getBusinessLicense());
-                    businessLicenseUrl = licenseUploadResponse.get("url");
+                    Map<String, String> originalUploadResponse = fileHandlerRepository.uploadFile(originalLicense);
+                    businessLicenseOriginalUrl = originalUploadResponse.get("url");
                 } catch (Exception e) {
-                    log.error("Error uploading business license: {}", e.getMessage(), e);
+                    log.error("Error uploading original business license: {}", e.getMessage(), e);
                 }
             }
 
@@ -503,7 +570,18 @@ public class EducationalUnitService {
                     .description(request.getDescription())
                     .establishedYear(request.getEstablishedYear())
                     .logo(logoUrl) // Set logo URL
-                    .businessLicense(businessLicenseUrl) // Set business license URL (you'll need to add this field)
+                    .businessLicense(businessLicenseSignedUrl)
+                    .businessLicenseSigned(businessLicenseSignedUrl)
+                    .businessLicenseOriginal(businessLicenseOriginalUrl)
+                    .businessLicenseSignedHash(businessLicenseSignedHash)
+                    .businessLicenseOriginalHash(businessLicenseOriginalHash)
+                    .signatureStatus(verificationResult.getStatus())
+                    .signatureErrorCode(verificationResult.getErrorCode())
+                    .signatureErrorReason(verificationResult.getErrorReason())
+                    .signatureWarning(verificationResult.getWarning())
+                    .signatureRevocationStatus(verificationResult.getRevocationStatus())
+                    .signatureVerifiedAt(verificationResult.getVerifiedAt())
+                    .certificateExpiryDate(verificationResult.getCertificateExpiryDate())
                     .idAdmin(adminUserId)
                     .status(EducationalUnitStatus.PENDING)
                     .createdAt(new Date())
@@ -525,7 +603,18 @@ public class EducationalUnitService {
                     .email(savedUnit.getEmail())
                     .website(savedUnit.getWebsite())
                     .logo(logoUrl)
-                    .businessLicense(businessLicenseUrl)
+                    .businessLicense(savedUnit.getBusinessLicense())
+                    .businessLicenseOriginal(savedUnit.getBusinessLicenseOriginal())
+                    .businessLicenseSigned(savedUnit.getBusinessLicenseSigned())
+                    .businessLicenseOriginalHash(savedUnit.getBusinessLicenseOriginalHash())
+                    .businessLicenseSignedHash(savedUnit.getBusinessLicenseSignedHash())
+                    .signatureStatus(savedUnit.getSignatureStatus() != null ? savedUnit.getSignatureStatus().getValue() : SignatureVerificationStatus.UNVERIFIED.getValue())
+                    .signatureErrorCode(savedUnit.getSignatureErrorCode())
+                    .signatureErrorReason(savedUnit.getSignatureErrorReason())
+                    .signatureWarning(savedUnit.getSignatureWarning())
+                    .signatureRevocationStatus(savedUnit.getSignatureRevocationStatus())
+                    .signatureVerifiedAt(savedUnit.getSignatureVerifiedAt())
+                    .certificateExpiryDate(savedUnit.getCertificateExpiryDate())
                     .description(savedUnit.getDescription())
                     .establishedYear(savedUnit.getEstablishedYear())
                     .status(savedUnit.getStatus().getStatus())
@@ -539,14 +628,173 @@ public class EducationalUnitService {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error during training unit registration: {}", e.getMessage(), e);
-            // Only throw a generic error for truly unexpected exceptions
+            // Keep business validation/runtime message so frontend can show actionable feedback.
+            if (e instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+
+            // Only throw a generic error for truly unexpected checked exceptions.
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
+    }
+
+    private MultipartFile getSignedLicenseFile(EducationalUnitRegistrationRequest request) {
+        if (request.getBusinessLicenseSigned() != null && !request.getBusinessLicenseSigned().isEmpty()) {
+            return request.getBusinessLicenseSigned();
+        }
+
+        if (request.getBusinessLicense() != null && !request.getBusinessLicense().isEmpty()) {
+            return request.getBusinessLicense();
+        }
+
+        return null;
+    }
+
+    private boolean isPdfFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return false;
+        }
+
+        String contentType = file.getContentType();
+        if (contentType != null && contentType.equalsIgnoreCase("application/pdf")) {
+            return true;
+        }
+
+        String fileName = file.getOriginalFilename();
+        return fileName != null && fileName.toLowerCase().endsWith(".pdf");
+    }
+
+    private String computeSha256(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(file.getBytes());
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            log.warn("Cannot compute SHA-256 for uploaded file {}: {}", file.getOriginalFilename(), ex.getMessage());
+            return null;
+        }
+    }
+
+    private String computeSha256(byte[] content) {
+        if (content == null || content.length == 0) {
+            return null;
+        }
+
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(content);
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            log.warn("Cannot compute SHA-256 for byte content: {}", ex.getMessage());
+            return null;
+        }
+    }
+
+    private String appendWarning(String currentWarning, String extraWarning) {
+        if (extraWarning == null || extraWarning.isBlank()) {
+            return currentWarning;
+        }
+
+        if (currentWarning == null || currentWarning.isBlank()) {
+            return extraWarning;
+        }
+
+        return currentWarning + " " + extraWarning;
+    }
+
+    @Transactional
+    public void reverifyEducationalUnitSignature(Integer unitId) {
+        EducationalUnit educationalUnit = educationalUnitRepository.findById(unitId)
+                .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        String signedUrl = educationalUnit.getBusinessLicenseSigned() != null
+                ? educationalUnit.getBusinessLicenseSigned()
+                : educationalUnit.getBusinessLicense();
+
+        if (signedUrl == null || signedUrl.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        byte[] signedBytes;
+        try {
+            signedBytes = restTemplate.getForObject(signedUrl, byte[].class);
+        } catch (Exception ex) {
+            log.error("Cannot download signed license for unit {}: {}", unitId, ex.getMessage(), ex);
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        if (signedBytes == null || signedBytes.length == 0) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        var verificationResult = businessLicenseSignatureVerificationService.verify(signedBytes, "reverify-signed-license.pdf");
+
+        String warning = verificationResult.getWarning();
+        String signedHash = computeSha256(signedBytes);
+
+        if (educationalUnit.getBusinessLicenseSignedHash() != null
+                && signedHash != null
+                && !educationalUnit.getBusinessLicenseSignedHash().equalsIgnoreCase(signedHash)) {
+            warning = appendWarning(warning, "Hash của bản signed đã thay đổi so với lần lưu trước.");
+        }
+
+        educationalUnit.setBusinessLicenseSignedHash(signedHash);
+        educationalUnit.setSignatureStatus(verificationResult.getStatus());
+        educationalUnit.setSignatureErrorCode(verificationResult.getErrorCode());
+        educationalUnit.setSignatureErrorReason(verificationResult.getErrorReason());
+        educationalUnit.setSignatureWarning(warning);
+        educationalUnit.setSignatureRevocationStatus(verificationResult.getRevocationStatus());
+        educationalUnit.setSignatureVerifiedAt(verificationResult.getVerifiedAt());
+        educationalUnit.setCertificateExpiryDate(verificationResult.getCertificateExpiryDate());
+
+        String originalUrl = educationalUnit.getBusinessLicenseOriginal();
+        if (originalUrl != null && !originalUrl.isBlank()) {
+            try {
+                byte[] originalBytes = restTemplate.getForObject(originalUrl, byte[].class);
+                String originalHash = computeSha256(originalBytes);
+
+                if (educationalUnit.getBusinessLicenseOriginalHash() != null
+                        && originalHash != null
+                        && !educationalUnit.getBusinessLicenseOriginalHash().equalsIgnoreCase(originalHash)) {
+                    educationalUnit.setSignatureWarning(appendWarning(
+                            educationalUnit.getSignatureWarning(),
+                            "Hash của bản gốc đã thay đổi so với lần lưu trước."
+                    ));
+                }
+
+                educationalUnit.setBusinessLicenseOriginalHash(originalHash);
+            } catch (Exception ex) {
+                log.warn("Cannot re-download original license for unit {}: {}", unitId, ex.getMessage());
+                educationalUnit.setSignatureWarning(appendWarning(
+                        educationalUnit.getSignatureWarning(),
+                        "Không thể tải lại bản gốc để kiểm tra hash."
+                ));
+            }
+        }
+
+        educationalUnitRepository.save(educationalUnit);
     }
 
     public void approveEducationalUnit(Integer id){
         EducationalUnit educationalUnit = educationalUnitRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
+
+        SignatureVerificationStatus signatureStatus = educationalUnit.getSignatureStatus();
+        if (signatureStatus == null || !signatureStatus.canApprove()) {
+            throw new AppException(ErrorCode.EDUCATIONAL_UNIT_SIGNATURE_NOT_VERIFIED);
+        }
 
         educationalUnit.setStatus(EducationalUnitStatus.ACTIVE);
 

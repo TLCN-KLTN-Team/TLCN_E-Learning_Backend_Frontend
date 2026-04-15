@@ -21,6 +21,17 @@ public class EducationUnitRegistrationResponse {
     private String website;
     private String logo;
     private String businessLicense;
+    private String businessLicenseOriginal;
+    private String businessLicenseSigned;
+    private String businessLicenseOriginalHash;
+    private String businessLicenseSignedHash;
+    private String signatureStatus;
+    private String signatureErrorCode;
+    private String signatureErrorReason;
+    private String signatureWarning;
+    private String signatureRevocationStatus;
+    private Date signatureVerifiedAt;
+    private Date certificateExpiryDate;
     private String description;
     private Integer establishedYear;
     private String status;

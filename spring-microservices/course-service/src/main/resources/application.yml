@@ -155,3 +155,8 @@ blockchain:
   private-key: ${BLOCKCHAIN_PRIVATE_KEY:}
   contract-address: ${BLOCKCHAIN_CONTRACT_ADDRESS:}
   chain-id: ${BLOCKCHAIN_CHAIN_ID:1337}
+
+signature-verification:
+  trusted-issuer-keywords: ${SIGNATURE_TRUSTED_ISSUERS:NEAC,VNPT,VIETTEL,FPT}
+  revocation-timeout-ms: ${SIGNATURE_REVOCATION_TIMEOUT_MS:3000}
+  revocation-timeout-policy: ${SIGNATURE_REVOCATION_TIMEOUT_POLICY:MANUAL_REVIEW}

@@ -13,6 +13,8 @@ import {
   MessageSquareReply,
   Building,
   Sigma,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { getStatusStyle, unitStatus } from "../data/UnitStatus";
 import React, { useState } from "react";
@@ -20,6 +22,7 @@ import type { EducationalUnitResponse } from "@/services/api/response/educationa
 import { toast } from "react-toastify";
 import {
   approveEducationalUnit,
+  reverifyEducationalUnitSignature,
   rejectEducationalUnit,
   sendFeedbackToEducationalUnit,
   changeEducationalUnitStatus,
@@ -57,6 +60,19 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Lỗi từ chối đơn vị";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleReverifySignature = async () => {
+    try {
+      await reverifyEducationalUnitSignature(unit.id);
+      toast.success("Xác thực lại chữ ký số thành công");
+      window.location.reload();
+      onClose();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Lỗi xác thực lại chữ ký số";
       toast.error(errorMessage);
     }
   };
@@ -120,6 +136,34 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
 
   if (!isOpen || !unit) return null;
 
+  const signatureStatusLabelMap: Record<string, string> = {
+    VERIFIED_UNMODIFIED: "Đã xác thực - Không bị chỉnh sửa",
+    VERIFIED_BUT_MODIFIED: "Đã ký nhưng tài liệu đã bị chỉnh sửa",
+    INVALID_UNTRUSTED_CA: "Không tin cậy CA",
+    INVALID_REVOKED: "Chứng thư đã bị thu hồi",
+    INVALID_EXPIRED: "Chứng thư đã hết hạn",
+    INVALID_NO_TIMESTAMP: "Thiếu timestamp TSA",
+    INVALID_PARSE_ERROR: "Không đọc được chữ ký số",
+    LEGACY_UNVERIFIED: "Hồ sơ cũ chưa xác thực",
+    INVALID: "Không hợp lệ",
+    UNVERIFIED: "Chưa xác thực",
+  };
+
+  const rawSignatureStatus = unit.signatureStatus || "UNVERIFIED";
+  const signatureStatusLabel =
+    signatureStatusLabelMap[rawSignatureStatus] || rawSignatureStatus;
+  const signatureStatusClass =
+    rawSignatureStatus === "VERIFIED_UNMODIFIED"
+      ? "bg-green-100 text-green-700"
+      : rawSignatureStatus === "VERIFIED_BUT_MODIFIED"
+      ? "bg-orange-100 text-orange-700"
+      : rawSignatureStatus === "UNVERIFIED"
+      ? "bg-amber-100 text-amber-700"
+      : "bg-red-100 text-red-700";
+  const canApproveBySignature = rawSignatureStatus === "VERIFIED_UNMODIFIED";
+  const signedLicenseUrl = unit.businessLicenseSigned || unit.businessLicense;
+  const originalLicenseUrl = unit.businessLicenseOriginal;
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
       {/* Backdrop */}
@@ -138,6 +182,8 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Đóng cửa sổ"
+            title="Đóng"
           >
             <X className="w-6 h-6" />
           </button>
@@ -274,20 +320,76 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
               <FileText className="w-5 h-5 text-blue-600" />
               Giấy tờ kèm theo
             </h4>
+            <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
+              <div className="flex items-center gap-2">
+                {rawSignatureStatus === "VERIFIED_UNMODIFIED" ? (
+                  <ShieldCheck className="w-5 h-5 text-green-600" />
+                ) : (
+                  <ShieldAlert className="w-5 h-5 text-amber-600" />
+                )}
+                <span className="text-sm font-medium text-gray-700">Trạng thái chữ ký số:</span>
+                <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${signatureStatusClass}`}>
+                  {signatureStatusLabel}
+                </span>
+              </div>
+              {unit.signatureWarning && (
+                <p className="text-xs text-amber-700 mt-2">Cảnh báo: {unit.signatureWarning}</p>
+              )}
+              {unit.signatureErrorReason && (
+                <p className="text-xs text-red-700 mt-2">Lý do lỗi: {unit.signatureErrorReason}</p>
+              )}
+              {unit.signatureRevocationStatus && (
+                <p className="text-xs text-slate-600 mt-2">
+                  Trạng thái OCSP/CRL: {unit.signatureRevocationStatus}
+                </p>
+              )}
+              {unit.signatureVerifiedAt && (
+                <p className="text-xs text-slate-600 mt-2">
+                  Thời điểm xác thực: {new Date(unit.signatureVerifiedAt).toLocaleString("vi-VN")}
+                </p>
+              )}
+              {unit.certificateExpiryDate && (
+                <p className="text-xs text-slate-600 mt-2">
+                  Hết hạn chứng thư: {new Date(unit.certificateExpiryDate).toLocaleDateString("vi-VN")}
+                </p>
+              )}
+              {(unit.businessLicenseSignedHash || unit.businessLicenseOriginalHash) && (
+                <div className="mt-3 rounded-md bg-slate-50 border border-slate-200 p-3">
+                  <p className="text-xs font-semibold text-slate-700">SHA-256 Integrity</p>
+                  {unit.businessLicenseSignedHash && (
+                    <p className="text-xs text-slate-600 mt-1 break-all">
+                      Signed PDF: <span className="font-mono">{unit.businessLicenseSignedHash}</span>
+                    </p>
+                  )}
+                  {unit.businessLicenseOriginalHash && (
+                    <p className="text-xs text-slate-600 mt-1 break-all">
+                      Original PDF: <span className="font-mono">{unit.businessLicenseOriginalHash}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="bg-gray-50 p-4 rounded-lg border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Copyright className="w-5 h-5 text-gray-600" />
                   <div>
                     <p className="font-medium text-gray-900">
-                      Giấy phép hoạt động
+                      Giấy phép hoạt động (đã ký số)
                     </p>
                     <p className="text-sm text-gray-600">
-                      Tài liệu chứng nhận hoạt động kinh doanh
+                      Tài liệu PDF đã ký số để hệ thống kiểm tra xác thực
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleReverifySignature}
+                    className="flex items-center gap-1 px-3 py-2 text-sm bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition-colors"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    Xác thực lại
+                  </button>
                   <button
                     onClick={() => setShowPreview(!showPreview)}
                     className="flex items-center gap-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
@@ -296,14 +398,25 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                     {showPreview ? "Ẩn preview" : "Xem preview"}
                   </button>
                   <a
-                    href={unit.businessLicense}
+                    href={signedLicenseUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    Mở trong tab mới
+                    Mở bản đã ký
                   </a>
+                  {originalLicenseUrl && (
+                    <a
+                      href={originalLicenseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 px-3 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Mở bản gốc
+                    </a>
+                  )}
                 </div>
               </div>
 
@@ -314,15 +427,15 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                     <h5 className="font-medium text-gray-900 mb-3">
                       Preview tài liệu:
                     </h5>
-                    {unit.businessLicense ? (
+                    {signedLicenseUrl ? (
                       <div className="space-y-3">
                         {/* Check if it's an image */}
                         {/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
-                          unit.businessLicense
+                          signedLicenseUrl
                         ) ? (
                           <div className="max-w-full">
                             <img
-                              src={unit.businessLicense}
+                              src={signedLicenseUrl}
                               alt="Giấy phép hoạt động"
                               className="max-w-full h-auto max-h-96 rounded border shadow-sm"
                               onError={(e) => {
@@ -362,7 +475,7 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                           <p className="text-xs text-gray-500">
                             URL:{" "}
                             <span className="font-mono break-all">
-                              {unit.businessLicense}
+                              {signedLicenseUrl}
                             </span>
                           </p>
                         </div>
@@ -442,7 +555,13 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
               </button>
               <button
                 onClick={handleApprove}
-                className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                disabled={!canApproveBySignature}
+                title={
+                  canApproveBySignature
+                    ? "Duyệt đơn vị"
+                    : "Chỉ có thể duyệt khi chữ ký số ở trạng thái VERIFIED_UNMODIFIED"
+                }
+                className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 Duyệt
               </button>

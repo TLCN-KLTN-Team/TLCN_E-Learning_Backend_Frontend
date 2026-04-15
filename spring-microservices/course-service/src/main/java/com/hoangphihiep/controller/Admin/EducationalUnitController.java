@@ -53,11 +53,15 @@ public class EducationalUnitController {
     public ResponseEntity<ApiResponse<EducationUnitRegistrationResponse>> registerEducationUnit(
             @RequestPart("data") @Valid EducationalUnitRegistrationRequest request,
             @RequestPart(value = "logo", required = false) MultipartFile logo,
-            @RequestPart(value = "businessLicense", required = false) MultipartFile businessLicense) {
+            @RequestPart(value = "businessLicense", required = false) MultipartFile businessLicense,
+            @RequestPart(value = "businessLicenseOriginal", required = false) MultipartFile businessLicenseOriginal,
+            @RequestPart(value = "businessLicenseSigned", required = false) MultipartFile businessLicenseSigned) {
 
         try {
             request.setLogo(logo);
             request.setBusinessLicense(businessLicense);
+            request.setBusinessLicenseOriginal(businessLicenseOriginal);
+            request.setBusinessLicenseSigned(businessLicenseSigned);
 
             EducationUnitRegistrationResponse response = educationalUnitService.registerEducationalUnit(request);
 

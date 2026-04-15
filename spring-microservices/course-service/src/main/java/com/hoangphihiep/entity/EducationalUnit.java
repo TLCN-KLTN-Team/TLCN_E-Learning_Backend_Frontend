@@ -2,6 +2,7 @@ package com.hoangphihiep.entity;
 
 
 import com.hoangphihiep.utils.EducationalUnitStatus;
+import com.hoangphihiep.utils.SignatureVerificationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,6 +30,25 @@ public class EducationalUnit {
     private String website;
     private String logo;
     private String businessLicense;
+    private String businessLicenseOriginal;
+    private String businessLicenseSigned;
+    private String businessLicenseOriginalHash;
+    private String businessLicenseSignedHash;
+
+    @Enumerated(EnumType.STRING)
+    private SignatureVerificationStatus signatureStatus;
+
+    private String signatureErrorCode;
+    private String signatureErrorReason;
+    private String signatureWarning;
+    private String signatureRevocationStatus;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date signatureVerifiedAt;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date certificateExpiryDate;
+
     private String description;
     private Integer establishedYear;
 

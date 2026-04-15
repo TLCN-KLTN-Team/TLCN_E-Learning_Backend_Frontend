@@ -40,6 +40,7 @@ public enum ErrorCode {
 
     // Educational Unit related errors (EDU_xxxx)
     EDUCATIONAL_UNIT_NOT_FOUND("EDU_1101", "Không tìm thấy đơn vị đào tạo", HttpStatus.NOT_FOUND),
+    EDUCATIONAL_UNIT_SIGNATURE_NOT_VERIFIED("EDU_1102", "Không thể duyệt vì giấy phép hoạt động chưa xác thực chữ ký số hợp lệ", HttpStatus.BAD_REQUEST),
 
     // Teacher related errors (TEACHER_xxxx)
     TEACHER_NOT_FOUND("TEACHER_1201", "Không tìm thấy giảng viên", HttpStatus.NOT_FOUND),
