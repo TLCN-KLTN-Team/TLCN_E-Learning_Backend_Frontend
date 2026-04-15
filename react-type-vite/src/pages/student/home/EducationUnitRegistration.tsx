@@ -20,6 +20,8 @@ import type { EducationUnitRegistrationRequest } from "@/services/api/request/ed
 interface ValidationErrors {
   adminName?: string
   representativeEmail?: string
+  businessLicenseOriginal?: string
+  businessLicenseSigned?: string
   general?: string
 }
 
@@ -47,7 +49,8 @@ const EducationUnitRegistration = () => {
     logo: null as File | null,
     description: "",
     establishedYear: "",
-    businessLicense: null as File | null,
+    businessLicenseOriginal: null as File | null,
+    businessLicenseSigned: null as File | null,
 
     // Admin account information
     adminName: "",
@@ -80,6 +83,22 @@ const EducationUnitRegistration = () => {
 
   const handleFileChange = (field: string, file: File | null) => {
     setFormData((prev) => ({ ...prev, [field]: file }))
+
+    if (validationErrors[field as keyof ValidationErrors]) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        [field]: undefined,
+      }))
+    }
+
+    if (error) {
+      setError(null)
+    }
+  }
+
+  const isPdfFile = (file: File | null) => {
+    if (!file) return false
+    return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
   }
 
   // Enhanced error parsing function
@@ -94,6 +113,10 @@ const EducationUnitRegistration = () => {
     // Check for username already exists error (assuming similar error code/message structure)
     if (errorMessage.includes("Username") || errorMessage.includes("USERNAME_EXISTS")) {
       errors.adminName = "Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên đăng nhập khác."
+    }
+
+    if (errorMessage.includes("SIGNATURE") || errorMessage.includes("businessLicenseSigned")) {
+      errors.businessLicenseSigned = "File giấy phép đã ký số không hợp lệ. Vui lòng kiểm tra lại chữ ký số."
     }
 
     // If no specific field errors, set as general error
@@ -129,9 +152,21 @@ const EducationUnitRegistration = () => {
       !formData.representativeName ||
       !formData.representativePosition ||
       !formData.representativePhone ||
-      !formData.representativeEmail
+      !formData.representativeEmail ||
+      !formData.businessLicenseOriginal ||
+      !formData.businessLicenseSigned
     ) {
       setValidationErrors({ general: "Vui lòng điền đầy đủ thông tin bắt buộc!" })
+      return
+    }
+
+    if (!isPdfFile(formData.businessLicenseOriginal)) {
+      setValidationErrors({ businessLicenseOriginal: "Giấy phép gốc phải là file PDF." })
+      return
+    }
+
+    if (!isPdfFile(formData.businessLicenseSigned)) {
+      setValidationErrors({ businessLicenseSigned: "Giấy phép đã ký số phải là file PDF." })
       return
     }
 
@@ -176,7 +211,8 @@ const EducationUnitRegistration = () => {
       const registrationResponse = await educationUnitApi.registerEducationUnit(
         registrationData,
         formData.logo || undefined,
-        formData.businessLicense || undefined,
+        formData.businessLicenseSigned || undefined,
+        formData.businessLicenseOriginal || undefined,
       )
 
       console.log("Registration successful:", registrationResponse)
@@ -304,6 +340,8 @@ const EducationUnitRegistration = () => {
               <button
                 onClick={handleRemoveFile}
                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors z-10"
+                aria-label="Xóa file"
+                title="Xóa file"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -341,6 +379,8 @@ const EducationUnitRegistration = () => {
           <button
             onClick={() => setImageModal({ isOpen: false, src: "", alt: "" })}
             className="absolute top-2 right-2 bg-white text-black rounded-full h-10 w-10 flex items-center justify-center text-lg hover:bg-gray-200 transition-colors z-10"
+            aria-label="Đóng xem ảnh"
+            title="Đóng xem ảnh"
           >
             <X className="h-6 w-6" />
           </button>
@@ -375,7 +415,7 @@ const EducationUnitRegistration = () => {
             <div className="text-center">
               <h1 className="text-3xl font-bold text-foreground mb-2">Đăng ký đơn vị đào tạo</h1>
               <p className="text-muted-foreground">
-                Đăng ký đơn vị của bạn để tham gia nền tảng học tập số của chúng tôi
+                Hoàn tất hồ sơ đơn vị và nộp giấy phép hoạt động PDF đã ký số để được xét duyệt nhanh
               </p>
             </div>
           </div>
@@ -392,7 +432,6 @@ const EducationUnitRegistration = () => {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Education Unit Information */}
-
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -651,15 +690,31 @@ const EducationUnitRegistration = () => {
                     description="Chấp nhận các định dạng: JPG, PNG, GIF"
                   />
 
-                  <FileUploadArea
-                    id="businessLicense"
-                    file={formData.businessLicense}
-                    onFileChange={(file) => handleFileChange("businessLicense", file)}
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    icon={FileText}
-                    label="Giấy phép hoạt động"
-                    description="Chấp nhận các định dạng: PDF, JPG, PNG"
-                  />
+                  <div className="space-y-2">
+                    <FileUploadArea
+                      id="businessLicenseOriginal"
+                      file={formData.businessLicenseOriginal}
+                      onFileChange={(file) => handleFileChange("businessLicenseOriginal", file)}
+                      accept=".pdf,application/pdf"
+                      icon={FileText}
+                      label="Giấy phép hoạt động (PDF gốc) *"
+                      description="Chỉ chấp nhận định dạng PDF"
+                    />
+                    <FieldError error={validationErrors.businessLicenseOriginal} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <FileUploadArea
+                      id="businessLicenseSigned"
+                      file={formData.businessLicenseSigned}
+                      onFileChange={(file) => handleFileChange("businessLicenseSigned", file)}
+                      accept=".pdf,application/pdf"
+                      icon={Shield}
+                      label="Giấy phép hoạt động (PDF đã ký số) *"
+                      description="File PDF PAdES đã ký số bằng chứng thư số hợp lệ"
+                    />
+                    <FieldError error={validationErrors.businessLicenseSigned} />
+                  </div>
                 </div>
               </CardContent>
             </Card>

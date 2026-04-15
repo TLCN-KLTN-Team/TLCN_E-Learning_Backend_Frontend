@@ -8,7 +8,8 @@ import type { EducationUnitRegistrationResponse } from "./response/educationUnit
 export const registerEducationUnit = async (
   registrationData: EducationUnitRegistrationRequest,
   logo?: File,
-  businessLicense?: File
+  businessLicenseSigned?: File,
+  businessLicenseOriginal?: File,
 ): Promise<EducationUnitRegistrationResponse> => {
   const formData = new FormData()
   
@@ -23,8 +24,14 @@ export const registerEducationUnit = async (
     formData.append('logo', logo)
   }
   
-  if (businessLicense) {
-    formData.append('businessLicense', businessLicense)
+  if (businessLicenseSigned) {
+    // Keep legacy part name for backward compatibility with current backend.
+    formData.append('businessLicense', businessLicenseSigned)
+    formData.append('businessLicenseSigned', businessLicenseSigned)
+  }
+
+  if (businessLicenseOriginal) {
+    formData.append('businessLicenseOriginal', businessLicenseOriginal)
   }
 
   const response = await axiosInstance.post<ApiResponse<EducationUnitRegistrationResponse>>(

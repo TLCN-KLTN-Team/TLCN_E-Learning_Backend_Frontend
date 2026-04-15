@@ -19,6 +19,12 @@ export const approveEducationalUnit = async (unitId: number): Promise<void> => {
   await axiosInstance.put(`${PREFIX}/approve/${unitId}`, formData);
 };
 
+export const reverifyEducationalUnitSignature = async (
+  unitId: number
+): Promise<void> => {
+  await axiosInstance.put(`${PREFIX}/reverify-signature/${unitId}`);
+};
+
 export const rejectEducationalUnit = async (
   unitId: number,
   reason: string
@@ -90,6 +96,7 @@ const updateEducationalUnitStatus = async (
 export default {
   getAllEducationalUnits,
   approveEducationalUnit,
+  reverifyEducationalUnitSignature,
   rejectEducationalUnit,
   sendFeedbackToEducationalUnit,
   changeEducationalUnitStatus,

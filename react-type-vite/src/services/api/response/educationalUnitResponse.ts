@@ -12,6 +12,17 @@ export interface EducationalUnitResponse {
   website?: string;
   logo?: string;
   businessLicense?: string;
+  businessLicenseOriginal?: string;
+  businessLicenseSigned?: string;
+  businessLicenseOriginalHash?: string;
+  businessLicenseSignedHash?: string;
+  signatureStatus?: string;
+  signatureErrorCode?: string;
+  signatureErrorReason?: string;
+  signatureWarning?: string;
+  signatureRevocationStatus?: string;
+  signatureVerifiedAt?: Date;
+  certificateExpiryDate?: Date;
   description?: string;
   establishedYear?: number;
   status: string;

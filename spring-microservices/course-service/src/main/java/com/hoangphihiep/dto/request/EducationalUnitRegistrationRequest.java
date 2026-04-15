@@ -24,6 +24,8 @@ public class EducationalUnitRegistrationRequest {
     // File uploads
     private MultipartFile logo;
     private MultipartFile businessLicense;
+    private MultipartFile businessLicenseOriginal;
+    private MultipartFile businessLicenseSigned;
 
     // Admin account information
     private String adminName;
