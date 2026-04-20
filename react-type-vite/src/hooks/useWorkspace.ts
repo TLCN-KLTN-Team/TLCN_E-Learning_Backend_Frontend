@@ -13,10 +13,7 @@ import type {
   SectionResponse,
   WorkspaceResponse,
 } from "@/types/chat.types";
-import {
-  getSectionById,
-  getSectionsByWorkspaceId,
-} from "@/services/api/workspace/section.api";
+import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
 
 export const useWorkspace = () => {
   const navigate = useNavigate();
@@ -60,17 +57,26 @@ export const useWorkspace = () => {
       setIsLoadingMessages(true);
 
       try {
-        const fullChannel = await getChannel(channel.id);
-        const sectionResponse = await getSectionById(fullChannel.sectionId);
-
-        setSelectedChannel(fullChannel);
-        setSelectedSection(sectionResponse);
-
-        navigateToWorkspacePath(
-          selectedWorkspace?.id,
-          sectionResponse.id,
-          fullChannel.id,
-        );
+        // If channel already has sectionId, navigate directly — no extra API calls needed
+        if (channel.sectionId) {
+          setSelectedChannel(channel);
+          setSelectedSection({ id: channel.sectionId, name: "", isPublic: true });
+          navigateToWorkspacePath(
+            selectedWorkspace?.id,
+            channel.sectionId,
+            channel.id,
+          );
+        } else {
+          // Fallback: fetch full channel if sectionId is missing
+          const fullChannel = await getChannel(channel.id);
+          setSelectedChannel(fullChannel);
+          setSelectedSection({ id: fullChannel.sectionId, name: "", isPublic: true });
+          navigateToWorkspacePath(
+            selectedWorkspace?.id,
+            fullChannel.sectionId,
+            fullChannel.id,
+          );
+        }
       } catch (error) {
         console.error("Error fetching channel details:", error);
         toast.error("Không thể tải thông tin kênh. Vui lòng thử lại.");
@@ -101,7 +107,7 @@ export const useWorkspace = () => {
         return;
       }
 
-      // Find general channel first, otherwise use first channel
+      // Find public section and its public channel, then apply directly without extra API calls
       const fetchChannelsAndSelectGeneralChannel = async () => {
         try {
           const sections = await getSectionsByWorkspaceId(selectedWorkspace.id);
@@ -124,7 +130,14 @@ export const useWorkspace = () => {
             return;
           }
 
-          await handleChannelSelect(publicChannel);
+          // Set state directly — publicChannel already has full data including sectionId
+          setSelectedChannel(publicChannel);
+          setSelectedSection(publicSection);
+          navigateToWorkspacePath(
+            selectedWorkspace.id,
+            publicSection.id,
+            publicChannel.id,
+          );
           initializedWorkspaceIdRef.current = selectedWorkspace.id;
         } catch (error) {
           console.error("Error auto-selecting channel:", error);
@@ -142,7 +155,7 @@ export const useWorkspace = () => {
       initializedWorkspaceIdRef.current = null;
       navigateToWorkspacePath();
     }
-  }, [handleChannelSelect, navigateToWorkspacePath, selectedWorkspace]);
+  }, [navigateToWorkspacePath, selectedWorkspace]);
 
   const handleWorkspaceSelect = (workspace: WorkspaceResponse) => {
     if (selectedWorkspace?.id === workspace.id) {

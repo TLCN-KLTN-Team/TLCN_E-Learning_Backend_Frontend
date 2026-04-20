@@ -1,29 +1,26 @@
-package demo.app.chat_app.dto.response;
+package demo.app.chat_app.dto.event;
 
+import demo.app.chat_app.dto.response.AttachmentResponse;
 import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.Instant;
 import java.util.List;
 
+/**
+ * Payload for MESSAGE_UPDATED events.
+ * Contains the clientMessageId for frontend merge and the list of newly uploaded attachments.
+ */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ChatMessageResponse {
-    String id;
+public class MessageUpdatePayload {
     String clientMessageId;
-    String channelId;
-    boolean me;
-    String content;
-    UserResponse sender;
-    MessageType messageType;
+    String messageId;
     MessageStatus status;
-    String fileUrl;
+    MessageType messageType;
     List<AttachmentResponse> attachments;
-    Instant createdDate;
-    boolean uploadedFiles;
 }

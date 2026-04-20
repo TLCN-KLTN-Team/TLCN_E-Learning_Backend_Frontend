@@ -1,18 +1,37 @@
-import type { AttachmentResponse } from "@/types/chat.types";
+import type {
+  ChatMessageResponse,
+  MessageUpdatePayload,
+} from "@/types/chat.types";
 import axiosInstance from "./httpClient/axiosInstance";
 import type { ApiResponse } from "./response/apiResponse";
 
 export const uploadMultipleFiles = async (
-  formData: FormData
-): Promise<AttachmentResponse[]> => {
-  const response = await axiosInstance.post<ApiResponse<AttachmentResponse[]>>(
+  formData: FormData,
+): Promise<MessageUpdatePayload> => {
+  const response = await axiosInstance.post<ApiResponse<MessageUpdatePayload>>(
     `/server/files/upload-multiple`,
     formData,
     {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-    }
+    },
+  );
+
+  return response.data.result;
+};
+
+export const uploadFileOnlyMessage = async (
+  formData: FormData,
+): Promise<ChatMessageResponse> => {
+  const response = await axiosInstance.post<ApiResponse<ChatMessageResponse>>(
+    `/server/files/upload-file-only`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
   );
 
   return response.data.result;
@@ -39,7 +58,7 @@ export const uploadImage = async (file: File): Promise<FileUploadResponse> => {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-    }
+    },
   );
 
   return response.data;

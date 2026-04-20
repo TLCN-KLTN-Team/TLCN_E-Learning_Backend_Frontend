@@ -1,13 +1,19 @@
 import { Hash, Edit, ArrowDown } from "lucide-react";
-import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { hasRole } from "@/utils/roleUtils";
 import MessageItem from "./MessageItem";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { getMessagesByChannelId } from "@/services/api/workspace/messageApi";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
-import { useAuth } from "@/context/auth-context/useAuth";
+
+interface MessageListProps {
+  selectedChannel: ChannelResponse;
+  messages: ChatMessageResponse[];
+  isLoadingMessages: boolean;
+  isConnected: boolean;
+  wsErrors: Array<{ message: string }>;
+  onRetry?: (message: ChatMessageResponse) => void;
+}
 
 // Time separator component (like Discord)
 const TimeSeparator = ({ date }: { date: Date }) => {
@@ -23,7 +29,6 @@ const TimeSeparator = ({ date }: { date: Date }) => {
     const isSameYear = messageDate.getFullYear() === now.getFullYear();
     const isSameMonth = isSameYear && messageDate.getMonth() === now.getMonth();
 
-    // Nếu cùng ngày -> hiển thị giờ
     if (isToday) {
       return `Hôm nay lúc ${messageDate.toLocaleTimeString("vi-VN", {
         hour: "2-digit",
@@ -34,25 +39,19 @@ const TimeSeparator = ({ date }: { date: Date }) => {
         hour: "2-digit",
         minute: "2-digit",
       })}`;
-    }
-    // Nếu cùng tháng -> hiển thị ngày
-    else if (isSameMonth) {
+    } else if (isSameMonth) {
       return messageDate.toLocaleDateString("vi-VN", {
         day: "numeric",
         month: "long",
         hour: "2-digit",
         minute: "2-digit",
       });
-    }
-    // Nếu cùng năm -> hiển thị ngày tháng
-    else if (isSameYear) {
+    } else if (isSameYear) {
       return messageDate.toLocaleDateString("vi-VN", {
         day: "numeric",
         month: "long",
       });
-    }
-    // Khác năm -> hiển thị đầy đủ
-    else {
+    } else {
       return messageDate.toLocaleDateString("vi-VN", {
         day: "numeric",
         month: "long",
@@ -72,28 +71,18 @@ const TimeSeparator = ({ date }: { date: Date }) => {
   );
 };
 
-interface MessageListProps {
-  selectedChannel: ChannelResponse;
-  wsMessages: ChatMessageResponse[];
-  isLoadingMessages: boolean;
-  isConnected: boolean;
-  wsErrors: Array<{ message: string }>;
-}
-
 const MessageList = ({
   selectedChannel,
-  wsMessages,
+  messages,
   isLoadingMessages,
   isConnected,
   wsErrors,
+  onRetry,
 }: MessageListProps) => {
-  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [allMessages, setAllMessages] = useState<ChatMessageResponse[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const prevLengthRef = useRef(allMessages.length);
+  const prevLengthRef = useRef(messages.length);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [hasNewMessage, setHasNewMessage] = useState(false);
 
@@ -111,15 +100,15 @@ const MessageList = ({
   }, []);
 
   useEffect(() => {
-    if (allMessages.length > prevLengthRef.current) {
+    if (messages.length > prevLengthRef.current) {
       if (isNearBottom) {
         setTimeout(() => scrollToBottom(), 50);
       } else {
         setHasNewMessage(true);
       }
     }
-    prevLengthRef.current = allMessages.length;
-  }, [allMessages.length, isNearBottom, scrollToBottom]);
+    prevLengthRef.current = messages.length;
+  }, [messages.length, isNearBottom, scrollToBottom]);
 
   // Initial scroll to bottom
   useEffect(() => {
@@ -142,74 +131,6 @@ const MessageList = ({
     return isSameSender && timeDifference <= timeDifferenceThreshold;
   };
 
-  useEffect(() => {
-    if (selectedChannel) {
-      setLoading(true);
-      const fetchMessages = async () => {
-        try {
-          const messagesData = await getMessagesByChannelId(selectedChannel.id);
-          console.log("Fetched messages:", messagesData);
-
-          // Set 'me' property for messages from API
-          const messagesWithMe = messagesData.map((msg) => ({
-            ...msg,
-            me: user?.id === msg.sender.id,
-          }));
-
-          setAllMessages(messagesWithMe);
-          setLoading(false);
-        } catch (error) {
-          console.error("Error fetching messages:", error);
-          toast.error("Không thể tải tin nhắn. Vui lòng thử lại sau.");
-          setLoading(false);
-        }
-      };
-      fetchMessages();
-    }
-  }, [selectedChannel, user?.id]);
-
-  // Effect to sync WebSocket messages with allMessages
-  useEffect(() => {
-    if (!selectedChannel) return;
-
-    console.log(`Selected channel`, selectedChannel);
-
-    // Filter WebSocket messages for current channel
-    const currentChannelWsMessages = wsMessages.filter(
-      (msg) => msg.channelId === selectedChannel.id,
-    );
-
-    if (currentChannelWsMessages.length > 0) {
-      setAllMessages((prevMessages) => {
-        // Create a set of existing message IDs for quick lookup
-        const existingIds = new Set(prevMessages.map((msg) => msg.id));
-
-        // Filter out WebSocket messages that are already in the list
-        const newMessages = currentChannelWsMessages.filter(
-          (wsMsg) => !existingIds.has(wsMsg.id),
-        );
-
-        if (newMessages.length === 0) {
-          return prevMessages; // No new messages to add
-        }
-
-        // Add 'me' property to new WebSocket messages
-        const processedNewMessages = newMessages.map((msg) => ({
-          ...msg,
-          me: user?.id === msg.sender.id,
-        }));
-
-        // Combine and sort all messages by timestamp
-        const combinedMessages = [...prevMessages, ...processedNewMessages];
-        return combinedMessages.sort(
-          (a, b) =>
-            new Date(a.createdDate).getTime() -
-            new Date(b.createdDate).getTime(),
-        );
-      });
-    }
-  }, [wsMessages, selectedChannel, user?.id]);
-
   // Function to check if time separator should be shown (1 hour difference)
   const shouldShowTimeSeparator = (
     currentMessage: ChatMessageResponse,
@@ -221,45 +142,44 @@ const MessageList = ({
     const previousTime = new Date(previousMessage.createdDate).getTime();
     const timeDifference = currentTime - previousTime;
 
-    // Show separator if difference is >= 1 hour (3600000 milliseconds)
     return timeDifference >= 3600000;
   };
 
   // Function to render messages with grouping logic and time separators
-  const renderMessages = (messages: ChatMessageResponse[]) => {
+  const renderMessages = (msgs: ChatMessageResponse[]) => {
     const elements: React.ReactElement[] = [];
 
-    messages.forEach((message, index) => {
-      const previousMessage = index > 0 ? messages[index - 1] : null;
+    msgs.forEach((message, index) => {
+      const previousMessage = index > 0 ? msgs[index - 1] : null;
       const shouldGroup = shouldGroupMessages(message, previousMessage);
       const showTimeSeparator = shouldShowTimeSeparator(
         message,
         previousMessage,
       );
 
-      // Add time separator if needed
       if (showTimeSeparator) {
         elements.push(
           <TimeSeparator
-            key={`separator-${message.id}`}
+            key={`separator-${message.id || message.clientMessageId}`}
             date={new Date(message.createdDate)}
           />,
         );
       }
 
-      // Add message
       elements.push(
         <MessageItem
-          key={message.id}
+          key={message.id || message.clientMessageId}
           message={message}
           showAvatar={!shouldGroup}
           showTimestamp={!shouldGroup}
+          onRetry={onRetry}
         />,
       );
     });
 
     return elements;
   };
+
   if (isLoadingMessages) {
     return (
       <div className="p-6 pt-16 text-center">
@@ -268,16 +188,8 @@ const MessageList = ({
     );
   }
 
-  if (loading) {
-    return (
-      <div className="p-6 pt-16 text-center">
-        <div className="text-gray-400">Loading messages...</div>
-      </div>
-    );
-  }
-
   // Show welcome message only if there are no messages at all
-  if (allMessages.length === 0) {
+  if (messages.length === 0) {
     return (
       <div className="p-6 pt-16">
         <div className="flex items-center mb-4">
@@ -309,7 +221,7 @@ const MessageList = ({
         className="h-full overflow-y-auto custom-scrollbar px-4 py-4 space-y-1"
         onScroll={handleScroll}
       >
-        {/* Channel description header - shown even when messages exist */}
+        {/* Channel description header */}
         <div className="pb-4 border-gray-700">
           <div className="flex items-center mb-3">
             <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
@@ -331,8 +243,8 @@ const MessageList = ({
           )}
         </div>
 
-        {/* Display all messages (API + WebSocket combined and sorted) */}
-        {renderMessages(allMessages)}
+        {/* Display all messages */}
+        {renderMessages(messages)}
         {/* Invisible element to scroll to */}
         <div ref={messagesEndRef} />
       </div>

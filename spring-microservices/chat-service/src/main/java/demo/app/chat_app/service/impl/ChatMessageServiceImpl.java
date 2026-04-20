@@ -6,6 +6,8 @@ import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChatMessageMapper;
+import demo.app.chat_app.model.enums.MessageStatus;
+import demo.app.chat_app.model.enums.MessageType;
 import demo.app.chat_app.model.workspace.*;
 import demo.app.chat_app.repository.*;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -49,15 +52,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         // Get current user
         String userId = principal.getName();
 
-        // Find sender participant info
-//        Participant sender = channel.getParticipants().stream()
-//                .filter(p -> p.getUserId().equals(userId))
-//                .findFirst()
-//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL));
-
         // Create and save message
         ChatMessage message = ChatMessage.builder()
-//                .sender(sender)
                 .channelId(request.getChannelId())
                 .content(request.getContent())
                 .createdDate(Instant.now())
@@ -69,16 +65,23 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         return this.toChatMessageResponse(message);
     }
 
-//    private boolean isFile(MultipartFile file) {
-//        String contentType = file.getContentType();
-//    }
-
     private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage) {
         var chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatMessage);
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         boolean isMe = chatMessage.getSender().equals(userId);
         chatMessageResponse.setMe(isMe);
         chatMessageResponse.setMessageType(chatMessage.getMessageType());
+        chatMessageResponse.setClientMessageId(chatMessage.getClientMessageId());
+        chatMessageResponse.setStatus(chatMessage.getStatus());
+
+        // Map attachments
+        if (chatMessage.getAttachments() != null && !chatMessage.getAttachments().isEmpty()) {
+            chatMessageResponse.setAttachments(
+                    chatMessageMapper.toAttachmentResponseList(chatMessage.getAttachments())
+            );
+        } else {
+            chatMessageResponse.setAttachments(Collections.emptyList());
+        }
 
         // get user profile info
         try {
@@ -103,7 +106,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         checkIsMemberChannel(channel, userId);
 
         // Use paginated query for better performance
-        // For now, get first 50 messages - should be parameterized
         Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.ASC, "createdDate"));
         Page<ChatMessage> messagePage = chatMessageRepository.findByChannelIdAndNotDeleted(channelId, pageable);
 
@@ -125,10 +127,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         // Verify channel exists and user has access
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-                
-//        if (!channel.hasParticipant(userId)) {
-//            throw new AppException(ErrorCode.USER_NOT_FOUND_IN_CHANNEL);
-//        }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdDate"));
         Page<ChatMessage> messagePage = chatMessageRepository.findByChannelIdAndNotDeleted(channelId, pageable);
@@ -147,7 +145,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .build();
     }
 
-    // ======== NEW METHODS FOR SEPARATED ARCHITECTURE ========
+    // ======== METHODS FOR POST-ATTACH PATTERN ========
     
     @Override
     public ChatMessageResponse sendTextMessage(TextMessageRequest request) {
@@ -157,17 +155,22 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         String userId = JwtUtils.getUserId();
 
-        // Create and save message with PENDING status (for file uploads)
+        // Create and save message with PENDING status
+        // The message starts as PENDING; it will be updated to SENT when attachments are uploaded
+        // or can remain as-is for text-only messages
         ChatMessage message = ChatMessage.builder()
+                .clientMessageId(request.getClientMessageId())
                 .sender(userId)
                 .channelId(request.getChannelId())
                 .content(request.getContent())
+                .messageType(MessageType.TEXT)
+                .status(request.isTextOnly() ? MessageStatus.SENT : MessageStatus.PENDING)
                 .createdDate(Instant.now())
                 .updatedDate(Instant.now())
                 .build();
 
         message = chatMessageRepository.save(message);
-        log.info("Text message created with ID: {}", message);
+        log.info("Text message created with ID: {} and clientMessageId: {}", message.getId(), message.getClientMessageId());
 
         return this.toChatMessageResponse(message);
     }

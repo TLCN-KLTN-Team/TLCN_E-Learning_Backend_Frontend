@@ -1,5 +1,7 @@
 package demo.app.chat_app.model.workspace;
 
+import demo.app.chat_app.model.enums.AttachmentType;
+import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -10,6 +12,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -25,6 +29,9 @@ public class ChatMessage {
     @MongoId
     String id;
 
+    @Indexed(unique = true, sparse = true)
+    String clientMessageId; // UUID from frontend, used as merge key for post-attach pattern
+
     @Indexed
     String channelId; // ID of the channel this message belongs to
 
@@ -38,7 +45,17 @@ public class ChatMessage {
     @Builder.Default
     MessageType messageType = MessageType.TEXT;
 
-    String fileUrl; // URL for message type FILE or IMAGE
+    @Builder.Default
+    MessageStatus status = MessageStatus.PENDING;
+
+    String fileUrl; // Legacy: URL for message type FILE or IMAGE
+
+    // Embedded attachment references for the post-attach pattern
+    @Builder.Default
+    List<MessageAttachment> attachments = new ArrayList<>();
+
+    // Legacy field kept for backward compatibility
+    List<MessageAttachment> messageAttachments;
 
     @Indexed
     Instant createdDate;

@@ -1,4 +1,4 @@
-import type { MessageType } from "./chat.enums";
+import type { AttachmentType, MessageStatus, MessageType } from "./chat.enums";
 
 // Channel Type Enum matching backend
 export const ChannelType = {
@@ -124,20 +124,58 @@ export interface BulkRandomChannelRequest {
 export interface ChatMessageRequest {
   channelId: string;
   content: string;
+  clientMessageId?: string;
+  textOnly?: boolean;
 }
 export interface ChatMessageResponse {
   id: string;
   channelId?: string | null;
+  clientMessageId?: string | null;
   me: boolean;
   content: string;
   sender: UserResponse;
   messageType: MessageType;
+  status?: MessageStatus;
   fileUrl?: string | null;
+  attachments?: AttachmentResponse[];
   createdDate: string;
 }
+
 export interface AttachmentResponse {
-  success: boolean;
-  message: string;
-  messageId?: string; // Optional, if the upload was part of a message
+  id: string;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  attachmentType: AttachmentType;
   fileUrl: string;
+  thumbnailUrl?: string | null;
+  uploadedAt: string;
+}
+
+export interface AttachmentItem {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize?: number;
+  category: AttachmentType;
+}
+
+/** WebSocket event types broadcast on /topic/channel/{channelId} */
+export type ChatEventType = "NEW_MESSAGE" | "MESSAGE_UPDATED";
+
+/**
+ * Mirrors backend MessageEvent.
+ * - NEW_MESSAGE  → `message` contains the full ChatMessageResponse
+ * - MESSAGE_UPDATED → `update` contains partial update payload
+ */
+export interface MessageUpdatePayload {
+  clientMessageId: string;
+  attachments?: AttachmentResponse[];
+  status?: MessageStatus;
+}
+
+export interface ChatEvent {
+  type: ChatEventType;
+  message?: ChatMessageResponse;       // present when type === "NEW_MESSAGE"
+  update?: MessageUpdatePayload;        // present when type === "MESSAGE_UPDATED"
 }

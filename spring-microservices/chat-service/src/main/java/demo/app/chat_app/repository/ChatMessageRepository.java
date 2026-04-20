@@ -9,9 +9,13 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChatMessageRepository extends MongoRepository<ChatMessage, String> {
+    
+    // Find message by clientMessageId (UUID from frontend) for post-attach pattern
+    Optional<ChatMessage> findByClientMessageId(String clientMessageId);
     
     // Paginated messages for a channel (most recent first)
     @Query("{ 'channelId': ?0, 'deleted': { $ne: true } }")

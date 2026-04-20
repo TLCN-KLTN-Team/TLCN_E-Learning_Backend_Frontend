@@ -1,5 +1,6 @@
 package demo.app.chat_app.controller;
 
+import demo.app.chat_app.dto.event.MessageEvent;
 import demo.app.chat_app.dto.request.TextMessageRequest;
 import demo.app.chat_app.dto.response.ChatMessageResponse;
 import demo.app.chat_app.exception.AppException;
@@ -14,13 +15,8 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor
@@ -30,8 +26,9 @@ public class ChatRealtimeController {
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
-     * Handle text-only messages via WebSocket for real-time communication
-     * Files should be uploaded separately via REST API
+     * Handle text-only messages via WebSocket for real-time communication.
+     * Message is saved with status=PENDING and broadcast as a NEW_MESSAGE event.
+     * Files should be uploaded separately via REST API (post-attach pattern).
      */
     @MessageMapping("/chat.sendMessage")
     public void sendTextMessage(@Payload TextMessageRequest request, SimpMessageHeaderAccessor accessor) {
@@ -43,6 +40,7 @@ public class ChatRealtimeController {
             String token = (String) accessor.getSessionAttributes().get("authToken");
             if (token != null) {
                 WebSocketAuthInterceptor.setToken(token);
+                // throw exception
                 log.debug("Token set for Feign client: {}", token.substring(0, Math.min(30, token.length())));
             } else {
                 log.warn("No auth token found in session for user: {}", userId);
@@ -52,18 +50,21 @@ public class ChatRealtimeController {
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(userId, null, null);
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-            log.info("Received text message for channel: {}", request.getChannelId());
+            log.info("Received text message for channel: {} with clientMessageId: {}",
+                    request.getChannelId(), request.getClientMessageId());
             
-            // Send text message immediately (placeholder with PENDING status)
-            ChatMessageResponse response = chatMessageService.sendTextMessage(request);
+            // Send text message immediately (saved with PENDING status)
+            ChatMessageResponse messageResponse = chatMessageService.sendTextMessage(request);
             
-            // Broadcast to channel subscribers
+            // Wrap in MessageEvent with type="NEW_MESSAGE" and broadcast
+            MessageEvent event = MessageEvent.newMessage(messageResponse);
             messagingTemplate.convertAndSend(
                 "/topic/channel/" + request.getChannelId(), 
-                response
+                event
             );
             
-            log.info("Text message sent successfully: {}", response.getId());
+            log.info("NEW_MESSAGE event broadcast for message: {} (clientMessageId: {})",
+                    messageResponse.getId(), messageResponse.getClientMessageId());
             
         } catch (Exception e) {
             log.error("Failed to send text message", e);
@@ -95,10 +96,11 @@ public class ChatRealtimeController {
             // Get updated message with attachments
             ChatMessageResponse updatedMessage = chatMessageService.getMessageById(messageId);
             
-            // Broadcast updated message to channel
+            // Broadcast updated message wrapped in MessageEvent
+            MessageEvent event = MessageEvent.newMessage(updatedMessage);
             messagingTemplate.convertAndSend(
                 "/topic/channel/" + updatedMessage.getChannelId(), 
-                updatedMessage
+                event
             );
             
         } catch (Exception e) {

@@ -9,4 +9,8 @@ import java.util.List;
 @Repository
 public interface MessageAttachmentRepository extends MongoRepository<MessageAttachment, String> {
     List<MessageAttachment> findMessageAttachmentByActiveOrderByUploadedAtDesc(boolean active);
+
+    List<MessageAttachment> findByMessageId(String messageId);
+
+    List<MessageAttachment> findByChannelId(String channelId);
 }

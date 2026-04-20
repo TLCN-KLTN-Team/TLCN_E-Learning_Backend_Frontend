@@ -10,6 +10,7 @@ import type {
   ChatMessageResponse,
   UserResponse,
 } from "@/types/chat.types";
+import type { FileItem } from "@/types/file.types";
 
 interface ChatWindowProps {
   selectedChannel: ChannelResponse | null;
@@ -18,7 +19,7 @@ interface ChatWindowProps {
   isConnected: boolean;
   wsMessages: ChatMessageResponse[];
   wsErrors: Array<{ message: string }>;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, files: FileItem[]) => void;
   onClearErrors: () => void;
 }
 
@@ -81,7 +82,7 @@ const ChatWindow = ({
         participants={participants}
         wsMessages={wsMessages}
         isConnected={isConnected}
-        onSendMessage={onSendMessage}
+        onSendMessage={(content: string) => onSendMessage(content, [])}
       />
     );
   }

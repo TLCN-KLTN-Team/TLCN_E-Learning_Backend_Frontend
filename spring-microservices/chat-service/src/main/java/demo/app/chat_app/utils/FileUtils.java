@@ -38,10 +38,32 @@ public class FileUtils {
         }
     }
 
+    public AttachmentType getAttachmentType(String fileName) {
+        if (isImage(fileName)) {
+            return AttachmentType.IMAGE;
+        } else if (isDocument(fileName)) {
+            return AttachmentType.DOCUMENT;
+        }
+        else {
+            // Tất cả file khác (video, audio, document, etc.) đều là OTHER
+            return AttachmentType.OTHER;
+        }
+    }
+
     private boolean isImage(String fileName) {
         return fileName.endsWith("jpeg") ||
                 fileName.endsWith("jpg") ||
                 fileName.endsWith("png") ||
                 fileName.endsWith("gif");
+    }
+
+    private boolean isDocument(String fileName) {
+        return fileName.endsWith("pdf") ||
+                fileName.endsWith("doc") ||
+                fileName.endsWith("docx") ||
+                fileName.endsWith("xls") ||
+                fileName.endsWith("xlsx") ||
+                fileName.endsWith("ppt") ||
+                fileName.endsWith("pptx");
     }
 }

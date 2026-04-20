@@ -2,7 +2,8 @@ export const MessageType = {
   TEXT: "TEXT",
   IMAGE: "IMAGE",
   FILE: "FILE",
-  VIDEO: "VIDEO",
+  MIXED: "MIXED",
+  FILE_ONLY: "FILE_ONLY",
 } as const;
 
 export const AttachmentType = {

@@ -14,4 +14,5 @@ public class TextMessageRequest {
     String channelId;
     String content;
     String clientMessageId; // UUID from frontend for tracking
+    boolean textOnly;
 }

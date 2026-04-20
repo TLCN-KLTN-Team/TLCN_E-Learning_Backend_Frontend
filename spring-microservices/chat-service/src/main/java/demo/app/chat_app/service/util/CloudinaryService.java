@@ -20,13 +20,13 @@ import java.util.Map;
 public class CloudinaryService {
     private final Cloudinary cloudinary;
 
-    private Map<String, Object> getUploadParams(MessageType type) {
+    private Map<String, Object> getUploadParams(AttachmentType type) {
         return ObjectUtils.asMap(
-                "resource_type", type == MessageType.IMAGE ? "image" : "auto"
+                "resource_type", type == AttachmentType.IMAGE ? "image" : "auto"
         );
     }
 
-    public String uploadFile(MultipartFile file, MessageType type) throws IOException {
+    public String uploadFile(MultipartFile file, AttachmentType type) throws IOException {
         try{
             Map result = cloudinary.uploader().upload(file.getBytes(), getUploadParams(type));
             return result.get("secure_url").toString();
@@ -36,7 +36,7 @@ public class CloudinaryService {
         }
     }
 
-    public void deleteFile(String publicId, MessageType type) {
+    public void deleteFile(String publicId, AttachmentType type) {
         try {
 
             Map result = cloudinary.uploader().destroy(publicId, getUploadParams(type));
