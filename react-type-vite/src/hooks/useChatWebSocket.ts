@@ -23,7 +23,9 @@ export const useChatWebSocket = () => {
   const [errors, setErrors] = useState<WebSocketError[]>([]);
   const { user } = useAuth();
   const clientRef = useRef<Client | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const isConnectingRef = useRef(false);
 
   // Initialize WebSocket connection with reconnection logic
@@ -63,7 +65,6 @@ export const useChatWebSocket = () => {
         console.log("✅ Connected to WebSocket successfully");
         setIsConnected(true);
         isConnectingRef.current = false;
-
       },
       onDisconnect: () => {
         console.log("❌ Disconnected from WebSocket");
@@ -120,7 +121,23 @@ export const useChatWebSocket = () => {
         `/topic/channel/${channelId}`,
         (message: IMessage) => {
           try {
-            const chatMessage: ChatMessageResponse = JSON.parse(message.body);
+            const raw = JSON.parse(message.body);
+
+            // Server wraps messages in MessageEvent: { type, message?, update? }
+            let chatMessage: ChatMessageResponse | null = null;
+
+            if (raw.type && raw.message) {
+              // Wrapped event — extract the message payload
+              if (raw.type === "NEW_MESSAGE") {
+                chatMessage = raw.message as ChatMessageResponse;
+              }
+              // MESSAGE_UPDATED is handled by useChatMessages, skip here
+            } else if (raw.sender) {
+              // Legacy fallback: bare ChatMessageResponse
+              chatMessage = raw as ChatMessageResponse;
+            }
+
+            if (!chatMessage) return;
 
             // Set 'me' property based on current user
             chatMessage.me = user?.id === chatMessage.sender.id;
@@ -129,15 +146,15 @@ export const useChatWebSocket = () => {
             if (chatMessage.channelId === channelId) {
               setMessages((prev) => {
                 // Avoid duplicate messages
-                const exists = prev.some((msg) => msg.id === chatMessage.id);
+                const exists = prev.some((msg) => msg.id === chatMessage!.id);
                 if (exists) return prev;
-                return [...prev, chatMessage];
+                return [...prev, chatMessage!];
               });
             }
           } catch (error) {
             console.error("Error parsing channel message:", error);
           }
-        }
+        },
       );
 
       return () => {
@@ -145,7 +162,7 @@ export const useChatWebSocket = () => {
         subscription.unsubscribe();
       };
     },
-    [user?.id]
+    [user?.id],
   ); // Add user.id dependency for 'me' property
 
   // Subscribe to direct messages - STABLE callback
@@ -173,7 +190,7 @@ export const useChatWebSocket = () => {
           toast.error("Failed to parse direct message");
           console.error("Error parsing direct message:", error);
         }
-      }
+      },
     );
 
     return () => {
@@ -207,7 +224,7 @@ export const useChatWebSocket = () => {
         } catch (error) {
           console.error("Error parsing error message:", error);
         }
-      }
+      },
     );
 
     return () => {
@@ -216,72 +233,15 @@ export const useChatWebSocket = () => {
     };
   }, [user?.username]); // Keep user dependency but avoid other unstable deps
 
-  // Listen file uploads
+  // Backward compatibility: file updates are now broadcast on /topic/channel/{channelId}
   const subscribeToMultipleFilesUploads = useCallback(
     (channelId: string) => {
-      if (!clientRef.current?.connected) {
-        console.error("WebSocket not connected for file uploads");
-        return () => {}; // Return stable function
-      }
-
-      console.log(`📎 Subscribing to file uploads for channel: ${channelId}`);
-      const subscription = clientRef.current.subscribe(
-        `/topic/channel/${channelId}/attachments`,
-        // Response from server
-        (message: IMessage) => {
-          try {
-            const response = JSON.parse(message.body);
-            console.log("📤 Received file upload response:", response);
-
-            // Handle both array and single message response
-            let messages: ChatMessageResponse[];
-            if (Array.isArray(response)) {
-              messages = response;
-            } else if (response && typeof response === "object") {
-              // Single message response
-              messages = [response];
-            } else {
-              console.warn("Invalid file upload response format:", response);
-              return;
-            }
-
-            setMessages((prev) => {
-              // Set 'me' property and filter for current channel
-              const processedMessages = messages
-                .filter((msg) => msg.channelId === channelId)
-                .map((msg) => ({
-                  ...msg,
-                  me: user?.id === msg.sender.id,
-                }));
-
-              // Avoid duplicates
-              const newMessages = processedMessages.filter(
-                (msg) => !prev.some((m) => m.id === msg.id)
-              );
-
-              if (newMessages.length > 0) {
-                console.log(
-                  `✅ Adding ${newMessages.length} new file messages to wsMessages`
-                );
-                return [...prev, ...newMessages];
-              }
-
-              return prev;
-            });
-          } catch (error) {
-            console.error("Error parsing file upload messages:", error);
-          }
-        }
+      console.warn(
+        "subscribeToMultipleFilesUploads is deprecated; using subscribeToChannel instead",
       );
-
-      return () => {
-        console.log(
-          `📎 Unsubscribing from file uploads for channel: ${channelId}`
-        );
-        subscription.unsubscribe();
-      };
+      return subscribeToChannel(channelId);
     },
-    [user?.id]
+    [subscribeToChannel],
   );
 
   // Send message to channel
@@ -306,6 +266,8 @@ export const useChatWebSocket = () => {
         const messagePayload = {
           channelId: messageRequest.channelId,
           content: messageRequest.content,
+          clientMessageId: messageRequest.clientMessageId,
+          textOnly: messageRequest.textOnly,
         };
 
         clientRef.current.publish({
@@ -331,7 +293,7 @@ export const useChatWebSocket = () => {
         ]);
       }
     },
-    [] // No dependencies needed for sendMessage
+    [], // No dependencies needed for sendMessage
   );
 
   // Disconnect from WebSocket

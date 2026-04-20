@@ -4,9 +4,15 @@ import lombok.Getter;
 
 @Getter
 public enum AttachmentType {
-    IMAGE,
-    DOCUMENT,
-    VIDEO,
-    AUDIO,
-    OTHER
+    IMAGE("IMAGE"),
+    DOCUMENT("DOCUMENT"),
+    VIDEO("VIDEO"),
+    AUDIO("AUDIO"),
+    OTHER("OTHER");
+
+    private final String type;
+
+    AttachmentType(String type) {
+        this.type = type;
+    }
 }

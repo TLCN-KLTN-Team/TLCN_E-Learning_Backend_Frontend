@@ -12,14 +12,13 @@ import {
 import { toast } from "react-toastify";
 import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
 import type { FileItem } from "@/types/file.types";
-import { uploadMultipleFiles } from "@/services/api/fileUploadApi";
 
 interface MessageInputProps {
   selectedChannel: ChannelResponse;
   isConnected: boolean;
   wsMessages: ChatMessageResponse[];
   wsErrors: Array<{ message: string }>;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, files: FileItem[]) => void;
   onClearErrors: () => void;
 }
 
@@ -30,7 +29,6 @@ const MessageInput = ({
 }: MessageInputProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
   const [isMultiline, setIsMultiline] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,64 +57,24 @@ const MessageInput = ({
     setIsMultiline(newHeight > 48);
   };
 
-  const uploadFilesForMessage = async () => {
-    setIsUploading(true);
-
-    const formData = new FormData();
-    selectedFiles.forEach((fileItem) => {
-      formData.append("files", fileItem.file ? fileItem.file : new Blob());
-    });
-    formData.append("channelId", selectedChannel.id);
-
-    try {
-      await uploadMultipleFiles(formData);
-    } catch (error) {
-      toast.error("Không thể tải lên tệp. Vui lòng thử lại.");
-      throw new Error("Failed to upload files: " + error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     const hasMessage = newMessage.trim().length > 0;
     const hasFiles = selectedFiles.length > 0;
 
-    // Validate input
     if (!hasMessage && !hasFiles) return;
     if (!isConnected) {
       toast.warning("Chưa kết nối đến server. Vui lòng đợi...");
       return;
     }
 
-    try {
-      if (hasMessage && hasFiles) {
-        // Send both message and files
-        onSendMessage(newMessage.trim());
-        // Upload files after sending message
-        await uploadFilesForMessage();
-      } else if (hasMessage && !hasFiles) {
-        // Send only message
-        onSendMessage(newMessage.trim());
-      } else if (!hasMessage && hasFiles) {
-        // Upload only files
-        await uploadFilesForMessage();
-      }
+    onSendMessage(newMessage.trim(), selectedFiles);
 
-      // Clear input and files after successful operation
-      setNewMessage("");
-      setSelectedFiles([]);
-      setIsMultiline(false);
-
-      // Reset textarea height
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
-      }
-
-    } catch (error) {
-      console.error("❌ Error in handleSendMessage:", error);
-      toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
-      // Don't clear inputs if there was an error
+    // Clear input state immediately (optimistic)
+    setNewMessage("");
+    setSelectedFiles([]);
+    setIsMultiline(false);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
     }
   };
 
@@ -247,7 +205,7 @@ const MessageInput = ({
             onClick={() => fileInputRef.current?.click()}
             className="text-gray-400 hover:text-white disabled:opacity-50 transition-colors"
             title="Upload file"
-            disabled={!isConnected || isUploading}
+            disabled={!isConnected}
           >
             <FilePlus className="w-5 h-5" />
           </button>
@@ -255,16 +213,14 @@ const MessageInput = ({
             onClick={() => imageInputRef.current?.click()}
             className="text-gray-400 hover:text-white disabled:opacity-50 transition-colors"
             title="Upload image"
-            disabled={!isConnected || isUploading}
+            disabled={!isConnected}
           >
             <ImagePlus className="w-5 h-5" />
           </button>
           <button
             onClick={handleSendMessage}
             disabled={
-              (!newMessage.trim() && selectedFiles.length === 0) ||
-              !isConnected ||
-              isUploading
+              (!newMessage.trim() && selectedFiles.length === 0) || !isConnected
             }
             className={`${
               selectedFiles.length > 0
@@ -272,29 +228,15 @@ const MessageInput = ({
                 : "bg-blue-500 hover:bg-blue-600"
             } disabled:bg-gray-500 disabled:cursor-not-allowed text-white p-2 rounded-md transition-colors`}
             title={
-              isUploading
-                ? "Uploading files..."
-                : selectedFiles.length > 0
-                  ? `Send message with ${selectedFiles.length} files`
-                  : "Send message"
+              selectedFiles.length > 0
+                ? `Send message with ${selectedFiles.length} files`
+                : "Send message"
             }
           >
-            {isUploading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
+            <Send className="w-4 h-4" />
           </button>
         </div>
       </div>
-
-      {/* Upload status */}
-      {isUploading && (
-        <div className="mt-2 flex items-center space-x-2 text-xs text-blue-400">
-          <div className="w-3 h-3 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
-          <span>Uploading {selectedFiles.length} files...</span>
-        </div>
-      )}
     </div>
   );
 };

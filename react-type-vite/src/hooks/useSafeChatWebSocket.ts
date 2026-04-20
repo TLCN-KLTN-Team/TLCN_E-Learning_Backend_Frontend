@@ -8,7 +8,10 @@ import type {
   ChatMessageResponse,
 } from "@/types/chat.types";
 
+import type { Client } from "@stomp/stompjs";
+
 interface SafeChatWebSocketReturn {
+  client: Client | null;
   isConnected: boolean;
   messages: ChatMessageResponse[];
   errors: WebSocketError[];
@@ -132,6 +135,7 @@ export const useSafeChatWebSocket = (): SafeChatWebSocketReturn => {
   }, [webSocket]);
 
   return {
+    client: webSocket.client,
     isConnected: webSocket.isConnected,
     messages: webSocket.messages,
     errors: webSocket.errors,

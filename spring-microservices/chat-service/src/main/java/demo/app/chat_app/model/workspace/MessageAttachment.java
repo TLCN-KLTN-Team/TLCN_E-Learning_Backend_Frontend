@@ -19,6 +19,11 @@ public class MessageAttachment {
     @MongoId
     String id; // Unique identifier for the attachment
 
+    String messageId;
+
+    @Indexed
+    String channelId; // Channel this attachment belongs to
+
     String fileName; // Name of the file being attached
 
     String contentType; // Type of the file (e.g., image/png, application/pdf)

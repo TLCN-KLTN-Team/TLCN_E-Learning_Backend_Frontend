@@ -10,16 +10,18 @@ import type {
   ChatMessageResponse,
   UserResponse,
 } from "@/types/chat.types";
+import type { FileItem } from "@/types/file.types";
 
 interface ChatPanelProps {
   selectedChannel: ChannelResponse | null;
   participants: UserResponse[];
   isLoadingMessages: boolean;
   isConnected: boolean;
-  wsMessages: ChatMessageResponse[];
+  messages: ChatMessageResponse[];
   wsErrors: Array<{ message: string }>;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, files: FileItem[]) => void;
   onClearErrors: () => void;
+  onRetry?: (message: ChatMessageResponse) => void;
 }
 
 const ChatPanel = ({
@@ -27,10 +29,11 @@ const ChatPanel = ({
   participants,
   isLoadingMessages,
   isConnected,
-  wsMessages,
+  messages,
   wsErrors,
   onSendMessage,
   onClearErrors,
+  onRetry,
 }: ChatPanelProps) => {
   const [showParticipants, setShowParticipants] = useState(false);
 
@@ -48,14 +51,12 @@ const ChatPanel = ({
     if (!selectedChannel?.endTime || selectedChannel.endTime <= 0) {
       return false;
     }
-
     // Check if it's one of the time-based channel types
   };
 
   // Handle channel expiration
   const handleChannelExpired = () => {
     console.log("Channel expired, redirecting to channel list...");
-    // Could add navigation logic here or emit event to parent
   };
 
   if (!selectedChannel) {
@@ -79,9 +80,9 @@ const ChatPanel = ({
       <TimeBasedChannelView
         channel={selectedChannel}
         participants={participants}
-        wsMessages={wsMessages}
+        wsMessages={messages}
         isConnected={isConnected}
-        onSendMessage={onSendMessage}
+        onSendMessage={(content: string) => onSendMessage(content, [])}
       />
     );
   }
@@ -93,7 +94,7 @@ const ChatPanel = ({
         <ChannelWorkspace
           channelId={selectedChannel.id}
           channelName={selectedChannel.name}
-          endTime={new Date(selectedChannel.endTime).toISOString()}
+          endTime={new Date(selectedChannel.endTime!)}
           onChannelExpired={handleChannelExpired}
         />
       </div>
@@ -115,10 +116,11 @@ const ChatPanel = ({
         <div className="flex-1 overflow-y-auto bg-gray-800">
           <MessageList
             selectedChannel={selectedChannel}
-            wsMessages={wsMessages}
+            messages={messages}
             isLoadingMessages={isLoadingMessages}
             isConnected={isConnected}
             wsErrors={wsErrors}
+            onRetry={onRetry}
           />
         </div>
 
@@ -126,7 +128,7 @@ const ChatPanel = ({
         <MessageInput
           selectedChannel={selectedChannel}
           isConnected={isConnected}
-          wsMessages={wsMessages}
+          wsMessages={messages}
           wsErrors={wsErrors}
           onSendMessage={onSendMessage}
           onClearErrors={onClearErrors}
