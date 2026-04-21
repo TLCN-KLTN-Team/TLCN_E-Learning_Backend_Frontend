@@ -2,6 +2,7 @@ package com.hoangphihiep.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.io.UnsupportedEncodingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -635,5 +636,315 @@ public class EmailService {
             log.error("Unexpected error sending feedback email: {}", e.getMessage(), e);
             return CompletableFuture.completedFuture(false);
         }
+    }
+
+    @Async
+    public CompletableFuture<Boolean> sendCreditTransferRequestCreatedEmailAsync(
+            String toEmail,
+            String firstName,
+            String studentName,
+            String targetCourseName,
+            Integer creditTransferId
+    ) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Xác nhận gửi yêu cầu quy đổi tín chỉ");
+            helper.setText(buildCreditTransferRequestCreatedEmail(firstName, studentName, targetCourseName, creditTransferId), true);
+
+            mailSender.send(message);
+            log.info("Credit transfer confirmation email sent successfully to {}", toEmail);
+            return CompletableFuture.completedFuture(true);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            log.error("Error sending credit transfer confirmation email to {}: {}", toEmail, e.getMessage(), e);
+            return CompletableFuture.completedFuture(false);
+        } catch (Exception e) {
+            log.error("Unexpected error while preparing credit transfer confirmation email for {}: {}", toEmail, e.getMessage(), e);
+            return CompletableFuture.completedFuture(false);
+        }
+    }
+
+    @Async
+    public CompletableFuture<Boolean> sendCreditTransferInterviewScheduledEmailAsync(
+            String toEmail,
+            String firstName,
+            String studentName,
+            String targetCourseName,
+            String interviewTime,
+            String interviewMode,
+            String meetingLinkOrLocation
+    ) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Lịch vấn đáp quy đổi tín chỉ đã được xếp");
+            helper.setText(buildCreditTransferInterviewScheduledEmail(
+                    firstName,
+                    studentName,
+                    targetCourseName,
+                    interviewTime,
+                    interviewMode,
+                    meetingLinkOrLocation
+            ), true);
+
+            mailSender.send(message);
+            log.info("Credit transfer interview schedule email sent successfully to {}", toEmail);
+            return CompletableFuture.completedFuture(true);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            log.error("Error sending interview schedule email to {}: {}", toEmail, e.getMessage(), e);
+            return CompletableFuture.completedFuture(false);
+        } catch (Exception e) {
+            log.error("Unexpected error while preparing interview schedule email for {}: {}", toEmail, e.getMessage(), e);
+            return CompletableFuture.completedFuture(false);
+        }
+    }
+
+    @Async
+    public CompletableFuture<Boolean> sendCreditTransferDecisionEmailAsync(
+            String toEmail,
+            String firstName,
+            String studentName,
+            String targetCourseName,
+            String decisionStatus,
+            String decisionTime,
+            String decisionReason
+    ) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject("Kết quả yêu cầu quy đổi tín chỉ");
+            helper.setText(buildCreditTransferDecisionEmail(
+                    firstName,
+                    studentName,
+                    targetCourseName,
+                    decisionStatus,
+                    decisionTime,
+                    decisionReason
+            ), true);
+
+            mailSender.send(message);
+            log.info("Credit transfer decision email sent successfully to {}", toEmail);
+            return CompletableFuture.completedFuture(true);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            log.error("Error sending decision email to {}: {}", toEmail, e.getMessage(), e);
+            return CompletableFuture.completedFuture(false);
+        } catch (Exception e) {
+            log.error("Unexpected error while preparing decision email for {}: {}", toEmail, e.getMessage(), e);
+            return CompletableFuture.completedFuture(false);
+        }
+    }
+
+    private String buildCreditTransferRequestCreatedEmail(String firstName, String studentName, String targetCourseName, Integer creditTransferId) {
+        String greetingName = firstName != null && !firstName.trim().isEmpty() ? firstName : studentName;
+        String dashboardUrl = frontendUrl + "/student/credit-transfers";
+
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Xác nhận yêu cầu quy đổi tín chỉ</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                    .header { background: linear-gradient(135deg, #0f766e 0%%, #2563eb 100%%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                    .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+                    .box { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; margin: 18px 0; }
+                    .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; font-weight: 700; }
+                    .value { font-size: 16px; font-weight: 600; color: #111827; margin-top: 4px; }
+                    .btn { display: inline-block; background: #2563eb; color: white !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; margin: 15px 0; font-weight: 600; }
+                    .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; padding-top: 20px; border-top: 1px solid #dee2e6; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Yêu cầu quy đổi đã được ghi nhận</h1>
+                    </div>
+
+                    <div class="content">
+                        <p>Xin chào %s,</p>
+                        <p>Hệ thống đã ghi nhận yêu cầu quy đổi tín chỉ của bạn.</p>
+
+                        <div class="box">
+                            <div class="label">Sinh viên</div>
+                            <div class="value">%s</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="label">Môn học được miễn</div>
+                            <div class="value">%s</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="label">Mã yêu cầu</div>
+                            <div class="value">#%s</div>
+                        </div>
+
+                        <p>Expert và giáo viên phụ trách sẽ nhận được thông báo để xử lý tiếp theo.</p>
+
+                        <div style="text-align: center;">
+                            <a href="%s" class="btn">Xem lịch sử yêu cầu</a>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>Đây là email tự động. Vui lòng không trả lời email này.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(greetingName, studentName, targetCourseName, creditTransferId, dashboardUrl);
+    }
+
+    private String buildCreditTransferInterviewScheduledEmail(
+            String firstName,
+            String studentName,
+            String targetCourseName,
+            String interviewTime,
+            String interviewMode,
+            String meetingLinkOrLocation
+    ) {
+        String greetingName = firstName != null && !firstName.trim().isEmpty() ? firstName : studentName;
+        String dashboardUrl = frontendUrl + "/student/credit-transfers";
+
+        String detailLabel = "Online".equalsIgnoreCase(interviewMode) ? "Link họp" : "Địa điểm";
+
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Lịch vấn đáp quy đổi tín chỉ</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                    .header { background: linear-gradient(135deg, #0f766e 0%%, #2563eb 100%%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                    .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+                    .box { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; margin: 18px 0; }
+                    .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; font-weight: 700; }
+                    .value { font-size: 16px; font-weight: 600; color: #111827; margin-top: 4px; word-break: break-word; }
+                    .btn { display: inline-block; background: #2563eb; color: white !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; margin: 15px 0; font-weight: 600; }
+                    .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; padding-top: 20px; border-top: 1px solid #dee2e6; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Lịch vấn đáp đã được xếp</h1>
+                    </div>
+
+                    <div class="content">
+                        <p>Xin chào %s,</p>
+                        <p>Lịch vấn đáp quy đổi tín chỉ cho môn <strong>%s</strong> đã được xếp.</p>
+
+                        <div class="box">
+                            <div class="label">Thời gian</div>
+                            <div class="value">%s</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="label">Hình thức</div>
+                            <div class="value">%s</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="label">%s</div>
+                            <div class="value">%s</div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <a href="%s" class="btn">Xem chi tiết yêu cầu</a>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>Đây là email tự động. Vui lòng không trả lời email này.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(greetingName, targetCourseName, interviewTime, interviewMode, detailLabel, meetingLinkOrLocation, dashboardUrl);
+    }
+
+    private String buildCreditTransferDecisionEmail(
+            String firstName,
+            String studentName,
+            String targetCourseName,
+            String decisionStatus,
+            String decisionTime,
+            String decisionReason
+    ) {
+        String greetingName = firstName != null && !firstName.trim().isEmpty() ? firstName : studentName;
+        String dashboardUrl = frontendUrl + "/student/credit-transfers";
+
+        String statusColor = "Được duyệt".equalsIgnoreCase(decisionStatus) ? "#16a34a" : "#dc2626";
+        String statusBg = "Được duyệt".equalsIgnoreCase(decisionStatus) ? "#dcfce7" : "#fee2e2";
+
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Kết quả quy đổi tín chỉ</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                    .header { background: linear-gradient(135deg, #0f766e 0%%, #2563eb 100%%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                    .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+                    .box { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; margin: 18px 0; }
+                    .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; font-weight: 700; }
+                    .value { font-size: 16px; font-weight: 600; color: #111827; margin-top: 4px; word-break: break-word; }
+                    .status-pill { display: inline-block; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 14px; color: %s; background: %s; }
+                    .btn { display: inline-block; background: #2563eb; color: white !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; margin: 15px 0; font-weight: 600; }
+                    .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; padding-top: 20px; border-top: 1px solid #dee2e6; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Kết quả yêu cầu quy đổi tín chỉ</h1>
+                    </div>
+
+                    <div class="content">
+                        <p>Xin chào %s,</p>
+                        <p>Yêu cầu quy đổi tín chỉ cho môn <strong>%s</strong> đã được cập nhật kết quả.</p>
+
+                        <div class="box">
+                            <div class="label">Trạng thái</div>
+                            <div class="value"><span class="status-pill">%s</span></div>
+                        </div>
+
+                        <div class="box">
+                            <div class="label">Thời gian xử lý</div>
+                            <div class="value">%s</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="label">Ghi chú</div>
+                            <div class="value">%s</div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <a href="%s" class="btn">Xem chi tiết yêu cầu</a>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>Đây là email tự động. Vui lòng không trả lời email này.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(statusColor, statusBg, greetingName, targetCourseName, decisionStatus, decisionTime, decisionReason, dashboardUrl);
     }
 }

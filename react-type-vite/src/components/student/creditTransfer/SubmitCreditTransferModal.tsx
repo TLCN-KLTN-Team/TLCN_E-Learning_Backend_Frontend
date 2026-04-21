@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import type { EquivalentCourseResponse } from "@/types/course.types";
 import * as studentCreditTransferApi from "@/services/api/student/studentCreditTransferApi";
 import { toast } from "react-toastify";
-import { Loader2, Upload, FileText, ArrowRight, AlertTriangle, CheckCircle2, CircleX } from "lucide-react";
+import { Loader2, ArrowRight, AlertTriangle, CheckCircle2, CircleX } from "lucide-react";
 import * as certificateApi from "@/services/api/user/certificateApi";
 import { AppError } from "@/errors";
 
@@ -24,11 +24,6 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
     onSuccess,
 }) => {
     const [description, setDescription] = useState("");
-    const [file, setFile] = useState<File | null>(null);
-    const [linkUrl, setLinkUrl] = useState("");
-    const [isLinkMode, setIsLinkMode] = useState(false);
-
-    const [isUploading, setIsUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // GATEKEEPER STATES
@@ -44,7 +39,6 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
             setEligible(null);
             setEligibilityError(null);
             setDescription("");
-            setFile(null);
         }
     }, [isOpen, equivalentCourse]);
 
@@ -100,56 +94,20 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
 
     if (!equivalentCourse) return null;
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
-        }
-    };
-
     const handleSubmit = async () => {
-        if (!description.trim()) {
-            toast.error("Vui lòng nhập mô tả hoặc ghi chú");
-            return;
-        }
-
-        if (!isLinkMode && !file) {
-            toast.error("Vui lòng tải ảnh hoặc file chứng chỉ!");
-            return;
-        }
-
-        if (isLinkMode && !linkUrl.trim()) {
-            toast.error("Vui lòng nhập đường dẫn chứng chỉ!");
-            return;
-        }
-
-        // ... rest of logic
-
-
         try {
             setIsSubmitting(true);
 
-            if (!isLinkMode && file) {
-                setIsUploading(true);
-                await studentCreditTransferApi.createRequestWithAttachment({
-                    equivalentCourseId: equivalentCourse.id,
-                    description: description,
-                }, file);
-            } else {
-                await studentCreditTransferApi.createRequest({
-                    equivalentCourseId: equivalentCourse.id,
-                    description: description,
-                    attachmentUrl: linkUrl,
-                });
-            }
+            await studentCreditTransferApi.createRequest({
+                equivalentCourseId: equivalentCourse.id,
+                description: description.trim(),
+            });
 
             toast.success("Gửi yêu cầu quy đổi thành công!");
             onSuccess();
             onClose();
             // Reset form
             setDescription("");
-            setFile(null);
-            setLinkUrl("");
-            setIsLinkMode(false);
         } catch (error: unknown) {
             const message =
                 error instanceof AppError
@@ -158,7 +116,6 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
             toast.error(message);
         } finally {
             setIsSubmitting(false);
-            setIsUploading(false);
         }
     };
 
@@ -168,7 +125,7 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
                 <DialogHeader>
                     <DialogTitle>Đăng ký Quy đổi tín chỉ</DialogTitle>
                     <DialogDescription className="sr-only">
-                        Điền mô tả và gửi minh chứng bằng tệp hoặc liên kết để tạo yêu cầu quy đổi tín chỉ.
+                        Điền ghi chú nếu cần để tạo yêu cầu quy đổi tín chỉ.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -242,7 +199,7 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
 
                 <div className="space-y-4 border-t pt-4">
                     <div className="grid w-full gap-1.5">
-                        <Label htmlFor="description">Ghi chú / Mô tả thêm</Label>
+                        <Label htmlFor="description">Ghi chú / Mô tả thêm (không bắt buộc)</Label>
                         <Textarea
                             id="description"
                             placeholder="Ví dụ: Em đã hoàn thành khóa học này vào tháng 5/2024..."
@@ -250,92 +207,22 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
                             onChange={(e) => setDescription(e.target.value)}
                         />
                     </div>
-
-                    <div className="grid w-full gap-1.5">
-                        <Label>Minh chứng (Chọn một phương thức)</Label>
-                        <div className="flex gap-4 mb-2">
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    type="radio"
-                                    id="proof-file"
-                                    name="proofType"
-                                    aria-label="Chọn minh chứng bằng tệp"
-                                    checked={!isLinkMode}
-                                    onChange={() => setIsLinkMode(false)}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                                />
-                                <Label htmlFor="proof-file" className="font-normal cursor-pointer">Ảnh chụp / File (Khuyên dùng)</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    type="radio"
-                                    id="proof-link"
-                                    name="proofType"
-                                    aria-label="Chọn minh chứng bằng liên kết"
-                                    checked={isLinkMode}
-                                    onChange={() => setIsLinkMode(true)}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                                />
-                                <Label htmlFor="proof-link" className="font-normal cursor-pointer">Chỉ gửi Link</Label>
-                            </div>
-                        </div>
-
-                        {!isLinkMode ? (
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => document.getElementById('file-upload')?.click()}
-                                    >
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        {file ? "Chọn lại file" : "Tải ảnh/file chứng chỉ"}
-                                    </Button>
-                                    <input
-                                        id="file-upload"
-                                        type="file"
-                                        aria-label="Tải tệp minh chứng"
-                                        className="hidden"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        onChange={handleFileChange}
-                                    />
-                                    {file && (
-                                        <span className="text-sm text-green-600 flex items-center">
-                                            <FileText className="h-4 w-4 mr-1" />
-                                            {file.name}
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
-                                    💡 <b>Lưu ý:</b> Với chứng chỉ Blockchain, hãy <b>chụp ảnh màn hình</b> thông báo "Certificate Completed" (như hình bạn thấy trên web) và tải lên đây để giảng viên dễ dàng xác thực.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Dán Transaction Hash (0x...) hoặc Link Verify Certificate vào đây"
-                                    value={linkUrl}
-                                    onChange={(e) => setLinkUrl(e.target.value)}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                />
-                                <p className="text-xs text-blue-600">
-                                    💡 Mẹo: Bạn có thể copy <b>BLOCKCHAIN TRANSACTION HASH</b> hoặc đường dẫn từ nút <b>Verify on Explorer</b> trên chứng chỉ của bạn.
-                                </p>
-                            </div>
-                        )}
-                    </div>
                 </div>
 
                 <DialogFooter>
                     <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
                         Hủy
                     </Button>
-                    <Button onClick={handleSubmit} disabled={isSubmitting || eligible === false}>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || eligible === false}
+                        variant="default"
+                        className="bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 disabled:!bg-gray-200 disabled:!text-gray-700 disabled:!border-gray-300 disabled:!opacity-100"
+                    >
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {isUploading ? "Đang tải file..." : "Đang gửi..."}
+                                Đang gửi...
                             </>
                         ) : (
                             "Gửi yêu cầu"

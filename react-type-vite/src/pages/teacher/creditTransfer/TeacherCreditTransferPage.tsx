@@ -8,6 +8,7 @@ import {
   scheduleCreditTransferInterview,
   searchTeacherCreditTransfers,
   submitCreditTransferInterviewScore,
+  uploadTeacherCreditTransferEvidence,
   type TeacherCreditTransferStatus,
 } from "@/services/api/teacher/creditTransferInterviewApi";
 
@@ -31,6 +32,8 @@ const TeacherCreditTransferPage: React.FC = () => {
   const [certificateScore, setCertificateScore] = useState("");
   const [interviewScore, setInterviewScore] = useState("");
   const [interviewFeedback, setInterviewFeedback] = useState("");
+  const [interviewEvidenceUrl, setInterviewEvidenceUrl] = useState("");
+  const [evidenceUploading, setEvidenceUploading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -67,12 +70,37 @@ const TeacherCreditTransferPage: React.FC = () => {
       setCertificateScore(detail.certificateScore?.toString() || "");
       setInterviewScore(detail.interviewScore?.toString() || "");
       setInterviewFeedback(detail.interviewFeedback || "");
+      setInterviewEvidenceUrl(detail.interviewEvidenceUrl || "");
       setIsModalOpen(true);
     } catch (error) {
       console.error(error);
       toast.error("Không thể tải chi tiết hồ sơ");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleEvidenceFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!selected || !file) return;
+
+    if (!file.type.startsWith("video/")) {
+      toast.warning("Vui lòng chọn file video minh chứng");
+      return;
+    }
+
+    try {
+      setEvidenceUploading(true);
+      const uploadedUrl = await uploadTeacherCreditTransferEvidence(selected.id, file);
+      setInterviewEvidenceUrl(uploadedUrl);
+      setSelected((prev) => (prev ? { ...prev, interviewEvidenceUrl: uploadedUrl } : prev));
+      toast.success("Đã tải lên video minh chứng");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Không thể tải lên video minh chứng");
+    } finally {
+      setEvidenceUploading(false);
     }
   };
 
@@ -114,12 +142,19 @@ const TeacherCreditTransferPage: React.FC = () => {
   const handleScore = async () => {
     if (!selected) return;
 
+    const resolvedCertificateScore = selected.certificateScore ?? Number(certificateScore);
+    if (!Number.isFinite(resolvedCertificateScore)) {
+      toast.warning("Không tìm thấy điểm chứng chỉ từ certificate.final_score");
+      return;
+    }
+
     try {
       setActionLoading(true);
       await submitCreditTransferInterviewScore(selected.id, {
-        certificateScore: Number(certificateScore),
+        certificateScore: resolvedCertificateScore,
         interviewScore: Number(interviewScore),
         interviewFeedback,
+        interviewEvidenceUrl: interviewEvidenceUrl.trim() || undefined,
       });
       toast.success("Đã lưu kết quả vấn đáp");
       await openDetail(selected.id);
@@ -149,6 +184,13 @@ const TeacherCreditTransferPage: React.FC = () => {
         return value;
     }
   };
+
+  const scheduleDisabled = actionLoading || selected?.status === "APPROVED" || selected?.status === "REJECTED";
+  const scoreDisabled =
+    actionLoading ||
+    evidenceUploading ||
+    !selected ||
+    (selected.status !== "INTERVIEW_SCHEDULED" && selected.status !== "INTERVIEW_SCORED");
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -194,8 +236,8 @@ const TeacherCreditTransferPage: React.FC = () => {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Sinh viên</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Môn nguồn</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Môn miễn</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Khóa học Nguồn (Bên ngoài)</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Khóa học Đích (Nội bộ)</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Trạng thái</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500">Hành động</th>
               </tr>
@@ -214,7 +256,7 @@ const TeacherCreditTransferPage: React.FC = () => {
                   <tr key={item.id} className="border-b">
                     <td className="px-4 py-3 text-sm">
                       <div className="font-medium">{item.studentName}</div>
-                      <div className="text-xs text-gray-500">{item.studentId}</div>
+                      <div className="text-xs text-gray-500">MSSV: {item.studentId}</div>
                     </td>
                     <td className="px-4 py-3 text-sm">{item.sourceCourseName}</td>
                     <td className="px-4 py-3 text-sm text-green-700 font-medium">{item.targetCourseName}</td>
@@ -273,7 +315,13 @@ const TeacherCreditTransferPage: React.FC = () => {
               ) : (
                 <input value={interviewLocation} onChange={(e) => setInterviewLocation(e.target.value)} placeholder="Địa điểm vấn đáp" className="w-full border rounded px-3 py-2 text-sm" />
               )}
-              <Button size="sm" onClick={handleSchedule} disabled={actionLoading || selected.status === "APPROVED" || selected.status === "REJECTED"}>
+              <Button
+                size="sm"
+                onClick={handleSchedule}
+                disabled={scheduleDisabled}
+                variant="default"
+                className="bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 disabled:!bg-gray-200 disabled:!text-gray-700 disabled:!border-gray-300 disabled:!opacity-100"
+              >
                 Lưu lịch vấn đáp
               </Button>
             </div>
@@ -281,14 +329,37 @@ const TeacherCreditTransferPage: React.FC = () => {
             <div className="border rounded-lg p-4 mb-4 space-y-3">
               <div className="font-medium flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Chấm điểm vấn đáp</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input value={certificateScore} onChange={(e) => setCertificateScore(e.target.value)} placeholder="Điểm trung bình chứng chỉ (0-10)" className="w-full border rounded px-3 py-2 text-sm" />
+                <input value={certificateScore} readOnly placeholder="Điểm trung bình chứng chỉ (tự động từ certificate.final_score)" className="w-full border rounded px-3 py-2 text-sm bg-gray-100 text-gray-700" />
                 <input value={interviewScore} onChange={(e) => setInterviewScore(e.target.value)} placeholder="Điểm vấn đáp (0-10)" className="w-full border rounded px-3 py-2 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <input
+                  value={interviewEvidenceUrl}
+                  onChange={(e) => setInterviewEvidenceUrl(e.target.value)}
+                  placeholder="Dán link YouTube hoặc URL video minh chứng"
+                  className="w-full border rounded px-3 py-2 text-sm"
+                />
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex items-center px-3 py-2 text-sm border rounded cursor-pointer hover:bg-gray-50">
+                    Upload video minh chứng
+                    <input
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={handleEvidenceFileChange}
+                      disabled={evidenceUploading || actionLoading}
+                    />
+                  </label>
+                  {evidenceUploading && <span className="text-xs text-gray-500">Đang tải video...</span>}
+                </div>
               </div>
               <textarea value={interviewFeedback} onChange={(e) => setInterviewFeedback(e.target.value)} placeholder="Nhận xét vấn đáp" className="w-full border rounded px-3 py-2 text-sm min-h-[90px]" />
               <Button
                 size="sm"
                 onClick={handleScore}
-                disabled={actionLoading || (selected.status !== "INTERVIEW_SCHEDULED" && selected.status !== "INTERVIEW_SCORED")}
+                disabled={scoreDisabled}
+                variant="default"
+                className="bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 disabled:!bg-gray-200 disabled:!text-gray-700 disabled:!border-gray-300 disabled:!opacity-100"
               >
                 Lưu điểm & chuyển expert duyệt
               </Button>

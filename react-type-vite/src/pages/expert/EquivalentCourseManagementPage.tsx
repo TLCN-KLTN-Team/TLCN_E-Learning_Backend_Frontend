@@ -150,8 +150,8 @@ const EquivalentCourseManagementPage: React.FC = () => {
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b border-gray-200">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Source Course (Nguồn)</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Target Course (Đích)</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Khóa học Nguồn (Bên ngoài)</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Khóa học Đích (Nội bộ)</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Yêu cầu</th>
                                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng thái</th>
                                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Hành động</th>
@@ -177,7 +177,7 @@ const EquivalentCourseManagementPage: React.FC = () => {
                                         <td className="px-6 py-4 text-center">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${course.status ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                                                 }`}>
-                                                {course.status ? "Active" : "Inactive"}
+                                                {course.status ? "Hoạt động" : "Không hoạt động"}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">

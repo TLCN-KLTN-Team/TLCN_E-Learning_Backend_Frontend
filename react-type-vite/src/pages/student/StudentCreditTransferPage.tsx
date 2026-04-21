@@ -161,6 +161,43 @@ const StudentCreditTransferPage = () => {
         return <span className="text-muted-foreground">Chưa có phản hồi</span>;
     };
 
+    const renderInterviewSchedule = (request: CreditTransferResponse) => {
+        if (!request.interviewScheduledAt) {
+            return <span className="text-muted-foreground">Chưa xếp lịch</span>;
+        }
+
+        const modeLabel = request.interviewMode === "ONLINE"
+            ? "Online"
+            : request.interviewMode === "OFFLINE"
+                ? "Offline"
+                : "-";
+
+        return (
+            <div className="space-y-1 text-xs text-gray-600 leading-5">
+                <div className="font-medium text-gray-900">
+                    {format(new Date(request.interviewScheduledAt), "dd/MM/yyyy HH:mm")}
+                </div>
+                <div>Hình thức: {modeLabel}</div>
+                {request.interviewMode === "ONLINE" && request.interviewMeetingLink && (
+                    <a
+                        href={request.interviewMeetingLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block text-blue-600 hover:underline break-all"
+                    >
+                        Phòng họp: {request.interviewMeetingLink}
+                    </a>
+                )}
+                {request.interviewMode === "OFFLINE" && request.interviewLocation && (
+                    <div>Địa điểm: {request.interviewLocation}</div>
+                )}
+                {request.interviewFeedback && (
+                    <div className="text-gray-500">Ghi chú: {request.interviewFeedback}</div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="student-dashboard student-dashboard-bg flex flex-col min-h-screen">
             <Header />
@@ -193,7 +230,7 @@ const StudentCreditTransferPage = () => {
                                     <TableRow>
                                         <TableHead>Khóa học Nguồn (Bên ngoài)</TableHead>
                                         <TableHead>Đơn vị đào tạo</TableHead>
-                                        <TableHead>Môn học được miễn (Nội bộ)</TableHead>
+                                        <TableHead>Khóa học Đích (Nội bộ)</TableHead>
                                         <TableHead>Yêu cầu / Điều kiện</TableHead>
                                         <TableHead className="text-right">Hành động</TableHead>
                                     </TableRow>
@@ -231,7 +268,7 @@ const StudentCreditTransferPage = () => {
                                                                 <Button
                                                                     size="sm"
                                                                     variant={actionState.variant}
-                                                                    className={actionState.className}
+                                                                    className={`bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 disabled:!bg-gray-200 disabled:!text-gray-700 disabled:!border-gray-300 disabled:!opacity-100 ${actionState.className}`}
                                                                     onClick={() => handleOpenModal(course)}
                                                                 >
                                                                     {actionState.label}
@@ -240,9 +277,16 @@ const StudentCreditTransferPage = () => {
                                                         }
 
                                                         return (
-                                                            <Badge variant={actionState.variant} className={actionState.className}>
-                                                                {actionState.label}
-                                                            </Badge>
+                                                            <div className="inline-flex flex-col items-end gap-1">
+                                                                <Badge variant={actionState.variant} className={actionState.className}>
+                                                                    {actionState.label}
+                                                                </Badge>
+                                                                {getLatestRequestByEquivalentCourse(course.id)?.interviewScheduledAt && (
+                                                                    <div className="text-[11px] text-gray-500 max-w-[220px] text-right">
+                                                                        {renderInterviewSchedule(getLatestRequestByEquivalentCourse(course.id)!)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         );
                                                     })()}
                                                 </TableCell>
@@ -263,6 +307,7 @@ const StudentCreditTransferPage = () => {
                                         <TableHead>Khóa học quy đổi</TableHead>
                                         <TableHead>Môn học được miễn</TableHead>
                                         <TableHead>Ghi chú của tôi</TableHead>
+                                        <TableHead>Lịch vấn đáp</TableHead>
                                         <TableHead>Trạng thái</TableHead>
                                         <TableHead>Phản hồi từ Chuyên gia</TableHead>
                                     </TableRow>
@@ -270,13 +315,13 @@ const StudentCreditTransferPage = () => {
                                 <TableBody>
                                     {isLoading ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-8">
+                                            <TableCell colSpan={7} className="text-center py-8">
                                                 <div className="flex justify-center"><Loader2 className="animate-spin" /></div>
                                             </TableCell>
                                         </TableRow>
                                     ) : myRequests.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                                            <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                                                 Bạn chưa gửi yêu cầu quy đổi nào.
                                             </TableCell>
                                         </TableRow>
@@ -287,6 +332,7 @@ const StudentCreditTransferPage = () => {
                                                 <TableCell>{req.sourceCourseName || "N/A"}</TableCell>
                                                 <TableCell>{req.targetCourseName || "N/A"}</TableCell>
                                                 <TableCell className="max-w-[200px] truncate" title={req.description}>{req.description}</TableCell>
+                                                <TableCell>{renderInterviewSchedule(req)}</TableCell>
                                                 <TableCell>{renderStatusBadge(req.status)}</TableCell>
                                                 <TableCell>{renderExpertFeedback(req)}</TableCell>
                                             </TableRow>

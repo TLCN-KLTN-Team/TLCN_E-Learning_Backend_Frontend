@@ -1,16 +1,28 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.ScheduleCreditTransferInterviewRequest;
+import com.hoangphihiep.dto.request.NotificationMessage;
 import com.hoangphihiep.dto.request.SubmitCreditTransferInterviewScoreRequest;
 import com.hoangphihiep.dto.response.CreditTransferResponse;
+import com.hoangphihiep.entity.Certificate;
 import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseProgress;
 import com.hoangphihiep.entity.CreditTransfer;
 import com.hoangphihiep.entity.EquivalentCourse;
 import com.hoangphihiep.mapper.CreditTransferMapper;
+import com.hoangphihiep.repository.CertificateRepository;
 import com.hoangphihiep.repository.CourseProgressRepository;
 import com.hoangphihiep.repository.CreditTransferRepository;
+import com.hoangphihiep.repository.httpclient.ExpertRepository;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
+import com.hoangphihiep.repository.httpclient.NotificationRepository;
+import com.hoangphihiep.repository.httpclient.UserInfoApi;
+import com.hoangphihiep.repository.httpclient.TeacherRepository;
+import com.hoangphihiep.dto.response.ExpertResponse;
+import com.hoangphihiep.dto.response.StudentResponse;
+import com.hoangphihiep.dto.response.TeacherResponse;
+import com.hoangphihiep.dto.response.UserResponse;
+import com.hoangphihiep.repository.httpclient.StudentRepository;
 import com.hoangphihiep.utils.CreditTransferStatus;
 import com.hoangphihiep.utils.InterviewMode;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +31,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -34,23 +48,34 @@ public class CreditTransferService {
     private static final double DEFAULT_CERTIFICATE_WEIGHT = 0.4;
     private static final double DEFAULT_INTERVIEW_WEIGHT = 0.6;
     private static final double DEFAULT_APPROVAL_THRESHOLD = 7.0;
+    private static final DateTimeFormatter INTERVIEW_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+    private static final DateTimeFormatter DECISION_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
 
     private final CreditTransferRepository creditTransferRepository;
     private final CourseProgressRepository courseProgressRepository;
+    private final CertificateRepository certificateRepository;
+    private final FileHandlerRepository fileHandlerRepository;
     private final com.hoangphihiep.repository.EquivalentCourseRepository equivalentCourseRepository;
     private final CreditTransferMapper creditTransferMapper;
-    private final FileHandlerRepository fileHandlerRepository;
+    private final UserInfoApi userInfoApi;
+    private final EmailService emailService;
+    private final NotificationRepository notificationRepository;
+    private final ExpertRepository expertRepository;
+    private final TeacherRepository teacherRepository;
+    private final StudentRepository studentRepository;
 
+    @Transactional(readOnly = true)
     public Page<CreditTransferResponse> searchCreditTransfers(String status, String keyword, Pageable pageable) {
         CreditTransferStatus parsedStatus = parseStatus(status);
         return creditTransferRepository.search(parsedStatus, keyword, pageable)
-                .map(creditTransferMapper::toResponse);
+                .map(this::toResponseWithCertificateScore);
     }
 
+    @Transactional(readOnly = true)
     public CreditTransferResponse getCreditTransferById(Integer id) {
         CreditTransfer creditTransfer = creditTransferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Review request not found"));
-        return creditTransferMapper.toResponse(creditTransfer);
+        return toResponseWithCertificateScore(creditTransfer);
     }
 
     @Transactional
@@ -76,6 +101,8 @@ public class CreditTransferService {
 
         creditTransferRepository.save(creditTransfer);
         updateStudentProgress(creditTransfer);
+        sendDecisionNotification(creditTransfer, true);
+        sendDecisionEmailNotification(creditTransfer, true);
     }
 
     @Transactional
@@ -93,6 +120,8 @@ public class CreditTransferService {
         creditTransfer.setApprovedDate(LocalDateTime.now());
 
         creditTransferRepository.save(creditTransfer);
+        sendDecisionNotification(creditTransfer, false);
+        sendDecisionEmailNotification(creditTransfer, false);
     }
 
     private void updateStudentProgress(CreditTransfer creditTransfer) {
@@ -153,6 +182,85 @@ public class CreditTransferService {
         creditTransfer.setInterviewFeedback(request.getNote());
         creditTransfer.setStatus(CreditTransferStatus.INTERVIEW_SCHEDULED);
         creditTransferRepository.save(creditTransfer);
+        
+        sendInterviewScheduledNotification(creditTransfer);
+        sendInterviewScheduledEmailNotification(creditTransfer);
+    }
+    
+    private void sendInterviewScheduledNotification(CreditTransfer creditTransfer) {
+        try {
+            EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
+            Course targetCourse = equivalentCourse != null ? equivalentCourse.getTargetCourse() : null;
+            String targetCourseName = targetCourse != null ? targetCourse.getCourseName() : "môn học đích";
+            
+            String interviewDetails = buildInterviewDetails(creditTransfer);
+            
+            notificationRepository.sendNotification(NotificationMessage.builder()
+                    .userId(creditTransfer.getIdStudent())
+                    .type("CREDIT_TRANSFER_INTERVIEW_SCHEDULED")
+                    .message("Lịch vấn đáp quy đổi tín chỉ cho môn " + targetCourseName + " đã được xếp. " + interviewDetails)
+                    .link("/student/credit-transfers")
+                    .data(buildCreditTransferData(creditTransfer, targetCourse))
+                    .build());
+        } catch (Exception e) {
+            log.warn("Failed to send interview scheduled notification for credit transfer {}: {}", creditTransfer.getId(), e.getMessage(), e);
+        }
+    }
+    
+    private String buildInterviewDetails(CreditTransfer creditTransfer) {
+        StringBuilder details = new StringBuilder();
+        if (creditTransfer.getInterviewScheduledAt() != null) {
+            details.append("Thời gian: ").append(creditTransfer.getInterviewScheduledAt().format(INTERVIEW_TIME_FORMATTER)).append(". ");
+        }
+        if (creditTransfer.getInterviewMode() != null) {
+            details.append("Hình thức: ").append(creditTransfer.getInterviewMode().equals(InterviewMode.ONLINE) ? "Online" : "Offline").append(". ");
+        }
+        if (creditTransfer.getInterviewMode() == InterviewMode.ONLINE && !isBlank(creditTransfer.getInterviewMeetingLink())) {
+            details.append("Link: ").append(creditTransfer.getInterviewMeetingLink()).append(".");
+        } else if (creditTransfer.getInterviewMode() == InterviewMode.OFFLINE && !isBlank(creditTransfer.getInterviewLocation())) {
+            details.append("Địa điểm: ").append(creditTransfer.getInterviewLocation()).append(".");
+        }
+        return details.toString();
+    }
+
+    private void sendInterviewScheduledEmailNotification(CreditTransfer creditTransfer) {
+        try {
+            UserResponse student = userInfoApi.getUserInfo(creditTransfer.getIdStudent()).getResult();
+            if (student == null || isBlank(student.getEmail())) {
+                log.warn("Skipping interview schedule email because student email is missing for request {}", creditTransfer.getId());
+                return;
+            }
+
+            EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
+            Course targetCourse = equivalentCourse != null ? equivalentCourse.getTargetCourse() : null;
+            String targetCourseName = targetCourse != null ? targetCourse.getCourseName() : "môn học đích";
+
+            String interviewTime = creditTransfer.getInterviewScheduledAt() != null
+                    ? creditTransfer.getInterviewScheduledAt().format(INTERVIEW_TIME_FORMATTER)
+                    : "Chưa cập nhật";
+
+            String interviewMode = creditTransfer.getInterviewMode() == InterviewMode.ONLINE ? "Online"
+                    : creditTransfer.getInterviewMode() == InterviewMode.OFFLINE ? "Offline" : "Chưa cập nhật";
+
+            String meetingOrLocation = "Chưa cập nhật";
+            if (creditTransfer.getInterviewMode() == InterviewMode.ONLINE && !isBlank(creditTransfer.getInterviewMeetingLink())) {
+                meetingOrLocation = creditTransfer.getInterviewMeetingLink();
+            } else if (creditTransfer.getInterviewMode() == InterviewMode.OFFLINE && !isBlank(creditTransfer.getInterviewLocation())) {
+                meetingOrLocation = creditTransfer.getInterviewLocation();
+            }
+
+            emailService.sendCreditTransferInterviewScheduledEmailAsync(
+                    student.getEmail(),
+                    student.getFirstName(),
+                    creditTransfer.getStudentName(),
+                    targetCourseName,
+                    interviewTime,
+                    interviewMode,
+                    meetingOrLocation
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send interview scheduled email for credit transfer {}: {}", creditTransfer.getId(), e.getMessage(), e);
+        }
     }
 
     @Transactional
@@ -168,20 +276,29 @@ public class CreditTransferService {
             throw new RuntimeException("Chỉ giáo viên đã xếp lịch mới được chấm vấn đáp");
         }
 
-        validateScoreRange(request.getCertificateScore(), "Điểm trung bình chứng chỉ");
         validateScoreRange(request.getInterviewScore(), "Điểm vấn đáp");
+
+        Double certificateScore = resolveCertificateScore(creditTransfer);
+        if (certificateScore == null) {
+            throw new RuntimeException("Không tìm thấy điểm chứng chỉ final_score cho sinh viên này");
+        }
+
+        validateScoreRange(certificateScore, "Điểm trung bình chứng chỉ");
 
         EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
         double certificateWeight = equivalentCourse.getCertificateWeight() != null ? equivalentCourse.getCertificateWeight() : DEFAULT_CERTIFICATE_WEIGHT;
         double interviewWeight = equivalentCourse.getInterviewWeight() != null ? equivalentCourse.getInterviewWeight() : DEFAULT_INTERVIEW_WEIGHT;
         double approvalThreshold = equivalentCourse.getApprovalThreshold() != null ? equivalentCourse.getApprovalThreshold() : DEFAULT_APPROVAL_THRESHOLD;
 
-        double decisionScore = (request.getCertificateScore() * certificateWeight) + (request.getInterviewScore() * interviewWeight);
+        double decisionScore = (certificateScore * certificateWeight) + (request.getInterviewScore() * interviewWeight);
 
         creditTransfer.setInterviewTeacherId(teacherId);
-        creditTransfer.setCertificateScore(request.getCertificateScore());
+        creditTransfer.setCertificateScore(certificateScore);
         creditTransfer.setInterviewScore(request.getInterviewScore());
         creditTransfer.setInterviewFeedback(request.getInterviewFeedback());
+        if (!isBlank(request.getInterviewEvidenceUrl())) {
+            creditTransfer.setInterviewEvidenceUrl(request.getInterviewEvidenceUrl().trim());
+        }
         creditTransfer.setInterviewScoredAt(LocalDateTime.now());
         creditTransfer.setCertificateWeightApplied(certificateWeight);
         creditTransfer.setInterviewWeightApplied(interviewWeight);
@@ -194,12 +311,43 @@ public class CreditTransferService {
     }
 
     @Transactional
-    public void createCreditTransfer(com.hoangphihiep.dto.request.CreateCreditTransferRequest request, String studentId, String studentName) {
-        createCreditTransfer(request, studentId, studentName, null);
+    public String uploadInterviewEvidence(Integer id, MultipartFile file, String teacherId) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Vui lòng chọn video minh chứng");
+        }
+
+        String contentType = file.getContentType() != null ? file.getContentType().toLowerCase(Locale.ROOT) : "";
+        if (!contentType.startsWith("video/")) {
+            throw new RuntimeException("File minh chứng phải là video");
+        }
+
+        CreditTransfer creditTransfer = creditTransferRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Review request not found"));
+
+        if (creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCHEDULED
+                && creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCORED) {
+            throw new RuntimeException("Yêu cầu không thể nộp minh chứng ở trạng thái hiện tại");
+        }
+
+        if (!isBlank(creditTransfer.getInterviewTeacherId()) && !teacherId.equals(creditTransfer.getInterviewTeacherId())) {
+            throw new RuntimeException("Chỉ giáo viên đã xếp lịch mới được nộp minh chứng");
+        }
+
+        Map<String, String> uploadResult = fileHandlerRepository.uploadFile(file);
+        String uploadedUrl = uploadResult != null ? uploadResult.get("url") : null;
+        if (isBlank(uploadedUrl)) {
+            throw new RuntimeException("Upload video minh chứng thất bại");
+        }
+
+        creditTransfer.setInterviewTeacherId(teacherId);
+        creditTransfer.setInterviewEvidenceUrl(uploadedUrl);
+        creditTransferRepository.save(creditTransfer);
+
+        return uploadedUrl;
     }
 
     @Transactional
-    public void createCreditTransfer(com.hoangphihiep.dto.request.CreateCreditTransferRequest request, String studentId, String studentName, MultipartFile attachmentFile) {
+    public void createCreditTransfer(com.hoangphihiep.dto.request.CreateCreditTransferRequest request, String studentId, String studentName) {
         EquivalentCourse equivalentCourse = equivalentCourseRepository.findById(request.getEquivalentCourseId())
                 .orElseThrow(() -> new RuntimeException("Khóa học quy đổi không tồn tại"));
 
@@ -226,7 +374,6 @@ public class CreditTransferService {
         creditTransfer.setStudentName(studentName);
         creditTransfer.setEquivalentCourse(equivalentCourse);
         creditTransfer.setDescription(request.getDescription());
-        creditTransfer.setAttachmentUrl(resolveAttachmentUrl(request.getAttachmentUrl(), attachmentFile));
         creditTransfer.setEducationalUnitName(request.getEducationalUnitName() != null ? request.getEducationalUnitName() : 
             (equivalentCourse.getSourceCourse() != null && equivalentCourse.getSourceCourse().getCourse() != null && equivalentCourse.getSourceCourse().getCourse().getEducationalUnit() != null) 
             ? equivalentCourse.getSourceCourse().getCourse().getEducationalUnit().getName() : "Unknown");
@@ -234,22 +381,12 @@ public class CreditTransferService {
         creditTransfer.setStatus(CreditTransferStatus.PENDING);
         creditTransfer.setRequestDate(LocalDateTime.now());
 
-        creditTransferRepository.save(creditTransfer);
+        CreditTransfer saved = creditTransferRepository.save(creditTransfer);
+        sendCreatedNotifications(saved);
+        sendCreatedEmailNotification(saved);
     }
 
-    private String resolveAttachmentUrl(String attachmentUrl, MultipartFile attachmentFile) {
-        if (attachmentFile != null && !attachmentFile.isEmpty()) {
-            Map<String, String> uploaded = fileHandlerRepository.uploadFile(attachmentFile);
-            String uploadedUrl = uploaded != null ? uploaded.get("url") : null;
-            if (isBlank(uploadedUrl)) {
-                throw new RuntimeException("Không thể tải tệp minh chứng lên hệ thống");
-            }
-            return uploadedUrl;
-        }
-
-        return attachmentUrl;
-    }
-
+    @Transactional(readOnly = true)
     public Page<CreditTransferResponse> getMyCreditTransfers(String studentId, Pageable pageable) {
         return creditTransferRepository.findByIdStudent(studentId, pageable)
                 .map(creditTransferMapper::toResponse);
@@ -279,5 +416,224 @@ public class CreditTransferService {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private CreditTransferResponse toResponseWithCertificateScore(CreditTransfer creditTransfer) {
+        CreditTransferResponse response = creditTransferMapper.toResponse(creditTransfer);
+        response.setStudentId(resolveStudentCode(creditTransfer.getIdStudent()));
+        if (response.getCertificateScore() == null) {
+            response.setCertificateScore(resolveCertificateScore(creditTransfer));
+        }
+        response.setInterviewEvidenceUrl(creditTransfer.getInterviewEvidenceUrl());
+        return response;
+    }
+
+    private String resolveStudentCode(String userId) {
+        if (isBlank(userId)) {
+            return userId;
+        }
+
+        try {
+            StudentResponse student = studentRepository.getStudentById(userId).getResult();
+            if (student != null && !isBlank(student.getStudentId())) {
+                return student.getStudentId();
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to resolve student code for userId {}: {}", userId, ex.getMessage());
+        }
+
+        return userId;
+    }
+
+    private Double resolveCertificateScore(CreditTransfer creditTransfer) {
+        EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
+        if (equivalentCourse == null || equivalentCourse.getSourceCourse() == null) {
+            return null;
+        }
+
+        Integer publishedCourseId = equivalentCourse.getSourceCourse().getId();
+        if (publishedCourseId == null) {
+            return null;
+        }
+
+        return certificateRepository.findByUserIdAndPublishedCourse_Id(creditTransfer.getIdStudent(), publishedCourseId)
+                .map(Certificate::getFinalScore)
+                .orElse(null);
+    }
+
+    private void sendDecisionNotification(CreditTransfer creditTransfer, boolean approved) {
+        try {
+            EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
+            Course targetCourse = equivalentCourse != null ? equivalentCourse.getTargetCourse() : null;
+            String targetCourseName = targetCourse != null ? targetCourse.getCourseName() : "môn học đích";
+
+            String message;
+            String type;
+            if (approved) {
+                type = "CREDIT_TRANSFER_APPROVED";
+                message = "Yêu cầu quy đổi tín chỉ cho môn " + targetCourseName + " đã được duyệt.";
+            } else {
+                type = "CREDIT_TRANSFER_REJECTED";
+                String reasonSuffix = isBlank(creditTransfer.getRejectionReason())
+                        ? ""
+                        : " Lý do: " + creditTransfer.getRejectionReason();
+                message = "Yêu cầu quy đổi tín chỉ cho môn " + targetCourseName + " đã bị từ chối." + reasonSuffix;
+            }
+
+            notificationRepository.sendNotification(NotificationMessage.builder()
+                    .userId(creditTransfer.getIdStudent())
+                    .type(type)
+                    .message(message)
+                    .link("/student/credit-transfers")
+                    .data(buildCreditTransferData(creditTransfer, targetCourse))
+                    .build());
+        } catch (Exception e) {
+            log.warn("Failed to send decision notification for credit transfer {}: {}", creditTransfer.getId(), e.getMessage(), e);
+        }
+    }
+
+    private void sendDecisionEmailNotification(CreditTransfer creditTransfer, boolean approved) {
+        try {
+            UserResponse student = userInfoApi.getUserInfo(creditTransfer.getIdStudent()).getResult();
+            if (student == null || isBlank(student.getEmail())) {
+                log.warn("Skipping decision email because student email is missing for request {}", creditTransfer.getId());
+                return;
+            }
+
+            EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
+            Course targetCourse = equivalentCourse != null ? equivalentCourse.getTargetCourse() : null;
+            String targetCourseName = targetCourse != null ? targetCourse.getCourseName() : "môn học đích";
+
+            String decisionStatus = approved ? "Được duyệt" : "Bị từ chối";
+            String decisionTime = creditTransfer.getApprovedDate() != null
+                    ? creditTransfer.getApprovedDate().format(DECISION_TIME_FORMATTER)
+                    : "Chưa cập nhật";
+            String decisionReason = approved
+                    ? "Yêu cầu đã đạt ngưỡng xét duyệt theo quy định."
+                    : (isBlank(creditTransfer.getRejectionReason()) ? "Không có lý do cụ thể." : creditTransfer.getRejectionReason());
+
+            emailService.sendCreditTransferDecisionEmailAsync(
+                    student.getEmail(),
+                    student.getFirstName(),
+                    creditTransfer.getStudentName(),
+                    targetCourseName,
+                    decisionStatus,
+                    decisionTime,
+                    decisionReason
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send decision email for credit transfer {}: {}", creditTransfer.getId(), e.getMessage(), e);
+        }
+    }
+
+    private void sendCreatedNotifications(CreditTransfer creditTransfer) {
+        try {
+            EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
+            Course targetCourse = equivalentCourse != null ? equivalentCourse.getTargetCourse() : null;
+            Integer educationalUnitId = targetCourse != null && targetCourse.getEducationalUnit() != null
+                    ? targetCourse.getEducationalUnit().getId()
+                    : null;
+
+            String targetCourseName = targetCourse != null ? targetCourse.getCourseName() : "môn học đích";
+
+            try {
+                notificationRepository.sendNotification(NotificationMessage.builder()
+                        .userId(creditTransfer.getIdStudent())
+                        .type("CREDIT_TRANSFER_REQUEST_CREATED")
+                        .message("Bạn đã gửi thành công yêu cầu quy đổi tín chỉ cho môn " + targetCourseName + ".")
+                        .link("/student/credit-transfers")
+                        .data(buildCreditTransferData(creditTransfer, targetCourse))
+                        .build());
+            } catch (Exception ex) {
+                log.warn("Failed to notify student for credit transfer {}: {}", creditTransfer.getId(), ex.getMessage());
+            }
+
+            if (educationalUnitId != null) {
+                try {
+                    var experts = expertRepository.getExpertsByEducationalUnitNoPage(educationalUnitId).getResult();
+                    if (experts != null) {
+                        for (ExpertResponse expert : experts) {
+                            if (expert == null || isBlank(expert.getId())) {
+                                continue;
+                            }
+
+                            notificationRepository.sendNotification(NotificationMessage.builder()
+                                    .userId(expert.getId())
+                                    .type("CREDIT_TRANSFER_REQUESTED")
+                                    .message("Có yêu cầu quy đổi tín chỉ mới cho môn " + targetCourseName + ". Vui lòng kiểm tra và duyệt hồ sơ.")
+                                    .link("/expert/credit-transfers")
+                                    .data(buildCreditTransferData(creditTransfer, targetCourse))
+                                    .build());
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.warn("Failed to notify experts for credit transfer {}: {}", creditTransfer.getId(), ex.getMessage());
+                }
+            }
+
+            if (targetCourse != null && !isBlank(targetCourse.getIdTeacher())) {
+                try {
+                    TeacherResponse teacher = teacherRepository.getTeacherByTeacherId(targetCourse.getIdTeacher()).getResult();
+                    if (teacher != null && !isBlank(teacher.getId())) {
+                        notificationRepository.sendNotification(NotificationMessage.builder()
+                                .userId(teacher.getId())
+                                .type("CREDIT_TRANSFER_NEEDS_SCHEDULE")
+                                .message("Sinh viên vừa gửi yêu cầu quy đổi cho môn " + targetCourseName + ". Vui lòng sắp lịch vấn đáp.")
+                                .link("/teacher/credit-transfers")
+                                .data(buildCreditTransferData(creditTransfer, targetCourse))
+                                .build());
+                    }
+                } catch (Exception ex) {
+                    log.warn("Failed to notify teacher for credit transfer {}: {}", creditTransfer.getId(), ex.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to send credit transfer notifications for request {}", creditTransfer.getId(), e);
+        }
+    }
+
+    private Map<String, Object> buildCreditTransferData(CreditTransfer creditTransfer, Course targetCourse) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("creditTransferId", creditTransfer.getId());
+
+        EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
+        if (equivalentCourse != null && equivalentCourse.getId() != null) {
+            data.put("equivalentCourseId", equivalentCourse.getId());
+        }
+
+        if (targetCourse != null) {
+            if (targetCourse.getId() != null) {
+                data.put("targetCourseId", targetCourse.getId());
+            }
+            if (targetCourse.getCourseName() != null) {
+                data.put("targetCourseName", targetCourse.getCourseName());
+            }
+        }
+
+        return data;
+    }
+
+    private void sendCreatedEmailNotification(CreditTransfer creditTransfer) {
+        try {
+            UserResponse student = userInfoApi.getUserInfo(creditTransfer.getIdStudent()).getResult();
+            if (student == null || isBlank(student.getEmail())) {
+                log.warn("Skipping credit transfer email because student email is missing for request {}", creditTransfer.getId());
+                return;
+            }
+
+            EquivalentCourse equivalentCourse = creditTransfer.getEquivalentCourse();
+            Course targetCourse = equivalentCourse != null ? equivalentCourse.getTargetCourse() : null;
+            String targetCourseName = targetCourse != null ? targetCourse.getCourseName() : "môn học đích";
+
+            emailService.sendCreditTransferRequestCreatedEmailAsync(
+                    student.getEmail(),
+                    student.getFirstName(),
+                    creditTransfer.getStudentName(),
+                    targetCourseName,
+                    creditTransfer.getId()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send credit transfer email for request {}: {}", creditTransfer.getId(), e.getMessage(), e);
+        }
     }
 }

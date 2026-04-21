@@ -67,10 +67,22 @@ public class ProgressService {
 
         int completedAssignments = assignmentSubmissionRepository.countDistinctAssignmentsByUserAndCourse(userId, course.getId());
 
-        // Calculate overall progress
-        int totalItems = totalLessons + totalQuizzes + totalAssignments;
-        int completedItems = completedLessons + completedQuizzes + completedAssignments;
-        double overallProgress = totalItems > 0 ? ((double) completedItems / totalItems) * 100 : 0;
+                // Calculate overall progress
+                int totalItems = totalLessons + totalQuizzes + totalAssignments;
+                int completedItems = completedLessons + completedQuizzes + completedAssignments;
+                double overallProgress = totalItems > 0 ? ((double) completedItems / totalItems) * 100 : 0;
+
+                // Credit transfer approval marks the course as completed in CourseProgress.
+                // Keep class progress stats consistent with that completion state.
+                if (Boolean.TRUE.equals(courseProgress.getCompletedViaCreditTransfer())
+                        || courseProgress.isCompleted()) {
+                        completedLessons = totalLessons;
+                        completedQuizzes = totalQuizzes;
+                        completedAssignments = totalAssignments;
+                        overallProgress = 100.0;
+                } else if (courseProgress.getProgressPercentage() > overallProgress) {
+                        overallProgress = courseProgress.getProgressPercentage();
+                }
 
         return ProgressStatsResponse.builder()
                 .totalLessons(totalLessons)

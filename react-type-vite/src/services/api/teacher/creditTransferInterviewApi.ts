@@ -49,3 +49,20 @@ export const submitCreditTransferInterviewScore = async (
 ): Promise<void> => {
   await axiosInstance.post(`${BASE_URL}/${id}/interview/score`, payload);
 };
+
+export const uploadTeacherCreditTransferEvidence = async (id: number, file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await axiosInstance.post<ApiResponse<string>>(
+    `${BASE_URL}/${id}/interview/evidence/upload`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data.result;
+};

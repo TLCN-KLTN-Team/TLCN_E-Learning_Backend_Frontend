@@ -84,7 +84,7 @@ public class CourseEnrollmentService {
                     .content(enrolledCourses)
                     .page(page)
                     .size(size)
-                    .totalElements(enrollments.getSize())
+                    .totalElements((int) enrollments.getTotalElements())
                     .totalPages(enrollments.getTotalPages())
                     .build();
         } catch (AppException e) {
@@ -108,6 +108,11 @@ public class CourseEnrollmentService {
                 return 0;
             }
 
+            // If course was completed (including credit transfer), dashboard should show 100%.
+            if (Boolean.TRUE.equals(courseProgress.getCompletedViaCreditTransfer()) || courseProgress.isCompleted()) {
+                return 100;
+            }
+
             // Get all visible sections for this class
             List<Section> sections = sectionRepository.findVisibleSectionsByClassId(course.getId(), classId.intValue());
 
@@ -123,7 +128,7 @@ public class CourseEnrollmentService {
             }
 
             // Calculate completed
-            int completedLessons = (int) courseProgress.getLessonProgresses().stream()
+                int completedLessons = (int) courseProgress.getLessonProgresses().stream()
                     .filter(lp -> lp.getCompleted())
                     .count();
 
@@ -134,6 +139,17 @@ public class CourseEnrollmentService {
             int totalItems = totalLessons + totalQuizzes + totalAssignments;
             int completedItems = completedLessons + completedQuizzes + completedAssignments;
             double overallProgress = totalItems > 0 ? ((double) completedItems / totalItems) * 100 : 0;
+
+            if (courseProgress.getProgressPercentage() > overallProgress) {
+                overallProgress = courseProgress.getProgressPercentage();
+            }
+
+            if (overallProgress < 0) {
+                overallProgress = 0;
+            }
+            if (overallProgress > 100) {
+                overallProgress = 100;
+            }
 
             return (int) Math.round(overallProgress);
         } catch (Exception e) {

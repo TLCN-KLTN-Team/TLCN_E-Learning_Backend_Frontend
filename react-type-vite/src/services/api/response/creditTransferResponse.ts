@@ -14,7 +14,6 @@ export interface CreditTransferResponse {
     equivalentCourseDescription: string;
 
     description: string;
-    attachmentUrl: string;
     status: "PENDING" | "INTERVIEW_SCHEDULED" | "INTERVIEW_SCORED" | "PENDING_EXPERT_REVIEW" | "APPROVED" | "REJECTED";
     requestDate: string;
 
@@ -24,6 +23,7 @@ export interface CreditTransferResponse {
     interviewMeetingLink?: string;
     interviewLocation?: string;
     interviewFeedback?: string;
+    interviewEvidenceUrl?: string;
     interviewScoredAt?: string;
 
     certificateScore?: number;

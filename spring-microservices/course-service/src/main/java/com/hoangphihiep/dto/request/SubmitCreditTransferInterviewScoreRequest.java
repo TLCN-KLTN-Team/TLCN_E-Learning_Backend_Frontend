@@ -13,4 +13,5 @@ public class SubmitCreditTransferInterviewScoreRequest {
     private Double certificateScore;
     private Double interviewScore;
     private String interviewFeedback;
+    private String interviewEvidenceUrl;
 }

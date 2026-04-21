@@ -12,6 +12,5 @@ import lombok.Setter;
 public class CreateCreditTransferRequest {
     private Integer equivalentCourseId;
     private String description;
-    private String attachmentUrl;
     private String educationalUnitName; // Optional override
 }
