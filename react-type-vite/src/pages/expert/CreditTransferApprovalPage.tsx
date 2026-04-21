@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Search, Eye, Filter } from "lucide-react";
 import * as creditTransferApi from "@/services/api/expert/creditTransferApi";
+import type { CreditTransferStatus } from "@/services/api/expert/creditTransferApi";
 import type { CreditTransferResponse } from "@/services/api/response/creditTransferResponse";
 import CreditTransferDetailModal from "@/components/expert/creditTransfer/CreditTransferDetailModal";
 import { toast } from "react-toastify";
@@ -12,14 +13,14 @@ const CreditTransferApprovalPage: React.FC = () => {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [searchKeyword, setSearchKeyword] = useState("");
-    const [filterStatus, setFilterStatus] = useState("all");
+    const [filterStatus, setFilterStatus] = useState<CreditTransferStatus | "all">("all");
     const [selectedRequest, setSelectedRequest] = useState<CreditTransferResponse | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchRequests = async () => {
         try {
             setLoading(true);
-            const statusParam = filterStatus === 'all' ? undefined : filterStatus;
+            const statusParam: CreditTransferStatus | undefined = filterStatus === 'all' ? undefined : filterStatus;
             const response = await creditTransferApi.searchCreditTransfers(statusParam, searchKeyword, page, 10);
             setRequests(response.content || []);
             setTotalPages(response.totalPages);
@@ -85,7 +86,7 @@ const CreditTransferApprovalPage: React.FC = () => {
                         <select
                             aria-label="Lọc trạng thái hồ sơ quy đổi"
                             value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
+                            onChange={(e) => setFilterStatus(e.target.value as CreditTransferStatus | "all")}
                             className="pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-white"
                         >
                             <option value="all">Tất cả trạng thái</option>
@@ -117,8 +118,8 @@ const CreditTransferApprovalPage: React.FC = () => {
                         <thead className="bg-gray-50 border-b">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Thông tin Sinh viên</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Khóa học Nguồn (External)</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Khóa học Đích (Internal)</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Khóa học Nguồn (Bên ngoài)</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Khóa học Đích (Nội bộ)</th>
                                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Ngày gửi</th>
                                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Trạng thái</th>
                                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Hành động</th>
@@ -143,7 +144,7 @@ const CreditTransferApprovalPage: React.FC = () => {
                                     <tr key={req.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">{req.studentName || 'N/A'}</div>
-                                            <div className="text-xs text-gray-500">{req.studentId}</div>
+                                            <div className="text-xs text-gray-500">MSSV: {req.studentId || '-'}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900 line-clamp-1" title={req.sourceCourseName}>{req.sourceCourseName}</div>

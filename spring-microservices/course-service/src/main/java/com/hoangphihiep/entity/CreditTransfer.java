@@ -39,9 +39,6 @@ public class CreditTransfer implements Serializable {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "attachment_url", columnDefinition = "TEXT")
-    private String attachmentUrl;
-
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
 
@@ -82,6 +79,9 @@ public class CreditTransfer implements Serializable {
 
     @Column(name = "interview_feedback", columnDefinition = "TEXT")
     private String interviewFeedback;
+
+    @Column(name = "interview_evidence_url", columnDefinition = "TEXT")
+    private String interviewEvidenceUrl;
 
     @Column(name = "interview_scored_at")
     private LocalDateTime interviewScoredAt;

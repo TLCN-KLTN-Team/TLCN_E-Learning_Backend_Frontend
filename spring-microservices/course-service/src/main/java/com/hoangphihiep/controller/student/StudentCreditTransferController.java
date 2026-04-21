@@ -14,10 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -50,23 +48,6 @@ public class StudentCreditTransferController {
 
         creditTransferService.createCreditTransfer(request, studentId, studentName); 
         
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .message("Gửi yêu cầu quy đổi thành công")
-                .build());
-    }
-
-    @PostMapping(value = "/with-attachment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<Void>> createRequestWithAttachment(
-            @RequestPart("data") CreateCreditTransferRequest request,
-            @RequestPart(value = "attachmentFile", required = false) MultipartFile attachmentFile
-    ) {
-        String studentId = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        UserResponse userResponse = userInfoApi.getUserInfo(studentId).getResult();
-        String studentName = userResponse.getLastName() + " " + userResponse.getFirstName();
-
-        creditTransferService.createCreditTransfer(request, studentId, studentName, attachmentFile);
-
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .message("Gửi yêu cầu quy đổi thành công")
                 .build());

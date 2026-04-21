@@ -186,7 +186,7 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
                         {/* Source Course Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Khóa học Nguồn (Source Course - All Published Courses)
+                                Khóa học Nguồn (Bên ngoài)
                             </label>
                             {dropdownLoading ? (
                                 <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
@@ -213,7 +213,7 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
                         {/* Target Course Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Khóa học Đích (Target Course - Internal)
+                                Khóa học Đích (Nội bộ)
                             </label>
                             {dropdownLoading ? (
                                 <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
@@ -236,12 +236,12 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
 
                         {/* Specific Requirements Section */}
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
-                            <h3 className="font-semibold text-gray-800 border-b pb-2">Điều kiện Tiên quyết (Automated Validation)</h3>
+                            <h3 className="font-semibold text-gray-800 border-b pb-2">Điều kiện Tiên quyết</h3>
 
                             {/* Rank Selection */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Yêu cầu Xếp loại (Required Rank)
+                                    Yêu cầu Xếp loại
                                 </label>
                                 <select
                                     name="requiredRank"
@@ -250,10 +250,10 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">-- Không yêu cầu --</option>
-                                    <option value="EXCELLENT">Xuất sắc (Excellent - GPA &ge; 9.0)</option>
-                                    <option value="GOOD">Giỏi (Good - GPA &ge; 8.0)</option>
-                                    <option value="MERIT">Khá (Merit - GPA &ge; 6.5)</option>
-                                    <option value="AVERAGE">Trung bình (Average - GPA &ge; 5.0)</option>
+                                    <option value="EXCELLENT">Xuất sắc (GPA &ge; 9.0)</option>
+                                    <option value="GOOD">Giỏi (GPA &ge; 8.0)</option>
+                                    <option value="MERIT">Khá (GPA &ge; 6.5)</option>
+                                    <option value="AVERAGE">Trung bình (GPA &ge; 5.0)</option>
                                 </select>
                             </div>
 

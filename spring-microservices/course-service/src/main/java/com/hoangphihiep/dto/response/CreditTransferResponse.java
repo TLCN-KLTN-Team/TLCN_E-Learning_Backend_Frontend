@@ -30,7 +30,6 @@ public class CreditTransferResponse {
     
     // Request Details
     private String description;
-    private String attachmentUrl;
     private String status;
     private LocalDateTime requestDate;
 
@@ -41,6 +40,7 @@ public class CreditTransferResponse {
     private String interviewMeetingLink;
     private String interviewLocation;
     private String interviewFeedback;
+    private String interviewEvidenceUrl;
     private LocalDateTime interviewScoredAt;
 
     // Decision

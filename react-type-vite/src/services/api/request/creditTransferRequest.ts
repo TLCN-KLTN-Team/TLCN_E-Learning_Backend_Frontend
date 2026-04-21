@@ -16,11 +16,11 @@ export interface SubmitCreditTransferInterviewScoreRequest {
     certificateScore: number;
     interviewScore: number;
     interviewFeedback?: string;
+    interviewEvidenceUrl?: string;
 }
 
 export interface CreateCreditTransferRequest {
     equivalentCourseId: number;
     description: string;
-    attachmentUrl: string;
     educationalUnitName?: string;
 }
