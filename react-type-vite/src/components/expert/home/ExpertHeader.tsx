@@ -6,22 +6,34 @@ import {
   Bell,
   Menu,
   User,
-  Settings,
   LogOut,
-  UserCircle,
   BellRing,
+  BookOpen,
+  CheckCircle,
+  UserCircle,
 } from "lucide-react";
 import "../../../styles/admin.css";
 import { useResponsive } from "../../../hooks/useResponsive";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
+import openEduIcon from "@/assets/open-edu-dark.png";
 import * as notificationApi from "@/services/api/notificationApi";
 import { useNavigate } from "react-router-dom";
 
-import openEduIcon from "@/assets/open-edu-dark.png";
+interface Notification {
+  id?: string;
+  senderId?: string;
+  recipientId: string;
+  content: string;
+  message?: string;
+  type: string;
+  isRead: boolean;
+  createdAt?: string;
+  link?: string;
+}
 
-interface AdminHeaderProps {
+interface ExpertHeaderProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
 }
@@ -38,108 +50,23 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-interface Notification {
-  id?: string;
-  senderId?: string;
-  recipientId: string;
-  content: string;
-  message?: string;
-  type: string;
-  isRead: boolean;
-  createdAt?: string;
-  link?: string;
-}
-
-const AdminHeader: React.FC<AdminHeaderProps> = ({
+const ExpertHeader: React.FC<ExpertHeaderProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
 }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const modalRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useResponsive();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const currentRole = user?.role || user?.roles?.[0] || "";
-  const isExpertView = currentRole === "EXPERT";
-  const notificationPagePath = isExpertView
-    ? "/expert/notifications"
-    : "/admin/notifications";
-  const dashboardFallbackPath = isExpertView
-    ? "/expert/courses"
-    : "/admin/dashboard";
-
-  // Profile menu items for admin
-  const profileMenuItems: MenuSection[] = [
-    {
-      section: "Admin",
-      items: [
-        { name: "Dashboard", icon: User, href: "/admin/dashboard" },
-        { name: "Quản lý thông tin cá nhân", icon: UserCircle, href: "/admin/info" },
-      ],
-    },
-    {
-      section: "Notifications",
-      items: [
-        {
-          name: "Thông báo",
-          icon: BellRing,
-          href: notificationPagePath,
-          badge: "New",
-        },
-      ],
-    },
-    {
-      section: "Account Settings",
-      items: [
-        {
-          name: "Cài đặt tài khoản",
-          icon: Settings,
-          href: "/admin/settings",
-        },
-      ],
-    },
-  ];
-
-  // Generate avatar initials from firstName and lastName
-  const getAvatarInitials = (firstName: string, lastName: string): string => {
-    const initials = `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""
-      }`;
-    return initials.toUpperCase() || "??";
-  };
-
-  // Get full name from firstName and lastName
-  const getFullName = (firstName: string, lastName: string): string => {
-    return `${firstName || ""} ${lastName || ""}`.trim() || "Admin User";
-  };
-
-  const getRoleName = () => {
-    // Check singular role first (backend field)
-    if (user?.role) {
-      if (user.role === "ADMIN") return "Admin";
-      return user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase();
-    }
-
-    if (!user?.roles || user.roles.length === 0) return "User";
-    if (user.roles.includes("ADMIN")) return "Admin";
-    const role = user.roles[0]; // Assuming single/primary role
-    return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-  };
-
-  const handleLogout = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsProfileOpen(false);
-    logout();
-    toast.success("Đăng xuất thành công!");
-  };
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const getNotificationTarget = (notif: Notification) => {
-    const fallback = dashboardFallbackPath;
+    const fallback = "/expert/courses";
     const rawLink = (notif.link || "").trim();
 
     if (!rawLink) return fallback;
@@ -148,8 +75,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
     }
 
     const normalizedPath = rawLink.startsWith("/") ? rawLink : `/${rawLink}`;
-    if (normalizedPath === "/notifications" || normalizedPath === "/admin/notifications") {
-      return notificationPagePath;
+    if (
+      normalizedPath === "/notifications" ||
+      normalizedPath === "/expert/notifications" ||
+      normalizedPath === "/admin/notifications"
+    ) {
+      return "/expert/notifications";
     }
 
     return normalizedPath;
@@ -168,6 +99,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
           .catch((err) => console.error("Failed to mark notification as read", err));
       }
     }
+
     const target = getNotificationTarget(notif);
     if (target.startsWith("http://") || target.startsWith("https://")) {
       window.location.assign(target);
@@ -210,6 +142,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
         const payload = JSON.parse(event.data);
         pushNotification(payload);
       } catch {
+        // ignore invalid payload
       }
     };
 
@@ -237,25 +170,58 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
     };
   }, [user?.id]);
 
+  const profileMenuItems: MenuSection[] = [
+    {
+      section: "Expert",
+      items: [
+        { name: "Khóa học", icon: User, href: "/expert/courses" },
+        { name: "Duyệt khóa học", icon: BookOpen, href: "/expert/published-courses" },
+        { name: "Quản lý thông tin cá nhân", icon: UserCircle, href: "/expert/info" },
+        { name: "Quản lý quy đổi", icon: BookOpen, href: "/expert/equivalent-courses" },
+        { name: "Phê duyệt tín chỉ", icon: CheckCircle, href: "/expert/credit-transfers" },
+      ],
+    },
+    {
+      section: "Notifications",
+      items: [
+        {
+          name: "Thông báo",
+          icon: BellRing,
+          href: "/expert/notifications",
+          badge: "New",
+        },
+      ],
+    },
+  ];
+
+  const getAvatarInitials = (firstName: string, lastName: string): string => {
+    const initials = `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`;
+    return initials.toUpperCase() || "??";
+  };
+
+  const getFullName = (firstName: string, lastName: string): string => {
+    return `${firstName || ""} ${lastName || ""}`.trim() || "Expert User";
+  };
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsProfileOpen(false);
+    logout();
+    toast.success("Đăng xuất thành công!");
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Handle notification dropdown
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         setIsNotificationOpen(false);
       }
 
-      // Handle profile dropdown
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target as Node)
-      ) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
       }
-
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -266,7 +232,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
     <nav className="bg-white border-b border-gray-200 py-2 md:py-4.5">
       <div className="container-fluid px-4 md:px-6">
         <div className="flex items-center justify-between w-full">
-          {/* Left side - Mobile logo and sidebar toggle */}
           <div className="flex items-center">
             {isMobile && (
               <div className="flex items-center lg:hidden">
@@ -278,7 +243,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
               </div>
             )}
 
-            {/* Sidebar toggle */}
             <div className="lg:hidden">
               <Button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -290,12 +254,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
             </div>
           </div>
 
-          {/* Empty space for layout balance */}
-          <div className="flex-1"></div>
+          <div className="flex-1" />
 
-          {/* Right side - Notifications and Profile */}
           <div className="flex items-center space-x-2 md:space-x-3">
-            {/* Notifications */}
             <div className="relative">
               <Button
                 onClick={() => {
@@ -312,7 +273,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                 )}
               </Button>
 
-              {/* Notification Dropdown */}
               {isNotificationOpen && (
                 <div
                   className="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[80vh] flex flex-col"
@@ -331,9 +291,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                       <button
                         className="text-sm text-blue-600 hover:underline"
                         onClick={() => {
-                          setNotifications((prev) =>
-                            prev.map((n) => ({ ...n, isRead: true }))
-                          );
+                          setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
                           setUnreadCount(0);
 
                           if (user?.id) {
@@ -347,12 +305,11 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                       </button>
                     </div>
                   </div>
+
                   <div className="overflow-y-auto flex-1">
                     <ul className="list-none m-0 p-0">
                       {notifications.length === 0 ? (
-                        <li className="p-4 text-center text-gray-500 text-sm">
-                          Chưa có thông báo
-                        </li>
+                        <li className="p-4 text-center text-gray-500 text-sm">Chưa có thông báo</li>
                       ) : (
                         notifications.slice(0, 20).map((notif, idx) => (
                           <li key={notif.id ?? idx}>
@@ -372,11 +329,11 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                   {notif.content || notif.message}
                                 </p>
                                 <div className="flex justify-between items-center mt-1">
-                                  <small className="text-gray-500">
+                                  <span className="text-xs text-gray-500">
                                     {notif.createdAt
                                       ? new Date(notif.createdAt).toLocaleString("vi-VN")
                                       : "Vừa xong"}
-                                  </small>
+                                  </span>
                                   {notif.link && (
                                     <button
                                       type="button"
@@ -397,11 +354,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                       )}
                     </ul>
                   </div>
+
                   <div className="p-3 text-center border-t border-gray-200 flex-shrink-0">
                     <button
                       className="text-blue-600 hover:underline text-sm"
                       onClick={() => {
-                        navigate(notificationPagePath);
+                        navigate("/expert/notifications");
                         setIsNotificationOpen(false);
                       }}
                     >
@@ -412,7 +370,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
               )}
             </div>
 
-            {/* Profile Dropdown - Updated */}
             {user ? (
               <div className="relative" ref={profileRef}>
                 <button
@@ -420,7 +377,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                   className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
                 >
                   <div className="flex items-center space-x-3">
-                    {/* Avatar */}
                     <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-medium text-sm">
                       {user.avatarUrl ? (
                         <img
@@ -432,20 +388,17 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                         getAvatarInitials(user.firstName, user.lastName)
                       )}
                     </div>
-                    {/* User Info - Hidden on mobile */}
                     <div className="text-left hidden md:block">
                       <div className="text-sm font-medium text-gray-900">
                         {getFullName(user.firstName, user.lastName)}
                       </div>
-                      <div className="text-xs text-gray-500">{getRoleName()}</div>
+                      <div className="text-xs text-gray-500">Expert</div>
                     </div>
                   </div>
                 </button>
 
-                {/* Dropdown Menu */}
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 py-2 z-50">
-                    {/* User Header */}
                     <div className="px-4 py-3 border-b border-gray-200">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center font-medium">
@@ -463,17 +416,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                           <div className="font-medium text-purple-600">
                             {getFullName(user.firstName, user.lastName)}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {user.email}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {getRoleName()}
-                          </div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                          <div className="text-xs text-gray-400">Expert</div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Menu Items */}
                     <div className="max-h-96 overflow-y-auto">
                       {profileMenuItems.map((section, sectionIndex) => (
                         <div key={sectionIndex}>
@@ -485,10 +433,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                               onClick={() => setIsProfileOpen(false)}
                             >
                               <div className="flex items-center space-x-3">
-                                <item.icon
-                                  size={16}
-                                  className="text-gray-500 group-hover:opacity-80"
-                                />
+                                <item.icon size={16} className="text-gray-500 group-hover:opacity-80" />
                                 <span>{item.name}</span>
                               </div>
                               {item.badge && (
@@ -505,7 +450,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                       ))}
                     </div>
 
-                    {/* Logout */}
                     <div className="border-t border-gray-200 mt-1">
                       <button
                         onClick={handleLogout}
@@ -519,10 +463,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                 )}
               </div>
             ) : (
-              // Fallback profile button if no user
               <div className="w-10 h-10 rounded-full overflow-hidden p-0">
                 <img
-                  src="/placeholder.svg?height=40&width=40&text=LF"
+                  src="/placeholder.svg?height=40&width=40&text=EX"
                   alt="Profile"
                   className="w-full h-full object-cover rounded-full"
                 />
@@ -535,4 +478,4 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   );
 };
 
-export default AdminHeader;
+export default ExpertHeader;

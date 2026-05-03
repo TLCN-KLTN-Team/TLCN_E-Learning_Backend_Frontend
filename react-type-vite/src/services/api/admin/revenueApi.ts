@@ -3,8 +3,6 @@ import type { ApiResponse } from "../response/apiResponse";
 
 import type { AdminRevenueResponse } from "../response/revenueResponse";
 
-// ==================== API Functions ====================
-
 /**
  * Get educational unit admin's revenue statistics
  * @returns Admin revenue data with breakdown by teachers and months

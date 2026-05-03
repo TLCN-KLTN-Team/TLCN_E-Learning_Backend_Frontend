@@ -1,7 +1,6 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.ai.AiRecommendationRequest;
-import com.hoangphihiep.dto.response.ai.AiRecommendationItem;
 import com.hoangphihiep.dto.request.ai.Candidate;
 import com.hoangphihiep.dto.request.ai.UserProfile;
 import com.hoangphihiep.dto.response.PublishedCourseCardResponse;
@@ -15,7 +14,6 @@ import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -92,8 +90,6 @@ public class AiRecommendationService {
             // 5. Map IDs back to PublishedCourseCardResponse
             return allCourses.stream()
                     .filter(c -> recommendedIds.contains(c.getId().toString()) || recommendedIds.contains(String.valueOf(c.getId())))
-                    // Sort by order in recommendations list if possible, but Set contains order is loose
-                    // ideally we loop recommendedIds and find match
                     .map(this::toPublishedCourseCardResponse)
                     .collect(Collectors.toList());
 

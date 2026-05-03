@@ -14,11 +14,6 @@ export const createTeacher = async (
     );
     return response.data.result;
   } catch (error: any) {
-    // Log error for debugging
-    console.error('Teacher API Error:', error);
-    
-    // Re-throw the original error to preserve its structure
-    // The React component will handle extracting the message
     throw error;
   }
 };
@@ -71,9 +66,6 @@ export const deleteTeacher = async (
   );
 };
 
-/**
- * Bulk import teachers
- */
 export interface BulkImportResult {
   successful: number;
   failed: number;

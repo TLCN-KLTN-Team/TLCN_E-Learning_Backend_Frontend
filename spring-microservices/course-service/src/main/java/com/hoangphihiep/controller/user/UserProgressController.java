@@ -44,15 +44,4 @@ public class UserProgressController {
                 .result(userProgressService.markLessonCompleteForPublishedCourse(request))
                 .build();
     }
-
-    @GetMapping("/lesson/{lessonId}/published-course/{publishedCourseId}/is-completed")
-    public ApiResponse<Boolean> isLessonCompleted(
-            @PathVariable Integer lessonId,
-            @PathVariable Integer publishedCourseId) {
-        log.info("Checking if lesson {} is completed for published course: {}", 
-                lessonId, publishedCourseId);
-        return ApiResponse.<Boolean>builder()
-                .result(userProgressService.isLessonCompletedForPublishedCourse(publishedCourseId, lessonId))
-                .build();
-    }
 }

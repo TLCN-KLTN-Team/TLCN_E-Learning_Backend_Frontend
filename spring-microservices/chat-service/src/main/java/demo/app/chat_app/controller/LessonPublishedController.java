@@ -88,9 +88,6 @@ public class LessonPublishedController {
         return ResponseEntity.ok(lessonDiscussionService.getUnreadCount(publishedCourseId, lessonId));
     }
 
-    /**
-     * Get unread counts for all lessons in a published course
-     */
     @GetMapping("/{publishedCourseId}/batch-unread-counts")
     public ResponseEntity<Map<Integer, Long>> getBatchUnreadCounts(
             @PathVariable Integer publishedCourseId,

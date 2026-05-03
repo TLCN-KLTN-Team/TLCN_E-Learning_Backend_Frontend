@@ -16,7 +16,6 @@ import com.hoangphihiep.mapper.CourseMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.StudentRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
-import com.hoangphihiep.repository.httpclient.UserRepository;
 import com.hoangphihiep.repository.httpclient.ExpertRepository;
 import com.hoangphihiep.repository.httpclient.NotificationRepository;
 import com.hoangphihiep.dto.request.NotificationMessage;
@@ -30,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.function.Function;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,52 +43,17 @@ public class CourseService {
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
     private final CourseMapper courseMapper;
-    private final UserRepository userRepository;
-    private final CourseEnrollmentRepository courseEnrollmentRepository;
     private final CourseEventProducer eventProducer;
     private final NotificationRepository notificationRepository;
     private final CourseClassRepository courseClassRepository;
 
-    // Constants for validation
     private static final int MIN_COURSE_NAME_LENGTH = 3;
     private static final int MAX_COURSE_NAME_LENGTH = 255;
-    private static final BigDecimal MAX_COURSE_PRICE = new BigDecimal("10000000"); // 10 triệu VNĐ
     private static final int MIN_PAGE_SIZE = 1;
     private static final int MAX_PAGE_SIZE = 100;
     private static final int MIN_DEPARTMENT_NAME_LENGTH = 2;
     private static final int MAX_DEPARTMENT_NAME_LENGTH = 255;
     private static final int MAX_DEPARTMENT_DESCRIPTION_LENGTH = 1000;
-
-    // Lấy danh sách khóa học của đơn vị đào tạo
-    public Page<CourseResponse> getCoursesByEducationalUnit(int educationalUnitId, int page, int size, String search) {
-        validatePaginationParameters(page, size);
-        validateEducationalUnitAccess(educationalUnitId);
-
-        if (search != null && search.trim().isEmpty()) {
-            search = null;
-        }
-
-        try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-            Page<Course> coursePage = courseRepository.findByEducationalUnitWithSearch(educationalUnitId, search, pageable);
-
-            return coursePage.map(course -> {
-                CourseResponse courseResponse = courseMapper.toCourseResponse(course);
-
-                // Fetch teacher info if idTeacher exists
-                if (course.getIdTeacher() != null && !course.getIdTeacher().trim().isEmpty()) {
-                    ApiResponse<TeacherResponse> teacherApiResponse = teacherRepository.getTeacherByTeacherId(course.getIdTeacher());
-                    if (teacherApiResponse != null && teacherApiResponse.getResult() != null) {
-                        courseResponse.setTeacher(teacherApiResponse.getResult());
-                    }
-                }
-
-                return courseResponse;
-            });
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
 
     public CourseResponse getCourseById (int id){
         if (id <= 0) {
@@ -102,7 +65,6 @@ public class CourseService {
 
         return courseMapper.toCourseResponse(course);
     }
-    // Tạo khóa học cho đơn vị đào tạo
     @Transactional
     public CourseResponse createCourseForEducationalUnit(int educationalUnitId, CourseRequest request) {
         validateEducationalUnitAccess(educationalUnitId);
@@ -111,7 +73,6 @@ public class CourseService {
         EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
-        // Kiểm tra tên khóa học không trùng trong cùng đơn vị
         if (courseRepository.existsByCourseNameAndEducationalUnit(request.getCourseName(), educationalUnitId)) {
             throw new AppException(ErrorCode.COURSE_DUPLICATE_NAME);
         }
@@ -121,8 +82,7 @@ public class CourseService {
             Course course = new Course();
             course.setCourseName(request.getCourseName());
             course.setEducationalUnit(educationalUnit);
-            
-            // Set expertId from current logged in user
+
             String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
             course.setExpertId(currentExpertId);
             
@@ -185,7 +145,6 @@ public class CourseService {
 
     private final ExpertRepository expertRepository;
 
-    // Lấy danh sách giáo viên của đơn vị đào tạo (Admin)
     public Page<TeacherResponse> getTeachersByEducationalUnit(int educationalUnitId, int page, int size, String search) {
         validateEducationalUnitAccess(educationalUnitId);
 
@@ -209,7 +168,6 @@ public class CourseService {
         }
     }
 
-    // Lấy danh sách giáo viên của đơn vị đào tạo (Expert)
     public Page<TeacherResponse> getTeachersForExpert(int educationalUnitId, int page, int size, String search) {
         // Validate expert access
         String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -324,7 +282,6 @@ public class CourseService {
         }
     }
 
-    // Lấy danh sách sinh viên của đơn vị đào tạo
     public Page<StudentResponse> getStudentsByEducationalUnit(int educationalUnitId, int page, int size, String search) {
         validateEducationalUnitAccess(educationalUnitId);
 
@@ -338,7 +295,6 @@ public class CourseService {
 
             Page<StudentResponse> studentPage = response.getResult();
 
-            // Batch populate để tối ưu hiệu suất
             List<StudentResponse> populatedStudents = batchPopulateStudentDetails(studentPage.getContent());
 
             return new PageImpl<>(populatedStudents, studentPage.getPageable(), studentPage.getTotalElements());
@@ -475,12 +431,9 @@ public class CourseService {
             // Non-blocking, continue
         }
 
-        // use kafka send event to create a workspace
-
         return courseMapper.toCourseResponse(updatedCourse);
     }
 
-    // Xóa giáo viên khỏi khóa học
     @Transactional
     public CourseResponse removeTeacherFromCourse(int courseId) {
         Course course = courseRepository.findById(courseId)
@@ -582,7 +535,7 @@ public class CourseService {
             throw new AppException(ErrorCode.COURSE_PAGE_SIZE_INVALID);
         }
     }
-    // Lấy danh sách departments của đơn vị đào tạo
+
     public Page<DepartmentResponse> getDepartmentsByEducationalUnit(int educationalUnitId, int page, int size, String search) {
         validatePaginationParameters(page, size);
         validateEducationalUnitAccess(educationalUnitId);
@@ -610,7 +563,6 @@ public class CourseService {
         EducationalUnit educationalUnit = educationalUnitRepository.findById(educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND));
 
-        // Kiểm tra tên department không trùng trong cùng đơn vị
         if (departmentRepository.existsByNameAndEducationalUnit(request.getName(), educationalUnitId)) {
             throw new AppException(ErrorCode.DEPARTMENT_DUPLICATE_NAME);
         }
@@ -629,7 +581,6 @@ public class CourseService {
         }
     }
 
-    // Cập nhật department
     @Transactional
     public DepartmentResponse updateDepartmentForEducationalUnit(int educationalUnitId, int departmentId, DepartmentRequest request) {
         validateEducationalUnitAccess(educationalUnitId);
@@ -638,7 +589,6 @@ public class CourseService {
         Department department = departmentRepository.findByIdAndEducationalUnitId(departmentId, educationalUnitId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
-        // Kiểm tra tên department không trùng (nếu có thay đổi tên)
         if (request.getName() != null &&
                 !request.getName().equals(department.getName()) &&
                 departmentRepository.existsByNameAndEducationalUnit(request.getName(), educationalUnitId)) {
@@ -668,34 +618,6 @@ public class CourseService {
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
         return toDepartmentResponse(department);
-    }
-
-    public List<CourseResponse> getCoursesByTeacherWithDetails(String teacherId) {
-        if (teacherId == null || teacherId.trim().isEmpty()) {
-            throw new AppException(ErrorCode.COURSE_TEACHER_REQUIRED);
-        }
-
-        try {
-            // Validate teacher exists
-            ApiResponse<TeacherResponse> teacherResponse = teacherRepository.getTeacherByTeacherId(teacherId);
-            if (teacherResponse.getResult() == null) {
-                throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
-            }
-
-            List<Course> courses = courseRepository.findByIdTeacher(teacherId);
-
-            return courses.stream()
-                    .map(course -> {
-                        CourseResponse courseResponse = courseMapper.toCourseResponse(course);
-                        return courseResponse;
-                    })
-                    .toList();
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error occurred while fetching courses with details for teacher: {}", teacherId, e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
     }
 
     public Page<CourseResponse> getCoursesByTeacherPaginated(String teacherId, int page, int size) {
@@ -738,7 +660,6 @@ public class CourseService {
         }
     }
 
-    // Lấy danh sách khóa học theo Expert ID
     public Page<CourseResponse> getCoursesByExpertId(String expertId, int page, int size, String search) {
         validatePaginationParameters(page, size);
 

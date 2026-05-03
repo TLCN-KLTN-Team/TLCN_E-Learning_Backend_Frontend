@@ -1,14 +1,6 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
-
-/**
- * Teacher Revenue API
- * Handles all revenue-related endpoints for teachers
- */
-
 import type { TeacherRevenueResponse } from "../response/revenueResponse";
-
-// ==================== API Functions ====================
 
 /**
  * Get teacher's revenue statistics

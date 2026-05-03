@@ -32,9 +32,6 @@ public class AssignmentPublishedController {
     private final PublishedCourseAssignmentDiscussionService discussionService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * Get all discussion messages for a published course assignment
-     */
     @GetMapping("/{publishedCourseId}/{assignmentId}/messages")
     public ResponseEntity<Page<PublishedDiscussionMessageResponse>> getAssignmentDiscussion(
             @PathVariable Integer publishedCourseId,
@@ -50,9 +47,6 @@ public class AssignmentPublishedController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * Post a new discussion message
-     */
     @PostMapping("/{publishedCourseId}/{assignmentId}/messages")
     public ResponseEntity<PublishedDiscussionMessageResponse> postMessage(
             @PathVariable Integer publishedCourseId,
@@ -75,9 +69,6 @@ public class AssignmentPublishedController {
         return ResponseEntity.ok(message);
     }
 
-    /**
-     * Delete a discussion message
-     */
     @DeleteMapping("/messages/{messageId}")
     public ResponseEntity<ApiResponse<Void>> deleteMessage(@PathVariable String messageId) {
         log.info("=== DELETE PUBLISHED COURSE ASSIGNMENT MESSAGE: {} ===", messageId);
@@ -98,9 +89,6 @@ public class AssignmentPublishedController {
                 .build());
     }
 
-    /**
-     * Toggle like on a message
-     */
     @PostMapping("/messages/{messageId}/like")
     public ResponseEntity<PublishedDiscussionMessageResponse> toggleLike(@PathVariable String messageId) {
         log.info("=== TOGGLE LIKE PUBLISHED COURSE ASSIGNMENT MESSAGE: {} ===", messageId);
@@ -118,9 +106,6 @@ public class AssignmentPublishedController {
         return ResponseEntity.ok(message);
     }
 
-    /**
-     * Get unread message count
-     */
     @GetMapping("/{publishedCourseId}/{assignmentId}/unread-count")
     public ResponseEntity<Long> getUnreadCount(
             @PathVariable Integer publishedCourseId,
@@ -133,9 +118,6 @@ public class AssignmentPublishedController {
         return ResponseEntity.ok(count);
     }
 
-    /**
-     * Get unread counts for all assignments in a published course
-     */
     @GetMapping("/{publishedCourseId}/batch-unread-counts")
     public ResponseEntity<Map<Integer, Long>> getBatchUnreadCounts(
             @PathVariable Integer publishedCourseId,
@@ -148,9 +130,6 @@ public class AssignmentPublishedController {
         return ResponseEntity.ok(counts);
     }
 
-    /**
-     * Mark discussion as read
-     */
     @PostMapping("/{publishedCourseId}/{assignmentId}/mark-read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @PathVariable Integer publishedCourseId,
@@ -165,9 +144,6 @@ public class AssignmentPublishedController {
                 .build());
     }
 
-    /**
-     * WebSocket endpoint for posting messages
-     */
     @MessageMapping("/course/assignment/{publishedCourseId}/{assignmentId}/discussion")
     @SendTo("/topic/course/assignment/{publishedCourseId}/{assignmentId}/discussion")
     public Map<String, Object> handleWebSocketMessage(

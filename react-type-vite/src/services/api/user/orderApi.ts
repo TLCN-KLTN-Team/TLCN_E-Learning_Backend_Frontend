@@ -31,7 +31,6 @@ export interface OrderResponse {
     orderItems: OrderItemResponse[];
 }
 
-// === User APIs ===
 
 const getHistoryOrders = async (): Promise<OrderResponse[]> => {
     const response = await axiosInstance.get<ApiResponse<OrderResponse[]>>(
@@ -53,14 +52,6 @@ const getTeacherOrders = async (): Promise<OrderItemResponse[]> => {
     return response.data.result;
 };
 
-
-const getRefundedOrders = async (): Promise<OrderItemResponse[]> => {
-    const response = await axiosInstance.get<ApiResponse<OrderItemResponse[]>>(
-        `${API_ADMIN_ORDER_ENDPOINT}/refunded`
-    );
-    return response.data.result;
-};
-
 const getPendingRefunds = async (): Promise<OrderItemResponse[]> => {
     const response = await axiosInstance.get<ApiResponse<OrderItemResponse[]>>(
         `${API_ADMIN_ORDER_ENDPOINT}/pending-refund`
@@ -78,7 +69,6 @@ export default {
     getHistoryOrders,
     refundCourse,
     getTeacherOrders,
-    getRefundedOrders,
     getPendingRefunds,
     approveRefund,
 };

@@ -30,10 +30,7 @@ public class LessonDiscussionService {
     private final LessonDiscussionRepository discussionRepository;
     private final DiscussionReadStatusRepository readStatusRepository;
     private final Cloudinary cloudinary;
-    
-    /**
-     * Get all discussion messages for a lesson
-     */
+
     public Page<DiscussionMessageResponse> getDiscussionMessages(Integer lessonId, Pageable pageable) {
         log.info("Fetching discussion messages for lesson: {}", lessonId);
         
@@ -42,10 +39,7 @@ public class LessonDiscussionService {
         
         return messages.map(this::toResponse);
     }
-    
-    /**
-     * Post a new discussion message
-     */
+
     public DiscussionMessageResponse postMessage(Integer lessonId, DiscussionMessageRequest request) {
         String currentUserId = getCurrentUserId();
         log.info("User {} posting message to lesson {} discussion", currentUserId, lessonId);
@@ -72,10 +66,7 @@ public class LessonDiscussionService {
         
         return toResponse(saved);
     }
-    
-    /**
-     * Delete a discussion message
-     */
+
     public Integer deleteMessage(String messageId) {
         String currentUserId = getCurrentUserId();
         log.info("User {} deleting message: {}", currentUserId, messageId);
@@ -94,10 +85,7 @@ public class LessonDiscussionService {
         
         return message.getLessonId();
     }
-    
-    /**
-     * Toggle like/unlike on a message
-     */
+
     public DiscussionMessageResponse toggleLike(String messageId) {
         String currentUserId = getCurrentUserId();
         log.info("User {} toggling like for message: {}", currentUserId, messageId);
@@ -116,10 +104,7 @@ public class LessonDiscussionService {
         
         return toResponse(saved);
     }
-    
-    /**
-     * Get unread message count for a lesson
-     */
+
     public Long getUnreadCount(Integer lessonId) {
         String currentUserId = getCurrentUserId();
         log.info("Getting unread count for lesson {} and user {}", lessonId, currentUserId);
@@ -134,10 +119,7 @@ public class LessonDiscussionService {
         LocalDateTime lastReadAt = readStatus.get().getLastReadAt();
         return discussionRepository.countByLessonIdAndCreatedAtAfterAndIsDeletedFalse(lessonId, lastReadAt);
     }
-    
-    /**
-     * Mark discussion as read
-     */
+
     public void markAsRead(Integer lessonId) {
         String currentUserId = getCurrentUserId();
         log.info("User {} marking lesson {} discussion as read", currentUserId, lessonId);
@@ -153,10 +135,7 @@ public class LessonDiscussionService {
         readStatus.setLastReadAt(LocalDateTime.now());
         readStatusRepository.save(readStatus);
     }
-    
-    /**
-     * Convert entity to response DTO
-     */
+
     private DiscussionMessageResponse toResponse(LessonMessage message) {
         String currentUserId = getCurrentUserId();
         
@@ -188,10 +167,7 @@ public class LessonDiscussionService {
                 .isDeleted(message.getIsDeleted())
                 .build();
     }
-    
-    /**
-     * Get current user ID from security context
-     */
+
     private String getCurrentUserId() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
@@ -199,10 +175,7 @@ public class LessonDiscussionService {
         }
         throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
-    
-    /**
-     * Check if current user is admin
-     */
+
     private boolean isAdmin() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null && 
@@ -210,9 +183,6 @@ public class LessonDiscussionService {
                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
-    /**
-     * Upload image to Cloudinary
-     */
     public Map<String, String> uploadImage(MultipartFile file) {
         if (file.isEmpty()) {
             throw new AppException(ErrorCode.FILE_EMPTY);

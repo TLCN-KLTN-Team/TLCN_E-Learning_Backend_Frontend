@@ -74,6 +74,7 @@ export const EXPERT_ROUTES = {
   BASE: "/expert",
   COURSES: "/expert/courses",
   PUBLISHED_COURSES: "/expert/published-courses",
+  NOTIFICATIONS: "/expert/notifications",
 } as const;
 
 // ============================================

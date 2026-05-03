@@ -37,14 +37,3 @@ export const markLessonComplete = async (
   return response.data.result;
 };
 
-// Kiểm tra lesson đã hoàn thành chưa
-export const isLessonCompleted = async (
-  classId: number,
-  lessonId: number
-): Promise<boolean> => {
-  const response = await axiosInstance.get<ApiResponse<boolean>>(
-    `${PROGRESS_API_BASE}/class/${classId}/lesson/${lessonId}/completed`
-  );
-  return response.data.result;
-};
-

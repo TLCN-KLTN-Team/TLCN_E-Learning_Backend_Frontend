@@ -37,7 +37,6 @@ public class TeacherPublishedCourseController {
 
     @PostMapping("/{courseId}/submit")
     public ApiResponse<PublishedCourseResponse> submitForApproval(@PathVariable Integer courseId) {
-        log.info("Teacher submitting course {} for approval", courseId);
         PublishedCourseResponse response = publishedCourseTeacherService.submitForApproval(courseId);
 
         return ApiResponse.<PublishedCourseResponse>builder()

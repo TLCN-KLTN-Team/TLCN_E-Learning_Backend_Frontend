@@ -1,22 +1,12 @@
 import axiosInstance from "../httpClient/axiosInstance"
-import type { BulkPublishRequest } from "../request/bulkPublishRequest"
 import type { ContentPublishStatusResponse } from "../response/contentPublishStatusResponse"
 import type { PublishCourseRequest } from "../request/publishCourseRequest"
 import type { ApiResponse } from "../response/apiResponse"
 import type { PublishedCourseResponse } from "../response/publishedCourseResponse"
-import type { SectionResponse } from "../response/sectionResponse"
 
 export const getPublishStatus = async (courseId: number): Promise<ContentPublishStatusResponse> => {
   const response = await axiosInstance.get<ApiResponse<ContentPublishStatusResponse>>(
     `/course-management/teacher/courses/${courseId}/publish-status`
-  )
-  return response.data.result
-}
-
-export const bulkPublish = async (request: BulkPublishRequest): Promise<ContentPublishStatusResponse> => {
-  const response = await axiosInstance.post<ApiResponse<ContentPublishStatusResponse>>(
-    `/course-management/teacher/courses/bulk-publish`,
-    request
   )
   return response.data.result
 }
@@ -106,12 +96,4 @@ export const toggleAssignmentPublish = async (assignmentId: number, isPublished:
   await axiosInstance.put(
     `/course-management/teacher/courses/assignments/${assignmentId}/publish?isPublished=${isPublished}`
   )
-}
-
-
-export const getCourseSections = async (courseId: number): Promise<SectionResponse[]> => {
-  const response = await axiosInstance.get<ApiResponse<SectionResponse[]>>(
-    `/course-management/courses/${courseId}/sections`
-  )
-  return response.data.result
 }

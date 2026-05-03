@@ -5,8 +5,6 @@ import type { ApiResponse } from "../response/apiResponse";
 export const getCourseReviews = async (courseId: number): Promise<ReviewResponse[]> => {
   const url = `/course-management/anonymous/reviews/course/${courseId}`;
   const response = await axiosInstance.get<ApiResponse<ReviewResponse[]>>(url);
-  console.log("👉 Review API response:", response.data);
-  console.log("👉 Review list:", response.data.result);
   return response.data.result;
 };
 
@@ -24,25 +22,19 @@ export const createReview = async (data: CreateReviewRequest): Promise<ReviewRes
 
 export const updateReview = async (reviewId: number, data: { rate: number; content: string }): Promise<ReviewResponse> => {
   const url = `/course-management/user/reviews/${reviewId}`;
-  console.log("👉 Updating review:", { reviewId, data });
   try {
     const response = await axiosInstance.put<ApiResponse<ReviewResponse>>(url, data);
-    console.log("✅ Update review success:", response.data);
     return response.data.result;
   } catch (error: any) {
-    console.error("❌ Update review failed:", error.response?.data || error.message);
     throw error;
   }
 };
 
 export const deleteReview = async (reviewId: number): Promise<void> => {
   const url = `/course-management/user/reviews/${reviewId}`;
-  console.log("👉 Deleting review:", reviewId);
   try {
     await axiosInstance.delete(url);
-    console.log("✅ Delete review success");
   } catch (error: any) {
-    console.error("❌ Delete review failed:", error.response?.data || error.message);
     throw error;
   }
 };

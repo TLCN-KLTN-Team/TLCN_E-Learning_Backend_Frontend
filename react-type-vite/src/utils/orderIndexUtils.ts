@@ -1,12 +1,4 @@
 /**
- * Utility functions for calculating order indices on the frontend
- * The backend will no longer auto-generate order indices
- * Frontend is responsible for calculating and sending the next order index
- *
- * All indices now start from 1 for consistency
- */
-
-/**
  * Get the next order index for a section
  * @param sections - Array of existing sections
  * @returns Next order index (max + 1, or 1 if empty)
@@ -59,49 +51,4 @@ export const getNextAssignmentNumberItem = (assignments: any[]): number => {
   }
   const maxIndex = Math.max(...assignments.map((a) => a.numberItem || 0))
   return maxIndex + 1
-}
-
-/**
- * Get the next order index for a question
- * Now starts from 1 instead of 0
- * @param questions - Array of existing questions
- * @returns Next order index (max + 1, or 1 if empty)
- */
-export const getNextQuestionOrderIndex = (questions: any[]): number => {
-  if (!questions || questions.length === 0) {
-    return 1
-  }
-  const maxIndex = Math.max(...questions.map((q) => q.orderIndex || 0))
-  return maxIndex + 1
-}
-
-/**
- * Get the next order index for an answer
- * Now starts from 1 instead of 0
- * @param answers - Array of existing answers
- * @returns Next order index (max + 1, or 1 if empty)
- */
-export const getNextAnswerOrderIndex = (answers: any[]): number => {
-  if (!answers || answers.length === 0) {
-    return 1
-  }
-  const maxIndex = Math.max(...answers.map((a) => a.orderIndex || 0))
-  return maxIndex + 1
-}
-
-/**
- * Recalculate order indices for an array of items after reordering
- * Now starts from 1 instead of 0
- * @param items - Array of items to reorder
- * @param indexField - Field name for the index (e.g., 'orderIndex', 'numberItem')
- * @returns Array with updated indices
- */
-export const recalculateOrderIndices = <T extends Record<string, any>>(
-  items: T[],
-  indexField: "orderIndex" | "numberItem" = "orderIndex",
-): T[] => {
-  return items.map((item, index) => ({
-    ...item,
-    [indexField]: index + 1,
-  }))
 }

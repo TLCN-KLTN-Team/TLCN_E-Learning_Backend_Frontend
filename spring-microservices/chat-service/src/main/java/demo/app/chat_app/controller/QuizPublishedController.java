@@ -32,9 +32,6 @@ public class QuizPublishedController {
     private final PublishedCourseQuizDiscussionService discussionService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * Get all discussion messages for a published course quiz
-     */
     @GetMapping("/{publishedCourseId}/{quizId}/messages")
     public ResponseEntity<Page<PublishedDiscussionMessageResponse>> getQuizDiscussion(
             @PathVariable Integer publishedCourseId,
@@ -50,9 +47,6 @@ public class QuizPublishedController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * Post a new discussion message
-     */
     @PostMapping("/{publishedCourseId}/{quizId}/messages")
     public ResponseEntity<PublishedDiscussionMessageResponse> postMessage(
             @PathVariable Integer publishedCourseId,
@@ -75,9 +69,6 @@ public class QuizPublishedController {
         return ResponseEntity.ok(message);
     }
 
-    /**
-     * Delete a discussion message
-     */
     @DeleteMapping("/messages/{messageId}")
     public ResponseEntity<ApiResponse<Void>> deleteMessage(@PathVariable String messageId) {
         log.info("=== DELETE PUBLISHED COURSE QUIZ MESSAGE: {} ===", messageId);
@@ -101,9 +92,6 @@ public class QuizPublishedController {
                 .build());
     }
 
-    /**
-     * Toggle like on a message
-     */
     @PostMapping("/messages/{messageId}/like")
     public ResponseEntity<PublishedDiscussionMessageResponse> toggleLike(@PathVariable String messageId) {
         log.info("=== TOGGLE LIKE PUBLISHED COURSE QUIZ MESSAGE: {} ===", messageId);
@@ -122,9 +110,6 @@ public class QuizPublishedController {
         return ResponseEntity.ok(message);
     }
 
-    /**
-     * Get unread message count
-     */
     @GetMapping("/{publishedCourseId}/{quizId}/unread-count")
     public ResponseEntity<Long> getUnreadCount(
             @PathVariable Integer publishedCourseId,
@@ -137,9 +122,6 @@ public class QuizPublishedController {
         return ResponseEntity.ok(count);
     }
 
-    /**
-     * Get unread counts for all quizzes in a published course
-     */
     @GetMapping("/{publishedCourseId}/batch-unread-counts")
     public ResponseEntity<Map<Integer, Long>> getBatchUnreadCounts(
             @PathVariable Integer publishedCourseId,
@@ -152,9 +134,6 @@ public class QuizPublishedController {
         return ResponseEntity.ok(counts);
     }
 
-    /**
-     * Mark discussion as read
-     */
     @PostMapping("/{publishedCourseId}/{quizId}/mark-read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @PathVariable Integer publishedCourseId,
@@ -169,9 +148,6 @@ public class QuizPublishedController {
                 .build());
     }
 
-    /**
-     * WebSocket endpoint for posting messages
-     */
     @MessageMapping("/course/quiz/{publishedCourseId}/{quizId}/discussion")
     @SendTo("/topic/course/quiz/{publishedCourseId}/{quizId}/discussion")
     public Map<String, Object> handleWebSocketMessage(

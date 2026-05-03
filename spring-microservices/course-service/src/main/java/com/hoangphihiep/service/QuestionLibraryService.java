@@ -10,7 +10,6 @@ import com.hoangphihiep.entity.CourseObjective;
 import com.hoangphihiep.entity.Question;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
-import com.hoangphihiep.repository.AnswerRepository;
 import com.hoangphihiep.repository.CourseObjectiveRepository;
 import com.hoangphihiep.repository.QuestionRepository;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
@@ -36,18 +35,12 @@ import java.util.stream.Collectors;
 public class QuestionLibraryService {
 
     private final QuestionRepository questionRepository;
-    private final AnswerRepository answerRepository;
     private final CourseObjectiveRepository courseObjectiveRepository;
     private final FileHandlerRepository fileHandlerRepository;
     private final TeacherRepository teacherRepository;
 
-    /**
-     * Get all library questions for current teacher (paginated)
-     */
     public Page<QuestionResponse> getLibraryQuestions(String search, String questionType, String difficultyLevel, Pageable pageable) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("Getting library questions for teacher: {}, search: {}, type: {}, difficulty: {}", 
-                 teacherId, search, questionType, difficultyLevel);
 
         Page<Question> questions;
         
@@ -64,32 +57,10 @@ public class QuestionLibraryService {
         return questions.map(this::toQuestionResponse);
     }
 
-    /**
-     * Get a single library question by ID
-     */
-    public QuestionResponse getLibraryQuestionById(Integer id) {
-        String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
-        
-        Question question = questionRepository.findByIdWithAnswers(id)
-                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
-
-        // Verify ownership
-        if (!teacherId.equals(question.getTeacherId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-
-        // All questions are now library questions (many-to-many with quizzes)
-        return toQuestionResponse(question);
-    }
-
-    /**
-     * Create a new library question
-     */
     @Transactional
     public QuestionResponse createLibraryQuestion(QuestionRequest request, List<MultipartFile> imageFiles) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
         String mappedTeacherId = resolveMappedTeacherId(teacherId);
-        log.info("Creating library question for teacher: {}", teacherId);
 
         // Upload images if provided
         List<String> uploadedUrls = new java.util.ArrayList<>();
@@ -132,7 +103,6 @@ public class QuestionLibraryService {
         question.setCreatedAt(new Date());
         question.setUpdateAt(new Date());
         question.setAnswers(new HashSet<>());
-        // Library questions are now standalone - many-to-many relationship with quizzes
 
         Question savedQuestion = questionRepository.save(question);
 
@@ -151,30 +121,21 @@ public class QuestionLibraryService {
             questionRepository.save(savedQuestion);
         }
 
-        log.info("Created library question with ID: {}", savedQuestion.getId());
         return toQuestionResponse(savedQuestion);
     }
 
-    /**
-     * Update an existing library question
-     */
     @Transactional
     public QuestionResponse updateLibraryQuestion(Integer id, QuestionRequest request, List<MultipartFile> imageFiles) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
         String mappedTeacherId = resolveMappedTeacherId(teacherId);
-        log.info("Updating library question {} for teacher: {}", id, teacherId);
 
         Question question = questionRepository.findByIdWithAnswers(id)
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
 
-        // Verify ownership
         if (!teacherId.equals(question.getTeacherId())) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        // All questions are now library questions (many-to-many with quizzes)
-
-        // Upload new images if provided
         List<String> uploadedUrls = new java.util.ArrayList<>();
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile file : imageFiles) {
@@ -189,7 +150,6 @@ public class QuestionLibraryService {
             }
         }
 
-        // Combine existing attachments with newly uploaded URLs
         List<String> allAttachments = new java.util.ArrayList<>();
         if (request.getAttachments() != null) {
             allAttachments.addAll(request.getAttachments());
@@ -230,17 +190,12 @@ public class QuestionLibraryService {
         }
 
         Question updated = questionRepository.save(question);
-        log.info("Updated library question with ID: {}", updated.getId());
         return toQuestionResponse(updated);
     }
 
-    /**
-     * Delete a library question
-     */
     @Transactional
     public void deleteLibraryQuestion(Integer id) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("Deleting library question {} for teacher: {}", id, teacherId);
 
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
@@ -252,45 +207,11 @@ public class QuestionLibraryService {
 
         // Delete question and cascade to quiz_questions (many-to-many links)
         questionRepository.delete(question);
-        log.info("Deleted library question with ID: {}", id);
     }
 
-    /**
-     * Get questions by IDs for adding to quiz
-     */
-    public List<QuestionResponse> getLibraryQuestionsByIds(List<Integer> ids) {
-        String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
-        
-        List<Question> questions = questionRepository.findLibraryQuestionsByIdsWithAnswers(ids);
-        
-        // Verify all questions belong to teacher
-        questions.forEach(q -> {
-            if (!teacherId.equals(q.getTeacherId())) {
-                throw new AppException(ErrorCode.UNAUTHORIZED);
-            }
-        });
-
-        return questions.stream()
-                .map(this::toQuestionResponse)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get count of library questions for teacher
-     */
-    public long getLibraryQuestionsCount() {
-        String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
-        return questionRepository.countLibraryQuestionsByTeacher(teacherId);
-    }
-
-    /**
-     * Import questions from Excel file (.xlsx)
-     * Excel Format: questionText | questionType | score | difficultyLevel | tags | answer1 | isCorrect1 | answer2 | isCorrect2 | ...
-     */
     @Transactional
     public Map<String, Object> importQuestionsFromCsv(MultipartFile file) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("Importing questions from Excel for teacher: {}", teacherId);
 
         List<Question> importedQuestions = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -329,7 +250,6 @@ public class QuestionLibraryService {
             }
 
         } catch (Exception e) {
-            log.error("Error reading Excel file: {}", e.getMessage());
             throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
         }
 
@@ -344,10 +264,6 @@ public class QuestionLibraryService {
         return result;
     }
 
-    /**
-     * Parse an Excel row into a Question entity
-     * Format: questionText | questionType | score | difficultyLevel | tags | answer1 | isCorrect1 | answer2 | isCorrect2 | ...
-     */
     private Question parseExcelRow(Row row, String teacherId) {
         if (row == null) return null;
 
@@ -399,9 +315,6 @@ public class QuestionLibraryService {
         return question;
     }
 
-    /**
-     * Helper method to get cell value as string
-     */
     private String getCellValueAsString(Cell cell) {
         if (cell == null) {
             return "";

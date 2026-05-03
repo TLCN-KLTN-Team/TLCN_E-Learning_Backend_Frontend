@@ -30,11 +30,7 @@ public class AssignmentDiscussionService {
     private final AssignmentDiscussionRepository discussionRepository;
     private final DiscussionReadStatusRepository readStatusRepository;
     private final Cloudinary cloudinary;
-    // TODO: Add UserServiceClient to fetch user details if needed
-    
-    /**
-     * Get all discussion messages for an assignment
-     */
+
     public Page<DiscussionMessageResponse> getDiscussionMessages(Integer assignmentId, Pageable pageable) {
         log.info("Fetching discussion messages for assignment: {}", assignmentId);
         
@@ -43,10 +39,7 @@ public class AssignmentDiscussionService {
         
         return messages.map(this::toResponse);
     }
-    
-    /**
-     * Post a new discussion message
-     */
+
     public DiscussionMessageResponse postMessage(Integer assignmentId, DiscussionMessageRequest request) {
         String currentUserId = getCurrentUserId();
         log.info("User {} posting message to assignment {} discussion", currentUserId, assignmentId);
@@ -74,10 +67,7 @@ public class AssignmentDiscussionService {
         
         return toResponse(saved);
     }
-    
-    /**
-     * Delete a discussion message
-     */
+
     public Integer deleteMessage(String messageId) {
         String currentUserId = getCurrentUserId();
         log.info("User {} deleting assignment message: {}", currentUserId, messageId);
@@ -96,10 +86,7 @@ public class AssignmentDiscussionService {
         
         return message.getAssignmentId();
     }
-    
-    /**
-     * Toggle like/unlike on a message
-     */
+
     public DiscussionMessageResponse toggleLike(String messageId) {
         String currentUserId = getCurrentUserId();
         log.info("User {} toggling like for assignment message: {}", currentUserId, messageId);
@@ -118,10 +105,7 @@ public class AssignmentDiscussionService {
         
         return toResponse(saved);
     }
-    
-    /**
-     * Get unread message count for an assignment
-     */
+
     public Long getUnreadCount(Integer assignmentId) {
         String currentUserId = getCurrentUserId();
         log.info("Getting unread count for assignment {} and user {}", assignmentId, currentUserId);
@@ -139,10 +123,7 @@ public class AssignmentDiscussionService {
         // Count messages created after last read time
         return discussionRepository.countByAssignmentIdAndCreatedAtAfterAndIsDeletedFalse(assignmentId, lastReadAt);
     }
-    
-    /**
-     * Mark discussion as read (for notifications)
-     */
+
     public void markAsRead(Integer assignmentId) {
         String currentUserId = getCurrentUserId();
         log.info("User {} marking assignment {} discussion as read", currentUserId, assignmentId);
@@ -158,10 +139,7 @@ public class AssignmentDiscussionService {
         readStatus.setLastReadAt(LocalDateTime.now());
         readStatusRepository.save(readStatus);
     }
-    
-    /**
-     * Convert entity to response DTO
-     */
+
     private DiscussionMessageResponse toResponse(AssignmentMessage message) {
         String currentUserId = getCurrentUserId();
         
@@ -194,10 +172,7 @@ public class AssignmentDiscussionService {
                 .isDeleted(message.getIsDeleted())
                 .build();
     }
-    
-    /**
-     * Get current user ID from security context
-     */
+
     private String getCurrentUserId() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
@@ -205,10 +180,7 @@ public class AssignmentDiscussionService {
         }
         throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
-    
-    /**
-     * Check if current user is admin
-     */
+
     private boolean isAdmin() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null && 
@@ -216,9 +188,6 @@ public class AssignmentDiscussionService {
                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
-    /**
-     * Upload image to Cloudinary
-     */
     public Map<String, String> uploadImage(MultipartFile file) {
         if (file.isEmpty()) {
             throw new AppException(ErrorCode.FILE_EMPTY);

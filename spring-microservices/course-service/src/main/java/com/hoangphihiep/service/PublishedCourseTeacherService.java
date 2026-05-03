@@ -146,17 +146,12 @@ public class PublishedCourseTeacherService {
         publishedCourse.setCourseTarget(request.getCourseTarget());
 
         PublishedCourse saved = publishedCourseRepository.save(publishedCourse);
-        // indexing for elasticsearch here
-//        indexingForPublishedCourse(saved);
-        log.info("Created/Updated draft published course for course ID: {}", request.getCourseId());
 
         return publishedCourseMapper.toPublishedCourseResponse(saved);
     }
 
     @Transactional
     public PublishedCourseResponse submitForApproval(Integer courseId) {
-
-        String currentTeacherId = SecurityContextHolder.getContext().getAuthentication().getName();
 
         PublishedCourse publishedCourse = publishedCourseRepository.findByCourseId(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
@@ -172,7 +167,6 @@ public class PublishedCourseTeacherService {
         publishedCourse.setUpdatedAt(new Date());
 
         PublishedCourse saved = publishedCourseRepository.save(publishedCourse);
-        log.info("Teacher {} submitted course {} for approval", currentTeacherId, courseId);
 
         return publishedCourseMapper.toPublishedCourseResponse(saved);
     }
@@ -240,15 +234,11 @@ public class PublishedCourseTeacherService {
         String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
         boolean isAuthorized = false;
 
-        log.info("Checking expert permission for user: {}", currentUserId);
         ApiResponse<ExpertResponse> response = expertRepository.getExpertByUserId(currentUserId);
-        log.info("Expert response: {}", response);
 
         if (response != null && response.getResult() != null) {
             ExpertResponse expert = response.getResult();
             String eduUnitIdStr = String.valueOf(publishedCourse.getCourse().getEducationalUnit().getId());
-            log.info("Comparing Expert EduUnitId: {} with Course EduUnitId: {}",
-                    expert.getEducationalUnitId(), eduUnitIdStr);
 
             if (expert.getEducationalUnitId() != null && expert.getEducationalUnitId().equals(eduUnitIdStr)) {
                 isAuthorized = true;
@@ -320,9 +310,6 @@ public class PublishedCourseTeacherService {
         return publishedCourseMapper.toPublishedCourseResponse(publishedCourse);
     }
 
-    /**
-     * Lấy published course by course ID
-     */
     public PublishedCourseResponse getPublishedCourseByCourseId(Integer courseId) {
         PublishedCourse publishedCourse = publishedCourseRepository.findByCourseId(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
@@ -330,7 +317,6 @@ public class PublishedCourseTeacherService {
         return publishedCourseMapper.toPublishedCourseResponse(publishedCourse);
     }
 
-    // Helper methods
     private PublishedCourse createNewPublishedCourse(PublishCourseRequest request, Course course, CourseType courseType) {
         PublishedCourse publishedCourse = new PublishedCourse();
         publishedCourse.setCourse(course);

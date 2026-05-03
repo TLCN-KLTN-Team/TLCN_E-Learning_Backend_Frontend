@@ -44,13 +44,4 @@ public class ProgressController {
                 .result(progressService.markLessonComplete(request))
                 .build();
     }
-
-    @GetMapping("/class/{classId}/lesson/{lessonId}/completed")
-    public ApiResponse<Boolean> isLessonCompleted(
-            @PathVariable Integer classId,
-            @PathVariable Integer lessonId) {
-        return ApiResponse.<Boolean>builder()
-                .result(progressService.isLessonCompleted(classId, lessonId))
-                .build();
-    }
 }

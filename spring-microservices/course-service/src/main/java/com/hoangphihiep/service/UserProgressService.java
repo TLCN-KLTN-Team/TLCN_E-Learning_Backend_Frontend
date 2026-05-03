@@ -172,28 +172,6 @@ public class UserProgressService {
         return getPublishedCourseProgressDetail(request.getPublishedCourseId());
     }
 
-    public Boolean isLessonCompletedForPublishedCourse(Integer publishedCourseId, Integer lessonId) {
-        String userId = getCurrentUserId();
-
-        PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId)
-                .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
-
-        Course course = publishedCourse.getCourse();
-
-        CourseProgress courseProgress = courseProgressRepository
-                .findByUserIdAndCourseId(userId, course.getId())
-                .orElse(null);
-
-        if (courseProgress == null) {
-            return false;
-        }
-
-        return lessonProgressRepository
-                .findByCourseProgress_IdAndLesson_Id(courseProgress.getId(), lessonId)
-                .map(LessonProgress::getCompleted)
-                .orElse(false);
-    }
-
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }

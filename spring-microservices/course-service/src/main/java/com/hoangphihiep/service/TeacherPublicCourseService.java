@@ -70,8 +70,6 @@ public class TeacherPublicCourseService {
     }
 
     public List<StudentQuizAttemptResponse> getStudentQuizAttempts(Integer courseId, String userId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
         List<QuizAttempt> attempts = quizAttemptRepository.findByUserIdAndCourseId(userId, courseId);
 
@@ -146,8 +144,6 @@ public class TeacherPublicCourseService {
     }
 
     public List<StudentAssignmentSubmissionResponse> getStudentAssignments(Integer courseId, String userId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
         List<AssignmentSubmission> submissions = assignmentSubmissionRepository
                 .findByUserIdAndCourseId(userId, courseId);
@@ -167,8 +163,6 @@ public class TeacherPublicCourseService {
         submission.setGradedAt(new Date());
         
         assignmentSubmissionRepository.save(submission);
-
-        log.info("Assignment submission {} graded with score: {}", submissionId, request.getScore());
 
         return mapToStudentAssignmentSubmissionResponse(submission);
     }
@@ -320,7 +314,6 @@ public class TeacherPublicCourseService {
             ? attempt.getSubmittedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
             : null;
 
-        log.info("🔍 Fetching user info for userId: {}", attempt.getIdUser());
         ApiResponse<UserResponse> userResponse = userInfoApi.getUserInfo(attempt.getIdUser());
         UserResponse user = userResponse.getResult();
         
@@ -333,7 +326,6 @@ public class TeacherPublicCourseService {
         } else {
             studentName = user.getId();
         }
-        log.info("✅ User fetched - ID: {}, Name: {}", user.getId(), studentName);
 
         return StudentQuizAttemptResponse.builder()
                 .attemptId(attempt.getId())

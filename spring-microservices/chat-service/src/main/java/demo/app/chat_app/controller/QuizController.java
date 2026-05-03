@@ -36,9 +36,6 @@ public class QuizController {
     private final QuizDiscussionService discussionService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * Get all discussion messages for a quiz (REST)
-     */
     @GetMapping("/{quizId}/messages")
     public ResponseEntity<Page<DiscussionMessageResponse>> getQuizDiscussion(
             @PathVariable Integer quizId,
@@ -51,9 +48,6 @@ public class QuizController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * Post a new discussion message (REST)
-     */
     @PostMapping("/{quizId}/messages")
     public ResponseEntity<DiscussionMessageResponse> postMessage(
             @PathVariable Integer quizId,
@@ -71,9 +65,6 @@ public class QuizController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Send message via WebSocket (Real-time)
-     */
     @MessageMapping("/quiz/{quizId}/discussion")
     public void sendDiscussionMessage(
             @DestinationVariable Integer quizId,
@@ -121,9 +112,6 @@ public class QuizController {
         }
     }
 
-    /**
-     * Delete a discussion message
-     */
     @DeleteMapping("/messages/{messageId}")
     public ResponseEntity<Void> deleteMessage(@PathVariable String messageId) {
         log.info("Deleting discussion message: {}", messageId);
@@ -138,9 +126,6 @@ public class QuizController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Like/Unlike a discussion message
-     */
     @PostMapping("/messages/{messageId}/like")
     public ResponseEntity<DiscussionMessageResponse> toggleLike(@PathVariable String messageId) {
         log.info("Toggling like for message: {}", messageId);
@@ -155,9 +140,6 @@ public class QuizController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get unread message count for a quiz
-     */
     @GetMapping("/{quizId}/unread-count")
     public ResponseEntity<Long> getUnreadCount(@PathVariable Integer quizId) {
         log.info("Getting unread count for quiz: {}", quizId);
@@ -165,9 +147,6 @@ public class QuizController {
         return ResponseEntity.ok(count);
     }
 
-    /**
-     * Mark discussion as read (for teacher/admin)
-     */
     @PostMapping("/{quizId}/mark-read")
     public ResponseEntity<Void> markAsRead(@PathVariable Integer quizId) {
         log.info("Marking quiz discussion as read: {}", quizId);
@@ -175,9 +154,6 @@ public class QuizController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * Upload image for discussion message
-     */
     @PostMapping("/upload-image")
     public ResponseEntity<java.util.Map<String, String>> uploadImage(@RequestPart("file") MultipartFile file) {
         log.info("Uploading image for discussion: {}", file.getOriginalFilename());

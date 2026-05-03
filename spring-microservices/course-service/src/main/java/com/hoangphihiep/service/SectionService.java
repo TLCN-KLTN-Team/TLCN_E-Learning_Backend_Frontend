@@ -103,7 +103,7 @@ public class SectionService {
     }
 
     @Transactional
-    public SectionResponse upsertSection(
+    private SectionResponse upsertSection(
             SectionRequest request,
             Course course,
             List<MultipartFile> lessonFiles,
@@ -966,69 +966,6 @@ public class SectionService {
         return assignment;
     }
 
-
-    @Transactional
-    public void deleteSection(Integer id) {
-        if (id == null || id <= 0) {
-            throw new AppException(ErrorCode.INVALID_REQUEST);
-        }
-
-        Section section = sectionRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
-
-        try {
-            log.info("Bắt đầu xóa theo chuỗi (cascade) cho section có id: {}", id);
-
-            List<Quiz> quizzes = quizRepository.findBySectionId(id);
-            for (Quiz quiz : quizzes) {
-                // Load questions via QuizQuestion join table
-                List<QuizQuestion> quizQuestions = quizQuestionRepository.findByQuizIdOrderByOrderIndex(quiz.getId());
-                List<Question> questions = quizQuestions.stream()
-                        .map(QuizQuestion::getQuestion)
-                        .toList();
-                
-                for (Question question : questions) {
-                    List<Answer> answers = answerRepository.findByQuestionId(question.getId());
-                    answerRepository.deleteAll(answers);
-                    answerRepository.flush();
-                }
-                
-                // Delete QuizQuestion links first
-                quizQuestionRepository.deleteByQuizId(quiz.getId());
-                quizQuestionRepository.flush();
-                
-                // Then delete questions
-                questionRepository.deleteAll(questions);
-                questionRepository.flush();
-                log.debug("Đã xóa {} câu hỏi cho bài kiểm tra có id: {}", questions.size(), quiz.getId());
-            }
-            quizRepository.deleteAll(quizzes);
-            quizRepository.flush();
-            log.debug("Đã xóa {} bài kiểm tra cho section có id: {}", quizzes.size(), id);
-
-            List<Lesson> lessons = lessonRepository.findBySectionId(id);
-            lessonRepository.deleteAll(lessons);
-            lessonRepository.flush();
-            log.debug("Đã xóa {} bài học cho section có id: {}", lessons.size(), id);
-
-            List<Assignment> assignments = assignmentRepository.findBySectionId(id);
-            for (Assignment assignment : assignments) {
-                List<AssignmentSubmission> submissions = assignmentSubmissionRepository.findByAssignmentId(assignment.getId());
-                assignmentSubmissionRepository.deleteAll(submissions);
-                assignmentSubmissionRepository.flush();
-            }
-            assignmentRepository.deleteAll(assignments);
-            assignmentRepository.flush();
-            log.debug("Đã xóa {} assignments cho section có id: {}", assignments.size(), id);
-
-            sectionRepository.delete(section);
-            sectionRepository.flush();
-            log.info("Đã xóa thành công section có id: {} cùng toàn bộ nội dung liên quan", id);
-        } catch (Exception e) {
-            log.error("Lỗi khi xóa section id: {}", id, e);
-            throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION);
-        }
-    }
 
     /**
      * Link questions from library to quiz (many-to-many relationship)

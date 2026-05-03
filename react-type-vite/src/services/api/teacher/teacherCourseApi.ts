@@ -34,16 +34,6 @@ export const getTeacherCourses = async (
 }
 
 /**
- * Get a specific course by ID
- * @param courseId - The course ID
- * @returns Course details
- */
-export const getTeacherCourseById = async (courseId: number): Promise<CourseResponse> => {
-  const response = await axiosInstance.get<ApiResponse<CourseResponse>>(`/course-management/courses/${courseId}`)
-  return response.data.result
-}
-
-/**
  * Get course by ID
  * @param courseId - The course ID
  * @returns Course information

@@ -174,7 +174,7 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
 
                     {/* Right: Target Course */}
                     <div className="p-4 border rounded-lg bg-gray-50 flex flex-col gap-2">
-                        <div className="text-sm font-semibold text-gray-500 uppercase">Môn học được miễn (Nội bộ)</div>
+                        <div className="text-sm font-semibold text-gray-500 uppercase">	Khóa học Đích (Nội bộ)</div>
                         <h3 className="font-bold text-lg text-green-700">{equivalentCourse.targetCourseName}</h3>
                         <div className="text-sm">
                             <span className="font-medium">Số tín chỉ:</span> {equivalentCourse.targetCourseCredits !== undefined ? equivalentCourse.targetCourseCredits : "N/A"}

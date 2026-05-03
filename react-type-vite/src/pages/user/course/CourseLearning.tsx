@@ -14,7 +14,6 @@ import {
   PlayCircle,
   Menu,
   X,
-  Share2,
   ChevronDown,
   Star,
   Search,
@@ -151,9 +150,6 @@ const CourseLearning: React.FC = () => {
     if (!courseId) return;
 
     try {
-      // Log for Debugging State
-      console.log("🔄 CourseLearning Render State:", { showCertificateModal, certificate });
-
       const stats = await progressApi.getPublishedCourseProgress(Number(courseId))
       setProgressStats(stats)
       console.log("📊 Progress Stats:", stats)
@@ -161,14 +157,7 @@ const CourseLearning: React.FC = () => {
       const detail = await progressApi.getPublishedCourseProgressDetail(
         Number(courseId),
       );
-      console.log("📋 Progress Detail Full:", detail);
-      console.log(
-        "📋 Lesson Progresses:",
-        detail.courseProgress.lessonProgresses,
-      );
-
-      // If lessonProgress exists, consider it completed (even if isCompleted is false)
-      // This is because the backend creates lessonProgress when user completes a lesson
+      
       const completedLessonIds = new Set(
         detail.courseProgress.lessonProgresses.map((lp) => lp.lessonId),
       );
@@ -842,15 +831,6 @@ const CourseLearning: React.FC = () => {
                 </div>
               )}
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-gray-800 gap-2"
-            >
-              <Share2 className="w-4 h-4" />
-              <span className="text-sm">Chia sẻ</span>
-            </Button>
 
             {/* Certificate Button Logic */}
             {certificate ? (

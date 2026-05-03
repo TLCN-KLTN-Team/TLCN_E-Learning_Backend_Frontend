@@ -47,7 +47,6 @@ const DepartmentManagementPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Modal states
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
   const [editingDepartment, setEditingDepartment] =
     useState<DepartmentResponse | null>(null);
@@ -56,9 +55,6 @@ const DepartmentManagementPage: React.FC = () => {
     name: string;
   } | null>(null);
 
-  // Detail modal state
-
-  // Initialize educationalUnit
   useEffect(() => {
     const initializeEducationalUnit = async () => {
       try {
@@ -131,7 +127,6 @@ const DepartmentManagementPage: React.FC = () => {
       await deleteDepartment(educationalUnitId!, departmentId);
       toast.success("Xóa khoa thành công!");
 
-      // Reload departments and adjust page if needed
       if (departments.length === 1 && currentPage > 0) {
         loadDepartments(currentPage - 1, pageSize);
       } else {

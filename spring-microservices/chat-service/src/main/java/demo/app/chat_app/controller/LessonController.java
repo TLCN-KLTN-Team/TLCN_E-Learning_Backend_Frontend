@@ -36,9 +36,6 @@ public class LessonController {
     private final LessonDiscussionService discussionService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * Get all discussion messages for a lesson (REST)
-     */
     @GetMapping("/{lessonId}/messages")
     public ResponseEntity<Page<DiscussionMessageResponse>> getLessonDiscussion(
             @PathVariable Integer lessonId,
@@ -51,9 +48,6 @@ public class LessonController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * Post a new discussion message (REST)
-     */
     @PostMapping("/{lessonId}/messages")
     public ResponseEntity<DiscussionMessageResponse> postMessage(
             @PathVariable Integer lessonId,
@@ -71,9 +65,6 @@ public class LessonController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Send message via WebSocket (Real-time)
-     */
     @MessageMapping("/lesson/{lessonId}/discussion")
     public void sendDiscussionMessage(
             @DestinationVariable Integer lessonId,
@@ -121,9 +112,6 @@ public class LessonController {
         }
     }
 
-    /**
-     * Delete a discussion message
-     */
     @DeleteMapping("/messages/{messageId}")
     public ResponseEntity<Void> deleteMessage(@PathVariable String messageId) {
         log.info("Deleting discussion message: {}", messageId);
@@ -138,9 +126,6 @@ public class LessonController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Like/Unlike a discussion message
-     */
     @PostMapping("/messages/{messageId}/like")
     public ResponseEntity<DiscussionMessageResponse> toggleLike(@PathVariable String messageId) {
         log.info("Toggling like for message: {}", messageId);
@@ -155,9 +140,6 @@ public class LessonController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get unread message count for a lesson
-     */
     @GetMapping("/{lessonId}/unread-count")
     public ResponseEntity<Long> getUnreadCount(@PathVariable Integer lessonId) {
         log.info("Getting unread count for lesson: {}", lessonId);
@@ -165,9 +147,6 @@ public class LessonController {
         return ResponseEntity.ok(count);
     }
 
-    /**
-     * Mark discussion as read
-     */
     @PostMapping("/{lessonId}/mark-read")
     public ResponseEntity<Void> markAsRead(@PathVariable Integer lessonId) {
         log.info("Marking lesson discussion as read: {}", lessonId);
@@ -175,9 +154,6 @@ public class LessonController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * Upload image for discussion message
-     */
     @PostMapping("/upload-image")
     public ResponseEntity<java.util.Map<String, String>> uploadImage(@RequestPart("file") MultipartFile file) {
         log.info("Uploading image for discussion: {}", file.getOriginalFilename());
