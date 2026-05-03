@@ -1,6 +1,5 @@
 package com.hoangphihiep.service;
 
-import com.hoangphihiep.dto.request.BulkPublishRequest;
 import com.hoangphihiep.dto.response.ContentPublishStatusResponse;
 import com.hoangphihiep.entity.*;
 import com.hoangphihiep.exception.AppException;
@@ -8,12 +7,10 @@ import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +28,10 @@ public class ContentPublishService {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
 
-
         section.setIsPublished(isPublished);
         section.setUpdateAt(new Date());
 
         sectionRepository.save(section);
-        log.info("Section {} publish status changed to: {}", sectionId, isPublished);
     }
 
     @Transactional
@@ -44,12 +39,10 @@ public class ContentPublishService {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new AppException(ErrorCode.LESSON_NOT_FOUND));
 
-
         lesson.setIsPublished(isPublished);
         lesson.setUpdateAt(new Date());
 
         lessonRepository.save(lesson);
-        log.info("Lesson {} publish status changed to: {}", lessonId, isPublished);
     }
 
     @Transactional
@@ -61,7 +54,6 @@ public class ContentPublishService {
         quiz.setUpdateAt(new Date());
 
         quizRepository.save(quiz);
-        log.info("Quiz {} publish status changed to: {}", quizId, isPublished);
     }
 
     @Transactional
@@ -73,78 +65,6 @@ public class ContentPublishService {
         assignment.setUpdateAt(new Date());
 
         assignmentRepository.save(assignment);
-        log.info("Assignment {} publish status changed to: {}", assignmentId, isPublished);
-    }
-
-    @Transactional
-    public ContentPublishStatusResponse bulkPublish(BulkPublishRequest request) {
-        Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
-
-        int sectionCount = 0;
-        int lessonCount = 0;
-        int quizCount = 0;
-        int assignmentCount = 0;
-
-        if (request.getSectionIds() != null && !request.getSectionIds().isEmpty()) {
-            List<Section> sections = sectionRepository.findAllById(request.getSectionIds());
-            for (Section section : sections) {
-                if (section.getCourse().getId() == course.getId()) {
-                    section.setIsPublished(request.getIsPublished());
-                    section.setUpdateAt(new Date());
-                    sectionCount++;
-                }
-            }
-            sectionRepository.saveAll(sections);
-        }
-
-        if (request.getLessonIds() != null && !request.getLessonIds().isEmpty()) {
-            List<Lesson> lessons = lessonRepository.findAllById(request.getLessonIds());
-            for (Lesson lesson : lessons) {
-                if (lesson.getSection().getCourse().getId() == course.getId()) {
-                    lesson.setIsPublished(request.getIsPublished());
-                    lesson.setUpdateAt(new Date());
-                    lessonCount++;
-                }
-            }
-            lessonRepository.saveAll(lessons);
-        }
-
-        if (request.getQuizIds() != null && !request.getQuizIds().isEmpty()) {
-            List<Quiz> quizzes = quizRepository.findAllById(request.getQuizIds());
-            for (Quiz quiz : quizzes) {
-                if (quiz.getSection().getCourse().getId() == course.getId()) {
-                    quiz.setIsPublished(request.getIsPublished());
-                    quiz.setUpdateAt(new Date());
-                    quizCount++;
-                }
-            }
-            quizRepository.saveAll(quizzes);
-        }
-
-        if (request.getAssignmentIds() != null && !request.getAssignmentIds().isEmpty()) {
-            List<Assignment> assignments = assignmentRepository.findAllById(request.getAssignmentIds());
-            for (Assignment assignment : assignments) {
-                if (assignment.getSection().getCourse().getId() == course.getId()) {
-                    assignment.setIsPublished(request.getIsPublished());
-                    assignment.setUpdateAt(new Date());
-                    assignmentCount++;
-                }
-            }
-            assignmentRepository.saveAll(assignments);
-        }
-
-        log.info("Bulk publish completed for course {}: {} sections, {} lessons, {} quizzes, {} assignments",
-                course.getId(), sectionCount, lessonCount, quizCount, assignmentCount);
-
-        return ContentPublishStatusResponse.builder()
-                .courseId(course.getId())
-                .sectionsUpdated(sectionCount)
-                .lessonsUpdated(lessonCount)
-                .quizzesUpdated(quizCount)
-                .assignmentsUpdated(assignmentCount)
-                .isPublished(request.getIsPublished())
-                .build();
     }
 
     public ContentPublishStatusResponse getPublishStatus(Integer courseId) {
@@ -223,8 +143,6 @@ public class ContentPublishService {
         }
 
         courseRepository.save(course);
-        log.info("Published all content for course {}: isPublished = {}", courseId, isPublished);
-
         return getPublishStatus(courseId);
     }
 

@@ -7,6 +7,8 @@ import ExpertLayout from "@/components/expert/home/ExpertLayout";
 import { EXPERT_ROUTES } from "@/constants/routes";
 import EquivalentCourseManagementPage from "@/pages/expert/EquivalentCourseManagementPage";
 import CreditTransferApprovalPage from "@/pages/expert/CreditTransferApprovalPage";
+import ExpertNotificationsPage from "@/pages/expert/notifications/ExpertNotificationsPage";
+import ExpertProfilePage from "@/pages/expert/ExpertProfilePage";
 
 // Expert routes - protected routes for expert roles
 const ExpertRoutes = [
@@ -30,6 +32,8 @@ const ExpertRoutes = [
         <Route path="courses" element={<CourseListPage />} />
         <Route path="equivalent-courses" element={<EquivalentCourseManagementPage />} />
         <Route path="credit-transfers" element={<CreditTransferApprovalPage />} />
+        <Route path="notifications" element={<ExpertNotificationsPage />} />
+        <Route path="info" element={<ExpertProfilePage />} />
         <Route path="published-courses" element={<PendingCoursesPage />} />
 
         <Route

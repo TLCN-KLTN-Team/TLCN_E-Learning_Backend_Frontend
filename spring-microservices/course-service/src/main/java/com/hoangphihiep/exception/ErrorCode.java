@@ -114,10 +114,10 @@ public enum ErrorCode {
     QUIZ_ATTEMPT_LIMIT_INVALID("QUIZ_2304", "Số lần thử không hợp lệ", HttpStatus.BAD_REQUEST),
     QUIZ_PASSING_SCORE_INVALID("QUIZ_2305", "Điểm đạt không hợp lệ", HttpStatus.BAD_REQUEST),
     QUIZ_NO_QUESTIONS("QUIZ_2306", "Bài kiểm tra phải có ít nhất một câu hỏi", HttpStatus.BAD_REQUEST),
-    QUIZ_NOT_STARTED("QUIZ_2307", "Quiz has not started yet", HttpStatus.BAD_REQUEST),
-    QUIZ_ENDED("QUIZ_2308", "Quiz has ended", HttpStatus.BAD_REQUEST),
-    QUIZ_ATTEMPT_LIMIT_REACHED("QUIZ_2309", "Quiz attempt limit reached", HttpStatus.BAD_REQUEST),
-    QUIZ_ATTEMPT_NOT_FOUND("QUIZ_2310", "Quiz attempt not found", HttpStatus.BAD_REQUEST),
+    QUIZ_NOT_STARTED("QUIZ_2307", "Bài kiểm tra chưa bắt đầu", HttpStatus.BAD_REQUEST),
+    QUIZ_ENDED("QUIZ_2308", "Bài kiểm tra đã kết thúc", HttpStatus.BAD_REQUEST),
+    QUIZ_ATTEMPT_LIMIT_REACHED("QUIZ_2309", "Đã đạt giới hạn số lần làm bài kiểm tra", HttpStatus.BAD_REQUEST),
+    QUIZ_ATTEMPT_NOT_FOUND("QUIZ_2310", "Không tìm thấy bài kiểm tra", HttpStatus.BAD_REQUEST),
 
     // Question related errors (QUESTION_xxxx)
     QUESTION_NOT_FOUND("QUESTION_2401", "Không tìm thấy câu hỏi", HttpStatus.NOT_FOUND),

@@ -54,17 +54,6 @@ public class QuestionLibraryController {
                 .build();
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<QuestionResponse> getLibraryQuestionById(
-            @PathVariable Integer id) {
-
-        QuestionResponse question = questionLibraryService.getLibraryQuestionById(id);
-
-        return ApiResponse.<QuestionResponse>builder()
-                .result(question)
-                .build();
-    }
-
     @PostMapping(consumes = {"multipart/form-data", "application/json"})
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<QuestionResponse> createLibraryQuestion(
@@ -99,30 +88,6 @@ public class QuestionLibraryController {
 
         return ApiResponse.<Void>builder()
                 .message("Library question deleted successfully")
-                .build();
-    }
-
-    @GetMapping("/count")
-    public ApiResponse<Map<String, Long>> getLibraryQuestionsCount() {
-
-        long count = questionLibraryService.getLibraryQuestionsCount();
-
-        Map<String, Long> response = new HashMap<>();
-        response.put("count", count);
-
-        return ApiResponse.<Map<String, Long>>builder()
-                .result(response)
-                .build();
-    }
-
-    @PostMapping("/batch")
-    public ApiResponse<List<QuestionResponse>> getLibraryQuestionsByIds(
-            @RequestBody List<Integer> questionIds) {
-
-        List<QuestionResponse> questions = questionLibraryService.getLibraryQuestionsByIds(questionIds);
-
-        return ApiResponse.<List<QuestionResponse>>builder()
-                .result(questions)
                 .build();
     }
 

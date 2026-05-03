@@ -61,11 +61,6 @@ export const deleteStudent = async (
   );
 };
 
-export const getAllStudents = async (): Promise<StudentResponse[]> => {
-  const response = await axiosInstance.get<ApiResponse<StudentResponse[]>>(`/course-management/admin/students/all`)
-  return response.data.result
-}
-
 export const bulkImportStudents = async (
   educationalUnitId: number,
   students: StudentRequest[]

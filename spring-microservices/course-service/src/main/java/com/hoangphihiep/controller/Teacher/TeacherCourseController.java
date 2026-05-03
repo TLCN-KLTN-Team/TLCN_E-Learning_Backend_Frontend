@@ -116,26 +116,12 @@ public class TeacherCourseController {
                 .build();
     }
 
-    @GetMapping("/{teacherId}")
-    public ApiResponse<List<CourseResponse>> getCoursesByTeacher(
-            @PathVariable String teacherId) {
-
-        List<CourseResponse> courses = courseService.getCoursesByTeacherWithDetails(teacherId);
-
-        return ApiResponse.<List<CourseResponse>>builder()
-                .result(courses)
-                .build();
-    }
-
     @GetMapping("/{teacherId}/paginated")
     public ApiResponse<Page<CourseResponse>> getCoursesByTeacherPaginated(
             @PathVariable String teacherId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        log.info("Getting paginated courses for teacher: {}", teacherId);
-
-        // Get courses
         Page<CourseResponse> courses = courseService.getCoursesByTeacherPaginated(teacherId, page, size);
 
         return ApiResponse.<Page<CourseResponse>>builder()
@@ -194,9 +180,6 @@ public class TeacherCourseController {
                 rubricFiles
         );
 
-        System.out.println("========== RESPONSE RESULT ==========");
-        System.out.println("Total sections created: " + responses.size());
-
         return ApiResponse.<List<SectionResponse>>builder()
                 .result(responses)
                 .build();
@@ -211,7 +194,6 @@ public class TeacherCourseController {
                 .build();
     }
 
-    // THAY ĐỔI: Đổi từ /section/{sectionId} thành /content-visibility/section/{sectionId}
     @PutMapping("/content-visibility/section/{sectionId}")
     public ApiResponse<Void> updateSectionVisibility(
             @PathVariable Integer sectionId,
@@ -309,7 +291,6 @@ public class TeacherCourseController {
 
     @GetMapping("/{courseId}/publish-status")
     public ApiResponse<ContentPublishStatusResponse> getPublishStatus(@PathVariable Integer courseId) {
-        log.info("Getting publish status for course: {}", courseId);
         ContentPublishStatusResponse response = contentPublishService.getPublishStatus(courseId);
 
         return ApiResponse.<ContentPublishStatusResponse>builder()
@@ -322,8 +303,6 @@ public class TeacherCourseController {
     public ApiResponse<Void> toggleSectionPublish(
             @PathVariable Integer sectionId,
             @RequestParam Boolean isPublished) {
-
-        log.info("Toggle section {} publish status to: {}", sectionId, isPublished);
         contentPublishService.toggleSectionPublish(sectionId, isPublished);
 
         return ApiResponse.<Void>builder()
@@ -336,7 +315,6 @@ public class TeacherCourseController {
             @PathVariable Integer lessonId,
             @RequestParam Boolean isPublished) {
 
-        log.info("Toggle lesson {} publish status to: {}", lessonId, isPublished);
         contentPublishService.toggleLessonPublish(lessonId, isPublished);
 
         return ApiResponse.<Void>builder()
@@ -367,21 +345,6 @@ public class TeacherCourseController {
 
         return ApiResponse.<Void>builder()
                 .message("Assignment publish status updated successfully")
-                .build();
-    }
-
-    @PostMapping("/bulk-publish")
-    public ApiResponse<ContentPublishStatusResponse> bulkPublish(
-            @Valid @RequestBody BulkPublishRequest request) {
-
-        log.info("Bulk publish request for course: {}, isPublished: {}",
-                request.getCourseId(), request.getIsPublished());
-
-        ContentPublishStatusResponse response = contentPublishService.bulkPublish(request);
-
-        return ApiResponse.<ContentPublishStatusResponse>builder()
-                .message("Bulk publish completed successfully")
-                .result(response)
                 .build();
     }
 

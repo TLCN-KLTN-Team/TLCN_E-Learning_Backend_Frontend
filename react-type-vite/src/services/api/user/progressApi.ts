@@ -30,14 +30,4 @@ export const markLessonComplete = async (data: {
   await axiosInstance.post(`${API_PREFIX}/lesson/complete`, data);
 };
 
-export const isLessonCompleted = async (
-  lessonId: number,
-  publishedCourseId: number
-): Promise<boolean> => {
-  const response = await axiosInstance.get<ApiResponse<boolean>>(
-    `${API_PREFIX}/lesson/${lessonId}/published-course/${publishedCourseId}/is-completed`
-  );
-  return response.data.result;
-};
-
 

@@ -45,11 +45,7 @@ public class PayoutOrderItemService {
             RevenueShareConfig superAdminConfig = revenueShareConfigRepository
                     .findByRecipientTypeAndIsActiveTrue(RecipientType.SUPER_ADMIN)
                     .orElseThrow(() -> new RuntimeException("SUPER_ADMIN revenue config not found"));
-            
-            log.info("🔵 Found SUPER_ADMIN config with share: {}%", superAdminConfig.getSharePercentage());
-            
-            // Tạo 1 item duy nhất cho SUPER_ADMIN (escrow/tạm giữ)
-            log.info("🔵 Building escrow item...");
+
             PayoutOrderItem escrowItem = PayoutOrderItem.builder()
                     .orderItem(orderItem)
                     .revenueShareConfig(superAdminConfig)  // Set config thay vì null
@@ -63,25 +59,15 @@ public class PayoutOrderItemService {
                     .canRefund(true)  // Cho phép refund trong 7 ngày
                     .build();
             
-            log.info("🔵 Built escrow item successfully");
-            log.info("🔵 Saving to database...");
-            
             PayoutOrderItem saved = payoutOrderItemRepository.save(escrowItem);
-            
-            log.info("✅ Created ESCROW payout - ID: {}, Amount: {} VND, holdUntil: {}, OrderItem ID: {}", 
-                    saved.getId(), totalAmount, saved.getHoldUntil(), orderItem.getId());
             
             return saved;
             
         } catch (Exception e) {
-            log.error("❌ ERROR creating escrow payout for OrderItem ID: {}", orderItem.getId(), e);
             throw e;
         }
     }
-    
-    /**
-     * Release escrow và chia tiền cho 3 bên (gọi bởi Scheduler)
-     */
+
     @Transactional
     public boolean releaseEscrowAndSplitById(Integer escrowItemId) {
         PayoutOrderItem escrowItem = payoutOrderItemRepository.findById(escrowItemId)
@@ -109,9 +95,6 @@ public class PayoutOrderItemService {
         return true;
     }
 
-    /**
-     * Release escrow và chia tiền cho 3 bên (gọi bởi Scheduler)
-     */
     @Transactional
     public void releaseEscrowAndSplit(PayoutOrderItem escrowItem) {
 
@@ -194,10 +177,7 @@ public class PayoutOrderItemService {
         
         log.info("Successfully released escrow item {} and split revenue", escrowItem.getId());
     }
-    
-    /**
-     * Xác định recipient ID dựa trên RecipientType
-     */
+
     private String determineRecipientId(RecipientType recipientType, PublishedCourse course) {
         return switch (recipientType) {
             case TEACHER -> teacherRepository.getTeacherByTeacherId(course.getCourse().getIdTeacher()).getResult().getId();
@@ -208,8 +188,6 @@ public class PayoutOrderItemService {
 
 
     private String getEducationalUnitAdminId(PublishedCourse course) {
-        // Giả sử educational unit có admin ID
-        // Có thể cần điều chỉnh dựa trên cấu trúc entity thực tế
         if (course.getCourse().getEducationalUnit() != null) {
             return course.getCourse().getEducationalUnit().getIdAdmin();
         }
@@ -248,8 +226,6 @@ public class PayoutOrderItemService {
         }
         payoutOrderItemRepository.saveAll(payoutItems);
     }
-    
-    // ========== Revenue API Methods ==========
 
     public TeacherRevenueResponse getTeacherRevenue() {
         return revenueService.getTeacherRevenue();
@@ -274,24 +250,15 @@ public class PayoutOrderItemService {
     public SystemRevenueResponse getSystemRevenueByRange(String startDate, String endDate) {
         return revenueService.getSystemRevenueByRange(startDate, endDate);
     }
-    
-    /**
-     * Get all teachers revenue (for system admin)
-     */
+
     public List<TeacherRevenueResponse> getAllTeachersRevenue() {
         return revenueService.getAllTeachersRevenue();
     }
-    
-    /**
-     * Get all teachers revenue by date range (for system admin)
-     */
+
     public List<TeacherRevenueResponse> getAllTeachersRevenueByRange(String startDate, String endDate) {
         return revenueService.getAllTeachersRevenueByRange(startDate, endDate);
     }
-    
-    /**
-     * Get all admins revenue (for system admin)
-     */
+
     public List<AdminRevenueResponse> getAllAdminsRevenue() {
         return revenueService.getAllAdminsRevenue();
     }

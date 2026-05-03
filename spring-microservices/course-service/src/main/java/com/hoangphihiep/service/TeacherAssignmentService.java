@@ -101,47 +101,6 @@ public class TeacherAssignmentService {
     }
 
     /**
-     * Get submissions for a specific assignment in a class
-     */
-    public List<AssignmentSubmissionResponse> getSubmissionsByAssignment(Integer assignmentId, Integer classId) {
-
-        log.info("=== GET SUBMISSIONS BY ASSIGNMENT - Assignment ID: {}, Class ID: {} ===", assignmentId, classId);
-
-        // Verify assignment and class
-        Assignment assignment = assignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
-
-        CourseClass courseClass = classRepository.findById(classId)
-                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
-
-        // Get students in class
-        List<String> studentIds = enrollmentRepository.findStudentIdsByClassId(classId);
-
-        // Map to user IDs
-        List<String> userIds = new ArrayList<>();
-        for (String studentId : studentIds) {
-            try {
-                ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
-                if (response != null && response.getResult() != null) {
-                    userIds.add(response.getResult().getId());
-                }
-            } catch (Exception e) {
-                log.error("Error fetching student: {}", studentId, e);
-            }
-        }
-
-        // Get submissions with user IDs
-        List<AssignmentSubmission> submissions = submissionRepository
-                .findByAssignmentIdAndStudentIds(assignmentId, userIds);
-
-        log.info("Found {} submissions for assignment", submissions.size());
-
-        return submissions.stream()
-                .map(submissionMapper::toAssignmentSubmissionResponse)
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Grade a student's assignment submission
      */
     @Transactional
@@ -168,28 +127,6 @@ public class TeacherAssignmentService {
         log.info("Successfully graded submission {} with score {}", submissionId, request.getScore());
 
         return submissionMapper.toAssignmentSubmissionResponse(graded);
-    }
-
-    /**
-     * Bulk grade multiple submissions
-     */
-    @Transactional
-    public List<AssignmentSubmissionResponse> bulkGradeSubmissions(List<GradeAssignmentRequest> requests) {
-
-        log.info("=== BULK GRADE - {} submissions ===", requests.size());
-
-        List<AssignmentSubmissionResponse> responses = new ArrayList<>();
-
-        for (GradeAssignmentRequest request : requests) {
-            try {
-                AssignmentSubmissionResponse response = gradeSubmission(request.getSubmissionId(), request);
-                responses.add(response);
-            } catch (Exception e) {
-                log.error("Error grading submission {}: {}", request.getSubmissionId(), e.getMessage());
-            }
-        }
-
-        return responses;
     }
 
     /**

@@ -61,9 +61,6 @@ const EditCoursePageContent: React.FC = () => {
         // Fetch sections with lessons and quizzes from API
         const sectionsResponse = await getSectionsByCourseId(Number.parseInt(courseId))
 
-        console.log("Course loaded:", courseResponse)
-        console.log("Sections loaded:", sectionsResponse)
-
         setCourseData({
           id: courseResponse.id,
           courseName: courseResponse.courseName,

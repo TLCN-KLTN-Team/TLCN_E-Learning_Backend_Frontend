@@ -1,6 +1,5 @@
 package com.hoangphihiep.service;
 
-import com.hoangphihiep.dto.request.ContentVisibilityRequest;
 import com.hoangphihiep.dto.response.ContentVisibilityResponse;
 import com.hoangphihiep.entity.*;
 import com.hoangphihiep.exception.AppException;
@@ -80,7 +79,6 @@ public class ContentVisibilityService {
             }
 
             visibilityRepository.saveAll(visibilities);
-            log.info("Updated visibility for section {} to {} classes", sectionId, visibleClassIds != null ? visibleClassIds.size() : 0);
         }
     }
 
@@ -175,7 +173,6 @@ public class ContentVisibilityService {
             }
 
             visibilityRepository.saveAll(visibilities);
-            log.info("Updated visibility for lesson {} to {} classes", lessonId, visibleClassIds != null ? visibleClassIds.size() : 0);
         }
     }
 
@@ -220,9 +217,6 @@ public class ContentVisibilityService {
 
     @Transactional
     public void updateQuizVisibility(Integer quizId, List<Integer> visibleClassIds) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
-
         // Lấy tất cả visibility hiện có
         List<ClassContentVisibility> existingVisibilities = 
                 visibilityRepository.findByContentTypeAndContentId("QUIZ", quizId);
@@ -270,7 +264,6 @@ public class ContentVisibilityService {
             }
 
             visibilityRepository.saveAll(visibilities);
-            log.info("Updated visibility for quiz {} to {} classes", quizId, visibleClassIds != null ? visibleClassIds.size() : 0);
         }
     }
 
@@ -365,7 +358,6 @@ public class ContentVisibilityService {
             }
 
             visibilityRepository.saveAll(visibilities);
-            log.info("Updated visibility for assignment {} to {} classes", assignmentId, visibleClassIds != null ? visibleClassIds.size() : 0);
         }
     }
 

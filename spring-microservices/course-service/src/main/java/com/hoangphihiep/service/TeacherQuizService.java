@@ -2,7 +2,6 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.*;
-import com.hoangphihiep.entity.QuizQuestion;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.repository.*;
@@ -27,16 +26,8 @@ public class TeacherQuizService {
     private final CourseEnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final AnswerRepository answerRepository;
-    private final QuestionRepository questionRepository;
-    private final QuestionLibraryService questionLibraryService;
-    private final QuizQuestionRepository quizQuestionRepository;
 
-    /**
-     * Get all quiz results for a class
-     */
     public List<QuizResultResponse> getQuizResultsForClass(Integer classId) {
-        log.info("=== GET QUIZ RESULTS FOR CLASS {} ===", classId);
-
         // Verify class exists
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
@@ -45,7 +36,6 @@ public class TeacherQuizService {
 
         // Get students and map to user IDs
         List<String> studentIds = enrollmentRepository.findStudentIdsByClassId(classId);
-        log.info("Found {} students in class", studentIds.size());
 
         if (studentIds.isEmpty()) {
             return new ArrayList<>();
@@ -72,52 +62,13 @@ public class TeacherQuizService {
         List<QuizAttempt> attempts = attemptRepository
                 .findByQuizCourseIdAndUserIds(courseId, userIds);
 
-        log.info("Found {} quiz attempts", attempts.size());
-
         // Build response
         return attempts.stream()
                 .map(attempt -> buildQuizResultResponse(attempt, studentInfoMap))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get results for a specific quiz in a class
-     */
-    public List<QuizResultResponse> getResultsByQuiz(Integer quizId, Integer classId) {
-        log.info("=== GET RESULTS FOR QUIZ {} IN CLASS {} ===", quizId, classId);
-
-        // Get students and map to user IDs
-        List<String> studentIds = enrollmentRepository.findStudentIdsByClassId(classId);
-        Map<String, StudentResponse> studentInfoMap = new HashMap<>();
-        List<String> userIds = new ArrayList<>();
-
-        for (String studentId : studentIds) {
-            try {
-                ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
-                if (response != null && response.getResult() != null) {
-                    StudentResponse student = response.getResult();
-                    userIds.add(student.getId());
-                    studentInfoMap.put(student.getId(), student);
-                }
-            } catch (Exception e) {
-                log.error("Error fetching student: {}", studentId, e);
-            }
-        }
-
-        // Get attempts for this quiz
-        List<QuizAttempt> attempts = attemptRepository
-                .findByQuizIdAndUserIds(quizId, userIds);
-
-        return attempts.stream()
-                .map(attempt -> buildQuizResultResponse(attempt, studentInfoMap))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get quiz statistics for a class
-     */
     public Map<String, Object> getQuizStatistics(Integer classId) {
-        log.info("=== GET QUIZ STATISTICS FOR CLASS {} ===", classId);
 
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
@@ -183,31 +134,6 @@ public class TeacherQuizService {
         return stats;
     }
 
-    /**
-     * Get detailed result for a specific attempt
-     */
-    public QuizResultResponse getAttemptDetail(Integer attemptId) {
-        log.info("=== GET ATTEMPT DETAIL {} ===", attemptId);
-
-        QuizAttempt attempt = attemptRepository.findById(attemptId)
-                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_ATTEMPT_NOT_FOUND));
-
-        // Get student info
-        Map<String, StudentResponse> studentInfoMap = new HashMap<>();
-        try {
-            // Attempt stores user ID (UUID), need to get student info
-            ApiResponse<StudentResponse> response = studentRepository.getStudentById(attempt.getIdUser());
-            if (response != null && response.getResult() != null) {
-                studentInfoMap.put(attempt.getIdUser(), response.getResult());
-            }
-        } catch (Exception e) {
-            log.error("Error fetching student info", e);
-        }
-
-        return buildQuizResultResponse(attempt, studentInfoMap);
-    }
-
-    // Helper methods
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
@@ -290,7 +216,6 @@ public class TeacherQuizService {
                             .build())
                     .collect(Collectors.toList());
         }
-        // ✅ XỬ LÝ SINGLE CHOICE
         else {
             selectedAnswerIds = new ArrayList<>();
             if (attemptAnswer.getSelectedAnswer() != null) {
@@ -319,72 +244,6 @@ public class TeacherQuizService {
                 .build();
     }
 
-    /**
-     * Add library questions to a quiz by copying them
-     * This creates new Question instances attached to the quiz
-     */
-    public List<Question> addLibraryQuestionsToQuiz(Integer quizId, List<Integer> libraryQuestionIds) {
-        log.info("Adding {} library questions to quiz {}", libraryQuestionIds.size(), quizId);
-
-        // Verify quiz exists and belongs to teacher
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
-
-        String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // Get library questions (with ownership verification)
-        List<QuestionResponse> libraryQuestions =
-                questionLibraryService.getLibraryQuestionsByIds(libraryQuestionIds);
-
-        // Copy each library question to the quiz
-        List<Question> copiedQuestions = new ArrayList<>();
-
-        int orderIndex = 1;
-        for (QuestionResponse libQuestion : libraryQuestions) {
-            // Create new Question instance
-            Question newQuestion = new Question();
-            // Removed direct quiz relationship - will link via QuizQuestion
-            newQuestion.setQuestionText(libQuestion.getQuestionText());
-            newQuestion.setQuestionType(libQuestion.getQuestionType());
-            newQuestion.setScore(libQuestion.getScore());
-            newQuestion.setDifficultyLevel(libQuestion.getDifficultyLevel());
-            newQuestion.setTags(libQuestion.getTags());
-            newQuestion.setTeacherId(teacherId);
-            newQuestion.setEducationalUnitId(libQuestion.getEducationalUnitId());
-
-            // Save the question first
-            Question savedQuestion = questionRepository.save(newQuestion);
-
-            // Copy answers
-            if (libQuestion.getAnswers() != null) {
-                for (com.hoangphihiep.dto.response.AnswerResponse libAnswer : libQuestion.getAnswers()) {
-                    Answer newAnswer = new Answer();
-                    newAnswer.setQuestion(savedQuestion);
-                    newAnswer.setContent(libAnswer.getContent());
-                    newAnswer.setIsCorrect(libAnswer.getIsCorrect());
-
-                    answerRepository.save(newAnswer);
-                }
-            }
-
-            copiedQuestions.add(savedQuestion);
-            
-            // Link question to quiz via QuizQuestion join table
-            QuizQuestion quizQuestion = QuizQuestion.builder()
-                    .quizId(quizId)
-                    .questionId(savedQuestion.getId())
-                    .orderIndex(orderIndex++)
-                    .build();
-            quizQuestionRepository.save(quizQuestion);
-        }
-
-        log.info("Successfully copied {} questions to quiz {}", copiedQuestions.size(), quizId);
-        return copiedQuestions;
-    }
-
-    /**
-     * Get all quizzes for a class
-     */
     public List<QuizResponse> getQuizzesByClass(Integer classId) {
         log.info("=== GET QUIZZES BY CLASS {} ===", classId);
 

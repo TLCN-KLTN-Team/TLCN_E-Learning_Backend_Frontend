@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 
 @Repository
 public interface CreditTransferRepository extends JpaRepository<CreditTransfer, Integer> {
@@ -17,9 +16,6 @@ public interface CreditTransferRepository extends JpaRepository<CreditTransfer, 
     @Query("SELECT ct FROM CreditTransfer ct WHERE (:status IS NULL OR ct.status = :status) " +
             "AND (:keyword IS NULL OR ct.studentName LIKE %:keyword% OR ct.description LIKE %:keyword%)")
     Page<CreditTransfer> search(@Param("status") CreditTransferStatus status, @Param("keyword") String keyword, Pageable pageable);
-
-    @Query("SELECT ct FROM CreditTransfer ct WHERE ct.idStudent = :userId AND ct.status = :status")
-    List<CreditTransfer> findByUserIdAndStatus(@Param("userId") String userId, @Param("status") CreditTransferStatus status);
 
     long countByIdStudentAndStatusIn(String idStudent, java.util.Collection<CreditTransferStatus> statuses);
 

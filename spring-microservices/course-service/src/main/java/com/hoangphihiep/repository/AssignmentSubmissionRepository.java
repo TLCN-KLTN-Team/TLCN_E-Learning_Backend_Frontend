@@ -35,15 +35,6 @@ public interface AssignmentSubmissionRepository extends JpaRepository<Assignment
             @Param("studentIds") List<String> studentIds
     );
 
-    @Query("SELECT s FROM AssignmentSubmission s " +
-            "WHERE s.assignment.id = :assignmentId " +
-            "AND s.idUser IN :studentIds " +
-            "ORDER BY s.submittedAt DESC")
-    List<AssignmentSubmission> findByAssignmentIdAndStudentIds(
-            @Param("assignmentId") Integer assignmentId,
-            @Param("studentIds") List<String> studentIds
-    );
-
     @Query("SELECT COUNT(s) FROM AssignmentSubmission s " +
             "WHERE s.assignment.section.course.id = :courseId " +
             "AND s.idUser IN :studentIds " +

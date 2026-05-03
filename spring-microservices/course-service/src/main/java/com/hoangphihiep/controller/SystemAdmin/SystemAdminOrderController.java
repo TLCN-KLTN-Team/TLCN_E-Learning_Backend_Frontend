@@ -19,12 +19,6 @@ public class SystemAdminOrderController {
         return ApiResponse.success(orderService.getPendingRefundItems(), "Get pending refund requests successfully");
     }
 
-    @GetMapping("/refunded")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ApiResponse<?> getRefundedOrders() {
-        return ApiResponse.success(orderService.getRefundedOrderItems(), "Get refunded orders successfully");
-    }
-
     @PostMapping("/approve-refund/{orderItemId}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiResponse<?> approveRefund(@PathVariable Integer orderItemId) {

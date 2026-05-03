@@ -26,9 +26,6 @@ export interface DiscussionPageResponse {
   size: number;
 }
 
-/**
- * Get discussion messages for a published course quiz
- */
 export const getCourseQuizDiscussion = async (
   publishedCourseId: number,
   quizId: number,
@@ -44,9 +41,6 @@ export const getCourseQuizDiscussion = async (
   return response.data;
 };
 
-/**
- * Post a new discussion message for a published course quiz
- */
 export const postCourseQuizDiscussionMessage = async (
   publishedCourseId: number,
   quizId: number,
@@ -59,16 +53,10 @@ export const postCourseQuizDiscussionMessage = async (
   return response.data;
 };
 
-/**
- * Delete a discussion message
- */
 export const deleteCourseQuizDiscussionMessage = async (messageId: string): Promise<void> => {
   await axiosInstance.delete(`/server/course-discussions/quiz/messages/${messageId}`);
 };
 
-/**
- * Toggle like on a discussion message
- */
 export const toggleCourseQuizDiscussionLike = async (messageId: string): Promise<DiscussionMessage> => {
   const response = await axiosInstance.post<DiscussionMessage>(
     `/server/course-discussions/quiz/messages/${messageId}/like`
@@ -76,16 +64,10 @@ export const toggleCourseQuizDiscussionLike = async (messageId: string): Promise
   return response.data;
 };
 
-/**
- * Mark discussion as read
- */
 export const markCourseQuizDiscussionAsRead = async (publishedCourseId: number, quizId: number): Promise<void> => {
   await axiosInstance.post(`/server/course-discussions/quiz/${publishedCourseId}/${quizId}/mark-read`);
 };
 
-/**
- * Get unread message count
- */
 export const getCourseQuizUnreadCount = async (publishedCourseId: number, quizId: number): Promise<number> => {
   const response = await axiosInstance.get<number>(
     `/server/course-discussions/quiz/${publishedCourseId}/${quizId}/unread-count`
@@ -93,9 +75,6 @@ export const getCourseQuizUnreadCount = async (publishedCourseId: number, quizId
   return response.data;
 };
 
-/**
- * Get unread counts for multiple quizzes in a published course
- */
 export const getCourseBatchQuizUnreadCounts = async (
   publishedCourseId: number,
   quizIds: number[]

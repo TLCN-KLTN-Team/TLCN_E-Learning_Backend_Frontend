@@ -55,18 +55,15 @@ const StudentListPage: React.FC = () => {
     null
   );
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  // State cho chức năng chỉnh sửa
   const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(
     null
   );
 
-  // State cho detail modal
   const [selectedStudent, setSelectedStudent] =
     useState<StudentResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -77,7 +74,6 @@ const StudentListPage: React.FC = () => {
   const [studentStatusTarget, setStudentStatusTarget] =
     useState<StudentResponse | null>(null);
 
-  // Initialize educationalUnit
   useEffect(() => {
     const initializeEducationalUnit = async () => {
       try {
@@ -188,7 +184,6 @@ const StudentListPage: React.FC = () => {
     }
   };
 
-  // Pagination handlers
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < totalPages) {
       loadStudents(newPage, pageSize);

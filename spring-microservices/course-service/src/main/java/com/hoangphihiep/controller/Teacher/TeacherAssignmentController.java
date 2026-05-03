@@ -46,19 +46,6 @@ public class TeacherAssignmentController {
                 .build();
     }
 
-    @GetMapping("/{assignmentId}/class/{classId}/submissions")
-    public ApiResponse<List<AssignmentSubmissionResponse>> getSubmissionsByAssignment(
-            @PathVariable Integer assignmentId,
-            @PathVariable Integer classId) {
-
-        List<AssignmentSubmissionResponse> submissions =
-                teacherAssignmentService.getSubmissionsByAssignment(assignmentId, classId);
-
-        return ApiResponse.<List<AssignmentSubmissionResponse>>builder()
-                .result(submissions)
-                .build();
-    }
-
     @PostMapping("/submissions/{submissionId}/grade")
     public ApiResponse<AssignmentSubmissionResponse> gradeSubmission(
             @PathVariable Integer submissionId,
@@ -74,23 +61,10 @@ public class TeacherAssignmentController {
                 .build();
     }
 
-    @PostMapping("/submissions/bulk-grade")
-    public ApiResponse<List<AssignmentSubmissionResponse>> bulkGradeSubmissions(
-            @Valid @RequestBody List<GradeAssignmentRequest> requests) {
-
-        List<AssignmentSubmissionResponse> responses =
-                teacherAssignmentService.bulkGradeSubmissions(requests);
-
-        return ApiResponse.<List<AssignmentSubmissionResponse>>builder()
-                .result(responses)
-                .build();
-    }
-
     @GetMapping("/class/{classId}/statistics")
     public ApiResponse<Map<String, Object>> getGradingStatistics(
             @PathVariable Integer classId) {
 
-        log.info("Fetching grading statistics for class: {}", classId);
         Map<String, Object> statistics =
                 teacherAssignmentService.getGradingStatistics(classId);
 
@@ -99,14 +73,4 @@ public class TeacherAssignmentController {
                 .build();
     }
 
-    @GetMapping("/submissions/{submissionId}")
-    public ApiResponse<AssignmentSubmissionResponse> getSubmissionDetail(
-            @PathVariable Integer submissionId) {
-
-        log.info("Fetching submission detail: {}", submissionId);
-
-        return ApiResponse.<AssignmentSubmissionResponse>builder()
-                .result(null)
-                .build();
-    }
 }

@@ -42,22 +42,19 @@ const TeacherFormModal: React.FC<TeacherFormModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Kiểm tra xem đây là chế độ edit hay tạo mới
   const isEditMode = Boolean(editingTeacher);
 
-  // Load departments when modal opens
   useEffect(() => {
     if (isOpen) {
       loadDepartments();
     }
   }, [isOpen]);
 
-  // Load teacher data when editing
   useEffect(() => {
     if (isOpen && editingTeacher) {
       setForm({
         username: editingTeacher.username || "",
-        password: "", // Không hiển thị mật khẩu cũ
+        password: "",
         email: editingTeacher.email || "",
         firstName: editingTeacher.firstName || "",
         lastName: editingTeacher.lastName || "",

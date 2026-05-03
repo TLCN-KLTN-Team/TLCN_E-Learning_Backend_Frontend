@@ -442,9 +442,4 @@ public class OrderService {
         List<OrderItem> pendingRefundItems = orderItemRepository.findByPaymentStatus(PaymentStatus.PENDING_REFUND);
         return orderItemMapper.toResponseList(new LinkedHashSet<>(pendingRefundItems));
     }
-
-    public List<OrderItemResponse> getRefundedOrderItems() {
-        List<OrderItem> refundedItems = orderItemRepository.findByPaymentStatus(PaymentStatus.REFUNDED);
-        return orderItemMapper.toResponseList(new LinkedHashSet<>(refundedItems));
-    }
 }

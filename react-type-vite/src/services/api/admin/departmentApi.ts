@@ -2,7 +2,6 @@ import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse, PaginatedResponse } from "../response/apiResponse";
 import type { DepartmentResponse } from "../response/departmentResponse";
 
-// GET Departments with pagination and search
 export const getDepartmentsByEducationalUnit = async (
   educationalUnitId: number,
   page: number = 0,
@@ -16,7 +15,6 @@ export const getDepartmentsByEducationalUnit = async (
   return response.data.result;
 };
 
-// CREATE Department
 export const createDepartment = async (
   educationalUnitId: number,
   data: {
@@ -31,7 +29,6 @@ export const createDepartment = async (
   return response.data.result;
 };
 
-// UPDATE Department
 export const updateDepartment = async (
   educationalUnitId: number,
   departmentId: string,
@@ -47,7 +44,6 @@ export const updateDepartment = async (
   return response.data.result;
 };
 
-// DELETE Department
 export const deleteDepartment = async (
   educationalUnitId: number,
   departmentId: string

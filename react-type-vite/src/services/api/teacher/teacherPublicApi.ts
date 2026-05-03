@@ -97,9 +97,6 @@ export interface TeacherPublicStatistics {
 }
 
 const teacherPublicApi = {
-  /**
-   * Lấy danh sách khóa học public của teacher
-   */
   getPublicCourses: async (teacherId: string, page: number = 0, size: number = 20) => {
     const response = await axiosInstance.get<{ result: { content: PublicCourseResponse[] } }>(
       `/course-management/teacher/public/courses/${teacherId}`,
@@ -108,40 +105,26 @@ const teacherPublicApi = {
     return response.data.result
   },
 
-  /**
-   * Lấy danh sách học viên của khóa học
-   */
   getCourseStudents: async (courseId: number): Promise<PublicCourseStudent[]> => {
     const response = await axiosInstance.get(`/course-management/teacher/public/courses/${courseId}/students`)
     return response.data.result
   },
 
-  /**
-   * Lấy danh sách quiz attempts của học viên
-   */
   getStudentQuizAttempts: async (
     courseId: number,
     studentId: string
   ): Promise<StudentQuizAttempt[]> => {
     const response = await axiosInstance.get(
       `/course-management/teacher/public/courses/${courseId}/students/${studentId}/quizzes`
-    )
-    console.log("🟢 Dữ liệu backend trả về:", response.data)         // In toàn bộ data
-    console.log("🟢 result:", response.data.result)   
+    ) 
     return response.data.result
   },
 
-  /**
-   * Lấy chi tiết một lần làm quiz
-   */
   getQuizAttemptDetails: async (attemptId: number): Promise<QuizAttemptDetail> => {
     const response = await axiosInstance.get(`/course-management/teacher/public/quizzes/attempts/${attemptId}/details`)
     return response.data.result
   },
 
-  /**
-   * Lấy danh sách bài tập đã nộp của học viên
-   */
   getStudentAssignments: async (
     courseId: number,
     studentId: string
@@ -152,9 +135,6 @@ const teacherPublicApi = {
     return response.data.result
   },
 
-  /**
-   * Chấm điểm bài tập
-   */
   gradeAssignment: async (
     submissionId: number,
     data: GradeAssignmentRequest
@@ -166,9 +146,6 @@ const teacherPublicApi = {
     return response.data.result
   },
 
-  /**
-   * Lấy thống kê của teacher
-   */
   getTeacherStatistics: async (teacherId: string): Promise<TeacherPublicStatistics> => {
     const response = await axiosInstance.get(`/course-management/teacher/public/statistics/${teacherId}`)
     return response.data.result

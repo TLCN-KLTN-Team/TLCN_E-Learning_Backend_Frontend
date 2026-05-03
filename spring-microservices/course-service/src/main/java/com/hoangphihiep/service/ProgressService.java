@@ -171,28 +171,6 @@ public class ProgressService {
         return getCourseProgressDetail(request.getClassId());
     }
 
-    public Boolean isLessonCompleted(Integer classId, Integer lessonId) {
-        String userId = getCurrentUserId();
-
-        CourseClass courseClass = courseClassRepository.findById(classId)
-                .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
-
-        Course course = courseClass.getCourse();
-
-        CourseProgress courseProgress = courseProgressRepository
-                .findByUserIdAndCourseId(userId, course.getId())
-                .orElse(null);
-
-        if (courseProgress == null) {
-            return false;
-        }
-
-        return lessonProgressRepository
-                .findByCourseProgress_IdAndLesson_Id(courseProgress.getId(), lessonId)
-                .map(LessonProgress::getCompleted)
-                .orElse(false);
-    }
-
     private CourseProgress createCourseProgress(String userId, Course course) {
         CourseProgress courseProgress = new CourseProgress();
         courseProgress.setIdUser(userId);

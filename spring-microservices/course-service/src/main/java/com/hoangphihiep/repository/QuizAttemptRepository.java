@@ -36,14 +36,6 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Intege
             "ORDER BY qa.submittedAt DESC")
     List<QuizAttempt> findByQuizCourseIdAndUserIds(@Param("courseId") Integer courseId, @Param("userIds") List<String> userIds);
 
-    @Query("SELECT qa FROM QuizAttempt qa " +
-            "WHERE qa.quiz.id = :quizId " +
-            "AND qa.idUser IN :userIds " +
-            "AND qa.submittedAt IS NOT NULL " +
-            "ORDER BY qa.submittedAt DESC")
-    List<QuizAttempt> findByQuizIdAndUserIds(@Param("quizId") Integer quizId, @Param("userIds") List<String> userIds
-    );
-
     @Query("SELECT COUNT(DISTINCT qa.quiz.id) FROM QuizAttempt qa " +
             "WHERE qa.idUser = :studentId " +
             "AND qa.quiz.section.course.id = :courseId " +
