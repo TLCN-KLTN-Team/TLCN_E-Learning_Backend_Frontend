@@ -80,7 +80,7 @@ export interface PublishedCourseDetailResponse {
   category: string;
   isHandsOn: boolean;
   purchaserStatus: boolean;
-  courseType: String;
+  courseType: string;
   courseVideo?: string; // Video preview URL from published_course
   sections?: PublishedSectionResponse[]; // Published sections
   courseTarget?: string[]; // Learning objectives list
@@ -146,13 +146,12 @@ export interface Course {
 }
 
 export interface Filters {
-  minPrice: number;
-  maxPrice: number;
   minRating: number;
-  levels: string[];
-  practiceType: string;
   category?: string;
-  duration: string[];
+  levels: string[];
+  practiceTypes: string[];
+  fees: string[];
+  durations: string[];
   sort: string;
 }
 

@@ -13,10 +13,9 @@ const searchAndFiltersPublishedCourses = async (
   page: number,
   size: number,
   keyword?: string,
-  minPrice?: number,
-  maxPrice?: number,
   minRating?: number,
-  practiceType?: string,
+  practiceTypes?: string[],
+  fees?: string[],
   levels?: string[],
   category?: string,
   sortBy?: string
@@ -30,12 +29,6 @@ const searchAndFiltersPublishedCourses = async (
   if (keyword && keyword.trim()) {
     params.append("keyword", keyword.trim());
   }
-  if (minPrice !== undefined) {
-    params.append("minPrice", minPrice.toString());
-  }
-  if (maxPrice !== undefined) {
-    params.append("maxPrice", maxPrice.toString());
-  }
   if (minRating !== undefined) {
     params.append("minRating", minRating.toString());
   }
@@ -45,8 +38,11 @@ const searchAndFiltersPublishedCourses = async (
   if (category) {
     params.append("category", category);
   }
-  if (practiceType != undefined) {
-    params.append("practiceType", practiceType);
+  if (practiceTypes && practiceTypes.length > 0) {
+    practiceTypes.forEach((type) => params.append("practiceTypes", type));
+  }
+  if (fees && fees.length > 0) {
+    fees.forEach((fee) => params.append("fees", fee));
   }
   if (sortBy) {
     params.append("sort", sortBy);

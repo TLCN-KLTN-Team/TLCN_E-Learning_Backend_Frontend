@@ -1,6 +1,7 @@
 package com.hoangphihiep.document;
 
 import com.hoangphihiep.helper.Indices;
+import com.hoangphihiep.utils.PracticeType;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +14,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Objects;
 
 @Data
 @AllArgsConstructor
@@ -63,6 +66,12 @@ public class PublishedCourseDocument {
     @Field(type = FieldType.Integer)
     private Integer studentsCount;
 
+    @Field(type = FieldType.Boolean)
+    private Boolean isFree;
+
+    @Field(type = FieldType.Keyword)
+    private List<String> practiceTypes; // ["QUIZ", "CODING"] - 1 khóa có thể có nhiều loại
+
     @Field(type = FieldType.Date)
     private LocalDate createdAt;
 
@@ -82,6 +91,36 @@ public class PublishedCourseDocument {
      */
     @CompletionField(maxInputLength = 50)
     private Completion categorySuggest;
+
+    public void buildDerivedFields() {
+        this.buildFee();
+        this.buildCompletionFields();
+        this.buildPracticeTypes();
+    }
+
+    private void buildFee() {
+        this.isFree = (this.price != null && this.price.compareTo(BigDecimal.ZERO) == 0);
+    }
+
+    private void buildPracticeTypes() {
+        if (this.practiceTypes == null || this.practiceTypes.isEmpty()) return;
+
+        this.practiceTypes = this.practiceTypes.stream()
+                .map(this::normalizePracticeType)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    private String normalizePracticeType(String value) {
+        if (value == null) return null;
+        return switch (value.toLowerCase().trim()) {
+            case "quiz"          -> PracticeType.QUIZ.name();          // → "QUIZ"
+            case "practice-test" -> PracticeType.PRACTICE_TEST.name(); // → "PRACTICE_TEST"
+            case "coding"        -> PracticeType.CODING.name();        // → "CODING"
+            default              -> null; // Bỏ qua giá trị không hợp lệ
+        };
+    }
 
     public void buildCompletionFields(){
         // Build course name suggestions

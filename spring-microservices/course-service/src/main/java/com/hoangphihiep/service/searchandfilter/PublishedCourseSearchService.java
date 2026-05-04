@@ -12,7 +12,8 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface PublishedCourseSearchService {
-    PaginatedResponse<PublishedCourseCardResponse> searchAndFiltersDSLWithFuzzy(SearchFiltersRequest request) throws IOException; // Search published courses based on a query string
-    CompletionSuggestionResponse autocompleteSuggestion(String prefix, int size) throws IOException;
+    // Search published courses based on a query string
+    PaginatedResponse<PublishedCourseCardResponse> searchAndFiltersDSLWithFuzzy(SearchFiltersRequest request) throws IOException;
+    CompletionSuggestionResponse fuzzyAutocompleteSuggestion(String prefix, int size) throws IOException;
 
 }
