@@ -73,136 +73,8 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
         return field != null && !field.trim().isEmpty();
     }
 
-    private BoolQuery.Builder buildBoolQueryWhenHaveKeywordAndFilters(SearchFiltersRequest request, boolean hasKeyword) {
-        BoolQuery.Builder boolQueryBuilder = QueryBuilders.bool();
-
-        // Add keyword search to must clause if present with improved multi-tier matching
-        if (hasKeyword) {
-            String trimmedKeyword = request.getKeyword().trim();
-            
-            // Tạo DisMax query với nhiều strategies khác nhau
-            BoolQuery.Builder keywordBoolQuery = QueryBuilders.bool();
-            
-            // 1. Exact match với trọng số cao nhất (courseName.keyword)
-            Query exactMatchQuery = QueryBuilders
-                    .term()
-                    .field("courseName.keyword")
-                    .value(trimmedKeyword)
-                    .boost(10.0f) // Trọng số rất cao cho exact match
-                    .build()._toQuery();
-            keywordBoolQuery.should(exactMatchQuery);
-            
-            // 2. Phrase match - tìm cụm từ chính xác (courseName, description)
-            Query phraseMatchCourseName = QueryBuilders
-                    .matchPhrase()
-                    .field("courseName")
-                    .query(trimmedKeyword)
-                    .boost(8.0f) // Trọng số cao cho phrase match
-                    .build()._toQuery();
-            keywordBoolQuery.should(phraseMatchCourseName);
-            
-            Query phraseMatchCategory = QueryBuilders
-                    .matchPhrase()
-                    .field("category")
-                    .query(trimmedKeyword)
-                    .boost(7.0f)
-                    .build()._toQuery();
-            keywordBoolQuery.should(phraseMatchCategory);
-            
-            Query phraseMatchDescription = QueryBuilders
-                    .matchPhrase()
-                    .field("description")
-                    .query(trimmedKeyword)
-                    .boost(5.0f)
-                    .build()._toQuery();
-            keywordBoolQuery.should(phraseMatchDescription);
-            
-            // 3. Match query - tìm từng từ riêng lẻ với operator AND
-            Query matchQueryCourseName = QueryBuilders
-                    .match()
-                    .field("courseName")
-                    .query(trimmedKeyword)
-                    .operator(Operator.And) // Phải chứa TẤT CẢ các từ
-                    .boost(6.0f)
-                    .build()._toQuery();
-            keywordBoolQuery.should(matchQueryCourseName);
-            
-            Query matchQueryCategory = QueryBuilders
-                    .match()
-                    .field("category")
-                    .query(trimmedKeyword)
-                    .operator(Operator.And)
-                    .boost(5.0f)
-                    .build()._toQuery();
-            keywordBoolQuery.should(matchQueryCategory);
-            
-            // 4. Multi-match với fuzzy (tìm gần đúng) - trọng số thấp nhất
-            Query fuzzyMultiMatch = QueryBuilders
-                    .multiMatch()
-                    .query(trimmedKeyword)
-                    .fields("courseName^3", "category^2.5", "description^1.5", "courseIntroduction^1", "instructor^2")
-                    .fuzziness("AUTO")
-                    .prefixLength(3) // Tăng prefix length để giảm kết quả không liên quan
-                    .maxExpansions(10) // Giới hạn số expansions
-                    .operator(Operator.Or)
-                    .boost(2.0f) // Trọng số thấp cho fuzzy
-                    .build()._toQuery();
-            keywordBoolQuery.should(fuzzyMultiMatch);
-            
-            // Yêu cầu ít nhất 1 trong các should clause phải match
-            keywordBoolQuery.minimumShouldMatch("1");
-            
-            boolQueryBuilder.must(keywordBoolQuery.build()._toQuery());
-        }
-
-        // Build category filter
-        if (request.getCategory() != null && !request.getCategory().trim().isEmpty()) {
-            Query categoryFilter = QueryBuilders.term()
-                    .field("category.keyword") // Sử dụng .keyword cho exact filtering
-                    .value(request.getCategory().trim())
-                    .build()._toQuery();
-            boolQueryBuilder.filter(categoryFilter);
-        }
-
-        // Build price range filter
-        if (request.getMinPrice() != null || request.getMaxPrice() != null) {
-            Query priceRangeFilter = Query.of(q -> q
-                    .range(r -> {
-                        r.field("price");
-                        if (request.getMinPrice() != null) {
-                            r.gte(JsonData.of(request.getMinPrice().doubleValue()));
-                        }
-                        if (request.getMaxPrice() != null) {
-                            r.lte(JsonData.of(request.getMaxPrice().doubleValue()));
-                        }
-                        return r;
-                    })
-            );
-            boolQueryBuilder.filter(priceRangeFilter);
-        }
-
-        // Build level filter
-        if (request.getLevels() != null && !request.getLevels().isEmpty()) {
-            List<FieldValue> levelValues = request.getLevels().stream()
-                    .map(FieldValue::of)
-                    .collect(Collectors.toList());
-
-            Query levelFilter = QueryBuilders.terms()
-                    .field("level")
-                    .terms(t -> t.value(levelValues))
-                    .build()._toQuery();
-            boolQueryBuilder.filter(levelFilter);
-        }
-
-        // Build rating filter
-        if (request.getMinRating() != null) {
-            Query ratingFilter = RangeQuery.of(r -> r
-                            .field("rating")
-                            .gte(JsonData.of(request.getMinRating().doubleValue())))
-                    ._toQuery();
-            boolQueryBuilder.filter(ratingFilter);
-        }
-        return boolQueryBuilder;
+    private boolean validateListField(List<?> field) {
+        return field != null && !field.isEmpty();
     }
 
     private List<SortOptions> buildSortOptions(String sortBy) {
@@ -232,6 +104,149 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
         return sortOptions;
     }
 
+    // Thêm helper method trong service
+    private String normalizePracticeType(String value) {
+        if (value == null) return null;
+        return switch (value.toLowerCase().trim()) {
+            case "quiz"          -> "QUIZ";
+            case "practice-test" -> "PRACTICE_TEST";
+            case "coding"        -> "CODING";
+            default              -> null;
+        };
+    }
+
+    private BoolQuery.Builder buildBoolQueryWhenHaveKeywordAndFilters(SearchFiltersRequest request, boolean hasKeyword) {
+        BoolQuery.Builder boolQueryBuilder = QueryBuilders.bool();
+
+        if (hasKeyword) {
+            boolQueryBuilder = this.buildBoolQueryOnlyKeyword(request.getKeyword());
+        }
+
+        // We don't need checks null or empty because we have already check before pass the prameters
+        // Build category filter
+        if (this.validateStringField(request.getCategory())) {
+            Query categoryFilter = QueryBuilders.term()
+                    .field("category.keyword")
+                    .value(request.getCategory().trim()) // trim đã có
+                    .caseInsensitive(true)  // Bỏ qua hoa/thường
+                    .build()._toQuery();
+            boolQueryBuilder.filter(categoryFilter);
+        }
+
+        // Build rating filter
+        if (request.getMinRating() != null) {
+            Query ratingFilter = RangeQuery.of(r -> r
+                            .field("rating")
+                            .gte(JsonData.of(request.getMinRating())))
+                    ._toQuery();
+            boolQueryBuilder.filter(ratingFilter);
+        }
+
+        // Build fee filter
+        // Filter fee
+        if (this.validateListField(request.getFees())) {
+            // FE gửi: ["FREE", "PAID"] hoặc chỉ ["FREE"] hoặc chỉ ["PAID"]
+            boolean wantFree = request.getFees().contains("free");
+            boolean wantPaid = request.getFees().contains("paid");
+            List<FieldValue> feeValues = request.getFees().stream()
+                    .map(FieldValue::of)
+                    .toList();
+            if (wantFree && wantPaid) {
+                // Cả hai → không cần filter, bỏ qua
+            } else if (wantFree) {
+                boolQueryBuilder.filter(QueryBuilders.term()
+                        .field("isFree")
+                        .value(true)   // ← Boolean true, không phải String "true"
+                        .build()._toQuery());
+            } else if (wantPaid) {
+                boolQueryBuilder.filter(QueryBuilders.term()
+                        .field("isFree")
+                        .value(false)  // ← Boolean false
+                        .build()._toQuery());
+            }
+        }
+
+        // Build practice type filter
+        if (this.validateListField(request.getPracticeTypes())) {
+            List<FieldValue> practiceValues = request.getPracticeTypes().stream()
+                    .map(this::normalizePracticeType) // ← Normalize giống như khi index
+                    .filter(Objects::nonNull)
+                    .map(FieldValue::of)
+                    .toList();
+
+            if (!practiceValues.isEmpty()) {
+                Query practiceFilter = QueryBuilders.terms()
+                        .field("practiceTypes")
+                        .terms(t -> t.value(practiceValues))
+                        .build()._toQuery();
+                boolQueryBuilder.filter(practiceFilter);
+            }
+        }
+
+        return boolQueryBuilder;
+    }
+
+    private BoolQuery.Builder buildBoolQueryOnlyKeyword(String keyword) {
+        String trimmedKeyword = keyword.trim();
+        BoolQuery.Builder keywordBoolQuery = QueryBuilders.bool();
+
+        // Use must-clause for searching items match with keyword
+        Query mustMatchPhrase = QueryBuilders.bool()
+                .should(QueryBuilders.matchPhrase()
+                        .field("courseName").query(trimmedKeyword).build()._toQuery())
+                .should(QueryBuilders.matchPhrase()
+                        .field("description").query(trimmedKeyword).build()._toQuery())
+                .should(QueryBuilders.matchPhrase()
+                        .field("category").query(trimmedKeyword).build()._toQuery())
+                .minimumShouldMatch("1")  // Ít nhất 1 field phải chứa cả cụm
+                .build()._toQuery();
+        keywordBoolQuery.must(mustMatchPhrase);
+
+        // SHOULD: Chỉ để tăng điểm, không ảnh hưởng đến việc lọc kết quả để sắp xếp hiển thị tốt hơn
+        // Exact match được ưu tiên cao nhất
+        keywordBoolQuery.should(QueryBuilders
+                .term()
+                .field("courseName.keyword")
+                .value(trimmedKeyword)
+                .boost(10.0f)
+                .build()._toQuery());
+
+        // Phrase match ở courseName được ưu tiên cao
+        keywordBoolQuery.should(QueryBuilders
+                .matchPhrase()
+                .field("courseName")
+                .query(trimmedKeyword)
+                .boost(8.0f)
+                .build()._toQuery());
+
+        // Phrase match ở category
+        keywordBoolQuery.should(QueryBuilders
+                .matchPhrase()
+                .field("category")
+                .query(trimmedKeyword)
+                .boost(6.0f)
+                .build()._toQuery());
+
+        // Phrase match ở description
+        keywordBoolQuery.should(QueryBuilders
+                .matchPhrase()
+                .field("description")
+                .query(trimmedKeyword)
+                .boost(5.0f)
+                .build()._toQuery());
+
+        // Match AND ở courseName — tất cả từ phải xuất hiện (không cần liền nhau)
+        keywordBoolQuery.should(QueryBuilders
+                .match()
+                .field("courseName")
+                .query(trimmedKeyword)
+                .operator(Operator.And)
+                .boost(4.0f)
+                .build()._toQuery());
+
+        return keywordBoolQuery;
+    }
+
     @Override
     public PaginatedResponse<PublishedCourseCardResponse> searchAndFiltersDSLWithFuzzy(SearchFiltersRequest request) throws IOException {
         log.debug("Starting search with request: {}", request);
@@ -239,64 +254,17 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
         Query finalQuery;
         boolean hasKeyword = request.getKeyword() != null && !request.getKeyword().trim().isEmpty();
         boolean hasFilters = (request.getCategory() != null && !request.getCategory().trim().isEmpty()) ||
-                (request.getMinPrice() != null || request.getMaxPrice() != null) ||
-                (request.getLevels() != null && !request.getLevels().isEmpty()) ||
+                (request.getDurations() != null && !request.getDurations().isEmpty()) ||
+                (request.getPracticeTypes() != null && !request.getPracticeTypes().isEmpty()) ||
+                (request.getFees() != null && !request.getFees().isEmpty()) ||
                 (request.getMinRating() != null);
 
         if (!hasKeyword && !hasFilters) {
             // No search criteria - return all documents
             finalQuery = QueryBuilders.matchAll().build()._toQuery();
         } else if (hasKeyword && !hasFilters) {
-            // Only keyword search - use improved multi-tier search
-            String trimmedKeyword = request.getKeyword().trim();
-            BoolQuery.Builder keywordBoolQuery = QueryBuilders.bool();
-            
-            // 1. Exact match
-            Query exactMatch = QueryBuilders
-                    .term()
-                    .field("courseName.keyword")
-                    .value(trimmedKeyword)
-                    .boost(10.0f)
-                    .build()._toQuery();
-            keywordBoolQuery.should(exactMatch);
-            
-            // 2. Phrase matches
-            keywordBoolQuery.should(QueryBuilders
-                    .matchPhrase()
-                    .field("courseName")
-                    .query(trimmedKeyword)
-                    .boost(8.0f)
-                    .build()._toQuery());
-            
-            keywordBoolQuery.should(QueryBuilders
-                    .matchPhrase()
-                    .field("category")
-                    .query(trimmedKeyword)
-                    .boost(7.0f)
-                    .build()._toQuery());
-            
-            // 3. Match with AND operator
-            keywordBoolQuery.should(QueryBuilders
-                    .match()
-                    .field("courseName")
-                    .query(trimmedKeyword)
-                    .operator(Operator.And)
-                    .boost(6.0f)
-                    .build()._toQuery());
-            
-            // 4. Fuzzy multi-match
-            keywordBoolQuery.should(QueryBuilders
-                    .multiMatch()
-                    .query(trimmedKeyword)
-                    .fields("courseName^3", "category^2.5", "description^1.5", "courseIntroduction^1", "instructor^2")
-                    .fuzziness("AUTO")
-                    .prefixLength(3)
-                    .maxExpansions(10)
-                    .boost(2.0f)
-                    .build()._toQuery());
-            
-            keywordBoolQuery.minimumShouldMatch("1");
-            finalQuery = keywordBoolQuery.build()._toQuery();
+            // Only keyword search without filters
+            finalQuery = this.buildBoolQueryOnlyKeyword(request.getKeyword()).build()._toQuery();
         } else {
             // Build bool query with filters and optional keyword
             BoolQuery.Builder boolQueryBuilder = this.buildBoolQueryWhenHaveKeywordAndFilters(request, hasKeyword);
@@ -377,28 +345,19 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
                 .build();
     }
 
-    private PublishedCourseCardResponse convertToCardResponse(PublishedCourse entity) {
-        return PublishedCourseCardResponse.builder()
-                .id(entity.getId())
-                .courseName(entity.getCourse().getCourseName())
-                .category(entity.getCourseType().getCourseTypeName())
-                .coursePrice(currencyUtils.formatCurrency(entity.getCoursePrice()))
-                .build();
-    }
-
     /**
      * Autocomplete cho course name
      * GET /api/courses/autocomplete?q=java+spr
      */
     @Override
-    public CompletionSuggestionResponse autocompleteSuggestion(String query, int size) throws IOException {
+    public CompletionSuggestionResponse fuzzyAutocompleteSuggestion(String query, int size) throws IOException {
         if (!validateStringParam(query)){
             return CompletionSuggestionResponse.builder()
                     .titleSuggestions(Collections.emptyList())
                     .build();
         }
 
-        return courseCompletionRepository.autoCompletion(query);
+        return courseCompletionRepository.autoCompletion(query, size);
     }
 
     private boolean validateStringParam(String param) {

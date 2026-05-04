@@ -79,7 +79,7 @@ public class ElasticSearchIndexInitializer {
 
     public void indexCourse(PublishedCourse course) throws IOException {
         PublishedCourseDocument document = this.toCourseDocument(course);
-        document.buildCompletionFields();
+        document.buildDerivedFields();
 
         elasticsearchClient.index(req -> req
                 .index(Indices.PUBLISHED_COURSE_INDEX)
@@ -89,6 +89,9 @@ public class ElasticSearchIndexInitializer {
     }
 
     private PublishedCourseDocument toCourseDocument(PublishedCourse course) {
+
+
+
         return PublishedCourseDocument.builder()
                 .id(course.getId().toString())
                 .courseName(course.getCourse().getCourseName())
@@ -99,6 +102,7 @@ public class ElasticSearchIndexInitializer {
                 .level(null) // TODO: Add level field to PublishedCourse entity if needed
                 .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
                 .studentsCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
+
                 .build();
     }
 

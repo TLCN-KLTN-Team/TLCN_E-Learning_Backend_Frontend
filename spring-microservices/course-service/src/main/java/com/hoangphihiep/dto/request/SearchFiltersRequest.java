@@ -13,12 +13,11 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SearchFiltersRequest {
     String keyword;
-    String category;
-    List<String> levels;
-    BigDecimal minPrice;
-    BigDecimal maxPrice;
     Double minRating;
-    String requiredPractice;
+    String category;
+    List<String> practiceTypes;
+    List<String> fees;
+    List<String> durations;
     int page;
     int size;
     String sortBy;

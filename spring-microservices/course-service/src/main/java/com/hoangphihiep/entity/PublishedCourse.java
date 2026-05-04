@@ -55,8 +55,6 @@ public class PublishedCourse {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private Set<OrderItem> orderItems = new HashSet<>();
 
-
-
     @Column(name = "status")
     private int status;
 

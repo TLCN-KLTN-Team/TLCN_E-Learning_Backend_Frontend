@@ -25,7 +25,6 @@ public class PublicCourseController {
     private final CourseTypeService courseTypeService;
     private final com.hoangphihiep.service.AiRecommendationService aiRecommendationService; // Injected
 
-
     // some apis get data here
     // get courses suggest for user
     // get courses by favorite based on user behavior
@@ -61,24 +60,23 @@ public class PublicCourseController {
 
     @GetMapping("/search")
     public ApiResponse<?> searchAndFiltersPublishedCourses(@RequestParam(defaultValue = "0") int page,
-                                                 @RequestParam(defaultValue = "12") int size,
-                                                 @RequestParam(required = false) String keyword,
-                                                 @RequestParam(required = false) BigDecimal minPrice, @RequestParam(required = false) BigDecimal maxPrice,
-                                                 @RequestParam(required = false) Double minRating,
-                                                 @RequestParam(required = false) List<String> levels,
-                                                 @RequestParam(required = false) String practiceType,
-                                                 @RequestParam(required = false) String category,
-                                                 @RequestParam(defaultValue = "popular") String sort
+                                                           @RequestParam(defaultValue = "12") int size,
+                                                           @RequestParam(required = false) String keyword,
+                                                           @RequestParam(required = false) Double minRating,
+                                                           @RequestParam(required = false) String category,
+                                                           @RequestParam(required = false) List<String> practiceTypes,
+                                                           @RequestParam(required = false) List<String> fees,
+                                                           @RequestParam(required = false) List<String> durations,
+                                                           @RequestParam(defaultValue = "popular") String sort
     ) throws IOException {
         // builde request
         SearchFiltersRequest request = SearchFiltersRequest.builder()
-                .keyword(keyword == null ? "" : keyword)
+                .keyword(keyword)
                 .category(category)
-                .minPrice(minPrice)
-                .maxPrice(maxPrice)
                 .minRating(minRating)
-                .requiredPractice(practiceType)
-                .levels(levels)
+                .practiceTypes(practiceTypes)
+                .fees(fees)
+                .durations(durations)
                 .page(page)
                 .size(size)
                 .sortBy(sort)
@@ -95,9 +93,9 @@ public class PublicCourseController {
     }
 
     @GetMapping("/auto-completion")
-    public ApiResponse<?> completionSearchForPublishedCourses(@RequestParam("q") String query,
-                                                              @RequestParam( defaultValue = "10") int size) throws IOException {
-        var result = publishedCourseSearchService.autocompleteSuggestion(query, size);
+    public ApiResponse<?> fuzzyAutoCompletionSearchForPublishedCourses(@RequestParam("q") String query,
+                                                              @RequestParam(defaultValue = "10") int size) throws IOException {
+        var result = publishedCourseSearchService.fuzzyAutocompleteSuggestion(query, size);
         return ApiResponse.success(
                 result,
                 "Completion search published courses successfully"

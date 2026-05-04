@@ -48,7 +48,7 @@ public class FileUploadController {
             // Broadcast MESSAGE_UPDATED event to channel subscribers
             MessageEvent event = MessageEvent.messageUpdated(payload);
             messagingTemplate.convertAndSend(
-                "/topic/channel/" + channelId,
+                "/topic/channel/" + channelId + "/attachment-updates",
                 event
             );
 

@@ -4,6 +4,7 @@ import {
   Search,
   Filter,
   Star,
+  StarHalf,
   RotateCcw,
   X,
   ChevronDown,
@@ -29,23 +30,6 @@ import { toast } from "react-toastify";
 import PublishedCourseService from "@/services/api/anonymous/course.api";
 import { CourseApiService } from "@/services/api/user/courseApi";
 
-// Debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 const Course: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,19 +45,17 @@ const Course: React.FC = () => {
   // Get initial values from URL params
   const getInitialSearchTerm = () => searchParams.get("keyword") || "";
   const getInitialFilters = (): Filters => ({
-    minPrice: parseInt(searchParams.get("minPrice") || "0"),
-    maxPrice: parseInt(searchParams.get("maxPrice") || "10000000"),
     minRating: parseInt(searchParams.get("minRating") || "0"),
-    levels: searchParams.getAll("levels"),
-    practiceType: searchParams.get("practiceType") || "",
     category: searchParams.get("category") || "",
-    duration: [],
+    levels: searchParams.getAll("levels"),
+    practiceTypes: searchParams.getAll("practiceTypes"),
+    fees: searchParams.getAll("fees"),
+    durations: [],
     sort: "",
   });
 
   const [searchTerm, setSearchTerm] = useState(getInitialSearchTerm);
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
-  const debouncedSearchTerm = useDebounce(searchTerm, 10000000);
 
   // Course types state
   const [courseTypes, setCourseTypes] = useState<CourseType[]>([]);
@@ -83,7 +65,7 @@ const Course: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [currentPage, setCurrentPage] = useState(
-    parseInt(searchParams.get("page") || "0")
+    parseInt(searchParams.get("page") || "0"),
   );
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -93,7 +75,7 @@ const Course: React.FC = () => {
   const updateUrlParams = (
     newSearchTerm: string,
     newFilters: Filters,
-    page: number
+    page: number,
   ) => {
     const params = new URLSearchParams();
 
@@ -103,12 +85,6 @@ const Course: React.FC = () => {
     if (page > 0) {
       params.set("page", page.toString());
     }
-    if (newFilters.minPrice > 0) {
-      params.set("minPrice", newFilters.minPrice.toString());
-    }
-    if (newFilters.maxPrice < 10000000) {
-      params.set("maxPrice", newFilters.maxPrice.toString());
-    }
     if (newFilters.minRating > 0) {
       params.set("minRating", newFilters.minRating.toString());
     }
@@ -116,9 +92,11 @@ const Course: React.FC = () => {
     if (newFilters.category) {
       params.set("category", newFilters.category);
     }
-    if (newFilters.practiceType) {
-      params.set("practiceType", newFilters.practiceType);
-    }
+
+    newFilters.fees.forEach((fee) => params.append("fees", fee));
+
+    newFilters.practiceTypes.forEach((type) => params.append("practiceTypes", type));
+
     if (newFilters.sort) {
       params.set("sort", newFilters.sort);
     }
@@ -137,13 +115,12 @@ const Course: React.FC = () => {
           currentPage,
           pageSize,
           searchTerm.trim(),
-          filters.minPrice > 0 ? filters.minPrice : undefined,
-          filters.maxPrice < 10000000 ? filters.maxPrice : undefined,
           filters.minRating > 0 ? filters.minRating : undefined,
-          filters.practiceType || undefined,
+          filters.practiceTypes.length > 0 ? filters.practiceTypes : undefined,
+          filters.fees.length > 0 ? filters.fees : undefined,
           filters.levels.length > 0 ? filters.levels : undefined,
           filters.category || undefined,
-          filters.sort || undefined
+          filters.sort || undefined,
         );
       console.log("Filters applied:", filters);
       console.log("Fetched courses with filters:", response);
@@ -186,47 +163,31 @@ const Course: React.FC = () => {
     loadCourseTypes();
   }, []);
 
-  // // Load category on component mount
-  // useEffect(() => {
-  //   const loadCategories = async () => {
-  //     try {
-  //       const fetchedCategories = await CourseApiService.getCategories();
-  //       setCategories(fetchedCategories);
-  //     } catch (error) {
-  //       console.error("Error fetching category:", error);
-  //       setCategories([]);
-  //     }
-  //   };
-
-  //   loadCategories();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
-
   // Fetch auto-completion suggestions
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (!debouncedSearchTerm || debouncedSearchTerm.trim().length < 2) {
+      if (!searchTerm || searchTerm.trim().length < 2) {
         setSuggestions([]);
         setShowSuggestions(false);
         return;
-      }
-
-      setLoadingSuggestions(true);
-      try {
-        const response: CompletionSuggestionResponse =
-          await PublishedCourseService.autoCompletion(debouncedSearchTerm, 5);
-        setSuggestions(response.titleSuggestions || []);
-        setShowSuggestions(true);
-      } catch (error) {
-        console.error("Error fetching suggestions:", error);
-        setSuggestions([]);
-      } finally {
-        setLoadingSuggestions(false);
+      } else {
+        setLoadingSuggestions(true);
+        try {
+          const response: CompletionSuggestionResponse =
+            await PublishedCourseService.autoCompletion(searchTerm, 5);
+          setSuggestions(response.titleSuggestions || []);
+          setShowSuggestions(true);
+        } catch (error) {
+          console.error("Error fetching suggestions:", error);
+          setSuggestions([]);
+        } finally {
+          setLoadingSuggestions(false);
+        }
       }
     };
 
     fetchSuggestions();
-  }, [debouncedSearchTerm]);
+  }, [searchTerm]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -247,13 +208,12 @@ const Course: React.FC = () => {
 
   const resetFilters = () => {
     const newFilters: Filters = {
-      minPrice: 0,
-      maxPrice: 10000000,
       minRating: 0,
       levels: [],
-      practiceType: "",
+      practiceTypes: [],
       category: "",
-      duration: [],
+      fees: [],
+      durations: [],
       sort: "",
     };
     setFilters(newFilters);
@@ -293,7 +253,7 @@ const Course: React.FC = () => {
 
   const updateFilter = (
     key: keyof Filters,
-    value: number | [number, number]
+    value: number | [number, number],
   ) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
@@ -314,16 +274,21 @@ const Course: React.FC = () => {
   };
 
   const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${
-          i < Math.floor(rating)
-            ? "text-yellow-400 fill-current"
-            : "text-gray-300"
-        }`}
-      />
-    ));
+    return Array.from({ length: 5 }, (_, i) => {
+      const startIndex = i + 1;
+
+      if (rating >= startIndex) {
+        return (
+          <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+        );
+      } else if (rating >= startIndex - 0.5) {
+        return (
+          <StarHalf key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+        );
+      } else {
+        return <Star key={i} className="w-4 h-4 text-gray-300" />;
+      }
+    });
   };
 
   return (
@@ -406,7 +371,11 @@ const Course: React.FC = () => {
                 onClick={() => setShowFilters(!showFilters)}
                 className="border-gray-300 hover:bg-gray-50"
               >
-                <Filter className="w-4 h-4 mr-2" />
+                {showFilters ? (
+                  <Filter className="w-4 h-4 mr-2 text-blue-500" />
+                ) : (
+                  <Filter className="w-4 h-4 mr-2" />
+                )}
                 Bộ lọc
               </Button>
 
@@ -456,8 +425,9 @@ const Course: React.FC = () => {
                 showFilters ? "block" : "hidden"
               } w-full lg:w-64 space-y-6`}
             >
-              <Card className="p-4 custom-scrollbar max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
+              <Card className="p-0 custom-scrollbar max-h-[80vh] overflow-y-auto divide-y divide-gray-200">
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4">
                   <h2 className="text-lg font-semibold">Bộ lọc</h2>
                   <div className="flex items-center gap-2">
                     <Button
@@ -480,43 +450,74 @@ const Course: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Khoảng giá */}
-                <div className="space-y-2 mb-6">
-                  <h3 className="font-medium">Khoảng giá</h3>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      placeholder="Từ"
-                      min="0"
-                      value={filters.minPrice}
-                      onChange={(e) =>
-                        updateFilter("minPrice", parseInt(e.target.value) || 0)
-                      }
-                      className="w-20 px-1.5 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <span className="text-gray-500 text-xs">-</span>
-                    <input
-                      type="number"
-                      placeholder="Đến"
-                      min="0"
-                      value={filters.maxPrice}
-                      onChange={(e) =>
-                        updateFilter("maxPrice", parseInt(e.target.value) || 0)
-                      }
-                      className="w-20 px-1.5 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
+                {/* Đánh giá */}
+                <div className="px-5 pb-4">
+                  <h3 className="font-medium mb-3">Đánh giá</h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="rating"
+                        checked={filters.minRating === 0}
+                        onChange={() => updateFilter("minRating", 0)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm">Tất cả</span>
+                    </label>
+                    {[4.5, 4.0, 3.5, 3.0].map((rating) => (
+                      <label
+                        key={rating}
+                        className="flex items-center space-x-3 cursor-pointer"
+                      >
+                        <input
+                          type="radio"
+                          name="rating"
+                          checked={filters.minRating === rating}
+                          onChange={() => updateFilter("minRating", rating)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <div className="flex items-center">
+                          {renderStars(rating)}
+                          <span className="ml-2 text-sm">{rating} & up</span>
+                        </div>
+                      </label>
+                    ))}
                   </div>
-                  <p className="text-xs text-blue-600">
-                    * Khóa học miễn phí sẽ được ưu tiên hiển thị
-                  </p>
                 </div>
 
-                {/* Lĩnh vực */}
+                {/* Thời lượng */}
+                <div className="px-5 pb-4">
+                  <h3 className="font-medium mb-3">Thời lượng</h3>
+                  <div className="space-y-3">
+                    {[
+                      {label: "0-1 giờ", value: "0-1"},
+                      {label: "1-3 giờ", value: "1-3"},
+                      {label: "3-6 giờ", value: "3-6"},
+                      {label: "6-10 giờ", value: "6-10"},
+                      {label: "Hơn 10 giờ", value: "10+"},
+                    ].map((option) => (
+                      <label key={option.value} className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.durations.includes(option.value)}
+                          onChange={() => toggleArrayFilter("durations", option.value)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <div className="flex items-center">
+                          <Clock className="w-4 h-4 text-gray-500 mr-2" />
+                          <span className="text-sm">{option.label}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Thể loại */}
                 {courseTypes.length > 0 && (
-                  <div className="space-y-3 mb-6">
-                    <h3 className="font-medium">Lĩnh vực</h3>
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2 cursor-pointer">
+                  <div className="px-5 pb-4">
+                    <h3 className="font-medium mb-3">Thể loại</h3>
+                    <div className="space-y-3">
+                      <label className="flex items-center space-x-3 cursor-pointer">
                         <input
                           type="radio"
                           name="courseType"
@@ -532,12 +533,12 @@ const Course: React.FC = () => {
                           }}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-sm">Tất cả lĩnh vực</span>
+                        <span className="text-sm">Tất cả thể loại</span>
                       </label>
                       {courseTypes.map((courseType) => (
                         <label
                           key={courseType.id}
-                          className="flex items-center space-x-2 cursor-pointer"
+                          className="flex items-center space-x-3 cursor-pointer"
                         >
                           <input
                             type="radio"
@@ -565,50 +566,15 @@ const Course: React.FC = () => {
                   </div>
                 )}
 
-                {/* Đánh giá */}
-                <div className="space-y-3 mb-6">
-                  <h3 className="font-medium">Đánh giá</h3>
-                  <div className="space-y-2">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="rating"
-                        checked={filters.minRating === 0}
-                        onChange={() => updateFilter("minRating", 0)}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm">Tất cả</span>
-                    </label>
-                    {[4.5, 4.0, 3.5, 3.0].map((rating) => (
-                      <label
-                        key={rating}
-                        className="flex items-center space-x-2 cursor-pointer"
-                      >
-                        <input
-                          type="radio"
-                          name="rating"
-                          checked={filters.minRating === rating}
-                          onChange={() => updateFilter("minRating", rating)}
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <div className="flex items-center">
-                          {renderStars(Math.floor(rating))}
-                          <span className="ml-2 text-sm">{rating} & up</span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Cấp độ */}
-                <div className="space-y-3 mb-6">
-                  <h3 className="font-medium">Cấp độ</h3>
-                  <div className="space-y-2">
+                {/* <div className="px-5 pb-4">
+                  <h3 className="font-medium mb-3">Cấp độ</h3>
+                  <div className="space-y-3">
                     {["Cơ bản", "Trung cấp", "Nâng cao", "Tất cả cấp độ"].map(
                       (level) => (
                         <label
                           key={level}
-                          className="flex items-center space-x-2 cursor-pointer"
+                          className="flex items-center space-x-3 cursor-pointer"
                         >
                           <Checkbox
                             checked={filters.levels.includes(level)}
@@ -618,37 +584,56 @@ const Course: React.FC = () => {
                           />
                           <span className="text-sm">{level}</span>
                         </label>
-                      )
+                      ),
                     )}
                   </div>
+                </div> */}
+
+                {/* Giá */}
+                <div className="px-5 pb-4">
+                  <h3 className="font-medium mb-3">Giá</h3>
+                  <div className="space-y-3">
+                    {[{
+                      label: "Miễn phí",
+                      value: "free",
+                    }, {
+                      label: "Có phí",
+                      value: "paid",
+                    }].map((option) => (
+                      <label
+                        key={option.value}
+                        className="flex items-center space-x-3 cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={filters.fees.includes(option.value)}
+                          onCheckedChange={() => {
+                            toggleArrayFilter("fees", option.value);
+                          }}
+                        />
+                        <span className="text-sm">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
+
                 {/* Bài tập */}
-                <div className="space-y-3 mb-6">
-                  <h3 className="font-medium">Bài tập</h3>
-                  <div className="space-y-2">
+                <div className="px-5 pb-4">
+                  <h3 className="font-medium mb-3">Tài liệu thực hành</h3>
+                  <div className="space-y-3">
                     {[
-                      { label: "Tất cả", value: "all" },
-                      { label: "Có bài tập", value: "has-exercises" },
-                      { label: "Không có bài tập", value: "no-exercises" },
+                      { label: "Trắc nghiệm", value: "quiz" },
+                      { label: "Bài kiểm tra thực hành", value: "practice-test" },
+                      { label: "Bài tập coding", value: "coding" },
                     ].map((option) => (
                       <label
                         key={option.value}
-                        className="flex items-center space-x-2 cursor-pointer"
+                        className="flex items-center space-x-3 cursor-pointer"
                       >
-                        <input
-                          type="radio"
-                          name="exercises"
-                          checked={filters.practiceType === option.value}
-                          onChange={() => {
-                            const newFilters = {
-                              ...filters,
-                              practiceType: option.value,
-                            };
-                            setFilters(newFilters);
-                            updateUrlParams(searchTerm, newFilters, 0);
-                            setCurrentPage(0);
-                          }}
-                          className="w-4 h-4 text-blue-600"
+                        <Checkbox
+                          checked={filters.practiceTypes.includes(option.value)}
+                          onCheckedChange={() =>
+                            toggleArrayFilter("practiceTypes", option.value)
+                          }
                         />
                         <span className="text-sm">{option.label}</span>
                       </label>

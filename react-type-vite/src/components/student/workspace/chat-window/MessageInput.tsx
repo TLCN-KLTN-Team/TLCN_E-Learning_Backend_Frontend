@@ -116,8 +116,8 @@ const MessageInput = ({
         accept="image/*"
       />
       <input
-        ref={fileInputRef}
         type="file"
+        ref={fileInputRef}
         className="hidden"
         onChange={(e) => handleFileSelect(e, "file")}
         accept="*/*"
