@@ -7,9 +7,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface PageVisitRepository extends JpaRepository<PageVisit, Long> {
+
+    List<PageVisit> findByUserIdOrderByVisitTimeDesc(String userId);
     
     @Query("SELECT COUNT(pv) FROM PageVisit pv WHERE " +
             "pv.visitTime >= :startDate AND pv.visitTime <= :endDate")
@@ -20,4 +23,8 @@ public interface PageVisitRepository extends JpaRepository<PageVisit, Long> {
             "pv.visitTime >= :startDate AND pv.visitTime <= :endDate")
     Long countUniqueSessionsInPeriod(@Param("startDate") LocalDateTime startDate,
                                       @Param("endDate") LocalDateTime endDate);
+
+    // NEW: Get user's page visits for engagement tracking
+    @Query("SELECT COUNT(pv) FROM PageVisit pv WHERE pv.userId = :userId AND pv.pageUrl LIKE %:courseId%")
+    Long countVisitsByCourseId(@Param("userId") String userId, @Param("courseId") Integer courseId);
 }

@@ -51,6 +51,7 @@ const QuestionBankPage: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState<string>("ALL")
   const [availableTags, setAvailableTags] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalItems, setTotalItems] = useState(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -64,7 +65,7 @@ const QuestionBankPage: React.FC = () => {
       setLoading(true)
       const response = await getLibraryQuestions({
         page: currentPage,
-        size: 10,
+        size: pageSize,
         search: searchTerm || undefined,
         questionType: questionType && questionType !== "ALL" ? questionType : undefined,
         difficultyLevel: difficultyLevel && difficultyLevel !== "ALL" ? difficultyLevel : undefined,
@@ -96,7 +97,7 @@ const QuestionBankPage: React.FC = () => {
 
   useEffect(() => {
     fetchQuestions()
-  }, [currentPage, searchTerm, questionType, difficultyLevel, selectedTag])
+  }, [currentPage, pageSize, searchTerm, questionType, difficultyLevel, selectedTag])
 
   const handleDelete = async () => {
     if (!questionToDelete) return
@@ -384,8 +385,8 @@ const QuestionBankPage: React.FC = () => {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-6">
+        <div className="mt-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               disabled={currentPage === 0}
@@ -394,17 +395,26 @@ const QuestionBankPage: React.FC = () => {
               Trước
             </Button>
             <span className="text-sm text-muted-foreground">
-              Trang {currentPage + 1} / {totalPages}
+              Trang {currentPage + 1} / {totalPages || "-"}
             </span>
             <Button
               variant="outline"
-              disabled={currentPage >= totalPages - 1}
+              disabled={totalPages === 0 || currentPage >= totalPages - 1}
               onClick={() => setCurrentPage(currentPage + 1)}
             >
               Sau
             </Button>
           </div>
-        )}
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground">Hiển thị</label>
+            <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(0); }} title="Số câu hỏi hiển thị trên trang" className="border rounded-md p-1 bg-background">
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
       </main>
 
       {/* Question Bank Modal */}

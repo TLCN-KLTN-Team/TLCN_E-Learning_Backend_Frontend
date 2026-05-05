@@ -40,6 +40,45 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     List<Course> findByIdTeacherAndPriceGreaterThan(@Param("teacherId") String teacherId, 
                                                      @Param("price") Double price);
 
+    @Query("SELECT c FROM Course c WHERE c.idTeacher = :teacherId AND " +
+            "(:search IS NULL OR :search = '' OR " +
+            "LOWER(c.courseName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(c.description) LIKE LOWER(CONCAT('%', :search, '%')))" )
+    Page<Course> findByIdTeacherWithSearch(@Param("teacherId") String teacherId,
+                                           @Param("search") String search,
+                                           Pageable pageable);
+
+    @Query("SELECT c FROM Course c WHERE c.idTeacher = :teacherId AND " +
+            "(:search IS NULL OR :search = '' OR " +
+            "LOWER(c.courseName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(c.description) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+            "(:creditRange IS NULL OR :creditRange = '' OR :creditRange = 'all' OR " +
+            "(:creditRange = '1-2' AND c.credits BETWEEN 1 AND 2) OR " +
+            "(:creditRange = '3-4' AND c.credits BETWEEN 3 AND 4) OR " +
+            "(:creditRange = '5+' AND c.credits >= 5))")
+    Page<Course> findByIdTeacherWithSearchAndCreditsRange(@Param("teacherId") String teacherId,
+                                                          @Param("search") String search,
+                                                          @Param("creditRange") String creditRange,
+                                                          Pageable pageable);
+
+    @Query("SELECT c FROM Course c WHERE c.idTeacher = :teacherId AND " +
+            "c.publishedCourse IS NOT NULL AND " +
+            "c.publishedCourse.coursePrice > :price AND " +
+            "(:search IS NULL OR :search = '' OR " +
+            "LOWER(c.courseName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(c.description) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+            "(:creditRange IS NULL OR :creditRange = '' OR :creditRange = 'all' OR " +
+            "(:creditRange = '1-2' AND c.credits BETWEEN 1 AND 2) OR " +
+            "(:creditRange = '3-4' AND c.credits BETWEEN 3 AND 4) OR " +
+            "(:creditRange = '5+' AND c.credits >= 5)) AND " +
+            "(:updatedAfter IS NULL OR c.updatedAt >= :updatedAfter)")
+    Page<Course> findPublicByTeacherWithFilters(@Param("teacherId") String teacherId,
+                                               @Param("search") String search,
+                                               @Param("creditRange") String creditRange,
+                                               @Param("price") Double price,
+                                               @Param("updatedAfter") java.util.Date updatedAfter,
+                                               Pageable pageable);
+
     @Query("SELECT COUNT(c) FROM Course c WHERE c.idTeacher = :teacherId")
     Integer countByTeacherId(@Param("teacherId") String teacherId);
 

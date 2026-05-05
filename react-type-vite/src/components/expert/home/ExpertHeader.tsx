@@ -19,7 +19,8 @@ import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import openEduIcon from "@/assets/open-edu-dark.png";
 import * as notificationApi from "@/services/api/notificationApi";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { EXPERT_ROUTES } from "@/constants/routes";
 
 interface Notification {
   id?: string;
@@ -61,6 +62,7 @@ const ExpertHeader: React.FC<ExpertHeaderProps> = ({
   const { isMobile } = useResponsive();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -304,8 +306,7 @@ const ExpertHeader: React.FC<ExpertHeaderProps> = ({
                         Đọc tất cả
                       </button>
                     </div>
-                  </div>
-
+                    </div>
                   <div className="overflow-y-auto flex-1">
                     <ul className="list-none m-0 p-0">
                       {notifications.length === 0 ? (
@@ -359,7 +360,7 @@ const ExpertHeader: React.FC<ExpertHeaderProps> = ({
                     <button
                       className="text-blue-600 hover:underline text-sm"
                       onClick={() => {
-                        navigate("/expert/notifications");
+                        navigate(EXPERT_ROUTES.NOTIFICATIONS, { state: { background: location } });
                         setIsNotificationOpen(false);
                       }}
                     >
@@ -430,7 +431,13 @@ const ExpertHeader: React.FC<ExpertHeaderProps> = ({
                               key={item.name}
                               href={item.href}
                               className="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors text-sm group text-gray-700"
-                              onClick={() => setIsProfileOpen(false)}
+                              onClick={(event) => {
+                                if (item.href === EXPERT_ROUTES.NOTIFICATIONS) {
+                                  event.preventDefault();
+                                  navigate(EXPERT_ROUTES.NOTIFICATIONS, { state: { background: location } });
+                                }
+                                setIsProfileOpen(false);
+                              }}
                             >
                               <div className="flex items-center space-x-3">
                                 <item.icon size={16} className="text-gray-500 group-hover:opacity-80" />

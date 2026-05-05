@@ -53,39 +53,53 @@ public class CourseEnrollmentService {
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
-    // Get basic course info to show for students who see course catalog
-    public PaginatedResponse<EnrolledCoursesResponse> getEnrolledCatalogCourses(int page, int size){
+    public PaginatedResponse<EnrolledCoursesResponse> getEnrolledCatalogCourses(int page, int size, String search, String sortBy){
         try {
             String userId = SecurityContextHolder.getContext().getAuthentication().getName();
             StudentResponse studentResponse = studentRepository.getStudentById(userId).getResult();
 
-            Pageable pageable = PageRequest.of(page, size);
-            Page<CourseEnrollment> enrollments = enrollmentRepository
-                    .findByStudentId(studentResponse.getStudentId(), pageable);
+            List<CourseEnrollment> enrollments = enrollmentRepository
+                    .findByStudentId(studentResponse.getStudentId(), Pageable.unpaged())
+                    .getContent();
+
+            String normalizedSearch = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
             List<EnrolledCoursesResponse> enrolledCourses = enrollments.stream()
+                    .filter(enrollment -> enrollment.getCourseClass() == null
+                            || !Boolean.TRUE.equals(enrollment.getCourseClass().getIsArchived()))
                     .map(enrollment -> {
                         EnrolledCoursesResponse response = new EnrolledCoursesResponse();
-                        Course course = courseRepository.findById(enrollment.getCourse().getId())
-                                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+                        Course course = enrollment.getCourse();
                         response.setCourseId(course.getId());
                         response.setClassId(enrollment.getCourseClass().getId());
                         response.setCourseName(course.getCourseName());
                         response.setEnrollmentDate(enrollment.getEnrolledAt().toString());
-                        
-                        // Calculate progress percentage for this class (same logic as getClassProgressStats)
+
                         int progressPercentage = calculateClassProgress(userId, course, Long.valueOf(enrollment.getCourseClass().getId()));
                         response.setProgressPercentage(progressPercentage);
-                        
                         return response;
+                    })
+                    .filter(response -> normalizedSearch.isEmpty()
+                            || response.getCourseName().toLowerCase(Locale.ROOT).contains(normalizedSearch))
+                    .sorted((left, right) -> {
+                        if ("progress".equalsIgnoreCase(sortBy)) {
+                            return Integer.compare(right.getProgressPercentage(), left.getProgressPercentage());
+                        }
+                        return left.getCourseName().compareToIgnoreCase(right.getCourseName());
                     })
                     .toList();
 
+            int totalElements = enrolledCourses.size();
+            int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
+            int start = Math.min(page * size, totalElements);
+            int end = Math.min(start + size, totalElements);
+            List<EnrolledCoursesResponse> pagedCourses = enrolledCourses.subList(start, end);
+
             return PaginatedResponse.<EnrolledCoursesResponse>builder()
-                    .content(enrolledCourses)
+                    .content(pagedCourses)
                     .page(page)
                     .size(size)
-                    .totalElements((int) enrollments.getTotalElements())
-                    .totalPages(enrollments.getTotalPages())
+                    .totalElements(totalElements)
+                    .totalPages(totalPages)
                     .build();
         } catch (AppException e) {
             throw e;
@@ -263,10 +277,6 @@ public class CourseEnrollmentService {
                 classId, contentType, contentId, true);
     }
 
-    /**
-     * Auto-enroll user to a class they are trying to access
-     * Creates enrollment and initializes course progress
-     */
     @Transactional
     public CourseEnrollment autoEnrollUserToClass(String userId, CourseClass courseClass, Course course) {
         try {
@@ -319,9 +329,6 @@ public class CourseEnrollmentService {
         }
     }
 
-    /**
-     * Enroll multiple students to a class
-     */
     @Transactional
     public void enrollStudentsToClass(Integer classId, List<String> studentIds) {
         validateEnrollmentRequest(classId, studentIds);
@@ -451,9 +458,6 @@ public class CourseEnrollmentService {
         }
     }
 
-    /**
-     * Get students enrolled in a class
-     */
     public List<StudentResponse> getStudentsInClass(Integer classId) {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
@@ -533,9 +537,6 @@ public class CourseEnrollmentService {
         }
     }
 
-    /**
-     * Unenroll a student from a class
-     */
     @Transactional
     public void unenrollStudentFromClass(Integer classId, String studentId) {
         CourseClass courseClass = classRepository.findById(classId)
@@ -564,9 +565,6 @@ public class CourseEnrollmentService {
         }
     }
 
-    /**
-     * Remove a specific enrollment by ID
-     */
     @Transactional
     public void removeEnrollment(Integer enrollmentId, Integer classId) {
         CourseEnrollment enrollment = enrollmentRepository.findById(enrollmentId)
@@ -594,18 +592,15 @@ public class CourseEnrollmentService {
         }
     }
 
-    /**
-     * Update total students count for a course based on all its classes
-     */
     @Transactional
     public void updateCourseTotalStudents(int courseId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        // Get all classes for this course
+        // Get all active (non-archived) classes for this course
         List<CourseClass> classes = classRepository.findAllByCourseId(courseId);
 
-        // Calculate total students across all classes
+        // Calculate total students across all active classes
         int totalStudents = classes.stream()
                 .mapToInt(CourseClass::getCurrentStudents)
                 .sum();

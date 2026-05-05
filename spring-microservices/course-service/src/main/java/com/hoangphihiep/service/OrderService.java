@@ -2,8 +2,7 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.CreationOrderItemRequest;
 import com.hoangphihiep.dto.request.CreationOrderRequest;
-import com.hoangphihiep.dto.response.OrderItemResponse;
-import com.hoangphihiep.dto.response.OrderResponse;
+import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.*;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
@@ -15,9 +14,6 @@ import com.hoangphihiep.repository.OrderRepository;
 import com.hoangphihiep.repository.httpclient.NotificationRepository;
 import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import com.hoangphihiep.repository.httpclient.UserRepository;
-import com.hoangphihiep.dto.response.TeacherResponse;
-import com.hoangphihiep.dto.response.UserResponse;
-import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.utils.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -165,7 +161,7 @@ public class OrderService {
                 .count();
     }
 
-    public List<OrderItemResponse> getTeacherOrders() {
+    public PaginatedResponse<OrderItemResponse> getTeacherOrders(int page, int size, String search) {
         String userId = JwtUtils.getCurrentUserId();
         
         // Fetch Teacher ID from User ID
@@ -201,8 +197,32 @@ public class OrderService {
                 itemResponse.setBuyerEmail("N/A");
             }
         }
-        
-        return responses;
+
+        // Filter by search term if provided
+        if (search != null && !search.trim().isEmpty()) {
+            String searchLower = search.toLowerCase();
+            responses = responses.stream()
+                    .filter(item -> item.getCourseName().toLowerCase().contains(searchLower) ||
+                            (item.getBuyerName() != null && item.getBuyerName().toLowerCase().contains(searchLower)) ||
+                            (item.getBuyerEmail() != null && item.getBuyerEmail().toLowerCase().contains(searchLower)))
+                    .toList();
+        }
+
+        // Apply pagination
+        int totalElements = responses.size();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        int startIndex = page * size;
+        int endIndex = Math.min(startIndex + size, totalElements);
+
+        List<OrderItemResponse> pageContent = responses.subList(startIndex, endIndex);
+
+        return PaginatedResponse.<OrderItemResponse>builder()
+                .content(pageContent)
+                .page(page)
+                .size(size)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .build();
     }
 
     @Transactional

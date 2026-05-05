@@ -4,6 +4,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import uteLogoDark from "../../../assets/open-edu-dark.png";
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/auth-context/useAuth";
 import * as notificationApi from "@/services/api/notificationApi";
 import { toast } from "react-toastify";
@@ -34,6 +35,7 @@ const Header = () => {
   const notificationRef = useRef<HTMLDivElement>(null);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const getNotificationTarget = (notif: Notification) => {
     const fallback = "/student/dashboard";
@@ -292,15 +294,15 @@ const Header = () => {
                     </ul>
                   </div>
                   <div className="p-3 text-center border-t border-gray-200 flex-shrink-0">
-                    <button
-                      className="text-blue-600 hover:underline text-sm"
-                      onClick={() => {
-                        navigate("/student/notifications");
-                        setIsNotificationOpen(false);
-                      }}
-                    >
-                      Xem tất cả thông báo
-                    </button>
+                      <button
+                        className="text-blue-600 hover:underline text-sm"
+                        onClick={() => {
+                          navigate(STUDENT_ROUTES.NOTIFICATIONS, { state: { background: location } });
+                          setIsNotificationOpen(false);
+                        }}
+                      >
+                        Xem tất cả thông báo
+                      </button>
                   </div>
                 </div>
               )}

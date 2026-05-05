@@ -15,7 +15,7 @@ import QuestionBankPage from "@/pages/teacher/QuestionBankPage";
 import QuestionGenerationPage from "@/pages/teacher/sidebar/QuestionGenerationPage";
 import { TEACHER_ROUTES } from "@/constants/routes";
 import TeacherOrderListPage from "@/pages/teacher/revenue/TeacherOrderListPage";
-import TeacherNotificationsPage from "@/pages/teacher/notifications/TeacherNotificationsPage";
+import TeacherNotificationsModal from "@/pages/teacher/notifications/TeacherNotificationsModal";
 import TeacherCreditTransferPage from "@/pages/teacher/creditTransfer/TeacherCreditTransferPage";
 
 // Teacher routes - protected routes for teacher role
@@ -38,7 +38,13 @@ const TeacherRoutes = [
     <Route
       key="teacher-notifications"
       path="notifications"
-      element={<TeacherNotificationsPage />}
+      element={
+        <TeacherNotificationsModal
+          isOpen={true}
+          onClose={() => window.history.back()}
+          title="Thông báo giảng viên"
+        />
+      }
     />
     <Route
       key="teacher-assigned-courses"

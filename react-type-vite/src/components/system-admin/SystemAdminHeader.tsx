@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import AdminProfile from "../shared/AdminProfile";
 import { useAuth } from "@/context/auth-context/useAuth";
 import * as notificationApi from "@/services/api/notificationApi";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { SYSTEM_ADMIN_ROUTES } from "@/constants/routes";
 
 interface SystemAdminHeaderProps {
   isSidebarOpen: boolean;
@@ -35,9 +36,10 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const getNotificationTarget = (notif: Notification) => {
-    const fallback = "/system-admin/dashboard";
+    const fallback = SYSTEM_ADMIN_ROUTES.DASHBOARD;
     const rawLink = (notif.link || "").trim();
 
     if (!rawLink) return fallback;
@@ -47,7 +49,7 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
 
     const normalizedPath = rawLink.startsWith("/") ? rawLink : `/${rawLink}`;
     if (normalizedPath === "/notifications" || normalizedPath === "/admin/notifications") {
-      return "/system-admin/notifications";
+      return SYSTEM_ADMIN_ROUTES.NOTIFICATIONS;
     }
 
     return normalizedPath;
@@ -288,7 +290,7 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
                   <button
                     className="text-blue-600 hover:underline text-sm"
                     onClick={() => {
-                      navigate('/system-admin/notifications');
+                      navigate(SYSTEM_ADMIN_ROUTES.NOTIFICATIONS, { state: { background: location } });
                       setIsNotificationOpen(false);
                     }}
                   >
@@ -300,7 +302,13 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
           </div>
 
           {/* Profile */}
-          <div className="relative" ref={profileRef}>
+                              onClick={(event) => {
+                                if (item.href === SYSTEM_ADMIN_ROUTES.NOTIFICATIONS) {
+                                  event.preventDefault();
+                                  navigate(SYSTEM_ADMIN_ROUTES.NOTIFICATIONS, { state: { background: location } });
+                                }
+                                setIsProfileOpen(false);
+                              }}
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden p-0 ring-2 ring-transparent hover:ring-blue-200 transition-all"

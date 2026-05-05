@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../../context/theme-context";
 import { ThemeToggle } from "../../ui/ThemeToggle";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { STUDENT_ROUTES } from "@/constants/routes";
 import {
   Settings,
   ShoppingCart,
@@ -66,6 +67,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const getNotificationTarget = (notif: Notification) => {
     const fallback = "/notifications";
@@ -475,12 +477,12 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                       </ul>
                     </div>
                     <div className="p-3 text-center border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-                      <button
-                        onClick={() => { navigate("/notifications"); setIsNotificationOpen(false); }}
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        Xem tất cả thông báo
-                      </button>
+                        <button
+                          onClick={() => { navigate(STUDENT_ROUTES.NOTIFICATIONS, { state: { background: location } }); setIsNotificationOpen(false); }}
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          Xem tất cả thông báo
+                        </button>
                     </div>
                   </div>
                 )}
@@ -689,7 +691,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
             {/* Notification Bell - Mobile */}
             {user && (
               <button
-                onClick={() => navigate("/notifications")}
+                onClick={() => navigate(STUDENT_ROUTES.NOTIFICATIONS, { state: { background: location } })}
                 className="relative p-2 text-foreground hover:text-bs-primary transition-colors"
                 aria-label="Notifications"
               >

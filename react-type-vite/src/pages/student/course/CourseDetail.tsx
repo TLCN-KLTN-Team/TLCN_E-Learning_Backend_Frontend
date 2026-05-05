@@ -261,7 +261,7 @@ const CourseDetail = () => {
             className="flex items-center text-blue-600 hover:text-blue-800"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Quay lại dashboard
+            Quay lại trang chủ
           </Link>
         </div>
 
@@ -380,7 +380,7 @@ const CourseDetail = () => {
                       <FileText className="w-3 h-3" />
                       <span>
                         {progressStats.completedQuizzes}/
-                        {progressStats.totalQuizzes} quiz
+                        {progressStats.totalQuizzes} bài kiểm tra
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -523,7 +523,7 @@ const CourseDetail = () => {
                                 {sortedLessons.length > 0 && (
                                   <div>
                                     <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                      📚 Bài học ({sortedLessons.length})
+                                      Bài học ({sortedLessons.length})
                                     </h4>
                                     <div className="space-y-2">
                                       {sortedLessons.map((lesson) => {
@@ -582,8 +582,7 @@ const CourseDetail = () => {
                                                 }
                                               >
                                                 <h5 className="font-medium text-gray-700">
-                                                  #{lesson.numberItem}{" "}
-                                                  {lesson.title}
+                                                  {lesson.numberItem}. {lesson.title}
                                                 </h5>
                                                 {lesson.videoUrl && (
                                                   <div className="flex items-center gap-2">
@@ -889,7 +888,7 @@ const CourseDetail = () => {
                                 {sortedQuizzes.length > 0 && (
                                   <div className="pt-3 border-t">
                                     <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                      📝 Bài kiểm tra ({sortedQuizzes.length})
+                                      Bài kiểm tra ({sortedQuizzes.length})
                                     </h4>
                                     <div className="space-y-2">
                                       {sortedQuizzes.map((quiz) => {
@@ -922,7 +921,7 @@ const CourseDetail = () => {
                                             </div>
                                             <div className="flex-1">
                                               <h5 className="font-medium text-gray-700">
-                                                #{quiz.numberItem} {quiz.title}
+                                                {quiz.numberItem}. {quiz.title}
                                               </h5>
                                               <p className="text-sm text-gray-500">
                                                 {quiz.duration} phút •{" "}
@@ -962,7 +961,7 @@ const CourseDetail = () => {
                                 {sortedAssignments.length > 0 && (
                                   <div className="pt-3 border-t">
                                     <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                      📋 Bài tập ({sortedAssignments.length})
+                                      Bài tập ({sortedAssignments.length})
                                     </h4>
                                     <div className="space-y-2">
                                       {sortedAssignments.map((assignment) => {
@@ -996,8 +995,7 @@ const CourseDetail = () => {
                                             </div>
                                             <div className="flex-1">
                                               <h5 className="font-medium text-gray-700">
-                                                #{assignment.numberItem}{" "}
-                                                {assignment.title}
+                                                {assignment.numberItem}. {assignment.title}
                                               </h5>
                                               <p className="text-sm text-gray-500">
                                                 Hạn:{" "}

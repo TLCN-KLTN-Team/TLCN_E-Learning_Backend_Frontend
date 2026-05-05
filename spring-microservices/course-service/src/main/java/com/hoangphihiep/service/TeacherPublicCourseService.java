@@ -39,12 +39,38 @@ public class TeacherPublicCourseService {
     private final AssignmentRepository assignmentRepository;
     private final QuizQuestionRepository quizQuestionRepository;
 
-    public Page<PublicCourseResponse> getPublicCoursesByTeacher(String teacherId, int page, int size) {
+    public Page<PublicCourseResponse> getPublicCoursesByTeacher(String teacherId, int page, int size,
+                                                                String search, String creditRange, String updatedRange) {
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<Course> courses = courseRepository.findByIdTeacherAndPriceGreaterThan(teacherId, 0.0, pageable);
-        
+        java.util.Date updatedAfter = resolveUpdatedAfter(updatedRange);
+
+        Page<Course> courses = courseRepository.findPublicByTeacherWithFilters(teacherId, search, creditRange, 0.0, updatedAfter, pageable);
+
         return courses.map(this::mapToPublicCourseResponse);
+    }
+
+    private java.util.Date resolveUpdatedAfter(String updatedRange) {
+        if (updatedRange == null || updatedRange.isBlank()) return null;
+
+        java.time.LocalDate now = java.time.LocalDate.now();
+        java.time.LocalDate cutoff;
+
+        switch (updatedRange) {
+            case "7d":
+                cutoff = now.minusDays(7);
+                break;
+            case "30d":
+                cutoff = now.minusDays(30);
+                break;
+            case "90d":
+                cutoff = now.minusDays(90);
+                break;
+            default:
+                return null;
+        }
+
+        return java.util.Date.from(cutoff.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
     }
     public List<PublicCourseStudentResponse> getCourseStudents(Integer courseId) {
         Course course = courseRepository.findById(courseId)

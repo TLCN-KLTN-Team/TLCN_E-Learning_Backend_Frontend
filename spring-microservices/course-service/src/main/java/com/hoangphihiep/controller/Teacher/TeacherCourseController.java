@@ -120,9 +120,11 @@ public class TeacherCourseController {
     public ApiResponse<Page<CourseResponse>> getCoursesByTeacherPaginated(
             @PathVariable String teacherId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String creditRange) {
 
-        Page<CourseResponse> courses = courseService.getCoursesByTeacherPaginated(teacherId, page, size);
+        Page<CourseResponse> courses = courseService.getCoursesByTeacherPaginated(teacherId, page, size, search, creditRange);
 
         return ApiResponse.<Page<CourseResponse>>builder()
                 .result(courses)

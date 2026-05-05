@@ -30,21 +30,6 @@ public class ExpertClassController {
     private final CourseEnrollmentService enrollmentService;
     private final CourseClassService classService;
 
-    @GetMapping("/classes")
-    public ApiResponse<Page<CourseClassResponse>> getClassesByEducationalUnit(
-            @PathVariable int educationalUnitId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search) {
-
-        Pageable pageable = PageRequest.of(page, size);
-        Page<CourseClassResponse> classes = classService.getClassesByEducationalUnit(educationalUnitId, pageable, search);
-
-        return ApiResponse.<Page<CourseClassResponse>>builder()
-                .result(classes)
-                .build();
-    }
-
     @PostMapping("/classes")
     public ApiResponse<CourseClassResponse> createClass(
             @PathVariable int educationalUnitId,
@@ -101,14 +86,14 @@ public class ExpertClassController {
     }
 
     @DeleteMapping("/classes/{classId}")
-    public ApiResponse<Void> deleteClass(
+    public ApiResponse<Void> archiveClass(
             @PathVariable int educationalUnitId,
             @PathVariable Integer classId) {
 
-        classService.deleteClass(classId);
+        classService.archiveClass(classId);
 
         return ApiResponse.<Void>builder()
-                .message("Class successfully deleted")
+                .message("Class successfully archived")
                 .build();
     }
 

@@ -13,9 +13,19 @@ export const getTeacherCourses = async (
   teacherId: string,
   page = 0,
   size = 20,
+  search = "",
+  creditRange = "all",
 ): Promise<PaginatedResponse<CourseResponse>> => {
   const response = await axiosInstance.get<ApiResponse<any>>(
-    `/course-management/teacher/courses/${teacherId}/paginated?page=${page}&size=${size}`,
+    `/course-management/teacher/courses/${teacherId}/paginated`,
+    {
+      params: {
+        page,
+        size,
+        search: search.trim() || undefined,
+        creditRange: creditRange === "all" ? undefined : creditRange,
+      },
+    },
   )
 
   const result = response.data.result

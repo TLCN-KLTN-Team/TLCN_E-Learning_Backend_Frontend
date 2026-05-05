@@ -17,4 +17,10 @@ public class UserProfile {
 
     @JsonProperty("history")
     private List<String> history;
+
+    @JsonProperty("behavior_signals")
+    private List<String> behaviorSignals;
+
+    @JsonProperty("collaborative_signals")
+    private List<String> collaborativeSignals;
 }

@@ -22,8 +22,9 @@ public class StudentCourseController {
     @GetMapping("/catalog")
     public ApiResponse<PaginatedResponse<?>> getCatalogCourses(@RequestParam int page,
                                                               @RequestParam int size,
-                                                              @RequestParam(required = false) String search) {
-        PaginatedResponse<EnrolledCoursesResponse> courses = enrollmentService.getEnrolledCatalogCourses(page, size);
+                                                              @RequestParam(required = false) String search,
+                                                              @RequestParam(required = false, defaultValue = "course_name") String sortBy) {
+        PaginatedResponse<EnrolledCoursesResponse> courses = enrollmentService.getEnrolledCatalogCourses(page, size, search, sortBy);
         return ApiResponse.<PaginatedResponse<?>>builder()
                 .result(courses)
                 .build();
