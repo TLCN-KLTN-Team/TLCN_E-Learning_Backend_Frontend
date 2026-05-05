@@ -25,4 +25,6 @@ public class CourseClassResponse {
     private String description;
     private Date createdAt;
     private Date updatedAt;
+    private Boolean isArchived;
+    private Date archivedAt;
 }

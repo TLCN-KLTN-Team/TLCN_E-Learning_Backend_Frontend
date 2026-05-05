@@ -44,6 +44,7 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"info" | "discussion">("info")
   const [unreadCount, setUnreadCount] = useState<number>(0)
+  const isQuizEnded = quiz?.endTime ? new Date(quiz.endTime) <= new Date() : true
 
   useEffect(() => {
     if (isOpen && quizId) {
@@ -145,6 +146,8 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            title="Đóng"
+            aria-label="Đóng"
             className="p-2 hover:bg-gray-100 rounded-full"
           >
           </button>
@@ -164,7 +167,9 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
               Thông tin & Làm bài
             </button>
             <button
+              disabled={!isQuizEnded}
               onClick={async () => {
+                if (!isQuizEnded) return
                 setActiveTab("discussion")
                 if (unreadCount > 0) {
                   try {
@@ -190,6 +195,14 @@ const QuizDetailModal: React.FC<QuizDetailModalProps> = ({
             </button>
           </nav>
         </div>
+
+        {!isQuizEnded && (
+          <div className="px-6 mt-4">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+              Bạn chỉ có thể vào thảo luận sau khi bài kiểm tra kết thúc vào {new Date(quiz.endTime as string).toLocaleString("vi-VN")}.
+            </div>
+          </div>
+        )}
 
         {/* Tab Content */}
         <div className="p-6">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, Plus, Edit, Trash2, Users, School, Calendar, Hash, Upload, AlertTriangle } from "lucide-react";
+import { X, Plus, Edit, Trash2, Users, School, Calendar, Hash, Upload, AlertTriangle, Archive } from "lucide-react";
 import { toast } from 'react-toastify';
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +47,7 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
   const [showImportModal, setShowImportModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [classToDelete, setClassToDelete] = useState<CourseClassResponse | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [formData, setFormData] = useState({
     className: "",
@@ -68,7 +69,6 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
     if (!course) return;
     try {
       setLoadingClasses(true);
-      debugger; // <--- Dòng này sẽ buộc trình duyệt dừng lại nếu bạn đang mở F12
       const response = await expertClassApi.getClassesByCourse(educationalUnitId, course.id);
       setClasses(response.content || []);
     } catch (error) {
@@ -254,6 +254,13 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
     onSuccess?.();
   };
 
+  const getFilteredClasses = () => {
+    return classes.filter(cls => showArchived ? cls.isArchived : !cls.isArchived);
+  };
+
+  const activeClasses = classes.filter(cls => !cls.isArchived);
+  const archivedClasses = classes.filter(cls => cls.isArchived);
+
   if (!isOpen || !course) return null;
 
   return (
@@ -292,24 +299,24 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                       <div className="grid grid-cols-3 gap-4 lg:gap-6 w-full lg:w-auto">
                         <div className="text-center">
-                          <div className="text-xl lg:text-2xl font-bold text-blue-600">{classes.length}</div>
-                          <div className="text-xs lg:text-sm text-gray-500">Tổng Số Lớp</div>
+                          <div className="text-xl lg:text-2xl font-bold text-blue-600">{activeClasses.length}</div>
+                          <div className="text-xs lg:text-sm text-gray-500">Lớp Hoạt Động</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xl lg:text-2xl font-bold text-green-600">
-                            {classes.reduce((sum, cls) => sum + (cls.currentStudents || 0), 0)}
+                            {activeClasses.reduce((sum, cls) => sum + (cls.currentStudents || 0), 0)}
                           </div>
                           <div className="text-xs lg:text-sm text-gray-500">Tổng Sinh Viên</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xl lg:text-2xl font-bold text-orange-600">
-                            {classes.reduce((sum, cls) => sum + cls.maxStudents, 0)}
+                            {archivedClasses.length}
                           </div>
-                          <div className="text-xs lg:text-sm text-gray-500">Sức Chứa Tối Đa</div>
+                          <div className="text-xs lg:text-sm text-gray-500">Lớp Đã Lưu Trữ</div>
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button
                           onClick={() => setShowCreateForm(true)}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg"
@@ -326,6 +333,17 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                           <span className="hidden sm:inline">Import từ File</span>
                           <span className="sm:hidden">Import</span>
                         </Button>
+                        {archivedClasses.length > 0 && (
+                          <Button
+                            onClick={() => setShowArchived(!showArchived)}
+                            variant={showArchived ? "default" : "outline"}
+                            className={`px-6 py-3 text-lg ${showArchived ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+                          >
+                            <Archive size={16} />
+                            <span className="hidden sm:inline ml-2">{showArchived ? 'Lớp Hoạt Động' : 'Lớp Lưu Trữ'}</span>
+                            <span className="sm:hidden">{showArchived ? 'Hoạt Động' : 'Lưu Trữ'}</span>
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -336,29 +354,36 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
                           <p className="text-gray-500">Đang tải danh sách lớp học...</p>
                         </div>
-                      ) : classes.length === 0 ? (
+                      ) : getFilteredClasses().length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
                           <School className="mx-auto mb-3 text-gray-400" size={48} />
-                          <p className="text-lg font-medium mb-2">Chưa có lớp học nào</p>
-                          <p className="text-sm">Tạo lớp học đầu tiên để bắt đầu tổ chức sinh viên</p>
+                          <p className="text-lg font-medium mb-2">{showArchived ? 'Chưa có lớp học nào được lưu trữ' : 'Chưa có lớp học nào'}</p>
+                          <p className="text-sm">{showArchived ? 'Lớp học sẽ xuất hiện ở đây khi được lưu trữ' : 'Tạo lớp học đầu tiên để bắt đầu tổ chức sinh viên'}</p>
                         </div>
                       ) : (
-                        classes.map((courseClass) => (
-                          <div key={courseClass.id} className="border rounded-lg p-4 lg:p-6 hover:shadow-md transition-shadow">
+                        getFilteredClasses().map((courseClass) => (
+                          <div key={courseClass.id} className={`border rounded-lg p-4 lg:p-6 hover:shadow-md transition-shadow ${courseClass.isArchived ? 'bg-gray-50 opacity-75' : ''}`}>
                             <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
                               <div className="flex-1 w-full lg:w-auto">
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
-                                  <h3 className="font-bold text-lg text-gray-900">{courseClass.className}</h3>
+                                  <h3 className={`font-bold text-lg ${courseClass.isArchived ? 'text-gray-600 line-through' : 'text-gray-900'}`}>{courseClass.className}</h3>
                                   <div className="flex flex-wrap items-center gap-2">
                                     <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
                                       {courseClass.classCode}
                                     </span>
-                                    <span className={`px-3 py-1 text-sm rounded-full font-medium ${courseClass.status === "ACTIVE"
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-gray-100 text-gray-800"
-                                      }`}>
-                                      {courseClass.status === "ACTIVE" ? "Hoạt động" : "Không hoạt động"}
-                                    </span>
+                                    {courseClass.isArchived ? (
+                                      <span className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full font-medium flex items-center gap-1">
+                                        <Archive size={14} />
+                                        Đã lưu trữ
+                                      </span>
+                                    ) : (
+                                      <span className={`px-3 py-1 text-sm rounded-full font-medium ${courseClass.status === "ACTIVE"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-gray-100 text-gray-800"
+                                        }`}>
+                                        {courseClass.status === "ACTIVE" ? "Hoạt động" : "Không hoạt động"}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
 
@@ -378,19 +403,16 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                                     </div>
                                   )}
 
+                                  {courseClass.endDate && (
+                                    <div className="flex items-center text-gray-600">
+                                      <Calendar size={16} className="mr-2 text-red-500 flex-shrink-0" />
+                                      <span className="truncate">Kết thúc {new Date(courseClass.endDate).toLocaleDateString('vi-VN')}</span>
+                                    </div>
+                                  )}
+
                                   <div className="flex items-center text-gray-600">
                                     <Hash size={16} className="mr-2 text-purple-500 flex-shrink-0" />
                                     <span className="truncate">Mã: {courseClass.id}</span>
-                                  </div>
-
-                                  <div className={`flex items-center text-sm ${courseClass.currentStudents >= courseClass.maxStudents
-                                    ? "text-red-600 font-medium"
-                                    : "text-gray-600"
-                                    }`}>
-                                    {courseClass.currentStudents >= courseClass.maxStudents
-                                      ? "🔴 Đã đầy"
-                                      : `Còn ${courseClass.maxStudents - courseClass.currentStudents} chỗ trống`
-                                    }
                                   </div>
                                 </div>
 
@@ -399,38 +421,47 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                                     <strong>Mô tả:</strong> {courseClass.description}
                                   </div>
                                 )}
+
+                                {courseClass.isArchived && courseClass.archivedAt && (
+                                  <div className="mt-3 text-xs text-gray-500">
+                                    Lưu trữ vào: {new Date(courseClass.archivedAt).toLocaleString('vi-VN')}
+                                  </div>
+                                )}
                               </div>
 
-                              <div className="flex flex-row lg:flex-col xl:flex-row gap-2 w-full lg:w-auto">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleManageStudents(courseClass)}
-                                  className="flex items-center gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 flex-1 lg:flex-none justify-center"
-                                >
-                                  <Users size={14} />
-                                  <span className="hidden sm:inline">Sinh viên</span>
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => startEdit(courseClass)}
-                                  className="flex items-center gap-1 text-green-600 border-green-200 hover:bg-green-50 flex-1 lg:flex-none justify-center"
-                                >
-                                  <Edit size={14} />
-                                  <span className="hidden sm:inline">Sửa</span>
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteClick(courseClass)}
-                                  disabled={isLoading}
-                                  className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50 flex-1 lg:flex-none justify-center disabled:opacity-50"
-                                >
-                                  <Trash2 size={14} />
-                                  <span className="hidden sm:inline">Xóa</span>
-                                </Button>
-                              </div>
+                              {!courseClass.isArchived && (
+                                <div className="flex flex-row lg:flex-col xl:flex-row gap-2 w-full lg:w-auto">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleManageStudents(courseClass)}
+                                    className="flex items-center gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 flex-1 lg:flex-none justify-center"
+                                  >
+                                    <Users size={14} />
+                                    <span className="hidden sm:inline">Sinh viên</span>
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => startEdit(courseClass)}
+                                    className="flex items-center gap-1 text-green-600 border-green-200 hover:bg-green-50 flex-1 lg:flex-none justify-center"
+                                  >
+                                    <Edit size={14} />
+                                    <span className="hidden sm:inline">Sửa</span>
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteClick(courseClass)}
+                                    disabled={isLoading}
+                                    className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50 flex-1 lg:flex-none justify-center disabled:opacity-50"
+                                  >
+                                    <Archive size={14} />
+                                    <span className="hidden sm:inline">Lưu Trữ</span>
+                                    <span className="sm:hidden">Lưu Trữ</span>
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))
@@ -634,17 +665,17 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
         <AlertDialogOverlay className="bg-black/50 backdrop-blur-sm fixed inset-0" />
         <AlertDialogContent className="max-w-md bg-white rounded-xl shadow-lg">
           <AlertDialogHeader>
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="text-red-600" size={32} />
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Archive className="text-yellow-600" size={32} />
             </div>
             <AlertDialogTitle className="text-center text-xl">
-              Xác nhận xóa lớp học
+              Lưu trữ lớp học
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="text-center">
                 <div className="bg-gray-50 rounded-lg p-4 mt-4">
                   <p className="text-sm text-gray-600 mb-3">
-                    Bạn có chắc chắn muốn xóa lớp học này?
+                    Bạn có chắc chắn muốn lưu trữ lớp học này? Lớp học sẽ được ẩn khỏi danh sách chính nhưng dữ liệu vẫn được lưu trữ.
                   </p>
                   {classToDelete && (
                     <div className="flex flex-col items-center justify-center space-y-1 p-3 bg-white rounded-lg border border-gray-200">
@@ -652,8 +683,8 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                       <span className="text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{classToDelete.classCode}</span>
                     </div>
                   )}
-                  <p className="text-sm text-red-500 mt-3 font-medium">
-                    Lưu ý: Hành động này sẽ xóa tất cả danh sách sinh viên đã đăng ký và không thể hoàn tác.
+                  <p className="text-sm text-yellow-600 mt-3 font-medium">
+                    Lưu ý: Bạn có thể xem lại lớp học này trong tab "Lớp Lưu Trữ" bất cứ lúc nào.
                   </p>
                 </div>
               </div>
@@ -669,17 +700,17 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                 confirmDeleteClass();
               }}
               disabled={isLoading}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-yellow-600 hover:bg-yellow-700 text-white"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Đang xóa...
+                  Đang lưu trữ...
                 </div>
               ) : (
                 <>
-                  <Trash2 size={16} className="mr-2" />
-                  Xác nhận xóa
+                  <Archive size={16} className="mr-2" />
+                  Xác nhận lưu trữ
                 </>
               )}
             </AlertDialogAction>

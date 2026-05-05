@@ -18,6 +18,10 @@ public interface CourseProgressRepository extends JpaRepository<CourseProgress, 
     @Query("SELECT cp FROM CourseProgress cp WHERE cp.idUser = :userId AND cp.course.id = :courseId")
     Optional<CourseProgress> findByUserIdAndCourseId(String userId, int courseId);
     
+    // NEW: Get high engagement courses for recommendation
+    @Query("SELECT cp FROM CourseProgress cp WHERE cp.idUser = :userId AND cp.progressPercentage > 50 ORDER BY cp.progressPercentage DESC")
+    List<CourseProgress> findHighEngagementCourses(@Param("userId") String userId);
+    
     // Dashboard KPI queries
     @Query("SELECT AVG(cp.progressPercentage) FROM CourseProgress cp " +
             "WHERE (:educationType IS NULL OR :educationType = 'ALL' OR cp.course.educationalUnit.type = :educationType) AND " +

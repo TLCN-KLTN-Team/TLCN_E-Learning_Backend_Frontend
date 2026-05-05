@@ -620,12 +620,15 @@ public class CourseService {
         return toDepartmentResponse(department);
     }
 
-    public Page<CourseResponse> getCoursesByTeacherPaginated(String teacherId, int page, int size) {
+    public Page<CourseResponse> getCoursesByTeacherPaginated(String teacherId, int page, int size, String search, String creditRange) {
         if (teacherId == null || teacherId.trim().isEmpty()) {
             throw new AppException(ErrorCode.COURSE_TEACHER_REQUIRED);
         }
 
         validatePaginationParameters(page, size);
+
+        String normalizedSearch = search == null || search.trim().isEmpty() ? null : search.trim();
+        String normalizedCreditRange = creditRange == null || creditRange.trim().isEmpty() ? null : creditRange.trim();
 
         try {
             // Validate teacher exists
@@ -636,22 +639,14 @@ public class CourseService {
 
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-            // Get all courses for teacher and convert to Page
-            List<Course> allCourses = courseRepository.findByIdTeacher(teacherId);
+                Page<Course> coursePage = courseRepository.findByIdTeacherWithSearchAndCreditsRange(
+                    teacherId,
+                    normalizedSearch,
+                    normalizedCreditRange,
+                    pageable
+                );
 
-            // Manual pagination
-            int start = page * size;
-            int end = Math.min(start + size, allCourses.size());
-            List<Course> paginatedCourses = allCourses.subList(start, end);
-
-            List<CourseResponse> courseResponses = paginatedCourses.stream()
-                    .map(course -> {
-                        CourseResponse courseResponse = courseMapper.toCourseResponse(course);
-                        return courseResponse;
-                    })
-                    .toList();
-
-            return new PageImpl<>(courseResponses, pageable, allCourses.size());
+            return coursePage.map(courseMapper::toCourseResponse);
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {

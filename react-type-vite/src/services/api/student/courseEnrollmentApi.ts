@@ -25,7 +25,8 @@ const COURSE_ENROLLMENT_API_BASE =
 export const getCatalogEnrolledCourses = async (
   page: number,
   size: number,
-  query: string
+  search: string,
+  sortBy: string
 ): Promise<PaginatedResponse<EnrolledCoursesResponse>> => {
   const response = await axiosInstance.get<
     ApiResponse<PaginatedResponse<EnrolledCoursesResponse>>
@@ -33,7 +34,8 @@ export const getCatalogEnrolledCourses = async (
     params: {
       page,
       size,
-      query,
+      search,
+      sortBy,
     },
   });
 

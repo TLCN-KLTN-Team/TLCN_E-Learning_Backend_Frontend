@@ -1,5 +1,6 @@
 import axiosInstance from "@/services/api/httpClient/axiosInstance";
 import type { ApiResponse } from "@/services/api/response/apiResponse";
+import type { PaginatedResponse } from "@/types/api";
 
 const API_USER_ORDER_ENDPOINT = "/course-management/user/orders";
 const API_TEACHER_ORDER_ENDPOINT = "/course-management/teacher/orders";
@@ -45,9 +46,20 @@ const refundCourse = async (orderItemId: number): Promise<void> => {
     );
 };
 
-const getTeacherOrders = async (): Promise<OrderItemResponse[]> => {
-    const response = await axiosInstance.get<ApiResponse<OrderItemResponse[]>>(
-        `${API_TEACHER_ORDER_ENDPOINT}`
+const getTeacherOrders = async (params?: {
+    page?: number;
+    size?: number;
+    search?: string;
+}): Promise<PaginatedResponse<OrderItemResponse> | OrderItemResponse[]> => {
+    const response = await axiosInstance.get<ApiResponse<PaginatedResponse<OrderItemResponse> | OrderItemResponse[]>>(
+        `${API_TEACHER_ORDER_ENDPOINT}`,
+        {
+            params: {
+                ...(params?.page !== undefined && { page: params.page }),
+                ...(params?.size !== undefined && { size: params.size }),
+                ...(params?.search && { search: params.search }),
+            }
+        }
     );
     return response.data.result;
 };

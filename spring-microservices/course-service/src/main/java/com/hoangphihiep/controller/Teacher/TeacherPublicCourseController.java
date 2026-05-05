@@ -21,10 +21,13 @@ public class TeacherPublicCourseController {
     public ApiResponse<Page<PublicCourseResponse>> getPublicCourses(
             @PathVariable String teacherId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String creditRange,
+            @RequestParam(required = false) String updatedRange) {
 
-        Page<PublicCourseResponse> courses = publicCourseService.getPublicCoursesByTeacher(teacherId, page, size);
-        
+        Page<PublicCourseResponse> courses = publicCourseService.getPublicCoursesByTeacher(teacherId, page, size, search, creditRange, updatedRange);
+
         return ApiResponse.<Page<PublicCourseResponse>>builder()
                 .message("Get public courses successfully")
                 .result(courses)

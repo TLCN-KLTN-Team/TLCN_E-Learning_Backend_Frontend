@@ -17,19 +17,6 @@ export const createClass = async (
   return response.data.result;
 };
 
-export const getClassesByEducationalUnit = async (
-  educationalUnitId: number,
-  page: number = 0,
-  size: number = 20,
-  search?: string
-): Promise<PaginatedResponse<CourseClassResponse>> => {
-  const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-  const response = await axiosInstance.get<ApiResponse<PaginatedResponse<CourseClassResponse>>>(
-    `/course-management/expert/educational-unit/${educationalUnitId}/classes?page=${page}&size=${size}${searchParam}`
-  );
-  return response.data.result;
-};
-
 export const getClassesByCourse = async (
   educationalUnitId: number,
   courseId: number,
@@ -63,7 +50,6 @@ export const deleteClass = async (
   );
 };
 
-// --- Class enrollment functions ---
 export const enrollStudentsToClass = async (
   educationalUnitId: number,
   classId: number,

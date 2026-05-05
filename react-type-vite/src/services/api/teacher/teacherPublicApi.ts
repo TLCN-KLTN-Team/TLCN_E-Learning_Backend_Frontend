@@ -97,11 +97,24 @@ export interface TeacherPublicStatistics {
 }
 
 const teacherPublicApi = {
-  getPublicCourses: async (teacherId: string, page: number = 0, size: number = 20) => {
-    const response = await axiosInstance.get<{ result: { content: PublicCourseResponse[] } }>(
+  getPublicCourses: async (
+    teacherId: string,
+    page: number = 0,
+    size: number = 20,
+    search?: string,
+    creditRange?: string,
+    updatedRange?: string
+  ) => {
+    const params: any = { page, size }
+    if (search) params.search = search
+    if (creditRange) params.creditRange = creditRange
+    if (updatedRange) params.updatedRange = updatedRange
+
+    const response = await axiosInstance.get<{ result: { content: PublicCourseResponse[]; totalElements?: number; totalPages?: number } }>(
       `/course-management/teacher/public/courses/${teacherId}`,
-      { params: { page, size } }
+      { params }
     )
+
     return response.data.result
   },
 

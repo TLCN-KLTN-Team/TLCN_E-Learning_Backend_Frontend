@@ -62,11 +62,21 @@ public class CourseClass implements Serializable {
     @Column(name = "updated_at")
     private Date updatedAt;
 
+    @Column(name = "is_archived", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    private Boolean isArchived = false;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "archived_at")
+    private Date archivedAt;
+
     @OneToMany(mappedBy = "courseClass", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CourseEnrollment> enrollments;
 
     @PrePersist
     protected void onCreate() {
+        if (isArchived == null) {
+            isArchived = false;
+        }
         createdAt = new Date();
         updatedAt = new Date();
     }

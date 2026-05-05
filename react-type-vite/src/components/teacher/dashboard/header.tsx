@@ -21,7 +21,8 @@ import { Button } from "@/components/ui/button";
 
 import openEduIcon from "@/assets/open-edu-dark.png";
 import * as notificationApi from "@/services/api/notificationApi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { TEACHER_ROUTES } from "@/constants/routes";
 
 interface Notification {
   id?: string;
@@ -60,6 +61,7 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { isMobile } = useResponsive();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -435,7 +437,7 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
                     <button
                       className="text-blue-600 hover:underline text-sm"
                       onClick={() => {
-                        navigate('/teacher/notifications');
+                          navigate(TEACHER_ROUTES.NOTIFICATIONS, { state: { background: location } });
                         setIsNotificationOpen(false);
                       }}
                     >
@@ -522,7 +524,13 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
                               key={item.name}
                               href={item.href}
                               className="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors text-sm group text-gray-700"
-                              onClick={() => setIsProfileOpen(false)}
+                              onClick={(event) => {
+                                if (item.href === TEACHER_ROUTES.NOTIFICATIONS) {
+                                  event.preventDefault();
+                                  navigate(TEACHER_ROUTES.NOTIFICATIONS, { state: { background: location } });
+                                }
+                                setIsProfileOpen(false);
+                              }}
                             >
                               <div className="flex items-center space-x-3">
                                 <item.icon

@@ -22,7 +22,7 @@ import { useAuth } from "@/context/auth-context/useAuth";
 import openEduIcon from "@/assets/open-edu-dark.png";
 
 const menuItems = [
-  { name: "Dashboard", icon: LayoutGrid, path: "/teacher/home" },
+  { name: "Trang Chủ", icon: LayoutGrid, path: "/teacher/home" },
   {
     name: "Khóa Học Nội Bộ",
     icon: BookOpen,
@@ -125,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
             title={collapsed ? "Sign Out" : undefined}
           >
             <LogOut className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
-            {!collapsed && <span>Sign Out</span>}
+            {!collapsed && <span>Đăng xuất</span>}
           </button>
         </div>
       </div>

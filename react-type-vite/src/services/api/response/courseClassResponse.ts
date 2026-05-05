@@ -12,4 +12,6 @@ export interface CourseClassResponse {
   description?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  isArchived?: boolean;
+  archivedAt?: Date;
 }

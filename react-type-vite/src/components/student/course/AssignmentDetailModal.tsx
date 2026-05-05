@@ -13,6 +13,7 @@ import {
   Link as LinkIcon,
   AlertTriangle,
   MessageSquare,
+  XCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Modal from "@/components/ui/modal"
@@ -123,6 +124,8 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
     }
   }
 
+  const canOpenDiscussion = isDeadlinePassed()
+
   if (isLoading) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl">
@@ -165,6 +168,8 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            title="Đóng"
+            aria-label="Đóng"
             className="p-2 hover:bg-gray-100 rounded-full"
           >
           </button>
@@ -185,7 +190,9 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
               Thông tin & Nộp bài
             </button>
             <button
+              disabled={!canOpenDiscussion}
               onClick={async () => {
+                if (!canOpenDiscussion) return
                 setActiveTab("discussion")
                 if (unreadCount > 0) {
                   try {
@@ -212,6 +219,14 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
             </button>
           </nav>
         </div>
+
+        {!canOpenDiscussion && (
+          <div className="px-6 mt-4">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+              Bạn chỉ có thể vào thảo luận sau khi hết hạn nộp bài vào {new Date(assignment.deadline).toLocaleString("vi-VN")}.
+            </div>
+          </div>
+        )}
 
         {/* Tab Content */}
         <div className="p-6">

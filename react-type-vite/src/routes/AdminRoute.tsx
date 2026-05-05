@@ -12,7 +12,7 @@ import ExpertListPage from "@/pages/admin/ExpertListPage";
 import StudentListPage from "@/pages/admin/StudentListPage";
 import { ADMIN_ROUTES } from "@/constants/routes";
 import AdminRefundPage from "@/pages/admin/revenue/AdminRefundPage";
-import AdminNotificationsPage from "@/pages/admin/notifications/AdminNotificationsPage";
+import AdminNotificationsModal from "@/pages/admin/notifications/AdminNotificationsModal";
 
 // Admin routes - protected routes for admin roles
 const AdminRoutes = [
@@ -28,7 +28,16 @@ const AdminRoutes = [
     {/* Default route - shows dashboard */}
     <Route index element={<AdminDashboardPage />} />
     <Route path="dashboard" element={<AdminDashboardPage />} />
-    <Route path="notifications" element={<AdminNotificationsPage />} />
+    <Route
+      path="notifications"
+      element={
+        <AdminNotificationsModal
+          isOpen={true}
+          onClose={() => window.history.back()}
+          title="Thông báo quản trị"
+        />
+      }
+    />
 
     {/* Other admin routes */}
     {/* <Route path="manage-earnings" element={<EarningsPage />} /> */}

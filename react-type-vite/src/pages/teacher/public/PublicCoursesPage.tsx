@@ -16,12 +16,18 @@ const PublicCoursesPage: React.FC = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [courses, setCourses] = useState<PublicCourseResponse[]>([])
-  const [filteredCourses, setFilteredCourses] = useState<PublicCourseResponse[]>([])
+  const [searchInput, setSearchInput] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [selectedCourseForDiscussion, setSelectedCourseForDiscussion] = useState<PublicCourseResponse | null>(null)
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [creditRange, setCreditRange] = useState<string>("all")
+  const [updatedRange, setUpdatedRange] = useState<string>("")
 
   useEffect(() => {
     const fetchTeacherIdAndCourses = async () => {
@@ -43,11 +49,13 @@ const PublicCoursesPage: React.FC = () => {
           return
         }
 
-        // Lấy danh sách khóa học public từ API
-        const response = await teacherPublicApi.getPublicCourses(fetchedTeacherId, 0, 20)
+          // Lấy danh sách khóa học public từ API (server-side paging + filters)
+          const response = await teacherPublicApi.getPublicCourses(fetchedTeacherId, page, pageSize, searchTerm, creditRange, updatedRange)
+          console.log("PublicCourses API response:", response)
 
-        setCourses(response.content)
-        setFilteredCourses(response.content)
+          setCourses(response.content || [])
+          setTotalElements(response.totalElements || 0)
+          setTotalPages(response.totalPages || 0)
       } catch (err: any) {
         console.error("Error fetching data:", err)
 
@@ -60,23 +68,28 @@ const PublicCoursesPage: React.FC = () => {
         }
 
         setCourses([])
-        setFilteredCourses([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchTeacherIdAndCourses()
-  }, [user?.id, navigate])
+  }, [user?.id, navigate, page, pageSize, searchTerm, creditRange, updatedRange])
 
+  // debounce search input
   useEffect(() => {
-    const filtered = courses.filter(
-      (course) =>
-        course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.description?.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
-    setFilteredCourses(filtered)
-  }, [searchTerm, courses])
+    const handle = setTimeout(() => {
+      setPage(0)
+      setSearchTerm(searchInput)
+    }, 350)
+
+    return () => clearTimeout(handle)
+  }, [searchInput])
+
+  // derived pagination values (fallbacks when backend omits totalPages)
+  const computedTotalPages = totalPages || (totalElements ? Math.ceil(totalElements / pageSize) : 0)
+  // always render pagination controls (disabled appropriately) so user can change pageSize or see navigation
+  const showPagination = true
 
   const handleViewCourseStudents = (courseId: number) => {
     navigate(`/teacher/public-courses/${courseId}/students`)
@@ -130,7 +143,7 @@ const PublicCoursesPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Tổng khóa học</p>
-                  <h3 className="text-2xl font-bold text-card-foreground">{courses.length}</h3>
+                  <h3 className="text-2xl font-bold text-card-foreground">{totalElements}</h3>
                 </div>
                 <ShoppingBag className="w-8 h-8 text-blue-500" />
               </div>
@@ -159,23 +172,35 @@ const PublicCoursesPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Search */}
+          {/* Search + Filters */}
           <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div className="relative max-w-md flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
               <Input
                 placeholder="Tìm kiếm khóa học..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10 bg-background border-input"
               />
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Lọc
-              </Button>
+              <div className="flex items-center space-x-2">
+                <select value={creditRange} onChange={(e) => { setCreditRange(e.target.value); setPage(0); }} className="border rounded-md p-1 bg-background">
+                  <option value="all">Tất cả tín chỉ</option>
+                  <option value="1-2">1-2</option>
+                  <option value="3-4">3-4</option>
+                  <option value="5+">5+</option>
+                </select>
+
+                <select value={updatedRange} onChange={(e) => { setUpdatedRange(e.target.value); setPage(0); }} className="border rounded-md p-1 bg-background">
+                  <option value="">Cập nhật: Tất cả</option>
+                  <option value="7d">7 ngày</option>
+                  <option value="30d">30 ngày</option>
+                  <option value="90d">90 ngày</option>
+                </select>
+              </div>
+
               <div className="flex border border-border rounded-md">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
@@ -198,9 +223,9 @@ const PublicCoursesPage: React.FC = () => {
           </div>
 
           {/* Courses Grid/List */}
-          {filteredCourses.length === 0 ? (
+          {courses.length === 0 ? (
             <div className="text-center py-12">
-              {courses.length === 0 ? (
+              {totalElements === 0 ? (
                 <>
                   <ShoppingBag className="mx-auto text-muted-foreground mb-4" size={48} />
                   <h3 className="text-lg font-medium text-foreground mb-2">Chưa có khóa học public nào</h3>
@@ -216,7 +241,7 @@ const PublicCoursesPage: React.FC = () => {
             </div>
           ) : (
             <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-4"}>
-              {filteredCourses.map((course) => (
+              {courses.map((course) => (
                 <div key={course.id} className="h-full">
                   {viewMode === "grid" ? (
                     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewCourseStudents(course.id)}>
@@ -302,6 +327,25 @@ const PublicCoursesPage: React.FC = () => {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+          {/* Pagination */}
+          {showPagination && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>Prev</Button>
+                <span className="text-sm text-muted-foreground">Trang {page + 1} / {computedTotalPages || "-"}</span>
+                <Button size="sm" onClick={() => setPage((p) => Math.min(Math.max(0, computedTotalPages - 1), p + 1))} disabled={computedTotalPages === 0 || page + 1 >= computedTotalPages}>Next</Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">Hiển thị</label>
+                <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }} className="border rounded-md p-1 bg-background">
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
             </div>
           )}
         </div>

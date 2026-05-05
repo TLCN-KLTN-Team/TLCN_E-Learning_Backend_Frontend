@@ -11,6 +11,8 @@ import java.util.Optional;
 @Repository
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Integer> {
 
+        List<QuizAttempt> findByIdUserAndSubmittedAtIsNotNullOrderBySubmittedAtDesc(String idUser);
+
     List<QuizAttempt> findByQuizIdAndIdUserOrderBySubmittedAtDesc(Integer quizId, String userId);
 
     int countByQuizIdAndIdUser(Integer quizId, String userId);

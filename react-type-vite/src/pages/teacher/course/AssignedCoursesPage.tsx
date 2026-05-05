@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { BookOpen, Search, Edit, Users, Clock, Calendar, Grid3X3, List, Filter } from "lucide-react"
+import { BookOpen, Search, Edit, Users, Clock, Calendar, Grid3X3, List, ChevronLeft, ChevronRight } from "lucide-react"
 import { getTeacherCourses } from "@/services/api/teacher/teacherCourseApi"
 import { useAuth } from "@/context/auth-context/useAuth"
 import type { CourseResponse } from "@/services/api/response/courseResponse"
@@ -14,11 +14,16 @@ import { getTeacherByUserId } from "@/services/api/teacher/teacherApi"
 const AssignedCoursesPage: React.FC = () => {
   const { user } = useAuth()
   const [courses, setCourses] = useState<CourseResponse[]>([])
-  const [filteredCourses, setFilteredCourses] = useState<CourseResponse[]>([])
+  const [searchInput, setSearchInput] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
+  const [creditRange, setCreditRange] = useState("all")
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(9)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
 
   useEffect(() => {
     const fetchTeacherIdAndCourses = async () => {
@@ -28,6 +33,9 @@ const AssignedCoursesPage: React.FC = () => {
 
         if (!user?.id) {
           setError("User not authenticated")
+          setCourses([])
+          setTotalPages(0)
+          setTotalElements(0)
           return
         }
 
@@ -42,30 +50,61 @@ const AssignedCoursesPage: React.FC = () => {
 
 
         // Bước 2: Lấy danh sách khóa học bằng teacherId
-        const response = await getTeacherCourses(fetchedTeacherId, 0, 20)
-        setCourses(response.content)
-        setFilteredCourses(response.content)
+        const response = await getTeacherCourses(fetchedTeacherId, page, pageSize, searchTerm, creditRange)
+        setCourses(response.content || [])
+        setTotalPages(response.totalPages || 0)
+        setTotalElements(response.totalElements || 0)
       } catch (err) {
         console.error("Error fetching data:", err)
         setError("Failed to load courses. Please try again later.")
         setCourses([])
-        setFilteredCourses([])
+        setTotalPages(0)
+        setTotalElements(0)
       } finally {
         setLoading(false)
       }
     }
 
     fetchTeacherIdAndCourses()
-  }, [user?.id])
+  }, [user?.id, page, pageSize, searchTerm, creditRange])
 
   useEffect(() => {
-    const filtered = courses.filter(
-      (course) =>
-        course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.description?.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
-    setFilteredCourses(filtered)
-  }, [searchTerm, courses])
+    const handle = setTimeout(() => {
+      setSearchTerm(searchInput.trim())
+      setPage(0)
+    }, 350)
+
+    return () => clearTimeout(handle)
+  }, [searchInput])
+
+  const handleCreditRangeChange = (value: string) => {
+    setCreditRange(value)
+    setPage(0)
+  }
+
+  const getPageNumbers = () => {
+    const maxPagesToShow = 5
+    const pages: number[] = []
+    if (totalPages <= 0) return pages
+
+    let startPage = Math.max(0, page - Math.floor(maxPagesToShow / 2))
+    let endPage = Math.min(totalPages - 1, startPage + maxPagesToShow - 1)
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(0, endPage - maxPagesToShow + 1)
+    }
+
+    for (let index = startPage; index <= endPage; index += 1) {
+      pages.push(index)
+    }
+
+    return pages
+  }
+
+  const showingStart = totalElements === 0 ? 0 : page * pageSize + 1
+  const showingEnd = Math.min((page + 1) * pageSize, totalElements)
+  const isNoResults = !loading && courses.length === 0 && totalElements === 0
+  const isFilteredNoResults = isNoResults && (searchTerm.length > 0 || creditRange !== "all")
 
   if (loading) {
     return (
@@ -94,7 +133,7 @@ const AssignedCoursesPage: React.FC = () => {
               <BookOpen className="mr-3 text-primary" size={32} />
               Khóa Học Nội Bộ
             </h1>
-            <p className="text-muted-foreground text-lg">Quản lý và chỉnh sửa các khóa học mà admin đã gán cho bạn</p>
+            <p className="text-muted-foreground text-lg">Quản lý và chỉnh sửa các khóa học mà admin đã phân công</p>
           </div>
 
           {/* Error Message */}
@@ -110,17 +149,40 @@ const AssignedCoursesPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
               <Input
                 placeholder="Tìm kiếm khóa học..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10 bg-background border-input"
               />
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Lọc
-              </Button>
+              <select
+                value={creditRange}
+                onChange={(e) => handleCreditRangeChange(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                aria-label="Lọc theo số tín chỉ"
+              >
+                <option value="all">Tất cả tín chỉ</option>
+                <option value="1-2">1-2 tín chỉ</option>
+                <option value="3-4">3-4 tín chỉ</option>
+                <option value="5+">5+ tín chỉ</option>
+              </select>
+
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value))
+                  setPage(0)
+                }}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                aria-label="Số mục mỗi trang"
+              >
+                <option value={6}>6 / trang</option>
+                <option value={9}>9 / trang</option>
+                <option value={12}>12 / trang</option>
+                <option value={20}>20 / trang</option>
+              </select>
+
               <div className="flex border border-border rounded-md">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
@@ -143,25 +205,25 @@ const AssignedCoursesPage: React.FC = () => {
           </div>
 
           {/* Courses Grid/List */}
-          {filteredCourses.length === 0 ? (
+          {isNoResults ? (
             <div className="text-center py-12">
-              {courses.length === 0 ? (
+              {isFilteredNoResults ? (
+                <>
+                  <Search className="mx-auto text-muted-foreground mb-4" size={48} />
+                  <h3 className="text-lg font-medium text-foreground mb-2">Không tìm thấy khóa học nào</h3>
+                  <p className="text-muted-foreground">Thử điều chỉnh từ khóa tìm kiếm hoặc bộ lọc tín chỉ</p>
+                </>
+              ) : (
                 <>
                   <BookOpen className="mx-auto text-muted-foreground mb-4" size={48} />
                   <h3 className="text-lg font-medium text-foreground mb-2">Chưa có khóa học nào được gán</h3>
                   <p className="text-muted-foreground">Liên hệ với admin để được gán khóa học để giảng dạy</p>
                 </>
-              ) : (
-                <>
-                  <Search className="mx-auto text-muted-foreground mb-4" size={48} />
-                  <h3 className="text-lg font-medium text-foreground mb-2">Không tìm thấy khóa học nào</h3>
-                  <p className="text-muted-foreground">Thử điều chỉnh từ khóa tìm kiếm</p>
-                </>
               )}
             </div>
           ) : (
             <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
-              {filteredCourses.map((course) => (
+              {courses.map((course) => (
                 <div
                   key={course.id}
                   className={`bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 ${
@@ -241,6 +303,38 @@ const AssignedCoursesPage: React.FC = () => {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {!loading && totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                Hiển thị <span className="font-medium">{showingStart}</span> đến <span className="font-medium">{showingEnd}</span> trong <span className="font-medium">{totalElements}</span> khóa học
+              </p>
+
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0}>
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Trước
+                </Button>
+
+                {getPageNumbers().map((pageNumber) => (
+                  <Button
+                    key={pageNumber}
+                    size="sm"
+                    variant={pageNumber === page ? "default" : "outline"}
+                    onClick={() => setPage(pageNumber)}
+                    className="min-w-9"
+                  >
+                    {pageNumber + 1}
+                  </Button>
+                ))}
+
+                <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))} disabled={page >= totalPages - 1}>
+                  Sau
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { Route } from "react-router-dom";
+import { Route, useNavigate } from "react-router-dom";
 import ProtectedRoute from "./protected/ProtectedRoute";
 import StudentDashboard from "@/pages/student/dashboard/StudentDashboard";
 import CourseDetail from "@/pages/student/course/CourseDetail";
@@ -12,7 +12,8 @@ import {
   ROUTE_PATTERNS,
 } from "@/constants/routes";
 import StudentCreditTransferPage from "@/pages/student/StudentCreditTransferPage";
-import StudentNotificationsPage from "@/pages/student/notifications/StudentNotificationsPage";
+import StudentNotificationsModal from "@/pages/student/notifications/StudentNotificationsModal";
+import { useState } from "react";
 
 // Student routes - protected routes for student role
 const StudentRoutes = [
@@ -78,7 +79,35 @@ const StudentRoutes = [
     path={STUDENT_ROUTES.NOTIFICATIONS}
     element={
       <ProtectedRoute allowedRoles={["STUDENT"]}>
-        <StudentNotificationsPage />
+        {/** Render modal in-route; navigate back to dashboard on close */}
+        {(() => {
+          const NotificationsModalWrapper = () => {
+            const [open, setOpen] = useState(true);
+            const navigate = useNavigate();
+            const handleClose = () => {
+              setOpen(false);
+              try {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate(STUDENT_ROUTES.DASHBOARD);
+                }
+              } catch (e) {
+                navigate(STUDENT_ROUTES.DASHBOARD);
+              }
+            };
+
+            return (
+              <StudentNotificationsModal
+                isOpen={open}
+                onClose={handleClose}
+                title="Thông báo học viên"
+              />
+            );
+          };
+
+          return <NotificationsModalWrapper />;
+        })()}
       </ProtectedRoute>
     }
   />,

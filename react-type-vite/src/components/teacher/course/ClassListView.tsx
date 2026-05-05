@@ -168,7 +168,7 @@ const ClassListView: React.FC<ClassListViewProps> = ({ courseId, educationalUnit
           <CardContent className="pt-12 pb-12 text-center">
             <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-600 mb-4">Chưa có lớp học nào cho khóa học này</p>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
               <Plus className="mr-2 h-4 w-4" />
               Tạo Lớp Học Mới
             </Button>

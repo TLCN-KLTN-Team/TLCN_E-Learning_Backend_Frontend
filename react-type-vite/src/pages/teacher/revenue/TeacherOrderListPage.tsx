@@ -12,6 +12,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Search, ShoppingBag } from "lucide-react";
 import OrderService, {
     type OrderItemResponse,
@@ -20,30 +21,59 @@ import OrderService, {
 const TeacherOrderListPage: React.FC = () => {
     const [orders, setOrders] = useState<OrderItemResponse[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchInput, setSearchInput] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(0);
 
     useEffect(() => {
         document.title = "Quản lý đơn hàng - E-Learning Platform";
-        fetchTeacherOrders();
     }, []);
+
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            setSearchTerm(searchInput);
+            setCurrentPage(0);
+        }, 350);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchInput]);
+
+    useEffect(() => {
+        fetchTeacherOrders();
+    }, [currentPage, pageSize, searchTerm]);
 
     const fetchTeacherOrders = async () => {
         try {
             setLoading(true);
-            const data = await OrderService.getTeacherOrders();
-            setOrders(data);
+            const data = await OrderService.getTeacherOrders({
+                page: currentPage,
+                size: pageSize,
+                search: searchTerm || undefined,
+            });
+            
+            if (data && typeof data === 'object' && 'content' in data) {
+                // Handle paginated response
+                const paginated = data as any;
+                setOrders(paginated.content || []);
+                setTotalPages(paginated.totalPages || 0);
+            } else if (Array.isArray(data)) {
+                // Handle array response (legacy)
+                setOrders(data);
+                setTotalPages(1);
+            } else {
+                setOrders([]);
+                setTotalPages(0);
+            }
         } catch (error) {
             console.error("Error fetching teacher orders:", error);
+            setOrders([]);
+            setTotalPages(0);
         } finally {
             setLoading(false);
         }
     };
-
-    const filteredOrders = orders.filter((order) =>
-        order.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.buyerName && order.buyerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (order.buyerEmail && order.buyerEmail.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -88,8 +118,8 @@ const TeacherOrderListPage: React.FC = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
                             placeholder="Tìm kiếm theo khóa học, người mua..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
                             className="pl-9"
                         />
                     </div>
@@ -107,7 +137,7 @@ const TeacherOrderListPage: React.FC = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredOrders.length === 0 ? (
+                            {orders.length === 0 ? (
                                 <TableRow>
                                     <TableCell
                                         colSpan={5}
@@ -117,7 +147,7 @@ const TeacherOrderListPage: React.FC = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredOrders.map((order) => (
+                                orders.map((order) => (
                                     <TableRow key={order.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
@@ -178,6 +208,38 @@ const TeacherOrderListPage: React.FC = () => {
                     </Table>
                 </div>
             </Card>
+
+            {/* Pagination */}
+            <div className="mt-6 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        disabled={currentPage === 0}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                    >
+                        Trước
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Trang {currentPage + 1} / {totalPages || "-"}
+                    </span>
+                    <Button
+                        variant="outline"
+                        disabled={totalPages === 0 || currentPage >= totalPages - 1}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                    >
+                        Sau
+                    </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <label className="text-sm text-muted-foreground">Hiển thị</label>
+                    <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(0); }} title="Số đơn hàng hiển thị trên trang" className="border rounded-md p-1 bg-background">
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                    </select>
+                </div>
+            </div>
         </div>
     );
 };

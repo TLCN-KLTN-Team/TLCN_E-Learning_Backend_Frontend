@@ -19,10 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +30,7 @@ public class CourseClassService {
     private final CourseRepository courseRepository;
     private final CourseClassMapper courseClassMapper;
     private final ClassEventProducer producer;
+    private final CourseEnrollmentService enrollmentService;
 
     @Transactional
     public CourseClassResponse createClass(CourseClassRequest request) {
@@ -56,6 +54,8 @@ public class CourseClassService {
                 .endDate(request.getEndDate())
                 .description(request.getDescription())
                 .status("ACTIVE")
+            .isArchived(false)
+            .archivedAt(null)
                 .createdAt(new Date())
                 .updatedAt(new Date())
                 .build();
@@ -83,14 +83,8 @@ public class CourseClassService {
         return courseClassMapper.toCourseClassResponse(savedClass);
     }
 
-    public Page<CourseClassResponse> getClassesByEducationalUnit(Integer educationalUnitId, Pageable pageable, String search) {
-        Page<CourseClass> classPage = classRepository.findByEducationalUnitIdWithSearch(educationalUnitId, search, pageable);
-
-        return classPage.map(courseClassMapper::toCourseClassResponse);
-    }
-
     public Page<CourseClassResponse> getClassesByCourse(Integer courseId, Pageable pageable) {
-        Page<CourseClass> classPage = classRepository.findByCourseId(courseId, pageable);
+        Page<CourseClass> classPage = classRepository.findByCourseIdAndIsArchivedFalse(courseId, pageable);
 
         return classPage.map(courseClassMapper::toCourseClassResponse);
     }
@@ -133,16 +127,20 @@ public class CourseClassService {
     }
 
     @Transactional
-    public void deleteClass(Integer classId) {
+    public void archiveClass(Integer classId) {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
-        // Check if class has enrolled students
-        if (courseClass.getCurrentStudents() > 0) {
-            throw new AppException(ErrorCode.CLASS_HAS_ENROLLED_STUDENTS);
+        courseClass.setIsArchived(true);
+        courseClass.setArchivedAt(new Date());
+        courseClass.setUpdatedAt(new Date());
+        classRepository.save(courseClass);
+        // Recalculate course totals after archiving a class
+        try {
+            enrollmentService.updateCourseTotalStudents(courseClass.getCourse().getId());
+        } catch (Exception e) {
+            log.warn("Failed to update course totals after archiving class {}: {}", classId, e.getMessage());
         }
-
-        classRepository.delete(courseClass);
     }
 
     @Transactional
@@ -193,5 +191,40 @@ public class CourseClassService {
                 .failed(failed)
                 .results(results)
                 .build();
+    }
+
+    @Transactional
+    public void autoArchiveExpiredClasses() {
+        List<CourseClass> expiredClasses = classRepository.findExpiredClasses();
+        
+        if (expiredClasses.isEmpty()) {
+            log.info("No expired classes to archive");
+            return;
+        }
+
+        Date now = new Date();
+        // Track affected course IDs to update totals once per course
+        Set<Integer> affectedCourseIds = new HashSet<>();
+        for (CourseClass courseClass : expiredClasses) {
+            courseClass.setIsArchived(true);
+            courseClass.setArchivedAt(now);
+            courseClass.setUpdatedAt(now);
+            classRepository.save(courseClass);
+            if (courseClass.getCourse() != null && courseClass.getCourse().getId() != null) {
+                affectedCourseIds.add(courseClass.getCourse().getId());
+            }
+            log.info("Auto-archived class: {} (ID: {})", courseClass.getClassName(), courseClass.getId());
+        }
+
+        log.info("Auto-archived {} expired classes", expiredClasses.size());
+
+        // Recalculate course totals for affected courses
+        for (Integer courseId : affectedCourseIds) {
+            try {
+                enrollmentService.updateCourseTotalStudents(courseId);
+            } catch (Exception e) {
+                log.warn("Failed to update course totals for course {} after auto-archive: {}", courseId, e.getMessage());
+            }
+        }
     }
 }
