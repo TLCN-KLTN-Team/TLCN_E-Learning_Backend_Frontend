@@ -302,13 +302,7 @@ const SystemAdminHeader: React.FC<SystemAdminHeaderProps> = ({
           </div>
 
           {/* Profile */}
-                              onClick={(event) => {
-                                if (item.href === SYSTEM_ADMIN_ROUTES.NOTIFICATIONS) {
-                                  event.preventDefault();
-                                  navigate(SYSTEM_ADMIN_ROUTES.NOTIFICATIONS, { state: { background: location } });
-                                }
-                                setIsProfileOpen(false);
-                              }}
+          <div className="relative" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden p-0 ring-2 ring-transparent hover:ring-blue-200 transition-all"
