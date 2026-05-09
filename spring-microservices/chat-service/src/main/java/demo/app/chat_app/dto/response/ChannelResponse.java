@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import demo.app.chat_app.model.workspace.ChannelScope;
 import demo.app.chat_app.model.workspace.ChannelStatus;
 import demo.app.chat_app.model.workspace.ChannelType;
+import demo.app.chat_app.service.util.ChannelPhase;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -34,4 +35,17 @@ public class ChannelResponse {
     Instant lastActivityAt;
     List<ChatMessageResponse> messages;
     Instant createdAt;
+
+    // ── UC-41 ────────────────────────────────────────────────────
+    Instant submissionDeadline;
+    Instant crossReviewDeadline;
+    boolean allowCrossReview;
+    String reviewTargetChannelId;
+    Instant submissionClosedAt;
+    Instant expiresAt;
+    /**
+     * Pha runtime — derive từ deadlines + now. Frontend dùng để
+     * disable input/upload khi phase != OPEN.
+     */
+    ChannelPhase phase;
 }

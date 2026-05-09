@@ -142,4 +142,16 @@ public interface ChannelService {
      * @param channelId Channel ID
      */
     void submitPractices(String channelId);
+
+    // ══════════════════════════════════════════════════════════════════
+    // UC-41: Cross-review
+    // ══════════════════════════════════════════════════════════════════
+
+    /**
+     * Lấy channel mà channelId được phân công chấm chéo.
+     *
+     * @param channelId ID kênh hiện tại (kênh nhóm chấm)
+     * @return BasicChannelResponse của kênh nhóm cần chấm
+     */
+    BasicChannelResponse getCrossReviewTarget(String channelId);
 }

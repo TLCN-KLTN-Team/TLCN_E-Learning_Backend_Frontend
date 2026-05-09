@@ -1,5 +1,6 @@
 package demo.app.chat_app.dto.response;
 
+import demo.app.chat_app.model.enums.AttachmentCategory;
 import demo.app.chat_app.model.enums.AttachmentType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -17,6 +18,7 @@ public class AttachmentResponse {
     String contentType; // MIME type of the file, e.g., "image/png", "application/pdf"
     long fileSize;
     AttachmentType attachmentType;
+    AttachmentCategory category; // UC-41: GENERAL / SUBMISSION
     String fileUrl;
     String thumbnail; // For images or videos, a thumbnail URL
     Instant uploadedAt;

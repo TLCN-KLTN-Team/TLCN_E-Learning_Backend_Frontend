@@ -2,6 +2,8 @@ package demo.app.chat_app.controller;
 
 import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
 import demo.app.chat_app.dto.response.*;
+import demo.app.chat_app.model.enums.AttachmentCategory;
+import demo.app.chat_app.service.AttachmentService;
 import demo.app.chat_app.service.ChannelService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ChannelController {
     ChannelService channelService;
+    AttachmentService attachmentService;
 
     @GetMapping("/{channelId}")
     public ApiResponse<ChannelResponse> getChannel(@PathVariable String channelId) {
@@ -123,5 +126,47 @@ public class ChannelController {
                     .message("Failed to end channel: " + e.getMessage())
                     .build();
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // UC-41: Cross-review & file panel
+    // ══════════════════════════════════════════════════════════════════
+
+    /**
+     * Liệt kê attachments của channel theo category (Tài liệu chung / Bài đã nộp).
+     * Default = GENERAL nếu không truyền query param.
+     */
+    @GetMapping("/{channelId}/attachments")
+    public ApiResponse<List<AttachmentResponse>> getChannelAttachments(
+            @PathVariable String channelId,
+            @RequestParam(value = "category", required = false) AttachmentCategory category) {
+        List<AttachmentResponse> attachments = attachmentService.listByChannel(channelId, category);
+        return ApiResponse.<List<AttachmentResponse>>builder()
+                .result(attachments)
+                .message("Channel attachments retrieved successfully")
+                .build();
+    }
+
+    /**
+     * Channel mà channelId đang được phân công chấm chéo.
+     */
+    @GetMapping("/{channelId}/cross-review-target")
+    public ApiResponse<BasicChannelResponse> getCrossReviewTarget(@PathVariable String channelId) {
+        return ApiResponse.<BasicChannelResponse>builder()
+                .result(channelService.getCrossReviewTarget(channelId))
+                .message("Cross-review target retrieved successfully")
+                .build();
+    }
+
+    /**
+     * SUBMISSION attachments của channel đối tác — chỉ truy cập được trong phase REVIEW.
+     */
+    @GetMapping("/{channelId}/cross-review-attachments")
+    public ApiResponse<List<AttachmentResponse>> getCrossReviewAttachments(@PathVariable String channelId) {
+        List<AttachmentResponse> attachments = attachmentService.listSubmissionsForCrossReview(channelId);
+        return ApiResponse.<List<AttachmentResponse>>builder()
+                .result(attachments)
+                .message("Cross-review submissions retrieved successfully")
+                .build();
     }
 }

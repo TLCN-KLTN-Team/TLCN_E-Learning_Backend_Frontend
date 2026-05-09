@@ -6,7 +6,7 @@ import org.mapstruct.Mapper;
 
 import java.util.List;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface MessageAttachmentMapper {
     List<AttachmentResponse> toAttachmentResponseList(List<MessageAttachment> attachments);
     AttachmentResponse toAttachmentResponse(MessageAttachment attachment);

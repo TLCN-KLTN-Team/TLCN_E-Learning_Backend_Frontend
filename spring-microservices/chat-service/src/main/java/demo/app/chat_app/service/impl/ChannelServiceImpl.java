@@ -23,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -191,6 +193,29 @@ public class ChannelServiceImpl implements ChannelService {
                 .orElse(savedChannel);
     }
 
+    /**
+     * UC-41: validate 2 mốc deadline cho channel GROUP làm bài tập.
+     * Service-side enforcement, không phụ thuộc bean validation.
+     */
+    private void validateDeadlines(String submissionStr, String crossReviewStr, boolean allowCrossReview) {
+        if (submissionStr == null || submissionStr.isBlank()) {
+            throw new AppException(ErrorCode.SUBMISSION_DEADLINE_REQUIRED);
+        }
+        Instant submission = DateTimeUtils.parseIsoToInstant(submissionStr);
+        if (submission.isBefore(Instant.now())) {
+            throw new AppException(ErrorCode.END_TIME_INVALID);
+        }
+        if (allowCrossReview) {
+            if (crossReviewStr == null || crossReviewStr.isBlank()) {
+                throw new AppException(ErrorCode.INVALID_DEADLINE_RANGE);
+            }
+            Instant crossReview = DateTimeUtils.parseIsoToInstant(crossReviewStr);
+            if (crossReview.isBefore(submission.plus(1, ChronoUnit.HOURS))) {
+                throw new AppException(ErrorCode.INVALID_DEADLINE_RANGE);
+            }
+        }
+    }
+
     @Override
     public BasicChannelResponse createChannel(ChannelCreationRequest request) {
 
@@ -206,7 +231,8 @@ public class ChannelServiceImpl implements ChannelService {
             throw new AppException(ErrorCode.CHANNEL_ALREADY_EXISTS);
         }
 
-        // UC-41: parse 2 deadline. crossReviewDeadline chỉ dùng khi allowCrossReview=true.
+        // UC-41: validate + parse 2 deadline. crossReviewDeadline chỉ dùng khi allowCrossReview=true.
+        validateDeadlines(request.getSubmissionDeadline(), request.getCrossReviewDeadline(), request.isAllowCrossReview());
         Instant submissionDeadline = DateTimeUtils.parseIsoToInstant(request.getSubmissionDeadline());
         Instant crossReviewDeadline = request.isAllowCrossReview()
                 ? DateTimeUtils.parseIsoToInstant(request.getCrossReviewDeadline())
@@ -255,6 +281,9 @@ public class ChannelServiceImpl implements ChannelService {
     @Transactional
     public BulkRandomChannelResponse bulkRandomlyCreateChannels(BulkRandomChannelRequest request) {
 
+        // UC-41: validate trước khi tạo bất kỳ channel nào
+        validateDeadlines(request.getSubmissionDeadline(), request.getCrossReviewDeadline(), request.isAllowCrossReview());
+
         // Get list members from section
         Section section = sectionRepository.findById(request.getSectionId())
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
@@ -264,6 +293,11 @@ public class ChannelServiceImpl implements ChannelService {
         Map<Integer, List<String>> groupAssignments = randomlyAssignMembersToGroups(
                 new ArrayList<>(section.getSectionMembers()),
                 request.getMembersPerGroup());
+
+        // UC-41: cross-review cần >= 2 nhóm
+        if (request.isAllowCrossReview() && groupAssignments.size() < 2) {
+            throw new AppException(ErrorCode.NOT_ENOUGH_GROUPS_FOR_CROSS_REVIEW);
+        }
 
         groupAssignments.forEach((groupNum, memberIds) -> {
             String channelName = String.format("%s - Nhóm %d", request.getChannelName(), groupNum);
@@ -282,9 +316,52 @@ public class ChannelServiceImpl implements ChannelService {
             bulkChannelResponses.add(channelResponse);
         });
 
+        // UC-41: gán cross-review target theo vòng tròn A→B→C→…→A
+        if (request.isAllowCrossReview() && bulkChannelResponses.size() >= 2) {
+            assignCircularCrossReviewTargets(bulkChannelResponses);
+        }
+
         return BulkRandomChannelResponse.builder()
                 .channels(bulkChannelResponses)
                 .build();
+    }
+
+    /**
+     * UC-41: gán reviewTargetChannelId theo vòng tròn.
+     * Shuffle ngẫu nhiên rồi nối A→B→C→…→A. Mỗi nhóm chấm đúng 1 nhóm khác,
+     * không trùng chính nó, không có nhóm nào bị bỏ qua.
+     */
+    private void assignCircularCrossReviewTargets(List<BasicChannelResponse> bulkChannelResponses) {
+        List<String> channelIds = bulkChannelResponses.stream()
+                .map(BasicChannelResponse::getId)
+                .collect(Collectors.toCollection(ArrayList::new));
+        Collections.shuffle(channelIds);
+
+        List<Channel> channels = channelRepository.findAllById(channelIds);
+        Map<String, Channel> byId = channels.stream()
+                .collect(Collectors.toMap(Channel::getId, c -> c));
+        for (int i = 0; i < channelIds.size(); i++) {
+            String currentId = channelIds.get(i);
+            String targetId = channelIds.get((i + 1) % channelIds.size());
+            byId.get(currentId).setReviewTargetChannelId(targetId);
+        }
+        channelRepository.saveAll(channels);
+        log.info("UC-41: assigned circular cross-review for {} channels", channelIds.size());
+    }
+
+    @Override
+    public BasicChannelResponse getCrossReviewTarget(String channelId) {
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        if (!channel.isAllowCrossReview()) {
+            throw new AppException(ErrorCode.CROSS_REVIEW_NOT_ALLOWED);
+        }
+        if (channel.getReviewTargetChannelId() == null) {
+            throw new AppException(ErrorCode.NO_CROSS_REVIEW_TARGET);
+        }
+        Channel target = channelRepository.findById(channel.getReviewTargetChannelId())
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        return channelMapper.toBasicChannelResponse(target);
     }
 
     private Map<Integer, List<String>> randomlyAssignMembersToGroups(List<String> memberIds, int membersPerGroup) {
