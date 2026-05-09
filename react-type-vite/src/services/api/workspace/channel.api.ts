@@ -1,6 +1,8 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
 import type {
+  AttachmentCategory,
+  AttachmentResponse,
   BasicChannelResponse,
   BulkRandomChannelRequest,
   BulkRandomChannelResponse,
@@ -92,3 +94,46 @@ export const getListBasicChannelsBySectionId = async (
   );
   return response.data.result;
 }
+
+// ─── UC-41: cross-review & file panel ────────────────────────────────
+
+/**
+ * Liệt kê attachment của channel theo phân loại.
+ * Default GENERAL nếu không truyền category.
+ */
+export const getChannelAttachments = async (
+  channelId: string,
+  category?: AttachmentCategory
+): Promise<AttachmentResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<AttachmentResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/attachments`,
+    { params: category ? { category } : undefined }
+  );
+  return response.data.result;
+};
+
+/**
+ * Lấy channel mà nhóm này được phân công chấm chéo.
+ * Throw nếu allowCrossReview=false hoặc chưa được pair.
+ */
+export const getCrossReviewTarget = async (
+  channelId: string
+): Promise<BasicChannelResponse> => {
+  const response = await axiosInstance.get<ApiResponse<BasicChannelResponse>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/cross-review-target`
+  );
+  return response.data.result;
+};
+
+/**
+ * Lấy SUBMISSION attachments của channel mà nhóm này được phân chấm.
+ * Chỉ truy cập được trong phase REVIEW.
+ */
+export const getCrossReviewAttachments = async (
+  channelId: string
+): Promise<AttachmentResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<AttachmentResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/cross-review-attachments`
+  );
+  return response.data.result;
+};

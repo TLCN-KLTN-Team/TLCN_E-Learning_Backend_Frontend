@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { X, Hash, Users } from "lucide-react";
-import { addMinutes, format } from "date-fns";
+import { addHours, addMinutes, format, parseISO } from "date-fns";
 import { getUsersByKeyword } from "@/services/api/workspace/workspace.api";
 import { toast } from "react-toastify";
 import type {
@@ -43,9 +43,13 @@ const AddChannelModal = ({
   const [allowCrossReview, setAllowCrossReview] = useState(false);
   const [totalStudents, setTotalStudents] = useState<number>(0); // TODO: Get from section/workspace
 
-  // Exact end time state (only for GROUP)
-  const [endTimeLocal, setEndTimeLocal] = useState<string>(() =>
-    format(addMinutes(new Date(), 15), "yyyy-MM-dd'T'HH:mm"),
+  // UC-41: 2 mốc deadline (datetime-local string).
+  // submissionDeadline luôn cần; crossReviewDeadline chỉ khi allowCrossReview=true.
+  const [submissionDeadlineLocal, setSubmissionDeadlineLocal] = useState<string>(
+    () => format(addMinutes(new Date(), 15), "yyyy-MM-dd'T'HH:mm"),
+  );
+  const [crossReviewDeadlineLocal, setCrossReviewDeadlineLocal] = useState<string>(
+    () => format(addHours(addMinutes(new Date(), 15), 2), "yyyy-MM-dd'T'HH:mm"),
   );
 
   // Student search states (only for TEXT)
@@ -129,22 +133,38 @@ const AddChannelModal = ({
         return;
       }
 
-      // Prepare request data based on channel type
+      if (selectedType === ChannelType.GROUP) {
+        if (!submissionDeadlineLocal) {
+          toast.error("Vui lòng chọn hạn nộp bài hợp lệ");
+          return;
+        }
+        if (allowCrossReview) {
+          if (!crossReviewDeadlineLocal) {
+            toast.error("Vui lòng chọn hạn chấm chéo");
+            return;
+          }
+          if (
+            parseISO(crossReviewDeadlineLocal) <=
+            addHours(parseISO(submissionDeadlineLocal), 1)
+          ) {
+            toast.error("Hạn chấm chéo phải sau hạn nộp ít nhất 1 giờ");
+            return;
+          }
+        }
+      }
+
       const requestData: BulkRandomChannelRequest = {
         sectionId: targetSectionId,
         description: channelDescription.trim(),
         channelName: channelName.trim(),
         channelType: selectedType,
-        endTime: endTimeLocal,
+        submissionDeadline: submissionDeadlineLocal,
+        crossReviewDeadline: allowCrossReview
+          ? crossReviewDeadlineLocal
+          : undefined,
         membersPerGroup: membersPerGroup,
         allowCrossReview: allowCrossReview,
       };
-      if (selectedType === ChannelType.GROUP) {
-        if (!endTimeLocal) {
-          toast.error("Vui lòng chọn thời gian kết thúc hợp lệ");
-          return;
-        }
-      }
 
       console.log("🚀 Creating channel with data:", requestData);
 
@@ -171,8 +191,12 @@ const AddChannelModal = ({
     // Reset GROUP states
     setMembersPerGroup(1);
     setAllowCrossReview(false);
-    // add 15 minutes to current time for default end time
-    setEndTimeLocal(format(addMinutes(new Date(), 15), "yyyy-MM-dd'T'HH:mm"));
+    setSubmissionDeadlineLocal(
+      format(addMinutes(new Date(), 15), "yyyy-MM-dd'T'HH:mm"),
+    );
+    setCrossReviewDeadlineLocal(
+      format(addHours(addMinutes(new Date(), 15), 2), "yyyy-MM-dd'T'HH:mm"),
+    );
 
     // Reset TEXT states
     setSelectedStudents([]);
@@ -380,10 +404,12 @@ const AddChannelModal = ({
                 totalStudents={totalStudents}
                 membersPerGroup={membersPerGroup}
                 allowCrossReview={allowCrossReview}
-                endTimeLocal={endTimeLocal}
+                submissionDeadlineLocal={submissionDeadlineLocal}
+                crossReviewDeadlineLocal={crossReviewDeadlineLocal}
                 onMembersPerGroupChange={setMembersPerGroup}
                 onAllowCrossReviewChange={setAllowCrossReview}
-                onEndTimeChange={setEndTimeLocal}
+                onSubmissionDeadlineChange={setSubmissionDeadlineLocal}
+                onCrossReviewDeadlineChange={setCrossReviewDeadlineLocal}
               />
             )}
 

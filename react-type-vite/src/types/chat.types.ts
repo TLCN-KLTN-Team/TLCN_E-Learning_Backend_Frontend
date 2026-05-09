@@ -22,9 +22,28 @@ export const ChannelStatus = {
   ACTIVE: "ACTIVE",
   LOCKED: "LOCKED",
   ARCHIVED: "ARCHIVED",
+  DELETED: "DELETED",
 } as const;
 
 export type ChannelStatus = (typeof ChannelStatus)[keyof typeof ChannelStatus];
+
+// UC-41: pha runtime của channel GROUP làm bài tập (do BE compute từ deadlines + now)
+export const ChannelPhase = {
+  OPEN: "OPEN",
+  REVIEW: "REVIEW",
+  LOCKED: "LOCKED",
+} as const;
+
+export type ChannelPhase = (typeof ChannelPhase)[keyof typeof ChannelPhase];
+
+// UC-41: phân loại tài liệu trong channel GROUP
+export const AttachmentCategory = {
+  GENERAL: "GENERAL",
+  SUBMISSION: "SUBMISSION",
+} as const;
+
+export type AttachmentCategory =
+  (typeof AttachmentCategory)[keyof typeof AttachmentCategory];
 
 export interface UserResponse {
   id: string;
@@ -90,7 +109,16 @@ export interface ChannelResponse {
   lastActivityAt: string;
   messages: ChatMessageResponse[];
   createdAt: string;
-  endTime: number; // Unix timestamp in milliseconds, optional
+  endTime?: number; // Unix timestamp in milliseconds, optional (legacy)
+
+  // UC-41 (chỉ có với channel GROUP làm bài tập)
+  submissionDeadline?: string; // ISO instant
+  crossReviewDeadline?: string; // ISO instant, null khi không bật chấm chéo
+  allowCrossReview?: boolean;
+  reviewTargetChannelId?: string | null;
+  submissionClosedAt?: string | null;
+  expiresAt?: string;
+  phase?: ChannelPhase;
 }
 
 export interface BulkRandomChannelResponse {
@@ -116,9 +144,12 @@ export interface BulkRandomChannelRequest {
   channelType: ChannelType;
   channelName: string;
   description?: string;
-  endTime: string; // ISO-8601 string for backend Instant parsing
-  membersPerGroup: number; // Số lượng thành viên trong một nhóm
-  allowCrossReview: boolean; // Cho phép chấm bài chéo
+  /** UC-41: hạn nộp bài (ISO-8601). Bắt buộc */
+  submissionDeadline: string;
+  /** UC-41: hạn chấm chéo (ISO-8601). Bắt buộc khi allowCrossReview=true, phải > submissionDeadline + 1h */
+  crossReviewDeadline?: string;
+  membersPerGroup: number;
+  allowCrossReview: boolean;
 }
 
 export interface ChatMessageRequest {
@@ -147,6 +178,8 @@ export interface AttachmentResponse {
   contentType: string;
   fileSize: number;
   attachmentType: AttachmentType;
+  /** UC-41: GENERAL (Tài liệu chung) / SUBMISSION (Bài đã nộp) */
+  category?: AttachmentCategory;
   fileUrl: string;
   thumbnailUrl?: string | null;
   uploadedAt: string;
