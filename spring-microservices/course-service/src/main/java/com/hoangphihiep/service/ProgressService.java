@@ -95,7 +95,7 @@ public class ProgressService {
                 .build();
     }
 
-    public CourseProgressDetailResponse getCourseProgressDetail(Integer classId) {
+    public CourseProgressResponse getCourseProgressDetail(Integer classId) {
         String userId = getCurrentUserId();
 
         CourseClass courseClass = courseClassRepository.findById(classId)
@@ -123,18 +123,11 @@ public class ProgressService {
                     ", isCompleted=" + lp.isCompleted());
         });
 
-        return CourseProgressDetailResponse.builder()
-                .courseProgress(courseProgressResponse)
-                .totalItems(stats.getTotalLessons() + stats.getTotalQuizzes() + stats.getTotalAssignments())
-                .completedItems(stats.getCompletedLessons() + stats.getCompletedQuizzes() + stats.getCompletedAssignments())
-                .completedLessons(stats.getCompletedLessons())
-                .completedQuizzes(stats.getCompletedQuizzes())
-                .completedAssignments(stats.getCompletedAssignments())
-                .build();
+        return courseProgressResponse;
     }
 
     @Transactional
-    public CourseProgressDetailResponse markLessonComplete(MarkLessonCompleteRequest request) {
+    public CourseProgressResponse markLessonComplete(MarkLessonCompleteRequest request) {
         String userId = getCurrentUserId();
 
         Lesson lesson = lessonRepository.findById(request.getLessonId())

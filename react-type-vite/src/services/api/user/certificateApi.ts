@@ -30,8 +30,20 @@ export const verifyCertificate = async (
     }
 };
 
-export const claimCertificate = async (
-    courseId: number
+export const claimCertificateWithWallet = async (
+    courseId: number,
+    walletAddress: string,
+    signature: string,
+    message: string
 ): Promise<void> => {
-    await axiosInstance.post(`${API_PREFIX}/claim/${courseId}`);
+    await axiosInstance.post(`${API_PREFIX}/claim/${courseId}`, {
+        walletAddress,
+        signature,
+        message,
+    });
+};
+
+export const getClaimChallenge = async (courseId: number) => {
+    const resp = await axiosInstance.get(`/course-management/user/certificates/claim/${courseId}/challenge`);
+    return resp.data.result as { message: string; nonce: string; expiresAt: string };
 };

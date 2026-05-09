@@ -16,6 +16,7 @@ import java.util.Date;
 public class CertificateResponse {
     private Integer id;
     private String userId;
+    private String studentWallet;
     private String studentName;
     private Integer courseId;
     private String courseName;
@@ -26,12 +27,19 @@ public class CertificateResponse {
     private BigInteger blockNumber;
     private Double finalScore;
     private String grade;
+    private String certificateHash;
+    private String pdfCid;
+    private String metadataCid;
+    private String pdfUrl;
+    private String tokenUri;
+    private String tokenId;
     private Certificate.CertificateStatus status;
 
     public static CertificateResponse fromEntity(Certificate certificate) {
         return CertificateResponse.builder()
                 .id(certificate.getId())
                 .userId(certificate.getUserId())
+            .studentWallet(certificate.getStudentWallet())
                 .courseId(certificate.getPublishedCourse().getId())
                 .courseName(certificate.getPublishedCourse().getCourseName())
                 .certificateCode(certificate.getCertificateCode())
@@ -42,6 +50,12 @@ public class CertificateResponse {
                 .status(certificate.getStatus())
                 .finalScore(certificate.getFinalScore())
                 .grade(certificate.getGrade())
+                .certificateHash(certificate.getCertificateHash())
+                .pdfCid(certificate.getPdfCid())
+                .metadataCid(certificate.getMetadataCid())
+                .pdfUrl(certificate.getPdfUrl())
+                .tokenUri(certificate.getTokenUri())
+                .tokenId(certificate.getTokenId())
                 .build();
     }
 }

@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface CertificateRepository extends JpaRepository<Certificate, Integer> {
     Optional<Certificate> findByUserIdAndPublishedCourse_Id(String userId, Integer publishedCourseId);
     Optional<Certificate> findByCertificateCode(String certificateCode);
+    Optional<Certificate> findByCertificateHash(String certificateHash);
 }

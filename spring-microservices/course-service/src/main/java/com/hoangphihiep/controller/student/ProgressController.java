@@ -2,7 +2,7 @@ package com.hoangphihiep.controller.student;
 
 import com.hoangphihiep.dto.request.MarkLessonCompleteRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.CourseProgressDetailResponse;
+import com.hoangphihiep.dto.response.CourseProgressResponse;
 import com.hoangphihiep.dto.response.ProgressStatsResponse;
 import com.hoangphihiep.service.ProgressService;
 import lombok.RequiredArgsConstructor;
@@ -24,23 +24,23 @@ public class ProgressController {
     }
 
     @GetMapping("/class/{classId}/detail")
-    public ApiResponse<CourseProgressDetailResponse> getCourseProgressDetail(
+    public ApiResponse<CourseProgressResponse> getCourseProgressDetail(
             @PathVariable Integer classId) {
-        CourseProgressDetailResponse result =
+        CourseProgressResponse result =
                 progressService.getCourseProgressDetail(classId);
 
-        System.out.println ("CourseProgressDetailResponse for classId {}: {}" +
+        System.out.println ("CourseProgressResponse for classId {}: {}" +
                 classId + result);
 
-        return ApiResponse.<CourseProgressDetailResponse>builder()
+        return ApiResponse.<CourseProgressResponse>builder()
                 .result(result)
                 .build();
     }
 
     @PostMapping("/lesson/complete")
-    public ApiResponse<CourseProgressDetailResponse> markLessonComplete(
+    public ApiResponse<CourseProgressResponse> markLessonComplete(
             @RequestBody MarkLessonCompleteRequest request) {
-        return ApiResponse.<CourseProgressDetailResponse>builder()
+        return ApiResponse.<CourseProgressResponse>builder()
                 .result(progressService.markLessonComplete(request))
                 .build();
     }

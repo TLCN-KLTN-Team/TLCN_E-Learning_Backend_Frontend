@@ -102,7 +102,7 @@ public class UserProgressService {
                 .build();
     }
 
-    public CourseProgressDetailResponse getPublishedCourseProgressDetail(Integer publishedCourseId) {
+    public CourseProgressResponse getPublishedCourseProgressDetail(Integer publishedCourseId) {
         String userId = getCurrentUserId();
 
         PublishedCourse publishedCourse = publishedCourseRepository.findById(publishedCourseId)
@@ -123,18 +123,11 @@ public class UserProgressService {
 
         CourseProgressResponse courseProgressResponse = courseProgressMapper.toCourseProgressResponse(courseProgress);
 
-        return CourseProgressDetailResponse.builder()
-                .courseProgress(courseProgressResponse)
-                .totalItems(stats.getTotalLessons() + stats.getTotalQuizzes() + stats.getTotalAssignments())
-                .completedItems(stats.getCompletedLessons() + stats.getCompletedQuizzes() + stats.getCompletedAssignments())
-                .completedLessons(stats.getCompletedLessons())
-                .completedQuizzes(stats.getCompletedQuizzes())
-                .completedAssignments(stats.getCompletedAssignments())
-                .build();
+        return courseProgressResponse;
     }
 
     @Transactional
-    public CourseProgressDetailResponse markLessonCompleteForPublishedCourse(MarkLessonCompleteRequest request) {
+    public CourseProgressResponse markLessonCompleteForPublishedCourse(MarkLessonCompleteRequest request) {
         String userId = getCurrentUserId();
 
         Lesson lesson = lessonRepository.findById(request.getLessonId())
@@ -201,8 +194,7 @@ public class UserProgressService {
             if (courseProgress.getCompleteDate() == null) {
                 courseProgress.setCompleteDate(new Date(System.currentTimeMillis()));
             }
-            // Trigger Blockchain Certificate Issuance (Idempotent check in service)
-            certificateService.issueCertificateAsync(courseProgress.getIdUser(), publishedCourseId);
+
         }
 
         courseProgressRepository.save(courseProgress);

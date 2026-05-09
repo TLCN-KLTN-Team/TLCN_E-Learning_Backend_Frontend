@@ -22,4 +22,11 @@ public class AnonymousCertificateController {
                 .result(certificateService.verifyCertificatePublic(code))
                 .build();
     }
+
+    @GetMapping("/verify-hash/{hash}")
+    public ApiResponse<PublicCertificateVerificationResponse> verifyCertificatePublicByHash(@PathVariable String hash) {
+        return ApiResponse.<PublicCertificateVerificationResponse>builder()
+                .result(certificateService.verifyCertificatePublicByHash(hash))
+                .build();
+    }
 }

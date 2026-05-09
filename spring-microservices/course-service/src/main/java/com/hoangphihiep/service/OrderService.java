@@ -2,6 +2,7 @@ package com.hoangphihiep.service;
 
 import com.hoangphihiep.dto.request.CreationOrderItemRequest;
 import com.hoangphihiep.dto.request.CreationOrderRequest;
+import com.hoangphihiep.dto.request.NotificationMessage;
 import com.hoangphihiep.dto.response.*;
 import com.hoangphihiep.entity.*;
 import com.hoangphihiep.exception.AppException;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -96,28 +98,17 @@ public class OrderService {
             orderItem.setPaymentStatus(PaymentStatus.PAID);
             orderItem.setPaymentTxnId(orderId); // Store transaction reference
 
-            log.info("Updated OrderItem ID: {} to PAID status", orderItem.getId());
-
-            // Create payout order items for revenue sharing
             try {
                 payoutOrderItemService.createPayoutOrderItems(orderItem);
 
-                // Update payout status to indicate revenue has been calculated
                 orderItem.setPayoutStatus(PayoutStatus.NOT_SETTLED);
 
-                log.info("Successfully created payout items for OrderItem ID: {}", orderItem.getId());
             } catch (Exception e) {
                 log.error("Error creating payout items for OrderItem ID: {}", orderItem.getId(), e);
-                // Continue processing other items even if one fails
             }
         }
 
-        // 4. Save all changes
-        Order savedOrder = orderRepository.save(order);
-
-        log.info("Successfully processed payment for order: {} with {} items",
-                orderId, order.getOrderItems().size());
-        return savedOrder;
+        return orderRepository.save(order);
     }
 
     public List<OrderResponse> getHistoryOrders() {
@@ -191,8 +182,6 @@ public class OrderService {
                     itemResponse.setBuyerId(user.getId());
                 }
             } catch (Exception e) {
-                log.warn("Failed to fetch user info for userId {}: {}", orderItem.getOrder().getIdUser(), e.getMessage());
-                // Continue processing other items even if one fails
                 itemResponse.setBuyerName("N/A");
                 itemResponse.setBuyerEmail("N/A");
             }
@@ -228,50 +217,38 @@ public class OrderService {
     @Transactional
     public void refundCourse(Integer orderItemId) {
         try {
-            log.info("Starting ESCROW refund process for orderItemId: {}", orderItemId);
-            
-            // 1. Find OrderItem
+
             OrderItem orderItem = orderItemRepository.findById(orderItemId)
                     .orElseThrow(() -> new AppException(ErrorCode.ORDER_ITEM_NOT_FOUND));
-            log.info("Found order item: {}", orderItemId);
 
             String userId = JwtUtils.getCurrentUserId();
             if (!orderItem.getOrder().getIdUser().equals(userId)) {
                 throw new AppException(ErrorCode.UNAUTHORIZED);
             }
-            log.info("User authorization passed: {}", userId);
 
             if (orderItem.getPaymentStatus() == PaymentStatus.REFUNDED) {
                 throw new AppException(ErrorCode.REFUND_ALREADY_PROCESSED);
             }
-            log.info("Payment status check passed");
 
             // 2. Validate 7-day window
             Date orderDate = orderItem.getOrder().getOrderDate();
             if (orderDate != null) {
-                long daysBetween = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(
+                long daysBetween = TimeUnit.MILLISECONDS.toDays(
                         System.currentTimeMillis() - orderDate.getTime()
                 );
                 if (daysBetween > 7) {
                     throw new AppException(ErrorCode.REFUND_WINDOW_EXPIRED);
                 }
             }
-            log.info("7-day window check passed");
 
-            // 3. Validate Progress < 30%
-            log.info("Getting published course...");
             PublishedCourse publishedCourse = orderItem.getCourse();
-            log.info("Published course retrieved: {}", publishedCourse != null ? publishedCourse.getId() : "null");
-            
-            log.info("Getting course from published course...");
+
             Course course = publishedCourse != null ? publishedCourse.getCourse() : null;
-            log.info("Course retrieved: {}", course != null ? course.getId() : "null");
             
             Integer courseId = course != null ? course.getId() : null;
             if (courseId == null) {
                 throw new AppException(ErrorCode.COURSE_NOT_FOUND);
             }
-            log.info("Course ID: {}", courseId);
             
             CourseProgress progress = courseProgressRepository
                     .findByUserIdAndCourseId(userId, courseId)
@@ -280,10 +257,7 @@ public class OrderService {
             if (progress != null && progress.getProgressPercentage() > 30.0) {
                 throw new AppException(ErrorCode.REFUND_PROGRESS_TOO_HIGH);
             }
-            log.info("Progress check passed");
 
-            // 4. ⭐ ESCROW LOGIC - Tìm escrow item
-            log.info("Looking for HELD escrow item...");
             PayoutOrderItem escrowItem = payoutOrderItemService.getPayoutItemsByOrderItem(orderItemId)
                     .stream()
                     .filter(item -> item.getStatus() == PayoutOrderItemStatus.HELD)
@@ -291,11 +265,10 @@ public class OrderService {
                     .orElse(null);
             
             if (escrowItem == null) {
-                log.warn("No HELD escrow found, checking if already released...");
                 // Nếu đã release (sau 7 ngày) → không thể refund
                 boolean hasReleased = payoutOrderItemService.getPayoutItemsByOrderItem(orderItemId)
                         .stream()
-                        .anyMatch(item -> item.getStatus() == com.hoangphihiep.utils.PayoutOrderItemStatus.RELEASED);
+                        .anyMatch(item -> item.getStatus() == PayoutOrderItemStatus.RELEASED);
                 
                 if (hasReleased) {
                     throw new AppException(ErrorCode.REFUND_WINDOW_EXPIRED);
@@ -303,22 +276,15 @@ public class OrderService {
                     throw new AppException(ErrorCode.ESCROW_NOT_FOUND);
                 }
             }
-            
-            // 5. Kiểm tra canRefund
+
             if (!escrowItem.getCanRefund()) {
                 throw new AppException(ErrorCode.REFUND_NOT_ALLOWED);
             }
-            
-            // 6. ✅ REFUND TỪ ESCROW - SIÊU ĐƠN GIẢN!
-            log.info("Updating payment status to PENDING_REFUND...");
+
             orderItem.setPaymentStatus(PaymentStatus.PENDING_REFUND);
             orderItemRepository.save(orderItem);
-            log.info("Order item saved with PENDING_REFUND status");
 
-            // 7. Notifications
-            log.info("Sending refund request notifications...");
             sendRefundRequestNotifications(orderItem, userId);
-            log.info("Refund request submitted successfully");
         } catch (AppException e) {
             log.error("AppException during refund: {}", e.getMessage());
             throw e;
@@ -331,55 +297,38 @@ public class OrderService {
     @Transactional
     public void approveRefund(Integer orderItemId) {
         try {
-            log.info("Starting ESCROW refund approval for orderItemId: {}", orderItemId);
-            
-            // 1. Find OrderItem
             OrderItem orderItem = orderItemRepository.findById(orderItemId)
                     .orElseThrow(() -> new AppException(ErrorCode.ORDER_ITEM_NOT_FOUND));
             
             if (orderItem.getPaymentStatus() != PaymentStatus.PENDING_REFUND) {
                 throw new AppException(ErrorCode.INVALID_REQUEST);
             }
-            log.info("Order item validated for approval");
 
-            // 2. ⭐ ESCROW LOGIC - Tìm escrow item
-            log.info("Looking for HELD escrow item...");
             PayoutOrderItem escrowItem = payoutOrderItemService.getPayoutItemsByOrderItem(orderItemId)
                     .stream()
                     .filter(item -> item.getStatus() == PayoutOrderItemStatus.HELD)
                     .findFirst()
                     .orElseThrow(() -> new AppException(ErrorCode.ESCROW_NOT_FOUND));
-            
-            // 3. ✅ REFUND TỪ ESCROW - 2 DÒNG CODE!
+
             escrowItem.setStatus(PayoutOrderItemStatus.REFUNDED);
             escrowItem.setCanRefund(false);
             payoutOrderItemService.getPayoutOrderItemRepository().save(escrowItem);
-            log.info("Escrow item marked as REFUNDED");
 
-            // 4. Update OrderItem status
             orderItem.setPaymentStatus(PaymentStatus.REFUNDED);
             log.info("Payment status updated to REFUNDED");
 
-            // 5. Check if all items are refunded
-            log.info("Checking if all order items are refunded...");
             Order mainOrder = orderItem.getOrder();
             boolean allRefunded = mainOrder.getOrderItems().stream()
                     .allMatch(item -> item.getPaymentStatus() == PaymentStatus.REFUNDED);
             if (allRefunded) {
                 mainOrder.setOrderStatus(OrderStatus.CANCELLED);
             }
-            log.info("Order status check completed");
 
-            log.info("Saving order item and order...");
             orderItemRepository.save(orderItem);
             orderRepository.save(mainOrder);
-            log.info("Order item and order saved");
 
-            // 6. Notifications
-            log.info("Sending refund approval notifications...");
             String buyerId = orderItem.getOrder().getIdUser();
             sendRefundApprovedNotifications(orderItem, buyerId);
-            log.info("Refund approval completed successfully");
         } catch (AppException e) {
             log.error("AppException during refund approval: {}", e.getMessage());
             throw e;
@@ -392,7 +341,7 @@ public class OrderService {
     private void sendRefundRequestNotifications(OrderItem item, String userId) {
         try {
             // To User
-            notificationRepository.sendNotification(com.hoangphihiep.dto.request.NotificationMessage.builder()
+            notificationRepository.sendNotification(NotificationMessage.builder()
                     .userId(userId)
                     .type("REFUND_REQUESTED")
                     .message("Yêu cầu hoàn tiền cho khóa học " + item.getCourse().getCourseName() + " đã được gửi. Vui lòng chờ admin xử lý.")
@@ -403,7 +352,7 @@ public class OrderService {
                 var superAdmins = userRepository.getUsersByRole("SUPER_ADMIN").getResult();
                 if (superAdmins != null) {
                     for (var admin : superAdmins) {
-                        notificationRepository.sendNotification(com.hoangphihiep.dto.request.NotificationMessage.builder()
+                        notificationRepository.sendNotification(NotificationMessage.builder()
                                 .userId(admin.getId())
                                 .type("REFUND_REQUEST")
                                 .message("Yêu cầu hoàn tiền mới từ người dùng: Khóa học \"" + item.getCourse().getCourseName() + "\" (OrderItem #" + item.getId() + ")")
@@ -422,7 +371,7 @@ public class OrderService {
     private void sendRefundApprovedNotifications(OrderItem item, String userId) {
         try {
             // To User
-            notificationRepository.sendNotification(com.hoangphihiep.dto.request.NotificationMessage.builder()
+            notificationRepository.sendNotification(NotificationMessage.builder()
                     .userId(userId)
                     .type("REFUND_ACCEPTED")
                     .message("Yêu cầu hoàn tiền cho khóa học " + item.getCourse().getCourseName() + " đã được chấp nhận.")
@@ -433,7 +382,7 @@ public class OrderService {
                 var superAdmins = userRepository.getUsersByRole("SUPER_ADMIN").getResult();
                 if (superAdmins != null) {
                     for (var admin : superAdmins) {
-                        notificationRepository.sendNotification(com.hoangphihiep.dto.request.NotificationMessage.builder()
+                        notificationRepository.sendNotification(NotificationMessage.builder()
                                 .userId(admin.getId())
                                 .type("REFUND_PROCESSED")
                                 .message("Hoàn tiền đã xử lý: Khóa học \"" + item.getCourse().getCourseName() + "\" (OrderItem #" + item.getId() + ")")
@@ -447,7 +396,7 @@ public class OrderService {
 
             // To Teacher
             String teacherId = item.getCourse().getCourse().getIdTeacher();
-            notificationRepository.sendNotification(com.hoangphihiep.dto.request.NotificationMessage.builder()
+            notificationRepository.sendNotification(NotificationMessage.builder()
                     .userId(teacherId)
                     .type("REVENUE_ADJUSTMENT")
                     .message("Khóa học " + item.getCourse().getCourseName() + " đã bị hoàn tiền. Doanh thu đã được điều chỉnh.")

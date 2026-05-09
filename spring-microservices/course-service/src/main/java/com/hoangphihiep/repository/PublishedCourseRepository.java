@@ -14,6 +14,9 @@ import java.util.Optional;
 @Repository
 public interface PublishedCourseRepository extends JpaRepository<PublishedCourse, Integer> {
 
+        @Query("SELECT pc FROM PublishedCourse pc JOIN FETCH pc.course WHERE pc.id = :id")
+        Optional<PublishedCourse> findByIdWithCourse(@Param("id") Integer id);
+
     Optional<PublishedCourse> findByCourseId(Integer courseId);
 
     boolean existsByCourseId(Integer courseId);

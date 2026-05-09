@@ -1,7 +1,7 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { MarkLessonCompleteRequest } from "../request/markLessonCompleteRequest";
 import type { ApiResponse } from "../response/apiResponse";
-import type { CourseProgressDetailResponse } from "../response/courseProgressDetailResponse";
+import type { CourseProgressResponse } from "../response/courseProgressResponse";
 import type { ProgressStatsResponse } from "../response/progressStatsResponse";
 
 
@@ -20,9 +20,9 @@ export const getClassProgress = async (
 // Lấy chi tiết tiến độ khóa học
 export const getCourseProgressDetail = async (
   classId: number
-): Promise<CourseProgressDetailResponse> => {
+): Promise<CourseProgressResponse> => {
   const response = await axiosInstance.get<
-    ApiResponse<CourseProgressDetailResponse>
+    ApiResponse<CourseProgressResponse>
   >(`${PROGRESS_API_BASE}/class/${classId}/detail`);
   return response.data.result;
 };
@@ -30,9 +30,9 @@ export const getCourseProgressDetail = async (
 // Đánh dấu lesson đã hoàn thành
 export const markLessonComplete = async (
   request: MarkLessonCompleteRequest
-): Promise<CourseProgressDetailResponse> => {
+): Promise<CourseProgressResponse> => {
   const response = await axiosInstance.post<
-    ApiResponse<CourseProgressDetailResponse>
+    ApiResponse<CourseProgressResponse>
   >(`${PROGRESS_API_BASE}/lesson/complete`, request);
   return response.data.result;
 };

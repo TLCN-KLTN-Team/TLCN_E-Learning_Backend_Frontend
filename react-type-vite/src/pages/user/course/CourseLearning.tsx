@@ -139,6 +139,24 @@ const CourseLearning: React.FC = () => {
   const [certificate, setCertificate] = useState<CertificateResponse | null>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [isCheckingCertificate, setIsCheckingCertificate] = useState(false)
+  const certificatePollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const claimInProgressRef = useRef(false)
+
+  const clearCertificatePolling = () => {
+    if (certificatePollRef.current !== null) {
+      clearInterval(certificatePollRef.current)
+      certificatePollRef.current = null
+    }
+    // reset optimistic claim state
+    claimInProgressRef.current = false
+    setIsCheckingCertificate(false)
+  }
+
+  useEffect(() => {
+    return () => {
+      clearCertificatePolling()
+    }
+  }, [])
 
   // Current item - must be declared before useEffect hooks
   const currentItem = contentItems[currentItemIndex];
@@ -152,16 +170,13 @@ const CourseLearning: React.FC = () => {
     try {
       const stats = await progressApi.getPublishedCourseProgress(Number(courseId))
       setProgressStats(stats)
-      console.log("📊 Progress Stats:", stats)
-      // Fetch completed lessons detail
       const detail = await progressApi.getPublishedCourseProgressDetail(
         Number(courseId),
       );
       
       const completedLessonIds = new Set(
-        detail.courseProgress.lessonProgresses.map((lp) => lp.lessonId),
+        detail.lessonProgresses.map((lp) => lp.lessonId),
       );
-      console.log("✅ Completed Lesson IDs:", Array.from(completedLessonIds));
       setCompletedLessons(completedLessonIds);
 
       // Fetch completed quizzes and assignments (check from sections which items have attempts/submissions)
@@ -234,10 +249,6 @@ const CourseLearning: React.FC = () => {
     try {
       const cert = await certificateApi.getMyCertificate(Number(courseId))
       setCertificate(cert)
-      // If certificate is pending, poll for it (simple implementation)
-      if (cert && cert.status === 'PENDING') {
-        setTimeout(checkCertificate, 5000)
-      }
     } catch (e) {
       console.error("Error checking certificate", e)
     } finally {
@@ -248,24 +259,53 @@ const CourseLearning: React.FC = () => {
   const handleClaimCertificate = async () => {
     if (!courseId) return
     try {
-      await certificateApi.claimCertificate(Number(courseId))
+      clearCertificatePolling()
+      // If MetaMask available, prefer wallet ownership flow with server challenge
+      if (typeof window !== "undefined" && (window as any).ethereum) {
+        try {
+          const accounts: string[] = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+          const wallet = accounts && accounts.length > 0 ? accounts[0] : null;
+          if (!wallet) throw new Error('No wallet available')
+          // Fetch server challenge bound to user+course
+          const challenge = await certificateApi.getClaimChallenge(Number(courseId));
+          const message = challenge.message;
+          const signature = await (window as any).ethereum.request({ method: 'personal_sign', params: [message, wallet] });
+          await certificateApi.claimCertificateWithWallet(Number(courseId), wallet, signature, message);
+        } catch (mmErr) {
+          console.error('MetaMask signing failed or challenge failed', mmErr);
+          toast.error('Không thể xác thực ví. Vui lòng kiểm tra MetaMask và thử lại.')
+          return
+        }
+      } else {
+        toast.error('Không tìm thấy MetaMask. Vui lòng cài đặt và đăng nhập để nhận chứng chỉ.')
+        return
+      }
       toast.success("Đang xử lý cấp chứng chỉ...")
 
-      // Poll for certificate update (retry 5 times, every 2 seconds)
-      let retries = 5;
-      const poll = setInterval(async () => {
+      // Poll until the certificate is issued, failed, or backend remains pending.
+      let retries = 12;
+      certificatePollRef.current = setInterval(async () => {
         const cert = await certificateApi.getMyCertificate(Number(courseId))
         if (cert) {
           setCertificate(cert)
-          clearInterval(poll)
-          toast.success("Chứng chỉ đã được cấp thành công!")
+          if (cert.status === "ISSUED") {
+            clearCertificatePolling()
+            toast.success("Chứng chỉ đã được cấp thành công!")
+          } else if (cert.status === "FAILED") {
+            clearCertificatePolling()
+            toast.error("Không thể cấp chứng chỉ. Vui lòng thử lại.")
+          }
         } else {
           retries--;
-          if (retries <= 0) clearInterval(poll)
+          if (retries <= 0) {
+            clearCertificatePolling()
+            toast.info("Chứng chỉ vẫn đang được xử lý ở backend")
+          }
         }
       }, 2000)
 
     } catch (error) {
+      clearCertificatePolling()
       console.error("Error claiming certificate:", error)
       toast.error("Lỗi khi yêu cầu cấp chứng chỉ")
     }
@@ -833,7 +873,7 @@ const CourseLearning: React.FC = () => {
             </div>
 
             {/* Certificate Button Logic */}
-            {certificate ? (
+            {certificate?.status === "ISSUED" ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -845,16 +885,37 @@ const CourseLearning: React.FC = () => {
               >
                 <Award className="w-4 h-4" />
                 <span className="text-sm font-semibold">
-                  {certificate.status === 'PENDING' ? 'Đang xử lý...' : 'Chứng chỉ'}
+                  Chứng chỉ
                 </span>
+              </Button>
+            ) : certificate?.status === "PENDING" ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-yellow-500 text-white border-none gap-2 opacity-90"
+                disabled
+              >
+                <Award className="w-4 h-4" />
+                <span className="text-sm font-semibold">Đang xử lý...</span>
+              </Button>
+            ) : certificate?.status === "FAILED" ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white border-none gap-2"
+                onClick={() => handleClaimCertificate()}
+                disabled={isCheckingCertificate}
+              >
+                <Award className="w-4 h-4" />
+                <span className="text-sm font-semibold">Thử cấp lại</span>
               </Button>
             ) : (
               progressStats && progressStats.overallProgress >= 100 && (
-                <Button
+                  <Button
                   variant="outline"
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white border-none gap-2 animate-pulse"
-                  onClick={handleClaimCertificate}
+                    onClick={() => handleClaimCertificate()}
                   disabled={isCheckingCertificate}
                 >
                   <Award className="w-4 h-4" />
@@ -2794,70 +2855,6 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
       setSubmissionFiles([]);
     }
     setShowEditModal(true);
-  };
-
-  const handleDelete = async () => {
-    if (!submission) return;
-
-    try {
-      await assignmentApi.deleteSubmission(submission.id);
-      toast.success("Đã xóa bài nộp");
-      loadSubmission();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Không thể xóa bài nộp");
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!submission) return;
-
-    const canSubmitText = ["TEXT", "BOTH"].includes(
-      assignment.submissionType || "",
-    );
-    const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(
-      assignment.submissionType || "",
-    );
-    const canSubmitLink = ["LINK", "BOTH"].includes(
-      assignment.submissionType || "",
-    );
-
-    try {
-      setSubmitting(true);
-
-      const hasContent =
-        submissionContent || submissionFiles.length > 0 || submissionLink;
-      if (!hasContent) {
-        toast.error("Vui lòng nhập nội dung bài làm");
-        setSubmitting(false);
-        return;
-      }
-
-      const updateData = {
-        assignmentId: assignment.id,
-        submissionText: canSubmitText ? submissionContent : undefined,
-        submissionLink: canSubmitLink ? submissionLink : undefined,
-      };
-
-      const existingFiles = submission.submissionFiles || [];
-
-      await assignmentApi.updateSubmission(
-        submission.id,
-        updateData,
-        canSubmitFile ? submissionFiles : undefined,
-        canSubmitFile ? existingFiles : undefined,
-      );
-
-      toast.success("Đã cập nhật bài nộp");
-      setShowEditModal(false);
-      setSubmissionFiles([]);
-      loadSubmission();
-    } catch (error: any) {
-      toast.error(
-        error.response?.data?.message || "Không thể cập nhật bài nộp",
-      );
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   if (loading) {

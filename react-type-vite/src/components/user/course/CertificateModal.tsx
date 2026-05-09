@@ -1,11 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Award, Download, ExternalLink, ShieldCheck, Loader2 } from "lucide-react";
+import { Award, Download, ExternalLink, ShieldCheck, Loader2, Copy, FileJson } from "lucide-react";
 import type { CertificateResponse } from "@/services/api/response/certificateResponse";
 import { createRoute } from "@/constants/routes";
 import { toPng } from 'html-to-image'; // Đã thay thế html2canvas
 import jsPDF from 'jspdf';
+import { toast } from 'react-toastify';
 
 interface CertificateModalProps {
     open: boolean;
@@ -18,6 +19,20 @@ interface CertificateModalProps {
 const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, certificate, courseName, studentName = "Học viên" }) => {
     const certificateRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const ipfsGateway = import.meta.env.VITE_IPFS_GATEWAY_URL || "https://gateway.pinata.cloud/ipfs/";
+    const apiBaseUrl = (import.meta.env.VITE_BASE_URL || "http://localhost:8888/api/v1").replace(/\/$/, "");
+    const blockchainExplorerUrl = (import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || "").replace(/\/$/, "");
+    const blockchainChainId = Number(import.meta.env.VITE_BLOCKCHAIN_CHAIN_ID || "1337");
+
+    const resolveIpfsUrl = (value?: string | null): string | null => {
+        if (!value) return null;
+
+        if (value.startsWith("ipfs://")) {
+            return `${ipfsGateway.replace(/\/?$/, "/")}${value.replace("ipfs://", "")}`;
+        }
+
+        return value;
+    };
 
     const deriveGradeFromScore = (score: number | null): string => {
         if (score === null) return "Không có";
@@ -79,6 +94,84 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
         } finally {
             setIsDownloading(false);
         }
+    };
+
+    const getExplorerTxUrl = (txHash?: string | null): string | null => {
+        if (!txHash) return null;
+
+        if (blockchainExplorerUrl) {
+            return `${blockchainExplorerUrl}/tx/${txHash}`;
+        }
+
+        switch (blockchainChainId) {
+            case 137:
+                return `https://polygonscan.com/tx/${txHash}`;
+            case 80002:
+                return `https://amoy.polygonscan.com/tx/${txHash}`;
+            case 80001:
+                return `https://mumbai.polygonscan.com/tx/${txHash}`;
+            case 11155111:
+                return `https://sepolia.etherscan.io/tx/${txHash}`;
+            default:
+                return null;
+        }
+    };
+
+    const handleViewPolygonScan = () => {
+        const explorerUrl = getExplorerTxUrl(certificate?.transactionHash);
+
+        if (!certificate?.transactionHash) {
+            toast.info('Transaction hash không khả dụng');
+            return;
+        }
+
+        if (!explorerUrl) {
+            toast.info('Chưa cấu hình blockchain explorer cho mạng hiện tại');
+            return;
+        }
+
+        window.open(explorerUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleDownloadPdfFromBackend = async () => {
+        if (!certificate?.certificateCode) {
+            toast.error('Mã chứng chỉ không tìm thấy');
+            return;
+        }
+
+        try {
+            setIsDownloading(true);
+            // Download the actual PDF from Pinata/backend (not regenerated client-side)
+            // This ensures hash verification will work correctly
+            const pdfUrl = resolveIpfsUrl(certificate.pdfUrl) || `${import.meta.env.VITE_BASE_URL || "http://localhost:8888/api/v1"}/certificates/${certificate.certificateCode}/pdf`;
+            
+            const response = await fetch(pdfUrl);
+            if (!response.ok) throw new Error('Failed to fetch PDF');
+            
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Create temporary link to download
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `${certificate.certificateCode}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // revoke after download
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        } catch (error) {
+            console.error("Tải xuống PDF thất bại:", error);
+            toast.error('Tải xuống PDF thất bại');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success(`Đã sao chép ${label}`);
     };
 
     if (!certificate) return null;
@@ -180,8 +273,9 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                 </div>
 
                 {/* Footer Controls */}
-                <DialogFooter className="w-full flex flex-col md:flex-row gap-3 bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-200 mt-2 shrink-0">
-                    <div className="flex items-center gap-3 w-full md:w-1/2 bg-slate-50 p-2 sm:p-3 rounded-lg border border-slate-100 min-w-0">
+                <DialogFooter className="w-full flex flex-col gap-3 bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-200 mt-2 shrink-0">
+                    {/* Public Verify Link */}
+                    <div className="flex items-center gap-3 w-full bg-slate-50 p-2 sm:p-3 rounded-lg border border-slate-100 min-w-0">
                         <div className="flex flex-col min-w-0 w-full">
                             <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Liên kết xác minh công khai</span>
                             <a
@@ -196,7 +290,72 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-1/2">
+                    {/* Blockchain Metadata */}
+                    {(certificate?.certificateHash || certificate?.tokenId) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                            {certificate?.certificateHash && (
+                                <div className="bg-purple-50 p-2 sm:p-3 rounded-lg border border-purple-100 flex items-center justify-between gap-2 min-w-0">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[9px] sm:text-xs font-semibold text-purple-600 uppercase tracking-wider mb-0.5">Certificate Hash</p>
+                                        <p className="text-[11px] sm:text-xs font-mono text-purple-800 truncate" title={certificate.certificateHash}>
+                                            {certificate.certificateHash.substring(0, 12)}...
+                                        </p>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 flex-shrink-0"
+                                        onClick={() => copyToClipboard(certificate.certificateHash || '', 'Certificate Hash')}
+                                        title="Sao chép hash"
+                                    >
+                                        <Copy className="w-3.5 h-3.5" />
+                                    </Button>
+                                </div>
+                            )}
+                            
+                            {certificate?.tokenId && (
+                                <div className="bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-100 flex items-center justify-between gap-2 min-w-0">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[9px] sm:text-xs font-semibold text-blue-600 uppercase tracking-wider mb-0.5">Token ID</p>
+                                        <p className="text-[11px] sm:text-xs font-mono text-blue-800 truncate" title={certificate.tokenId}>
+                                            {certificate.tokenId}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 flex-shrink-0"
+                                        onClick={() => copyToClipboard(certificate.tokenId || '', 'Token ID')}
+                                        title="Sao chép Token ID"
+                                    >
+                                        <Copy className="w-3.5 h-3.5" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center justify-end gap-2 w-full">
+                        <Button
+                            onClick={handleDownloadPdfFromBackend}
+                            disabled={isDownloading}
+                            className="flex-1 sm:flex-none bg-orange-600 hover:bg-orange-700 text-white gap-1.5 text-xs sm:text-sm h-9 px-3"
+                            title="Mở PDF chứng chỉ"
+                        >
+                            {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" /> : <Download className="w-3.5 h-3.5 shrink-0" />}
+                            <span className="truncate">Xem PDF</span>
+                        </Button>
+
+                        <Button
+                            onClick={handleViewPolygonScan}
+                            disabled={!certificate?.transactionHash}
+                            className="flex-1 sm:flex-none bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 text-xs sm:text-sm h-9 px-3"
+                            title="Xem giao dịch trên explorer"
+                        >
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">View transaction</span>
+                        </Button>
 
                         <Button
                             onClick={() => handleDownload('image')}
@@ -213,7 +372,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                             className="flex-1 sm:flex-none bg-blue-900 hover:bg-blue-800 text-white gap-1.5 text-xs sm:text-sm h-9 px-3"
                         >
                             {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" /> : <Download className="w-3.5 h-3.5 shrink-0" />}
-                            <span className="truncate">Tải PDF</span>
+                            <span className="truncate">Tải PNG</span>
                         </Button>
                     </div>
                 </DialogFooter>

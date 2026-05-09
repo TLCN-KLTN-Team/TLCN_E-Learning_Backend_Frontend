@@ -12,3 +12,12 @@ export const verifyPublicCertificate = async (
   >(`${CERTIFICATE_PUBLIC_ENDPOINT}/verify/${encodeURIComponent(code)}`);
   return response.data.result;
 };
+
+export const verifyPublicCertificateByHash = async (
+  hash: string
+): Promise<PublicCertificateVerificationResponse> => {
+  const response = await publicAxiosInstance.get<
+    ApiResponse<PublicCertificateVerificationResponse>
+  >(`${CERTIFICATE_PUBLIC_ENDPOINT}/verify-hash/${encodeURIComponent(hash)}`);
+  return response.data.result;
+};

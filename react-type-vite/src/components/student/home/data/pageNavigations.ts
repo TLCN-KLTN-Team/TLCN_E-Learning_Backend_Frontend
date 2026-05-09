@@ -17,6 +17,7 @@ export const navigation = [
     ],
   },
   { name: "Diễn đàn", href: FORUM_ROUTES.HOME },
+  { name: "Xác minh chứng chỉ", href: PUBLIC_ROUTES.CERTIFICATE_VERIFY_BASE },
   { name: "Về chúng tôi", href: PUBLIC_ROUTES.ABOUT_US },
   { name: "Liên hệ", href: PUBLIC_ROUTES.CONTACT },
 ];
