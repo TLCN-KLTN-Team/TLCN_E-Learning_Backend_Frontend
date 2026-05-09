@@ -329,25 +329,39 @@ public class ChannelServiceImpl implements ChannelService {
 
     /**
      * UC-41: gán reviewTargetChannelId theo vòng tròn.
-     * Shuffle ngẫu nhiên rồi nối A→B→C→…→A. Mỗi nhóm chấm đúng 1 nhóm khác,
-     * không trùng chính nó, không có nhóm nào bị bỏ qua.
+     * Shuffle ngẫu nhiên rồi nối A→B→C→…→A.
      */
     private void assignCircularCrossReviewTargets(List<BasicChannelResponse> bulkChannelResponses) {
         List<String> channelIds = bulkChannelResponses.stream()
                 .map(BasicChannelResponse::getId)
                 .collect(Collectors.toCollection(ArrayList::new));
-        Collections.shuffle(channelIds);
+        Map<String, String> pairing = buildCircularPairing(channelIds, new Random());
 
-        List<Channel> channels = channelRepository.findAllById(channelIds);
-        Map<String, Channel> byId = channels.stream()
-                .collect(Collectors.toMap(Channel::getId, c -> c));
-        for (int i = 0; i < channelIds.size(); i++) {
-            String currentId = channelIds.get(i);
-            String targetId = channelIds.get((i + 1) % channelIds.size());
-            byId.get(currentId).setReviewTargetChannelId(targetId);
+        List<Channel> channels = channelRepository.findAllById(pairing.keySet());
+        for (Channel c : channels) {
+            c.setReviewTargetChannelId(pairing.get(c.getId()));
         }
         channelRepository.saveAll(channels);
-        log.info("UC-41: assigned circular cross-review for {} channels", channelIds.size());
+        log.info("UC-41: assigned circular cross-review for {} channels", pairing.size());
+    }
+
+    /**
+     * Pure helper: xếp danh sách channelIds thành một chu trình duy nhất
+     * A→B→C→…→A. Mỗi id chấm đúng 1 id khác, không tự chấm. Trả map
+     * sourceId → targetId.
+     *
+     * Tách ra static để unit test không cần Mongo/Spring context.
+     * Yêu cầu: channelIds.size() >= 2 (caller phải đảm bảo).
+     */
+    static Map<String, String> buildCircularPairing(List<String> channelIds, Random rng) {
+        List<String> shuffled = new ArrayList<>(channelIds);
+        Collections.shuffle(shuffled, rng);
+        Map<String, String> pairing = new LinkedHashMap<>();
+        int n = shuffled.size();
+        for (int i = 0; i < n; i++) {
+            pairing.put(shuffled.get(i), shuffled.get((i + 1) % n));
+        }
+        return pairing;
     }
 
     @Override
