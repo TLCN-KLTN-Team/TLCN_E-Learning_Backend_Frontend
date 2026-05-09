@@ -90,7 +90,11 @@ public enum ErrorCode {
     CLOUDINARY_DELETE_FAILED("FILE_5005", "Xoá file trên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
 
-    INVALID_FILE_NAME("FILE_5006", "Tên file không hợp lệ", HttpStatus.INTERNAL_SERVER_ERROR);
+    INVALID_FILE_NAME("FILE_5006", "Tên file không hợp lệ", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // Cross-service / resource errors
+    RESOURCE_NOT_FOUND("BIZ_4001", "Không tìm thấy tài nguyên yêu cầu", HttpStatus.NOT_FOUND),
+    FEIGN_CLIENT_ERROR("SYS_9001", "Lỗi gọi dịch vụ bên ngoài", HttpStatus.INTERNAL_SERVER_ERROR);
 
     ErrorCode(String code, String message, HttpStatusCode statusCode) {
         this.code = code;

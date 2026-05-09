@@ -1,6 +1,9 @@
-import { Building2, Edit, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Building2, Edit, FileDown, Loader2, Trash2 } from "lucide-react";
+import { toast } from "react-toastify";
 import { getStatusStyle, unitStatus } from "../data/UnitStatus";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
+import fileExportApi from "@/services/api/file/exportApi";
 
 interface TraningUnitItemProps {
   unit: EducationalUnitResponse;
@@ -15,6 +18,8 @@ const TraningUnitItem = ({
   onRowClick,
   onEditClick,
 }: TraningUnitItemProps) => {
+  const [isExporting, setIsExporting] = useState(false);
+
   const handleRowClick = () => {
     onRowClick(unit.id);
   };
@@ -26,6 +31,25 @@ const TraningUnitItem = ({
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEditClick(unit);
+  };
+
+  const handleExportClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isExporting) return;
+
+    try {
+      setIsExporting(true);
+      await fileExportApi.downloadEducationalUnitProfile(unit.id, unit.name);
+      toast.success(`Đã xuất hồ sơ "${unit.name}" thành công`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? `Xuất hồ sơ thất bại: ${error.message}`
+          : "Xuất hồ sơ thất bại"
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -71,6 +95,21 @@ const TraningUnitItem = ({
 
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
         <div className="flex space-x-1 md:space-x-2">
+          <button
+            onClick={handleExportClick}
+            disabled={isExporting}
+            title="Xuất hồ sơ PDF"
+            className="text-emerald-600 hover:text-emerald-900 flex items-center gap-1 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4" />
+            )}
+            <span className="hidden md:inline">
+              {isExporting ? "Đang xuất..." : "Xuất hồ sơ"}
+            </span>
+          </button>
           <button
             onClick={handleEditClick}
             className="text-blue-600 hover:text-blue-900 flex items-center gap-1 p-1"

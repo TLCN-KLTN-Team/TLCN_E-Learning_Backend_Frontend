@@ -104,6 +104,8 @@ springdoc:
         url: ${COURSE_SERVICE_URI:http://localhost:8088}/course-management/v3/api-docs
       - name: realtime-service
         url: ${CHAT_SERVICE_URI:http://localhost:8090}/server/v3/api-docs
+      - name: file-service
+        url: ${FILE_SERVICE_URI:http://localhost:8084}/file-handler/v3/api-docs
 #      - name: notification-service
 #        url: ${CHAT_SERVICE_URI:http://localhost:8090}/server/v3/api-docs
 #      - name: ai-service
