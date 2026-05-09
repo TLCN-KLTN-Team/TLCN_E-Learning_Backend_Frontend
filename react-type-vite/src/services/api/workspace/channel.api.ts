@@ -137,3 +137,29 @@ export const getCrossReviewAttachments = async (
   );
   return response.data.result;
 };
+
+/**
+ * UC-41: upload file vào channel với phân loại category.
+ * Wrap upload-file-only — tạo file-only message kèm category để BE lưu vào
+ * collection attachments với category đúng.
+ */
+export const uploadChannelFile = async (
+  channelId: string,
+  category: AttachmentCategory,
+  files: FileList | File[],
+): Promise<void> => {
+  const formData = new FormData();
+  formData.append("channelId", channelId);
+  formData.append(
+    "clientMessageId",
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `up-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  );
+  formData.append("category", category);
+  Array.from(files).forEach((f) => formData.append("files", f));
+
+  await axiosInstance.post(`/server/files/upload-file-only`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};

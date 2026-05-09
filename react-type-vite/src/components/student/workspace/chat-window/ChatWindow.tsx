@@ -4,11 +4,13 @@ import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChannelWorkspace from "../channel/ChannelWorkspace";
+import ChannelFilesPanel from "../channel/ChannelFilesPanel";
 import TimeBasedChannelView from "../channel/TimeBasedChannelView";
-import type {
-  ChannelResponse,
-  ChatMessageResponse,
-  UserResponse,
+import {
+  ChannelType,
+  type ChannelResponse,
+  type ChatMessageResponse,
+  type UserResponse,
 } from "@/types/chat.types";
 import type { FileItem } from "@/types/file.types";
 
@@ -34,9 +36,14 @@ const ChatWindow = ({
   onClearErrors,
 }: ChatWindowProps) => {
   const [showParticipants, setShowParticipants] = useState(false);
+  const [showFilesPanel, setShowFilesPanel] = useState(false);
 
   const toggleParticipants = () => {
     setShowParticipants(!showParticipants);
+  };
+
+  const toggleFilesPanel = () => {
+    setShowFilesPanel((v) => !v);
   };
 
   // Check if this is a timed exercise channel
@@ -101,16 +108,29 @@ const ChatWindow = ({
     );
   }
 
+  const isGroupChannel = selectedChannel.type === ChannelType.GROUP;
+
   return (
     <div className="flex-1 flex bg-gray-900 border-l border-gray-700">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col relative">
         {/* Chat Header */}
         <ChatHeader
           selectedChannel={selectedChannel}
           onToggleParticipants={toggleParticipants}
           showParticipants={showParticipants}
+          onToggleFiles={isGroupChannel ? toggleFilesPanel : undefined}
+          showFilesPanel={showFilesPanel}
         />
+
+        {/* UC-41: panel "Tài liệu của nhóm" — slide-in từ trái */}
+        {isGroupChannel && showFilesPanel && (
+          <ChannelFilesPanel
+            isOpen={showFilesPanel}
+            onClose={() => setShowFilesPanel(false)}
+            channel={selectedChannel}
+          />
+        )}
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto bg-gray-800">

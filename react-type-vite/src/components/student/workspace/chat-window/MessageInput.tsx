@@ -7,11 +7,17 @@ import {
   ImagePlus,
   FilePlus,
   FileText,
+  Lock,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
+import {
+  ChannelPhase,
+  type ChannelResponse,
+  type ChatMessageResponse,
+} from "@/types/chat.types";
 import type { FileItem } from "@/types/file.types";
+import { derivePhase } from "@/utils/channelPhase";
 
 interface MessageInputProps {
   selectedChannel: ChannelResponse;
@@ -57,6 +63,18 @@ const MessageInput = ({
     setIsMultiline(newHeight > 48);
   };
 
+  // UC-41: derive phase từ deadline. Channel không phải bài tập (no submissionDeadline) coi là OPEN.
+  const phase = derivePhase(
+    selectedChannel.submissionDeadline,
+    selectedChannel.crossReviewDeadline,
+    selectedChannel.allowCrossReview,
+  );
+  const isLocked = phase !== ChannelPhase.OPEN;
+  const lockMessage =
+    phase === ChannelPhase.REVIEW
+      ? "Đã hết hạn nộp. Đang trong giai đoạn chấm chéo."
+      : "Kênh đã hết hạn. Không thể gửi tin nhắn hoặc upload file.";
+
   const handleSendMessage = () => {
     const hasMessage = newMessage.trim().length > 0;
     const hasFiles = selectedFiles.length > 0;
@@ -64,6 +82,10 @@ const MessageInput = ({
     if (!hasMessage && !hasFiles) return;
     if (!isConnected) {
       toast.warning("Chưa kết nối đến server. Vui lòng đợi...");
+      return;
+    }
+    if (isLocked) {
+      toast.warning(lockMessage);
       return;
     }
 
@@ -104,6 +126,17 @@ const MessageInput = ({
       }
     }
   };
+
+  if (isLocked) {
+    return (
+      <div className="p-4 bg-gray-900 border-t border-gray-700">
+        <div className="flex items-center gap-3 rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-gray-300">
+          <Lock className="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <span>{lockMessage}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 bg-gray-900">
