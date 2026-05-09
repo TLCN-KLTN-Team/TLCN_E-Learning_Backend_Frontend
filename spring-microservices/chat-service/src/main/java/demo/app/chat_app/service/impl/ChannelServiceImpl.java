@@ -13,6 +13,7 @@ import demo.app.chat_app.repository.SectionRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.service.ChannelMemberService;
 import demo.app.chat_app.service.ChannelService;
+import demo.app.chat_app.service.util.ChannelPhase;
 import demo.app.chat_app.service.util.DateTimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -472,7 +473,24 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public void submitPractices(String channelId) {
+        // UC-41: nhóm chốt nộp bài. Chỉ được gọi khi channel còn phase OPEN.
+        // Sau khi gọi: scheduler / cron sẽ chuyển trạng thái khi qua submissionDeadline,
+        // nhưng nhóm có thể chủ động đóng sớm — đặt submissionClosedAt + chuyển status.
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        ChannelPhase.assertOpenForMember(channel);
 
+        Instant now = Instant.now();
+        channel.setSubmissionClosedAt(now);
+        channel.setUpdatedAt(now);
+        if (channel.isAllowCrossReview() && channel.getCrossReviewDeadline() != null) {
+            channel.setStatus(ChannelStatus.LOCKED);
+        } else {
+            channel.setStatus(ChannelStatus.ARCHIVED);
+            channel.setExpiredAt(now);
+        }
+        channelRepository.save(channel);
+        log.info("UC-41: channel {} submitted early by member; new status = {}", channelId, channel.getStatus());
     }
 
 }

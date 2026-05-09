@@ -13,6 +13,7 @@ import demo.app.chat_app.repository.*;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.ChannelMemberService;
 import demo.app.chat_app.service.ChatMessageService;
+import demo.app.chat_app.service.util.ChannelPhase;
 import demo.app.chat_app.utils.JwtUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         // Validate and get channel
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        // UC-41: chặn gửi tin khi channel đã qua phase OPEN (LOCKED/ARCHIVED soft-lock)
+        ChannelPhase.assertOpenForMember(channel);
 
         // Get current user
         String userId = principal.getName();
@@ -152,6 +156,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         // Validate and get channel
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        // UC-41: chặn gửi tin khi channel đã qua phase OPEN
+        ChannelPhase.assertOpenForMember(channel);
 
         String userId = JwtUtils.getUserId();
 

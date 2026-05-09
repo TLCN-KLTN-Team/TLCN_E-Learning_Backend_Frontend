@@ -7,6 +7,7 @@ import demo.app.chat_app.dto.response.UserResponse;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChatMessageMapper;
+import demo.app.chat_app.model.enums.AttachmentCategory;
 import demo.app.chat_app.model.enums.AttachmentType;
 import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
@@ -18,6 +19,7 @@ import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.MessageAttachmentRepository;
 import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.service.ChatMessageService;
+import demo.app.chat_app.service.util.ChannelPhase;
 import demo.app.chat_app.service.util.ChatMessageUtils;
 import demo.app.chat_app.service.util.CloudinaryService;
 import demo.app.chat_app.utils.FileUtils;
@@ -83,10 +85,15 @@ public class FileUploadService {
     public ChatMessageResponse createFileOnlyMessage(MultipartFile[] files,
                                                       String channelId,
                                                       String clientMessageId,
+                                                      AttachmentCategory category,
                                                       Principal principal) {
         // Validate channel
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        // UC-41: chặn upload khi channel đã qua phase OPEN (member không upload thêm được)
+        ChannelPhase.assertOpenForMember(channel);
+        AttachmentCategory effectiveCategory = category != null ? category : AttachmentCategory.GENERAL;
 
         String userId = principal.getName();
         String authToken = getAuthTokenFromContext();
@@ -115,7 +122,7 @@ public class FileUploadService {
             final String messageId = chatMessage.getId();
             List<CompletableFuture<MessageAttachment>> futures = Arrays.stream(files)
                     .map(file -> CompletableFuture.supplyAsync(() ->
-                            uploadSingleFile(file, messageId, channelId, authToken)))
+                            uploadSingleFile(file, messageId, channelId, effectiveCategory, authToken)))
                     .toList();
 
             // Wait for all uploads to complete
@@ -178,10 +185,15 @@ public class FileUploadService {
     public MessageUpdatePayload uploadAndAttachFiles(MultipartFile[] files,
                                                       String channelId,
                                                       String clientMessageId,
+                                                      AttachmentCategory category,
                                                       Principal principal) {
         // Validate channel
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        // UC-41: chặn upload khi channel đã qua phase OPEN
+        ChannelPhase.assertOpenForMember(channel);
+        AttachmentCategory effectiveCategory = category != null ? category : AttachmentCategory.GENERAL;
 
         String userId = principal.getName();
 
@@ -208,7 +220,7 @@ public class FileUploadService {
             // Upload files in parallel
             List<CompletableFuture<MessageAttachment>> futures = Arrays.stream(files)
                     .map(file -> CompletableFuture.supplyAsync(() ->
-                            uploadSingleFile(file, chatMessage.getId(), channelId, authToken)))
+                            uploadSingleFile(file, chatMessage.getId(), channelId, effectiveCategory, authToken)))
                     .toList();
 
             // Wait for all uploads to complete
@@ -280,6 +292,9 @@ public class FileUploadService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
+        // UC-41: chặn upload khi channel đã qua phase OPEN
+        ChannelPhase.assertOpenForMember(channel);
+
         String userId = principal.getName();
         String authToken = getAuthTokenFromContext();
 
@@ -297,7 +312,7 @@ public class FileUploadService {
      * Upload a single file and create a MessageAttachment (without creating a new ChatMessage).
      */
     private MessageAttachment uploadSingleFile(MultipartFile file, String messageId,
-                                                String channelId, String authToken) {
+                                                String channelId, AttachmentCategory category, String authToken) {
         try {
             if (StringUtils.hasText(authToken)) {
                 WebSocketAuthInterceptor.setToken(authToken);
@@ -318,6 +333,7 @@ public class FileUploadService {
                     .fileSize(file.getSize())
                     .fileUrl(fileUrl)
                     .attachmentType(attachmentType)
+                    .category(category)
                     .uploadedAt(Instant.now())
                     .build();
 

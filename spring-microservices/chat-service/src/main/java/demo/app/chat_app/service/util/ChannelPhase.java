@@ -1,5 +1,7 @@
 package demo.app.chat_app.service.util;
 
+import demo.app.chat_app.exception.AppException;
+import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.model.workspace.Channel;
 
 import java.time.Instant;
@@ -47,5 +49,16 @@ public enum ChannelPhase {
 
     public boolean isCrossReviewAccessible() {
         return this == REVIEW;
+    }
+
+    /**
+     * UC-41 guard: chỉ cho phép thành viên ghi (chat, upload, submit) trong phase OPEN.
+     * Channel không phải bài tập nhóm (submissionDeadline = null) cũng coi là OPEN.
+     * Throw AppException(CHANNEL_LOCKED) khi không thoả.
+     */
+    public static void assertOpenForMember(Channel channel) {
+        if (of(channel, Instant.now()) != OPEN) {
+            throw new AppException(ErrorCode.CHANNEL_LOCKED);
+        }
     }
 }

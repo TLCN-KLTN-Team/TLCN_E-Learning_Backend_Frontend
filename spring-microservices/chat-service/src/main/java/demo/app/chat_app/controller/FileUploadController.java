@@ -4,6 +4,7 @@ import demo.app.chat_app.dto.event.MessageEvent;
 import demo.app.chat_app.dto.event.MessageUpdatePayload;
 import demo.app.chat_app.dto.response.ApiResponse;
 import demo.app.chat_app.dto.response.ChatMessageResponse;
+import demo.app.chat_app.model.enums.AttachmentCategory;
 import demo.app.chat_app.service.impl.FileUploadService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,13 +37,14 @@ public class FileUploadController {
             @RequestParam("files") MultipartFile[] files,
             @RequestParam("channelId") String channelId,
             @RequestParam("clientMessageId") String clientMessageId,
+            @RequestParam(value = "category", required = false) AttachmentCategory category,
             Principal principal) {
         try {
-            log.info("Post-attach upload: channelId={}, clientMessageId={}, fileCount={}",
-                    channelId, clientMessageId, files.length);
+            log.info("Post-attach upload: channelId={}, clientMessageId={}, fileCount={}, category={}",
+                    channelId, clientMessageId, files.length, category);
 
             MessageUpdatePayload payload = fileUploadService.uploadAndAttachFiles(
-                files, channelId, clientMessageId, principal
+                files, channelId, clientMessageId, category, principal
             );
 
             // Broadcast MESSAGE_UPDATED event to channel subscribers
@@ -84,13 +86,14 @@ public class FileUploadController {
             @RequestParam("files") MultipartFile[] files,
             @RequestParam("channelId") String channelId,
             @RequestParam("clientMessageId") String clientMessageId,
+            @RequestParam(value = "category", required = false) AttachmentCategory category,
             Principal principal) {
         try {
-            log.info("File-only upload: channelId={}, clientMessageId={}, fileCount={}",
-                    channelId, clientMessageId, files.length);
+            log.info("File-only upload: channelId={}, clientMessageId={}, fileCount={}, category={}",
+                    channelId, clientMessageId, files.length, category);
 
             ChatMessageResponse response = fileUploadService.createFileOnlyMessage(
-                files, channelId, clientMessageId, principal
+                files, channelId, clientMessageId, category, principal
             );
 
             // Broadcast NEW_MESSAGE event to channel subscribers

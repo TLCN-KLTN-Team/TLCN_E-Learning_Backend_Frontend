@@ -117,15 +117,11 @@ public class ChannelController {
 
     @PutMapping("/submit/{channelId}")
     public ApiResponse<Void> endChannel(@PathVariable String channelId) {
-        try {
-            return ApiResponse.<Void>builder()
-                    .message("Channel ended successfully")
-                    .build();
-        } catch (Exception e) {
-            return ApiResponse.<Void>builder()
-                    .message("Failed to end channel: " + e.getMessage())
-                    .build();
-        }
+        // UC-41: nhóm chủ động chốt nộp bài. Throw nếu đã qua phase OPEN.
+        channelService.submitPractices(channelId);
+        return ApiResponse.<Void>builder()
+                .message("Channel ended successfully")
+                .build();
     }
 
     // ══════════════════════════════════════════════════════════════════
