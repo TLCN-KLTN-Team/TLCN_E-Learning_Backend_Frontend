@@ -1,5 +1,6 @@
 package demo.app.chat_app.model.workspace;
 
+import demo.app.chat_app.model.enums.AttachmentCategory;
 import demo.app.chat_app.model.enums.AttachmentType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -33,6 +34,16 @@ public class MessageAttachment {
     String fileUrl; // where store file, I will use cloudinary.
 
     AttachmentType attachmentType;
+
+    @Builder.Default
+    AttachmentCategory category = AttachmentCategory.GENERAL;
+    /*
+     * UC-41: phân loại tài liệu trong channel GROUP.
+     * GENERAL    → kho tài liệu chung của nhóm
+     * SUBMISSION → bài nộp cuối cùng của nhóm
+     * "Bài cần chấm chéo" của nhóm khác = SUBMISSION attachments của
+     * channel mà reviewTargetChannelId trỏ tới — không lưu category riêng.
+     */
 
     // for image/video
     String thumbnail;

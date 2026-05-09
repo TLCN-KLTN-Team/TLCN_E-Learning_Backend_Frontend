@@ -3,8 +3,6 @@ package demo.app.chat_app.dto.request;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,8 +14,20 @@ public class BulkRandomChannelRequest {
     String channelType;
     String channelName;
     String description;
-    String endTime;
+
+    /**
+     * Hạn nộp bài (ISO-8601). Bắt buộc.
+     */
+    String submissionDeadline;
+
+    /**
+     * Hạn chấm chéo (ISO-8601). Bắt buộc khi allowCrossReview=true,
+     * phải > submissionDeadline + 1h. Bỏ qua khi allowCrossReview=false.
+     */
+    String crossReviewDeadline;
+
     boolean allowCrossReview;
+
     // For Group type
     int membersPerGroup;
 }

@@ -58,6 +58,12 @@ public enum ErrorCode {
     UN_EXISTING_CHANNEL("CH_4001", "Không tìm thấy kênh", HttpStatus.NOT_FOUND),
     CHANNEL_ALREADY_EXISTS("CH_4002", "Kênh đã tồn tại trong workspace", HttpStatus.BAD_REQUEST),
     GENERAL_CHANNEL_NOT_FOUND("CH_4003", "Không tìm thấy kênh chung trong workspace", HttpStatus.NOT_FOUND),
+    CHANNEL_LOCKED("CH_4004", "Kênh đã hết hạn nộp/đã khoá, không thể thực hiện hành động này", HttpStatus.FORBIDDEN),
+    INVALID_DEADLINE_RANGE("CH_4005", "Hạn chấm chéo phải sau hạn nộp ít nhất 1 giờ", HttpStatus.BAD_REQUEST),
+    NOT_ENOUGH_GROUPS_FOR_CROSS_REVIEW("CH_4006", "Cần tối thiểu 2 nhóm để bật chấm chéo", HttpStatus.BAD_REQUEST),
+    NO_CROSS_REVIEW_TARGET("CH_4007", "Kênh này chưa được phân công chấm chéo", HttpStatus.NOT_FOUND),
+    CROSS_REVIEW_NOT_ALLOWED("CH_4008", "Kênh này không bật chế độ chấm chéo", HttpStatus.BAD_REQUEST),
+    SUBMISSION_DEADLINE_REQUIRED("CH_4009", "Hạn nộp bài là bắt buộc", HttpStatus.BAD_REQUEST),
 
     // Message Errors (MSG_xxxx)
     MESSAGE_NOT_FOUND("MSG_5001", "Không tìm thấy tin nhắn", HttpStatus.NOT_FOUND),

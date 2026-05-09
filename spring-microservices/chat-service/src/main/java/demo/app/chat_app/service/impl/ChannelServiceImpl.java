@@ -206,8 +206,12 @@ public class ChannelServiceImpl implements ChannelService {
             throw new AppException(ErrorCode.CHANNEL_ALREADY_EXISTS);
         }
 
-        // convert endTime ISO form to Instant
-        Instant expiresAt = DateTimeUtils.parseIsoToInstant(request.getEndTime());
+        // UC-41: parse 2 deadline. crossReviewDeadline chỉ dùng khi allowCrossReview=true.
+        Instant submissionDeadline = DateTimeUtils.parseIsoToInstant(request.getSubmissionDeadline());
+        Instant crossReviewDeadline = request.isAllowCrossReview()
+                ? DateTimeUtils.parseIsoToInstant(request.getCrossReviewDeadline())
+                : null;
+        Instant expiresAt = crossReviewDeadline != null ? crossReviewDeadline : submissionDeadline;
 
         // Create channel entity
         Channel channel = Channel.builder()
@@ -221,6 +225,10 @@ public class ChannelServiceImpl implements ChannelService {
                 .description(request.getDescription())
                 .createdAt(Instant.now())
                 .expiresAt(expiresAt)
+                .submissionDeadline(submissionDeadline)
+                .crossReviewDeadline(crossReviewDeadline)
+                .allowCrossReview(request.isAllowCrossReview())
+                .status(ChannelStatus.ACTIVE)
                 .build();
 
         Channel savedChannel = channelRepository.save(channel);
@@ -266,7 +274,9 @@ public class ChannelServiceImpl implements ChannelService {
                     .channelName(channelName)
                     .description(request.getDescription() + " (Nhóm " + groupNum + ")")
                     .memberIds(memberIds)
-                    .endTime(request.getEndTime())
+                    .submissionDeadline(request.getSubmissionDeadline())
+                    .crossReviewDeadline(request.getCrossReviewDeadline())
+                    .allowCrossReview(request.isAllowCrossReview())
                     .build();
             BasicChannelResponse channelResponse = this.createChannel(groupChannelRequest);
             bulkChannelResponses.add(channelResponse);

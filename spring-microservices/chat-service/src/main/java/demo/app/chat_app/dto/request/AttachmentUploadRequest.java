@@ -1,5 +1,6 @@
 package demo.app.chat_app.dto.request;
 
+import demo.app.chat_app.model.enums.AttachmentCategory;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,4 +16,10 @@ public class AttachmentUploadRequest {
     String channelId;      // Channel ID for validation
     String fileName;       // Original file name
     String contentType;    // File content type
+
+    /**
+     * UC-41: phân loại tài liệu trong channel GROUP.
+     * Null/không truyền → mặc định GENERAL ở service layer.
+     */
+    AttachmentCategory category;
 }

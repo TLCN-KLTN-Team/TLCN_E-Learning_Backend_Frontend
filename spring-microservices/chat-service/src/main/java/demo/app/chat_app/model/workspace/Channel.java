@@ -149,22 +149,49 @@ public class Channel {
     private Instant expiresAt;
     /*
      * Thời điểm Channel hết hạn. Null = không giới hạn (mặc định).
-     *
-     * Khi Instant.now() >= expiresAt:
-     *   - Mọi hành vi gửi tin, reaction, pin đều bị từ chối
-     *   - Scheduler job tự động set status = ARCHIVED
-     *
-     * Enforce ở Service trước khi xử lý bất kỳ action nào:
-     *   if (channel.expiresAt != null
-     *       && Instant.now().isAfter(channel.expiresAt)) {
-     *       throw new ChannelExpiredException();
-     *   }
-     *
-     * Scheduler query (chạy định kỳ, VD: mỗi phút):
-     *   db.channels.find({
-     *     expiresAt: { $lte: now },
-     *     status: "ACTIVE"
-     *   }) → batch update status = "ARCHIVED", expiredAt = now
+     * Với GROUP/UC-41: expiresAt = crossReviewDeadline ?? submissionDeadline
+     * (mốc cuối cùng channel còn ý nghĩa).
+     */
+
+    // ── UC-41: Bài tập nhóm ──────────────────────────────────────
+    private Instant submissionDeadline;
+    /*
+     * Hạn nộp bài của nhóm (chỉ Channel GROUP làm bài tập mới set).
+     * Khi qua mốc này:
+     *   - allowCrossReview=true  → vào phase REVIEW, status = LOCKED
+     *     (chặn chat, chặn upload mới của thành viên),
+     *     reviewer của nhóm khác vẫn truy cập được attachment
+     *     SUBMISSION qua endpoint cross-review.
+     *   - allowCrossReview=false → vào phase LOCKED, status = ARCHIVED.
+     */
+
+    private Instant crossReviewDeadline;
+    /*
+     * Hạn chấm chéo. Null nếu allowCrossReview=false.
+     * Phải > submissionDeadline + 1h (validate ở service).
+     * Khi qua mốc này: status = ARCHIVED, mọi hành động đều khoá
+     * trừ giảng viên (giảng viên có thể hard-delete sau khi chấm xong).
+     */
+
+    @Builder.Default
+    private boolean allowCrossReview = false;
+    /*
+     * Cờ bật chấm chéo. Set khi tạo channel GROUP qua bulk-random.
+     * Quyết định có 1 hay 2 deadline + có gán reviewTargetChannelId.
+     */
+
+    private String reviewTargetChannelId;
+    /*
+     * ID của Channel GROUP mà nhóm này được phân công chấm chéo.
+     * Gán một lần khi bulkRandomlyCreateChannels (vòng tròn A→B→C→…→A).
+     * Null khi allowCrossReview=false hoặc N<2 nhóm.
+     */
+
+    private Instant submissionClosedAt;
+    /*
+     * Thời điểm scheduler quan sát thấy submissionDeadline đã qua
+     * và đóng giai đoạn nộp bài. Dùng để idempotent: scheduler chỉ
+     * xử lý transition một lần. Null khi vẫn còn trong phase OPEN.
      */
 
     // ── Audit ────────────────────────────────────────────────────
