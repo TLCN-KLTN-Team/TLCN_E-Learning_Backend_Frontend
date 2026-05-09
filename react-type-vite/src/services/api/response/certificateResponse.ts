@@ -3,6 +3,7 @@ export interface CertificateResponse {
     userId: string;
     studentName?: string;
     courseId: number;
+    courseName?: string;
     certificateCode: string;
     issueDate: string;
     transactionHash: string;
@@ -11,4 +12,8 @@ export interface CertificateResponse {
     status: "PENDING" | "ISSUED" | "FAILED";
     finalScore?: number;
     grade?: string;
+    certificateHash?: string;
+    pdfUrl?: string;
+    tokenUri?: string;
+    tokenId?: string;
 }

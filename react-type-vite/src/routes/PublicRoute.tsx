@@ -82,6 +82,11 @@ const PublicRoutes = [
     path={ROUTE_PATTERNS.CERTIFICATE_VERIFY}
     element={<CertificateVerificationPage />}
   />,
+  <Route
+    key="certificate-verify-base"
+    path={PUBLIC_ROUTES.CERTIFICATE_VERIFY_BASE}
+    element={<CertificateVerificationPage />}
+  />,
 
   // Forum Routes
   <Route key="forum-layout" element={<ForumLayout />}>

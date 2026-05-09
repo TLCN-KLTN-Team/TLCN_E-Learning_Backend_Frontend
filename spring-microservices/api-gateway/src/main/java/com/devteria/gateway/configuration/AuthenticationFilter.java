@@ -55,7 +55,8 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                     "/course-management/anonymous/reviews/.*",
                     "/course-management/anonymous/teachers/.*",
                         "/course-management/anonymous/home/reviews/.*",
-                        "/course-management/anonymous/certificates/verify/.*"
+                            "/course-management/anonymous/certificates/verify/.*",
+                            "/course-management/anonymous/certificates/verify-hash/.*"
             )
     );
 

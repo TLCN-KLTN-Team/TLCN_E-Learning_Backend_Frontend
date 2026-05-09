@@ -1,6 +1,6 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ProgressStatsResponse } from "../response/progressStatsResponse";
-import type { CourseProgressDetailResponse } from "../response/courseProgressDetailResponse";
+import type { CourseProgressResponse } from "../response/courseProgressResponse";
 import type { ApiResponse } from "../response/apiResponse";
 
 const API_PREFIX = "/course-management/user/progress";
@@ -16,8 +16,8 @@ export const getPublishedCourseProgress = async (
 
 export const getPublishedCourseProgressDetail = async (
   publishedCourseId: number
-): Promise<CourseProgressDetailResponse> => {
-  const response = await axiosInstance.get<ApiResponse<CourseProgressDetailResponse>>(
+): Promise<CourseProgressResponse> => {
+  const response = await axiosInstance.get<ApiResponse<CourseProgressResponse>>(
     `${API_PREFIX}/published-course/${publishedCourseId}/detail`
   );
   return response.data.result;

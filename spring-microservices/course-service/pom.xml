@@ -202,6 +202,19 @@
 			<artifactId>poi-ooxml</artifactId>
 			<version>5.2.5</version>
 		</dependency>
+
+		<!-- Flying Saucer for HTML to PDF conversion (Apache 2.0 License) -->
+		<dependency>
+			<groupId>org.xhtmlrenderer</groupId>
+			<artifactId>flying-saucer-core</artifactId>
+			<version>9.1.22</version>
+		</dependency>
+		<!-- PDF rendering backend for Flying Saucer (OpenPDF) -->
+		<dependency>
+			<groupId>org.xhtmlrenderer</groupId>
+			<artifactId>flying-saucer-pdf-openpdf</artifactId>
+			<version>9.1.22</version>
+		</dependency>
 	</dependencies>
 
 	<dependencyManagement>

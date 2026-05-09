@@ -160,3 +160,8 @@ signature-verification:
   trusted-issuer-keywords: ${SIGNATURE_TRUSTED_ISSUERS:NEAC,VNPT,VIETTEL,FPT}
   revocation-timeout-ms: ${SIGNATURE_REVOCATION_TIMEOUT_MS:3000}
   revocation-timeout-policy: ${SIGNATURE_REVOCATION_TIMEOUT_POLICY:MANUAL_REVIEW}
+
+pinata:
+  jwt: ${PINATA_JWT}
+  gateway-url: ${PINATA_GATEWAY_URL:https://gateway.pinata.cloud/ipfs/}
+  api-url: ${PINATA_API_URL:https://api.pinata.cloud}

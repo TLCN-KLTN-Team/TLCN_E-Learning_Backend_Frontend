@@ -92,7 +92,7 @@ const Footer = () => {
         {/* Bottom Footer */}
         <div className="border-t border-border py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2025 E-Learning Platform. Built with ❤️ by Devzeus.</p>
+            <p>© 2025 E-Learning Platform.</p>
             <div className="flex items-center space-x-6">
               <a href="#" className="hover:text-bs-primary transition-colors">
                 Chính sách bảo mật

@@ -1,6 +1,6 @@
 import axiosInstance from "@/services/api/httpClient/axiosInstance";
 import type { ApiResponse } from "@/services/api/response/apiResponse";
-import type { PaginatedResponse } from "@/types/api";
+import type { PaginatedResponse } from "@/services/api/response/apiResponse";
 
 const API_USER_ORDER_ENDPOINT = "/course-management/user/orders";
 const API_TEACHER_ORDER_ENDPOINT = "/course-management/teacher/orders";

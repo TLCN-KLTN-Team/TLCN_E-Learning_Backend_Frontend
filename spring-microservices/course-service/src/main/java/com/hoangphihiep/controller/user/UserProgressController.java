@@ -2,7 +2,7 @@ package com.hoangphihiep.controller.user;
 
 import com.hoangphihiep.dto.request.MarkLessonCompleteRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
-import com.hoangphihiep.dto.response.CourseProgressDetailResponse;
+import com.hoangphihiep.dto.response.CourseProgressResponse;
 import com.hoangphihiep.dto.response.ProgressStatsResponse;
 import com.hoangphihiep.service.UserProgressService;
 import lombok.RequiredArgsConstructor;
@@ -20,27 +20,26 @@ public class UserProgressController {
     @GetMapping("/published-course/{publishedCourseId}/stats")
     public ApiResponse<ProgressStatsResponse> getPublishedCourseProgressStats(
             @PathVariable Integer publishedCourseId) {
-        log.info("Getting progress stats for published course: {}", publishedCourseId);
         return ApiResponse.<ProgressStatsResponse>builder()
                 .result(userProgressService.getPublishedCourseProgressStats(publishedCourseId))
                 .build();
     }
 
     @GetMapping("/published-course/{publishedCourseId}/detail")
-    public ApiResponse<CourseProgressDetailResponse> getPublishedCourseProgressDetail(
+    public ApiResponse<CourseProgressResponse> getPublishedCourseProgressDetail(
             @PathVariable Integer publishedCourseId) {
         log.info("Getting progress detail for published course: {}", publishedCourseId);
-        return ApiResponse.<CourseProgressDetailResponse>builder()
+        return ApiResponse.<CourseProgressResponse>builder()
                 .result(userProgressService.getPublishedCourseProgressDetail(publishedCourseId))
                 .build();
     }
 
     @PostMapping("/lesson/complete")
-    public ApiResponse<CourseProgressDetailResponse> markLessonComplete(
+    public ApiResponse<CourseProgressResponse> markLessonComplete(
             @RequestBody MarkLessonCompleteRequest request) {
         log.info("Marking lesson {} complete for published course: {}", 
                 request.getLessonId(), request.getPublishedCourseId());
-        return ApiResponse.<CourseProgressDetailResponse>builder()
+        return ApiResponse.<CourseProgressResponse>builder()
                 .result(userProgressService.markLessonCompleteForPublishedCourse(request))
                 .build();
     }
