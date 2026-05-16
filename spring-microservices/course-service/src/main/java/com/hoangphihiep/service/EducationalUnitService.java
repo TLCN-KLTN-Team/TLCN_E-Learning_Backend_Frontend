@@ -473,7 +473,6 @@ public class EducationalUnitService {
 
     @Transactional
     public EducationUnitRegistrationResponse registerEducationalUnit(EducationalUnitRegistrationRequest request) {
-        log.info("Starting training unit registration for: {}", request.getName());
 
         try {
             // 1. Create admin user account in identity-service
@@ -509,8 +508,7 @@ public class EducationalUnitService {
                 }
             }
 
-            MultipartFile signedLicense = getSignedLicenseFile(request);
-            MultipartFile originalLicense = request.getBusinessLicenseOriginal();
+            MultipartFile signedLicense = request.getBusinessLicenseSigned();
 
             if (signedLicense == null || signedLicense.isEmpty()) {
                 throw new RuntimeException("Vui lòng tải lên file PDF giấy phép hoạt động đã ký số.");
@@ -520,24 +518,18 @@ public class EducationalUnitService {
                 throw new RuntimeException("Giấy phép hoạt động đã ký số phải là định dạng PDF.");
             }
 
-            if (originalLicense != null && !originalLicense.isEmpty() && !isPdfFile(originalLicense)) {
-                throw new RuntimeException("Giấy phép hoạt động gốc phải là định dạng PDF.");
-            }
-
-                BusinessLicenseSignatureVerificationService.SignatureVerificationResult verificationResult =
+                SignatureVerificationResponse verificationResult =
                     businessLicenseSignatureVerificationService.verify(signedLicense);
 
-                    if (verificationResult.getStatus() != SignatureVerificationStatus.VERIFIED_UNMODIFIED) {
+            if (verificationResult.getStatus() != SignatureVerificationStatus.VERIFIED_UNMODIFIED) {
                 throw new RuntimeException(verificationResult.getErrorReason() != null
                     ? verificationResult.getErrorReason()
                     : "Không thể xác thực chữ ký số trong giấy phép đã nộp.");
-                }
+            }
 
-            // 3. Upload signed/original business license files
+            // 3. Upload signed business license file
             String businessLicenseSignedUrl = null;
-            String businessLicenseOriginalUrl = null;
             String businessLicenseSignedHash = computeSha256(signedLicense);
-            String businessLicenseOriginalHash = computeSha256(originalLicense);
 
             log.info("Uploading signed business license file");
             try {
@@ -546,16 +538,6 @@ public class EducationalUnitService {
             } catch (Exception e) {
                 log.error("Error uploading signed business license: {}", e.getMessage(), e);
                 throw new RuntimeException("Không thể tải lên giấy phép đã ký số. Vui lòng thử lại.");
-            }
-
-            if (originalLicense != null && !originalLicense.isEmpty()) {
-                log.info("Uploading original business license file");
-                try {
-                    Map<String, String> originalUploadResponse = fileHandlerRepository.uploadFile(originalLicense);
-                    businessLicenseOriginalUrl = originalUploadResponse.get("url");
-                } catch (Exception e) {
-                    log.error("Error uploading original business license: {}", e.getMessage(), e);
-                }
             }
 
             SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findSubscriptionPlanById(1L);
@@ -572,9 +554,9 @@ public class EducationalUnitService {
                     .logo(logoUrl) // Set logo URL
                     .businessLicense(businessLicenseSignedUrl)
                     .businessLicenseSigned(businessLicenseSignedUrl)
-                    .businessLicenseOriginal(businessLicenseOriginalUrl)
+                    .businessLicenseOriginal(null)
                     .businessLicenseSignedHash(businessLicenseSignedHash)
-                    .businessLicenseOriginalHash(businessLicenseOriginalHash)
+                    .businessLicenseOriginalHash(null)
                     .signatureStatus(verificationResult.getStatus())
                     .signatureErrorCode(verificationResult.getErrorCode())
                     .signatureErrorReason(verificationResult.getErrorReason())
@@ -636,18 +618,6 @@ public class EducationalUnitService {
             // Only throw a generic error for truly unexpected checked exceptions.
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
-    }
-
-    private MultipartFile getSignedLicenseFile(EducationalUnitRegistrationRequest request) {
-        if (request.getBusinessLicenseSigned() != null && !request.getBusinessLicenseSigned().isEmpty()) {
-            return request.getBusinessLicenseSigned();
-        }
-
-        if (request.getBusinessLicense() != null && !request.getBusinessLicense().isEmpty()) {
-            return request.getBusinessLicense();
-        }
-
-        return null;
     }
 
     private boolean isPdfFile(MultipartFile file) {

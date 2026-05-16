@@ -3,7 +3,6 @@ package com.hoangphihiep.controller.Teacher;
 import com.hoangphihiep.dto.request.QuizBlueprintRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.QuizBlueprintResponse;
-import com.hoangphihiep.entity.QuizBlueprint;
 import com.hoangphihiep.service.QuizBlueprintService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +26,7 @@ public class TeacherQuizBlueprintController {
     public ApiResponse<List<QuizBlueprintResponse>> getBlueprintByQuizId(
             @PathVariable Integer quizId) {
 
-        List<QuizBlueprintResponse> responses = quizBlueprintService.getBlueprintByQuizId(quizId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        List<QuizBlueprintResponse> responses = quizBlueprintService.getBlueprintByQuizId(quizId);
 
         return ApiResponse.<List<QuizBlueprintResponse>>builder()
                 .result(responses)
@@ -43,14 +39,14 @@ public class TeacherQuizBlueprintController {
             @PathVariable Integer quizId,
             @Valid @RequestBody QuizBlueprintRequest request) {
 
-        QuizBlueprint blueprint = quizBlueprintService.addCLOToBlueprint(
+        QuizBlueprintResponse blueprint = quizBlueprintService.addCLOToBlueprint(
                 quizId,
                 request.getCloId(),
                 request.getPercentage()
         );
 
         return ApiResponse.<QuizBlueprintResponse>builder()
-                .result(toResponse(blueprint))
+                .result(blueprint)
                 .build();
     }
 
@@ -60,14 +56,14 @@ public class TeacherQuizBlueprintController {
             @PathVariable Integer cloId,
             @Valid @RequestBody QuizBlueprintRequest request) {
 
-        QuizBlueprint blueprint = quizBlueprintService.updateCLOPercentage(
+        QuizBlueprintResponse blueprint = quizBlueprintService.updateCLOPercentage(
                 quizId,
                 cloId,
                 request.getPercentage()
         );
 
         return ApiResponse.<QuizBlueprintResponse>builder()
-                .result(toResponse(blueprint))
+                .result(blueprint)
                 .build();
     }
 
@@ -125,16 +121,4 @@ public class TeacherQuizBlueprintController {
                 .build();
     }
 
-    private QuizBlueprintResponse toResponse(QuizBlueprint blueprint) {
-        return QuizBlueprintResponse.builder()
-                .id(blueprint.getId())
-                .quizId(blueprint.getQuiz().getId())
-                .cloId(blueprint.getCourseObjective().getId())
-                .cloCode(blueprint.getCourseObjective().getCode())
-                .cloDescription(blueprint.getCourseObjective().getDescription())
-                .percentage(blueprint.getPercentage())
-                .createdAt(blueprint.getCreatedAt())
-                .updatedAt(blueprint.getUpdatedAt())
-                .build();
-    }
 }

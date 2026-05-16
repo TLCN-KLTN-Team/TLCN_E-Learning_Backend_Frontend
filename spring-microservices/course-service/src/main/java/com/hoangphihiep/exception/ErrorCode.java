@@ -227,12 +227,12 @@ public enum ErrorCode {
     CHANGE_EDUCATIONAL_UNIT_STATUS_FAILED("EDU_STATUS_9002", "Change educationalUnit status failed", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Course Objective (CLO) related errors (CLO_xxxx)
-    CLO_NOT_FOUND("CLO_2601", "Không tìm thấy CLO (Course Learning Objective)", HttpStatus.NOT_FOUND),
-    CLO_CODE_REQUIRED("CLO_2602", "Mã CLO không được để trống", HttpStatus.BAD_REQUEST),
-    CLO_DESCRIPTION_REQUIRED("CLO_2603", "Mô tả CLO không được để trống", HttpStatus.BAD_REQUEST),
+    CLO_NOT_FOUND("CLO_2601", "Không tìm thấy CĐR", HttpStatus.NOT_FOUND),
+    CLO_CODE_REQUIRED("CLO_2602", "Mã CĐR không được để trống", HttpStatus.BAD_REQUEST),
+    CLO_DESCRIPTION_REQUIRED("CLO_2603", "Mô tả CĐR không được để trống", HttpStatus.BAD_REQUEST),
     CLO_CODE_ALREADY_EXISTS("CLO_2604", "Mã CLO đã tồn tại trong khóa học này", HttpStatus.CONFLICT),
-    CLO_INVALID_CODE_FORMAT("CLO_2605", "Định dạng mã CLO không hợp lệ", HttpStatus.BAD_REQUEST),
-    CLO_COURSE_NOT_FOUND("CLO_2606", "Không tìm thấy khóa học cho CLO", HttpStatus.NOT_FOUND),
+    CLO_INVALID_CODE_FORMAT("CLO_2605", "Định dạng mã CĐR không hợp lệ", HttpStatus.BAD_REQUEST),
+    CLO_COURSE_NOT_FOUND("CLO_2606", "Không tìm thấy khóa học cho CĐR", HttpStatus.NOT_FOUND),
 
     // Quiz Blueprint related errors (BLUEPRINT_xxxx)
     QUIZ_BLUEPRINT_NOT_FOUND("BLUEPRINT_2801", "Không tìm thấy blueprint ma trận CLO cho đề thi", HttpStatus.NOT_FOUND),

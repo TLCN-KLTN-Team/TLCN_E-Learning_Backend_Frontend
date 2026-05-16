@@ -68,7 +68,7 @@ public class CertificateService {
         com.hoangphihiep.dto.response.ClaimChallengeResponse resp = new com.hoangphihiep.dto.response.ClaimChallengeResponse();
         resp.setMessage(message);
         resp.setNonce(nonce);
-        resp.setExpiresAt(new java.util.Date(expiresAt));
+        resp.setExpiresAt(new Date(expiresAt));
         return resp;
     }
 
