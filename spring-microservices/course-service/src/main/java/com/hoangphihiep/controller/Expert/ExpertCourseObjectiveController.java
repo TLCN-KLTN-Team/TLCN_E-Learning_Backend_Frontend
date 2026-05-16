@@ -3,12 +3,10 @@ package com.hoangphihiep.controller.Expert;
 import com.hoangphihiep.dto.request.CourseObjectiveRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.CourseObjectiveResponse;
-import com.hoangphihiep.entity.CourseObjective;
 import com.hoangphihiep.service.CourseObjectiveService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,16 +22,9 @@ public class ExpertCourseObjectiveController {
     @GetMapping
     public ApiResponse<List<CourseObjectiveResponse>> getCourseObjectives(
             @PathVariable Integer educationalUnitId,
-            @PathVariable Integer courseId,
-            @RequestParam(defaultValue = "true") boolean activeOnly) {
+            @PathVariable Integer courseId) {
 
-        List<CourseObjective> objectives = activeOnly
-                ? courseObjectiveService.getActiveCourseObjectivesByCourseId(courseId)
-                : courseObjectiveService.getCourseObjectivesByCourseId(courseId);
-
-        List<CourseObjectiveResponse> responses = objectives.stream()
-                .map(this::toResponse)
-                .toList();
+        List<CourseObjectiveResponse> responses = courseObjectiveService.getCourseObjectivesByCourseId(courseId);
 
         return ApiResponse.<List<CourseObjectiveResponse>>builder()
                 .result(responses)
@@ -41,20 +32,19 @@ public class ExpertCourseObjectiveController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CourseObjectiveResponse> createCourseObjective(
             @PathVariable Integer educationalUnitId,
             @PathVariable Integer courseId,
             @Valid @RequestBody CourseObjectiveRequest request) {
 
-        CourseObjective objective = courseObjectiveService.createCourseObjective(
+        CourseObjectiveResponse objective = courseObjectiveService.createCourseObjective(
                 courseId,
                 request.getCode(),
                 request.getDescription()
         );
 
         return ApiResponse.<CourseObjectiveResponse>builder()
-                .result(toResponse(objective))
+                .result(objective)
                 .build();
     }
 
@@ -65,14 +55,14 @@ public class ExpertCourseObjectiveController {
             @PathVariable Integer cloId,
             @Valid @RequestBody CourseObjectiveRequest request) {
 
-        CourseObjective objective = courseObjectiveService.updateCourseObjective(
+        CourseObjectiveResponse objective = courseObjectiveService.updateCourseObjective(
                 cloId,
                 request.getCode(),
                 request.getDescription()
         );
 
         return ApiResponse.<CourseObjectiveResponse>builder()
-                .result(toResponse(objective))
+                .result(objective)
                 .build();
     }
 
@@ -99,19 +89,6 @@ public class ExpertCourseObjectiveController {
 
         return ApiResponse.<Void>builder()
                 .message("CLO reactivated successfully")
-                .build();
-    }
-
-    private CourseObjectiveResponse toResponse(CourseObjective objective) {
-        return CourseObjectiveResponse.builder()
-                .id(objective.getId())
-                .courseId(objective.getCourse().getId())
-                                .courseName(objective.getCourse().getCourseName())
-                .code(objective.getCode())
-                .description(objective.getDescription())
-                .isActive(objective.getIsActive())
-                .createdAt(objective.getCreatedAt())
-                .updatedAt(objective.getUpdatedAt())
                 .build();
     }
 }

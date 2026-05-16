@@ -1,10 +1,9 @@
 package com.hoangphihiep.service;
 
 import com.hoangphihiep.config.SignatureVerificationConfig;
+import com.hoangphihiep.dto.response.SignatureVerificationResponse;
 import com.hoangphihiep.utils.RevocationTimeoutPolicy;
 import com.hoangphihiep.utils.SignatureVerificationStatus;
-import lombok.Builder;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -32,9 +31,9 @@ public class BusinessLicenseSignatureVerificationService {
     private final SignatureVerificationConfig signatureVerificationConfig;
     private final CertificateRevocationCheckService certificateRevocationCheckService;
 
-    public SignatureVerificationResult verify(MultipartFile signedPdf) {
+    public SignatureVerificationResponse verify(MultipartFile signedPdf) {
         if (signedPdf == null || signedPdf.isEmpty()) {
-            return SignatureVerificationResult.invalid(
+            return SignatureVerificationResponse.invalid(
                     SignatureVerificationStatus.INVALID_PARSE_ERROR,
                     "LICENSE_FILE_MISSING",
                     "Thiếu file giấy phép đã ký số"
@@ -48,7 +47,7 @@ public class BusinessLicenseSignatureVerificationService {
             return verify(signedPdf.getBytes(), sourceName);
         } catch (Exception ex) {
             log.error("Cannot read signed PDF bytes: {}", ex.getMessage(), ex);
-            return SignatureVerificationResult.invalid(
+                return SignatureVerificationResponse.invalid(
                     SignatureVerificationStatus.INVALID_PARSE_ERROR,
                     "SIGNATURE_PARSE_EXCEPTION",
                     "Không thể đọc nội dung chữ ký số trong PDF"
@@ -56,9 +55,9 @@ public class BusinessLicenseSignatureVerificationService {
         }
     }
 
-    public SignatureVerificationResult verify(byte[] signedPdfBytes, String sourceName) {
+    public SignatureVerificationResponse verify(byte[] signedPdfBytes, String sourceName) {
         if (signedPdfBytes == null || signedPdfBytes.length == 0) {
-            return SignatureVerificationResult.invalid(
+                return SignatureVerificationResponse.invalid(
                     SignatureVerificationStatus.INVALID_PARSE_ERROR,
                     "LICENSE_FILE_MISSING",
                     "Thiếu dữ liệu giấy phép đã ký số"
@@ -67,7 +66,7 @@ public class BusinessLicenseSignatureVerificationService {
 
         try {
             if (signedPdfBytes.length < 8) {
-                return SignatureVerificationResult.invalid(
+                return SignatureVerificationResponse.invalid(
                         SignatureVerificationStatus.INVALID_PARSE_ERROR,
                         "PDF_INVALID",
                         "File PDF không hợp lệ hoặc bị hỏng"
@@ -76,7 +75,7 @@ public class BusinessLicenseSignatureVerificationService {
 
             String content = new String(signedPdfBytes, StandardCharsets.ISO_8859_1);
             if (!content.startsWith("%PDF")) {
-                return SignatureVerificationResult.invalid(
+                return SignatureVerificationResponse.invalid(
                         SignatureVerificationStatus.INVALID_PARSE_ERROR,
                         "PDF_INVALID_HEADER",
                         "File không đúng định dạng PDF: " + sourceName
@@ -85,7 +84,7 @@ public class BusinessLicenseSignatureVerificationService {
 
             boolean hasSignatureMarkers = content.contains("/ByteRange") && content.contains("/Contents");
             if (!hasSignatureMarkers) {
-                return SignatureVerificationResult.invalid(
+                return SignatureVerificationResponse.invalid(
                         SignatureVerificationStatus.INVALID_PARSE_ERROR,
                         "SIGNATURE_NOT_FOUND",
                         "Không tìm thấy chữ ký số trong PDF"
@@ -98,32 +97,32 @@ public class BusinessLicenseSignatureVerificationService {
 
                 X509CertificateHolder signerCertificate = extractSignerCertificate(content);
                 if (signerCertificate == null) {
-                return SignatureVerificationResult.invalid(
-                    SignatureVerificationStatus.INVALID_PARSE_ERROR,
-                    "SIGNER_CERT_NOT_FOUND",
-                    "Không tìm thấy chứng thư người ký trong tài liệu"
-                );
+                    return SignatureVerificationResponse.invalid(
+                            SignatureVerificationStatus.INVALID_PARSE_ERROR,
+                            "SIGNER_CERT_NOT_FOUND",
+                            "Không tìm thấy chứng thư người ký trong tài liệu"
+                    );
                 }
 
                 if (!isTrustedIssuer(signerCertificate)) {
-                return SignatureVerificationResult.invalid(
-                    SignatureVerificationStatus.INVALID_UNTRUSTED_CA,
-                    "UNTRUSTED_CA",
-                    "Chứng thư ký số không thuộc danh sách CA tin cậy của hệ thống"
-                ).toBuilder()
-                    .certificateExpiryDate(signerCertificate.getNotAfter())
-                    .build();
+                    return SignatureVerificationResponse.invalid(
+                            SignatureVerificationStatus.INVALID_UNTRUSTED_CA,
+                            "UNTRUSTED_CA",
+                            "Chứng thư ký số không thuộc danh sách CA tin cậy của hệ thống"
+                    ).toBuilder()
+                            .certificateExpiryDate(signerCertificate.getNotAfter())
+                            .build();
                 }
 
                 Date certificateExpiryDate = signerCertificate.getNotAfter();
                 if (certificateExpiryDate != null && certificateExpiryDate.before(new Date())) {
-                return SignatureVerificationResult.invalid(
-                    SignatureVerificationStatus.INVALID_EXPIRED,
-                    "CERTIFICATE_EXPIRED",
-                    "Chứng thư số đã hết hạn"
-                ).toBuilder()
-                    .certificateExpiryDate(certificateExpiryDate)
-                    .build();
+                    return SignatureVerificationResponse.invalid(
+                            SignatureVerificationStatus.INVALID_EXPIRED,
+                            "CERTIFICATE_EXPIRED",
+                            "Chứng thư số đã hết hạn"
+                    ).toBuilder()
+                            .certificateExpiryDate(certificateExpiryDate)
+                            .build();
                 }
 
                 CertificateRevocationCheckService.RevocationCheckResult revocationResult =
@@ -131,33 +130,31 @@ public class BusinessLicenseSignatureVerificationService {
                     String revocationStatusDetail = buildRevocationStatusDetail(revocationResult);
 
                 if ("REVOKED".equalsIgnoreCase(revocationResult.getStatus())) {
-                return SignatureVerificationResult.invalid(
-                    SignatureVerificationStatus.INVALID_REVOKED,
-                    "CERTIFICATE_REVOKED",
-                    "Chứng thư số đã bị thu hồi"
-                ).toBuilder()
-                    .revocationStatus(revocationStatusDetail)
-                    .certificateExpiryDate(certificateExpiryDate)
-                    .build();
+                    return SignatureVerificationResponse.invalid(
+                            SignatureVerificationStatus.INVALID_REVOKED,
+                            "CERTIFICATE_REVOKED",
+                            "Chứng thư số đã bị thu hồi"
+                    ).toBuilder()
+                            .revocationStatus(revocationStatusDetail)
+                            .certificateExpiryDate(certificateExpiryDate)
+                            .build();
                 }
 
                 if (revocationResult.isTimedOut()
                     && signatureVerificationConfig.getRevocationTimeoutPolicy() == RevocationTimeoutPolicy.FAIL_CLOSED) {
-                return SignatureVerificationResult.invalid(
-                    SignatureVerificationStatus.INVALID,
-                    "REVOCATION_CHECK_TIMEOUT",
-                    "Không thể kiểm tra trạng thái thu hồi chứng thư trong thời gian cho phép"
-                ).toBuilder()
-                    .revocationStatus(revocationStatusDetail)
-                    .certificateExpiryDate(certificateExpiryDate)
-                    .build();
+                    return SignatureVerificationResponse.invalid(
+                            SignatureVerificationStatus.INVALID,
+                            "REVOCATION_CHECK_TIMEOUT",
+                            "Không thể kiểm tra trạng thái thu hồi chứng thư trong thời gian cho phép"
+                    ).toBuilder()
+                            .revocationStatus(revocationStatusDetail)
+                            .certificateExpiryDate(certificateExpiryDate)
+                            .build();
                 }
 
-            String warning = hasTimestamp
-                    ? null
-                    : "Không tìm thấy TSA timestamp. Theo chính sách hiện tại, hồ sơ vẫn tiếp nhận nhưng sẽ cảnh báo review.";
+            String warning = null;
 
-            return SignatureVerificationResult.builder()
+            return SignatureVerificationResponse.builder()
                     .status(SignatureVerificationStatus.VERIFIED_UNMODIFIED)
                     .errorCode(null)
                     .errorReason(null)
@@ -169,7 +166,7 @@ public class BusinessLicenseSignatureVerificationService {
                     .build();
         } catch (Exception ex) {
             log.error("Cannot parse signed PDF for verification: {}", ex.getMessage(), ex);
-            return SignatureVerificationResult.invalid(
+            return SignatureVerificationResponse.invalid(
                     SignatureVerificationStatus.INVALID_PARSE_ERROR,
                     "SIGNATURE_PARSE_EXCEPTION",
                     "Không thể đọc nội dung chữ ký số trong PDF"
@@ -269,41 +266,4 @@ public class BusinessLicenseSignatureVerificationService {
         return Hex.decode(cleanedHex);
     }
 
-    @Getter
-    @Builder
-    public static class SignatureVerificationResult {
-        private SignatureVerificationStatus status;
-        private String errorCode;
-        private String errorReason;
-        private String warning;
-        private boolean hasTimestamp;
-        private String revocationStatus;
-        private Date verifiedAt;
-        private Date certificateExpiryDate;
-
-        public static SignatureVerificationResult invalid(SignatureVerificationStatus status, String errorCode, String errorReason) {
-            return SignatureVerificationResult.builder()
-                    .status(status)
-                    .errorCode(errorCode)
-                    .errorReason(errorReason)
-                    .warning(null)
-                    .hasTimestamp(false)
-                    .revocationStatus("MANUAL_REVIEW_REQUIRED")
-                    .verifiedAt(new Date())
-                    .certificateExpiryDate(null)
-                    .build();
-        }
-
-        public SignatureVerificationResultBuilder toBuilder() {
-            return SignatureVerificationResult.builder()
-                    .status(this.status)
-                    .errorCode(this.errorCode)
-                    .errorReason(this.errorReason)
-                    .warning(this.warning)
-                    .hasTimestamp(this.hasTimestamp)
-                    .revocationStatus(this.revocationStatus)
-                    .verifiedAt(this.verifiedAt)
-                    .certificateExpiryDate(this.certificateExpiryDate);
-        }
-    }
 }

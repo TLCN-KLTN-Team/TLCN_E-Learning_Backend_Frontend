@@ -132,6 +132,7 @@ public class AiRecommendationService {
         // ===== LEVEL 2: Interests from Highly Engaged Courses =====
         // Courses with high progress (>50%) indicate strong interest
         List<String> engagedCourses = getHighEngagementCourses(userId);
+        log.debug("engagedCourses: {}", engagedCourses);
         interests.addAll(engagedCourses);
 
         // Page visit behavior signals from course page clicks/views
@@ -325,8 +326,6 @@ public class AiRecommendationService {
 
     private List<String> getHighEngagementCourses(String userId) {
         try {
-            // Using Spring Data JPA's findAll + filter in memory
-            // In production, this should be a @Query method
             return publishedCourseRepository.findAll().stream()
                     .filter(course -> {
                         Optional<CourseProgress> progress = courseProgressRepository

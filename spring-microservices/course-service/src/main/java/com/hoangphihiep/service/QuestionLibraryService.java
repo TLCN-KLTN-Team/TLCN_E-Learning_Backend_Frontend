@@ -63,7 +63,7 @@ public class QuestionLibraryService {
         String mappedTeacherId = resolveMappedTeacherId(teacherId);
 
         // Upload images if provided
-        List<String> uploadedUrls = new java.util.ArrayList<>();
+        List<String> uploadedUrls = new ArrayList<>();
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile file : imageFiles) {
                 try {
@@ -78,7 +78,7 @@ public class QuestionLibraryService {
         }
 
         // Combine existing attachments with newly uploaded URLs
-        List<String> allAttachments = new java.util.ArrayList<>();
+        List<String> allAttachments = new ArrayList<>();
         if (request.getAttachments() != null) {
             allAttachments.addAll(request.getAttachments());
         }

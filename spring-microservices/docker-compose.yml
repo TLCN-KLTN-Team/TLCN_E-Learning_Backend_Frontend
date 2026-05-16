@@ -388,9 +388,17 @@ services:
       PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
       PAYPAL_RETURN_URL: ${PAYPAL_RETURN_URL}
       PAYPAL_CANCEL_URL: ${PAYPAL_CANCEL_URL}
-      SIGNATURE_TRUSTED_ISSUERS: ${SIGNATURE_TRUSTED_ISSUERS:NEAC,VNPT,VIETTEL,FPT}
-      SIGNATURE_REVOCATION_TIMEOUT_MS: ${SIGNATURE_REVOCATION_TIMEOUT_MS:3000}
-      SIGNATURE_REVOCATION_TIMEOUT_POLICY: ${SIGNATURE_REVOCATION_TIMEOUT_POLICY:MANUAL_REVIEW}
+      ESCROW_HOLD_DAYS: ${ESCROW_HOLD_DAYS:-7}
+      PINATA_JWT: ${PINATA_JWT}
+      PINATA_GATEWAY_URL: ${PINATA_GATEWAY_URL:-https://gateway.pinata.cloud/ipfs/}
+      PINATA_API_URL: ${PINATA_API_URL:-https://api.pinata.cloud}
+      BLOCKCHAIN_RPC_URL: ${BLOCKCHAIN_RPC_URL}
+      BLOCKCHAIN_PRIVATE_KEY: ${BLOCKCHAIN_PRIVATE_KEY}
+      BLOCKCHAIN_CONTRACT_ADDRESS: ${BLOCKCHAIN_CONTRACT_ADDRESS}
+      BLOCKCHAIN_CHAIN_ID: ${BLOCKCHAIN_CHAIN_ID:-1337}
+      SIGNATURE_TRUSTED_ISSUERS: ${SIGNATURE_TRUSTED_ISSUERS:-NEAC,VNPT,VIETTEL,FPT}
+      SIGNATURE_REVOCATION_TIMEOUT_MS: ${SIGNATURE_REVOCATION_TIMEOUT_MS:-3000}
+      SIGNATURE_REVOCATION_TIMEOUT_POLICY: ${SIGNATURE_REVOCATION_TIMEOUT_POLICY:-MANUAL_REVIEW}
     depends_on:
       mysql:
         condition: service_healthy
@@ -522,7 +530,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: production
       IDENTITY_SERVICE_URI: http://identity-service:8080
-      PROFILE_SERVICE_URI: http://profile-service:8081
+      AI_SERVICE_URI: http://ai-service:8000
       FILE_SERVICE_URI: http://file-service:8084
       COURSE_SERVICE_URI: http://course-service:8088
       CHAT_SERVICE_URI: http://chat-service:8090
@@ -543,6 +551,8 @@ services:
         condition: service_healthy
       chat-service:
         condition: service_healthy
+      ai-service:
+        condition: service_started
       notification-service:
         condition: service_started
     networks:
@@ -593,6 +603,41 @@ services:
         -XX:+UseG1GC
     depends_on:
       kafka:
+        condition: service_healthy
+    networks:
+      - backend-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ai-service:
+    image: ${DOCKERHUB_USER}/ai-service:${VERSION:-latest}
+    container_name: ai-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/ai_db?authSource=admin
+      AI_SERVICE_DOCUMENT_PARSER: ${AI_SERVICE_DOCUMENT_PARSER:-http://document-parser:8001/api/v1/parser}
+      AI_SERVICE_FLASHCARD: ${AI_SERVICE_FLASHCARD:-http://flashcard-service:8002/api/v1/flashcard}
+      AI_SERVICE_QUIZ: ${AI_SERVICE_QUIZ:-http://quiz-service:8003/api/v1/quiz}
+      JAVA_OPTS: >
+        -Xms128m
+        -Xmx256m
+        -XX:+UseG1GC
+        -Djava.security.egd=file:/dev/./urandom
+    depends_on:
+      mongodb:
         condition: service_healthy
     networks:
       - backend-network

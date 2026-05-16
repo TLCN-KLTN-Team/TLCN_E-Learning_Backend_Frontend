@@ -2,6 +2,7 @@ package com.hoangphihiep.controller.user;
 
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.CertificateResponse;
+import com.hoangphihiep.dto.response.ClaimChallengeResponse;
 import com.hoangphihiep.entity.Certificate;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.service.CertificateService;
@@ -27,7 +28,7 @@ public class CertificateController {
     private final CertificateService certificateService;
 
     @GetMapping("/claim/{courseId}/challenge")
-    public ApiResponse<com.hoangphihiep.dto.response.ClaimChallengeResponse> getClaimChallenge(@PathVariable Integer courseId) {
+    public ApiResponse<ClaimChallengeResponse> getClaimChallenge(@PathVariable Integer courseId) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         com.hoangphihiep.dto.response.ClaimChallengeResponse resp = certificateService.generateClaimChallenge(userId, courseId);
         return ApiResponse.<com.hoangphihiep.dto.response.ClaimChallengeResponse>builder().result(resp).build();
@@ -71,10 +72,6 @@ public class CertificateController {
                 .build();
     }
 
-    /**
-     * Public endpoint to verify certificate by hash against blockchain
-     * Returns blockchain verification results for the certificate
-     */
     @GetMapping(value = "/verify-hash/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> verifyCertificateByHash(@PathVariable String hash) {
         try {
@@ -119,10 +116,6 @@ public class CertificateController {
         }
     }
 
-    /**
-     * Public endpoint to download/view certificate PDF (placeholder implementation)
-     * In production, this would generate or retrieve actual PDF file
-     */
     @GetMapping(value = "/{code}/pdf", produces = "application/pdf")
     public ResponseEntity<?> getCertificatePdf(@PathVariable String code) {
         try {

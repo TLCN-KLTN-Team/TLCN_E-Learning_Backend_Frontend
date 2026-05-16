@@ -18,7 +18,7 @@ fi
 DOCKERHUB_USER="${DOCKERHUB_USER:-devzeus}"
 VERSION="${VERSION:-1.0.0}"
 
-SERVICES=("api-gateway" "identity-service" "course-service" "chat-service" "file-service")
+SERVICES=("api-gateway" "identity-service" "course-service" "chat-service" "file-service" "notification-service" "ai-service")
 
 echo -e "${YELLOW}🚀 Building Docker images locally...${NC}"
 echo -e "${YELLOW}📋 Docker Hub User: $DOCKERHUB_USER${NC}"

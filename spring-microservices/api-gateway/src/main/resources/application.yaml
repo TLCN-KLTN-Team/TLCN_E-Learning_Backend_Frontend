@@ -24,13 +24,6 @@ spring:
               filters:
                 - StripPrefix=2
 
-            - id: profile-service
-              uri: http://localhost:8081
-              predicates:
-                - Path=${app.api-prefix}/profile/users/**
-              filters:
-                - StripPrefix=2
-
             - id: file-handler-service
               uri: ${FILE_SERVICE_URI:http://localhost:8084}
               predicates:
@@ -106,10 +99,8 @@ springdoc:
         url: ${CHAT_SERVICE_URI:http://localhost:8090}/server/v3/api-docs
       - name: file-service
         url: ${FILE_SERVICE_URI:http://localhost:8084}/file-handler/v3/api-docs
-#      - name: notification-service
-#        url: ${CHAT_SERVICE_URI:http://localhost:8090}/server/v3/api-docs
-#      - name: ai-service
-#        url: ${CHAT_SERVICE_URI:http://localhost:8090}/server/v3/api-docs
+      - name: ai-service
+        url: ${AI_SERVICE_URI:http://localhost:8000}/v3/api-docs
 
 management:
   endpoints:

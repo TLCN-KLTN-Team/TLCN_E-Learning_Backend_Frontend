@@ -236,7 +236,7 @@ public class Web3jService {
 
     private BigInteger callUint256View(String functionName, Type param) throws Exception {
         log.debug("Calling view function: {} with param: {}", functionName, param);
-        org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+        Function function = new Function(
                 functionName,
                 List.of(param),
                 List.of(new TypeReference<Uint256>() {})

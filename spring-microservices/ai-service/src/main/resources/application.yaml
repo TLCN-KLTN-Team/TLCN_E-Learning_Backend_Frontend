@@ -3,13 +3,13 @@ spring:
     name: ai-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017/ai_db
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/ai_db}
 
 server:
   port: 8000
 
 ai:
   service:
-    document-parser: http://localhost:8001/api/v1/parser
-    flashcard: http://localhost:8002/api/v1/flashcard
-    quiz: http://localhost:8003/api/v1/quiz
+    document-parser: ${AI_SERVICE_DOCUMENT_PARSER:http://localhost:8001/api/v1/parser}
+    flashcard: ${AI_SERVICE_FLASHCARD:http://localhost:8002/api/v1/flashcard}
+    quiz: ${AI_SERVICE_QUIZ:http://localhost:8003/api/v1/quiz}

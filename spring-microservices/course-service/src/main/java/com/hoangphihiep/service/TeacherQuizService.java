@@ -134,10 +134,6 @@ public class TeacherQuizService {
         return stats;
     }
 
-    private String getCurrentUserId() {
-        return SecurityContextHolder.getContext().getAuthentication().getName();
-    }
-
     private QuizResultResponse buildQuizResultResponse(
             QuizAttempt attempt,
             Map<String, StudentResponse> studentInfoMap) {
