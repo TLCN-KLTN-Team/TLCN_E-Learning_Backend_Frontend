@@ -33,7 +33,7 @@ const RecommendedCourses: React.FC<RecommendedCoursesProps> = ({ currentCourseId
                     console.log("RecommendedCourses: Fetching for guest with category:", category);
                     // 1. Try fetching related courses by category
                     let data = await PublishedCourseService.searchAndFiltersPublishedCourses(
-                        0, 5, undefined, undefined, undefined, undefined, undefined, undefined,
+                        0, 5, undefined, undefined, undefined, undefined, undefined,
                         category, "popular"
                     );
 
@@ -43,7 +43,7 @@ const RecommendedCourses: React.FC<RecommendedCoursesProps> = ({ currentCourseId
                     if (!data || !data.content || data.content.length === 0 || (data.content.length === 1 && String(data.content[0].id) === String(currentCourseId))) {
                         console.log("RecommendedCourses: Fallback to popular courses");
                         data = await PublishedCourseService.searchAndFiltersPublishedCourses(
-                            0, 5, undefined, undefined, undefined, undefined, undefined, undefined,
+                            0, 5, undefined, undefined, undefined, undefined, undefined,
                             undefined, "popular"
                         );
                         console.log("RecommendedCourses: Popular search result:", data);

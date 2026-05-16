@@ -10,7 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { DollarSign, ShoppingCart, TrendingUp, Loader2, Users, XCircle } from "lucide-react";
+import { DollarSign, ShoppingCart, TrendingUp, Loader2 } from "lucide-react";
 import type { TimeRange } from "@/types/revenue.types";
 import { TIME_RANGE_OPTIONS } from "@/types/revenue.types";
 import { getSystemRevenue, getSystemRevenueByDateRange } from "@/services/api/superadmin/revenueApi";
@@ -188,6 +188,7 @@ const SystemRevenueTab: React.FC = () => {
             Khoảng thời gian
           </label>
           <select
+            aria-label="Khoảng thời gian"
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as TimeRange)}
             className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"

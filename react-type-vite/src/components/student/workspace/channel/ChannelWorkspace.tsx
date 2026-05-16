@@ -76,7 +76,7 @@ const ChannelWorkspace = ({
         <ChannelTimer
           channelId={channelId}
           channelName={channelName}
-          endTime={endTime}
+          endTime={endTime.toISOString()} // sua tam thoi de chay
           onChannelExpired={handleChannelExpired}
         />
       )}

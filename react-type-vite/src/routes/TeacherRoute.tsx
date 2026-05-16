@@ -1,5 +1,4 @@
-import { Route } from "react-router-dom";
-import TeacherHomePage from "../pages/teacher/dashboard/TeacherDashboard";
+import { Route, Navigate } from "react-router-dom";
 import AssignedCoursesPage from "../pages/teacher/course/AssignedCoursesPage";
 import EditCoursePage from "../pages/teacher/course/EditCoursePage";
 import ProtectedRoute from "./protected/ProtectedRoute";
@@ -29,12 +28,7 @@ const TeacherRoutes = [
       </ProtectedRoute>
     }
   >
-    <Route key="teacher-home" path="home" element={<TeacherHomePage />} />
-    <Route
-      key="teacher-dashboard"
-      path="dashboard"
-      element={<TeacherHomePage />}
-    />
+    <Route index element={<Navigate to="assigned-courses" replace />} />
     <Route
       key="teacher-notifications"
       path="notifications"

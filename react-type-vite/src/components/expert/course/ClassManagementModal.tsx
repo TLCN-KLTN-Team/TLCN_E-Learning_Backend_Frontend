@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, Plus, Edit, Trash2, Users, School, Calendar, Hash, Upload, AlertTriangle, Archive } from "lucide-react";
+import { X, Plus, Edit, Users, School, Calendar, Hash, Upload, Archive } from "lucide-react";
 import { toast } from 'react-toastify';
 import { Button } from "@/components/ui/button";
 import {

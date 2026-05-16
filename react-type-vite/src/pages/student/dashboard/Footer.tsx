@@ -1,5 +1,3 @@
-import { HandHeart } from "lucide-react";
-
 const Footer = () => {
   return (
     <footer className="bg-gray-800 text-white py-4 px-8 flex flex-col justify-center items-center">

@@ -40,7 +40,7 @@ export const STUDENT_ROUTES = {
 // ============================================
 export const TEACHER_ROUTES = {
   BASE: "/teacher",
-  HOME: "/teacher/home",
+  HOME: "/teacher/assigned-courses",
   DASHBOARD: "/teacher/dashboard",
   NOTIFICATIONS: "/teacher/notifications",
   ASSIGNED_COURSES: "/teacher/assigned-courses",

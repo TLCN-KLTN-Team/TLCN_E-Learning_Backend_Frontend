@@ -110,15 +110,15 @@ const CourseDetail = () => {
       // Fetch completed lessons
       const detail = await progressApi.getCourseProgressDetail(Number(id));
       console.log("📝 Course progress detail:", detail);
-      console.log("📚 Lesson progresses:", detail?.courseProgress?.lessonProgresses);
+      console.log("📚 Lesson progresses:", detail?.lessonProgresses);
 
-      const completedLessonIds = new Set(
-        detail?.courseProgress?.lessonProgresses
-          ?.filter((lp: any) => {
-            console.log(`Lesson ${lp.lessonId}: completed=${lp.completed}`);
-            return lp.completed === true; // Use 'completed' instead of 'isCompleted'
+      const completedLessonIds = new Set<number>(
+        (detail?.lessonProgresses || [])
+          .filter((lp) => {
+            console.log(`Lesson ${lp.lessonId}: completed=${lp.isCompleted}`);
+            return lp.isCompleted === true;
           })
-          ?.map((lp: any) => lp.lessonId) || []
+          .map((lp) => lp.lessonId)
       );
 
       console.log("✅ Completed lesson IDs:", Array.from(completedLessonIds));

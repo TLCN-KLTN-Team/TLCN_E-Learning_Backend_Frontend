@@ -1,11 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Award, Download, ExternalLink, ShieldCheck, Loader2, Copy, FileJson } from "lucide-react";
+import { Award, Download, ExternalLink, Loader2, Copy } from "lucide-react";
 import type { CertificateResponse } from "@/services/api/response/certificateResponse";
 import { createRoute } from "@/constants/routes";
-import { toPng } from 'html-to-image'; // Đã thay thế html2canvas
-import jsPDF from 'jspdf';
 import { toast } from 'react-toastify';
 
 interface CertificateModalProps {
@@ -20,7 +18,6 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
     const certificateRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const ipfsGateway = import.meta.env.VITE_IPFS_GATEWAY_URL || "https://gateway.pinata.cloud/ipfs/";
-    const apiBaseUrl = (import.meta.env.VITE_BASE_URL || "http://localhost:8888/api/v1").replace(/\/$/, "");
     const blockchainExplorerUrl = (import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || "").replace(/\/$/, "");
     const blockchainChainId = Number(import.meta.env.VITE_BLOCKCHAIN_CHAIN_ID || "1337");
 
@@ -49,52 +46,9 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
         typeof certificate?.finalScore === "number" && Number.isFinite(certificate.finalScore)
             ? certificate.finalScore
             : null;
-    const txHash = certificate?.transactionHash;
-    const txHashDisplay = txHash
-        ? txHash.length > 18
-            ? `${txHash.substring(0, 10)}...${txHash.substring(txHash.length - 8)}`
-            : txHash
-        : "Không có";
     const displayStudentName = studentName?.trim() || certificate?.studentName?.trim() || certificate?.userId || "Học viên";
     const displayGrade = certificate?.grade?.trim() || deriveGradeFromScore(finalScoreValue);
     const displayGpa = finalScoreValue !== null ? finalScoreValue.toFixed(1) : "Không có";
-
-    const handleDownload = async (type: 'pdf' | 'image') => {
-        if (!certificateRef.current) return;
-        setIsDownloading(true);
-
-        try {
-            // Sử dụng html-to-image để fix lỗi màu oklch của Tailwind/Shadcn
-            const dataUrl = await toPng(certificateRef.current, {
-                quality: 1,
-                pixelRatio: 2, // Tăng độ nét cho ảnh in ra
-                backgroundColor: "#ffffff",
-                style: {
-                    transform: 'scale(1)',
-                    transformOrigin: 'top left',
-                    margin: '0'
-                }
-            });
-
-            if (type === 'image') {
-                const link = document.createElement('a');
-                link.download = `ChungChi-${certificate?.certificateCode || 'OpenEdu'}.png`;
-                link.href = dataUrl;
-                link.click();
-            } else {
-                const pdf = new jsPDF('l', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-
-                pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`ChungChi-${certificate?.certificateCode || 'OpenEdu'}.pdf`);
-            }
-        } catch (error) {
-            console.error("Tải xuống thất bại:", error);
-        } finally {
-            setIsDownloading(false);
-        }
-    };
 
     const getExplorerTxUrl = (txHash?: string | null): string | null => {
         if (!txHash) return null;
@@ -190,22 +144,21 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                 <div className="flex-1 w-full overflow-y-auto overflow-x-hidden flex flex-col items-center rounded-lg min-h-0">
                     <div
                         ref={certificateRef}
-                        className="relative bg-white w-full max-w-[800px] aspect-[1.414/1] flex flex-col items-center justify-between p-4 sm:p-8 md:p-12 shadow-md border border-gray-200 overflow-hidden shrink-0"
-                        style={{ fontFamily: "'Times New Roman', serif" }}
+                        className="relative bg-white w-full max-w-[800px] aspect-[1.414/1] flex flex-col items-center justify-between p-4 sm:p-8 md:p-12 shadow-md border border-gray-200 overflow-hidden shrink-0 font-serif"
                     >
                         {/* Khung viền trang trí */}
                         <div className="absolute inset-2 sm:inset-4 border-[3px] sm:border-4 border-double border-yellow-500 pointer-events-none z-0"></div>
                         <div className="absolute inset-3 sm:inset-6 border border-blue-900 pointer-events-none z-0"></div>
 
                         {/* Góc họa tiết */}
-                        <div className="absolute top-0 left-0 w-16 h-16 sm:w-24 sm:h-24 bg-blue-900 z-0" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}></div>
-                        <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-blue-900 z-0" style={{ clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}></div>
-                        <div className="absolute bottom-0 left-0 w-16 h-16 sm:w-24 sm:h-24 bg-blue-900 z-0" style={{ clipPath: 'polygon(0 100%, 0 0, 100% 100%)' }}></div>
-                        <div className="absolute bottom-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-blue-900 z-0" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)' }}></div>
+                        <div className="absolute top-0 left-0 w-0 h-0 border-t-[64px] border-t-blue-900 border-r-[64px] border-r-transparent sm:border-t-[96px] sm:border-r-[96px] z-0"></div>
+                        <div className="absolute top-0 right-0 w-0 h-0 border-t-[64px] border-t-blue-900 border-l-[64px] border-l-transparent sm:border-t-[96px] sm:border-l-[96px] z-0"></div>
+                        <div className="absolute bottom-0 left-0 w-0 h-0 border-b-[64px] border-b-blue-900 border-r-[64px] border-r-transparent sm:border-b-[96px] sm:border-r-[96px] z-0"></div>
+                        <div className="absolute bottom-0 right-0 w-0 h-0 border-b-[64px] border-b-blue-900 border-l-[64px] border-l-transparent sm:border-b-[96px] sm:border-l-[96px] z-0"></div>
 
                         {/* Header */}
                         <div className="z-10 mt-2 sm:mt-4 text-center w-full px-4">
-                            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-widest text-blue-900 uppercase mb-1" style={{ fontFamily: "serif" }}>CHỨNG CHỈ</h1>
+                            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-widest text-blue-900 uppercase mb-1 font-serif">CHỨNG CHỈ</h1>
                             <p className="text-xs sm:text-sm md:text-lg text-yellow-600 tracking-[0.1em] sm:tracking-[0.2em] font-semibold uppercase">HOÀN THÀNH KHÓA HỌC</p>
                         </div>
 
@@ -248,7 +201,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                             </div>
 
                             <div className="flex flex-col items-center justify-center">
-                                <div className="w-12 h-12 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-yellow-500 rounded-full flex flex-col items-center justify-center text-white shadow-md border-2 sm:border-4 border-white outline outline-1 sm:outline-2 outline-yellow-500 mb-1 sm:mb-2 z-10 shrink-0">
+                                <div className="w-12 h-12 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-yellow-500 rounded-full flex flex-col items-center justify-center text-white shadow-md border-2 sm:border-4 border-white ring-1 ring-yellow-500 mb-1 sm:mb-2 z-10 shrink-0">
                                     <Award className="w-5 h-5 sm:w-8 sm:h-8 md:w-10 md:h-10" />
                                     {certificate.grade && (
                                         <span className="text-[6px] sm:text-[9px] font-bold uppercase tracking-wider bg-white/20 px-1 sm:px-2 py-0.5 rounded mt-0.5">
@@ -355,24 +308,6 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                         >
                             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                             <span className="truncate">View transaction</span>
-                        </Button>
-
-                        <Button
-                            onClick={() => handleDownload('image')}
-                            disabled={isDownloading}
-                            className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs sm:text-sm h-9 px-3"
-                        >
-                            {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" /> : <Download className="w-3.5 h-3.5 shrink-0" />}
-                            <span className="truncate">Lưu ảnh</span>
-                        </Button>
-
-                        <Button
-                            onClick={() => handleDownload('pdf')}
-                            disabled={isDownloading}
-                            className="flex-1 sm:flex-none bg-blue-900 hover:bg-blue-800 text-white gap-1.5 text-xs sm:text-sm h-9 px-3"
-                        >
-                            {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" /> : <Download className="w-3.5 h-3.5 shrink-0" />}
-                            <span className="truncate">Tải PNG</span>
                         </Button>
                     </div>
                 </DialogFooter>

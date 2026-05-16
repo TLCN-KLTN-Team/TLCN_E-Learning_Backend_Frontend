@@ -34,7 +34,7 @@ const TeacherNotificationsModal: React.FC<Props> = ({
           <div className="p-4">
             <NotificationCenterPage
               title={title}
-              fallbackPath="/teacher/home"
+              fallbackPath="/teacher/assigned-courses"
               notificationsPagePath="/teacher/notifications"
             />
           </div>
