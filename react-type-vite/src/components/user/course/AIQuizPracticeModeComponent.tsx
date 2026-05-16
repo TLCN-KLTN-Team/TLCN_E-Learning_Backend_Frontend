@@ -77,7 +77,7 @@ function generateQuizSetId(questions: QuizQuestion[]): string {
   const content = questions
     .map(
       (q) =>
-        `${q.question}|${q.type}|${q.correctAnswer}|${JSON.stringify(q.options || [])}`,
+        `${q.question}|${q.questionType}|${JSON.stringify(q.options || [])}`,
     )
     .sort() // Sort to ensure consistent ordering
     .join("::");
@@ -317,13 +317,13 @@ export default function ReviewMain({
     if (savedSet) {
       toast.success("Đã lưu bộ flashcards vào kho!");
       // Optionally add to local saved sets list
-      const uiFlashcards = flashcards.map((c) => ({
-        id: c.id,
-        front: c.front,
-        back: c.back,
-        tags: c.tags,
-        difficulty: c.difficulty,
-      }));
+      // const uiFlashcards = flashcards.map((c) => ({
+      //   id: c.id,
+      //   front: c.front,
+      //   back: c.back,
+      //   tags: c.tags,
+      //   difficulty: c.difficulty,
+      // }));
     } else {
       toast.error("Lưu bộ flashcards thất bại. Vui lòng thử lại.");
     }

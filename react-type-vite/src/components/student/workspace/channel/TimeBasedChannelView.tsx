@@ -99,11 +99,10 @@ const TimeBasedChannelView = ({
   };
 
   // Get user initials for avatar
-  const getUserInitials = (participant: UserResponse): string => {
-    const firstName = participant.firstName || "";
-    const lastName = participant.lastName || "";
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "??";
-  };
+  // const getUserInitials = (participant: UserResponse): string => {
+  //   const firstName = participant.nickname;
+  //   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "??";
+  // };
 
   // Check if channel is ending soon (less than 5 minutes)
   const isEndingSoon = timeRemaining > 0 && timeRemaining <= 5 * 60 * 1000;
@@ -116,7 +115,7 @@ const TimeBasedChannelView = ({
           {/* Channel Name */}
           <div className="flex items-center space-x-3">
             <h1 className="text-xl font-semibold text-gray-800">
-              # {channel.channelName}
+              # {channel.name}
             </h1>
           </div>
 
@@ -173,11 +172,11 @@ const TimeBasedChannelView = ({
       {/* Welcome Message */}
       <div className="bg-gray-100 border-b border-gray-200 px-6 py-4">
         <h2 className="text-lg font-semibold text-gray-800 mb-2">
-          Welcome to #{channel.channelName}!
+          Welcome to #{channel.name}!
         </h2>
         <p className="text-gray-600 mb-3">
           {channel.description ||
-            `Đây là kênh chung dành cho ${channel.channelName}.`}
+            `Đây là kênh chung dành cho ${channel.name}.`}
         </p>
 
         {!isExpired && (
@@ -220,12 +219,12 @@ const TimeBasedChannelView = ({
                   {message.sender.avatarUrl ? (
                     <img
                       src={message.sender.avatarUrl}
-                      alt={getUserInitials(message.sender)}
+                      alt={message.sender.nickname}
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
-                      {getUserInitials(message.sender)}
+                      {message.sender.nickname.charAt(0)}
                     </div>
                   )}
                 </div>
@@ -234,7 +233,7 @@ const TimeBasedChannelView = ({
                 <div className={`flex-1 ${message.me ? "text-right" : ""}`}>
                   <div className="flex items-baseline space-x-2 mb-1">
                     <span className="font-semibold text-gray-800 text-sm">
-                      {message.sender.firstName} {message.sender.lastName}
+                      {message.sender.nickname}
                     </span>
                     <span className="text-xs text-gray-500">
                       {message.sender.studentId}
@@ -294,7 +293,7 @@ const TimeBasedChannelView = ({
                   type="text"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  placeholder={`Message #${channel.channelName}`}
+                  placeholder={`Message #${channel.name}`}
                   disabled={!isConnected || isExpired}
                   className="w-full px-4 py-3 pr-32 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-200 disabled:cursor-not-allowed"
                 />

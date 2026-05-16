@@ -91,11 +91,10 @@ export const updateCourse = async (
 
 export const getCourseObjectives = async (
   educationalUnitId: number,
-  courseId: number,
-  activeOnly: boolean = true
+  courseId: number
 ): Promise<CourseObjectiveResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<CourseObjectiveResponse[]>>(
-    `/course-management/expert/educational-unit/${educationalUnitId}/courses/${courseId}/clos?activeOnly=${activeOnly}`
+    `/course-management/expert/educational-unit/${educationalUnitId}/courses/${courseId}/clos`
   );
   return response.data.result;
 };

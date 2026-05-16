@@ -13,7 +13,6 @@ import {
   Link as LinkIcon,
   AlertTriangle,
   MessageSquare,
-  XCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Modal from "@/components/ui/modal"

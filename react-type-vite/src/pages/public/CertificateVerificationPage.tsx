@@ -19,7 +19,6 @@ const toHex = (buffer: ArrayBuffer) =>
     .join("");
 
 const ipfsGateway = import.meta.env.VITE_IPFS_GATEWAY_URL || "https://gateway.pinata.cloud/ipfs/";
-const apiBaseUrl = (import.meta.env.VITE_BASE_URL || "http://localhost:8888/api/v1").replace(/\/$/, "");
 const blockchainExplorerUrl = (import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || "").replace(/\/$/, "");
 const blockchainChainId = Number(import.meta.env.VITE_BLOCKCHAIN_CHAIN_ID || "1337");
 
@@ -177,6 +176,8 @@ export default function CertificateVerificationPage() {
     };
   }, [data]);
 
+  const certificate = data?.certificate ?? null;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 px-4 homepage-links">
@@ -272,32 +273,32 @@ export default function CertificateVerificationPage() {
           </CardContent>
         </Card>
 
-        {data?.found && data.certificate && (
+        {data?.found && certificate && (
           <Card>
             <CardHeader>
               <CardTitle>Thông tin chứng chỉ</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-slate-700">
-              <div><span className="font-semibold">Mã chứng chỉ:</span> {data.certificate.certificateCode}</div>
-              <div><span className="font-semibold">Mã học viên (ẩn danh):</span> {data.certificate.userId}</div>
-              <div><span className="font-semibold">Khóa học:</span> {data.certificate.courseName || `Published Course #${data.certificate.courseId}`}</div>
-              <div><span className="font-semibold">Xếp loại:</span> {data.certificate.grade || "N/A"}</div>
-              <div><span className="font-semibold">Điểm:</span> {typeof data.certificate.finalScore === "number" ? data.certificate.finalScore.toFixed(1) : "N/A"}</div>
+              <div><span className="font-semibold">Mã chứng chỉ:</span> {certificate.certificateCode}</div>
+              <div><span className="font-semibold">Mã học viên (ẩn danh):</span> {certificate.userId}</div>
+              <div><span className="font-semibold">Khóa học:</span> {certificate.courseName || `Published Course #${certificate.courseId}`}</div>
+              <div><span className="font-semibold">Xếp loại:</span> {certificate.grade || "N/A"}</div>
+              <div><span className="font-semibold">Điểm:</span> {typeof certificate.finalScore === "number" ? certificate.finalScore.toFixed(1) : "N/A"}</div>
               <div className="flex items-center gap-2">
                 <CalendarDays className="w-4 h-4" />
                 <span className="font-semibold">Ngày cấp:</span>
-                {data.certificate.issueDate ? new Date(data.certificate.issueDate).toLocaleString("vi-VN") : "N/A"}
+                {certificate.issueDate ? new Date(certificate.issueDate).toLocaleString("vi-VN") : "N/A"}
               </div>
-              <div><span className="font-semibold">Trạng thái:</span> {data.certificate.status}</div>
+              <div><span className="font-semibold">Trạng thái:</span> {certificate.status}</div>
 
-            {(data.certificate.pdfCid || data.certificate.pdfUrl || data.certificate.tokenUri) && (
+            {(certificate.pdfUrl || certificate.tokenUri) && (
               <div className="pt-3 grid gap-3 sm:grid-cols-2">
-                {data.certificate.pdfCid && (
+                {certificate.tokenUri && (
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">PDF CID</div>
-                    <div className="break-all text-xs font-mono text-slate-700">{data.certificate.pdfCid}</div>
-                    {resolveIpfsUrl(data.certificate.pdfUrl) && (
-                      <Button variant="outline" className="gap-2 w-full" onClick={() => window.open(resolveIpfsUrl(data.certificate.pdfUrl)!, "_blank", "noopener,noreferrer") }>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Token URI</div>
+                    <div className="break-all text-xs font-mono text-slate-700">{certificate.tokenUri}</div>
+                    {resolveIpfsUrl(certificate.pdfUrl || certificate.tokenUri) && (
+                      <Button variant="outline" className="gap-2 w-full" onClick={() => window.open(resolveIpfsUrl(certificate.pdfUrl || certificate.tokenUri)!, "_blank", "noopener,noreferrer") }>
                         <ExternalLink className="w-4 h-4" />
                         Mở PDF trên IPFS
                       </Button>
@@ -307,12 +308,12 @@ export default function CertificateVerificationPage() {
               </div>
             )}
 
-              {getExplorerTxUrl(data.certificate.transactionHash) && (
+              {getExplorerTxUrl(certificate.transactionHash) && (
                 <div className="pt-2">
                   <Button
                     variant="outline"
                     className="gap-2"
-                    onClick={() => window.open(getExplorerTxUrl(data.certificate.transactionHash)!, "_blank")}
+                    onClick={() => window.open(getExplorerTxUrl(certificate.transactionHash)!, "_blank")}
                   >
                     <ExternalLink className="w-4 h-4" />
                     Xem giao dịch trên explorer

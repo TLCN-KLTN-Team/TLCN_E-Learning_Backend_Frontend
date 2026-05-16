@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, ArrowLeft, Building2, User, FileText, Shield, AlertCircle, Eye, EyeOff, X } from "lucide-react"
+import { Upload, ArrowLeft, Building2, User, Shield, AlertCircle, Eye, EyeOff, X } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import Header from "../../../components/student/home/Header"
@@ -16,11 +16,9 @@ import Footer from "../../../components/student/home/Footer"
 import * as educationUnitApi from "@/services/api/registerEducationUnitApi"
 import type { EducationUnitRegistrationRequest } from "@/services/api/request/educationUnitRegistrationRequest"
 
-// Enhanced error handling types
 interface ValidationErrors {
   adminName?: string
   representativeEmail?: string
-  businessLicenseOriginal?: string
   businessLicenseSigned?: string
   general?: string
 }
@@ -49,7 +47,6 @@ const EducationUnitRegistration = () => {
     logo: null as File | null,
     description: "",
     establishedYear: "",
-    businessLicenseOriginal: null as File | null,
     businessLicenseSigned: null as File | null,
 
     // Admin account information
@@ -153,15 +150,9 @@ const EducationUnitRegistration = () => {
       !formData.representativePosition ||
       !formData.representativePhone ||
       !formData.representativeEmail ||
-      !formData.businessLicenseOriginal ||
       !formData.businessLicenseSigned
     ) {
       setValidationErrors({ general: "Vui lòng điền đầy đủ thông tin bắt buộc!" })
-      return
-    }
-
-    if (!isPdfFile(formData.businessLicenseOriginal)) {
-      setValidationErrors({ businessLicenseOriginal: "Giấy phép gốc phải là file PDF." })
       return
     }
 
@@ -212,7 +203,6 @@ const EducationUnitRegistration = () => {
         registrationData,
         formData.logo || undefined,
         formData.businessLicenseSigned || undefined,
-        formData.businessLicenseOriginal || undefined,
       )
 
       console.log("Registration successful:", registrationResponse)
@@ -689,19 +679,6 @@ const EducationUnitRegistration = () => {
                     label="Logo đơn vị"
                     description="Chấp nhận các định dạng: JPG, PNG, GIF"
                   />
-
-                  <div className="space-y-2">
-                    <FileUploadArea
-                      id="businessLicenseOriginal"
-                      file={formData.businessLicenseOriginal}
-                      onFileChange={(file) => handleFileChange("businessLicenseOriginal", file)}
-                      accept=".pdf,application/pdf"
-                      icon={FileText}
-                      label="Giấy phép hoạt động (PDF gốc) *"
-                      description="Chỉ chấp nhận định dạng PDF"
-                    />
-                    <FieldError error={validationErrors.businessLicenseOriginal} />
-                  </div>
 
                   <div className="space-y-2">
                     <FileUploadArea

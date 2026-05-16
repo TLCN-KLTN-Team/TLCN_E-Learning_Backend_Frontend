@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const getNotificationTarget = (notif: Notification) => {
-    const fallback = "/teacher/home";
+    const fallback = TEACHER_ROUTES.ASSIGNED_COURSES;
     const rawLink = (notif.link || "").trim();
 
     if (!rawLink) return fallback;

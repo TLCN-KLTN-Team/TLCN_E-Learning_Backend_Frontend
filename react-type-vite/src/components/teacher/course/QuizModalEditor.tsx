@@ -393,7 +393,7 @@ const QuizModalEditor: React.FC<{
           <QuizSettings settings={quiz} onSettingsChange={handleSettingsChange} />
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-md space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-blue-700 font-medium">Ma trận CĐR (Blueprint %)</p>
+              <p className="text-sm text-blue-700 font-medium">Ma trận CĐR</p>
               <span className={`text-xs font-semibold ${totalBlueprintPercentage === 100 ? "text-green-700" : "text-yellow-700"}`}>
                 Tổng: {totalBlueprintPercentage}%
               </span>
@@ -468,14 +468,13 @@ const QuizModalEditor: React.FC<{
               <div className="col-span-8">
                 <Button
                   type="button"
-                  variant="default"
                   onClick={handleGenerateQuestionsByBlueprint}
                   disabled={isGeneratingQuestions || blueprintDraft.length === 0}
-                  className="w-full"
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700"
                 >
                   {isGeneratingQuestions ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Đang sinh câu hỏi...
                     </>
                   ) : (

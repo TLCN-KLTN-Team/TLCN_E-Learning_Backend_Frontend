@@ -3,7 +3,6 @@
 import type React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  LayoutGrid,
   BookOpen,
   HelpCircle,
   TrendingUp,
@@ -13,7 +12,6 @@ import {
   EarthLock,
   BrainCircuit,
   Box,
-  Brain,
   ShoppingBag,
   FileCheck2,
 } from "lucide-react";
@@ -22,7 +20,6 @@ import { useAuth } from "@/context/auth-context/useAuth";
 import openEduIcon from "@/assets/open-edu-dark.png";
 
 const menuItems = [
-  { name: "Trang Chủ", icon: LayoutGrid, path: "/teacher/home" },
   {
     name: "Khóa Học Nội Bộ",
     icon: BookOpen,

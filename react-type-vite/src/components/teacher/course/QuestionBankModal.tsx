@@ -109,7 +109,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
         }
       } catch (error) {
         console.error("Error loading CLOs:", error)
-        toast.error("Không thể tải danh sách CLO")
+        toast.error("Không thể tải danh sách chuẩn đầu ra")
       }
     }
 

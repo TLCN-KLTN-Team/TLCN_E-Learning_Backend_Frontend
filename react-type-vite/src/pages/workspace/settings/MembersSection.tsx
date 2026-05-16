@@ -19,7 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Channel, ChannelMember } from "@/types/channel.types";
+import type { Channel } from "@/types/channel.types";
+import type { ChannelMember } from "@/types/"
 import {
   Avatar,
   AvatarFallback,

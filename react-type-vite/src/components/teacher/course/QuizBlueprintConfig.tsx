@@ -161,7 +161,7 @@ const QuizBlueprintConfig: React.FC<QuizBlueprintConfigProps> = ({ quizId, cours
   return (
     <div className="p-4 bg-blue-50 border border-blue-200 rounded-md space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-blue-700 font-medium">Ma trận CĐR (Blueprint %)</p>
+        <p className="text-sm text-blue-700 font-medium">Ma trận CĐR</p>
         <span className={`text-xs font-semibold ${totalPercentage === 100 ? "text-green-700" : "text-yellow-700"}`}>
           Tổng: {totalPercentage}%
         </span>

@@ -2848,6 +2848,61 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!submission) return;
+    try {
+      setSubmitting(true);
+      await assignmentApi.deleteSubmission(submission.id);
+      setSubmission(null);
+    } catch (err) {
+      console.error("Error deleting submission:", err);
+    } finally {
+      setSubmitting(false);
+      setShowDeleteSubmissionConfirm(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setSubmitting(true);
+
+      const canSubmitText = ["TEXT", "BOTH"].includes(assignment.submissionType || "");
+      const canSubmitFile = ["UPLOAD_FILE", "BOTH"].includes(assignment.submissionType || "");
+      const canSubmitLink = ["LINK", "BOTH"].includes(assignment.submissionType || "");
+
+      const hasContent = (canSubmitText ? submissionContent : "") || (canSubmitFile ? submissionFiles.length > 0 : false) || (submission && submission.submissionFiles && submission.submissionFiles.length > 0) || (canSubmitLink ? submissionLink : "");
+
+      if (!hasContent) {
+        // nothing to update
+        setSubmitting(false);
+        return;
+      }
+
+      if (submission) {
+        const updateData = {
+          assignmentId: assignment.id,
+          submissionText: canSubmitText ? submissionContent : undefined,
+          submissionLink: canSubmitLink ? submissionLink : undefined,
+        };
+
+        await assignmentApi.updateSubmission(
+          submission.id,
+          updateData,
+          canSubmitFile ? submissionFiles : undefined,
+          canSubmitFile ? submission.submissionFiles || [] : undefined
+        );
+
+        // reload submission
+        await loadSubmission();
+        setShowEditModal(false);
+      }
+    } catch (err) {
+      console.error("Error updating submission:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleEdit = () => {
     if (submission) {
       setSubmissionContent(submission.submissionText || "");

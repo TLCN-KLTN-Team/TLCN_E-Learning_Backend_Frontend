@@ -38,7 +38,7 @@ const CourseObjectiveModal: React.FC<CourseObjectiveModalProps> = ({
     if (!course) return;
     try {
       setCloLoading(true);
-      const clos = await expertCourseApi.getCourseObjectives(educationalUnitId, course.id, false);
+      const clos = await expertCourseApi.getCourseObjectives(educationalUnitId, course.id);
       setCourseObjectives(clos);
     } catch (error) {
       console.error("Error loading CĐRs:", error);

@@ -90,7 +90,7 @@ export interface ChannelResponse {
   lastActivityAt: string;
   messages: ChatMessageResponse[];
   createdAt: string;
-  endTime?: number; // Unix timestamp in milliseconds, optional
+  endTime: number; // Unix timestamp in milliseconds, optional
 }
 
 export interface BulkRandomChannelResponse {

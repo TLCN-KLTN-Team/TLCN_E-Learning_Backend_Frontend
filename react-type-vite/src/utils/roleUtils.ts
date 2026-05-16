@@ -11,7 +11,7 @@ export const getRoleBasedRedirectPath = (role: string): string => {
     SUPER_ADMIN: "/system-admin",
     ADMIN: "/admin",
     EXPERT: "/expert/courses",
-    TEACHER: "/teacher/home",
+    TEACHER: "/teacher/assigned-courses",
     STUDENT: "/",
     USER: "/",
   };

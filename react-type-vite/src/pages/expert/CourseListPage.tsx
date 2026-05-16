@@ -1084,7 +1084,7 @@ const EditCourseModal: React.FC<EditCourseModalProps> = ({
 
     try {
       setIsLoading(true);
-      await expertCourseApi.createCourse(educationalUnitId, form);
+      await expertCourseApi.updateCourse(educationalUnitId, course.id, form);
       toast.success("Cập nhật khóa học thành công!");
       onSuccess?.();
       onClose();

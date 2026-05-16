@@ -79,7 +79,6 @@ const QuestionBankPage: React.FC = () => {
       setTotalItems(response.totalItems)
       setCurrentPage(response.currentPage)
 
-      // Extract unique tags from all questions for filter dropdown
       const tags = new Set<string>()
       response.questions.forEach((q) => {
         if (q.tags) {
