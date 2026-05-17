@@ -20,13 +20,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Channel } from "@/types/channel.types";
-import type { ChannelMember } from "@/types/"
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar.tsx";
 import { Label } from "@/components/ui/label";
+
+interface ChannelMember {
+  id: string;
+  fullName: string;
+  email?: string;
+  avatar?: string;
+}
 
 interface MembersSectionProps {
   channelData: Channel;

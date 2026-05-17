@@ -116,7 +116,7 @@ const ChatWindow = ({
         <div className="flex-1 overflow-y-auto bg-gray-800">
           <MessageList
             selectedChannel={selectedChannel}
-            wsMessages={wsMessages}
+            messages={wsMessages}
             isLoadingMessages={isLoadingMessages}
             isConnected={isConnected}
             wsErrors={wsErrors}
