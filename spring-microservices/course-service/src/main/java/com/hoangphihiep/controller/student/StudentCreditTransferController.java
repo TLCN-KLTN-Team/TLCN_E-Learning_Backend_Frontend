@@ -6,7 +6,6 @@ import com.hoangphihiep.dto.response.CreditTransferResponse;
 import com.hoangphihiep.dto.response.EquivalentCourseResponse;
 import com.hoangphihiep.dto.response.UserResponse;
 import com.hoangphihiep.repository.httpclient.UserInfoApi;
-import com.hoangphihiep.repository.httpclient.UserRepository;
 import com.hoangphihiep.service.CreditTransferService;
 import com.hoangphihiep.service.EquivalentCourseService;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +57,14 @@ public class StudentCreditTransferController {
             @RequestParam(required = false) String keyword,
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<EquivalentCourseResponse> result = equivalentCourseService.getAllEquivalentCourses(keyword, null, pageable);
+                String studentId = SecurityContextHolder.getContext().getAuthentication().getName();
+                Integer educationalUnitId = userInfoApi.getStudentEducationalUnit(studentId).getResult();
+
+                if (educationalUnitId == null) {
+                        throw new RuntimeException("Không thể xác định đơn vị đào tạo của sinh viên hiện tại");
+                }
+
+                Page<EquivalentCourseResponse> result = equivalentCourseService.getAllEquivalentCoursesByEducationalUnit(keyword, null, educationalUnitId, pageable);
         return ResponseEntity.ok(ApiResponse.<Page<EquivalentCourseResponse>>builder()
                 .result(result)
                 .build());

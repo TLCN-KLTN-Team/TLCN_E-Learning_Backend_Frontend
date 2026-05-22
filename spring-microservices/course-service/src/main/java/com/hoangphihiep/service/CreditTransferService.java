@@ -1,5 +1,6 @@
 package com.hoangphihiep.service;
 
+import com.hoangphihiep.dto.request.CreateCreditTransferRequest;
 import com.hoangphihiep.dto.request.ScheduleCreditTransferInterviewRequest;
 import com.hoangphihiep.dto.request.NotificationMessage;
 import com.hoangphihiep.dto.request.SubmitCreditTransferInterviewScoreRequest;
@@ -29,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,15 +68,40 @@ public class CreditTransferService {
 
     @Transactional(readOnly = true)
     public Page<CreditTransferResponse> searchCreditTransfers(String status, String keyword, Pageable pageable) {
+        String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
+        return searchCreditTransfers(status, keyword, currentExpertId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CreditTransferResponse> searchCreditTransfers(String status, String keyword, String expertId, Pageable pageable) {
         CreditTransferStatus parsedStatus = parseStatus(status);
-        return creditTransferRepository.search(parsedStatus, keyword, pageable)
+        return creditTransferRepository.search(parsedStatus, keyword, expertId, pageable)
+                .map(this::toResponseWithCertificateScore);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CreditTransferResponse> searchTeacherCreditTransfers(String status, String keyword, String teacherId, Pageable pageable) {
+        CreditTransferStatus parsedStatus = parseStatus(status);
+        return creditTransferRepository.searchByTeacher(parsedStatus, keyword, teacherId, pageable)
                 .map(this::toResponseWithCertificateScore);
     }
 
     @Transactional(readOnly = true)
     public CreditTransferResponse getCreditTransferById(Integer id) {
+        String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
         CreditTransfer creditTransfer = creditTransferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Review request not found"));
+
+        assertCanAccessCreditTransfer(creditTransfer, currentExpertId);
+        return toResponseWithCertificateScore(creditTransfer);
+    }
+
+    @Transactional(readOnly = true)
+    public CreditTransferResponse getTeacherCreditTransferById(Integer id, String teacherId) {
+        CreditTransfer creditTransfer = creditTransferRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Review request not found"));
+
+        assertTeacherCanAccessCreditTransfer(creditTransfer, teacherId);
         return toResponseWithCertificateScore(creditTransfer);
     }
 
@@ -82,6 +109,8 @@ public class CreditTransferService {
     public void approveCreditTransfer(Integer id, String note, String approvedById) {
         CreditTransfer creditTransfer = creditTransferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Review request not found"));
+
+        assertCanAccessCreditTransfer(creditTransfer, approvedById);
 
         if (creditTransfer.getStatus() != CreditTransferStatus.PENDING_EXPERT_REVIEW) {
             throw new RuntimeException("Yêu cầu chưa sẵn sàng để expert phê duyệt");
@@ -109,6 +138,8 @@ public class CreditTransferService {
     public void rejectCreditTransfer(Integer id, String reason, String rejectedById) {
         CreditTransfer creditTransfer = creditTransferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Review request not found"));
+
+        assertCanAccessCreditTransfer(creditTransfer, rejectedById);
 
         if (creditTransfer.getStatus() != CreditTransferStatus.PENDING_EXPERT_REVIEW) {
             throw new RuntimeException("Yêu cầu chưa sẵn sàng để expert từ chối");
@@ -152,10 +183,32 @@ public class CreditTransferService {
         log.info("Updated progress for student {} course {} via Credit Transfer", studentId, targetCourse.getId());
     }
 
+    private void assertCanAccessCreditTransfer(CreditTransfer creditTransfer, String expertId) {
+        if (creditTransfer == null
+                || creditTransfer.getEquivalentCourse() == null
+                || creditTransfer.getEquivalentCourse().getTargetCourse() == null
+                || creditTransfer.getEquivalentCourse().getTargetCourse().getExpertId() == null
+                || !creditTransfer.getEquivalentCourse().getTargetCourse().getExpertId().equals(expertId)) {
+            throw new RuntimeException("Bạn không có quyền truy cập yêu cầu tín chỉ này");
+        }
+    }
+
+    private void assertTeacherCanAccessCreditTransfer(CreditTransfer creditTransfer, String teacherId) {
+        if (creditTransfer == null
+                || creditTransfer.getEquivalentCourse() == null
+                || creditTransfer.getEquivalentCourse().getTargetCourse() == null
+                || creditTransfer.getEquivalentCourse().getTargetCourse().getIdTeacher() == null
+                || !creditTransfer.getEquivalentCourse().getTargetCourse().getIdTeacher().equals(teacherId)) {
+            throw new RuntimeException("Bạn không có quyền truy cập yêu cầu tín chỉ này");
+        }
+    }
+
     @Transactional
     public void scheduleInterview(Integer id, ScheduleCreditTransferInterviewRequest request, String teacherId) {
         CreditTransfer creditTransfer = creditTransferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Review request not found"));
+
+        assertTeacherCanAccessCreditTransfer(creditTransfer, teacherId);
 
         if (creditTransfer.getStatus() != CreditTransferStatus.PENDING
                 && creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCHEDULED) {
@@ -268,6 +321,8 @@ public class CreditTransferService {
         CreditTransfer creditTransfer = creditTransferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Review request not found"));
 
+        assertTeacherCanAccessCreditTransfer(creditTransfer, teacherId);
+
         if (creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCHEDULED) {
             throw new RuntimeException("Yêu cầu chưa được xếp lịch vấn đáp");
         }
@@ -324,6 +379,8 @@ public class CreditTransferService {
         CreditTransfer creditTransfer = creditTransferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Review request not found"));
 
+        assertTeacherCanAccessCreditTransfer(creditTransfer, teacherId);
+
         if (creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCHEDULED
                 && creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCORED) {
             throw new RuntimeException("Yêu cầu không thể nộp minh chứng ở trạng thái hiện tại");
@@ -347,7 +404,7 @@ public class CreditTransferService {
     }
 
     @Transactional
-    public void createCreditTransfer(com.hoangphihiep.dto.request.CreateCreditTransferRequest request, String studentId, String studentName) {
+    public void createCreditTransfer(CreateCreditTransferRequest request, String studentId, String studentName) {
         EquivalentCourse equivalentCourse = equivalentCourseRepository.findById(request.getEquivalentCourseId())
                 .orElseThrow(() -> new RuntimeException("Khóa học quy đổi không tồn tại"));
 

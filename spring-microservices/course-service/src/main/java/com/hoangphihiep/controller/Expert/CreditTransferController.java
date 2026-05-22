@@ -26,7 +26,8 @@ public class CreditTransferController {
             @RequestParam(required = false) String keyword,
             @PageableDefault(sort = "requestDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<CreditTransferResponse> result = creditTransferService.searchCreditTransfers(status, keyword, pageable);
+        String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+        Page<CreditTransferResponse> result = creditTransferService.searchCreditTransfers(status, keyword, currentUserId, pageable);
         return ResponseEntity.ok(ApiResponse.<Page<CreditTransferResponse>>builder()
                 .result(result)
                 .build());

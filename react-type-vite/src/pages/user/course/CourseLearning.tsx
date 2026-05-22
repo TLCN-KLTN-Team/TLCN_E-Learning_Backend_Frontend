@@ -17,7 +17,6 @@ import {
   ChevronDown,
   Star,
   Search,
-  Plus,
   Maximize,
   History as HistoryIcon,
   XCircle,
@@ -94,10 +93,7 @@ const CourseLearning: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     | "overview"
     | "about"
-    | "notes"
-    | "announcements"
     | "reviews"
-    | "tools"
     | "discussion"
     | "practice"
   >("overview");
@@ -243,6 +239,32 @@ const CourseLearning: React.FC = () => {
     }
   };
 
+    // Optimistically update progressStats counts to avoid UI flicker
+    const optimisticUpdateProgress = (
+      type: "lesson" | "quiz" | "assignment",
+    ) => {
+      setProgressStats((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev } as ProgressStatsResponse & { overallProgress: number };
+
+        if (type === "lesson") {
+          next.completedLessons = (next.completedLessons || 0) + 1;
+        } else if (type === "quiz") {
+          next.completedQuizzes = (next.completedQuizzes || 0) + 1;
+        } else if (type === "assignment") {
+          next.completedAssignments = (next.completedAssignments || 0) + 1;
+        }
+
+        const total =
+          (next.totalLessons || 0) + (next.totalQuizzes || 0) + (next.totalAssignments || 0);
+        const completed =
+          (next.completedLessons || 0) + (next.completedQuizzes || 0) + (next.completedAssignments || 0);
+
+        next.overallProgress = total > 0 ? (completed / total) * 100 : 0;
+        return next;
+      });
+    };
+
   const checkCertificate = async () => {
     if (!courseId) return
     setIsCheckingCertificate(true)
@@ -330,6 +352,9 @@ const CourseLearning: React.FC = () => {
         newSet.add(lessonId);
         return newSet;
       });
+
+      // Optimistically update UI counts so the tick remains visible
+      optimisticUpdateProgress("lesson");
 
       // Refresh progress stats
       await fetchProgressStats();
@@ -684,6 +709,8 @@ const CourseLearning: React.FC = () => {
 
       // Update completed assignments immediately
       setCompletedAssignments((prev) => new Set(prev).add(currentItem.id));
+      // Optimistically update UI counts so the tick remains visible
+      optimisticUpdateProgress("assignment");
 
       // Reload assignment data to show new submission
       loadCourseData();
@@ -706,7 +733,9 @@ const CourseLearning: React.FC = () => {
           onQuizCompleted={() => {
             // Mark quiz as completed
             setCompletedQuizzes((prev) => new Set(prev).add(currentItem.id));
-            // Refresh progress stats
+            // Optimistically update UI counts so the tick remains visible
+            optimisticUpdateProgress("quiz");
+            // Refresh progress stats from backend to reconcile
             fetchProgressStats();
           }}
           onExit={() => {
@@ -1072,26 +1101,7 @@ const CourseLearning: React.FC = () => {
                         {currentItem?.type === "assignment" &&
                           "Về bài tập này"}
                       </button>
-                      <button
-                        onClick={() => setActiveTab("notes")}
-                        className={`py-4 text-sm font-medium transition-colors ${
-                          activeTab === "notes"
-                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
-                            : "border-transparent text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        Ghi chú
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("announcements")}
-                        className={`py-4 text-sm font-medium transition-colors ${
-                          activeTab === "announcements"
-                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
-                            : "border-transparent text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        Thông báo
-                      </button>
+                      {/* Notes and Announcements tabs removed */}
                       <button
                         onClick={() => setActiveTab("reviews")}
                         className={`py-4 text-sm font-medium transition-colors ${
@@ -1102,16 +1112,7 @@ const CourseLearning: React.FC = () => {
                       >
                         Đánh giá
                       </button>
-                      <button
-                        onClick={() => setActiveTab("tools")}
-                        className={`py-4 text-sm font-medium transition-colors ${
-                          activeTab === "tools"
-                            ? `${ACTIVE_COURSE_NAVIGATION_CLASS}`
-                            : "border-transparent text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        Công cụ
-                      </button>
+                      {/* Tools tab removed */}
                       {currentItem && (
                         <button
                           onClick={() => setActiveTab("discussion")}
@@ -1152,16 +1153,7 @@ const CourseLearning: React.FC = () => {
                         <CourseOverview course={courseData} />
                       )}
                       {activeTab === "about" && renderContent()}
-                      {activeTab === "notes" && <NotesTab />}
-                      {activeTab === "announcements" && <AnnouncementsTab />}
                       {activeTab === "reviews" && <ReviewsTab />}
-                      {activeTab === "tools" && (
-                        <div className="text-center py-12">
-                          <p className="text-gray-500">
-                            Công cụ học tập đang phát triển
-                          </p>
-                        </div>
-                      )}
                       {activeTab === "discussion" &&
                         currentItem &&
                         courseId && (
@@ -1863,77 +1855,7 @@ const CourseOverview: React.FC<{ course: any }> = ({ course }) => {
   );
 };
 
-// Notes Tab Component
-const NotesTab: React.FC = () => {
-  const [selectedLecture, setSelectedLecture] = useState("all");
-  const [sortBy, setSortBy] = useState("recent");
-
-  return (
-    <div>
-      {/* Create Note Input */}
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Tạo ghi chú mới tại 0:00"
-            className="w-full border rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-gray-900"
-          />
-          <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Thêm ghi chú"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-3 mb-6">
-        <select
-          value={selectedLecture}
-          onChange={(e) => setSelectedLecture(e.target.value)}
-          className="border rounded px-4 py-2 text-sm text-purple-600 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-          aria-label="Lọc theo bài giảng"
-        >
-          <option value="all">Tất cả bài giảng</option>
-          <option value="1">Bài giảng 1</option>
-          <option value="2">Bài giảng 2</option>
-        </select>
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="border rounded px-4 py-2 text-sm text-purple-600 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-          aria-label="Sắp xếp ghi chú"
-        >
-          <option value="recent">Mới nhất</option>
-          <option value="oldest">Cũ nhất</option>
-        </select>
-      </div>
-
-      {/* Empty State */}
-      <div className="text-center py-12">
-        <p className="text-gray-600">
-          Nhấn vào ô "Tạo ghi chú mới", nút "+", hoặc phím "B" để tạo ghi chú đầu tiên.
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// Announcements Tab Component
-const AnnouncementsTab: React.FC = () => {
-  return (
-    <div className="text-center py-12">
-      <h2 className="text-2xl font-bold mb-4">Chưa có thông báo nào</h2>
-      <p className="text-gray-600 max-w-2xl mx-auto">
-        Giảng viên chưa đăng thông báo cho khóa học này.
-        Thông báo sẽ được dùng để cập nhật các thay đổi hoặc nội dung mới của
-        khóa học.
-      </p>
-    </div>
-  );
-};
+/* Notes and Announcements tabs removed */
 
 // Reviews Tab Component
 /* eslint-disable react/forbid-dom-props */

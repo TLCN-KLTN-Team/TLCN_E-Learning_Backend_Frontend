@@ -4,7 +4,9 @@ import com.hoangphihiep.dto.request.ScheduleCreditTransferInterviewRequest;
 import com.hoangphihiep.dto.request.SubmitCreditTransferInterviewScoreRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.CreditTransferResponse;
+import com.hoangphihiep.dto.response.TeacherResponse;
 import com.hoangphihiep.service.CreditTransferService;
+import com.hoangphihiep.repository.httpclient.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,18 @@ import org.springframework.web.multipart.MultipartFile;
 public class TeacherCreditTransferController {
 
     private final CreditTransferService creditTransferService;
+        private final TeacherRepository teacherRepository;
+
+        private String resolveCurrentTeacherId() {
+                String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+                TeacherResponse teacher = teacherRepository.getTeacherByUserId(userId).getResult();
+
+                if (teacher == null || teacher.getTeacherId() == null || teacher.getTeacherId().trim().isEmpty()) {
+                        throw new RuntimeException("Không thể xác định giáo viên hiện tại");
+                }
+
+                return teacher.getTeacherId();
+        }
 
         @GetMapping
         public ResponseEntity<ApiResponse<Page<CreditTransferResponse>>> search(
@@ -36,7 +50,8 @@ public class TeacherCreditTransferController {
                         @RequestParam(required = false) String keyword,
                         @PageableDefault(sort = "requestDate", direction = Sort.Direction.DESC) Pageable pageable
         ) {
-                Page<CreditTransferResponse> result = creditTransferService.searchCreditTransfers(status, keyword, pageable);
+                                String teacherId = resolveCurrentTeacherId();
+                Page<CreditTransferResponse> result = creditTransferService.searchTeacherCreditTransfers(status, keyword, teacherId, pageable);
                 return ResponseEntity.ok(ApiResponse.<Page<CreditTransferResponse>>builder()
                                 .result(result)
                                 .build());
@@ -44,8 +59,9 @@ public class TeacherCreditTransferController {
 
         @GetMapping("/{id}")
         public ResponseEntity<ApiResponse<CreditTransferResponse>> getDetail(@PathVariable Integer id) {
+                                String teacherId = resolveCurrentTeacherId();
                 return ResponseEntity.ok(ApiResponse.<CreditTransferResponse>builder()
-                                .result(creditTransferService.getCreditTransferById(id))
+                                .result(creditTransferService.getTeacherCreditTransferById(id, teacherId))
                                 .build());
         }
 
@@ -54,7 +70,7 @@ public class TeacherCreditTransferController {
             @PathVariable Integer id,
             @RequestBody ScheduleCreditTransferInterviewRequest request
     ) {
-        String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String teacherId = resolveCurrentTeacherId();
         creditTransferService.scheduleInterview(id, request, teacherId);
 
         return ResponseEntity.ok(ApiResponse.<Void>builder()
@@ -67,7 +83,7 @@ public class TeacherCreditTransferController {
             @PathVariable Integer id,
             @RequestBody SubmitCreditTransferInterviewScoreRequest request
     ) {
-        String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String teacherId = resolveCurrentTeacherId();
         creditTransferService.submitInterviewScore(id, request, teacherId);
 
         return ResponseEntity.ok(ApiResponse.<Void>builder()
@@ -80,7 +96,7 @@ public class TeacherCreditTransferController {
                         @PathVariable Integer id,
                         @RequestPart("file") MultipartFile file
         ) {
-                String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
+                String teacherId = resolveCurrentTeacherId();
                 String uploadedUrl = creditTransferService.uploadInterviewEvidence(id, file, teacherId);
 
                 return ResponseEntity.ok(ApiResponse.<String>builder()

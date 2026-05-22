@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,8 +25,9 @@ public class EquivalentCourseController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer targetCourseId,
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
         return ApiResponse.<Page<EquivalentCourseResponse>>builder()
-                .result(equivalentCourseService.getAllEquivalentCourses(keyword, targetCourseId, pageable))
+                    .result(equivalentCourseService.getAllEquivalentCourses(keyword, targetCourseId, currentExpertId, pageable))
                 .build();
     }
 
