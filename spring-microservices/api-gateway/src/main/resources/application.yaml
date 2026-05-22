@@ -92,7 +92,7 @@ springdoc:
   swagger-ui:
     urls:
       - name: user-service
-        url: ${IDENTITY_SERVICE_URI:http://localhost:8080}/identity/v3/api-docs
+        url: ${IDENTITY_SERVICE_URI:http://localhost:8080/identity}/v3/api-docs
       - name: course-service
         url: ${COURSE_SERVICE_URI:http://localhost:8088}/course-management/v3/api-docs
       - name: realtime-service

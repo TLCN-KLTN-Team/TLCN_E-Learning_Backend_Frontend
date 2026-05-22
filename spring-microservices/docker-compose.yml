@@ -366,6 +366,7 @@ services:
       IDENTITY_SERVICE_URL: http://identity-service:8080/identity
       FILE_SERVICE_URL: http://file-service:8084/file-handler
       APP_SERVICES_FILE: http://file-service:8084/file-handler
+      AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai-service:8000/api/v1/recommend}
       API_GATEWAY_URL: http://api-gateway:8888
       NOTIFICATION_SERVICE_URI: http://notification-service:8092
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -477,7 +478,7 @@ services:
     ports:
       - "8090:8090"
     environment:
-      SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/mongo_notification?authSource=admin
+      SPRING_DATA_MONGODB_URI: mongodb+srv://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@hackathon.n5sib2v.mongodb.net/workspace_db?retryWrites=true&w=majority&appName=Hackathon
       JWT_SECRET_KEY: ${JWT_SIGNER_KEY}
       CLOUDINARY_CLOUD_NAME: ${CHAT_SERVICE_CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CHAT_SERVICE_CLOUDINARY_API_KEY}
@@ -596,7 +597,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       MONGO_DB_USERNAME: ${MONGO_DB_USERNAME}
       MONGO_DB_PASSWORD: ${MONGO_DB_PASSWORD}
-      SPRING_DATA_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/notification_service?authSource=admin
+      SPRING_DATA_MONGODB_URI: mongodb+srv://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@hackathon.n5sib2v.mongodb.net/notification_service?retryWrites=true&w=majority&appName=Hackathon
       JAVA_OPTS: >
         -Xms128m
         -Xmx256m

@@ -11,6 +11,7 @@ import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -43,7 +44,8 @@ public class AiRecommendationService {
     private final ReviewService reviewService;
     private final OrderService orderService;
 
-    private static final String AI_SERVICE_URL = "http://localhost:8002/api/v1/recommend";
+    @Value("${AI_SERVICE_URL:http://localhost:8004/api/v1/recommend}")
+    private String aiServiceUrl;
 
     public List<PublishedCourseCardResponse> getRecommendedCourses() {
         String userId = JwtUtils.getCurrentUserId();
@@ -87,7 +89,7 @@ public class AiRecommendationService {
             HttpEntity<AiRecommendationRequest> entity = new HttpEntity<>(request, headers);
 
             AiRecommendationResponse response = restTemplate.postForObject(
-                    AI_SERVICE_URL,
+                    aiServiceUrl,
                     entity,
                     AiRecommendationResponse.class
             );

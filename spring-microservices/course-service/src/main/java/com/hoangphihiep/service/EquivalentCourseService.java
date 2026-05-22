@@ -12,6 +12,7 @@ import com.hoangphihiep.repository.PublishedCourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,13 +29,24 @@ public class EquivalentCourseService {
     private final CourseRepository courseRepository;
     private final EquivalentCourseMapper equivalentCourseMapper;
 
+    public Page<EquivalentCourseResponse> getAllEquivalentCourses(String keyword, Integer targetCourseId, String expertId, Pageable pageable) {
+        return equivalentCourseRepository.searchEquivalentCourses(keyword, targetCourseId, expertId, pageable)
+                .map(equivalentCourseMapper::toResponse);
+    }
+
     public Page<EquivalentCourseResponse> getAllEquivalentCourses(String keyword, Integer targetCourseId, Pageable pageable) {
-        return equivalentCourseRepository.searchEquivalentCourses(keyword, targetCourseId, pageable)
+        return getAllEquivalentCourses(keyword, targetCourseId, null, pageable);
+    }
+
+    public Page<EquivalentCourseResponse> getAllEquivalentCoursesByEducationalUnit(String keyword, Integer targetCourseId, Integer educationalUnitId, Pageable pageable) {
+        return equivalentCourseRepository.searchEquivalentCoursesByEducationalUnit(keyword, targetCourseId, educationalUnitId, pageable)
                 .map(equivalentCourseMapper::toResponse);
     }
 
     @Transactional
     public EquivalentCourseResponse createEquivalentCourse(EquivalentCourseRequest request) {
+        String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
+
         // Validation: Duplicate Check
         if (equivalentCourseRepository.existsBySourceCourseIdAndTargetCourseId(
                 request.getSourceCourseId(), request.getTargetCourseId())) {
@@ -47,6 +59,8 @@ public class EquivalentCourseService {
         Course targetCourse = courseRepository.findById(request.getTargetCourseId())
                 .orElseThrow(() -> new RuntimeException("Target course not found with id: " + request.getTargetCourseId()));
 
+        validateTargetCourseOwnership(targetCourse, currentExpertId);
+
         EquivalentCourse equivalentCourse = equivalentCourseMapper.toEntity(request);
         equivalentCourse.setSourceCourse(sourceCourse);
         equivalentCourse.setTargetCourse(targetCourse);
@@ -58,8 +72,12 @@ public class EquivalentCourseService {
 
     @Transactional
     public EquivalentCourseResponse updateEquivalentCourse(Integer id, EquivalentCourseRequest request) {
+        String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
+
         EquivalentCourse equivalentCourse = equivalentCourseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Equivalent course not found with id: " + id));
+
+        validateTargetCourseOwnership(equivalentCourse.getTargetCourse(), currentExpertId);
 
         // Check if source/target changed and if it creates duplicate
         if ((!equivalentCourse.getSourceCourse().getId().equals(request.getSourceCourseId()) ||
@@ -74,6 +92,8 @@ public class EquivalentCourseService {
         Course targetCourse = courseRepository.findById(request.getTargetCourseId())
                 .orElseThrow(() -> new RuntimeException("Target course not found with id: " + request.getTargetCourseId()));
 
+        validateTargetCourseOwnership(targetCourse, currentExpertId);
+
         equivalentCourseMapper.updateEntity(equivalentCourse, request);
         equivalentCourse.setSourceCourse(sourceCourse);
         equivalentCourse.setTargetCourse(targetCourse);
@@ -85,10 +105,18 @@ public class EquivalentCourseService {
 
     @Transactional
     public void deleteEquivalentCourse(Integer id) {
-        if (!equivalentCourseRepository.existsById(id)) {
+        String currentExpertId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!equivalentCourseRepository.existsByIdAndTargetCourseExpertId(id, currentExpertId)) {
             throw new RuntimeException("Equivalent course not found with id: " + id);
         }
         equivalentCourseRepository.deleteById(id);
+    }
+
+    private void validateTargetCourseOwnership(Course targetCourse, String expertId) {
+        if (targetCourse == null || targetCourse.getExpertId() == null || !targetCourse.getExpertId().equals(expertId)) {
+            throw new RuntimeException("You do not have permission to manage this equivalent course.");
+        }
     }
 
     private void applyDecisionRuleDefaultsAndValidation(EquivalentCourse equivalentCourse) {
