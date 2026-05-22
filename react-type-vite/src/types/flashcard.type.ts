@@ -33,12 +33,26 @@ export interface FlashCardResponse {
 }
 
 export interface SaveFlashcardSetRequest {
-  id: string;
+  /** Content-based hash để chặn lưu trùng — khớp field `flashcardSetId` ở Spring DTO. */
+  flashcardSetId: string;
   flashcards: Flashcard[];
   internalDocument: string;
   externalDocument?: string | null;
-  authorId?: string;
-  language?: string; // Default: "vietnamese"
+  authorId: string;
+  language?: string;
+}
+
+export interface FlashcardSetResponse {
+  id: string;
+  name?: string;
+  flashcards: Flashcard[];
+  internalDocument: string;
+  externalDocument?: string | null;
+  authorId: string;
+  language: string;
+  createdAt: string;
+  updatedAt: string;
+  number: number;
 }
 
 // UI types (for frontend components)

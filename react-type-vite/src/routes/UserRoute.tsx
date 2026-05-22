@@ -10,6 +10,8 @@ import OrderHistoryPage from "@/pages/user/personal/OrderHistoryPage";
 import CourseLearning from "@/pages/user/course/CourseLearning";
 import UserQuizAttempt from "@/components/user/course/UserQuizAttempt";
 import MyDocumentLibraryPage from "@/pages/student/document-library/MyDocumentLibraryPage";
+import FlashcardReviewPage from "@/pages/student/document-library/FlashcardReviewPage";
+import QuizReviewPage from "@/pages/student/document-library/QuizReviewPage";
 import UserNotificationsPage from "@/pages/user/notifications/UserNotificationsPage";
 import { USER_ROUTES, ROUTE_PATTERNS } from "@/constants/routes";
 
@@ -90,6 +92,26 @@ const UserRoutes = [
     element={
       <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
         <MyDocumentLibraryPage />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="document-library-flashcard"
+    path={USER_ROUTES.DOCUMENT_LIBRARY_FLASHCARD}
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <FlashcardReviewPage />
+      </ProtectedRoute>
+    }
+  />,
+
+  <Route
+    key="document-library-quiz"
+    path={USER_ROUTES.DOCUMENT_LIBRARY_QUIZ}
+    element={
+      <ProtectedRoute allowedRoles={["STUDENT", "USER"]}>
+        <QuizReviewPage />
       </ProtectedRoute>
     }
   />,

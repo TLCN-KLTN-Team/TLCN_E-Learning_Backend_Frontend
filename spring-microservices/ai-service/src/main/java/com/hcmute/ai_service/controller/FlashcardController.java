@@ -1,7 +1,9 @@
 package com.hcmute.ai_service.controller;
 
+import com.hcmute.ai_service.dto.request.FlashCardRequest;
 import com.hcmute.ai_service.dto.request.SaveFlashcardSetRequest;
 import com.hcmute.ai_service.dto.response.ApiResponse;
+import com.hcmute.ai_service.dto.response.FlashCardResponse;
 import com.hcmute.ai_service.dto.response.FlashcardSetResponse;
 import com.hcmute.ai_service.service.impl.FlashcardService;
 import jakarta.validation.Valid;
@@ -19,6 +21,24 @@ import java.util.List;
 public class FlashcardController {
 
     private final FlashcardService flashcardService;
+
+    /**
+     * Proxy generate flashcards request to Python AI service.
+     */
+    @PostMapping("/generate")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<FlashCardResponse> generateFlashcards(
+            @Valid @RequestBody FlashCardRequest request) {
+
+        log.info("Received request to generate flashcards");
+
+        FlashCardResponse response = flashcardService.generateFlashcards(request);
+
+        return ApiResponse.success(
+                response,
+                "Flashcards generated successfully"
+        );
+    }
 
     /**
      * API endpoint để lưu một bộ flashcard set vào cơ sở dữ liệu
@@ -72,6 +92,17 @@ public class FlashcardController {
                 flashcardSetResponse,
                 "Flashcard set retrieved successfully"
         );
+    }
+
+    /**
+     * Xóa một bộ flashcard khỏi kho tài liệu.
+     */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse<Void> deleteFlashcardSet(@PathVariable String id) {
+        log.info("Received request to delete flashcard set: {}", id);
+        flashcardService.deleteFlashcardSet(id);
+        return ApiResponse.success(null, "Flashcard set deleted successfully");
     }
 }
 

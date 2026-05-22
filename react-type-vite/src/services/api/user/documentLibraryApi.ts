@@ -1,199 +1,93 @@
-// Mock API for Document Library (Archive)
-// This will be replaced with real API calls later
+/**
+ * Document Library API — gom hai nguồn dữ liệu:
+ *   - GET /ai/flashcards/author/{id}
+ *   - GET /ai/quiz/user/{id}
+ * thành một danh sách DocumentSet thống nhất để trang document-library hiển
+ * thị (flashcards + quizzes do chính user đã lưu).
+ */
 
 import type {
   DocumentSet,
-  FlashcardSet,
-  QuizSet,
-  DocumentLibraryStats,
+  FlashcardSet as UIFlashcardSet,
+  QuizSet as UIQuizSet,
 } from "@/types/document-library.types";
+import flashcardApi from "./flashcard.api";
+import quizApi from "./quiz.api";
+import type { FlashcardSetResponse } from "@/types/flashcard.type";
+import type { QuizSetResponse } from "@/types/quiz.type";
 
-// Mock data generators
-let setIdCounter = 0;
-const genSetId = () => `set_${++setIdCounter}_${Date.now()}`;
-
-const mockFlashcardSets: Omit<FlashcardSet, "id">[] = [
-  {
-    name: "React Hooks & Lifecycle",
-    type: "flashcard",
-    count: 15,
-    createdAt: "2026-03-05T10:30:00Z",
-    tags: ["react", "hooks", "frontend"],
-    difficulty: "medium",
-  },
-  {
-    name: "TypeScript Basics",
-    type: "flashcard",
-    count: 20,
-    createdAt: "2026-03-03T14:20:00Z",
-    tags: ["typescript", "programming"],
-    difficulty: "easy",
-  },
-  {
-    name: "Advanced React Patterns",
-    type: "flashcard",
-    count: 12,
-    createdAt: "2026-03-01T09:15:00Z",
-    tags: ["react", "patterns", "advanced"],
-    difficulty: "hard",
-  },
-  {
-    name: "CSS Grid & Flexbox",
-    type: "flashcard",
-    count: 18,
-    createdAt: "2026-02-28T16:45:00Z",
-    tags: ["css", "layout"],
-    difficulty: "medium",
-  },
-  {
-    name: "JavaScript ES6+",
-    type: "flashcard",
-    count: 25,
-    createdAt: "2026-02-25T11:00:00Z",
-    tags: ["javascript", "es6"],
-    difficulty: "easy",
-  },
-];
-
-const mockQuizSets: Omit<QuizSet, "id">[] = [
-  {
-    name: "React Component Quiz",
-    type: "quiz",
-    count: 10,
-    createdAt: "2026-03-06T13:30:00Z",
-    tags: ["react", "components"],
-    difficulty: "medium",
-    questionsAnswered: 10,
-    correctAnswers: 8,
-  },
-  {
-    name: "Frontend Fundamentals Test",
-    type: "quiz",
-    count: 15,
-    createdAt: "2026-03-04T10:00:00Z",
-    tags: ["frontend", "basics"],
-    difficulty: "easy",
-    questionsAnswered: 15,
-    correctAnswers: 13,
-  },
-  {
-    name: "State Management Quiz",
-    type: "quiz",
-    count: 8,
-    createdAt: "2026-03-02T15:20:00Z",
-    tags: ["react", "state", "redux"],
-    difficulty: "hard",
-    questionsAnswered: 8,
-    correctAnswers: 5,
-  },
-  {
-    name: "Web Performance Quiz",
-    type: "quiz",
-    count: 12,
-    createdAt: "2026-02-27T09:30:00Z",
-    tags: ["performance", "optimization"],
-    difficulty: "medium",
-  },
-];
-
-// Simulated delay for API calls
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * Get all document sets (flashcards + quizzes)
- */
-export const getAllDocumentSets = async (): Promise<DocumentSet[]> => {
-  await delay(500); // Simulate network delay
-
-  const flashcardSets: FlashcardSet[] = mockFlashcardSets.map((set) => ({
-    ...set,
-    id: genSetId(),
-  }));
-
-  const quizSets: QuizSet[] = mockQuizSets.map((set) => ({
-    ...set,
-    id: genSetId(),
-  }));
-
-  const allSets: DocumentSet[] = [...flashcardSets, ...quizSets];
-
-  // Sort by creation date (newest first)
-  return allSets.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+function mapFlashcardSet(set: FlashcardSetResponse): UIFlashcardSet {
+  const tags = new Set<string>();
+  (set.flashcards ?? []).forEach((c) =>
+    (c.tags ?? []).forEach((t) => t && tags.add(t)),
   );
-};
-
-/**
- * Get only flashcard sets
- */
-export const getFlashcardSets = async (): Promise<FlashcardSet[]> => {
-  await delay(400);
-
-  const flashcardSets: FlashcardSet[] = mockFlashcardSets.map((set) => ({
-    ...set,
-    id: genSetId(),
-  }));
-
-  return flashcardSets.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-};
-
-/**
- * Get only quiz sets
- */
-export const getQuizSets = async (): Promise<QuizSet[]> => {
-  await delay(400);
-
-  const quizSets: QuizSet[] = mockQuizSets.map((set) => ({
-    ...set,
-    id: genSetId(),
-  }));
-
-  return quizSets.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-};
-
-/**
- * Get document library statistics
- */
-export const getDocumentLibraryStats =
-  async (): Promise<DocumentLibraryStats> => {
-    await delay(300);
-
-    const totalFlashcards = mockFlashcardSets.reduce(
-      (sum, set) => sum + set.count,
-      0,
-    );
-    const totalQuizQuestions = mockQuizSets.reduce(
-      (sum, set) => sum + set.count,
-      0,
-    );
-
-    return {
-      totalSets: mockFlashcardSets.length + mockQuizSets.length,
-      flashcardCount: mockFlashcardSets.length,
-      quizCount: mockQuizSets.length,
-      totalFlashcards,
-      totalQuizQuestions,
-    };
+  return {
+    id: set.id,
+    name: set.name?.trim() || "Bộ Flashcards",
+    type: "flashcard",
+    count: set.number ?? set.flashcards?.length ?? 0,
+    createdAt: set.createdAt,
+    updatedAt: set.updatedAt,
+    tags: Array.from(tags).slice(0, 5),
   };
+}
 
-/**
- * Delete a document set by ID
- */
-export const deleteDocumentSet = async (id: string): Promise<void> => {
-  await delay(300);
-  console.log(`Deleted set with ID: ${id}`);
-  // In real implementation, this would make a DELETE request to the backend
+function mapQuizSet(set: QuizSetResponse): UIQuizSet {
+  const tags = new Set<string>();
+  (set.questions ?? []).forEach((q) =>
+    (q.tags ?? []).forEach((t) => t && tags.add(t)),
+  );
+  return {
+    id: set.id,
+    name: set.name?.trim() || "Bộ Quiz",
+    type: "quiz",
+    count: set.number ?? set.questions?.length ?? 0,
+    createdAt: set.createdAt,
+    updatedAt: set.updatedAt,
+    tags: Array.from(tags).slice(0, 5),
+  };
+}
+
+export const getAllDocumentSets = async (
+  userId: string,
+): Promise<DocumentSet[]> => {
+  if (!userId) return [];
+
+  const [flashcards, quizzes] = await Promise.all([
+    flashcardApi.getFlashcardSetsByAuthor(userId).catch((err) => {
+      console.error("Failed to load flashcard sets:", err);
+      return [];
+    }),
+    quizApi.getQuizSetsByUser(userId).catch((err) => {
+      console.error("Failed to load quiz sets:", err);
+      return [];
+    }),
+  ]);
+
+  const merged: DocumentSet[] = [
+    ...flashcards.map(mapFlashcardSet),
+    ...quizzes.map(mapQuizSet),
+  ];
+
+  return merged.sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+};
+
+export const deleteDocumentSet = async (
+  id: string,
+  type: "flashcard" | "quiz",
+): Promise<void> => {
+  if (type === "flashcard") {
+    await flashcardApi.deleteFlashcardSet(id);
+  } else {
+    await quizApi.deleteQuizSet(id);
+  }
 };
 
 export const documentLibraryApi = {
   getAllDocumentSets,
-  getFlashcardSets,
-  getQuizSets,
-  getDocumentLibraryStats,
   deleteDocumentSet,
 };
 

@@ -104,6 +104,8 @@ export const USER_ROUTES = {
   WISHLIST: "/wishlist",
   MY_COURSES: "/my-courses",
   DOCUMENT_LIBRARY: "/document-library",
+  DOCUMENT_LIBRARY_FLASHCARD: "/document-library/flashcard/:id",
+  DOCUMENT_LIBRARY_QUIZ: "/document-library/quiz/:id",
   PAYMENT_CHECKOUT: "/payment/checkout/express/course",
   VNPAY_RETURN: "/payment/checkout/express/vnpay/return",
   PAYPAL_RETURN: "/payment/checkout/express/paypal/return",
@@ -177,6 +179,12 @@ export const createRoute = {
   // Expert Routes
   publishedCourseDetail: (publishedCourseId: string | number) =>
     `/expert/published-courses/${publishedCourseId}`,
+
+  // Document Library — review pages
+  documentLibraryFlashcard: (id: string | number) =>
+    `/document-library/flashcard/${id}`,
+  documentLibraryQuiz: (id: string | number) =>
+    `/document-library/quiz/${id}`,
 } as const;
 
 // ============================================
@@ -222,6 +230,10 @@ export const ROUTE_PATTERNS = {
 
   // Expert patterns
   PUBLISHED_COURSE_DETAIL: "/expert/published-courses/:publishedCourseId",
+
+  // Document Library — review patterns
+  DOCUMENT_LIBRARY_FLASHCARD: "/document-library/flashcard/:id",
+  DOCUMENT_LIBRARY_QUIZ: "/document-library/quiz/:id",
 } as const;
 
 // ============================================

@@ -49,12 +49,15 @@ public class FlashcardConverter {
      * @return FlashcardSetResponse
      */
     public FlashcardSetResponse toFlashcardSetResponse(FlashcardSet flashcardSet) {
-        List<FlashcardDto> flashcardDtos = flashcardSet.getFlashcards().stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+        List<FlashcardDto> flashcardDtos = flashcardSet.getFlashcards() != null
+                ? flashcardSet.getFlashcards().stream()
+                        .map(this::toDto)
+                        .collect(Collectors.toList())
+                : List.of();
 
         return FlashcardSetResponse.builder()
                 .id(flashcardSet.getId())
+                .name(flashcardSet.getFlashcardSetName())
                 .flashcards(flashcardDtos)
                 .internalDocument(flashcardSet.getInternalDocument())
                 .externalDocument(flashcardSet.getExternalDocument())
@@ -62,6 +65,7 @@ public class FlashcardConverter {
                 .language(flashcardSet.getLanguage())
                 .createdAt(flashcardSet.getCreatedAt())
                 .updatedAt(flashcardSet.getUpdatedAt())
+                .number(flashcardDtos.size())
                 .build();
     }
 }

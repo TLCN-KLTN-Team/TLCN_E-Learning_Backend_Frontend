@@ -1,48 +1,70 @@
-import axios from "axios";
 import type {
   FlashCardRequest,
   FlashCardResponse,
+  FlashcardSetResponse,
   SaveFlashcardSetRequest,
 } from "@/types/flashcard.type";
+import type { ApiResponse } from "../response/apiResponse";
 import axiosInstance from "../httpClient/axiosInstance";
 
-const PYTHON_FLASHCARD_API = "http://localhost:8002/api/v1/flashcards";
 const FLASHCARD_API = "/ai/flashcards";
 
 /**
- * Generate flashcards using AI from the Python backend
+ * Generate flashcards via the API Gateway (which proxies to the Spring AI
+ * service, which in turn calls the Python flashcard service).
  */
 export const generateFlashcards = async (
   request: FlashCardRequest,
 ): Promise<FlashCardResponse> => {
-  const response = await axios.post<FlashCardResponse>(
-    `${PYTHON_FLASHCARD_API}/generate`,
+  const response = await axiosInstance.post<ApiResponse<FlashCardResponse>>(
+    `${FLASHCARD_API}/generate`,
     request,
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    },
   );
-  return response.data;
+  return response.data.result;
 };
 
+/**
+ * Lưu một bộ flashcard mới vào kho tài liệu.
+ */
 export const saveFlashcardSet = async (
-  flashcardSetRequest: SaveFlashcardSetRequest
-): Promise<any> => {
-  const savedFlashcardSetResponse = await axiosInstance.post(
+  request: SaveFlashcardSetRequest,
+): Promise<FlashcardSetResponse> => {
+  const response = await axiosInstance.post<ApiResponse<FlashcardSetResponse>>(
     `${FLASHCARD_API}/save`,
-    flashcardSetRequest
+    request,
   );
+  return response.data.result;
+};
 
-  if (savedFlashcardSetResponse.status === 200) {
-    return savedFlashcardSetResponse.data;
-  } else {
-    throw new Error("Failed to save flashcard set");
-  }
+/**
+ * Lấy toàn bộ flashcard set của một tác giả (phục vụ kho tài liệu).
+ */
+export const getFlashcardSetsByAuthor = async (
+  authorId: string,
+): Promise<FlashcardSetResponse[]> => {
+  const response = await axiosInstance.get<
+    ApiResponse<FlashcardSetResponse[]>
+  >(`${FLASHCARD_API}/author/${authorId}`);
+  return response.data.result ?? [];
+};
+
+export const getFlashcardSetById = async (
+  id: string,
+): Promise<FlashcardSetResponse> => {
+  const response = await axiosInstance.get<ApiResponse<FlashcardSetResponse>>(
+    `${FLASHCARD_API}/${id}`,
+  );
+  return response.data.result;
+};
+
+export const deleteFlashcardSet = async (id: string): Promise<void> => {
+  await axiosInstance.delete(`${FLASHCARD_API}/${id}`);
 };
 
 export default {
   generateFlashcards,
   saveFlashcardSet,
+  getFlashcardSetsByAuthor,
+  getFlashcardSetById,
+  deleteFlashcardSet,
 };
