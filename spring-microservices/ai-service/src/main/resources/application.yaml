@@ -1,15 +1,26 @@
+# ai-service — config Spring Boot
+#
+# Biến môi trường được nạp từ file `.env` đặt cùng cấp pom.xml. File `.env`
+# được Spring Boot import như một property source (xem `spring.config.import`
+# bên dưới) nên có thể tham chiếu trực tiếp `${MONGO_DB_USERNAME}` mà không
+# cần prefix. Nếu file vắng mặt Spring vẫn khởi động bình thường nhờ
+# `optional:`. Biến OS-level (Docker -e / CI secret) có mức ưu tiên cao hơn.
+
 spring:
   application:
     name: ai-service
+  config:
+    import: optional:file:./.env[.properties]
   data:
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/ai_db}
+      uri: mongodb+srv://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@${MONGO_DB_HOST:hackathon.n5sib2v.mongodb.net}/${MONGO_DB_NAME:ai_db}?retryWrites=true&w=majority&appName=Hackathon
+      auto-index-creation: true
 
 server:
-  port: 8000
+  port: ${SERVER_PORT:8000}
 
 ai:
   service:
     document-parser: ${AI_SERVICE_DOCUMENT_PARSER:http://localhost:8001/api/v1/parser}
-    flashcard: ${AI_SERVICE_FLASHCARD:http://localhost:8002/api/v1/flashcard}
+    flashcard: ${AI_SERVICE_FLASHCARD:http://localhost:8002/api/v1/flashcards}
     quiz: ${AI_SERVICE_QUIZ:http://localhost:8003/api/v1/quiz}

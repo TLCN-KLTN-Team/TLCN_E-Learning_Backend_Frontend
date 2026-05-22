@@ -10,7 +10,6 @@ export interface FlashcardSet {
   createdAt: string;
   updatedAt?: string;
   tags: string[];
-  difficulty?: "easy" | "medium" | "hard";
 }
 
 export interface QuizSet {
@@ -21,7 +20,6 @@ export interface QuizSet {
   createdAt: string;
   updatedAt?: string;
   tags: string[];
-  difficulty?: "easy" | "medium" | "hard";
   questionsAnswered?: number;
   correctAnswers?: number;
 }

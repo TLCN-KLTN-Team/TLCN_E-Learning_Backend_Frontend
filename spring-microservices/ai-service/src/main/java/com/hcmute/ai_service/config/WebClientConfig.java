@@ -20,6 +20,9 @@ public class WebClientConfig {
     @Value("${ai.service.quiz}")
     private String quizServiceUrl;
 
+    @Value("${ai.service.flashcard}")
+    private String flashcardServiceUrl;
+
     @Bean
     public WebClient documentParserWebClient() {
         HttpClient httpClient = this.httpClientConfig();
@@ -37,6 +40,17 @@ public class WebClientConfig {
 
         return WebClient.builder()
                 .baseUrl(quizServiceUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
+    @Bean
+    public WebClient flashcardWebClient() {
+        HttpClient httpClient = this.httpClientConfig();
+
+        return WebClient.builder()
+                .baseUrl(flashcardServiceUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();

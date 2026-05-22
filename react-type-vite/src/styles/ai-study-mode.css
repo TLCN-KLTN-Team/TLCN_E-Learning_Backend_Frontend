@@ -371,6 +371,524 @@
   animation: ai-slide-up 0.3s ease-out;
 }
 
+/* ============================================ */
+/* Learning Outcome (CĐR) selection card        */
+/* ============================================ */
+.outcome-card {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(229, 231, 235);
+  background-color: hsl(var(--card));
+  padding: 0.875rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.outcome-card:hover {
+  border-color: rgba(20, 184, 166, 0.4);
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.08);
+}
+
+.outcome-card.checked {
+  border-color: rgb(20, 184, 166);
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.06) 0%,
+    rgba(6, 182, 212, 0.06) 100%
+  );
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.15);
+}
+
+.outcome-index {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.15) 0%,
+    rgba(6, 182, 212, 0.15) 100%
+  );
+  color: rgb(15, 118, 110);
+  white-space: nowrap;
+}
+
+.outcome-config {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(20, 184, 166, 0.3);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+
+.outcome-difficulty-select {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  background-color: hsl(var(--card));
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  color: rgb(17, 24, 39);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.outcome-difficulty-select:focus {
+  border-color: rgb(20, 184, 166);
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+}
+
+/* ============================================ */
+/* Quiz: question type & difficulty UI            */
+/* ============================================ */
+
+/* Step 2 — question type cards. Style mirrors .outcome-card so quiz reads
+   as a sibling flow to the flashcard outcome flow. */
+.quiz-type-card {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(229, 231, 235);
+  background-color: hsl(var(--card));
+  padding: 0.75rem 0.875rem;
+  text-align: left;
+  font-size: 0.875rem;
+  color: rgb(75, 85, 99);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+  cursor: pointer;
+}
+
+.quiz-type-card:hover {
+  border-color: rgba(20, 184, 166, 0.4);
+  color: rgb(15, 118, 110);
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.08);
+  transform: translateY(-1px);
+}
+
+.quiz-type-card.selected {
+  border-color: rgb(20, 184, 166);
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.08) 0%,
+    rgba(6, 182, 212, 0.08) 100%
+  );
+  color: rgb(15, 118, 110);
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.15);
+}
+
+.quiz-type-card.selected .quiz-type-label {
+  font-weight: 600;
+}
+
+.quiz-type-icon {
+  height: 1.125rem;
+  width: 1.125rem;
+  flex-shrink: 0;
+  color: rgb(107, 114, 128);
+  transition: color 0.18s ease;
+}
+
+.quiz-type-card:hover .quiz-type-icon,
+.quiz-type-card.selected .quiz-type-icon {
+  color: rgb(20, 184, 166);
+}
+
+/* Step 3 — per-type config block. Card hosts the difficulty cells. */
+.quiz-type-config {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  background: linear-gradient(
+    135deg,
+    rgba(240, 253, 250, 0.5) 0%,
+    rgba(236, 254, 255, 0.5) 100%
+  );
+  padding: 0.875rem 1rem;
+  transition: box-shadow 0.18s ease;
+}
+
+.quiz-type-config:hover {
+  box-shadow: 0 2px 10px rgba(20, 184, 166, 0.1);
+}
+
+.quiz-type-config-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(15, 118, 110);
+  margin-bottom: 0.625rem;
+}
+
+.quiz-difficulty-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+
+/* Difficulty cell — labels & selects pick up the semantic color of their
+   tone on hover/focus so the meaning (Dễ / TB / Khó) is reinforced. */
+.quiz-difficulty-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.625rem;
+  border: 1px solid transparent;
+  background-color: rgba(255, 255, 255, 0.7);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.quiz-difficulty-cell .quiz-difficulty-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: color 0.18s ease;
+}
+
+/* Semantic tones for the three difficulties. The default state keeps a
+   muted color; on hover/focus the cell, label and select border light up
+   with the tone color so the user gets instant feedback. */
+.quiz-difficulty-cell.tone-easy .quiz-difficulty-label {
+  color: rgb(15, 118, 110);
+}
+
+.quiz-difficulty-cell.tone-medium .quiz-difficulty-label {
+  color: rgb(180, 83, 9);
+}
+
+.quiz-difficulty-cell.tone-hard .quiz-difficulty-label {
+  color: rgb(190, 18, 60);
+}
+
+.quiz-difficulty-cell.tone-easy:hover,
+.quiz-difficulty-cell.tone-easy:focus-within {
+  border-color: rgba(16, 185, 129, 0.45);
+  background-color: rgba(236, 253, 245, 0.85);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.quiz-difficulty-cell.tone-easy:hover .quiz-difficulty-label,
+.quiz-difficulty-cell.tone-easy:focus-within .quiz-difficulty-label {
+  color: rgb(5, 150, 105);
+}
+
+.quiz-difficulty-cell.tone-medium:hover,
+.quiz-difficulty-cell.tone-medium:focus-within {
+  border-color: rgba(245, 158, 11, 0.5);
+  background-color: rgba(255, 251, 235, 0.9);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+.quiz-difficulty-cell.tone-medium:hover .quiz-difficulty-label,
+.quiz-difficulty-cell.tone-medium:focus-within .quiz-difficulty-label {
+  color: rgb(217, 119, 6);
+}
+
+.quiz-difficulty-cell.tone-hard:hover,
+.quiz-difficulty-cell.tone-hard:focus-within {
+  border-color: rgba(244, 63, 94, 0.5);
+  background-color: rgba(255, 241, 242, 0.9);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.15);
+}
+
+.quiz-difficulty-cell.tone-hard:hover .quiz-difficulty-label,
+.quiz-difficulty-cell.tone-hard:focus-within .quiz-difficulty-label {
+  color: rgb(225, 29, 72);
+}
+
+/* Re-skin the shared select inside a tone cell to follow the tone color
+   for its focus ring. */
+.quiz-difficulty-cell .quiz-difficulty-select {
+  width: 100%;
+  background-color: rgb(255, 255, 255);
+}
+
+.quiz-difficulty-cell.tone-easy .quiz-difficulty-select:focus {
+  border-color: rgb(16, 185, 129);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.quiz-difficulty-cell.tone-medium .quiz-difficulty-select:focus {
+  border-color: rgb(245, 158, 11);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.quiz-difficulty-cell.tone-hard .quiz-difficulty-select:focus {
+  border-color: rgb(244, 63, 94);
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.2);
+}
+
+/* Reuse the same tone treatment for flashcard outcome difficulty selects
+   so the two flows look unified. The flashcard JSX uses Tailwind classes
+   (text-emerald-600 / text-amber-600 / text-rose-600) on the label, so we
+   only need to color the select's hover/focus state by parent context. */
+.outcome-config select.outcome-difficulty-select:hover {
+  border-color: rgba(20, 184, 166, 0.6);
+}
+
+/* Dark mode adjustments for quiz tones */
+@media (prefers-color-scheme: dark) {
+  .quiz-type-card {
+    background-color: rgba(15, 23, 42, 0.4);
+    color: rgb(203, 213, 225);
+    border-color: rgb(51, 65, 85);
+  }
+
+  .quiz-type-card:hover {
+    color: rgb(94, 234, 212);
+  }
+
+  .quiz-type-card.selected {
+    background: linear-gradient(
+      135deg,
+      rgba(20, 184, 166, 0.18) 0%,
+      rgba(6, 182, 212, 0.18) 100%
+    );
+    color: rgb(153, 246, 228);
+    border-color: rgb(45, 212, 191);
+  }
+
+  .quiz-type-config {
+    background: linear-gradient(
+      135deg,
+      rgba(20, 184, 166, 0.12) 0%,
+      rgba(6, 182, 212, 0.12) 100%
+    );
+    border-color: rgba(45, 212, 191, 0.4);
+  }
+
+  .quiz-difficulty-cell {
+    background-color: rgba(15, 23, 42, 0.5);
+  }
+}
+
+/* ============================================ */
+/* Flashcard generation animation                */
+/* ============================================ */
+.flashcard-generating-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  background:
+    radial-gradient(
+      circle at 30% 20%,
+      rgba(20, 184, 166, 0.12) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 70% 80%,
+      rgba(6, 182, 212, 0.12) 0%,
+      transparent 60%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(240, 253, 250, 0.6) 0%,
+      rgba(236, 254, 255, 0.6) 100%
+    );
+  overflow: hidden;
+}
+
+.flashcard-generating-stage::before,
+.flashcard-generating-stage::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.flashcard-generating-stage::before {
+  width: 180px;
+  height: 180px;
+  background: rgba(20, 184, 166, 0.35);
+  top: -60px;
+  left: -60px;
+  animation: flashcard-blob 6s ease-in-out infinite;
+}
+
+.flashcard-generating-stage::after {
+  width: 220px;
+  height: 220px;
+  background: rgba(6, 182, 212, 0.3);
+  bottom: -80px;
+  right: -80px;
+  animation: flashcard-blob 7s ease-in-out infinite reverse;
+}
+
+.flashcard-orbit {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.flashcard-orbit-core {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    rgb(20, 184, 166) 0%,
+    rgb(6, 182, 212) 100%
+  );
+  color: white;
+  box-shadow: 0 0 24px rgba(20, 184, 166, 0.55);
+  animation: flashcard-core-pulse 1.6s ease-in-out infinite;
+  z-index: 2;
+}
+
+.flashcard-orbit-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  color: rgb(20, 184, 166);
+  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.25);
+  transform-origin: center;
+  animation: flashcard-orbit 3.2s linear infinite;
+}
+
+.flashcard-orbit-card-1 {
+  animation-delay: 0s;
+}
+
+.flashcard-orbit-card-2 {
+  animation-delay: -1.06s;
+  background: linear-gradient(135deg, #ffffff 0%, #ccfbf1 100%);
+}
+
+.flashcard-orbit-card-3 {
+  animation-delay: -2.13s;
+  background: linear-gradient(135deg, #ffffff 0%, #cffafe 100%);
+}
+
+.flashcard-generating-text {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.flashcard-generating-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgb(15, 118, 110);
+  background: linear-gradient(
+    90deg,
+    rgb(15, 118, 110) 0%,
+    rgb(6, 182, 212) 50%,
+    rgb(15, 118, 110) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: flashcard-shimmer 2.4s linear infinite;
+}
+
+.flashcard-generating-subtitle {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: rgb(75, 85, 99);
+}
+
+.flashcard-generating-bar {
+  position: relative;
+  width: 220px;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(20, 184, 166, 0.15);
+  overflow: hidden;
+}
+
+.flashcard-generating-bar > span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    rgb(20, 184, 166) 0%,
+    rgb(6, 182, 212) 100%
+  );
+  animation: flashcard-bar 1.4s ease-in-out infinite;
+}
+
+@keyframes flashcard-orbit {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(60px)
+      rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg) translateX(60px)
+      rotate(-360deg);
+  }
+}
+
+@keyframes flashcard-core-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 24px rgba(20, 184, 166, 0.55);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 36px rgba(6, 182, 212, 0.65);
+  }
+}
+
+@keyframes flashcard-shimmer {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes flashcard-bar {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes flashcard-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(20px, 30px) scale(1.1);
+  }
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .ai-chapter-badge {

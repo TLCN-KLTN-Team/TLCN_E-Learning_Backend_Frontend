@@ -16,15 +16,15 @@ public class InitConfig {
 
     public static void init() {
         try {
-            // Try to find .env file in the identity-service directory
+            // Try to find .env file in the chat-service directory
             Path currentPath = Paths.get("").toAbsolutePath();
             Path envPath;
 
-            // Check if we're running from the identity-service directory
+            // Check if we're running from the chat-service directory
             if (currentPath.getFileName().toString().equals("chat-service")) {
                 envPath = currentPath.resolve(".env");
             } else {
-                // We're probably running from the parent directory, look in identity-service
+                // We're probably running from the parent directory, look in chat-service
                 envPath = currentPath.resolve("chat-service").resolve(".env");
             }
 

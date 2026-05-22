@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(ls e:/TLCN/TLCN_E-Learning/)",
+      "Read(//e/TLCN/TLCN_E-Learning/**)",
+      "Bash(npx tsc *)"
     ]
   }
 }

@@ -31,6 +31,14 @@ public abstract class BaseQuestion {
     private Float score;
     private List<String> tags;
 
+    /** Mới — ID chuẩn đầu ra mà câu hỏi này được sinh ra dựa trên. */
+    @JsonProperty("learning_outcome_id")
+    private String learningOutcomeId;
+
+    /** Mới — Title chuẩn đầu ra, tiện cho UI hiển thị tag mà không phải tra lại. */
+    @JsonProperty("learning_outcome_title")
+    private String learningOutcomeTitle;
+
     @JsonProperty("question_type")
     public abstract String getQuestionType();
 }
