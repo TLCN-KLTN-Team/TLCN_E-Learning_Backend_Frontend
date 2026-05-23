@@ -12,6 +12,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ChatMessageRequest {
     String channelId;
-    String content; // Renamed from 'message' to 'content' to match usage
-    // if we have attachments, they handle receive in controller
+    String content;
+    String clientMessageId;
 }

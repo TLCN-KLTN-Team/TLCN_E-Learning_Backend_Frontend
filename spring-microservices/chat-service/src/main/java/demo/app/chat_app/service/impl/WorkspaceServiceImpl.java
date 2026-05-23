@@ -81,23 +81,30 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         return workspaceMapper.toResponse(workspace);
     }
 
+    /**
+     * Idempotent: triggered bởi COURSE_CREATED. Đảm bảo
+     *   Workspace (1) + General Section "Thông báo chung" (1) + General Channel (1)
+     * tồn tại cho course. Có thể replay an toàn — nếu workspace đã có, không tạo
+     * thêm; vẫn gọi createGeneralSection để bù khi lần trước crash giữa chừng.
+     */
     public void createWorkspaceWhenCourseCreatedAndAssignForATeacher(CourseCreatedEvent event) {
-        if (workspaceRepository.existsByCourseId(event.getCourseId())) {
-            return; // Workspace already exists for this course
-        }
+        Workspace workspace = workspaceRepository.findByCourseId(event.getCourseId())
+                .orElseGet(() -> {
+                    Workspace fresh = Workspace.builder()
+                            .courseId(event.getCourseId())
+                            .name(event.getCourseName())
+                            .description(event.getDescription())
+                            .ownerId(event.getTeacherId())
+                            .createdAt(Instant.now())
+                            .updatedAt(Instant.now())
+                            .build();
+                    Workspace saved = workspaceRepository.save(fresh);
+                    log.info("Workspace created for courseId={} ownerId={} → {}",
+                            event.getCourseId(), event.getTeacherId(), saved.getId());
+                    return saved;
+                });
 
-        Workspace workspace = Workspace.builder()
-                .courseId(event.getCourseId())
-                .name(event.getCourseName())
-                .description(event.getDescription())
-                .ownerId(event.getTeacherId())
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
-
-        Workspace savedWorkspace = workspaceRepository.save(workspace);
-
-        sectionService.createGeneralSection(savedWorkspace.getId(), savedWorkspace);
+        sectionService.createGeneralSection(workspace.getId(), workspace);
     }
 
     @Override

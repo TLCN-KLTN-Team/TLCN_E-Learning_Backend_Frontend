@@ -140,7 +140,7 @@ export const useChatWebSocket = () => {
             if (!chatMessage) return;
 
             // Set 'me' property based on current user
-            chatMessage.me = user?.id === chatMessage.sender.id;
+            chatMessage.me = !!user?.id && user.id === chatMessage.sender?.id;
 
             // Filter messages by channelId if needed
             if (chatMessage.channelId === channelId) {
@@ -179,7 +179,7 @@ export const useChatWebSocket = () => {
           const chatMessage: ChatMessageResponse = JSON.parse(message.body);
 
           // Set 'me' property based on current user
-          chatMessage.me = user?.id === chatMessage.sender.id;
+          chatMessage.me = !!user?.id && user.id === chatMessage.sender?.id;
 
           setMessages((prev) => {
             const exists = prev.some((msg) => msg.id === chatMessage.id);

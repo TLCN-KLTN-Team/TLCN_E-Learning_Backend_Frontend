@@ -86,7 +86,7 @@ export const useChatMessages = ({
         if (cancelled) return;
         const withMe = data.map((msg) => ({
           ...msg,
-          me: user?.id === msg.sender.id,
+          me: !!user?.id && user.id === msg.sender?.id,
         }));
         setMessages(withMe);
       })

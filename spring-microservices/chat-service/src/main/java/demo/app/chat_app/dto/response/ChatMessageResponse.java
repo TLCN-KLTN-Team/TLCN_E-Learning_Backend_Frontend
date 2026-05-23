@@ -22,7 +22,6 @@ public class ChatMessageResponse {
     UserResponse sender;
     MessageType messageType;
     MessageStatus status;
-    String fileUrl;
     List<AttachmentResponse> attachments;
     Instant createdDate;
     boolean uploadedFiles;

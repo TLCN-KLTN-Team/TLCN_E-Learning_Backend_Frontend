@@ -12,8 +12,11 @@ import demo.app.chat_app.model.enums.AttachmentType;
 import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
 import demo.app.chat_app.model.workspace.Channel;
+import demo.app.chat_app.model.workspace.ChannelMember;
+import demo.app.chat_app.model.workspace.ChannelRole;
 import demo.app.chat_app.model.workspace.ChatMessage;
 import demo.app.chat_app.model.workspace.MessageAttachment;
+import demo.app.chat_app.repository.ChannelMemberRepository;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.MessageAttachmentRepository;
@@ -50,6 +53,7 @@ public class FileUploadService {
     FileUtils fileUtils;
     ChatMessageService chatMessageService;
     ChannelRepository channelRepository;
+    ChannelMemberRepository channelMemberRepository;
     ChatMessageMapper chatMessageMapper;
     ChatMessageUtils chatMessageUtils;
     GetUserClient getUserClient;
@@ -59,7 +63,6 @@ public class FileUploadService {
     ChatMessageRepository chatMessageRepository;
 
     public boolean softDeleteFile(String fileId) {
-        // Logic to soft delete a file by marking it as inactive
         return messageAttachmentRepository.findById(fileId)
                 .map(attachment -> {
                     attachment.setActive(false);
@@ -71,39 +74,25 @@ public class FileUploadService {
 
     // ======== FILE-ONLY MESSAGE ========
 
-    /**
-     * Create a new message with file attachments only (no text content).
-     * Unlike uploadAndAttachFiles, this doesn't require a prior WebSocket message.
-     * 
-     * Flow:
-     * 1. Create a new ChatMessage with FILE_ONLY type and PENDING status
-     * 2. Upload each file to Cloudinary in parallel
-     * 3. Create & save MessageAttachment documents
-     * 4. Update ChatMessage: push attachments, set status=SENT
-     * 5. Return full ChatMessageResponse for WebSocket broadcast as NEW_MESSAGE
-     */
     public ChatMessageResponse createFileOnlyMessage(MultipartFile[] files,
                                                       String channelId,
                                                       String clientMessageId,
                                                       AttachmentCategory category,
                                                       Principal principal) {
-        // Validate channel
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        // UC-41: chặn upload khi channel đã qua phase OPEN (member không upload thêm được)
         ChannelPhase.assertOpenForMember(channel);
         AttachmentCategory effectiveCategory = category != null ? category : AttachmentCategory.GENERAL;
 
         String userId = principal.getName();
         String authToken = getAuthTokenFromContext();
 
-        // Create a new ChatMessage placeholder with PENDING status
         ChatMessage chatMessage = ChatMessage.builder()
                 .clientMessageId(clientMessageId)
                 .sender(userId)
                 .channelId(channelId)
-                .content(null) // No text content for file-only messages
+                .content(null)
                 .messageType(MessageType.FILE_ONLY)
                 .status(MessageStatus.PENDING)
                 .createdDate(Instant.now())
@@ -114,41 +103,33 @@ public class FileUploadService {
         log.info("File-only message placeholder created with ID: {} and clientMessageId: {}",
                 chatMessage.getId(), clientMessageId);
 
-        // Track upload status
         uploadStatusMap.put(chatMessage.getId(), "UPLOADING");
 
         try {
-            // Upload files in parallel
             final String messageId = chatMessage.getId();
             List<CompletableFuture<MessageAttachment>> futures = Arrays.stream(files)
                     .map(file -> CompletableFuture.supplyAsync(() ->
                             uploadSingleFile(file, messageId, channelId, effectiveCategory, authToken)))
                     .toList();
 
-            // Wait for all uploads to complete
             List<MessageAttachment> uploadedAttachments = futures.stream()
                     .map(CompletableFuture::join)
                     .toList();
 
-            // Save all attachments to the attachment collection
             List<MessageAttachment> savedAttachments = messageAttachmentRepository.saveAll(uploadedAttachments);
 
-            // Update ChatMessage with attachments and mark as SENT
-            chatMessage.setAttachments(new ArrayList<>(savedAttachments));
             chatMessage.setStatus(MessageStatus.SENT);
             chatMessage.setUpdatedDate(Instant.now());
             chatMessageRepository.save(chatMessage);
 
-            // Update status
             uploadStatusMap.put(chatMessage.getId(), "COMPLETED");
 
             log.info("File-only message completed: messageId={}, attachmentCount={}",
                     chatMessage.getId(), savedAttachments.size());
 
-            return toChatMessageResponse(chatMessage, userId);
+            return toChatMessageResponse(chatMessage, userId, savedAttachments);
 
         } catch (Exception e) {
-            // Mark message as FAILED on error
             chatMessage.setStatus(MessageStatus.FAILED);
             chatMessage.setUpdatedDate(Instant.now());
             chatMessageRepository.save(chatMessage);
@@ -157,7 +138,6 @@ public class FileUploadService {
             log.error("Failed to create file-only message for clientMessageId: {}", clientMessageId, e);
             throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
         } finally {
-            // Clean up status after a delay
             final String msgId = chatMessage.getId();
             CompletableFuture.runAsync(() -> {
                 try {
@@ -172,39 +152,23 @@ public class FileUploadService {
 
     // ======== POST-ATTACH PATTERN ========
 
-    /**
-     * Upload multiple files and attach them to an existing message (identified by clientMessageId).
-     * 
-     * Flow:
-     * 1. Find the ChatMessage by clientMessageId
-     * 2. Upload each file to Cloudinary in parallel
-     * 3. Create & save MessageAttachment documents
-     * 4. Update ChatMessage: push attachments, set status=SENT, determine messageType
-     * 5. Return MessageUpdatePayload for WebSocket broadcast
-     */
     public MessageUpdatePayload uploadAndAttachFiles(MultipartFile[] files,
                                                       String channelId,
                                                       String clientMessageId,
                                                       AttachmentCategory category,
                                                       Principal principal) {
-        // Validate channel
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        // UC-41: chặn upload khi channel đã qua phase OPEN
         ChannelPhase.assertOpenForMember(channel);
         AttachmentCategory effectiveCategory = category != null ? category : AttachmentCategory.GENERAL;
 
-        String userId = principal.getName();
-
-        // Find existing message by clientMessageId
         ChatMessage chatMessage = chatMessageRepository.findByClientMessageId(clientMessageId)
                 .orElseThrow(() -> {
                     log.error("Message not found for clientMessageId: {}", clientMessageId);
                     return new AppException(ErrorCode.MESSAGE_NOT_FOUND);
                 });
 
-        // Verify the message belongs to the correct channel
         if (!chatMessage.getChannelId().equals(channelId)) {
             log.error("Channel mismatch: message channelId={}, request channelId={}",
                     chatMessage.getChannelId(), channelId);
@@ -213,33 +177,20 @@ public class FileUploadService {
 
         String authToken = getAuthTokenFromContext();
 
-        // Update status to UPLOADING
         uploadStatusMap.put(chatMessage.getId(), "UPLOADING");
 
         try {
-            // Upload files in parallel
             List<CompletableFuture<MessageAttachment>> futures = Arrays.stream(files)
                     .map(file -> CompletableFuture.supplyAsync(() ->
                             uploadSingleFile(file, chatMessage.getId(), channelId, effectiveCategory, authToken)))
                     .toList();
 
-            // Wait for all uploads to complete
             List<MessageAttachment> uploadedAttachments = futures.stream()
                     .map(CompletableFuture::join)
                     .toList();
 
-            // Save all attachments to the attachment collection
             List<MessageAttachment> savedAttachments = messageAttachmentRepository.saveAll(uploadedAttachments);
 
-            // Update ChatMessage: push attachments, set status and type
-            List<MessageAttachment> existingAttachments = chatMessage.getAttachments();
-            if (existingAttachments == null) {
-                existingAttachments = new ArrayList<>();
-            }
-            existingAttachments.addAll(savedAttachments);
-            chatMessage.setAttachments(existingAttachments);
-
-            // Determine message type
             boolean hasContent = StringUtils.hasText(chatMessage.getContent());
             chatMessage.setMessageType(hasContent ? MessageType.MIXED : MessageType.FILE_ONLY);
             chatMessage.setStatus(MessageStatus.SENT);
@@ -247,10 +198,8 @@ public class FileUploadService {
 
             chatMessageRepository.save(chatMessage);
 
-            // Update status
             uploadStatusMap.put(chatMessage.getId(), "COMPLETED");
 
-            // Build response
             List<AttachmentResponse> attachmentResponses = chatMessageMapper.toAttachmentResponseList(savedAttachments);
 
             return MessageUpdatePayload.builder()
@@ -262,7 +211,6 @@ public class FileUploadService {
                     .build();
 
         } catch (Exception e) {
-            // Mark message as FAILED on error
             chatMessage.setStatus(MessageStatus.FAILED);
             chatMessage.setUpdatedDate(Instant.now());
             chatMessageRepository.save(chatMessage);
@@ -271,10 +219,9 @@ public class FileUploadService {
             log.error("Failed to upload and attach files for clientMessageId: {}", clientMessageId, e);
             throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
         } finally {
-            // Clean up status after a delay (could use scheduled task)
             CompletableFuture.runAsync(() -> {
                 try {
-                    Thread.sleep(60_000); // Keep status for 1 minute
+                    Thread.sleep(60_000);
                     uploadStatusMap.remove(chatMessage.getId());
                 } catch (InterruptedException ignored) {
                     Thread.currentThread().interrupt();
@@ -284,7 +231,7 @@ public class FileUploadService {
     }
 
     /**
-     * Legacy upload method: creates a new message per file (kept for backward compatibility).
+     * Legacy upload method: creates a new message per file.
      */
     public List<ChatMessageResponse> uploadMultipleFilesToMessage(MultipartFile[] files,
                                                                   String channelId,
@@ -292,7 +239,6 @@ public class FileUploadService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        // UC-41: chặn upload khi channel đã qua phase OPEN
         ChannelPhase.assertOpenForMember(channel);
 
         String userId = principal.getName();
@@ -308,9 +254,6 @@ public class FileUploadService {
                 .toList();
     }
 
-    /**
-     * Upload a single file and create a MessageAttachment (without creating a new ChatMessage).
-     */
     private MessageAttachment uploadSingleFile(MultipartFile file, String messageId,
                                                 String channelId, AttachmentCategory category, String authToken) {
         try {
@@ -345,9 +288,6 @@ public class FileUploadService {
         }
     }
 
-    /**
-     * Legacy: upload a single file and create a new ChatMessage for it.
-     */
     private ChatMessageResponse uploadSingleFileAsLegacyMessage(MultipartFile file,
                                                                  String channelId,
                                                                  String sender,
@@ -367,24 +307,32 @@ public class FileUploadService {
             try {
                 AttachmentType attachmentType = fileUtils.getAttachmentType(file.getOriginalFilename());
 
-                MessageAttachment attachment = MessageAttachment.builder()
-                        .fileName(file.getOriginalFilename())
-                        .contentType(file.getContentType())
-                        .fileSize(file.getSize())
-                        .fileUrl(cloudinaryService.uploadFile(file, attachmentType))
-                        .uploadedAt(Instant.now())
-                        .build();
-
                 ChatMessage chatMessage = ChatMessage.builder()
                         .content(file.getOriginalFilename())
                         .channelId(channelId)
                         .sender(sender)
+                        .messageType(MessageType.FILE_ONLY)
+                        .status(MessageStatus.SENT)
                         .createdDate(Instant.now())
                         .updatedDate(Instant.now())
                         .build();
 
                 chatMessage = chatMessageRepository.save(chatMessage);
-                return this.toChatMessageResponse(chatMessage, sender);
+
+                MessageAttachment attachment = MessageAttachment.builder()
+                        .messageId(chatMessage.getId())
+                        .channelId(channelId)
+                        .fileName(file.getOriginalFilename())
+                        .contentType(file.getContentType())
+                        .fileSize(file.getSize())
+                        .fileUrl(cloudinaryService.uploadFile(file, attachmentType))
+                        .attachmentType(attachmentType)
+                        .category(AttachmentCategory.GENERAL)
+                        .uploadedAt(Instant.now())
+                        .build();
+                attachment = messageAttachmentRepository.save(attachment);
+
+                return this.toChatMessageResponse(chatMessage, sender, List.of(attachment));
             } catch (AppException e) {
                 log.error("Error uploading file {}: {}", file.getOriginalFilename(), e.getMessage());
                 throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
@@ -396,60 +344,86 @@ public class FileUploadService {
         }
     }
 
-    private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage, String userId) {
+    /**
+     * Build a ChatMessageResponse. Attachments are passed in explicitly (caller
+     * has them in hand from the upload pipeline) to avoid an extra DB roundtrip.
+     * Sender info is resolved from ChannelMember first (denormalized), then
+     * falls back to user-service, then to "Anonymous" — never throws.
+     */
+    private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage,
+                                                       String currentUserId,
+                                                       List<MessageAttachment> attachments) {
         var chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatMessage);
-        boolean isMe = chatMessage.getSender().equals(userId);
+        boolean isMe = chatMessage.getSender() != null && chatMessage.getSender().equals(currentUserId);
         chatMessageResponse.setMe(isMe);
         chatMessageResponse.setMessageType(chatMessage.getMessageType());
         chatMessageResponse.setClientMessageId(chatMessage.getClientMessageId());
         chatMessageResponse.setStatus(chatMessage.getStatus());
         chatMessageResponse.setChannelId(chatMessage.getChannelId());
 
-        // Map attachments
-        if (chatMessage.getAttachments() != null && !chatMessage.getAttachments().isEmpty()) {
-            chatMessageResponse.setAttachments(
-                    chatMessageMapper.toAttachmentResponseList(chatMessage.getAttachments())
-            );
-        } else {
-            chatMessageResponse.setAttachments(Collections.emptyList());
-        }
+        chatMessageResponse.setAttachments(
+                attachments == null || attachments.isEmpty()
+                        ? Collections.emptyList()
+                        : chatMessageMapper.toAttachmentResponseList(attachments));
 
-        log.info("Mapping chat message to response for messageId: {}, isMe: {}", chatMessage.getId(), isMe);
-
-        try {
-            UserResponse senderProfile = getUserClient.getUser(chatMessage.getSender()).getResult();
-            chatMessageResponse.setSender(senderProfile);
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.GET_USER_PROFILE_FAILED);
-        }
+        chatMessageResponse.setSender(resolveSender(chatMessage.getChannelId(), chatMessage.getSender()));
 
         return chatMessageResponse;
     }
 
-    /**
-     * Get upload status for a message
-     */
+    private UserResponse resolveSender(String channelId, String senderUserId) {
+        if (senderUserId == null || senderUserId.isBlank()) {
+            return anonymousUser(null);
+        }
+        try {
+            ChannelMember member = channelMemberRepository
+                    .findByChannelIdAndUserId(channelId, senderUserId)
+                    .orElse(null);
+            if (member != null && member.getNickname() != null && !member.getNickname().isBlank()) {
+                return UserResponse.builder()
+                        .id(member.getUserId())
+                        .nickname(member.getNickname())
+                        .studentId(member.getStudentId())
+                        .avatarUrl(member.getAvatarUrl())
+                        .isOwner(member.getRole() == ChannelRole.TEACHER)
+                        .build();
+            }
+        } catch (Exception e) {
+            log.debug("ChannelMember lookup failed for userId={}, channelId={}", senderUserId, channelId, e);
+        }
+        try {
+            UserResponse profile = getUserClient.getUser(senderUserId).getResult();
+            if (profile != null) {
+                return profile;
+            }
+        } catch (Exception e) {
+            log.info("Failed to fetch user profile for userId: {}", senderUserId);
+        }
+        return anonymousUser(senderUserId);
+    }
+
+    private UserResponse anonymousUser(String userId) {
+        return UserResponse.builder()
+                .id(userId)
+                .nickname("Anonymous")
+                .build();
+    }
+
     public String getUploadStatus(String messageId) {
         return uploadStatusMap.getOrDefault(messageId, "UNKNOWN");
     }
 
-    /**
-     * Clear upload status after completion
-     */
     public void clearUploadStatus(String messageId) {
         uploadStatusMap.remove(messageId);
     }
 
-    /**
-     * Get auth token from HTTP request context or WebSocket ThreadLocal
-     */
     private String getAuthTokenFromContext() {
         String authToken = WebSocketAuthInterceptor.getToken();
-        
+
         if (!StringUtils.hasText(authToken)) {
             ServletRequestAttributes servletRequestAttributes =
                     (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            
+
             if (servletRequestAttributes != null && servletRequestAttributes.getRequest() != null) {
                 authToken = servletRequestAttributes.getRequest().getHeader("Authorization");
                 log.debug("Token retrieved from HTTP request context");
@@ -457,7 +431,7 @@ public class FileUploadService {
         } else {
             log.debug("Token retrieved from WebSocket ThreadLocal");
         }
-        
+
         return authToken;
     }
 }

@@ -1,6 +1,5 @@
 package demo.app.chat_app.model.workspace;
 
-import demo.app.chat_app.model.enums.AttachmentType;
 import demo.app.chat_app.model.enums.MessageStatus;
 import demo.app.chat_app.model.enums.MessageType;
 import lombok.*;
@@ -12,8 +11,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -33,10 +30,10 @@ public class ChatMessage {
     String clientMessageId; // UUID from frontend, used as merge key for post-attach pattern
 
     @Indexed
-    String channelId; // ID of the channel this message belongs to
+    String channelId;
 
     @Indexed
-    String groupId; // Optional group ID if the message is linked to a group chat
+    String groupId;
 
     String content;
 
@@ -48,14 +45,9 @@ public class ChatMessage {
     @Builder.Default
     MessageStatus status = MessageStatus.PENDING;
 
-    String fileUrl; // Legacy: URL for message type FILE or IMAGE
-
-    // Embedded attachment references for the post-attach pattern
-    @Builder.Default
-    List<MessageAttachment> attachments = new ArrayList<>();
-
-    // Legacy field kept for backward compatibility
-    List<MessageAttachment> messageAttachments;
+    // Attachments are stored in the dedicated `attachments` collection
+    // (MessageAttachment) and queried by messageId at response time.
+    // Source of truth lives there — no embedding here.
 
     @Indexed
     Instant createdDate;

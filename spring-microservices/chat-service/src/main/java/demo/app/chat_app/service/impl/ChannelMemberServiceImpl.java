@@ -19,10 +19,12 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -136,57 +138,112 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
                 .toList();
     }
 
+    /**
+     * Idempotent insert: nếu (channelId, userId) đã tồn tại do race / replay,
+     * trả về bản ghi cũ thay vì throw. Caller (teacher/student add) chỉ cần
+     * gọi 1 lần và biết chắc record có trong DB sau khi return.
+     */
     @Override
     @Transactional
     public ChannelMember addMemberToChannel(ChannelMember channelMember) {
-        // MongoDB unique index on (channelId, userId) will prevent duplicates
-        ChannelMember savedMember = channelMemberRepository.save(channelMember);
-
-        // Update channel member count
-        updateChannelMemberCountInternal(channelMember.getChannelId(), 1);
-
-        return savedMember;
+        try {
+            ChannelMember savedMember = channelMemberRepository.save(channelMember);
+            updateChannelMemberCountInternal(channelMember.getChannelId(), 1);
+            return savedMember;
+        } catch (DuplicateKeyException dup) {
+            log.info("ChannelMember already exists for channel={} user={} — returning existing",
+                    channelMember.getChannelId(), channelMember.getUserId());
+            return channelMemberRepository
+                    .findByChannelIdAndUserId(channelMember.getChannelId(), channelMember.getUserId())
+                    .orElseThrow(() -> dup);
+        }
     }
 
+    /**
+     * Bulk add với per-record fault tolerance: lưu từng member trong vòng try/catch
+     * để 1 duplicate (race / replay) không kéo cả batch xuống — phần còn lại vẫn
+     * được persist. Trả về danh sách đã thật sự lưu (mới + tồn-tại-trước).
+     *
+     * Member count chỉ tăng theo số bản ghi MỚI thực sự insert, không tính bản ghi
+     * trùng đã có sẵn → tránh inflated count khi event replay.
+     */
     @Override
     @Transactional
     public List<ChannelMember> addMembersToChannel(List<ChannelMember> channelMembers, String channelId) {
-        if (channelMembers.isEmpty()) {
+        if (channelMembers == null || channelMembers.isEmpty()) {
             return List.of();
         }
 
-        // Save all members
-        List<ChannelMember> savedMembers = channelMemberRepository.saveAll(channelMembers);
+        List<ChannelMember> persisted = new ArrayList<>(channelMembers.size());
+        int newlyInserted = 0;
+        int duplicates = 0;
+        int failures = 0;
 
-        // Update channel member count
-        updateChannelMemberCountInternal(channelId, channelMembers.size());
+        for (ChannelMember member : channelMembers) {
+            try {
+                persisted.add(channelMemberRepository.save(member));
+                newlyInserted++;
+            } catch (DuplicateKeyException dup) {
+                duplicates++;
+                channelMemberRepository
+                        .findByChannelIdAndUserId(member.getChannelId(), member.getUserId())
+                        .ifPresent(persisted::add);
+                log.debug("Skipped duplicate ChannelMember channel={} user={}",
+                        member.getChannelId(), member.getUserId());
+            } catch (Exception ex) {
+                failures++;
+                log.error("Failed to save ChannelMember channel={} user={}: {}",
+                        member.getChannelId(), member.getUserId(), ex.getMessage());
+            }
+        }
 
-        return savedMembers;
+        if (newlyInserted > 0) {
+            updateChannelMemberCountInternal(channelId, newlyInserted);
+        }
+        log.info("addMembersToChannel channel={} requested={} inserted={} duplicates={} failures={}",
+                channelId, channelMembers.size(), newlyInserted, duplicates, failures);
+        return persisted;
     }
 
+    /**
+     * Thêm teacher vào channel. Luôn persist ChannelMember kể cả khi teacher-service
+     * không trả được info — bắt mọi exception và rơi xuống fallback raw-userId để
+     * không bao giờ bỏ qua bước save (đây là cách user pass access check).
+     *
+     * Idempotent: {@link #addMemberToChannel} đã handle DuplicateKey → trả về
+     * record cũ. Gọi lại không sinh duplicate.
+     */
     @Override
     public ChannelMember addTeacherMemberToChannel(String teacherId, String sectionId, String channelId) {
+        TeacherResponse teacherInfo = null;
         try {
-            TeacherResponse teacherInfo = teacherClient.getTeacherById(teacherId)
-                    .getResult();
-            ChannelMember channelMember = ChannelMember.builder()
-                    .channelId(channelId)
-                    .sectionId(sectionId)
-                    .userId(teacherId)
-                    .studentId(teacherInfo.getTeacherId())
-                    .role(ChannelRole.STUDENT)
-                    .status(MemberStatus.ACTIVE)
-                    .notificationLevel(NotificationLevel.ALL)
-                    .unreadCount(0)
-                    .unreadMentionCount(0)
-                    .joinedAt(Instant.now())
-                    .updatedAt(Instant.now())
-                    .nickname(teacherInfo.getLastName() + " " + teacherInfo.getFirstName())
-                    .build();
-            return addMemberToChannel(channelMember);
-        } catch (AppException ae) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+            teacherInfo = teacherClient.getTeacherById(teacherId).getResult();
+        } catch (Exception ex) {
+            log.warn("Cannot fetch teacher info for teacherId={} ({}). Saving with raw userId.",
+                    teacherId, ex.getMessage());
         }
+
+        String nickname = teacherInfo != null
+                ? ((teacherInfo.getLastName() != null ? teacherInfo.getLastName() : "")
+                    + " "
+                    + (teacherInfo.getFirstName() != null ? teacherInfo.getFirstName() : "")).trim()
+                : "";
+        ChannelMember channelMember = ChannelMember.builder()
+                .channelId(channelId)
+                .sectionId(sectionId)
+                .userId(teacherId)
+                .studentId(teacherInfo != null ? teacherInfo.getTeacherId() : null)
+                .role(ChannelRole.TEACHER)
+                .status(MemberStatus.ACTIVE)
+                .notificationLevel(NotificationLevel.ALL)
+                .unreadCount(0)
+                .unreadMentionCount(0)
+                .joinedAt(Instant.now())
+                .updatedAt(Instant.now())
+                .nickname(nickname.isBlank() ? null : nickname)
+                .avatarUrl(teacherInfo != null ? teacherInfo.getAvatarUrl() : null)
+                .build();
+        return addMemberToChannel(channelMember);
     }
 
     @Override
@@ -213,6 +270,7 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
                         .nickname(member.getNickname())
                         .studentId(member.getStudentId())
                         .avatarUrl(member.getAvatarUrl())
+                        .isOwner(member.getRole() == ChannelRole.TEACHER)
                         .build())
                 .toList();
     }

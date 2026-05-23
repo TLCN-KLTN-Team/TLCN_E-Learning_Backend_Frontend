@@ -12,9 +12,9 @@ import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.service.SectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -38,33 +38,65 @@ public class SectionServiceImpl implements SectionService {
                 .toList();
     }
 
+    /**
+     * Tạo general section (classId=null) + general channel cho workspace.
+     * Idempotent: nếu đã có section, trả về và đảm bảo channel cũng được khởi tạo.
+     */
     public void createGeneralSection(String workspaceId, Workspace workspace) {
-        Section section = Section.builder()
-                .name("Thông báo chung")
-                .workspaceId(workspaceId)
-                .isPublic(true)
-                .build();
-        Section savedSection = sectionRepository.save(section);
+        Section section = sectionRepository.findGeneralSectionByWorkspaceId(workspaceId)
+                .orElseGet(() -> {
+                    Section newSection = Section.builder()
+                            .name("Thông báo chung")
+                            .workspaceId(workspaceId)
+                            .isPublic(true)
+                            .build();
+                    try {
+                        return sectionRepository.save(newSection);
+                    } catch (DuplicateKeyException dup) {
+                        // Concurrent insert wins — đọc lại bản đã tồn tại.
+                        log.warn("General section concurrent insert for workspace {}, reading existing", workspaceId);
+                        return sectionRepository.findGeneralSectionByWorkspaceId(workspaceId)
+                                .orElseThrow(() -> dup);
+                    }
+                });
 
-        Channel channel = channelService.createGeneralChannelInGeneralSection(savedSection.getId(), workspace);
+        // Đảm bảo general channel tồn tại (channelService cũng idempotent).
+        channelService.createGeneralChannelInGeneralSection(section.getId(), workspace);
     }
 
-    public void createSectionWhenClassCreated(ClassCreatedEvent event){
+    /**
+     * Section + first channel cho một class mới. Idempotent theo (workspaceId, classId)
+     * — replay của CLASS_CREATED không gây DuplicateKeyException.
+     */
+    public void createSectionWhenClassCreated(ClassCreatedEvent event) {
         Workspace wEntity = workspaceRepository.findByCourseId(event.getCourseId())
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
-        Section section = Section.builder()
-                .workspaceId(wEntity.getId())
-                .classId(event.getClassId())
-                .name(event.getClassName())
-                .description(event.getDescription())
-                .studentCount(1) // Giá trị ban đầu, sẽ được cập nhật khi có SV enroll
-                .build();
+        Section section = sectionRepository
+                .findByWorkspaceIdAndClassId(wEntity.getId(), event.getClassId())
+                .orElseGet(() -> {
+                    Section newSection = Section.builder()
+                            .workspaceId(wEntity.getId())
+                            .classId(event.getClassId())
+                            .name(event.getClassName())
+                            .description(event.getDescription())
+                            .studentCount(1) // sẽ được cập nhật khi STUDENTS_ENROLLED về
+                            .build();
+                    try {
+                        return sectionRepository.save(newSection);
+                    } catch (DuplicateKeyException dup) {
+                        // Có thể có 2 instance/thread cùng insert ở giây thứ 0 — đọc lại
+                        log.warn("Class section concurrent insert for workspace={}, classId={}, reading existing",
+                                wEntity.getId(), event.getClassId());
+                        return sectionRepository
+                                .findByWorkspaceIdAndClassId(wEntity.getId(), event.getClassId())
+                                .orElseThrow(() -> dup);
+                    }
+                });
 
-        sectionRepository.save(section);
-
+        // Channel creation cũng idempotent.
         Channel channel = channelService.createFirstChannelInSectionWhenStudentsEnrolled(event);
-
+        log.info("Section {} & channel {} ready for class {}", section.getId(), channel.getId(), event.getClassId());
     }
 
     public Section getGeneralSectionByClassId(Integer classId) {

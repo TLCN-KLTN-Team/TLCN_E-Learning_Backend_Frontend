@@ -17,4 +17,16 @@ public interface AttachmentService {
      * Throw nếu channel không bật chấm chéo, chưa đến phase REVIEW, hoặc chưa được pair.
      */
     List<AttachmentResponse> listSubmissionsForCrossReview(String channelId);
+
+    /**
+     * List ảnh (IMAGE) đã gửi trong channel — phục vụ gallery "Ảnh đã gửi" trong panel info.
+     * Trả mới nhất trước, chỉ những file còn active.
+     */
+    List<AttachmentResponse> listImagesByChannel(String channelId);
+
+    /**
+     * List file (mọi attachmentType trừ IMAGE) đã gửi trong channel — phục vụ
+     * mục "File đã gửi" trong panel info. Trả mới nhất trước, active only.
+     */
+    List<AttachmentResponse> listFilesByChannel(String channelId);
 }

@@ -1,10 +1,15 @@
-import { Hash, Edit, ArrowDown } from "lucide-react";
+import { Hash, Edit, ArrowDown, Upload } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { hasRole } from "@/utils/roleUtils";
 import MessageItem from "./MessageItem";
+import SubmitAssignmentModal from "./SubmitAssignmentModal";
 import { useEffect, useState, useRef, useCallback } from "react";
-import type { ChannelResponse, ChatMessageResponse } from "@/types/chat.types";
+import {
+  ChannelType,
+  type ChannelResponse,
+  type ChatMessageResponse,
+} from "@/types/chat.types";
 
 interface MessageListProps {
   selectedChannel: ChannelResponse;
@@ -85,6 +90,36 @@ const MessageList = ({
   const prevLengthRef = useRef(messages.length);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [hasNewMessage, setHasNewMessage] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+
+  const isGroupChannel = selectedChannel.type === ChannelType.GROUP;
+  const isStudent = hasRole("STUDENT") || hasRole("TEACHER");
+  const isTeacher = hasRole("TEACHER");
+  const showSubmitButton = isGroupChannel && isStudent;
+  const showEditButton = !isGroupChannel && isTeacher;
+
+  const renderActionButton = () => {
+    if (showSubmitButton) {
+      return (
+        <button
+          onClick={() => setShowSubmitModal(true)}
+          className="flex items-center text-indigo-400 hover:text-indigo-300 text-sm"
+        >
+          <Upload className="w-4 h-4 mr-1" />
+          Nộp bài
+        </button>
+      );
+    }
+    if (showEditButton) {
+      return (
+        <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
+          <Edit className="w-4 h-4 mr-1" />
+          Edit Channel
+        </button>
+      );
+    }
+    return null;
+  };
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -123,7 +158,8 @@ const MessageList = ({
   ): boolean => {
     if (!previousMessage) return false;
 
-    const isSameSender = currentMessage.sender.id === previousMessage.sender.id;
+    const isSameSender =
+      currentMessage.sender?.id === previousMessage.sender?.id;
     const timeDifference =
       new Date(currentMessage.createdDate).getTime() -
       new Date(previousMessage.createdDate).getTime();
@@ -204,11 +240,13 @@ const MessageList = ({
           {selectedChannel.description ||
             `This is the start of the #${selectedChannel.name} channel.`}
         </p>
-        {hasRole("TEACHER") && (
-          <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
-            <Edit className="w-4 h-4 mr-1" />
-            Edit Channel
-          </button>
+        {renderActionButton()}
+        {showSubmitButton && (
+          <SubmitAssignmentModal
+            isOpen={showSubmitModal}
+            onClose={() => setShowSubmitModal(false)}
+            channel={selectedChannel}
+          />
         )}
       </div>
     );
@@ -235,12 +273,7 @@ const MessageList = ({
             {selectedChannel.description ||
               `This is the start of the #${selectedChannel.name} channel.`}
           </p>
-          {hasRole("TEACHER") && (
-            <button className="flex items-center text-blue-400 hover:text-blue-300 text-sm">
-              <Edit className="w-4 h-4 mr-1" />
-              Edit Channel
-            </button>
-          )}
+          {renderActionButton()}
         </div>
 
         {/* Display all messages */}
@@ -276,6 +309,14 @@ const MessageList = ({
           ❌ {wsErrors[0].message}
           {wsErrors.length > 1 && ` (+${wsErrors.length - 1} more)`}
         </div>
+      )}
+
+      {showSubmitButton && (
+        <SubmitAssignmentModal
+          isOpen={showSubmitModal}
+          onClose={() => setShowSubmitModal(false)}
+          channel={selectedChannel}
+        />
       )}
     </div>
   );

@@ -47,11 +47,26 @@ public class ChannelServiceImpl implements ChannelService {
         Workspace workspace = workspaceRepository.findById(section.getWorkspaceId())
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
+        // Idempotent: lookup-or-create channel. addTeacherMember/syncSectionMembers
+        // tự dedup ở tầng repository (DuplicateKey → return existing) nên gọi không
+        // điều kiện trên cả 2 nhánh để self-heal khi lần trước crash giữa chừng.
+        Channel channel = channelRepository.findBySectionIdAndIsPublicTrue(section.getId())
+                .orElseGet(() -> buildAndSaveFirstClassChannel(event, section, workspace));
+
+        channelMemberService.addTeacherMemberToChannel(
+                workspace.getOwnerId(), section.getId(), channel.getId());
+        syncSectionMembersToChannel(section, channel);
+
+        log.info("Class channel ready: section={} channel={} teacher={}",
+                section.getId(), channel.getId(), workspace.getOwnerId());
+        return channel;
+    }
+
+    private Channel buildAndSaveFirstClassChannel(ClassCreatedEvent event, Section section, Workspace workspace) {
         String channelName = String.format("%s - %s", event.getClassName(), event.getClassCode());
         String channelSlug = channelName.toLowerCase()
                 .replaceAll("[^a-z0-9-]", "-")
                 .replaceAll("-+", "-");
-
         Channel channel = Channel.builder()
                 .sectionId(section.getId())
                 .name(channelName)
@@ -64,26 +79,39 @@ public class ChannelServiceImpl implements ChannelService {
                 .isReadOnly(false)
                 .status(ChannelStatus.ACTIVE)
                 .position(0)
-                .memberCount(1) // Teacher is the first member
+                .memberCount(0) // sẽ được addMembersToChannel inc theo số thật sự insert
                 .createdByUserId(workspace.getOwnerId())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
+        return channelRepository.save(channel);
+    }
 
-        // Save channel first to get the ID
-        Channel savedChannel = channelRepository.save(channel);
+    /**
+     * Đảm bảo mọi userId trong {@code section.sectionMembers} cũng là ChannelMember
+     * ACTIVE của {@code channel}. Idempotent: dedup theo membership hiện có rồi
+     * delegate cho {@link ChannelMemberService#addMembersToChannel} (per-record
+     * fault-tolerant). Dùng để self-heal cả 2 nhánh new-channel & reuse-channel.
+     */
+    private void syncSectionMembersToChannel(Section section, Channel channel) {
+        List<String> sectionMembers = section.getSectionMembers();
+        if (sectionMembers == null || sectionMembers.isEmpty()) return;
 
-        // Firstly add teacher member to channel - nickname và avatarUrl sẽ được lazy load sau
-        ChannelMember teacherMember = ChannelMember.builder()
-                .sectionId(section.getId())
-                .channelId(savedChannel.getId())
-                .userId(workspace.getOwnerId())
-                .build();
+        Set<String> existing = channelMemberService.getAllMembersInChannel(channel.getId())
+                .stream()
+                .map(ChannelMember::getUserId)
+                .collect(Collectors.toSet());
 
-        // Save teacher member using ChannelMemberService
-        channelMemberService.addMemberToChannel(teacherMember);
+        List<String> missing = sectionMembers.stream()
+                .filter(id -> id != null && !existing.contains(id))
+                .toList();
+        if (missing.isEmpty()) return;
 
-        return savedChannel;
+        List<ChannelMember> toAdd = channelMemberService.createChannelMembersForNewParticipants(
+                missing, section.getId(), channel.getId());
+        channelMemberService.addMembersToChannel(toAdd, channel.getId());
+        log.info("Synced {} section-members → channel {} (section {})",
+                missing.size(), channel.getId(), section.getId());
     }
 
     @Override
@@ -91,8 +119,8 @@ public class ChannelServiceImpl implements ChannelService {
         Section section = sectionRepository.findByClassId(event.getClassId())
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
 
-        // Update section members (extract userIds from either studentIds or students)
-        List<String> userIds = null;
+        // 1) Update section members trước (contains-check idempotent ở entity)
+        List<String> userIds;
         if (event.getStudentIds() != null && !event.getStudentIds().isEmpty()) {
             userIds = event.getStudentIds();
         } else if (event.getStudents() != null && !event.getStudents().isEmpty()) {
@@ -100,45 +128,48 @@ public class ChannelServiceImpl implements ChannelService {
                     .map(demo.app.chat_app.events.StudentInfo::getUserId)
                     .filter(Objects::nonNull)
                     .toList();
-        }
-
-        if (userIds != null && !userIds.isEmpty()) {
-            section.addMembers(userIds);
-            sectionRepository.save(section);
-            log.info("Updated section {} with {} new members", section.getId(), userIds.size());
         } else {
-            log.warn("No user IDs found in event to update section members");
-        }
-
-        Channel generalChannelForSection = channelRepository.findBySectionIdAndIsPublicTrue(section.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-
-        List<ChannelMember> newChannelMembers;
-
-        // Ưu tiên dùng students (chứa full info) nếu có
-        if (event.getStudents() != null && !event.getStudents().isEmpty()) {
-            log.info("Using student info from event (no API calls needed)");
-            newChannelMembers = channelMemberService.createChannelMembersFromStudentInfo(
-                    event.getStudents(),
-                    section.getId(),
-                    generalChannelForSection.getId()
-            );
-        } else if (event.getStudentIds() != null && !event.getStudentIds().isEmpty()) {
-            // Fallback: dùng old way với API calls
-            log.warn("⚠Student info not found in event, falling back to API calls");
-            newChannelMembers = channelMemberService.createChannelMembersForNewParticipants(
-                    event.getStudentIds(),
-                    section.getId(),
-                    generalChannelForSection.getId()
-            );
-        } else {
-            log.error("No student information found in event (neither students nor studentIds)");
+            log.error("STUDENTS_ENROLLED event has no studentIds nor students");
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
+        if (userIds.isEmpty()) {
+            log.warn("STUDENTS_ENROLLED with empty user list — skipping");
+            return;
+        }
 
-        // Save all members (this will also update channel member count)
-        channelMemberService.addMembersToChannel(newChannelMembers, generalChannelForSection.getId());
-        log.info("Added {} members to channel {}", newChannelMembers.size(), generalChannelForSection.getId());
+        section.addMembers(userIds);
+        sectionRepository.save(section);
+
+        // 2) Channel members. Ưu tiên dùng StudentInfo (đã có nickname/avatar) —
+        // chỉ insert những user CHƯA là member; addMembersToChannel cũng tự nuốt
+        // DuplicateKey nên không sợ race giữa retry.
+        Channel channel = channelRepository.findBySectionIdAndIsPublicTrue(section.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        Set<String> existingChannelUserIds = channelMemberService
+                .getAllMembersInChannel(channel.getId())
+                .stream()
+                .map(ChannelMember::getUserId)
+                .collect(Collectors.toSet());
+
+        List<ChannelMember> candidates;
+        if (event.getStudents() != null && !event.getStudents().isEmpty()) {
+            List<demo.app.chat_app.events.StudentInfo> fresh = event.getStudents().stream()
+                    .filter(s -> s.getUserId() != null && !existingChannelUserIds.contains(s.getUserId()))
+                    .toList();
+            candidates = channelMemberService.createChannelMembersFromStudentInfo(
+                    fresh, section.getId(), channel.getId());
+        } else {
+            List<String> freshIds = event.getStudentIds().stream()
+                    .filter(id -> id != null && !existingChannelUserIds.contains(id))
+                    .toList();
+            candidates = channelMemberService.createChannelMembersForNewParticipants(
+                    freshIds, section.getId(), channel.getId());
+        }
+
+        channelMemberService.addMembersToChannel(candidates, channel.getId());
+        log.info("STUDENTS_ENROLLED done: section={} channel={} requested={} freshCandidates={}",
+                section.getId(), channel.getId(), userIds.size(), candidates.size());
     }
 
     @Override
@@ -146,6 +177,21 @@ public class ChannelServiceImpl implements ChannelService {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
 
+        // Idempotent: lookup-or-create + sync. addTeacher / sync-members tự dedup
+        // ở tầng repository nên gọi không điều kiện trên cả 2 nhánh.
+        Channel channel = channelRepository.findBySectionIdAndIsPublicTrue(sectionId)
+                .orElseGet(() -> buildAndSaveGeneralChannel(sectionId, workspace));
+
+        channelMemberService.addTeacherMemberToChannel(
+                workspace.getOwnerId(), sectionId, channel.getId());
+        syncSectionMembersToChannel(section, channel);
+
+        log.info("General channel ready: section={} channel={} teacher={}",
+                sectionId, channel.getId(), workspace.getOwnerId());
+        return channel;
+    }
+
+    private Channel buildAndSaveGeneralChannel(String sectionId, Workspace workspace) {
         Channel channel = Channel.builder()
                 .sectionId(sectionId)
                 .name("general")
@@ -165,33 +211,7 @@ public class ChannelServiceImpl implements ChannelService {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
-
-        // Save channel first to get the ID
-        Channel savedChannel = channelRepository.save(channel);
-
-        // add teacher member to channel - nickname và avatarUrl sẽ được lazy load sau
-        ChannelMember teacherMember = ChannelMember.builder()
-                .sectionId(sectionId)
-                .channelId(savedChannel.getId())
-                .userId(workspace.getOwnerId())
-                .build();
-        channelMemberService.addMemberToChannel(teacherMember);
-
-        // Create channel members with the saved channel ID using ChannelMemberService
-        if (section.getSectionMembers() != null || !section.getSectionMembers().isEmpty()){
-
-            List<ChannelMember> channelMembers = channelMemberService.createChannelMembersForNewParticipants(
-                    section.getSectionMembers(), sectionId, savedChannel.getId()
-            );
-
-            // Save all members (this will also update member count)
-            if (!channelMembers.isEmpty()) {
-                channelMemberService.addMembersToChannel(channelMembers, savedChannel.getId());
-            }
-        }
-
-        return channelRepository.findById(savedChannel.getId())
-                .orElse(savedChannel);
+        return channelRepository.save(channel);
     }
 
     /**

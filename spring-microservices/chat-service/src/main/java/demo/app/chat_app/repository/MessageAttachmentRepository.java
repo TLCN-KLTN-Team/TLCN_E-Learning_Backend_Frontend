@@ -1,10 +1,12 @@
 package demo.app.chat_app.repository;
 
 import demo.app.chat_app.model.enums.AttachmentCategory;
+import demo.app.chat_app.model.enums.AttachmentType;
 import demo.app.chat_app.model.workspace.MessageAttachment;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -12,6 +14,8 @@ public interface MessageAttachmentRepository extends MongoRepository<MessageAtta
     List<MessageAttachment> findMessageAttachmentByActiveOrderByUploadedAtDesc(boolean active);
 
     List<MessageAttachment> findByMessageId(String messageId);
+
+    List<MessageAttachment> findByMessageIdInAndIsActiveTrue(Collection<String> messageIds);
 
     List<MessageAttachment> findByChannelId(String channelId);
 
@@ -21,4 +25,18 @@ public interface MessageAttachmentRepository extends MongoRepository<MessageAtta
      */
     List<MessageAttachment> findByChannelIdAndCategoryAndIsActiveTrueOrderByUploadedAtDesc(
             String channelId, AttachmentCategory category);
+
+    /**
+     * List attachments của channel có attachmentType chỉ định (active only),
+     * mới nhất trước. Dùng cho gallery "Ảnh đã gửi".
+     */
+    List<MessageAttachment> findByChannelIdAndAttachmentTypeAndIsActiveTrueOrderByUploadedAtDesc(
+            String channelId, AttachmentType attachmentType);
+
+    /**
+     * List attachments của channel với attachmentType nằm trong tập hợp truyền vào,
+     * active only, mới nhất trước. Dùng cho list "File đã gửi" (mọi loại trừ IMAGE).
+     */
+    List<MessageAttachment> findByChannelIdAndAttachmentTypeInAndIsActiveTrueOrderByUploadedAtDesc(
+            String channelId, Collection<AttachmentType> attachmentTypes);
 }

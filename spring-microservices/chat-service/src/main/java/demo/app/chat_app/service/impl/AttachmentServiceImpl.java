@@ -5,6 +5,7 @@ import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.MessageAttachmentMapper;
 import demo.app.chat_app.model.enums.AttachmentCategory;
+import demo.app.chat_app.model.enums.AttachmentType;
 import demo.app.chat_app.model.workspace.Channel;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.MessageAttachmentRepository;
@@ -16,6 +17,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
 
 @Service
@@ -27,9 +29,16 @@ public class AttachmentServiceImpl implements AttachmentService {
     ChannelRepository channelRepository;
     MessageAttachmentMapper mapper;
 
+    /** Mọi attachmentType được coi là "file" (tức không phải ảnh) khi render panel info. */
+    private static final EnumSet<AttachmentType> NON_IMAGE_TYPES = EnumSet.of(
+            AttachmentType.DOCUMENT,
+            AttachmentType.VIDEO,
+            AttachmentType.AUDIO,
+            AttachmentType.OTHER
+    );
+
     @Override
     public List<AttachmentResponse> listByChannel(String channelId, AttachmentCategory category) {
-        // tồn tại channel + category default GENERAL nếu null
         channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
         AttachmentCategory cat = category != null ? category : AttachmentCategory.GENERAL;
@@ -49,11 +58,28 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
         ChannelPhase phase = ChannelPhase.of(channel, Instant.now());
         if (phase != ChannelPhase.REVIEW) {
-            // Chỉ phase REVIEW mới mở quyền xem bài cần chấm
             throw new AppException(ErrorCode.CHANNEL_LOCKED);
         }
         return mapper.toAttachmentResponseList(
                 attachmentRepository.findByChannelIdAndCategoryAndIsActiveTrueOrderByUploadedAtDesc(
                         channel.getReviewTargetChannelId(), AttachmentCategory.SUBMISSION));
+    }
+
+    @Override
+    public List<AttachmentResponse> listImagesByChannel(String channelId) {
+        channelRepository.findById(channelId)
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        return mapper.toAttachmentResponseList(
+                attachmentRepository.findByChannelIdAndAttachmentTypeAndIsActiveTrueOrderByUploadedAtDesc(
+                        channelId, AttachmentType.IMAGE));
+    }
+
+    @Override
+    public List<AttachmentResponse> listFilesByChannel(String channelId) {
+        channelRepository.findById(channelId)
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+        return mapper.toAttachmentResponseList(
+                attachmentRepository.findByChannelIdAndAttachmentTypeInAndIsActiveTrueOrderByUploadedAtDesc(
+                        channelId, NON_IMAGE_TYPES));
     }
 }

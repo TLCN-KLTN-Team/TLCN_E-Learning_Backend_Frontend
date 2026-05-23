@@ -11,9 +11,9 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ChatMessageMapper {
-    @Mapping(target = "me", ignore = true)     // Will be set in service layer
-    @Mapping(target = "sender", ignore = true) // Will be set in service layer
-    @Mapping(target = "attachments", ignore = true) // Will be mapped manually
+    @Mapping(target = "me", ignore = true)          // Set in service layer
+    @Mapping(target = "sender", ignore = true)      // Enriched in service layer
+    @Mapping(target = "attachments", ignore = true) // Fetched separately by messageId
     ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage);
 
     AttachmentResponse toAttachmentResponse(MessageAttachment attachment);
