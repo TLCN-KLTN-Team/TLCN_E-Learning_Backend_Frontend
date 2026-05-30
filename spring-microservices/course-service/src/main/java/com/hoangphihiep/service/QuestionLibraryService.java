@@ -98,7 +98,6 @@ public class QuestionLibraryService {
         question.setTags(request.getTags());
         question.setAttachments(allAttachments.isEmpty() ? null : allAttachments);
         question.setTeacherId(teacherId);
-        question.setEducationalUnitId(request.getEducationalUnitId());
         question.setCourseObjective(courseObjective);
         question.setCreatedAt(new Date());
         question.setUpdateAt(new Date());
@@ -169,7 +168,6 @@ public class QuestionLibraryService {
         question.setDifficultyLevel(request.getDifficultyLevel());
         question.setTags(request.getTags());
         question.setAttachments(allAttachments.isEmpty() ? null : allAttachments);
-        question.setEducationalUnitId(request.getEducationalUnitId());
         question.setCourseObjective(courseObjective);
         question.setUpdateAt(new Date());
 
@@ -368,7 +366,6 @@ public class QuestionLibraryService {
         response.setDifficultyLevel(question.getDifficultyLevel());
         response.setTags(question.getTags());
         response.setTeacherId(question.getTeacherId());
-        response.setEducationalUnitId(question.getEducationalUnitId());
         if (question.getCourseObjective() != null) {
             response.setCloId(question.getCourseObjective().getId());
             response.setCloCode(question.getCourseObjective().getCode());

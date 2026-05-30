@@ -120,40 +120,7 @@ const AdminProfileInfo: React.FC = () => {
               </div>
             </div>
 
-            {/* Subscription Info */}
-            {(educationalUnit.subscriptionStartDate ||
-              educationalUnit.subscriptionEndDate) && (
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="bg-purple-50 rounded-lg p-4 space-y-2">
-                    <div className="flex items-center space-x-2 text-purple-700">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-xs font-semibold uppercase">
-                        Thông tin gói dịch vụ
-                      </span>
-                    </div>
-                    {educationalUnit.subscriptionStartDate && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Ngày bắt đầu:</span>
-                        <span className="font-medium text-gray-900">
-                          {new Date(
-                            educationalUnit.subscriptionStartDate
-                          ).toLocaleDateString("vi-VN")}
-                        </span>
-                      </div>
-                    )}
-                    {educationalUnit.subscriptionEndDate && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Ngày hết hạn:</span>
-                        <span className="font-medium text-gray-900">
-                          {new Date(
-                            educationalUnit.subscriptionEndDate
-                          ).toLocaleDateString("vi-VN")}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+            
           </div>
         ) : (
           <div className="text-center py-8">

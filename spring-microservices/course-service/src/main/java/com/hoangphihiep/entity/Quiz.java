@@ -78,9 +78,6 @@ public class Quiz implements Serializable {
     @JoinColumn(name = "section_id")
     private Section section;
 
-    // Removed direct relationship with Question - now using QuizQuestion join table
-    // Many-to-many relationship handled via QuizQuestion entity
-
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
     private Set<QuizAttempt> quizAttempts = new HashSet<>();
 }

@@ -6,6 +6,7 @@ import com.hoangphihiep.entity.*;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.UserInfoApi;
 import com.hoangphihiep.service.blockchain.Web3jService;
+import com.hoangphihiep.utils.CertificateStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -146,7 +147,7 @@ public class CertificateService {
 
             if (existingCertOpt.isPresent()) {
                 Certificate existing = existingCertOpt.get();
-                if (existing.getStatus() == Certificate.CertificateStatus.ISSUED) {
+                if (existing.getStatus() == CertificateStatus.ISSUED) {
                     // nothing to do
                     return;
                 }
@@ -181,7 +182,7 @@ public class CertificateService {
                         .finalScore(finalScore)
                         .grade(grade)
                         .tokenId(null)
-                        .status(Certificate.CertificateStatus.PENDING)
+                        .status(CertificateStatus.PENDING)
                         .build();
 
                 byte[] pdfBytes = renderCertificatePdf(certificatePreview);
@@ -201,7 +202,7 @@ public class CertificateService {
                 metadataPayload.put("grade", grade);
                 metadataPayload.put("finalScore", finalScore);
                 metadataPayload.put("issueDate", issueDate);
-                metadataPayload.put("status", Certificate.CertificateStatus.PENDING.toString());
+                metadataPayload.put("status", CertificateStatus.PENDING.toString());
                 metadataPayload.put("pdfCid", pdfCid);
                 metadataPayload.put("pdfUrl", pdfUrl);
 
@@ -214,7 +215,7 @@ public class CertificateService {
                         .publishedCourse(publishedCourse)
                         .certificateCode(certificateCode)
                         .issueDate(issueDate)
-                        .status(Certificate.CertificateStatus.PENDING)
+                        .status(CertificateStatus.PENDING)
                         .finalScore(finalScore)
                         .grade(grade)
                         .certificateHash(certificateHash)
@@ -236,7 +237,7 @@ public class CertificateService {
                 certificate.setSignature(signature);
                 certificate.setSignatureMessage(message);
                 certificate.setSignatureVerifiedAt(new Date());
-                certificate.setStatus(Certificate.CertificateStatus.PENDING);
+                certificate.setStatus(CertificateStatus.PENDING);
                 certificateRepository.save(certificate);
             }
 
@@ -270,7 +271,7 @@ public class CertificateService {
 
                 if (existingCert.isPresent()) {
                     Certificate cert = existingCert.get();
-                    if (cert.getStatus() == Certificate.CertificateStatus.ISSUED) {
+                    if (cert.getStatus() == CertificateStatus.ISSUED) {
                         return;
                     }
 
@@ -302,7 +303,7 @@ public class CertificateService {
                             .finalScore(finalScore)
                             .grade(grade)
                             .tokenId(tokenId)
-                            .status(Certificate.CertificateStatus.PENDING)
+                            .status(CertificateStatus.PENDING)
                             .build();
 
                     byte[] pdfBytes = renderCertificatePdf(certificatePreview);
@@ -322,7 +323,7 @@ public class CertificateService {
                     metadataPayload.put("grade", grade);
                     metadataPayload.put("finalScore", finalScore);
                     metadataPayload.put("issueDate", issueDate);
-                    metadataPayload.put("status", Certificate.CertificateStatus.PENDING.toString());
+                    metadataPayload.put("status", CertificateStatus.PENDING.toString());
                     metadataPayload.put("pdfCid", pdfCid);
                     metadataPayload.put("pdfUrl", pdfUrl);
 
@@ -335,7 +336,7 @@ public class CertificateService {
                             .publishedCourse(publishedCourse)
                             .certificateCode(certificateCode)
                             .issueDate(issueDate)
-                            .status(Certificate.CertificateStatus.PENDING)
+                            .status(CertificateStatus.PENDING)
                             .finalScore(finalScore)
                             .grade(grade)
                             .certificateHash(certificateHash)
@@ -355,7 +356,7 @@ public class CertificateService {
 
                     certificate.setTransactionHash(txHash);
                     certificate.setContractAddress(web3jService.getContractAddress());
-                    certificate.setStatus(Certificate.CertificateStatus.ISSUED);
+                    certificate.setStatus(CertificateStatus.ISSUED);
                     certificate.setBlockNumber(web3jService.getBlockNumber(txHash));
                     certificateRepository.save(certificate);
 
@@ -365,9 +366,9 @@ public class CertificateService {
                     log.error("Failed to issue blockchain certificate: {}", errorMsg, e);
 
                     if (errorMsg.contains("INSUFFICIENT_FUNDS")) {
-                        certificate.setStatus(Certificate.CertificateStatus.FAILED);
+                        certificate.setStatus(CertificateStatus.FAILED);
                     } else {
-                        certificate.setStatus(Certificate.CertificateStatus.PENDING);
+                        certificate.setStatus(CertificateStatus.PENDING);
                     }
 
                     certificateRepository.save(certificate);
@@ -490,7 +491,7 @@ public class CertificateService {
                     .certificateCode(code)
                     .issueDate(onChainData.getIssueDate())
                     .contractAddress(web3jService.getContractAddress())
-                    .status(Certificate.CertificateStatus.ISSUED)
+                    .status(CertificateStatus.ISSUED)
                     .build();
 
                 return PublicCertificateVerificationResponse.builder()
@@ -584,7 +585,7 @@ public class CertificateService {
                 .blockNumber(certificate.getBlockNumber())
                 .finalScore(certificate.getFinalScore())
                 .grade(certificate.getGrade())
-                .status(txFailed ? Certificate.CertificateStatus.FAILED : certificate.getStatus())
+                .status(txFailed ? CertificateStatus.FAILED : certificate.getStatus())
                 .build();
 
         return PublicCertificateVerificationResponse.builder()
@@ -718,7 +719,7 @@ public class CertificateService {
                             .certificateCode(null)
                             .issueDate(onChainData.getIssueDate())
                             .contractAddress(web3jService.getContractAddress())
-                            .status(Certificate.CertificateStatus.ISSUED)
+                            .status(CertificateStatus.ISSUED)
                             .certificateHash(certificateHash)
                             .build();
 
@@ -815,7 +816,7 @@ public class CertificateService {
                 .pdfUrl(certificate.getPdfUrl())
                 .tokenUri(certificate.getTokenUri())
                 .tokenId(certificate.getTokenId())
-                .status(txFailed ? Certificate.CertificateStatus.FAILED : certificate.getStatus())
+                .status(txFailed ? CertificateStatus.FAILED : certificate.getStatus())
                 .build();
 
         return PublicCertificateVerificationResponse.builder()

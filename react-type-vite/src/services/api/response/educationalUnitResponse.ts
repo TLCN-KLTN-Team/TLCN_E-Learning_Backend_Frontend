@@ -26,8 +26,6 @@ export interface EducationalUnitResponse {
   description?: string;
   establishedYear?: number;
   status: string;
-  subscriptionStartDate?: Date;
-  subscriptionEndDate?: Date;
   createdAt?: Date;
   totalDepartments?: number;
   totalCourses?: number;

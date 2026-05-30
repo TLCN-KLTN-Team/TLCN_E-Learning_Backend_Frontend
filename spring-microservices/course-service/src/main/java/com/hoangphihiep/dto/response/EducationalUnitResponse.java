@@ -59,11 +59,6 @@ public class EducationalUnitResponse {
     private Integer establishedYear;
 
     private String status;
-
-    private Date subscriptionStartDate;
-
-    private Date subscriptionEndDate;
-
     private Date createdAt;
 
     private Integer totalDepartments;

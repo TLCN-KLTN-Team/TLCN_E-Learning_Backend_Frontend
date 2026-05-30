@@ -75,11 +75,4 @@ public class Assignment implements Serializable {
     @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     private Set<AssignmentSubmission> submissions = new HashSet<>();
-
-    public void addSubmission(AssignmentSubmission submission) {
-        if (submission != null && !submissions.contains(submission)) {
-            submissions.add(submission);
-            submission.setAssignment(this);
-        }
-    }
 }

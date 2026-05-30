@@ -9,7 +9,6 @@ import com.hoangphihiep.entity.Department;
 import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseProgress;
 import com.hoangphihiep.entity.EducationalUnit;
-import com.hoangphihiep.entity.SubscriptionPlan;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.EducationalUnitMapper;
@@ -40,7 +39,6 @@ public class EducationalUnitService {
     private final EducationalUnitRepository educationalUnitRepository;
     private final UserRepository userRepository;
     private final FileHandlerRepository fileHandlerRepository;
-    private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final EducationalUnitMapper educationalUnitMapper;
     private final CourseRepository courseRepository;
     private final DepartmentRepository departmentRepository;
@@ -265,8 +263,6 @@ public class EducationalUnitService {
                     .description(edu.getDescription())
                     .establishedYear(edu.getEstablishedYear())
                     .status(edu.getStatus().getStatus())
-                    .subscriptionStartDate(edu.getSubscriptionStartDate())
-                    .subscriptionEndDate(edu.getSubscriptionEndDate())
                     .createdAt(edu.getCreatedAt())
                     .totalCourses((int) totalCourses)
                     .totalDepartments((int) totalDepartments)
@@ -372,8 +368,6 @@ public class EducationalUnitService {
                 .description(savedUnit.getDescription())
                 .establishedYear(savedUnit.getEstablishedYear())
                 .status(savedUnit.getStatus().getStatus())
-                .subscriptionStartDate(savedUnit.getSubscriptionStartDate())
-                .subscriptionEndDate(savedUnit.getSubscriptionEndDate())
                 .createdAt(savedUnit.getCreatedAt())
                 .totalCourses((int) totalCourses)
                 .totalDepartments((int) totalDepartments)
@@ -540,7 +534,6 @@ public class EducationalUnitService {
                 throw new RuntimeException("Không thể tải lên giấy phép đã ký số. Vui lòng thử lại.");
             }
 
-            SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findSubscriptionPlanById(1L);
             // 4. Create training unit in course-management database
             EducationalUnit educationalUnit = EducationalUnit.builder()
                     .name(request.getName())
@@ -567,9 +560,6 @@ public class EducationalUnitService {
                     .idAdmin(adminUserId)
                     .status(EducationalUnitStatus.PENDING)
                     .createdAt(new Date())
-                    .subscriptionPlan(subscriptionPlan)
-                    .subscriptionStartDate(new Date())
-                    .subscriptionEndDate(new Date())
                     .build();
 
             EducationalUnit savedUnit = educationalUnitRepository.save(educationalUnit);
