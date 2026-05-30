@@ -58,16 +58,6 @@ public class EducationalUnit {
     @Column(name = "admin_id")
     private String idAdmin;
 
-    @ManyToOne
-    @JoinColumn(name = "subscription_plan_id")
-    private SubscriptionPlan subscriptionPlan;
-
-    @Temporal(TemporalType.DATE)
-    private Date subscriptionStartDate;
-
-    @Temporal(TemporalType.DATE)
-    private Date subscriptionEndDate;
-
     @Temporal(TemporalType.DATE)
     private Date createdAt;
 

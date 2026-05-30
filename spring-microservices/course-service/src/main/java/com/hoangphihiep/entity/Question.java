@@ -53,9 +53,6 @@ public class Question implements Serializable {
     @Column(name = "teacher_id")
     private String teacherId; // Teacher who created this question
 
-    @Column(name = "educational_unit_id")
-    private Integer educationalUnitId;
-
     // CLO (Course Learning Objective) linking
     @ManyToOne
     @JoinColumn(name = "course_objective_id")
@@ -73,7 +70,4 @@ public class Question implements Serializable {
             answers.add(answer);
         }
     }
-
-    // Removed direct relationship with Quiz - now using QuizQuestion join table
-    // Many-to-many relationship handled via QuizQuestion entity
 }

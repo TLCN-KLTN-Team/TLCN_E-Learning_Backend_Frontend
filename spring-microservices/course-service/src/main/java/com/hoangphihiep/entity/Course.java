@@ -74,12 +74,6 @@ public class Course implements Serializable {
     @JoinColumn(name = "educational_unit_id")
     private EducationalUnit educationalUnit;
 
-    public void addSection(Section section) {
-        if (section != null) {
-            sections.add(section);
-        }
-    }
-
     @OneToOne(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private PublishedCourse publishedCourse;
 

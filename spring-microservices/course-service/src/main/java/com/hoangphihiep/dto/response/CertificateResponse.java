@@ -1,6 +1,7 @@
 package com.hoangphihiep.dto.response;
 
 import com.hoangphihiep.entity.Certificate;
+import com.hoangphihiep.utils.CertificateStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,7 +34,7 @@ public class CertificateResponse {
     private String pdfUrl;
     private String tokenUri;
     private String tokenId;
-    private Certificate.CertificateStatus status;
+    private CertificateStatus status;
 
     public static CertificateResponse fromEntity(Certificate certificate) {
         return CertificateResponse.builder()

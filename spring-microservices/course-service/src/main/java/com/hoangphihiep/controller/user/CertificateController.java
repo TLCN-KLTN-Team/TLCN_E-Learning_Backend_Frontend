@@ -3,10 +3,10 @@ package com.hoangphihiep.controller.user;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.CertificateResponse;
 import com.hoangphihiep.dto.response.ClaimChallengeResponse;
-import com.hoangphihiep.entity.Certificate;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.service.CertificateService;
 import com.hoangphihiep.dto.request.ClaimRequest;
+import com.hoangphihiep.utils.CertificateStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -85,7 +85,7 @@ public class CertificateController {
             }
 
             // Verify against blockchain
-            if (certificate.getStatus() != Certificate.CertificateStatus.ISSUED) {
+            if (certificate.getStatus() != CertificateStatus.ISSUED) {
                 return ResponseEntity.ok(ApiResponse.builder()
                         .message("Certificate is not in ISSUED status")
                         .result(Map.of(

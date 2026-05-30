@@ -304,6 +304,23 @@ public class CourseService {
         }
     }
 
+    public Page<ExpertResponse> getExpertsByEducationalUnit(int educationalUnitId, int page, int size, String search) {
+        validateEducationalUnitAccess(educationalUnitId);
+
+        try {
+            ApiResponse<Page<ExpertResponse>> response = expertRepository.getExpertsByEducationalUnit(
+                    educationalUnitId, page, size, search);
+
+            if (response.getResult() == null) {
+                throw new AppException(ErrorCode.EXPERT_NOT_FOUND);
+            }
+
+            return response.getResult();
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
     private List<StudentResponse> batchPopulateStudentDetails(List<StudentResponse> students) {
         if (students.isEmpty()) {
             return students;

@@ -1,5 +1,6 @@
 package com.hoangphihiep.entity;
 
+import com.hoangphihiep.utils.CertificateStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -85,9 +86,5 @@ public class Certificate {
     @Column(name = "token_id")
     private String tokenId;
 
-    public enum CertificateStatus {
-        PENDING,
-        ISSUED,
-        FAILED
-    }
+
 }

@@ -234,6 +234,8 @@ public enum ErrorCode {
     CLO_INVALID_CODE_FORMAT("CLO_2605", "Định dạng mã CĐR không hợp lệ", HttpStatus.BAD_REQUEST),
     CLO_COURSE_NOT_FOUND("CLO_2606", "Không tìm thấy khóa học cho CĐR", HttpStatus.NOT_FOUND),
 
+    EXPERT_NOT_FOUND("EXPERT_2600", "Không tìm thấy chyên gia", HttpStatus.NOT_FOUND),
+
     // Quiz Blueprint related errors (BLUEPRINT_xxxx)
     QUIZ_BLUEPRINT_NOT_FOUND("BLUEPRINT_2801", "Không tìm thấy blueprint ma trận CLO cho đề thi", HttpStatus.NOT_FOUND),
     QUIZ_BLUEPRINT_PERCENTAGE_INVALID("BLUEPRINT_2802", "Tỷ lệ phần trăm CLO không hợp lệ (phải từ 0-100)", HttpStatus.BAD_REQUEST),
