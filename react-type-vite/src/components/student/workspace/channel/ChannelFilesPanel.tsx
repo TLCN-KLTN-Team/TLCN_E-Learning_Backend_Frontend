@@ -3,6 +3,7 @@ import {
   Download,
   FileText,
   Loader2,
+  Send,
   Upload,
   X,
 } from "lucide-react";
@@ -12,10 +13,13 @@ import {
   ChannelPhase,
   type AttachmentResponse,
   type ChannelResponse,
+  type CrossReviewScoreResponse,
 } from "@/types/chat.types";
 import {
   getChannelAttachments,
   getCrossReviewAttachments,
+  getMyCrossReview,
+  submitCrossReview,
   uploadChannelFile,
 } from "@/services/api/workspace/channel.api";
 import { derivePhase } from "@/utils/channelPhase";
@@ -43,6 +47,11 @@ const ChannelFilesPanel = ({
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingCategory, setUploadingCategory] =
     useState<AttachmentCategory | null>(null);
+  const [reviewScore, setReviewScore] = useState<string>("");
+  const [reviewComment, setReviewComment] = useState<string>("");
+  const [existingReview, setExistingReview] =
+    useState<CrossReviewScoreResponse | null>(null);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const generalInputRef = useRef<HTMLInputElement>(null);
   const submissionInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,9 +84,18 @@ const ChannelFilesPanel = ({
         getCrossReviewAttachments(channel.id).then(
           (data) => !cancelled && setCrossReviewFiles(data ?? []),
         ),
+        getMyCrossReview(channel.id).then((data) => {
+          if (cancelled) return;
+          setExistingReview(data);
+          setReviewScore(data?.score != null ? String(data.score) : "");
+          setReviewComment(data?.comment ?? "");
+        }),
       );
     } else {
       setCrossReviewFiles([]);
+      setExistingReview(null);
+      setReviewScore("");
+      setReviewComment("");
     }
 
     Promise.allSettled(loaders).finally(() => {
@@ -124,6 +142,31 @@ const ChannelFilesPanel = ({
       toast.error(err instanceof Error ? err.message : "Upload thất bại");
     } finally {
       setUploadingCategory(null);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    const parsed = Number(reviewScore);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
+      toast.warn("Điểm phải là số trong khoảng 0 – 10");
+      return;
+    }
+    setIsSubmittingReview(true);
+    try {
+      const saved = await submitCrossReview(channel.id, {
+        score: parsed,
+        comment: reviewComment.trim() || undefined,
+      });
+      setExistingReview(saved);
+      setReviewScore(String(saved.score));
+      setReviewComment(saved.comment ?? "");
+      toast.success("Đã gửi điểm chấm chéo");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Gửi điểm chấm chéo thất bại",
+      );
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
@@ -188,12 +231,66 @@ const ChannelFilesPanel = ({
               }
             />
             {showCrossReview && (
-              <FileSection
-                title="Bài cần chấm chéo"
-                files={crossReviewFiles}
-                emptyHint="Chưa có bài để chấm."
-                showUpload={false}
-              />
+              <>
+                <FileSection
+                  title="Bài cần chấm chéo"
+                  files={crossReviewFiles}
+                  emptyHint="Chưa có bài để chấm."
+                  showUpload={false}
+                />
+                <section className="rounded-md border border-gray-700 bg-gray-800/50 p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-gray-200 font-medium">
+                      Nhận xét & chấm điểm
+                    </h4>
+                    {existingReview && (
+                      <span className="text-[11px] text-emerald-400">
+                        Đã nộp · có thể cập nhật
+                      </span>
+                    )}
+                  </div>
+                  <label className="block">
+                    <span className="text-xs text-gray-400">
+                      Điểm (0 – 10)
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      step={0.1}
+                      value={reviewScore}
+                      onChange={(e) => setReviewScore(e.target.value)}
+                      disabled={isSubmittingReview}
+                      className="mt-1 w-32 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs text-gray-400">Nhận xét</span>
+                    <textarea
+                      rows={3}
+                      maxLength={2000}
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      disabled={isSubmittingReview}
+                      placeholder="Góp ý cho nhóm bạn chấm…"
+                      className="mt-1 w-full rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 resize-none"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSubmitReview}
+                    disabled={isSubmittingReview || reviewScore === ""}
+                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white"
+                  >
+                    {isSubmittingReview ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    {existingReview ? "Cập nhật điểm" : "Gửi điểm chấm chéo"}
+                  </button>
+                </section>
+              </>
             )}
             {phase === ChannelPhase.LOCKED && (
               <div className="rounded-md border border-red-700 bg-red-950/40 px-3 py-2 text-red-300 text-xs">

@@ -1,10 +1,13 @@
 package demo.app.chat_app.controller;
 
 import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
+import demo.app.chat_app.dto.request.CrossReviewSubmitRequest;
 import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.model.enums.AttachmentCategory;
 import demo.app.chat_app.service.AttachmentService;
 import demo.app.chat_app.service.ChannelService;
+import demo.app.chat_app.service.CrossReviewService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,6 +22,7 @@ import java.util.List;
 public class ChannelController {
     ChannelService channelService;
     AttachmentService attachmentService;
+    CrossReviewService crossReviewService;
 
     @GetMapping("/{channelId}")
     public ApiResponse<ChannelResponse> getChannel(@PathVariable String channelId) {
@@ -163,6 +167,60 @@ public class ChannelController {
         return ApiResponse.<List<AttachmentResponse>>builder()
                 .result(attachments)
                 .message("Cross-review submissions retrieved successfully")
+                .build();
+    }
+
+    /**
+     * Liệt kê ảnh (IMAGE) đã gửi trong channel — phục vụ gallery "Ảnh đã gửi"
+     * trong panel thông tin kênh.
+     */
+    @GetMapping("/{channelId}/images")
+    public ApiResponse<List<AttachmentResponse>> getChannelImages(@PathVariable String channelId) {
+        return ApiResponse.<List<AttachmentResponse>>builder()
+                .result(attachmentService.listImagesByChannel(channelId))
+                .message("Channel images retrieved successfully")
+                .build();
+    }
+
+    /**
+     * Liệt kê file (mọi attachmentType trừ IMAGE) đã gửi trong channel —
+     * phục vụ mục "File đã gửi" trong panel thông tin kênh.
+     */
+    @GetMapping("/{channelId}/files")
+    public ApiResponse<List<AttachmentResponse>> getChannelFiles(@PathVariable String channelId) {
+        return ApiResponse.<List<AttachmentResponse>>builder()
+                .result(attachmentService.listFilesByChannel(channelId))
+                .message("Channel files retrieved successfully")
+                .build();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // UC-41: Cross-review submit (điểm + nhận xét)
+    // ══════════════════════════════════════════════════════════════════
+
+    /**
+     * Nhóm chấm chéo submit điểm + nhận xét cho nhóm mà mình được phân công.
+     * Upsert theo cặp (reviewerChannelId, reviewedChannelId); bắn notification
+     * tới mọi thành viên nhóm bị chấm.
+     */
+    @PostMapping("/{channelId}/cross-review/submit")
+    public ApiResponse<CrossReviewScoreResponse> submitCrossReview(
+            @PathVariable String channelId,
+            @Valid @RequestBody CrossReviewSubmitRequest request) {
+        return ApiResponse.<CrossReviewScoreResponse>builder()
+                .result(crossReviewService.submitReview(channelId, request))
+                .message("Cross-review submitted successfully")
+                .build();
+    }
+
+    /**
+     * Lấy điểm mà nhóm này đã nộp (nếu có) — FE prefill form.
+     */
+    @GetMapping("/{channelId}/cross-review/my-score")
+    public ApiResponse<CrossReviewScoreResponse> getMyCrossReview(@PathVariable String channelId) {
+        return ApiResponse.<CrossReviewScoreResponse>builder()
+                .result(crossReviewService.getMyReview(channelId))
+                .message("Cross-review score retrieved successfully")
                 .build();
     }
 }

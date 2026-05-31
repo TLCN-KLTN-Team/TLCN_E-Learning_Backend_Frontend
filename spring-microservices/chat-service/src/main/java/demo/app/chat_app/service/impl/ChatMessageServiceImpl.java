@@ -31,6 +31,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -42,24 +44,27 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     ChannelRepository channelRepository;
     ChannelMemberService channelMemberService;
     SectionRepository sectionRepository;
+    MessageAttachmentRepository messageAttachmentRepository;
+    ChannelMemberRepository channelMemberRepository;
     GetUserClient getUserClient;
 
     @Override
     public ChatMessageResponse sendMessage(ChatMessageRequest request, Principal principal) {
-        // Validate and get channel
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
         // UC-41: chặn gửi tin khi channel đã qua phase OPEN (LOCKED/ARCHIVED soft-lock)
         ChannelPhase.assertOpenForMember(channel);
 
-        // Get current user
         String userId = principal.getName();
 
-        // Create and save message
         ChatMessage message = ChatMessage.builder()
+                .clientMessageId(request.getClientMessageId())
+                .sender(userId)
                 .channelId(request.getChannelId())
                 .content(request.getContent())
+                .messageType(MessageType.TEXT)
+                .status(MessageStatus.SENT)
                 .createdDate(Instant.now())
                 .updatedDate(Instant.now())
                 .build();
@@ -72,72 +77,100 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage) {
         var chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatMessage);
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isMe = chatMessage.getSender().equals(userId);
+        boolean isMe = chatMessage.getSender() != null && chatMessage.getSender().equals(userId);
         chatMessageResponse.setMe(isMe);
         chatMessageResponse.setMessageType(chatMessage.getMessageType());
         chatMessageResponse.setClientMessageId(chatMessage.getClientMessageId());
         chatMessageResponse.setStatus(chatMessage.getStatus());
 
-        // Map attachments
-        if (chatMessage.getAttachments() != null && !chatMessage.getAttachments().isEmpty()) {
-            chatMessageResponse.setAttachments(
-                    chatMessageMapper.toAttachmentResponseList(chatMessage.getAttachments())
-            );
-        } else {
-            chatMessageResponse.setAttachments(Collections.emptyList());
-        }
+        // Load attachments separately from the dedicated collection (source of truth).
+        List<MessageAttachment> attachments = messageAttachmentRepository.findByMessageId(chatMessage.getId());
+        chatMessageResponse.setAttachments(
+                attachments.isEmpty()
+                        ? Collections.emptyList()
+                        : chatMessageMapper.toAttachmentResponseList(attachments));
 
-        // get user profile info
-        try {
-            UserResponse senderProfile = getUserClient.getUser(chatMessage.getSender()).getResult();
-            chatMessageResponse.setSender(senderProfile);
-        } catch (Exception e) {
-            log.info("Failed to fetch user profile for userId: {}", chatMessage.getSender(), e);
-            throw new AppException(ErrorCode.GET_USER_PROFILE_FAILED);
-        }
+        chatMessageResponse.setSender(resolveSender(chatMessage.getChannelId(), chatMessage.getSender(), userId));
 
         return chatMessageResponse;
+    }
+
+    /**
+     * Resolve sender info for a message — prefer denormalized ChannelMember data
+     * (already enriched with nickname/avatar at member creation time), fall back to
+     * user-service only when needed, and never throw. A missing user yields an
+     * "Anonymous" placeholder so the message still renders.
+     */
+    private UserResponse resolveSender(String channelId, String senderUserId, String currentUserId) {
+        if (senderUserId == null || senderUserId.isBlank()) {
+            return anonymousUser(null);
+        }
+
+        try {
+            ChannelMember member = channelMemberRepository
+                    .findByChannelIdAndUserId(channelId, senderUserId)
+                    .orElse(null);
+            if (member != null && member.getNickname() != null && !member.getNickname().isBlank()) {
+                return UserResponse.builder()
+                        .id(member.getUserId())
+                        .nickname(member.getNickname())
+                        .studentId(member.getStudentId())
+                        .avatarUrl(member.getAvatarUrl())
+                        .isOwner(member.getRole() == ChannelRole.TEACHER)
+                        .build();
+            }
+        } catch (Exception e) {
+            log.debug("ChannelMember lookup failed for userId={}, channelId={}", senderUserId, channelId, e);
+        }
+
+        try {
+            UserResponse profile = getUserClient.getUser(senderUserId).getResult();
+            if (profile != null) {
+                return profile;
+            }
+        } catch (Exception e) {
+            log.info("Failed to fetch user profile for userId: {}", senderUserId);
+        }
+
+        return anonymousUser(senderUserId);
+    }
+
+    private UserResponse anonymousUser(String userId) {
+        return UserResponse.builder()
+                .id(userId)
+                .nickname("Anonymous")
+                .build();
     }
 
     @Override
     public List<ChatMessageResponse> getMessages(String channelId) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        
-        // Verify channel exists and user has access
+
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
         checkIsMemberChannel(channel, userId);
 
-        // Use paginated query for better performance
         Pageable pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.ASC, "createdDate"));
         Page<ChatMessage> messagePage = chatMessageRepository.findByChannelIdAndNotDeleted(channelId, pageable);
 
         if (messagePage.isEmpty()) {
             return new ArrayList<>();
         }
-        
-        List<ChatMessageResponse> response = messagePage.getContent().stream()
-                .map(this::toChatMessageResponse)
-                .toList();
 
-        return response;
+        return toChatMessageResponses(messagePage.getContent(), channelId, userId);
     }
-    
-    // New method for paginated messages
+
     public PageResponse<ChatMessageResponse> getMessagesPaginated(String channelId, int page, int size) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        
-        // Verify channel exists and user has access
+
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdDate"));
         Page<ChatMessage> messagePage = chatMessageRepository.findByChannelIdAndNotDeleted(channelId, pageable);
-        
-        List<ChatMessageResponse> responses = messagePage.getContent().stream()
-                .map(this::toChatMessageResponse)
-                .toList();
+
+        List<ChatMessageResponse> responses = toChatMessageResponses(messagePage.getContent(), channelId, userId);
 
         return PageResponse.<ChatMessageResponse>builder()
                 .content(responses)
@@ -149,22 +182,55 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .build();
     }
 
+    /**
+     * Batch-aware version: fetches all attachments for the given messages in one
+     * query (instead of N+1) and reuses {@link #resolveSender} for sender enrichment.
+     */
+    private List<ChatMessageResponse> toChatMessageResponses(List<ChatMessage> messages,
+                                                              String channelId,
+                                                              String currentUserId) {
+        if (messages.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> messageIds = messages.stream().map(ChatMessage::getId).toList();
+        Map<String, List<MessageAttachment>> attachmentsByMessage = messageAttachmentRepository
+                .findByMessageIdInAndIsActiveTrue(messageIds)
+                .stream()
+                .collect(Collectors.groupingBy(MessageAttachment::getMessageId));
+
+        return messages.stream()
+                .map(msg -> {
+                    var resp = chatMessageMapper.toChatMessageResponse(msg);
+                    boolean isMe = msg.getSender() != null && msg.getSender().equals(currentUserId);
+                    resp.setMe(isMe);
+                    resp.setMessageType(msg.getMessageType());
+                    resp.setClientMessageId(msg.getClientMessageId());
+                    resp.setStatus(msg.getStatus());
+
+                    List<MessageAttachment> msgAttachments = attachmentsByMessage.getOrDefault(msg.getId(), List.of());
+                    resp.setAttachments(
+                            msgAttachments.isEmpty()
+                                    ? Collections.emptyList()
+                                    : chatMessageMapper.toAttachmentResponseList(msgAttachments));
+
+                    resp.setSender(resolveSender(channelId, msg.getSender(), currentUserId));
+                    return resp;
+                })
+                .toList();
+    }
+
     // ======== METHODS FOR POST-ATTACH PATTERN ========
-    
+
     @Override
     public ChatMessageResponse sendTextMessage(TextMessageRequest request) {
-        // Validate and get channel
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        // UC-41: chặn gửi tin khi channel đã qua phase OPEN
         ChannelPhase.assertOpenForMember(channel);
 
         String userId = JwtUtils.getUserId();
 
-        // Create and save message with PENDING status
-        // The message starts as PENDING; it will be updated to SENT when attachments are uploaded
-        // or can remain as-is for text-only messages
         ChatMessage message = ChatMessage.builder()
                 .clientMessageId(request.getClientMessageId())
                 .sender(userId)
@@ -187,7 +253,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new AppException(ErrorCode.MESSAGE_NOT_FOUND));
 
-        // Check if user has access to this message's channel
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         Channel channel = channelRepository.findById(message.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
@@ -198,14 +263,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     private void checkIsMemberChannel(Channel channel, String userId) {
-        ChannelMember channelMember = channelMemberService.getChannelMemberByChannelIdAndUserId(channel.getId(), userId);
-    }
-
-    private ChatMessageResponse toUploadedResponse(ChatMessage chatMessage, String userId) {
-        var chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatMessage);
-        boolean isMe = chatMessage.getSender().equals(userId);
-        chatMessageResponse.setMe(isMe);
-
-        return chatMessageResponse;
+        channelMemberService.getChannelMemberByChannelIdAndUserId(channel.getId(), userId);
     }
 }

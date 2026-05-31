@@ -43,7 +43,7 @@ const TimeBasedChannelView = ({
   useEffect(() => {
     const calculateTimeRemaining = () => {
       const now = Date.now();
-      const endTime = channel.endTime;
+      const endTime = channel.endTime ?? 0;
       const remaining = endTime - now;
 
       if (remaining <= 0) {
@@ -216,15 +216,15 @@ const TimeBasedChannelView = ({
               >
                 {/* Avatar */}
                 <div className="flex-shrink-0">
-                  {message.sender.avatarUrl ? (
+                  {message.sender?.avatarUrl ? (
                     <img
                       src={message.sender.avatarUrl}
-                      alt={message.sender.nickname}
+                      alt={message.sender.nickname ?? "member"}
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
-                      {message.sender.nickname.charAt(0)}
+                      {(message.sender?.nickname ?? "?").charAt(0)}
                     </div>
                   )}
                 </div>
@@ -233,10 +233,10 @@ const TimeBasedChannelView = ({
                 <div className={`flex-1 ${message.me ? "text-right" : ""}`}>
                   <div className="flex items-baseline space-x-2 mb-1">
                     <span className="font-semibold text-gray-800 text-sm">
-                      {message.sender.nickname}
+                      {message.sender?.nickname ?? "Anonymous"}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {message.sender.studentId}
+                      {message.sender?.studentId ?? ""}
                     </span>
                     <span className="text-xs text-gray-400">
                       {new Date(message.createdDate).toLocaleTimeString(
@@ -258,16 +258,17 @@ const TimeBasedChannelView = ({
                     <p className="text-sm whitespace-pre-wrap break-words">
                       {message.content}
                     </p>
-                    {message.fileUrl && (
+                    {message.attachments?.map((att) => (
                       <a
-                        href={message.fileUrl}
+                        key={att.id}
+                        href={att.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs underline mt-1 block"
                       >
-                        📎 Xem file đính kèm
+                        📎 {att.fileName}
                       </a>
-                    )}
+                    ))}
                   </div>
                 </div>
               </div>

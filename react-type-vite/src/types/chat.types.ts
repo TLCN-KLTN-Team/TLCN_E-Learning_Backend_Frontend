@@ -164,10 +164,10 @@ export interface ChatMessageResponse {
   clientMessageId?: string | null;
   me: boolean;
   content: string;
-  sender: UserResponse;
+  /** Có thể null nếu sender không còn trong workspace hoặc user-service không trả info. */
+  sender?: UserResponse | null;
   messageType: MessageType;
   status?: MessageStatus;
-  fileUrl?: string | null;
   attachments?: AttachmentResponse[];
   createdDate: string;
 }
@@ -183,6 +183,23 @@ export interface AttachmentResponse {
   fileUrl: string;
   thumbnailUrl?: string | null;
   uploadedAt: string;
+}
+
+// UC-41: payload submit form chấm chéo
+export interface CrossReviewSubmitRequest {
+  score: number; // 0 - 10
+  comment?: string;
+}
+
+export interface CrossReviewScoreResponse {
+  id: string;
+  reviewerChannelId: string;
+  reviewedChannelId: string;
+  reviewerUserId: string;
+  score: number;
+  comment?: string | null;
+  submittedAt: string;
+  updatedAt: string;
 }
 
 export interface AttachmentItem {

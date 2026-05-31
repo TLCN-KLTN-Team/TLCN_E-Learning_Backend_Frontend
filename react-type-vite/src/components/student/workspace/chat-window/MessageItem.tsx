@@ -28,10 +28,11 @@ const MessageItem = ({
   const isPending = message.status === MessageStatus.PENDING;
   const isFailed = message.status === MessageStatus.FAILED;
 
-  const displayName = message.sender.nickname
-    ? `${message.sender.nickname}`.trim()
-    : "Anonymous";
-  const avatarUrl = message.sender.avatarUrl || getAvartarFromName(displayName);
+  const senderNickname = message.sender?.nickname?.trim();
+  const displayName =
+    senderNickname && senderNickname.length > 0 ? senderNickname : "Anonymous";
+  const avatarUrl =
+    message.sender?.avatarUrl || getAvartarFromName(displayName);
 
   const messageTime = new Date(message.createdDate).toLocaleTimeString(
     "vi-VN",
@@ -97,66 +98,6 @@ const MessageItem = ({
 
   const hasTextContent = Boolean(message.content?.trim());
 
-  const renderLegacyImage = () => {
-    if (!message.fileUrl) return null;
-
-    return (
-      <div className={`${showTimestamp ? "mt-1" : "mt-0"}`}>
-        <div className="relative inline-block">
-          <img
-            src={message.fileUrl}
-            alt={message.content || "Image"}
-            className="max-w-sm max-h-64 rounded-lg border border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
-            loading="lazy"
-            onClick={() => {
-              setSelectedMediaUrl(message.fileUrl || null);
-              setSelectedMediaAlt(message.content || "Image");
-              setShowMediaModal(true);
-            }}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const renderLegacyFile = () => {
-    if (!message.fileUrl) return null;
-
-    return (
-      <div className={`${showTimestamp ? "mt-1" : "mt-0"}`}>
-        <div className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg border border-gray-600 max-w-sm">
-          <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center">
-            <svg
-              className="w-6 h-6 text-gray-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">
-              {message.content || "Unknown file"}
-            </p>
-            <p className="text-gray-400 text-xs">File attachment</p>
-          </div>
-          <a
-            href={message.fileUrl}
-            download={message.content}
-            className="text-blue-400 hover:text-blue-300 text-sm"
-            title="Download file"
-          >
-            ↓
-          </a>
-        </div>
-      </div>
-    );
-  };
-
   const renderMessageContent = () => {
     switch (message.messageType) {
       case "TEXT":
@@ -165,13 +106,6 @@ const MessageItem = ({
             {message.content}
           </p>
         ) : null;
-
-      // Legacy formats kept for backward compatibility.
-      case "IMAGE":
-        return renderLegacyImage();
-
-      case "FILE":
-        return renderLegacyFile();
 
       case "MIXED":
         return (
@@ -186,7 +120,7 @@ const MessageItem = ({
         );
 
       case "FILE_ONLY":
-        return renderAttachments(showTimestamp) || renderLegacyFile();
+        return renderAttachments(showTimestamp);
 
       default:
         return (

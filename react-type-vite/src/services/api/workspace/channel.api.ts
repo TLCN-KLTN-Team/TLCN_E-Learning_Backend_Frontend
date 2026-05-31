@@ -10,6 +10,8 @@ import type {
   ChatMessageRequest,
   ChatMessageResponse,
   CreateChannelRequest,
+  CrossReviewScoreResponse,
+  CrossReviewSubmitRequest,
   UserResponse,
 } from "@/types/chat.types";
 
@@ -139,10 +141,65 @@ export const getCrossReviewAttachments = async (
 };
 
 /**
+ * Lấy danh sách ảnh (attachmentType=IMAGE) đã gửi trong channel.
+ * Phục vụ gallery "Ảnh đã gửi" trong panel thông tin kênh.
+ */
+export const getChannelImages = async (
+  channelId: string,
+): Promise<AttachmentResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<AttachmentResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/images`,
+  );
+  return response.data.result;
+};
+
+/**
+ * Lấy danh sách file (mọi attachmentType trừ IMAGE) đã gửi trong channel.
+ * Phục vụ mục "File đã gửi" trong panel thông tin kênh.
+ */
+export const getChannelFiles = async (
+  channelId: string,
+): Promise<AttachmentResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<AttachmentResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/files`,
+  );
+  return response.data.result;
+};
+
+/**
  * UC-41: upload file vào channel với phân loại category.
  * Wrap upload-file-only — tạo file-only message kèm category để BE lưu vào
  * collection attachments với category đúng.
  */
+/**
+ * UC-41: nhóm chấm chéo submit điểm + nhận xét cho nhóm được phân công.
+ * Backend upsert theo cặp (reviewerChannelId, reviewedChannelId) và
+ * tự bắn notification tới mọi thành viên nhóm bị chấm.
+ */
+export const submitCrossReview = async (
+  channelId: string,
+  payload: CrossReviewSubmitRequest,
+): Promise<CrossReviewScoreResponse> => {
+  const response = await axiosInstance.post<ApiResponse<CrossReviewScoreResponse>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/cross-review/submit`,
+    payload,
+  );
+  return response.data.result;
+};
+
+/**
+ * Lấy bản chấm hiện tại của nhóm (nếu có) — để FE prefill form.
+ * Trả về null khi nhóm chưa submit lần nào.
+ */
+export const getMyCrossReview = async (
+  channelId: string,
+): Promise<CrossReviewScoreResponse | null> => {
+  const response = await axiosInstance.get<ApiResponse<CrossReviewScoreResponse | null>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/cross-review/my-score`,
+  );
+  return response.data.result;
+};
+
 export const uploadChannelFile = async (
   channelId: string,
   category: AttachmentCategory,

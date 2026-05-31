@@ -64,6 +64,8 @@ public enum ErrorCode {
     NO_CROSS_REVIEW_TARGET("CH_4007", "Kênh này chưa được phân công chấm chéo", HttpStatus.NOT_FOUND),
     CROSS_REVIEW_NOT_ALLOWED("CH_4008", "Kênh này không bật chế độ chấm chéo", HttpStatus.BAD_REQUEST),
     SUBMISSION_DEADLINE_REQUIRED("CH_4009", "Hạn nộp bài là bắt buộc", HttpStatus.BAD_REQUEST),
+    CROSS_REVIEW_NOT_MEMBER("CH_4010", "Bạn không thuộc nhóm chấm chéo này", HttpStatus.FORBIDDEN),
+    CROSS_REVIEW_SCORE_INVALID("CH_4011", "Điểm phải nằm trong khoảng 0 – 10", HttpStatus.BAD_REQUEST),
 
     // Message Errors (MSG_xxxx)
     MESSAGE_NOT_FOUND("MSG_5001", "Không tìm thấy tin nhắn", HttpStatus.NOT_FOUND),

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Push-Location 'e:\\\\TLCN\\\\TLCN_E-Learning\\\\spring-microservices\\\\chat-service'; & .\\\\mvnw.cmd -DskipTests -q clean compile 2>&1 | Tee-Object -Variable mvOut | Out-Null; \"ExitCode=$LASTEXITCODE\"; $mvOut | Where-Object { $_ -match 'ERROR|BUILD|error:' } | Select-Object -Last 60; Pop-Location)",
+      "PowerShell(Push-Location 'e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite'; & npx tsc -p tsconfig.app.json --noEmit 2>&1 | Tee-Object -Variable tscOut | Out-Null; \"ExitCode=$LASTEXITCODE\"; $tscOut | Select-Object -First 40; Pop-Location)",
+      "PowerShell(Push-Location 'e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite'; & npx tsc -b 2>&1 | Tee-Object -Variable tscOut | Out-Null; \"ExitCode=$LASTEXITCODE\"; $tscOut | Select-String -Pattern 'error' | Select-Object -First 60; Pop-Location)",
+      "Bash(xargs grep -l \"publishClassCreatedEvent\\\\|ClassEventProducer\")"
+    ],
+    "additionalDirectories": [
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\controller",
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\kafka\\consumer",
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\course-service\\src\\main\\java\\com\\hoangphihiep\\kafka\\producer",
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\config",
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\resources"
+    ]
+  }
+}
