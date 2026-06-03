@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  ChevronDown,
+  ChevronRight,
   Download,
   FileText,
   Loader2,
@@ -14,11 +16,13 @@ import {
   type AttachmentResponse,
   type ChannelResponse,
   type CrossReviewScoreResponse,
+  type SessionGroupSubmissionsResponse,
 } from "@/types/chat.types";
 import {
   getChannelAttachments,
   getCrossReviewAttachments,
-  getMyCrossReview,
+  getMyCrossReviews,
+  getSessionSubmissions,
   submitCrossReview,
   uploadChannelFile,
 } from "@/services/api/workspace/channel.api";
@@ -36,6 +40,161 @@ const formatFileSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+// ─── Per-group review form ──────────────────────────────────────────────────
+
+interface GroupReviewFormProps {
+  reviewerChannelId: string;
+  group: SessionGroupSubmissionsResponse;
+  existing: CrossReviewScoreResponse | undefined;
+  onSaved: (saved: CrossReviewScoreResponse) => void;
+  isSelf?: boolean;
+}
+
+const GroupReviewForm = ({
+  reviewerChannelId,
+  group,
+  existing,
+  onSaved,
+  isSelf,
+}: GroupReviewFormProps) => {
+  const [score, setScore] = useState(existing?.score != null ? String(existing.score) : "");
+  const [comment, setComment] = useState(existing?.comment ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const handleSubmit = async () => {
+    const parsed = Number(score);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
+      toast.warn("Điểm phải là số trong khoảng 0 – 10");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const saved = await submitCrossReview(reviewerChannelId, {
+        reviewedChannelId: group.channelId,
+        score: parsed,
+        comment: comment.trim() || undefined,
+      });
+      onSaved(saved);
+      toast.success(`Đã gửi điểm cho ${group.channelName}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gửi điểm thất bại");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="rounded-md border border-gray-700 bg-gray-800/60 overflow-hidden">
+      {/* Header — collapse/expand */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-700/50"
+      >
+        <span className="text-gray-200 font-medium text-sm flex items-center gap-1.5">
+          {group.channelName}
+          {isSelf && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-800 text-indigo-200 font-normal">
+              Nhóm bạn
+            </span>
+          )}
+        </span>
+        <div className="flex items-center gap-2">
+          {existing && (
+            <span className="text-[11px] text-emerald-400">
+              Đã chấm {existing.score}/10
+            </span>
+          )}
+          {expanded ? (
+            <ChevronDown className="w-4 h-4 text-gray-400" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          )}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="px-3 pb-3 space-y-3 border-t border-gray-700">
+          {/* Files của nhóm này */}
+          {group.files.length === 0 ? (
+            <p className="text-xs text-gray-500 italic pt-2">Nhóm chưa nộp file nào.</p>
+          ) : (
+            <ul className="space-y-1 pt-2">
+              {group.files.map((f) => (
+                <li
+                  key={f.id}
+                  className="flex items-center justify-between gap-2 rounded bg-gray-900 px-2 py-1.5 border border-gray-700"
+                >
+                  <div className="min-w-0">
+                    <p className="text-gray-100 text-xs truncate" title={f.fileName}>
+                      {f.fileName}
+                    </p>
+                    <p className="text-[11px] text-gray-500">{formatFileSize(f.fileSize)}</p>
+                  </div>
+                  <a
+                    href={f.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white shrink-0"
+                    title="Tải xuống"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Form chấm điểm */}
+          <div className="space-y-2 pt-1">
+            <label className="block">
+              <span className="text-xs text-gray-400">Điểm (0 – 10)</span>
+              <input
+                type="number"
+                min={0}
+                max={10}
+                step={0.1}
+                value={score}
+                onChange={(e) => setScore(e.target.value)}
+                disabled={submitting}
+                className="mt-1 w-28 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs text-gray-400">Nhận xét</span>
+              <textarea
+                rows={2}
+                maxLength={2000}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                disabled={submitting}
+                placeholder="Góp ý cho nhóm…"
+                className="mt-1 w-full rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 resize-none"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting || score === ""}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white"
+            >
+              {submitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+              {existing ? "Cập nhật" : "Gửi điểm"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Main panel ─────────────────────────────────────────────────────────────
+
 const ChannelFilesPanel = ({
   isOpen,
   onClose,
@@ -43,15 +202,10 @@ const ChannelFilesPanel = ({
 }: ChannelFilesPanelProps) => {
   const [generalFiles, setGeneralFiles] = useState<AttachmentResponse[]>([]);
   const [submissionFiles, setSubmissionFiles] = useState<AttachmentResponse[]>([]);
-  const [crossReviewFiles, setCrossReviewFiles] = useState<AttachmentResponse[]>([]);
+  const [groupSubmissions, setGroupSubmissions] = useState<SessionGroupSubmissionsResponse[]>([]);
+  const [myReviews, setMyReviews] = useState<CrossReviewScoreResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadingCategory, setUploadingCategory] =
-    useState<AttachmentCategory | null>(null);
-  const [reviewScore, setReviewScore] = useState<string>("");
-  const [reviewComment, setReviewComment] = useState<string>("");
-  const [existingReview, setExistingReview] =
-    useState<CrossReviewScoreResponse | null>(null);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [uploadingCategory, setUploadingCategory] = useState<AttachmentCategory | null>(null);
   const generalInputRef = useRef<HTMLInputElement>(null);
   const submissionInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,10 +214,7 @@ const ChannelFilesPanel = ({
     channel.crossReviewDeadline,
     channel.allowCrossReview,
   );
-  const showCrossReview =
-    phase === ChannelPhase.REVIEW &&
-    Boolean(channel.allowCrossReview) &&
-    Boolean(channel.reviewTargetChannelId);
+  const showCrossReview = phase === ChannelPhase.REVIEW && Boolean(channel.allowCrossReview);
   const canUpload = phase === ChannelPhase.OPEN;
 
   useEffect(() => {
@@ -71,49 +222,44 @@ const ChannelFilesPanel = ({
     let cancelled = false;
     setIsLoading(true);
 
+    const loadSubmissions = channel.assignmentSessionId
+      ? getSessionSubmissions(channel.id)
+      : getChannelAttachments(channel.id, AttachmentCategory.SUBMISSION);
+
     const loaders: Array<Promise<unknown>> = [
       getChannelAttachments(channel.id, AttachmentCategory.GENERAL).then(
         (data) => !cancelled && setGeneralFiles(data ?? []),
       ),
-      getChannelAttachments(channel.id, AttachmentCategory.SUBMISSION).then(
+      loadSubmissions.then(
         (data) => !cancelled && setSubmissionFiles(data ?? []),
       ),
     ];
+
     if (showCrossReview) {
       loaders.push(
         getCrossReviewAttachments(channel.id).then(
-          (data) => !cancelled && setCrossReviewFiles(data ?? []),
+          (data) => !cancelled && setGroupSubmissions(data ?? []),
         ),
-        getMyCrossReview(channel.id).then((data) => {
-          if (cancelled) return;
-          setExistingReview(data);
-          setReviewScore(data?.score != null ? String(data.score) : "");
-          setReviewComment(data?.comment ?? "");
-        }),
+        getMyCrossReviews(channel.id).then(
+          (data) => !cancelled && setMyReviews(data ?? []),
+        ),
       );
     } else {
-      setCrossReviewFiles([]);
-      setExistingReview(null);
-      setReviewScore("");
-      setReviewComment("");
+      setGroupSubmissions([]);
+      setMyReviews([]);
     }
 
     Promise.allSettled(loaders).finally(() => {
       if (!cancelled) setIsLoading(false);
     });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [isOpen, channel.id, showCrossReview]);
 
   const handleUploadClick = (category: AttachmentCategory) => {
     if (!canUpload) return;
-    if (category === AttachmentCategory.GENERAL) {
-      generalInputRef.current?.click();
-    } else {
-      submissionInputRef.current?.click();
-    }
+    if (category === AttachmentCategory.GENERAL) generalInputRef.current?.click();
+    else submissionInputRef.current?.click();
   };
 
   const handleFilesSelected = async (
@@ -127,16 +273,17 @@ const ChannelFilesPanel = ({
     setUploadingCategory(category);
     try {
       await uploadChannelFile(channel.id, category, files);
-      const refreshed = await getChannelAttachments(channel.id, category);
       if (category === AttachmentCategory.GENERAL) {
+        const refreshed = await getChannelAttachments(channel.id, AttachmentCategory.GENERAL);
         setGeneralFiles(refreshed ?? []);
       } else {
+        const refreshed = channel.assignmentSessionId
+          ? await getSessionSubmissions(channel.id)
+          : await getChannelAttachments(channel.id, AttachmentCategory.SUBMISSION);
         setSubmissionFiles(refreshed ?? []);
       }
       toast.success(
-        category === AttachmentCategory.GENERAL
-          ? "Đã tải tài liệu chung"
-          : "Đã nộp bài",
+        category === AttachmentCategory.GENERAL ? "Đã tải tài liệu chung" : "Đã nộp bài",
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload thất bại");
@@ -145,29 +292,21 @@ const ChannelFilesPanel = ({
     }
   };
 
-  const handleSubmitReview = async () => {
-    const parsed = Number(reviewScore);
-    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
-      toast.warn("Điểm phải là số trong khoảng 0 – 10");
-      return;
-    }
-    setIsSubmittingReview(true);
-    try {
-      const saved = await submitCrossReview(channel.id, {
-        score: parsed,
-        comment: reviewComment.trim() || undefined,
-      });
-      setExistingReview(saved);
-      setReviewScore(String(saved.score));
-      setReviewComment(saved.comment ?? "");
-      toast.success("Đã gửi điểm chấm chéo");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Gửi điểm chấm chéo thất bại",
-      );
-    } finally {
-      setIsSubmittingReview(false);
-    }
+  // Build map reviewedChannelId → score để prefill từng form
+  const myReviewMap = Object.fromEntries(
+    myReviews.map((r) => [r.reviewedChannelId, r]),
+  );
+
+  const handleReviewSaved = (saved: CrossReviewScoreResponse) => {
+    setMyReviews((prev) => {
+      const idx = prev.findIndex((r) => r.reviewedChannelId === saved.reviewedChannelId);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = saved;
+        return next;
+      }
+      return [...prev, saved];
+    });
   };
 
   if (!isOpen) return null;
@@ -196,11 +335,7 @@ const ChannelFilesPanel = ({
           </h3>
           <p className="text-xs text-gray-400 mt-0.5">{channel.name}</p>
         </div>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-white"
-          title="Đóng"
-        >
+        <button onClick={onClose} className="text-gray-400 hover:text-white" title="Đóng">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -220,84 +355,48 @@ const ChannelFilesPanel = ({
               uploadLabel="Tải tài liệu"
               onUploadClick={() => handleUploadClick(AttachmentCategory.GENERAL)}
             />
+
             <FileSection
               title="Bài đã nộp"
               files={submissionFiles}
               showUpload={canUpload}
               uploading={uploadingCategory === AttachmentCategory.SUBMISSION}
               uploadLabel="Nộp bài"
-              onUploadClick={() =>
-                handleUploadClick(AttachmentCategory.SUBMISSION)
-              }
+              onUploadClick={() => handleUploadClick(AttachmentCategory.SUBMISSION)}
             />
+
             {showCrossReview && (
-              <>
-                <FileSection
-                  title="Bài cần chấm chéo"
-                  files={crossReviewFiles}
-                  emptyHint="Chưa có bài để chấm."
-                  showUpload={false}
-                />
-                <section className="rounded-md border border-gray-700 bg-gray-800/50 p-3 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-gray-200 font-medium">
-                      Nhận xét & chấm điểm
-                    </h4>
-                    {existingReview && (
-                      <span className="text-[11px] text-emerald-400">
-                        Đã nộp · có thể cập nhật
-                      </span>
-                    )}
+              <section>
+                <h4 className="text-gray-200 font-medium mb-2">
+                  Chấm bài ({groupSubmissions.length} nhóm)
+                </h4>
+                {groupSubmissions.length === 0 ? (
+                  <p className="text-xs text-gray-500 italic">
+                    Chưa có nhóm nào nộp bài trong session này.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {groupSubmissions.map((group) => (
+                      <GroupReviewForm
+                        key={group.channelId}
+                        reviewerChannelId={channel.id}
+                        group={group}
+                        existing={myReviewMap[group.channelId]}
+                        onSaved={handleReviewSaved}
+                        isSelf={group.channelId === channel.id}
+                      />
+                    ))}
                   </div>
-                  <label className="block">
-                    <span className="text-xs text-gray-400">
-                      Điểm (0 – 10)
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={10}
-                      step={0.1}
-                      value={reviewScore}
-                      onChange={(e) => setReviewScore(e.target.value)}
-                      disabled={isSubmittingReview}
-                      className="mt-1 w-32 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-xs text-gray-400">Nhận xét</span>
-                    <textarea
-                      rows={3}
-                      maxLength={2000}
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      disabled={isSubmittingReview}
-                      placeholder="Góp ý cho nhóm bạn chấm…"
-                      className="mt-1 w-full rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 resize-none"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleSubmitReview}
-                    disabled={isSubmittingReview || reviewScore === ""}
-                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white"
-                  >
-                    {isSubmittingReview ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                    {existingReview ? "Cập nhật điểm" : "Gửi điểm chấm chéo"}
-                  </button>
-                </section>
-              </>
+                )}
+              </section>
             )}
+
             {phase === ChannelPhase.LOCKED && (
               <div className="rounded-md border border-red-700 bg-red-950/40 px-3 py-2 text-red-300 text-xs">
                 Kênh đã hết hạn. Chỉ giảng viên còn quyền thao tác.
               </div>
             )}
-            {phase === ChannelPhase.REVIEW && !showCrossReview && (
+            {phase === ChannelPhase.REVIEW && !channel.allowCrossReview && (
               <div className="rounded-md border border-amber-700 bg-amber-950/40 px-3 py-2 text-amber-200 text-xs">
                 Đang trong giai đoạn chấm chéo — không thể nộp bài mới.
               </div>
@@ -308,6 +407,8 @@ const ChannelFilesPanel = ({
     </div>
   );
 };
+
+// ─── FileSection ─────────────────────────────────────────────────────────────
 
 interface FileSectionProps {
   title: string;
@@ -327,59 +428,55 @@ const FileSection = ({
   uploading,
   uploadLabel,
   onUploadClick,
-}: FileSectionProps) => {
-  return (
-    <section>
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-gray-200 font-medium">{title}</h4>
-        {showUpload && onUploadClick && (
-          <button
-            type="button"
-            onClick={onUploadClick}
-            disabled={uploading}
-            className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white"
-          >
-            {uploading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Upload className="w-3.5 h-3.5" />
-            )}
-            {uploadLabel ?? "Tải lên"}
-          </button>
-        )}
-      </div>
-      {files.length === 0 ? (
-        <p className="text-xs text-gray-500 italic">{emptyHint}</p>
-      ) : (
-        <ul className="space-y-2">
-          {files.map((f) => (
-            <li
-              key={f.id}
-              className="flex items-center justify-between gap-2 rounded-md bg-gray-800 px-3 py-2 border border-gray-700"
-            >
-              <div className="min-w-0">
-                <p className="text-gray-100 text-sm truncate" title={f.fileName}>
-                  {f.fileName}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {formatFileSize(f.fileSize)}
-                </p>
-              </div>
-              <a
-                href={f.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white"
-                title="Tải xuống"
-              >
-                <Download className="w-4 h-4" />
-              </a>
-            </li>
-          ))}
-        </ul>
+}: FileSectionProps) => (
+  <section>
+    <div className="flex items-center justify-between mb-2">
+      <h4 className="text-gray-200 font-medium">{title}</h4>
+      {showUpload && onUploadClick && (
+        <button
+          type="button"
+          onClick={onUploadClick}
+          disabled={uploading}
+          className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white"
+        >
+          {uploading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Upload className="w-3.5 h-3.5" />
+          )}
+          {uploadLabel ?? "Tải lên"}
+        </button>
       )}
-    </section>
-  );
-};
+    </div>
+    {files.length === 0 ? (
+      <p className="text-xs text-gray-500 italic">{emptyHint}</p>
+    ) : (
+      <ul className="space-y-2">
+        {files.map((f) => (
+          <li
+            key={f.id}
+            className="flex items-center justify-between gap-2 rounded-md bg-gray-800 px-3 py-2 border border-gray-700"
+          >
+            <div className="min-w-0">
+              <p className="text-gray-100 text-sm truncate" title={f.fileName}>
+                {f.fileName}
+              </p>
+              <p className="text-xs text-gray-400">{formatFileSize(f.fileSize)}</p>
+            </div>
+            <a
+              href={f.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white"
+              title="Tải xuống"
+            >
+              <Download className="w-4 h-4" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+);
 
 export default ChannelFilesPanel;

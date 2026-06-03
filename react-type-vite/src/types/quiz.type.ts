@@ -27,8 +27,8 @@ export interface QuizQuestionConfigDto {
 /** Body sent to POST /ai/quiz/generate/user (Spring proxies to Python /generate/user). */
 export interface GenerateQuizUserRequest {
   context: string;
-  /** Snake-case to match the Jackson @JsonProperty on the Java DTO. */
-  learning_outcomes: LearningOutcomeDto[];
+  /** Optional — empty array means AI uses the full context without outcome filtering. */
+  learning_outcomes?: LearningOutcomeDto[];
   questions: QuizQuestionConfigDto[];
   language?: string;
 }

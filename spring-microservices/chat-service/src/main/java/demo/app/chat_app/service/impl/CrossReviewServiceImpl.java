@@ -9,6 +9,7 @@ import demo.app.chat_app.model.workspace.Channel;
 import demo.app.chat_app.model.workspace.ChannelMember;
 import demo.app.chat_app.model.workspace.CrossReviewScore;
 import demo.app.chat_app.model.workspace.MemberStatus;
+import demo.app.chat_app.repository.AssignmentSessionRepository;
 import demo.app.chat_app.repository.ChannelMemberRepository;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.CrossReviewScoreRepository;
@@ -34,6 +35,7 @@ import java.util.List;
 public class CrossReviewServiceImpl implements CrossReviewService {
 
     ChannelRepository channelRepository;
+    AssignmentSessionRepository assignmentSessionRepository;
     ChannelMemberRepository channelMemberRepository;
     CrossReviewScoreRepository scoreRepository;
     NotificationRepository notificationRepository;
@@ -49,11 +51,20 @@ public class CrossReviewServiceImpl implements CrossReviewService {
         if (!reviewerChannel.isAllowCrossReview()) {
             throw new AppException(ErrorCode.CROSS_REVIEW_NOT_ALLOWED);
         }
-        String reviewedChannelId = reviewerChannel.getReviewTargetChannelId();
-        if (reviewedChannelId == null) {
+
+        String reviewedChannelId = request.getReviewedChannelId();
+
+        // Validate reviewed channel thuộc cùng AssignmentSession.
+        if (reviewerChannel.getAssignmentSessionId() == null) {
+            throw new AppException(ErrorCode.ASSIGNMENT_SESSION_NOT_FOUND);
+        }
+        boolean sameSession = assignmentSessionRepository
+                .findById(reviewerChannel.getAssignmentSessionId())
+                .map(s -> s.getChannelIds() != null && s.getChannelIds().contains(reviewedChannelId))
+                .orElse(false);
+        if (!sameSession) {
             throw new AppException(ErrorCode.NO_CROSS_REVIEW_TARGET);
         }
-
         // Chỉ cho phép chấm trong phase REVIEW.
         if (ChannelPhase.of(reviewerChannel, Instant.now()) != ChannelPhase.REVIEW) {
             throw new AppException(ErrorCode.CHANNEL_LOCKED);
@@ -104,16 +115,12 @@ public class CrossReviewServiceImpl implements CrossReviewService {
     }
 
     @Override
-    public CrossReviewScoreResponse getMyReview(String channelId) {
-        Channel reviewerChannel = channelRepository.findById(channelId)
+    public List<CrossReviewScoreResponse> getMyReviews(String channelId) {
+        channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-        String reviewedChannelId = reviewerChannel.getReviewTargetChannelId();
-        if (reviewedChannelId == null) {
-            return null;
-        }
-        return scoreRepository.findByReviewerChannelIdAndReviewedChannelId(channelId, reviewedChannelId)
+        return scoreRepository.findAllByReviewerChannelId(channelId).stream()
                 .map(this::toResponse)
-                .orElse(null);
+                .toList();
     }
 
     @Override

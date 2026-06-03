@@ -11,6 +11,9 @@ public interface CrossReviewScoreRepository extends MongoRepository<CrossReviewS
     Optional<CrossReviewScore> findByReviewerChannelIdAndReviewedChannelId(
             String reviewerChannelId, String reviewedChannelId);
 
+    /** Tất cả điểm mà nhóm reviewerChannelId đã nộp (nhiều nhóm bị chấm). */
+    List<CrossReviewScore> findAllByReviewerChannelId(String reviewerChannelId);
+
     /**
      * Hồ sơ chấm chéo của một sinh viên — mọi điểm mà bài của sinh viên này
      * đã nhận được từ các nhóm chấm chéo.

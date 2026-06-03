@@ -2,6 +2,8 @@
 spring:
   application:
     name: chat-service
+  jackson:
+    time-zone: Asia/Ho_Chi_Minh
   data:
     mongodb:
       uri: mongodb+srv://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@hackathon.n5sib2v.mongodb.net/workspace_db?retryWrites=true&w=majority&appName=Hackathon

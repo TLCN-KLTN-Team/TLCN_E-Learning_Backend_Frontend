@@ -20,6 +20,13 @@ public interface MessageAttachmentRepository extends MongoRepository<MessageAtta
     List<MessageAttachment> findByChannelId(String channelId);
 
     /**
+     * UC-41: list attachments thuộc tập messageIds và channelId, active only, mới nhất trước.
+     * Dùng cho panel "Bài đã nộp" — lấy từ session.submittedFileMessageIds + lọc theo channel.
+     */
+    List<MessageAttachment> findByMessageIdInAndChannelIdAndIsActiveTrueOrderByUploadedAtDesc(
+            Collection<String> messageIds, String channelId);
+
+    /**
      * UC-41: list attachments theo channel + category, chỉ những file còn active.
      * Dùng cho panel "Tài liệu chung" / "Bài đã nộp" / "Bài cần chấm chéo".
      */

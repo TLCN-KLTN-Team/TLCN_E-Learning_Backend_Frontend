@@ -154,6 +154,13 @@ public class Channel {
      */
 
     // ── UC-41: Bài tập nhóm ──────────────────────────────────────
+    private String assignmentSessionId;
+    /*
+     * ID của AssignmentSession mà channel này thuộc về.
+     * Được set khi tạo bulk-random channels; null với channel MAIN hoặc
+     * GROUP tạo thủ công không thuộc phiên làm bài nào.
+     */
+
     private Instant submissionDeadline;
     /*
      * Hạn nộp bài của nhóm (chỉ Channel GROUP làm bài tập mới set).
@@ -177,14 +184,8 @@ public class Channel {
     private boolean allowCrossReview = false;
     /*
      * Cờ bật chấm chéo. Set khi tạo channel GROUP qua bulk-random.
-     * Quyết định có 1 hay 2 deadline + có gán reviewTargetChannelId.
-     */
-
-    private String reviewTargetChannelId;
-    /*
-     * ID của Channel GROUP mà nhóm này được phân công chấm chéo.
-     * Gán một lần khi bulkRandomlyCreateChannels (vòng tròn A→B→C→…→A).
-     * Null khi allowCrossReview=false hoặc N<2 nhóm.
+     * Quyết định có 1 hay 2 deadline.
+     * Khi phase REVIEW, channel sẽ load tất cả bài nộp từ AssignmentSession.
      */
 
     private Instant submissionClosedAt;

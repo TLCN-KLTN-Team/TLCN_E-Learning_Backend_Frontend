@@ -1,5 +1,5 @@
 import { Upload, CheckCircle, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import QuizService from "@/services/api/teacher/quizApi";
 import "@/styles/ai-study-mode.css";
 
@@ -33,51 +33,72 @@ export default function DocumentUpload({
 }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  // Ref tracks latest summary value so stream appends after any user edits
+  const summaryRef = useRef(summary);
+
+  useEffect(() => {
+    summaryRef.current = summary;
+  }, [summary]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      try {
-        // Display file name immediately
-        onFileSelect(file.name);
-        setIsProcessing(true);
+    if (!file) return;
 
-        // Call API to get streaming response
-        const response = await QuizService.summarizeExtractionFile(file);
-        console.log("Response from API:", response);
+    try {
+      onFileSelect(file.name);
+      // Clear previous content and reset ref before streaming new file
+      onSummaryChange("");
+      summaryRef.current = "";
+      setIsProcessing(true);
 
-        if (!response || !response.body) {
-          throw new Error("Invalid response from server");
-        }
+      const response = await QuizService.summarizeExtractionFile(file);
+      console.log("Response from API:", response);
 
-        setIsProcessing(false);
-        setIsStreaming(true);
-
-        // Process streaming response
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let accumulatedText = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            setIsStreaming(false);
-            break;
-          }
-
-          // Decode the chunk and accumulate
-          const chunk = decoder.decode(value, { stream: true });
-          accumulatedText += chunk;
-
-          // Update UI with accumulated text
-          onSummaryChange(accumulatedText);
-        }
-      } catch (error) {
-        console.error("Error processing file:", error);
-        setIsProcessing(false);
-        setIsStreaming(false);
+      if (!response?.body) {
+        throw new Error("Invalid response from server");
       }
+
+      setIsProcessing(false);
+      setIsStreaming(true);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          setIsStreaming(false);
+          break;
+        }
+
+        // Normalize CRLF → LF so split("\n\n") works regardless of gateway
+        const rawText = decoder.decode(value, { stream: true });
+        buffer += rawText.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+        // SSE events are delimited by double newline
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+
+        for (const event of events) {
+          if (!event.trim()) continue;
+          for (const line of event.split("\n")) {
+            // Handle both "data: " (spec) and "data:" (no-space variant)
+            if (!line.startsWith("data:")) continue;
+            const chunk = line.startsWith("data: ") ? line.slice(6) : line.slice(5);
+            // Skip keepalive empty events and [DONE] sentinel
+            if (!chunk || chunk === "[DONE]") continue;
+            const newText = summaryRef.current + chunk;
+            summaryRef.current = newText;
+            onSummaryChange(newText);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error processing file:", error);
+      setIsProcessing(false);
+      setIsStreaming(false);
     }
   };
 
@@ -159,9 +180,11 @@ export default function DocumentUpload({
           <div className="relative">
             <textarea
               value={summary}
-              onChange={(e) => onSummaryChange(e.target.value)}
+              onChange={(e) => {
+                summaryRef.current = e.target.value;
+                onSummaryChange(e.target.value);
+              }}
               rows={textareaRows}
-              disabled={isStreaming}
               className={`w-full rounded-lg border-2 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 resize-y transition-all duration-300 ${
                 isStreaming
                   ? "border-primary/50 opacity-90"

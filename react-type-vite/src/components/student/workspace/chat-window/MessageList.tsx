@@ -34,15 +34,18 @@ const TimeSeparator = ({ date }: { date: Date }) => {
     const isSameYear = messageDate.getFullYear() === now.getFullYear();
     const isSameMonth = isSameYear && messageDate.getMonth() === now.getMonth();
 
+    const tz = "Asia/Ho_Chi_Minh";
     if (isToday) {
       return `Hôm nay lúc ${messageDate.toLocaleTimeString("vi-VN", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: tz,
       })}`;
     } else if (isYesterday) {
       return `Hôm qua lúc ${messageDate.toLocaleTimeString("vi-VN", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: tz,
       })}`;
     } else if (isSameMonth) {
       return messageDate.toLocaleDateString("vi-VN", {
@@ -50,17 +53,20 @@ const TimeSeparator = ({ date }: { date: Date }) => {
         month: "long",
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: tz,
       });
     } else if (isSameYear) {
       return messageDate.toLocaleDateString("vi-VN", {
         day: "numeric",
         month: "long",
+        timeZone: tz,
       });
     } else {
       return messageDate.toLocaleDateString("vi-VN", {
         day: "numeric",
         month: "long",
         year: "numeric",
+        timeZone: tz,
       });
     }
   };

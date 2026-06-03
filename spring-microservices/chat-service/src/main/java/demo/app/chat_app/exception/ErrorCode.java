@@ -66,6 +66,7 @@ public enum ErrorCode {
     SUBMISSION_DEADLINE_REQUIRED("CH_4009", "Hạn nộp bài là bắt buộc", HttpStatus.BAD_REQUEST),
     CROSS_REVIEW_NOT_MEMBER("CH_4010", "Bạn không thuộc nhóm chấm chéo này", HttpStatus.FORBIDDEN),
     CROSS_REVIEW_SCORE_INVALID("CH_4011", "Điểm phải nằm trong khoảng 0 – 10", HttpStatus.BAD_REQUEST),
+    ASSIGNMENT_SESSION_NOT_FOUND("CH_4012", "Không tìm thấy phiên làm bài tập", HttpStatus.NOT_FOUND),
 
     // Message Errors (MSG_xxxx)
     MESSAGE_NOT_FOUND("MSG_5001", "Không tìm thấy tin nhắn", HttpStatus.NOT_FOUND),

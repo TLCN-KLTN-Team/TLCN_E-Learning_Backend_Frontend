@@ -27,4 +27,10 @@ public class ChannelCreationRequest {
     private String crossReviewDeadline;
 
     private boolean allowCrossReview;
+
+    /**
+     * ID của AssignmentSession nếu channel này được tạo từ bulk-random.
+     * Null khi tạo kênh thủ công.
+     */
+    private String assignmentSessionId;
 }

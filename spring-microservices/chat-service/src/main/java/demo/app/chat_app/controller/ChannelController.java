@@ -148,24 +148,26 @@ public class ChannelController {
     }
 
     /**
-     * Channel mà channelId đang được phân công chấm chéo.
+     * UC-41: Lấy các file SUBMISSION được track trong AssignmentSession cho channel này.
+     * Dùng cho panel "Bài đã nộp" — load từ session.submittedFileMessageIds thay vì query trực tiếp theo category.
+     * Trả về empty list nếu channel không thuộc assignment session nào.
      */
-    @GetMapping("/{channelId}/cross-review-target")
-    public ApiResponse<BasicChannelResponse> getCrossReviewTarget(@PathVariable String channelId) {
-        return ApiResponse.<BasicChannelResponse>builder()
-                .result(channelService.getCrossReviewTarget(channelId))
-                .message("Cross-review target retrieved successfully")
+    @GetMapping("/{channelId}/session-submissions")
+    public ApiResponse<List<AttachmentResponse>> getSessionSubmissions(@PathVariable String channelId) {
+        return ApiResponse.<List<AttachmentResponse>>builder()
+                .result(attachmentService.listSessionSubmissionsForChannel(channelId))
+                .message("Session submissions retrieved successfully")
                 .build();
     }
 
     /**
-     * SUBMISSION attachments của channel đối tác — chỉ truy cập được trong phase REVIEW.
+     * UC-41: bài nộp của TẤT CẢ nhóm khác trong cùng AssignmentSession, gom theo nhóm.
+     * Chỉ truy cập được trong phase REVIEW. FE dùng để hiển thị bài của từng nhóm và cho điểm.
      */
     @GetMapping("/{channelId}/cross-review-attachments")
-    public ApiResponse<List<AttachmentResponse>> getCrossReviewAttachments(@PathVariable String channelId) {
-        List<AttachmentResponse> attachments = attachmentService.listSubmissionsForCrossReview(channelId);
-        return ApiResponse.<List<AttachmentResponse>>builder()
-                .result(attachments)
+    public ApiResponse<List<SessionGroupSubmissionsResponse>> getCrossReviewAttachments(@PathVariable String channelId) {
+        return ApiResponse.<List<SessionGroupSubmissionsResponse>>builder()
+                .result(attachmentService.listSubmissionsForCrossReview(channelId))
                 .message("Cross-review submissions retrieved successfully")
                 .build();
     }
@@ -214,13 +216,40 @@ public class ChannelController {
     }
 
     /**
-     * Lấy điểm mà nhóm này đã nộp (nếu có) — FE prefill form.
+     * Tất cả điểm nhóm này đã nộp trong session — FE dùng để prefill form theo từng nhóm.
      */
     @GetMapping("/{channelId}/cross-review/my-score")
-    public ApiResponse<CrossReviewScoreResponse> getMyCrossReview(@PathVariable String channelId) {
-        return ApiResponse.<CrossReviewScoreResponse>builder()
-                .result(crossReviewService.getMyReview(channelId))
-                .message("Cross-review score retrieved successfully")
+    public ApiResponse<List<CrossReviewScoreResponse>> getMyCrossReview(@PathVariable String channelId) {
+        return ApiResponse.<List<CrossReviewScoreResponse>>builder()
+                .result(crossReviewService.getMyReviews(channelId))
+                .message("Cross-review scores retrieved successfully")
+                .build();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // UC-41: Assignment Session — dùng khi chấm điểm tổng kết
+    // ══════════════════════════════════════════════════════════════════
+
+    /**
+     * Lấy thông tin một phiên làm bài (tất cả nhóm + trạng thái đã nộp).
+     * Giáo viên dùng endpoint này để tổng quan tiến độ và chấm điểm cuối kỳ.
+     */
+    @GetMapping("/sessions/{sessionId}")
+    public ApiResponse<AssignmentSessionResponse> getAssignmentSession(@PathVariable String sessionId) {
+        return ApiResponse.<AssignmentSessionResponse>builder()
+                .result(channelService.getAssignmentSession(sessionId))
+                .message("Assignment session retrieved successfully")
+                .build();
+    }
+
+    /**
+     * Lấy tất cả phiên làm bài thuộc một section.
+     */
+    @GetMapping("/sessions/section/{sectionId}")
+    public ApiResponse<List<AssignmentSessionResponse>> getSessionsBySection(@PathVariable String sectionId) {
+        return ApiResponse.<List<AssignmentSessionResponse>>builder()
+                .result(channelService.getAssignmentSessionsBySection(sectionId))
+                .message("Assignment sessions retrieved successfully")
                 .build();
     }
 }

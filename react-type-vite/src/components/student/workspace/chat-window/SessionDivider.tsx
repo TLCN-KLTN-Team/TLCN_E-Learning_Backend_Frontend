@@ -7,6 +7,7 @@ const SessionDivider = ({ timestamp }: SessionDividerProps) => {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
   });
 
   return (

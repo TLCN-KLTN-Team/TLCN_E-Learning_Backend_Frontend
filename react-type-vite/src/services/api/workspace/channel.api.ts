@@ -12,6 +12,7 @@ import type {
   CreateChannelRequest,
   CrossReviewScoreResponse,
   CrossReviewSubmitRequest,
+  SessionGroupSubmissionsResponse,
   UserResponse,
 } from "@/types/chat.types";
 
@@ -115,29 +116,16 @@ export const getChannelAttachments = async (
 };
 
 /**
- * Lấy channel mà nhóm này được phân công chấm chéo.
- * Throw nếu allowCrossReview=false hoặc chưa được pair.
- */
-export const getCrossReviewTarget = async (
-  channelId: string
-): Promise<BasicChannelResponse> => {
-  const response = await axiosInstance.get<ApiResponse<BasicChannelResponse>>(
-    `${CHANNEL_API_BASE_URL}/${channelId}/cross-review-target`
-  );
-  return response.data.result;
-};
-
-/**
- * Lấy SUBMISSION attachments của channel mà nhóm này được phân chấm.
+ * UC-41: lấy bài nộp của TẤT CẢ nhóm khác trong session, gom theo nhóm.
  * Chỉ truy cập được trong phase REVIEW.
  */
 export const getCrossReviewAttachments = async (
   channelId: string
-): Promise<AttachmentResponse[]> => {
-  const response = await axiosInstance.get<ApiResponse<AttachmentResponse[]>>(
+): Promise<SessionGroupSubmissionsResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<SessionGroupSubmissionsResponse[]>>(
     `${CHANNEL_API_BASE_URL}/${channelId}/cross-review-attachments`
   );
-  return response.data.result;
+  return response.data.result ?? [];
 };
 
 /**
@@ -188,16 +176,30 @@ export const submitCrossReview = async (
 };
 
 /**
- * Lấy bản chấm hiện tại của nhóm (nếu có) — để FE prefill form.
- * Trả về null khi nhóm chưa submit lần nào.
+ * UC-41: tất cả điểm nhóm này đã nộp trong session — FE prefill theo từng nhóm.
+ * Trả về [] nếu chưa submit lần nào.
  */
-export const getMyCrossReview = async (
+export const getMyCrossReviews = async (
   channelId: string,
-): Promise<CrossReviewScoreResponse | null> => {
-  const response = await axiosInstance.get<ApiResponse<CrossReviewScoreResponse | null>>(
+): Promise<CrossReviewScoreResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<CrossReviewScoreResponse[]>>(
     `${CHANNEL_API_BASE_URL}/${channelId}/cross-review/my-score`,
   );
-  return response.data.result;
+  return response.data.result ?? [];
+};
+
+/**
+ * UC-41: lấy các file SUBMISSION được track trong AssignmentSession của channel.
+ * Load từ session.submittedFileMessageIds, lọc theo channelId.
+ * Trả về [] nếu channel không thuộc session nào.
+ */
+export const getSessionSubmissions = async (
+  channelId: string,
+): Promise<AttachmentResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<AttachmentResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/session-submissions`,
+  );
+  return response.data.result ?? [];
 };
 
 export const uploadChannelFile = async (
@@ -217,6 +219,6 @@ export const uploadChannelFile = async (
   Array.from(files).forEach((f) => formData.append("files", f));
 
   await axiosInstance.post(`/server/files/upload-file-only`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: { "Content-Type": undefined },
   });
 };

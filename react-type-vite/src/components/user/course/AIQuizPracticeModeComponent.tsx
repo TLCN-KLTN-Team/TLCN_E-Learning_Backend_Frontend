@@ -12,7 +12,6 @@ import {
   Send,
   XCircle,
   AlertCircle,
-  Target,
   Wand2,
   ListChecks,
   CircleDot,
@@ -61,50 +60,36 @@ import { AppError } from "@/errors";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
 
-// Utility function to generate content-based hash ID
 function generateContentHash(content: string): string {
   let hash = 0;
   for (let i = 0; i < content.length; i++) {
     const char = content.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   return Math.abs(hash).toString(36);
 }
 
-// Generate unique ID based on flashcard content
 function generateFlashcardSetId(flashcards: UIFlashcard[]): string {
   const content = flashcards
     .map((card) => `${card.front}|${card.back}|${card.difficulty}`)
-    .sort() // Sort to ensure consistent ordering
+    .sort()
     .join("::");
-
-  const hash = generateContentHash(content);
-  return `fc_${hash}_${flashcards.length}`;
+  return `fc_${generateContentHash(content)}_${flashcards.length}`;
 }
 
-// Generate unique ID based on quiz content
 function generateQuizSetId(questions: QuizQuestion[]): string {
   const content = questions
     .map(
       (q) =>
         `${q.question}|${q.questionType}|${JSON.stringify(q.options || [])}`,
     )
-    .sort() // Sort to ensure consistent ordering
+    .sort()
     .join("::");
-
-  const hash = generateContentHash(content);
-  return `qz_${hash}_${questions.length}`;
+  return `qz_${generateContentHash(content)}_${questions.length}`;
 }
 
-interface LearningOutcome {
-  id: string;
-  chapterId: string;
-  title: string;
-  content: string;
-}
-
-interface OutcomeFlashcardConfig {
+interface FlashcardDifficultyConfig {
   easy: number;
   medium: number;
   hard: number;
@@ -126,11 +111,9 @@ export default function ReviewMain({
   const [mode, setMode] = useState<ReviewMode>("flashcard");
   const [generating, setGenerating] = useState(false);
 
-  // External info (uploaded document)
   const [uploadedFileName, setUploadedFileName] = useState("");
   const [externalInfo, setExternalInfo] = useState("");
 
-  // Internal info (chapter context)
   const internalInfoDefault = useMemo(
     () => getContextForChapters(chapters, selectedChapterIds),
     [chapters, selectedChapterIds],
@@ -140,53 +123,49 @@ export default function ReviewMain({
   >(null);
   const internalInfo = internalInfoOverride ?? internalInfoDefault;
 
-  // AI Study Mode state
-  const [showMergedPreview, setShowMergedPreview] = useState(false);
-  const [aiSubmitting, setAiSubmitting] = useState(false);
-  const [aiRequestId, setAiRequestId] = useState<string | null>(null);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [aiSuccess, setAiSuccess] = useState<AIStudySubmitResponse | null>(
-    null,
-  );
-
-  // Merged content for AI Study Mode
-  const mergedContent = useMemo(() => {
-    const parts: string[] = [];
-
-    if (internalInfo.trim()) {
-      parts.push("=== NỘI DUNG TỪ CÁC CHƯƠNG ===\n\n" + internalInfo);
-    }
-
-    if (externalInfo.trim()) {
-      parts.push("=== TÀI LIỆU BỔ SUNG ===\n\n" + externalInfo);
-    }
-
-    return parts.join("\n\n" + "=".repeat(50) + "\n\n");
-  }, [internalInfo, externalInfo]);
-
-  // Reset override when selection changes
+  // Reset override when chapter selection changes
   const [prevSelectedIds, setPrevSelectedIds] = useState(selectedChapterIds);
   if (prevSelectedIds !== selectedChapterIds) {
     setPrevSelectedIds(selectedChapterIds);
     setInternalInfoOverride(null);
   }
 
+  // AI Study Mode state
+  const [showMergedPreview, setShowMergedPreview] = useState(false);
+  const [aiSubmitting, setAiSubmitting] = useState(false);
+  const [aiRequestId, setAiRequestId] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSuccess, setAiSuccess] = useState<AIStudySubmitResponse | null>(null);
+
+  const mergedContent = useMemo(() => {
+    const parts: string[] = [];
+    if (internalInfo.trim()) {
+      parts.push("=== NỘI DUNG TỪ CÁC CHƯƠNG ===\n\n" + internalInfo);
+    }
+    if (externalInfo.trim()) {
+      parts.push("=== TÀI LIỆU BỔ SUNG ===\n\n" + externalInfo);
+    }
+    return parts.join("\n\n" + "=".repeat(50) + "\n\n");
+  }, [internalInfo, externalInfo]);
+
   // Flashcard state
   const [flashcards, setFlashcards] = useState<UIFlashcard[]>([]);
   const [editingFlashcards, setEditingFlashcards] = useState(false);
-  // Per-outcome flashcard configs (keyed by outcome id). Existence in this map
-  // means the outcome is checked.
-  const [outcomeConfigs, setOutcomeConfigs] = useState<
-    Record<string, OutcomeFlashcardConfig>
-  >({});
+  const [flashcardDifficultyConfig, setFlashcardDifficultyConfig] =
+    useState<FlashcardDifficultyConfig>({ easy: 5, medium: 3, hard: 2 });
+
+  const totalFlashcards = useMemo(
+    () =>
+      flashcardDifficultyConfig.easy +
+      flashcardDifficultyConfig.medium +
+      flashcardDifficultyConfig.hard,
+    [flashcardDifficultyConfig],
+  );
 
   // Quiz state
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<QuestionType[]>([]);
   const [quizConfig, setQuizConfig] = useState<QuizConfig>({});
-  // Per-quiz outcome selection (set of outcome ids). Mirrors the flashcard
-  // flow: pick CĐR -> pick question types -> set counts.
-  const [quizOutcomeIds, setQuizOutcomeIds] = useState<Set<string>>(new Set());
 
   const selectedChapterNames = useMemo(
     () =>
@@ -205,95 +184,9 @@ export default function ReviewMain({
     [quizConfig],
   );
 
-  // Learning outcomes (chuẩn đầu ra) derived from the selected chapters.
-  // One outcome per selected chapter; checking it pulls that chapter's
-  // content into the LLM prompt and exposes per-difficulty count controls.
-  const learningOutcomes = useMemo<LearningOutcome[]>(
-    () =>
-      chapters
-        .filter((c) => selectedChapterIds.includes(c.id))
-        .slice()
-        .sort((a, b) => a.order - b.order)
-        .map((chapter) => ({
-          id: `lo_${chapter.id}`,
-          chapterId: chapter.id,
-          title: chapter.title,
-          content: chapter.description,
-        })),
-    [chapters, selectedChapterIds],
-  );
-
-  // Reset outcome configs when the underlying outcome list changes (e.g. user
-  // (un)ticks chapters in the sidebar).
-  const outcomeIdsKey = learningOutcomes.map((o) => o.id).join("|");
-  const [prevOutcomeIdsKey, setPrevOutcomeIdsKey] = useState(outcomeIdsKey);
-  if (prevOutcomeIdsKey !== outcomeIdsKey) {
-    setPrevOutcomeIdsKey(outcomeIdsKey);
-    setOutcomeConfigs((prev) => {
-      const next: Record<string, OutcomeFlashcardConfig> = {};
-      for (const o of learningOutcomes) {
-        if (prev[o.id]) next[o.id] = prev[o.id];
-      }
-      return next;
-    });
-    setQuizOutcomeIds((prev) => {
-      const next = new Set<string>();
-      for (const o of learningOutcomes) {
-        if (prev.has(o.id)) next.add(o.id);
-      }
-      return next;
-    });
-  }
-
-  const checkedOutcomes = useMemo(
-    () => learningOutcomes.filter((o) => outcomeConfigs[o.id]),
-    [learningOutcomes, outcomeConfigs],
-  );
-
-  const totalFlashcards = useMemo(
-    () =>
-      Object.values(outcomeConfigs).reduce(
-        (sum, c) => sum + c.easy + c.medium + c.hard,
-        0,
-      ),
-    [outcomeConfigs],
-  );
-
-  const handleToggleOutcome = useCallback((outcomeId: string) => {
-    setOutcomeConfigs((prev) => {
-      const next = { ...prev };
-      if (next[outcomeId]) {
-        delete next[outcomeId];
-      } else {
-        next[outcomeId] = { easy: 3, medium: 2, hard: 0 };
-      }
-      return next;
-    });
-  }, []);
-
-  const handleOutcomeCountChange = useCallback(
-    (
-      outcomeId: string,
-      difficulty: keyof OutcomeFlashcardConfig,
-      count: number,
-    ) => {
-      setOutcomeConfigs((prev) => {
-        if (!prev[outcomeId]) return prev;
-        const clamped = Math.max(0, Math.min(30, count || 0));
-        return {
-          ...prev,
-          [outcomeId]: { ...prev[outcomeId], [difficulty]: clamped },
-        };
-      });
-    },
-    [],
-  );
-
   const handleGenerateFlashcards = useCallback(async () => {
-    if (checkedOutcomes.length === 0 || totalFlashcards === 0) {
-      setAiError(
-        "Vui lòng chọn ít nhất một chuẩn đầu ra và nhập số lượng thẻ.",
-      );
+    if (totalFlashcards === 0) {
+      setAiError("Vui lòng nhập số lượng thẻ cho ít nhất một độ khó.");
       return;
     }
 
@@ -301,40 +194,27 @@ export default function ReviewMain({
     setAiError(null);
 
     try {
-      // Build the internal document from the ticked outcomes only, so the LLM
-      // is fed exactly the content the user opted in to. Fall back to the
-      // override text (which may include user edits) when present.
-      const outcomeBased = checkedOutcomes
-        .map((o) => `=== ${o.title} ===\n\n${o.content}`)
-        .join("\n\n");
-      const internalDoc = internalInfoOverride ?? outcomeBased ?? internalInfo;
-
-      // Aggregate the per-outcome configs into a single cardsPerDifficulty
-      // payload that the Python backend already understands.
-      const totals = checkedOutcomes.reduce(
-        (acc, o) => {
-          const cfg = outcomeConfigs[o.id];
-          acc.easy += cfg.easy;
-          acc.medium += cfg.medium;
-          acc.hard += cfg.hard;
-          return acc;
-        },
-        { easy: 0, medium: 0, hard: 0 },
-      );
-
       const request: FlashCardRequest = {
-        internalDocument: internalDoc,
+        internalDocument: internalInfo,
         externalDocument: externalInfo || null,
         cardsPerDifficulty: [
-          { difficulty: DifficultyLevel.EASY, numberOfCards: totals.easy },
-          { difficulty: DifficultyLevel.MEDIUM, numberOfCards: totals.medium },
-          { difficulty: DifficultyLevel.HARD, numberOfCards: totals.hard },
+          {
+            difficulty: DifficultyLevel.EASY,
+            numberOfCards: flashcardDifficultyConfig.easy,
+          },
+          {
+            difficulty: DifficultyLevel.MEDIUM,
+            numberOfCards: flashcardDifficultyConfig.medium,
+          },
+          {
+            difficulty: DifficultyLevel.HARD,
+            numberOfCards: flashcardDifficultyConfig.hard,
+          },
         ].filter((c) => c.numberOfCards > 0),
         language: "vietnamese",
       };
 
       const response = await generateFlashcards(request);
-      console.log("Flashcards generated:", response);
 
       let idCounter = 0;
       const uiFlashcards = response.cards.map((card) =>
@@ -353,35 +233,9 @@ export default function ReviewMain({
     } finally {
       setGenerating(false);
     }
-  }, [
-    checkedOutcomes,
-    outcomeConfigs,
-    totalFlashcards,
-    internalInfo,
-    internalInfoOverride,
-    externalInfo,
-  ]);
-
-  // Outcomes whose content will feed the quiz prompt.
-  const checkedQuizOutcomes = useMemo(
-    () => learningOutcomes.filter((o) => quizOutcomeIds.has(o.id)),
-    [learningOutcomes, quizOutcomeIds],
-  );
-
-  const handleToggleQuizOutcome = useCallback((outcomeId: string) => {
-    setQuizOutcomeIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(outcomeId)) next.delete(outcomeId);
-      else next.add(outcomeId);
-      return next;
-    });
-  }, []);
+  }, [totalFlashcards, flashcardDifficultyConfig, internalInfo, externalInfo]);
 
   const handleGenerateQuiz = useCallback(async () => {
-    if (checkedQuizOutcomes.length === 0) {
-      setAiError("Vui lòng chọn ít nhất một chuẩn đầu ra.");
-      return;
-    }
     if (selectedTypes.length === 0) {
       setAiError("Vui lòng chọn ít nhất một loại câu hỏi.");
       return;
@@ -397,30 +251,18 @@ export default function ReviewMain({
     setGenerating(true);
 
     try {
-      // Build a context the LLM can read even if it ignores learning_outcomes —
-      // each CĐR is marked with its title so chunks remain attributable.
-      const outcomeContext = checkedQuizOutcomes
-        .map((o) => `=== ${o.title} ===\n\n${o.content ?? ""}`)
-        .join("\n\n");
       const context = externalInfo
-        ? `${outcomeContext}\n\n=== TÀI LIỆU BỔ SUNG ===\n\n${externalInfo}`
-        : outcomeContext;
+        ? `${internalInfo}\n\n=== TÀI LIỆU BỔ SUNG ===\n\n${externalInfo}`
+        : internalInfo;
 
       const payload: GenerateQuizUserRequest = {
         context,
-        learning_outcomes: checkedQuizOutcomes.map((o) => ({
-          id: o.id,
-          title: o.title,
-          content: o.content ?? "",
-          chapterId: o.chapterId,
-        })),
+        learning_outcomes: [],
         questions: selectedTypes.map((type) => {
           const cfg = quizConfig[type] || { EASY: 0, MEDIUM: 0, HARD: 0 };
           return {
             type,
-            numberOfQuestions: (
-              ["EASY", "MEDIUM", "HARD"] as Difficulty[]
-            )
+            numberOfQuestions: (["EASY", "MEDIUM", "HARD"] as Difficulty[])
               .map((d) => ({ difficulty: d, number: cfg[d] ?? 0 }))
               .filter((c) => c.number > 0),
           };
@@ -454,13 +296,7 @@ export default function ReviewMain({
     } finally {
       setGenerating(false);
     }
-  }, [
-    checkedQuizOutcomes,
-    externalInfo,
-    quizConfig,
-    selectedTypes,
-    totalQuizQuestions,
-  ]);
+  }, [externalInfo, internalInfo, quizConfig, selectedTypes, totalQuizQuestions]);
 
   const handleToggleType = useCallback((type: QuestionType) => {
     setSelectedTypes((prev) => {
@@ -579,15 +415,8 @@ export default function ReviewMain({
             : "Lưu bộ quiz thất bại. Vui lòng thử lại.";
       toast.error(message);
     }
-  }, [
-    quizQuestions,
-    selectedChapterNames,
-    user,
-    internalInfo,
-    externalInfo,
-  ]);
+  }, [quizQuestions, selectedChapterNames, user, internalInfo, externalInfo]);
 
-  // AI Study Mode handlers
   const handleSubmitToAI = useCallback(async () => {
     if (!mergedContent.trim()) {
       setAiError(
@@ -630,7 +459,6 @@ export default function ReviewMain({
 
   const handleCancelAIRequest = useCallback(async () => {
     if (!aiRequestId) return;
-
     try {
       await cancelAIStudyRequest(aiRequestId);
       setAiRequestId(null);
@@ -701,7 +529,7 @@ export default function ReviewMain({
           />
         )}
 
-        {/* Mode selector - NOW WITH 3 OPTIONS */}
+        {/* Mode selector */}
         {canGenerate && (
           <div className="ai-section-card space-y-4">
             <p className="text-sm font-medium text-muted-foreground">
@@ -771,12 +599,9 @@ export default function ReviewMain({
           </div>
         )}
 
-        {/* ============================================ */}
-        {/* AI STUDY MODE - NEW FEATURE */}
-        {/* ============================================ */}
+        {/* AI Study Mode */}
         {canGenerate && mode === "ai-study" && (
           <>
-            {/* Merged Content Preview */}
             <div className="ai-section-card space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -840,7 +665,6 @@ export default function ReviewMain({
               </div>
             </div>
 
-            {/* AI Submission Section */}
             <div className="ai-section-card space-y-4">
               <div className="flex items-center gap-2">
                 <div className="ai-header-icon">
@@ -856,7 +680,6 @@ export default function ReviewMain({
                 dựa trên các chương đã chọn và tài liệu bổ sung.
               </p>
 
-              {/* Error Display */}
               {aiError && (
                 <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
                   <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
@@ -864,9 +687,7 @@ export default function ReviewMain({
                     <p className="text-sm font-medium text-destructive">
                       Có lỗi xảy ra
                     </p>
-                    <p className="text-sm text-destructive/90 mt-1">
-                      {aiError}
-                    </p>
+                    <p className="text-sm text-destructive/90 mt-1">{aiError}</p>
                   </div>
                   <button
                     onClick={() => setAiError(null)}
@@ -877,7 +698,6 @@ export default function ReviewMain({
                 </div>
               )}
 
-              {/* Success Display */}
               {aiSuccess && (
                 <div className="ai-success-box">
                   <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
@@ -921,7 +741,6 @@ export default function ReviewMain({
                 </div>
               )}
 
-              {/* Submit Button */}
               <div className="flex gap-3">
                 <button
                   onClick={handleSubmitToAI}
@@ -954,142 +773,84 @@ export default function ReviewMain({
           </>
         )}
 
-        {/* Flashcard mode */}
+        {/* ==================== FLASHCARD MODE ==================== */}
         {canGenerate && mode === "flashcard" && (
           <>
+            {/* Difficulty config */}
             <div className="ai-section-card space-y-4">
               <div className="flex items-center gap-2">
                 <div className="ai-header-icon">
-                  <Target className="h-4 w-4" />
+                  <Wand2 className="h-4 w-4" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
-                    Chuẩn đầu ra của bộ Flashcards
+                    Số lượng thẻ theo độ khó
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    Tích chọn các chuẩn đầu ra để nội dung liên quan được nạp
-                    vào AI, sau đó cấu hình số lượng thẻ theo độ khó.
+                    Cấu hình số lượng flashcards AI sẽ tạo cho từng mức độ.
                   </p>
                 </div>
               </div>
 
-              {learningOutcomes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Chưa có chuẩn đầu ra nào — hãy chọn ít nhất một chương ở
-                  sidebar.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {learningOutcomes.map((outcome, idx) => {
-                    const cfg = outcomeConfigs[outcome.id];
-                    const isChecked = Boolean(cfg);
-                    return (
-                      <div
-                        key={outcome.id}
-                        className={`outcome-card ${isChecked ? "checked" : ""}`}
-                      >
-                        <label className="flex items-start gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleToggleOutcome(outcome.id)}
-                            className="mt-1 h-4 w-4 accent-teal-500 cursor-pointer"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="outcome-index">
-                                CĐR {idx + 1}
-                              </span>
-                              <p className="font-medium text-sm text-foreground truncate">
-                                {outcome.title}
-                              </p>
-                            </div>
-                            {outcome.content && (
-                              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                {outcome.content}
-                              </p>
-                            )}
-                          </div>
-                        </label>
+              <div className="quiz-difficulty-row">
+                {(
+                  [
+                    { key: "easy" as const, label: "Dễ", tone: "easy" },
+                    { key: "medium" as const, label: "Trung bình", tone: "medium" },
+                    { key: "hard" as const, label: "Khó", tone: "hard" },
+                  ]
+                ).map(({ key, label, tone }) => (
+                  <div key={key} className={`quiz-difficulty-cell tone-${tone}`}>
+                    <label className="quiz-difficulty-label">{label}</label>
+                    <select
+                      value={flashcardDifficultyConfig[key]}
+                      onChange={(e) =>
+                        setFlashcardDifficultyConfig((prev) => ({
+                          ...prev,
+                          [key]: parseInt(e.target.value, 10),
+                        }))
+                      }
+                      className="outcome-difficulty-select quiz-difficulty-select"
+                    >
+                      {Array.from({ length: 31 }).map((_, n) => (
+                        <option key={n} value={n}>
+                          {n} thẻ
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
 
-                        {isChecked && (
-                          <div className="outcome-config animate-ai-slide-up">
-                            {(
-                              [
-                                {
-                                  key: "easy" as const,
-                                  label: "Dễ",
-                                  tone: "easy",
-                                },
-                                {
-                                  key: "medium" as const,
-                                  label: "Trung bình",
-                                  tone: "medium",
-                                },
-                                {
-                                  key: "hard" as const,
-                                  label: "Khó",
-                                  tone: "hard",
-                                },
-                              ]
-                            ).map(({ key, label, tone }) => (
-                              <div
-                                key={key}
-                                className={`quiz-difficulty-cell tone-${tone}`}
-                              >
-                                <label className="quiz-difficulty-label">
-                                  {label}
-                                </label>
-                                <select
-                                  value={cfg[key]}
-                                  onChange={(e) =>
-                                    handleOutcomeCountChange(
-                                      outcome.id,
-                                      key,
-                                      parseInt(e.target.value, 10),
-                                    )
-                                  }
-                                  className="outcome-difficulty-select quiz-difficulty-select"
-                                >
-                                  {Array.from({ length: 11 }).map((_, n) => (
-                                    <option key={n} value={n}>
-                                      {n} thẻ
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {checkedOutcomes.length > 0 && (
-                    <div className="flex items-center justify-between pt-2 border-t border-border text-sm">
-                      <span className="text-muted-foreground">
-                        Đã chọn{" "}
-                        <span className="font-semibold text-foreground">
-                          {checkedOutcomes.length}
-                        </span>{" "}
-                        / {learningOutcomes.length} chuẩn đầu ra
-                      </span>
-                      <span className="ai-stat-value">
-                        Tổng {totalFlashcards} thẻ
-                      </span>
-                    </div>
-                  )}
+              {totalFlashcards > 0 && (
+                <div className="flex items-center justify-end pt-2 border-t border-border text-sm">
+                  <span className="ai-stat-value">Tổng {totalFlashcards} thẻ</span>
                 </div>
               )}
             </div>
 
+            {/* Error display for flashcard */}
+            {aiError && mode === "flashcard" && (
+              <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-destructive">
+                    Có lỗi xảy ra
+                  </p>
+                  <p className="text-sm text-destructive/90 mt-1">{aiError}</p>
+                </div>
+                <button
+                  onClick={() => setAiError(null)}
+                  className="text-destructive hover:text-destructive/80"
+                >
+                  <XCircle className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
             <button
               onClick={handleGenerateFlashcards}
-              disabled={
-                generating ||
-                checkedOutcomes.length === 0 ||
-                totalFlashcards === 0
-              }
+              disabled={generating || totalFlashcards === 0}
               className="w-full ai-button-primary"
             >
               {generating ? (
@@ -1126,8 +887,8 @@ export default function ReviewMain({
                     AI đang chế tạo flashcards của bạn...
                   </p>
                   <p className="flashcard-generating-subtitle">
-                    Đang phân tích nội dung và tinh chỉnh từng câu hỏi theo
-                    chuẩn đầu ra đã chọn.
+                    Đang phân tích nội dung và tinh chỉnh từng thẻ theo độ khó
+                    đã chọn.
                   </p>
                 </div>
                 <div className="flashcard-generating-bar">
@@ -1168,147 +929,60 @@ export default function ReviewMain({
           </>
         )}
 
-        {/* Quiz mode */}
+        {/* ==================== QUIZ MODE ==================== */}
         {canGenerate && mode === "quiz" && (
           <>
-            {/* Step 1: Pick learning outcomes (chuẩn đầu ra) for the quiz */}
+            {/* Step 1: Pick question types */}
             <div className="ai-section-card space-y-4">
               <div className="flex items-center gap-2">
                 <div className="ai-header-icon">
-                  <Target className="h-4 w-4" />
+                  <ListChecks className="h-4 w-4" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
-                    Chuẩn đầu ra của bộ Quiz
+                    Loại câu hỏi
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    Bước 1 — tích chọn các chuẩn đầu ra để nội dung tương ứng
-                    được nạp vào AI khi tạo quiz.
+                    Bước 1 — chọn các dạng câu hỏi bạn muốn AI tạo cho bộ quiz.
                   </p>
                 </div>
               </div>
 
-              {learningOutcomes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Chưa có chuẩn đầu ra nào — hãy chọn ít nhất một chương ở
-                  sidebar.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {learningOutcomes.map((outcome, idx) => {
-                    const isChecked = quizOutcomeIds.has(outcome.id);
-                    return (
-                      <div
-                        key={outcome.id}
-                        className={`outcome-card ${isChecked ? "checked" : ""}`}
-                      >
-                        <label className="flex items-start gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() =>
-                              handleToggleQuizOutcome(outcome.id)
-                            }
-                            className="mt-1 h-4 w-4 accent-teal-500 cursor-pointer"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="outcome-index">
-                                CĐR {idx + 1}
-                              </span>
-                              <p className="font-medium text-sm text-foreground truncate">
-                                {outcome.title}
-                              </p>
-                            </div>
-                            {outcome.content && (
-                              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                {outcome.content}
-                              </p>
-                            )}
-                          </div>
-                        </label>
-                      </div>
-                    );
-                  })}
-
-                  {checkedQuizOutcomes.length > 0 && (
-                    <div className="flex items-center justify-between pt-2 border-t border-border text-sm">
-                      <span className="text-muted-foreground">
-                        Đã chọn{" "}
-                        <span className="font-semibold text-foreground">
-                          {checkedQuizOutcomes.length}
-                        </span>{" "}
-                        / {learningOutcomes.length} chuẩn đầu ra
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(
+                  [
+                    { type: "SINGLE_CHOICE" as QuestionType, icon: CircleDot },
+                    {
+                      type: "MULTIPLE_CHOICE" as QuestionType,
+                      icon: CheckCheck,
+                    },
+                    { type: "TRUE_FALSE" as QuestionType, icon: ToggleLeft },
+                    {
+                      type: "FILL_IN_THE_BLANK" as QuestionType,
+                      icon: PenLine,
+                    },
+                  ]
+                ).map(({ type, icon: Icon }) => {
+                  const active = selectedTypes.includes(type);
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => handleToggleType(type)}
+                      className={`quiz-type-card ${active ? "selected" : ""}`}
+                    >
+                      <Icon className="quiz-type-icon" />
+                      <span className="quiz-type-label">
+                        {QUESTION_TYPE_LABELS[type]}
                       </span>
-                      <span className="ai-stat-value">
-                        Tổng {totalQuizQuestions} câu
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Step 2: Pick question types (only after at least one outcome is chosen) */}
-            {checkedQuizOutcomes.length > 0 && (
-              <div className="ai-section-card space-y-4 animate-ai-slide-up">
-                <div className="flex items-center gap-2">
-                  <div className="ai-header-icon">
-                    <ListChecks className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">
-                      Loại câu hỏi
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      Bước 2 — chọn các dạng câu hỏi bạn muốn AI tạo cho bộ
-                      quiz.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {(
-                    [
-                      {
-                        type: "SINGLE_CHOICE" as QuestionType,
-                        icon: CircleDot,
-                      },
-                      {
-                        type: "MULTIPLE_CHOICE" as QuestionType,
-                        icon: CheckCheck,
-                      },
-                      {
-                        type: "TRUE_FALSE" as QuestionType,
-                        icon: ToggleLeft,
-                      },
-                      {
-                        type: "FILL_IN_THE_BLANK" as QuestionType,
-                        icon: PenLine,
-                      },
-                    ]
-                  ).map(({ type, icon: Icon }) => {
-                    const active = selectedTypes.includes(type);
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => handleToggleType(type)}
-                        className={`quiz-type-card ${active ? "selected" : ""}`}
-                      >
-                        <Icon className="quiz-type-icon" />
-                        <span className="quiz-type-label">
-                          {QUESTION_TYPE_LABELS[type]}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Counts per (type, difficulty) — only once a type is picked */}
-            {checkedQuizOutcomes.length > 0 && selectedTypes.length > 0 && (
+            {/* Step 2: Counts per (type, difficulty) */}
+            {selectedTypes.length > 0 && (
               <div className="ai-section-card space-y-4 animate-ai-slide-up">
                 <div className="flex items-center gap-2">
                   <div className="ai-header-icon">
@@ -1319,8 +993,7 @@ export default function ReviewMain({
                       Số lượng câu hỏi theo độ khó
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      Bước 3 — cấu hình số câu hỏi cho từng loại / độ khó để
-                      tạo sinh.
+                      Bước 2 — cấu hình số câu hỏi cho từng loại / độ khó.
                     </p>
                   </div>
                 </div>
@@ -1387,7 +1060,34 @@ export default function ReviewMain({
                       </div>
                     );
                   })}
+
+                  {totalQuizQuestions > 0 && (
+                    <div className="flex items-center justify-end pt-2 border-t border-border text-sm">
+                      <span className="ai-stat-value">
+                        Tổng {totalQuizQuestions} câu
+                      </span>
+                    </div>
+                  )}
                 </div>
+              </div>
+            )}
+
+            {/* Error display for quiz */}
+            {aiError && mode === "quiz" && (
+              <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-destructive">
+                    Có lỗi xảy ra
+                  </p>
+                  <p className="text-sm text-destructive/90 mt-1">{aiError}</p>
+                </div>
+                <button
+                  onClick={() => setAiError(null)}
+                  className="text-destructive hover:text-destructive/80"
+                >
+                  <XCircle className="h-4 w-4" />
+                </button>
               </div>
             )}
 
@@ -1395,7 +1095,7 @@ export default function ReviewMain({
               onClick={handleGenerateQuiz}
               disabled={
                 generating ||
-                checkedQuizOutcomes.length === 0 ||
+                selectedTypes.length === 0 ||
                 totalQuizQuestions === 0
               }
               className="w-full ai-button-primary"
@@ -1434,8 +1134,8 @@ export default function ReviewMain({
                     AI đang chế tạo bộ quiz của bạn...
                   </p>
                   <p className="flashcard-generating-subtitle">
-                    Đang phân tích nội dung và sinh câu hỏi theo chuẩn đầu ra
-                    bạn đã chọn.
+                    Đang phân tích nội dung và sinh câu hỏi theo cấu hình đã
+                    chọn.
                   </p>
                 </div>
                 <div className="flashcard-generating-bar">
@@ -1453,7 +1153,6 @@ export default function ReviewMain({
             />
           </>
         )}
-
       </div>
     </main>
   );
