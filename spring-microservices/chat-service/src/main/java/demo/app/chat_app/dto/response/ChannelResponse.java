@@ -37,10 +37,10 @@ public class ChannelResponse {
     Instant createdAt;
 
     // ── UC-41 ────────────────────────────────────────────────────
+    String assignmentSessionId;
     Instant submissionDeadline;
     Instant crossReviewDeadline;
     boolean allowCrossReview;
-    String reviewTargetChannelId;
     Instant submissionClosedAt;
     Instant expiresAt;
     /**

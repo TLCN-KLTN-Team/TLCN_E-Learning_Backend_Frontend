@@ -144,14 +144,23 @@ public interface ChannelService {
     void submitPractices(String channelId);
 
     // ══════════════════════════════════════════════════════════════════
-    // UC-41: Cross-review
+    // UC-41: Assignment Session
     // ══════════════════════════════════════════════════════════════════
 
     /**
-     * Lấy channel mà channelId được phân công chấm chéo.
+     * Lấy thông tin một phiên làm bài tập, bao gồm danh sách tất cả các kênh nhóm
+     * và các kênh đã nộp bài. Dùng khi giáo viên muốn chấm điểm tổng kết.
      *
-     * @param channelId ID kênh hiện tại (kênh nhóm chấm)
-     * @return BasicChannelResponse của kênh nhóm cần chấm
+     * @param sessionId ID của AssignmentSession
+     * @return AssignmentSessionResponse với đầy đủ thông tin phiên + trạng thái nộp bài
      */
-    BasicChannelResponse getCrossReviewTarget(String channelId);
+    AssignmentSessionResponse getAssignmentSession(String sessionId);
+
+    /**
+     * Lấy tất cả phiên làm bài tập thuộc một section.
+     *
+     * @param sectionId ID của Section
+     * @return Danh sách AssignmentSessionResponse
+     */
+    List<AssignmentSessionResponse> getAssignmentSessionsBySection(String sectionId);
 }

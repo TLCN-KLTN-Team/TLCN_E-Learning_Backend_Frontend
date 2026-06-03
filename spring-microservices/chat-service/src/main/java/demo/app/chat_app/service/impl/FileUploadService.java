@@ -16,6 +16,8 @@ import demo.app.chat_app.model.workspace.ChannelMember;
 import demo.app.chat_app.model.workspace.ChannelRole;
 import demo.app.chat_app.model.workspace.ChatMessage;
 import demo.app.chat_app.model.workspace.MessageAttachment;
+import demo.app.chat_app.model.workspace.AssignmentSession;
+import demo.app.chat_app.repository.AssignmentSessionRepository;
 import demo.app.chat_app.repository.ChannelMemberRepository;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
@@ -49,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class FileUploadService {
     MessageAttachmentRepository messageAttachmentRepository;
+    AssignmentSessionRepository assignmentSessionRepository;
     CloudinaryService cloudinaryService;
     FileUtils fileUtils;
     ChatMessageService chatMessageService;
@@ -121,6 +124,11 @@ public class FileUploadService {
             chatMessage.setStatus(MessageStatus.SENT);
             chatMessage.setUpdatedDate(Instant.now());
             chatMessageRepository.save(chatMessage);
+
+            // UC-41: track SUBMISSION messageId trong AssignmentSession
+            if (effectiveCategory == AttachmentCategory.SUBMISSION && channel.getAssignmentSessionId() != null) {
+                trackSubmissionInSession(channel.getAssignmentSessionId(), chatMessage.getId());
+            }
 
             uploadStatusMap.put(chatMessage.getId(), "COMPLETED");
 
@@ -197,6 +205,11 @@ public class FileUploadService {
             chatMessage.setUpdatedDate(Instant.now());
 
             chatMessageRepository.save(chatMessage);
+
+            // UC-41: track SUBMISSION messageId trong AssignmentSession
+            if (effectiveCategory == AttachmentCategory.SUBMISSION && channel.getAssignmentSessionId() != null) {
+                trackSubmissionInSession(channel.getAssignmentSessionId(), chatMessage.getId());
+            }
 
             uploadStatusMap.put(chatMessage.getId(), "COMPLETED");
 
@@ -415,6 +428,26 @@ public class FileUploadService {
 
     public void clearUploadStatus(String messageId) {
         uploadStatusMap.remove(messageId);
+    }
+
+    /**
+     * UC-41: thêm messageId vào danh sách submittedFileMessageIds của session.
+     * Idempotent — không thêm trùng. Gọi sau khi lưu message SUBMISSION thành công.
+     */
+    private void trackSubmissionInSession(String sessionId, String messageId) {
+        assignmentSessionRepository.findById(sessionId).ifPresent(session -> {
+            List<String> ids = session.getSubmittedFileMessageIds();
+            if (ids == null) {
+                ids = new ArrayList<>();
+                session.setSubmittedFileMessageIds(ids);
+            }
+            if (!ids.contains(messageId)) {
+                ids.add(messageId);
+                session.setUpdatedAt(Instant.now());
+                assignmentSessionRepository.save(session);
+                log.info("UC-41: tracked submission messageId={} in session={}", messageId, sessionId);
+            }
+        });
     }
 
     private String getAuthTokenFromContext() {

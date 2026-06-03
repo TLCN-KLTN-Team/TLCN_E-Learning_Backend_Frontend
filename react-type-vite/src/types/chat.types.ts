@@ -112,10 +112,10 @@ export interface ChannelResponse {
   endTime?: number; // Unix timestamp in milliseconds, optional (legacy)
 
   // UC-41 (chỉ có với channel GROUP làm bài tập)
+  assignmentSessionId?: string | null;
   submissionDeadline?: string; // ISO instant
   crossReviewDeadline?: string; // ISO instant, null khi không bật chấm chéo
   allowCrossReview?: boolean;
-  reviewTargetChannelId?: string | null;
   submissionClosedAt?: string | null;
   expiresAt?: string;
   phase?: ChannelPhase;
@@ -187,8 +187,17 @@ export interface AttachmentResponse {
 
 // UC-41: payload submit form chấm chéo
 export interface CrossReviewSubmitRequest {
+  /** ID channel nhóm bị chấm — bắt buộc vì một channel chấm nhiều nhóm */
+  reviewedChannelId: string;
   score: number; // 0 - 10
   comment?: string;
+}
+
+/** UC-41: bài nộp của một nhóm trong session — trả về từ /cross-review-attachments */
+export interface SessionGroupSubmissionsResponse {
+  channelId: string;
+  channelName: string;
+  files: AttachmentResponse[];
 }
 
 export interface CrossReviewScoreResponse {

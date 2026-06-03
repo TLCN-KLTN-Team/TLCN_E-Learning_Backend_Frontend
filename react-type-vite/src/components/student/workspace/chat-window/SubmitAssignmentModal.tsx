@@ -41,6 +41,7 @@ const formatDeadline = (iso?: string | null): string => {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Ho_Chi_Minh",
   });
 };
 
@@ -91,6 +92,8 @@ const SubmitAssignmentModal = ({
     };
   }, [isOpen, channel.id]);
 
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) {
@@ -99,6 +102,17 @@ const SubmitAssignmentModal = ({
     }
     const picked = Array.from(files);
     e.target.value = "";
+
+    const oversized = picked.filter((f) => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      toast.error(
+        `File vượt quá 20MB: ${oversized.map((f) => f.name).join(", ")}`,
+      );
+      const valid = picked.filter((f) => f.size <= MAX_FILE_SIZE);
+      if (valid.length > 0) setPendingFiles((prev) => [...prev, ...valid]);
+      return;
+    }
+
     setPendingFiles((prev) => [...prev, ...picked]);
   };
 

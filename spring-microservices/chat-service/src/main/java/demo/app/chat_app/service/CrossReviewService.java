@@ -15,9 +15,10 @@ public interface CrossReviewService {
     CrossReviewScoreResponse submitReview(String channelId, CrossReviewSubmitRequest request);
 
     /**
-     * Điểm mà nhóm reviewerChannelId đã nộp (nếu có) — để FE prefill form.
+     * Tất cả điểm mà nhóm reviewerChannelId đã nộp trong session — FE dùng để
+     * prefill từng form chấm theo reviewedChannelId.
      */
-    CrossReviewScoreResponse getMyReview(String channelId);
+    List<CrossReviewScoreResponse> getMyReviews(String channelId);
 
     /**
      * Hồ sơ chấm chéo của một sinh viên — tất cả các lần bài của họ

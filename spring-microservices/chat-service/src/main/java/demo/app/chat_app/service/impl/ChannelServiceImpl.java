@@ -8,6 +8,7 @@ import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChannelMapper;
 import demo.app.chat_app.model.workspace.*;
+import demo.app.chat_app.repository.AssignmentSessionRepository;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.SectionRepository;
 import demo.app.chat_app.repository.WorkspaceRepository;
@@ -36,6 +37,7 @@ public class ChannelServiceImpl implements ChannelService {
     WorkspaceRepository workspaceRepository;
     SectionRepository sectionRepository;
     ChannelRepository channelRepository;
+    AssignmentSessionRepository assignmentSessionRepository;
     ChannelMemberService channelMemberService;
     ChannelMapper channelMapper;
     ChatMessageServiceImpl chatMessageService;
@@ -275,6 +277,7 @@ public class ChannelServiceImpl implements ChannelService {
                 .submissionDeadline(submissionDeadline)
                 .crossReviewDeadline(crossReviewDeadline)
                 .allowCrossReview(request.isAllowCrossReview())
+                .assignmentSessionId(request.getAssignmentSessionId())
                 .status(ChannelStatus.ACTIVE)
                 .build();
 
@@ -308,8 +311,9 @@ public class ChannelServiceImpl implements ChannelService {
         // Get list members from section
         Section section = sectionRepository.findById(request.getSectionId())
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
+        Workspace workspace = workspaceRepository.findById(section.getWorkspaceId())
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSPACE_NOT_EXISTED));
 
-        List<BasicChannelResponse> bulkChannelResponses = new ArrayList<>();
         // Randomly assign members to groups
         Map<Integer, List<String>> groupAssignments = randomlyAssignMembersToGroups(
                 new ArrayList<>(section.getSectionMembers()),
@@ -320,6 +324,25 @@ public class ChannelServiceImpl implements ChannelService {
             throw new AppException(ErrorCode.NOT_ENOUGH_GROUPS_FOR_CROSS_REVIEW);
         }
 
+        // Tạo AssignmentSession trước để lấy sessionId gắn vào từng channel
+        Instant now = Instant.now();
+        AssignmentSession session = AssignmentSession.builder()
+                .sectionId(section.getId())
+                .workspaceId(workspace.getId())
+                .name(request.getChannelName())
+                .description(request.getDescription())
+                .submissionDeadline(DateTimeUtils.parseIsoToInstant(request.getSubmissionDeadline()))
+                .crossReviewDeadline(request.isAllowCrossReview()
+                        ? DateTimeUtils.parseIsoToInstant(request.getCrossReviewDeadline()) : null)
+                .allowCrossReview(request.isAllowCrossReview())
+                .createdByUserId(workspace.getOwnerId())
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+        session = assignmentSessionRepository.save(session);
+        final String sessionId = session.getId();
+
+        List<BasicChannelResponse> bulkChannelResponses = new ArrayList<>();
         groupAssignments.forEach((groupNum, memberIds) -> {
             String channelName = String.format("%s - Nhóm %d", request.getChannelName(), groupNum);
             ChannelCreationRequest groupChannelRequest = ChannelCreationRequest.builder()
@@ -332,46 +355,34 @@ public class ChannelServiceImpl implements ChannelService {
                     .submissionDeadline(request.getSubmissionDeadline())
                     .crossReviewDeadline(request.getCrossReviewDeadline())
                     .allowCrossReview(request.isAllowCrossReview())
+                    .assignmentSessionId(sessionId)
                     .build();
             BasicChannelResponse channelResponse = this.createChannel(groupChannelRequest);
             bulkChannelResponses.add(channelResponse);
         });
 
-        // UC-41: gán cross-review target theo vòng tròn A→B→C→…→A
-        if (request.isAllowCrossReview() && bulkChannelResponses.size() >= 2) {
-            assignCircularCrossReviewTargets(bulkChannelResponses);
-        }
+        // Ghi danh sách channelIds vào session sau khi tất cả channel đã được tạo
+        List<String> channelIds = bulkChannelResponses.stream()
+                .map(BasicChannelResponse::getId)
+                .collect(Collectors.toList());
+        session.setChannelIds(channelIds);
+        session.setUpdatedAt(Instant.now());
+        assignmentSessionRepository.save(session);
+
+        log.info("UC-41: created AssignmentSession {} with {} channels for section {}",
+                sessionId, channelIds.size(), section.getId());
 
         return BulkRandomChannelResponse.builder()
+                .assignmentSessionId(sessionId)
                 .channels(bulkChannelResponses)
                 .build();
     }
 
     /**
-     * UC-41: gán reviewTargetChannelId theo vòng tròn.
-     * Shuffle ngẫu nhiên rồi nối A→B→C→…→A.
-     */
-    private void assignCircularCrossReviewTargets(List<BasicChannelResponse> bulkChannelResponses) {
-        List<String> channelIds = bulkChannelResponses.stream()
-                .map(BasicChannelResponse::getId)
-                .collect(Collectors.toCollection(ArrayList::new));
-        Map<String, String> pairing = buildCircularPairing(channelIds, new Random());
-
-        List<Channel> channels = channelRepository.findAllById(pairing.keySet());
-        for (Channel c : channels) {
-            c.setReviewTargetChannelId(pairing.get(c.getId()));
-        }
-        channelRepository.saveAll(channels);
-        log.info("UC-41: assigned circular cross-review for {} channels", pairing.size());
-    }
-
-    /**
-     * Pure helper: xếp danh sách channelIds thành một chu trình duy nhất
-     * A→B→C→…→A. Mỗi id chấm đúng 1 id khác, không tự chấm. Trả map
-     * sourceId → targetId.
-     *
-     * Tách ra static để unit test không cần Mongo/Spring context.
-     * Yêu cầu: channelIds.size() >= 2 (caller phải đảm bảo).
+     * UC-41: circular cross-review pairing.
+     * Shuffles the channel IDs using {@code rng}, then maps each id to the next
+     * one in the shuffled list (with wrap-around), forming exactly one cycle.
+     * Package-private + static so unit tests can call it without Spring context.
      */
     static Map<String, String> buildCircularPairing(List<String> channelIds, Random rng) {
         List<String> shuffled = new ArrayList<>(channelIds);
@@ -382,21 +393,6 @@ public class ChannelServiceImpl implements ChannelService {
             pairing.put(shuffled.get(i), shuffled.get((i + 1) % n));
         }
         return pairing;
-    }
-
-    @Override
-    public BasicChannelResponse getCrossReviewTarget(String channelId) {
-        Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-        if (!channel.isAllowCrossReview()) {
-            throw new AppException(ErrorCode.CROSS_REVIEW_NOT_ALLOWED);
-        }
-        if (channel.getReviewTargetChannelId() == null) {
-            throw new AppException(ErrorCode.NO_CROSS_REVIEW_TARGET);
-        }
-        Channel target = channelRepository.findById(channel.getReviewTargetChannelId())
-                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-        return channelMapper.toBasicChannelResponse(target);
     }
 
     private Map<Integer, List<String>> randomlyAssignMembersToGroups(List<String> memberIds, int membersPerGroup) {
@@ -525,6 +521,78 @@ public class ChannelServiceImpl implements ChannelService {
         }
         channelRepository.save(channel);
         log.info("UC-41: channel {} submitted early by member; new status = {}", channelId, channel.getStatus());
+
+        // Ghi nhận channel này đã nộp vào AssignmentSession (nếu thuộc phiên làm bài)
+        if (channel.getAssignmentSessionId() != null) {
+            assignmentSessionRepository.findById(channel.getAssignmentSessionId()).ifPresent(session -> {
+                if (!session.getSubmittedChannelIds().contains(channelId)) {
+                    session.getSubmittedChannelIds().add(channelId);
+                    session.setUpdatedAt(Instant.now());
+                    assignmentSessionRepository.save(session);
+                    log.info("UC-41: session {} updated — {}/{} channels submitted",
+                            session.getId(),
+                            session.getSubmittedChannelIds().size(),
+                            session.getChannelIds().size());
+                }
+            });
+        }
+    }
+
+    @Override
+    public AssignmentSessionResponse getAssignmentSession(String sessionId) {
+        AssignmentSession session = assignmentSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_SESSION_NOT_FOUND));
+
+        List<BasicChannelResponse> channelResponses = channelRepository.findAllById(session.getChannelIds())
+                .stream()
+                .map(channelMapper::toBasicChannelResponse)
+                .collect(Collectors.toList());
+
+        return AssignmentSessionResponse.builder()
+                .id(session.getId())
+                .sectionId(session.getSectionId())
+                .name(session.getName())
+                .description(session.getDescription())
+                .submissionDeadline(session.getSubmissionDeadline())
+                .crossReviewDeadline(session.getCrossReviewDeadline())
+                .allowCrossReview(session.isAllowCrossReview())
+                .channels(channelResponses)
+                .submittedChannelIds(session.getSubmittedChannelIds())
+                .totalChannels(session.getChannelIds().size())
+                .submittedCount(session.getSubmittedChannelIds().size())
+                .createdAt(session.getCreatedAt())
+                .build();
+    }
+
+    @Override
+    public List<AssignmentSessionResponse> getAssignmentSessionsBySection(String sectionId) {
+        sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
+
+        return assignmentSessionRepository.findAllBySectionId(sectionId).stream()
+                .map(session -> {
+                    List<BasicChannelResponse> channelResponses = channelRepository
+                            .findAllById(session.getChannelIds())
+                            .stream()
+                            .map(channelMapper::toBasicChannelResponse)
+                            .collect(Collectors.toList());
+
+                    return AssignmentSessionResponse.builder()
+                            .id(session.getId())
+                            .sectionId(session.getSectionId())
+                            .name(session.getName())
+                            .description(session.getDescription())
+                            .submissionDeadline(session.getSubmissionDeadline())
+                            .crossReviewDeadline(session.getCrossReviewDeadline())
+                            .allowCrossReview(session.isAllowCrossReview())
+                            .channels(channelResponses)
+                            .submittedChannelIds(session.getSubmittedChannelIds())
+                            .totalChannels(session.getChannelIds().size())
+                            .submittedCount(session.getSubmittedChannelIds().size())
+                            .createdAt(session.getCreatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
 }
