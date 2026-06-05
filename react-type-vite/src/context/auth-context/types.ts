@@ -44,4 +44,5 @@ export interface RegisterData {
   lastName: string;
   dob?: Date;
   agreeToTerms: boolean;
+  roles?: string[];
 }

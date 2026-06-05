@@ -20,6 +20,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -172,6 +173,65 @@ public class ChannelServiceImpl implements ChannelService {
         channelMemberService.addMembersToChannel(candidates, channel.getId());
         log.info("STUDENTS_ENROLLED done: section={} channel={} requested={} freshCandidates={}",
                 section.getId(), channel.getId(), userIds.size(), candidates.size());
+
+        // 3) Đồng bộ sinh viên vào general channel của workspace
+        syncStudentsToGeneralChannel(section.getWorkspaceId(), userIds, event.getStudents());
+    }
+
+    /**
+     * Đảm bảo tất cả sinh viên trong {@code userIds} đều là thành viên của general channel
+     * (kênh chung cấp workspace, isReadOnly=true). Idempotent — gọi nhiều lần an toàn.
+     *
+     * <p>General section được xác định bởi classId=null trong workspace. General channel
+     * là MAIN channel (isPublic=true) của general section đó.
+     */
+    private void syncStudentsToGeneralChannel(
+            String workspaceId,
+            List<String> userIds,
+            List<demo.app.chat_app.events.StudentInfo> studentInfos) {
+
+        Section generalSection = sectionRepository.findGeneralSectionByWorkspaceId(workspaceId)
+                .orElse(null);
+        if (generalSection == null) {
+            log.warn("syncStudentsToGeneralChannel: no general section for workspace={}", workspaceId);
+            return;
+        }
+
+        Channel generalChannel = channelRepository.findBySectionIdAndIsPublicTrue(generalSection.getId())
+                .orElse(null);
+        if (generalChannel == null) {
+            log.warn("syncStudentsToGeneralChannel: no general channel for section={}", generalSection.getId());
+            return;
+        }
+
+        // Thêm vào sectionMembers của general section (idempotent — entity.addMember dedup)
+        generalSection.addMembers(userIds);
+        sectionRepository.save(generalSection);
+
+        // Xây danh sách ChannelMember chỉ cho những sinh viên chưa ở trong general channel
+        Set<String> existingInGeneral = channelMemberService.getAllMembersInChannel(generalChannel.getId())
+                .stream()
+                .map(ChannelMember::getUserId)
+                .collect(Collectors.toSet());
+
+        List<ChannelMember> generalCandidates;
+        if (studentInfos != null && !studentInfos.isEmpty()) {
+            List<demo.app.chat_app.events.StudentInfo> fresh = studentInfos.stream()
+                    .filter(s -> s.getUserId() != null && !existingInGeneral.contains(s.getUserId()))
+                    .toList();
+            generalCandidates = channelMemberService.createChannelMembersFromStudentInfo(
+                    fresh, generalSection.getId(), generalChannel.getId());
+        } else {
+            List<String> freshIds = userIds.stream()
+                    .filter(id -> id != null && !existingInGeneral.contains(id))
+                    .toList();
+            generalCandidates = channelMemberService.createChannelMembersForNewParticipants(
+                    freshIds, generalSection.getId(), generalChannel.getId());
+        }
+
+        channelMemberService.addMembersToChannel(generalCandidates, generalChannel.getId());
+        log.info("syncStudentsToGeneralChannel workspace={} generalChannel={} added={}",
+                workspaceId, generalChannel.getId(), generalCandidates.size());
     }
 
     @Override
@@ -447,7 +507,19 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public List<BasicChannelResponse> getBasicChannels(String sectionId) {
-        List<Channel> channelList = channelRepository.findAllBySectionId(sectionId);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
+
+        boolean isTeacher = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_TEACHER"));
+
+        List<Channel> channelList;
+        if (isTeacher) {
+            channelList = channelRepository.findAllBySectionId(sectionId);
+        } else {
+            List<String> channelIds = channelMemberService.getChannelIdsForUserInSection(sectionId, userId);
+            channelList = channelRepository.findAllById(channelIds);
+        }
 
         return channelList.stream()
                 .map(channelMapper::toBasicChannelResponse)
@@ -559,6 +631,9 @@ public class ChannelServiceImpl implements ChannelService {
                 .channels(channelResponses)
                 .submittedChannelIds(session.getSubmittedChannelIds())
                 .totalChannels(session.getChannelIds().size())
+                .scoreCollectionStatus(session.getScoreCollectionStatus() != null ? session.getScoreCollectionStatus().name() : null)
+                .scoreCollectionError(session.getScoreCollectionError())
+                .scoreCollectedAt(session.getScoreCollectedAt())
                 .submittedCount(session.getSubmittedChannelIds().size())
                 .createdAt(session.getCreatedAt())
                 .build();
@@ -589,6 +664,9 @@ public class ChannelServiceImpl implements ChannelService {
                             .submittedChannelIds(session.getSubmittedChannelIds())
                             .totalChannels(session.getChannelIds().size())
                             .submittedCount(session.getSubmittedChannelIds().size())
+                            .scoreCollectionStatus(session.getScoreCollectionStatus() != null ? session.getScoreCollectionStatus().name() : null)
+                            .scoreCollectionError(session.getScoreCollectionError())
+                            .scoreCollectedAt(session.getScoreCollectedAt())
                             .createdAt(session.getCreatedAt())
                             .build();
                 })

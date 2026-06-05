@@ -61,4 +61,14 @@ public class AssignmentSession {
     String createdByUserId;
     Instant createdAt;
     Instant updatedAt;
+
+    /** Trạng thái thu thập điểm cuối sau khi crossReviewDeadline qua. */
+    @Builder.Default
+    ScoreCollectionStatus scoreCollectionStatus = ScoreCollectionStatus.PENDING;
+
+    /** Thời điểm thu thập điểm thành công. */
+    Instant scoreCollectedAt;
+
+    /** Thông báo lỗi lần thu thập gần nhất (null nếu thành công). */
+    String scoreCollectionError;
 }

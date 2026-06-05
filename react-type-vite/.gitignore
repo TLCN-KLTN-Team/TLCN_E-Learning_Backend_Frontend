@@ -31,3 +31,4 @@ dist-ssr
 # ignore .github
 .github/*
 .vercel
+.claude/*

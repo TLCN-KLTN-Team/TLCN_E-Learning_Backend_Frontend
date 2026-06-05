@@ -1,12 +1,15 @@
 package demo.app.chat_app.controller;
 
 import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
+import demo.app.chat_app.dto.request.CrossReviewBatchSubmitRequest;
 import demo.app.chat_app.dto.request.CrossReviewSubmitRequest;
 import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.model.enums.AttachmentCategory;
+import demo.app.chat_app.model.workspace.GroupFinalScore;
 import demo.app.chat_app.service.AttachmentService;
 import demo.app.chat_app.service.ChannelService;
 import demo.app.chat_app.service.CrossReviewService;
+import demo.app.chat_app.service.ScoreCollectionService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ public class ChannelController {
     ChannelService channelService;
     AttachmentService attachmentService;
     CrossReviewService crossReviewService;
+    ScoreCollectionService scoreCollectionService;
 
     @GetMapping("/{channelId}")
     public ApiResponse<ChannelResponse> getChannel(@PathVariable String channelId) {
@@ -226,6 +230,32 @@ public class ChannelController {
                 .build();
     }
 
+    /**
+     * UC-41 Batch: nhóm nộp toàn bộ điểm đã lưu cục bộ trong một lần ("Nộp bài chấm").
+     * Upsert CrossReviewScoreOfGroup + từng CrossReviewScore; bắn notification.
+     */
+    @PostMapping("/{channelId}/cross-review/batch-submit")
+    public ApiResponse<CrossReviewScoreOfGroupResponse> submitBatchCrossReview(
+            @PathVariable String channelId,
+            @Valid @RequestBody CrossReviewBatchSubmitRequest request) {
+        return ApiResponse.<CrossReviewScoreOfGroupResponse>builder()
+                .result(crossReviewService.submitBatchReview(channelId, request))
+                .message("Batch cross-review submitted successfully")
+                .build();
+    }
+
+    /**
+     * UC-41: Tính điểm cuối cùng của nhóm channelId theo thuật toán Median.
+     * Dành cho giảng viên hoặc hệ thống dùng sau khi phase REVIEW kết thúc.
+     */
+    @GetMapping("/{channelId}/cross-review/final-score")
+    public ApiResponse<FinalScoreResponse> getCrossReviewFinalScore(@PathVariable String channelId) {
+        return ApiResponse.<FinalScoreResponse>builder()
+                .result(crossReviewService.calculateFinalScore(channelId))
+                .message("Final score calculated successfully")
+                .build();
+    }
+
     // ══════════════════════════════════════════════════════════════════
     // UC-41: Assignment Session — dùng khi chấm điểm tổng kết
     // ══════════════════════════════════════════════════════════════════
@@ -250,6 +280,70 @@ public class ChannelController {
         return ApiResponse.<List<AssignmentSessionResponse>>builder()
                 .result(channelService.getAssignmentSessionsBySection(sectionId))
                 .message("Assignment sessions retrieved successfully")
+                .build();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // UC-41: Score collection — thu thập điểm cuối sau chấm chéo
+    // ══════════════════════════════════════════════════════════════════
+
+    /**
+     * Giáo viên retry thu thập điểm thủ công (khi auto-collect thất bại).
+     * Idempotent: nếu đã COLLECTED thì trả về kết quả cũ.
+     */
+    @PostMapping("/sessions/{sessionId}/collect-scores")
+    public ApiResponse<List<GroupFinalScoreResponse>> collectScores(@PathVariable String sessionId) {
+        List<GroupFinalScore> scores = scoreCollectionService.collectAndCalculate(sessionId);
+        List<GroupFinalScoreResponse> responses = scores.stream()
+                .map(this::toGroupFinalScoreResponse)
+                .toList();
+        return ApiResponse.<List<GroupFinalScoreResponse>>builder()
+                .result(responses)
+                .message("Scores collected successfully")
+                .build();
+    }
+
+    /**
+     * Lấy kết quả điểm cuối của một session (đọc từ GroupFinalScore đã lưu).
+     */
+    @GetMapping("/sessions/{sessionId}/scores")
+    public ApiResponse<List<GroupFinalScoreResponse>> getSessionScores(@PathVariable String sessionId) {
+        List<GroupFinalScore> scores = scoreCollectionService.getSessionScores(sessionId);
+        List<GroupFinalScoreResponse> responses = scores.stream()
+                .map(this::toGroupFinalScoreResponse)
+                .toList();
+        return ApiResponse.<List<GroupFinalScoreResponse>>builder()
+                .result(responses)
+                .message("Session scores retrieved successfully")
+                .build();
+    }
+
+    private GroupFinalScoreResponse toGroupFinalScoreResponse(GroupFinalScore s) {
+        List<GroupFinalScoreResponse.PeerScoreEntryResponse> peers = s.getPeerScores() == null
+                ? List.of()
+                : s.getPeerScores().stream()
+                        .map(p -> GroupFinalScoreResponse.PeerScoreEntryResponse.builder()
+                                .reviewerChannelId(p.getReviewerChannelId())
+                                .score(p.getScore())
+                                .comment(p.getComment())
+                                .submittedAt(p.getSubmittedAt())
+                                .build())
+                        .toList();
+        return GroupFinalScoreResponse.builder()
+                .id(s.getId())
+                .assignmentSessionId(s.getAssignmentSessionId())
+                .channelId(s.getChannelId())
+                .sectionId(s.getSectionId())
+                .peerScores(peers)
+                .selfScore(s.getSelfScore())
+                .medianPeerScore(s.getMedianPeerScore())
+                .finalScore(s.getFinalScore())
+                .usedSelfScore(s.isUsedSelfScore())
+                .reviewerCount(peers.size())
+                .memberUserIds(s.getMemberUserIds())
+                .status(s.getStatus() != null ? s.getStatus().name() : null)
+                .calculatedAt(s.getCalculatedAt())
+                .sentToLmsAt(s.getSentToLmsAt())
                 .build();
     }
 }

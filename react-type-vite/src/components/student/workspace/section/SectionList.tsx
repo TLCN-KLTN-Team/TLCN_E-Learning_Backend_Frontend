@@ -12,6 +12,7 @@ interface SectionListProps {
   onInvitePeople?: (channel: ChannelResponse) => void;
   onChannelSettings?: (channel: ChannelResponse) => void;
   onCreateChannel?: (sectionId: string) => void;
+  onManageSession?: (sectionId: string, sectionName: string) => void;
   expandedSections: Set<string>;
   onToggleSection: (sectionId: string) => void;
 }
@@ -23,6 +24,7 @@ const SectionList = ({
   onInvitePeople,
   onChannelSettings,
   onCreateChannel,
+  onManageSession,
   expandedSections,
   onToggleSection,
 }: SectionListProps) => {
@@ -37,6 +39,7 @@ const SectionList = ({
           onInvitePeople={onInvitePeople}
           onChannelSettings={onChannelSettings}
           onCreateChannel={onCreateChannel}
+          onManageSession={onManageSession}
           isExpanded={expandedSections.has(section.id)}
           onToggle={() => onToggleSection(section.id)}
         />

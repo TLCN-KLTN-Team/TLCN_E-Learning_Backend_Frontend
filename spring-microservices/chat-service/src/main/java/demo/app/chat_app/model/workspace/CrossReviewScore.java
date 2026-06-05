@@ -31,15 +31,20 @@ import java.util.List;
 @CompoundIndexes({
         @CompoundIndex(name = "reviewer_reviewed_unique",
                 def = "{'reviewerChannelId': 1, 'reviewedChannelId': 1}", unique = true),
-        @CompoundIndex(name = "reviewed_channel_idx", def = "{'reviewedChannelId': 1}")
+        @CompoundIndex(name = "reviewed_channel_idx", def = "{'reviewedChannelId': 1}"),
+        @CompoundIndex(name = "session_reviewed_idx",
+                def = "{'assignmentSessionId': 1, 'reviewedChannelId': 1}")
 })
 public class CrossReviewScore {
 
     @MongoId
     String id;
 
-    private String reviewerChannelId; // Channel của nhóm thực hiện chấm
-    private String reviewedChannelId; // Channel của nhóm bị chấm
+    private String reviewerChannelId;   // Channel của nhóm thực hiện chấm
+    private String reviewedChannelId;   // Channel của nhóm bị chấm
+
+    @Indexed
+    private String assignmentSessionId; // Session mà cặp chấm này thuộc về
 
     private String reviewerUserId;    // userId của thành viên submit form
     @Indexed

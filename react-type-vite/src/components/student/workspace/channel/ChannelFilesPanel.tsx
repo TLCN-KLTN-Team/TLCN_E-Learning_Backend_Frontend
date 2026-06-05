@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
+  CheckCircle2,
   Download,
   FileText,
   Loader2,
+  Save,
   Send,
   Upload,
   X,
@@ -23,7 +25,7 @@ import {
   getCrossReviewAttachments,
   getMyCrossReviews,
   getSessionSubmissions,
-  submitCrossReview,
+  submitBatchCrossReview,
   uploadChannelFile,
 } from "@/services/api/workspace/channel.api";
 import { derivePhase } from "@/utils/channelPhase";
@@ -42,47 +44,57 @@ const formatFileSize = (bytes: number): string => {
 
 // ─── Per-group review form ──────────────────────────────────────────────────
 
+interface LocalDraft {
+  score: string;
+  comment: string;
+}
+
 interface GroupReviewFormProps {
-  reviewerChannelId: string;
   group: SessionGroupSubmissionsResponse;
-  existing: CrossReviewScoreResponse | undefined;
-  onSaved: (saved: CrossReviewScoreResponse) => void;
+  /** Điểm đã nộp lên server (từ myReviews). */
+  submitted: CrossReviewScoreResponse | undefined;
+  /** Bản nháp đang lưu cục bộ (chưa nộp batch). */
+  draft: LocalDraft | undefined;
+  onDraftSave: (channelId: string, score: string, comment: string) => void;
   isSelf?: boolean;
 }
 
 const GroupReviewForm = ({
-  reviewerChannelId,
   group,
-  existing,
-  onSaved,
+  submitted,
+  draft,
+  onDraftSave,
   isSelf,
 }: GroupReviewFormProps) => {
-  const [score, setScore] = useState(existing?.score != null ? String(existing.score) : "");
-  const [comment, setComment] = useState(existing?.comment ?? "");
-  const [submitting, setSubmitting] = useState(false);
+  const [score, setScore] = useState(draft?.score ?? (submitted?.score != null ? String(submitted.score) : ""));
+  const [comment, setComment] = useState(draft?.comment ?? (submitted?.comment ?? ""));
+  const [savedLocally, setSavedLocally] = useState(!!draft);
   const [expanded, setExpanded] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleScoreChange = (v: string) => { setScore(v); setSavedLocally(false); };
+  const handleCommentChange = (v: string) => { setComment(v); setSavedLocally(false); };
+
+  const handleSaveLocally = () => {
     const parsed = Number(score);
     if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
       toast.warn("Điểm phải là số trong khoảng 0 – 10");
       return;
     }
-    setSubmitting(true);
-    try {
-      const saved = await submitCrossReview(reviewerChannelId, {
-        reviewedChannelId: group.channelId,
-        score: parsed,
-        comment: comment.trim() || undefined,
-      });
-      onSaved(saved);
-      toast.success(`Đã gửi điểm cho ${group.channelName}`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gửi điểm thất bại");
-    } finally {
-      setSubmitting(false);
-    }
+    onDraftSave(group.channelId, score, comment);
+    setSavedLocally(true);
+    toast.success(`Đã lưu điểm cho ${group.channelName} (chưa nộp)`);
   };
+
+  const hasDraft = draft !== undefined;
+  const headerBadge = hasDraft ? (
+    <span className="text-[11px] text-amber-400 flex items-center gap-1">
+      <CheckCircle2 className="w-3 h-3" /> Đã lưu {draft.score}/10
+    </span>
+  ) : submitted ? (
+    <span className="text-[11px] text-emerald-400">
+      Đã nộp {submitted.score}/10
+    </span>
+  ) : null;
 
   return (
     <div className="rounded-md border border-gray-700 bg-gray-800/60 overflow-hidden">
@@ -101,11 +113,7 @@ const GroupReviewForm = ({
           )}
         </span>
         <div className="flex items-center gap-2">
-          {existing && (
-            <span className="text-[11px] text-emerald-400">
-              Đã chấm {existing.score}/10
-            </span>
-          )}
+          {headerBadge}
           {expanded ? (
             <ChevronDown className="w-4 h-4 text-gray-400" />
           ) : (
@@ -156,8 +164,7 @@ const GroupReviewForm = ({
                 max={10}
                 step={0.1}
                 value={score}
-                onChange={(e) => setScore(e.target.value)}
-                disabled={submitting}
+                onChange={(e) => handleScoreChange(e.target.value)}
                 className="mt-1 w-28 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
               />
             </label>
@@ -167,24 +174,23 @@ const GroupReviewForm = ({
                 rows={2}
                 maxLength={2000}
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                disabled={submitting}
+                onChange={(e) => handleCommentChange(e.target.value)}
                 placeholder="Góp ý cho nhóm…"
                 className="mt-1 w-full rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 resize-none"
               />
             </label>
             <button
               type="button"
-              onClick={handleSubmit}
-              disabled={submitting || score === ""}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white"
+              onClick={handleSaveLocally}
+              disabled={score === ""}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded disabled:bg-gray-600 disabled:cursor-not-allowed text-white transition-colors ${
+                savedLocally
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-indigo-600 hover:bg-indigo-700"
+              }`}
             >
-              {submitting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Send className="w-3.5 h-3.5" />
-              )}
-              {existing ? "Cập nhật" : "Gửi điểm"}
+              <Save className="w-3.5 h-3.5" />
+              {savedLocally ? "Đã lưu" : "Lưu điểm"}
             </button>
           </div>
         </div>
@@ -204,6 +210,9 @@ const ChannelFilesPanel = ({
   const [submissionFiles, setSubmissionFiles] = useState<AttachmentResponse[]>([]);
   const [groupSubmissions, setGroupSubmissions] = useState<SessionGroupSubmissionsResponse[]>([]);
   const [myReviews, setMyReviews] = useState<CrossReviewScoreResponse[]>([]);
+  /** Bản nháp điểm lưu cục bộ: reviewedChannelId → {score, comment} */
+  const [draftScores, setDraftScores] = useState<Record<string, LocalDraft>>({});
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingCategory, setUploadingCategory] = useState<AttachmentCategory | null>(null);
   const generalInputRef = useRef<HTMLInputElement>(null);
@@ -292,21 +301,37 @@ const ChannelFilesPanel = ({
     }
   };
 
-  // Build map reviewedChannelId → score để prefill từng form
+  // Build map reviewedChannelId → submitted score để hiển thị badge "Đã nộp"
   const myReviewMap = Object.fromEntries(
     myReviews.map((r) => [r.reviewedChannelId, r]),
   );
 
-  const handleReviewSaved = (saved: CrossReviewScoreResponse) => {
-    setMyReviews((prev) => {
-      const idx = prev.findIndex((r) => r.reviewedChannelId === saved.reviewedChannelId);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = saved;
-        return next;
-      }
-      return [...prev, saved];
-    });
+  const handleDraftSave = (channelId: string, score: string, comment: string) => {
+    setDraftScores((prev) => ({ ...prev, [channelId]: { score, comment } }));
+  };
+
+  const draftCount = Object.keys(draftScores).length;
+
+  const handleBatchSubmit = async () => {
+    if (draftCount === 0) return;
+    setBatchSubmitting(true);
+    try {
+      const entries = Object.entries(draftScores).map(([reviewedChannelId, d]) => ({
+        reviewedChannelId,
+        score: Number(d.score),
+        comment: d.comment.trim() || undefined,
+      }));
+      await submitBatchCrossReview(channel.id, { entries });
+      // Reload điểm đã nộp từ server và xóa drafts
+      const refreshed = await getMyCrossReviews(channel.id);
+      setMyReviews(refreshed ?? []);
+      setDraftScores({});
+      toast.success(`Đã nộp bài chấm thành công (${entries.length} nhóm)`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nộp bài chấm thất bại");
+    } finally {
+      setBatchSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -376,18 +401,44 @@ const ChannelFilesPanel = ({
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {groupSubmissions.map((group) => (
+                    {groupSubmissions.map((g) => (
                       <GroupReviewForm
-                        key={group.channelId}
-                        reviewerChannelId={channel.id}
-                        group={group}
-                        existing={myReviewMap[group.channelId]}
-                        onSaved={handleReviewSaved}
-                        isSelf={group.channelId === channel.id}
+                        key={g.channelId}
+                        group={g}
+                        submitted={myReviewMap[g.channelId]}
+                        draft={draftScores[g.channelId]}
+                        onDraftSave={handleDraftSave}
+                        isSelf={g.channelId === channel.id}
                       />
                     ))}
                   </div>
                 )}
+
+                {/* Nút Nộp bài chấm */}
+                <div className="mt-4 pt-3 border-t border-gray-700">
+                  {draftCount > 0 && (
+                    <p className="text-xs text-amber-400 mb-2">
+                      {draftCount} nhóm đã được lưu điểm — nhấn "Nộp bài chấm" để gửi lên hệ thống.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleBatchSubmit}
+                    disabled={draftCount === 0 || batchSubmitting}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-md bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium transition-colors"
+                  >
+                    {batchSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    {batchSubmitting
+                      ? "Đang nộp…"
+                      : draftCount > 0
+                        ? `Nộp bài chấm (${draftCount} nhóm)`
+                        : "Nộp bài chấm"}
+                  </button>
+                </div>
               </section>
             )}
 

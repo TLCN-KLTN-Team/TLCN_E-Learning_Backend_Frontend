@@ -4,7 +4,14 @@
       "Bash(npm run *)",
       "Bash(ls e:/TLCN/TLCN_E-Learning/)",
       "Read(//e/TLCN/TLCN_E-Learning/**)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(xargs grep -l \"AssignmentSession\\\\|CrossReview\\\\|scoreCollection\\\\|collectScore\")",
+      "Bash(xargs grep -l \"ScoreCollectionStatus\\\\|CrossReviewScore\\\\|GroupFinalScore\")",
+      "Bash(xargs grep -l \"Scheduled\\\\|collectAndCalculate\\\\|ScoreCollectionService\")",
+      "Bash(xargs grep -l \"session\\\\|Session\")"
+    ],
+    "additionalDirectories": [
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\scheduler"
     ]
   }
 }

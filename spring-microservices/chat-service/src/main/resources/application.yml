@@ -62,11 +62,14 @@ services:
     url: ${SERVICES_IDENTITY_URL:http://localhost:8080/identity}
   notification:
     url: ${SERVICES_NOTIFICATION_URL:http://localhost:8092}
+  file:
+    url: ${SERVICES_FILE_URL:http://localhost:8084}
 
 kafka:
   topic:
     course-events: course-events
     class-events: class-events
+    score-events: score-events
 
 management:
   endpoints:
