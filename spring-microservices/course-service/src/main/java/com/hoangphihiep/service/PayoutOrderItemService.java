@@ -208,6 +208,7 @@ public class PayoutOrderItemService {
     @Transactional
     public void refundPayoutItems(Integer orderItemId) {
         List<PayoutOrderItem> payoutItems = payoutOrderItemRepository.findByOrderItemId(orderItemId);
+        LocalDateTime refundedAt = LocalDateTime.now();
 
         for (PayoutOrderItem item : payoutItems) {
             // Only reverse if not already reversed or settled
@@ -221,6 +222,7 @@ public class PayoutOrderItemService {
                 } else {
                     item.setStatus(PayoutOrderItemStatus.REVERSED);
                 }
+                item.setRefundedAt(refundedAt);
                 log.info("Reversed payout item {} (Recipient: {}) due to refund", item.getId(), item.getRecipientType());
             }
         }
@@ -261,5 +263,13 @@ public class PayoutOrderItemService {
 
     public List<AdminRevenueResponse> getAllAdminsRevenue() {
         return revenueService.getAllAdminsRevenue();
+    }
+
+    public List<TeacherRevenueResponse.CourseRevenueDetail> getAllCoursesRevenue() {
+        return revenueService.getAllCoursesRevenue();
+    }
+
+    public List<TeacherRevenueResponse.CourseRevenueDetail> getAllCoursesRevenueByRange(String startDate, String endDate) {
+        return revenueService.getAllCoursesRevenueByRange(startDate, endDate);
     }
 }

@@ -65,12 +65,12 @@ const EditCourseNavigationSidebar: React.FC<EditCourseNavigationSidebarProps> = 
   ]
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 p-6 h-screen sticky top-0 overflow-y-auto">
+    <aside className="w-72 bg-white border-r border-gray-200 p-6 h-screen sticky top-0 overflow-y-auto">
       {/* Logo/Header */}
       <div className="mb-8 pb-6 border-b border-gray-200">
         <div className="flex items-center gap-2 mb-2">
           <BookOpen className="w-6 h-6 text-blue-600" />
-          <h2 className="text-lg font-bold text-gray-900">Chỉnh Sửa Khóa Học</h2>
+          <h2 className="text-lg font-bold text-gray-900">Chỉnh sửa</h2>
         </div>
         <p className="text-sm text-gray-600 line-clamp-2">{courseData.courseName}</p>
       </div>

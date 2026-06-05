@@ -81,4 +81,7 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     Long countDistinctStudentsInPeriod(@Param("educationType") String educationType,
                                         @Param("startDate") Date startDate,
                                         @Param("endDate") Date endDate);
+
+    @Query("SELECT ce FROM CourseEnrollment ce WHERE ce.course.educationalUnit.id = :eduId ORDER BY ce.enrolledAt DESC")
+    Page<CourseEnrollment> findRecentByEducationalUnitId(@Param("eduId") Integer eduId, Pageable pageable);
 }

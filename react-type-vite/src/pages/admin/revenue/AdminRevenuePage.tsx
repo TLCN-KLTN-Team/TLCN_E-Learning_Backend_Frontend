@@ -40,47 +40,18 @@ import {
   type ChartGranularity,
 } from "@/utils/revenueUtils";
 
-interface AdminRevenueData {
-  totalRevenue: number;
-  totalAccrued: number;
-  totalSettled: number;
-  totalPending: number;
-  totalCourses: number;
-  totalTeachers: number;
-  totalStudents: number;
-  totalOrders: number;
-  totalRefundedOrders: number;
-  totalPartiallyRefundedOrders: number;
-  totalFullyRefundedOrders: number;
-  totalOrderItems: number;
-  totalRefundedItems: number;
-  sharePercentage: number;
-  educationalUnitName: string;
-  educationalUnitId: string;
-  teacherRevenueDetails: TeacherRevenueDetail[];
-  monthlyRevenueDetails: MonthlyRevenueDetail[];
-}
-
-interface TeacherRevenueDetail {
-  teacherId: string;
-  teacherName: string;
-  revenue: number;
-  courseCount: number;
-  studentCount: number;
-  averageRating: number;
-}
-
-interface MonthlyRevenueDetail {
-  month: string;
-  revenue: number;
-  orderCount: number;
+type RevenueChartPoint = {
+  period: string;
+  revenue?: number;
+  orderCount?: number;
   refundedOrders?: number;
-}
+};
 
 const AdminRevenuePage: React.FC = () => {
-  const [revenueData, setRevenueData] = useState<AdminRevenueData | null>(
+  const [revenueData, setRevenueData] = useState<AdminRevenueResponse | null>(
     null
   );
+  const [selectedChartPoint, setSelectedChartPoint] = useState<RevenueChartPoint | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [customStartDate, setCustomStartDate] = useState(
@@ -165,6 +136,7 @@ const AdminRevenuePage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setSelectedChartPoint(null);
 
       let response: AdminRevenueResponse;
 
@@ -180,20 +152,6 @@ const AdminRevenuePage: React.FC = () => {
         response = await getAdminRevenueByDateRange(startDate, endDate);
       }
 
-      console.log("=== ADMIN REVENUE DATA DEBUG ===");
-      console.log("Time range:", timeRange);
-      console.log("Full response:", response);
-      console.log("Teacher details:", response.teacherRevenueDetails);
-      console.log("Monthly details:", response.monthlyRevenueDetails);
-      console.log("Stats:", {
-        totalRevenue: response.totalRevenue,
-        totalAccrued: response.totalAccrued,
-        totalSettled: response.totalSettled,
-        totalTeachers: response.totalTeachers,
-        totalCourses: response.totalCourses,
-        totalStudents: response.totalStudents
-      });
-      console.log("===============================");
       setRevenueData(response);
     } catch (err) {
       handleError(err);
@@ -201,6 +159,13 @@ const AdminRevenuePage: React.FC = () => {
       console.error("Error fetching revenue data:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChartClick = (state: any) => {
+    const point = state?.activePayload?.[0]?.payload as RevenueChartPoint | undefined;
+    if (point) {
+      setSelectedChartPoint(point);
     }
   };
 
@@ -255,6 +220,13 @@ const AdminRevenuePage: React.FC = () => {
       </div>
     );
   }
+
+  const displayRevenue = Number(selectedChartPoint?.revenue ?? revenueData.totalRevenue);
+  const displayOrders = Number(selectedChartPoint?.orderCount ?? revenueData.totalOrders);
+  const displayRefundedOrders = Number(selectedChartPoint?.refundedOrders ?? revenueData.totalRefundedOrders ?? 0);
+  const selectedPeriodLabel = selectedChartPoint
+    ? formatChartLabel(selectedChartPoint.period, chartGranularity)
+    : null;
 
   return (
     <div className="space-y-6 p-6">
@@ -327,10 +299,10 @@ const AdminRevenuePage: React.FC = () => {
                 Tổng doanh thu đơn vị
               </p>
               <h3 className="text-2xl font-bold text-gray-900">
-                {formatShortCurrency(revenueData.totalRevenue)}
+                {formatShortCurrency(displayRevenue)}
               </h3>
               <p className="text-xs text-gray-500 mt-1">
-                {formatCurrency(revenueData.totalRevenue)}
+                {formatCurrency(displayRevenue)}
               </p>
               <p className="text-xs text-blue-600 mt-2">
                 {revenueData.sharePercentage}% chiết khấu từ hệ thống
@@ -397,6 +369,10 @@ const AdminRevenuePage: React.FC = () => {
                   <BookOpen className="w-4 h-4 inline mr-1" />
                   {revenueData.totalCourses} khóa học
                 </p>
+                <p className="text-sm text-gray-900">
+                  <DollarSign className="w-4 h-4 inline mr-1" />
+                  {displayOrders} đơn hàng
+                </p>
               </div>
             </div>
             <div className="bg-purple-100 p-3 rounded-lg">
@@ -419,11 +395,11 @@ const AdminRevenuePage: React.FC = () => {
                   Số đơn hoàn tiền
                 </p>
                 <p className="text-2xl font-bold text-red-600">
-                  {revenueData.totalRefundedOrders || 0}
+                  {displayRefundedOrders}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {revenueData.totalOrders > 0
-                    ? `${(((revenueData.totalRefundedOrders || 0) / revenueData.totalOrders) * 100).toFixed(1)}% tổng đơn hàng`
+                  {displayOrders > 0
+                    ? `${((displayRefundedOrders / displayOrders) * 100).toFixed(1)}% tổng đơn hàng`
                     : "0.0% tổng đơn hàng"}
                 </p>
               </div>
@@ -462,8 +438,20 @@ const AdminRevenuePage: React.FC = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           {getChartTitle(chartGranularity)}
         </h3>
+        {selectedPeriodLabel && (
+          <div className="mb-3 flex items-center gap-3 text-sm text-gray-600">
+            <span>Đang xem: <span className="font-medium text-gray-900">{selectedPeriodLabel}</span></span>
+            <button
+              type="button"
+              onClick={() => setSelectedChartPoint(null)}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              Xem tổng
+            </button>
+          </div>
+        )}
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={chartDataWithRefunds}>
+          <LineChart data={chartDataWithRefunds} onClick={handleChartClick}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="period"
@@ -550,7 +538,7 @@ const AdminRevenuePage: React.FC = () => {
                 "Doanh thu",
               ]}
             />
-            <Legend formatter={() => "Doanh thu giảng viên"} />
+            <Legend formatter={() => "Doanh thu đơn vị"} />
             <Bar
               dataKey="revenue"
               fill="#10b981"
@@ -584,7 +572,7 @@ const AdminRevenuePage: React.FC = () => {
                   Đánh giá
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Doanh thu giảng viên
+                  Doanh thu đơn vị
                 </th>
               </tr>
             </thead>

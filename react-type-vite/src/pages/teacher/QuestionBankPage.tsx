@@ -14,6 +14,8 @@ import {
   Tag,
   FileText,
   Upload,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react"
 import {
   getLibraryQuestions,
@@ -170,6 +172,11 @@ const QuestionBankPage: React.FC = () => {
     )
   }
 
+  const getSortedAnswers = (question: QuestionLibraryResponse) =>
+    [...(question.answers || [])].sort(
+      (a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0)
+    )
+
   return (
     <div className="flex-1 overflow-auto">
       <main className="container mx-auto px-4 py-8">
@@ -322,18 +329,26 @@ const QuestionBankPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {questions.map((question) => (
-              <div
-                key={question.id}
-                className="bg-card rounded-lg border p-4 hover:shadow-md transition-shadow"
-              >
+            {questions.map((question) => {
+              const answers = getSortedAnswers(question)
+              const correctAnswerCount = answers.filter((answer) => answer.isCorrect).length
+
+              return (
+                <div
+                  key={question.id}
+                  className="bg-card rounded-lg border p-4 hover:shadow-md transition-shadow"
+                >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="outline">{getQuestionTypeLabel(question.questionType)}</Badge>
                       {getDifficultyBadge(question.difficultyLevel)}
                       {question.cloCode && (
-                        <Badge className="bg-blue-100 text-blue-800">{question.cloCode}</Badge>
+                        <Badge className="bg-blue-100 text-blue-800">
+                          {question.courseName
+                            ? `${question.cloCode} - ${question.courseName}`
+                            : question.cloCode}
+                        </Badge>
                       )}
                       {question.score && (
                         <Badge variant="secondary">{question.score} điểm</Badge>
@@ -356,9 +371,36 @@ const QuestionBankPage: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="text-sm text-muted-foreground">
-                      {question.answers.length} đáp án •{" "}
-                      {question.answers.filter((a) => a.isCorrect).length} đáp án đúng
+                    {answers.length > 0 ? (
+                      <div className="mt-3 space-y-2">
+                        {answers.map((answer, index) => (
+                          <div
+                            key={answer.id || index}
+                            className={`flex items-center gap-2 rounded-md border p-2 text-sm ${
+                              answer.isCorrect
+                                ? "border-green-200 bg-green-50 text-green-900"
+                                : "border-gray-200 bg-gray-50 text-gray-700"
+                            }`}
+                          >
+                            {answer.isCorrect ? (
+                              <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                            )}
+                            <span className={answer.isCorrect ? "font-medium" : ""}>
+                              {answer.content}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        Chưa có đáp án
+                      </div>
+                    )}
+
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      {answers.length} đáp án • {correctAnswerCount} đáp án đúng
                     </div>
                   </div>
 
@@ -379,7 +421,8 @@ const QuestionBankPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
 

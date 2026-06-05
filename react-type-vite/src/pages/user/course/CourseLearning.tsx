@@ -2641,7 +2641,7 @@ const QuizContent: React.FC<{ quiz: QuizResponse }> = ({ quiz }) => {
               <p className="text-xl font-bold text-gray-900">
                 {loadingHistory
                   ? "..."
-                  : `${quizHistory.length}/${quiz.attemptLimit}`}{" "}
+                  : `${quizHistory.length}`}{" "}
                 lần
               </p>
             </div>

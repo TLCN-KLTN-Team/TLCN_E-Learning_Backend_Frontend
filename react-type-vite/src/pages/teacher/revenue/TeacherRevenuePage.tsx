@@ -20,7 +20,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { getTeacherRevenue, getTeacherRevenueByDateRange } from "@/services/api/teacher/revenueApi";
-import type { TeacherRevenueResponse, RefundDetail } from "@/services/api/response/revenueResponse";
+import type { TeacherRevenueResponse } from "@/services/api/response/revenueResponse";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import type { TimeRange } from "@/types/revenue.types";
 import { TIME_RANGE_OPTIONS } from "@/types/revenue.types";
@@ -38,43 +38,18 @@ import {
   type ChartGranularity,
 } from "@/utils/revenueUtils";
 
-interface TeacherRevenueData {
-  totalRevenue: number;
-  totalAccrued: number;
-  totalSettled: number;
-  totalPending: number;
-  totalReversed: number;
-  totalCoursesSold: number;
-  totalStudents: number;
-  totalOrders: number;
-  totalRefundedOrders: number;
-  sharePercentage: number;
-  courseRevenueDetails: CourseRevenueDetail[];
-  monthlyRevenueDetails: MonthlyRevenueDetail[];
-  refundDetails: RefundDetail[];
-}
-
-interface CourseRevenueDetail {
-  courseId: string;
-  courseName: string;
-  courseThumbnail: string;
-  revenue: number;
-  totalSales: number;
-  totalStudents: number;
-  averageRating: number;
-}
-
-interface MonthlyRevenueDetail {
-  month: string;
-  revenue: number;
-  orderCount: number;
+type RevenueChartPoint = {
+  period: string;
+  revenue?: number;
+  orderCount?: number;
   refundedOrders?: number;
-}
+};
 
 const TeacherRevenuePage: React.FC = () => {
-  const [revenueData, setRevenueData] = useState<TeacherRevenueData | null>(
+  const [revenueData, setRevenueData] = useState<TeacherRevenueResponse | null>(
     null
   );
+  const [selectedChartPoint, setSelectedChartPoint] = useState<RevenueChartPoint | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [customStartDate, setCustomStartDate] = useState(
@@ -148,38 +123,6 @@ const TeacherRevenuePage: React.FC = () => {
     );
   }, [revenueData, chartGranularity, timeRange, customStartDate, customEndDate, selectedMonth, selectedYear]);
 
-  const chartDataWithRefunds = useMemo(() => {
-    if (!transformedChartData.length) return [];
-
-    const refundsByPeriod = new Map<string, number>();
-
-    transformedChartData.forEach((item) => {
-      refundsByPeriod.set(item.period, item.refundedOrders || 0);
-    });
-
-    (revenueData?.refundDetails || []).forEach((refund) => {
-      if (!refund.refundedAt) return;
-      const date = new Date(refund.refundedAt);
-      if (Number.isNaN(date.getTime())) return;
-
-      const key =
-        chartGranularity === "day"
-          ? formatDateLocal(date)
-          : chartGranularity === "month"
-            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-            : `${date.getFullYear()}`;
-
-      if (refundsByPeriod.has(key)) {
-        refundsByPeriod.set(key, (refundsByPeriod.get(key) || 0) + 1);
-      }
-    });
-
-    return transformedChartData.map((item) => ({
-      ...item,
-      refundedOrders: refundsByPeriod.get(item.period) || 0,
-    }));
-  }, [transformedChartData, revenueData?.refundDetails, chartGranularity]);
-
   useEffect(() => {
     fetchRevenueData();
   }, [timeRange, customStartDate, customEndDate, selectedMonth, selectedYear]);
@@ -188,6 +131,7 @@ const TeacherRevenuePage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setSelectedChartPoint(null);
 
       let response: TeacherRevenueResponse;
 
@@ -203,12 +147,6 @@ const TeacherRevenuePage: React.FC = () => {
         response = await getTeacherRevenueByDateRange(startDate, endDate);
       }
 
-      console.log("=== REVENUE DATA DEBUG ===");
-      console.log("Time range:", timeRange);
-      console.log("Full response:", response);
-      console.log("Course details:", response.courseRevenueDetails);
-      console.log("Monthly details:", response.monthlyRevenueDetails);
-      console.log("========================");
       setRevenueData(response);
     } catch (err) {
       handleError(err);
@@ -216,6 +154,13 @@ const TeacherRevenuePage: React.FC = () => {
       console.error("Error fetching revenue data:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChartClick = (state: any) => {
+    const point = state?.activePayload?.[0]?.payload as RevenueChartPoint | undefined;
+    if (point) {
+      setSelectedChartPoint(point);
     }
   };
 
@@ -270,6 +215,13 @@ const TeacherRevenuePage: React.FC = () => {
       </div>
     );
   }
+
+  const displayRevenue = Number(selectedChartPoint?.revenue ?? revenueData.totalRevenue);
+  const displayOrders = Number(selectedChartPoint?.orderCount ?? revenueData.totalOrders);
+  const displayRefundedOrders = Number(selectedChartPoint?.refundedOrders ?? revenueData.totalRefundedOrders ?? 0);
+  const selectedPeriodLabel = selectedChartPoint
+    ? formatChartLabel(selectedChartPoint.period, chartGranularity)
+    : null;
 
   return (
     <div className="space-y-6 p-6">
@@ -340,10 +292,10 @@ const TeacherRevenuePage: React.FC = () => {
                 Tổng doanh thu
               </p>
               <h3 className="text-2xl font-bold text-gray-900">
-                {formatShortCurrency(revenueData.totalRevenue)}
+                {formatShortCurrency(displayRevenue)}
               </h3>
               <p className="text-xs text-gray-500 mt-1">
-                {formatCurrency(revenueData.totalRevenue)}
+                {formatCurrency(displayRevenue)}
               </p>
               <p className="text-xs text-green-600 mt-2">
                 {revenueData.sharePercentage}% của tổng giá trị khóa học
@@ -403,7 +355,7 @@ const TeacherRevenuePage: React.FC = () => {
                 {revenueData.totalStudents}
               </h3>
               <p className="text-xs text-gray-500 mt-1">
-                {revenueData.totalOrders} đơn hàng
+                {displayOrders} đơn hàng
               </p>
             </div>
             <div className="bg-purple-100 p-3 rounded-lg">
@@ -437,11 +389,11 @@ const TeacherRevenuePage: React.FC = () => {
                   Số đơn hàng hoàn tiền
                 </p>
                 <p className="text-2xl font-bold text-red-600">
-                  {revenueData.totalRefundedOrders || 0}
+                  {displayRefundedOrders}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {revenueData.totalOrders > 0
-                    ? `${(((revenueData.totalRefundedOrders || 0) / revenueData.totalOrders) * 100).toFixed(1)}% tổng đơn hàng`
+                  {displayOrders > 0
+                    ? `${((displayRefundedOrders / displayOrders) * 100).toFixed(1)}% tổng đơn hàng`
                     : "0.0% tổng đơn hàng"}
                 </p>
               </div>
@@ -458,8 +410,20 @@ const TeacherRevenuePage: React.FC = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           {getChartTitle(chartGranularity)}
         </h3>
+        {selectedPeriodLabel && (
+          <div className="mb-3 flex items-center gap-3 text-sm text-gray-600">
+            <span>Đang xem: <span className="font-medium text-gray-900">{selectedPeriodLabel}</span></span>
+            <button
+              type="button"
+              onClick={() => setSelectedChartPoint(null)}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              Xem tổng
+            </button>
+          </div>
+        )}
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={chartDataWithRefunds}>
+          <LineChart data={transformedChartData} onClick={handleChartClick}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="period"

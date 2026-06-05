@@ -154,12 +154,18 @@ const CourseRevenueTab: React.FC = () => {
         )}
       </div>
 
-      {/* Top Courses */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Top 5 Khóa học có doanh thu cao nhất
-        </h3>
-        <div className="space-y-4">
+      {coursesData.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          Không có dữ liệu
+        </div>
+      ) : (
+        <>
+          {/* Top Courses */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Top 5 Khóa học có doanh thu cao nhất
+            </h3>
+            <div className="space-y-4">
           {topCourses.slice(0, 5).map((course, index) => (
             <div
               key={course.courseId}
@@ -315,6 +321,8 @@ const CourseRevenueTab: React.FC = () => {
           </table>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };

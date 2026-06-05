@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @Repository
@@ -39,4 +41,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
     List<OrderItem> findAllByCourse_Course_IdTeacher(@Param("teacherId") String teacherId);
 
     List<OrderItem> findByPaymentStatus(com.hoangphihiep.utils.PaymentStatus paymentStatus);
+
+    @Query("SELECT oi FROM OrderItem oi WHERE oi.course.course.educationalUnit.id = :eduId AND oi.order.orderStatus = 'COMPLETED' AND oi.paymentStatus = 'PAID' ORDER BY oi.order.orderDate DESC")
+    Page<OrderItem> findRecentByEducationalUnitId(@Param("eduId") Integer eduId, Pageable pageable);
 }

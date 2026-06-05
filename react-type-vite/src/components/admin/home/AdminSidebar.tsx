@@ -3,206 +3,94 @@
 import {
   GraduationCap,
   Home,
-
   Users,
-  Package,
   DollarSign,
-  Settings,
-  ChevronDown,
   LogOut,
-  Globe,
+  Building2,
   X,
-  Building2
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
 import "../../../styles/admin.css";
-import { Button } from '@/components/ui/button';
-import logo from '@/assets/open-edu-light.png';
+import { useAuth } from "@/context/auth-context/useAuth";
 import { getAuthInfo } from "@/utils/auth.utils";
+import openEduIcon from "@/assets/open-edu-dark.png";
 
 interface AdminSidebarProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-interface MenuItem {
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  path?: string;
-  children?: {
-    id: string;
-    label: string;
-    path: string;
-    badge?: string;
-  }[];
-}
+const rawGroups = [
+  {
+    group: "Tổng quan",
+    items: [
+      { id: "dashboard", name: "Bảng điều khiển", icon: Home, path: "/admin" },
+    ]
+  },
+  {
+    group: "Người dùng",
+    items: [
+      { id: "students", name: "Sinh viên", icon: GraduationCap, path: "/admin/students" },
+      { id: "instructors", name: "Giảng viên", icon: Users, path: "/admin/instructors" },
+      { id: "experts", name: "Chuyên Gia", icon: Users, path: "/admin/experts" },
+    ]
+  },
+  {
+    group: "Đào tạo",
+    items: [
+      { id: "departments", name: "Khoa", icon: Building2, path: "/admin/departments" },
+    ]
+  },
+  {
+    group: "Tài chính",
+    items: [
+      { id: "earnings", name: "Doanh thu", icon: DollarSign, path: "/admin/revenue" },
+    ]
+  }
+];
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
+  collapsed,
+  onToggleCollapse
 }) => {
   const location = useLocation();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const { logout } = useAuth();
   const authInfo = getAuthInfo();
   const role = authInfo?.role;
 
-  // Debug logging
-  console.log("AdminSidebar render:", { isSidebarOpen, currentPath: location.pathname });
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    logout();
+    toast.success("Đăng xuất thành công!");
+  };
 
-  let menuItems: MenuItem[] = [
-    {
-      id: "dashboard",
-      label: "Bảng điều khiển",
-      icon: Home,
-      path: "/admin", // Full path for dashboard
-    },
-
-    {
-      id: "students",
-      label: "Sinh viên",
-      icon: GraduationCap,
-      path: "/admin/students", // Full path
-    },
-    {
-      id: "instructors",
-      label: "Giảng viên",
-      icon: Users,
-      path: "/admin/instructors", // Full path
-    },
-    {
-      id: "experts",
-      label: "Chuyên Gia",
-      icon: Users,
-      path: "/admin/experts", // Full path
-    },
-    {
-      id: "departments",
-      label: "Khoa",
-      icon: Building2, // Import from lucide-react
-      path: "/admin/departments",
-    },
-    {
-      id: "published-courses",
-      label: "Duyệt Khóa Học Thương Mại",
-      icon: Package, // Import from lucide-react
-      path: "/expert/published-courses",
-    },
-    {
-      id: "earnings",
-      label: "Doanh thu",
-      icon: DollarSign,
-      path: "/admin/revenue",
-    },
-  ];
-
-  if (role === 'EXPERT') {
-    // Expert only sees 'published-courses'
-    menuItems = menuItems.filter(item => item.id === 'published-courses');
-  } else if (role === 'ADMIN') {
-    // Admin sees everything EXCEPT 'published-courses' (transferred to Expert)
-    menuItems = menuItems.filter(item => item.id !== 'published-courses');
-  }
+  const groupedMenuItems = rawGroups.map(group => {
+    let filteredItems = group.items;
+    if (role === 'EXPERT') {
+      filteredItems = filteredItems.filter(item => item.id === 'published-courses');
+    } else if (role === 'ADMIN') {
+      filteredItems = filteredItems.filter(item => item.id !== 'published-courses');
+    }
+    return {
+      ...group,
+      items: filteredItems
+    }
+  }).filter(group => group.items.length > 0);
 
   const isActive = (path: string) => {
-    // Handle both exact matches and dashboard case
     if (path === "/admin") {
       return location.pathname === "/admin" || location.pathname === "/admin/dashboard";
     }
     return location.pathname === path;
-  };
-
-  const toggleMenu = (menuId: string) => {
-    setExpandedMenus((prev) =>
-      prev.includes(menuId)
-        ? prev.filter((id) => id !== menuId)
-        : [...prev, menuId]
-    );
-  };
-
-  const handleMenuClick = (item: MenuItem) => {
-    if (item.children) {
-      toggleMenu(item.id);
-    } else if (item.path) {
-      // Close sidebar on mobile after navigation
-      if (window.innerWidth < 1024) {
-        setIsSidebarOpen(false);
-      }
-    }
-  };
-
-  const renderMenuItem = (item: MenuItem) => {
-    const Icon = item.icon;
-    const isExpanded = expandedMenus.includes(item.id);
-    const hasChildren = item.children && item.children.length > 0;
-
-    return (
-      <div key={item.id} className="mb-1">
-        {hasChildren ? (
-          <Button
-            onClick={() => handleMenuClick(item)}
-            className="w-full flex items-center justify-between px-3 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors no-transition"
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              cursor: "pointer",
-            }}>
-            <div className="flex items-center">
-              <Icon className="w-5 h-5 mr-3" />
-              <span>{item.label}</span>
-            </div>
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""
-                }`}
-            />
-          </Button>
-        ) : (
-          <Link
-            to={item.path!}
-            onClick={() => handleMenuClick(item)}
-            className={`no-transition flex items-center px-3 py-3 rounded transition-colors ${isActive(item.path!)
-              ? "bg-blue-600 text-white font-medium"
-              : "text-gray-300 hover:bg-gray-700 hover:text-white"
-              }`}
-            style={{ textDecoration: "none", display: "flex" }}
-          >
-            <Icon className="w-5 h-5 mr-3" />
-            <span>{item.label}</span>
-          </Link>
-        )}
-
-        {hasChildren && isExpanded && (
-          <div className="ml-8 mt-2 space-y-1">
-            {item.children!.map((child) => (
-              <div key={child.id}>
-                <Link
-                  to={child.path}
-                  onClick={() => {
-                    if (window.innerWidth < 1024) {
-                      setIsSidebarOpen(false);
-                    }
-                  }}
-                  className={`no-transition flex items-center justify-between px-3 py-2 text-sm transition-colors ${isActive(child.path)
-                    ? "text-blue-400 font-medium"
-                    : "text-gray-400 hover:text-white"
-                    }`}
-                  style={{ textDecoration: "none", display: "flex" }}
-                >
-                  <span>{child.label}</span>
-                  {child.badge && (
-                    <span className="bg-green-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center">
-                      {child.badge}
-                    </span>
-                  )}
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -210,110 +98,96 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 lg:hidden"
-          style={{ zIndex: 30 }}
+          className="fixed inset-0 bg-black/50 lg:hidden z-40"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
-      <nav
-        className={`admin-sidebar w-64 bg-gray-900 text-white flex flex-col h-screen fixed left-0 top-0 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen
-          ? "translate-x-0 sidebar-open"
-          : "-translate-x-full lg:translate-x-0"
-          }`}
-        style={{
-          zIndex: 50,
-          backgroundColor: "#111827",
-          position: "fixed",
-          left: 0,
-          top: 0,
-          height: "100vh",
-          width: "16rem",
-        }}
-      >
-        {/* Navigation */}
-        <div
-          className="flex-1 overflow-y-auto"
-          style={{ position: "relative", zIndex: 51 }}
-        >
-          <div className="p-4 space-y-1">
-            {/* Header with Close Button */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-between h-16 lg:h-20">
-                  {/* Logo */}
-                  <Link
-                    to="/"
-                    className="flex items-center max-w-[140px] lg:max-w-[180px] decoration-none no-hover-effect"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <img
-                      src={logo}
-                      alt="OpenEdu - E-Learning Platform"
-                      className="h-6 lg:h-8 w-auto max-w-full object-contain"
-                    />
-                  </Link>
-                  {/* Mobile Close Button */}
-                  <Button
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="lg:hidden p-1 text-gray-400 hover:text-white transition-colors"
-                    style={{ zIndex: 52 }}
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
+      <div className={`fixed lg:fixed inset-y-0 left-0 z-50 bg-background border-r border-border transform transition-all duration-300 ease-in-out flex flex-col ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${collapsed ? "lg:w-16 w-64" : "w-64"}`}>
+        <div className="flex items-center justify-between px-4 border-b border-border h-[73px]">
+          {!collapsed && (
+            <div className="flex items-center space-x-2 overflow-hidden">
+              <Link to="/admin">
+                <img src={openEduIcon} alt="OpenEdu" className="h-8 w-auto min-w-[32px]" />
+              </Link>
+            </div>
+          )}
+          <button
+            onClick={onToggleCollapse}
+            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent transition-colors"
+          >
+            {collapsed ? (
+              <ChevronRight className="w-4 h-4 text-gray-500" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-gray-500" />
+            )}
+          </button>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent text-gray-500 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-              {/* Dynamic Menu Items */}
-              <div className="space-y-1">{menuItems.map(renderMenuItem)}</div>
+        <div className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
+          <div className="space-y-5">
+            {groupedMenuItems.map((group, groupIndex) => (
+              <div key={group.group} className="space-y-2">
+                {!collapsed && (
+                  <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                    {group.group}
+                  </p>
+                )}
 
-              {/* Footer */}
-              <div className="px-4 pb-4 mt-8 pt-6 border-t border-gray-700">
-                <div className="flex justify-between items-center mb-3">
-                  <Link
-                    to="/admin/settings"
-                    className="no-transition text-gray-400 hover:text-white transition-colors"
-                    title="Cài đặt"
-                    onClick={() => {
-                      if (window.innerWidth < 1024) {
-                        setIsSidebarOpen(false);
-                      }
-                    }}
-                  >
-                    <Settings className="w-5 h-5" />
-                  </Link>
-                  <Link
-                    to="/"
-                    className="no-transition text-gray-400 hover:text-white transition-colors"
-                    title="Trang chủ"
-                    onClick={() => {
-                      if (window.innerWidth < 1024) {
-                        setIsSidebarOpen(false);
-                      }
-                    }}
-                  >
-                    <Globe className="w-5 h-5" />
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="no-transition text-gray-400 hover:text-white transition-colors"
-                    title="Đăng xuất"
-                    onClick={() => {
-                      if (window.innerWidth < 1024) {
-                        setIsSidebarOpen(false);
-                      }
-                    }}
-                  >
-                    <LogOut className="w-5 h-5" />
-                  </Link>
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const active = isActive(item.path);
+
+                    return (
+                      <Link
+                        key={item.id}
+                        className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group relative ${active
+                          ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
+                          : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                          }`}
+                        to={item.path}
+                        title={collapsed ? item.name : undefined}
+                        onClick={() => {
+                          if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                        }}
+                      >
+                        {active && !collapsed && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-800 rounded-r-full" />
+                        )}
+                        <item.icon
+                          className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} ${active ? "text-white" : "text-gray-500 group-hover:text-gray-900"}`}
+                        />
+                        {!collapsed && <span className="leading-tight whitespace-nowrap">{item.name}</span>}
+                      </Link>
+                    );
+                  })}
                 </div>
+
+                {!collapsed && groupIndex < groupedMenuItems.length - 1 && (
+                  <div className="border-t border-gray-200 pt-2" />
+                )}
               </div>
+            ))}
+
+            <div className="border-t border-gray-200 pt-4">
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full px-3 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-red-600 rounded-lg transition-all duration-200 group mt-1"
+                title={collapsed ? "Đăng xuất" : undefined}
+              >
+                <LogOut className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} group-hover:text-red-600`} />
+                {!collapsed && <span className="whitespace-nowrap">Đăng xuất</span>}
+              </button>
             </div>
           </div>
-          {/* Ensure all containers are closed before ending nav */}
         </div>
-      </nav>
+      </div>
     </>
   );
 };

@@ -5,6 +5,9 @@ import com.hoangphihiep.dto.request.EducationalUnitRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.EducationalUnitResponse;
 import com.hoangphihiep.dto.response.EducationUnitRegistrationResponse;
+import com.hoangphihiep.dto.response.DepartmentStatResponse;
+import com.hoangphihiep.dto.response.RecentActivityResponse;
+import java.util.List;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.service.EducationalUnitService;
 import jakarta.validation.Valid;
@@ -46,6 +49,24 @@ public class EducationalUnitController {
         Double ratio = educationalUnitService.getAverageInternalStudentRatio(currentAdminId);
         return ApiResponse.<Double>builder()
                 .result(ratio != null ? ratio : 0.0)
+                .build();
+    }
+
+    @GetMapping("/department-stats")
+    public ApiResponse<List<DepartmentStatResponse>> getDepartmentStats() {
+        String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<DepartmentStatResponse> stats = educationalUnitService.getDepartmentStats(currentAdminId);
+        return ApiResponse.<List<DepartmentStatResponse>>builder()
+                .result(stats)
+                .build();
+    }
+
+    @GetMapping("/recent-activities")
+    public ApiResponse<List<RecentActivityResponse>> getRecentActivities() {
+        String currentAdminId = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<RecentActivityResponse> activities = educationalUnitService.getRecentActivities(currentAdminId);
+        return ApiResponse.<List<RecentActivityResponse>>builder()
+                .result(activities)
                 .build();
     }
 

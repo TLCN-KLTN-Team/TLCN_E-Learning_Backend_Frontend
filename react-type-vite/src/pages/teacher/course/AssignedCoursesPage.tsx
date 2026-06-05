@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { BookOpen, Search, Edit, Users, Clock, Calendar, Grid3X3, List, ChevronLeft, ChevronRight } from "lucide-react"
+import { BookOpen, Search, Edit, Users, Clock, Calendar, Grid3X3, List, ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react"
 import { getTeacherCourses } from "@/services/api/teacher/teacherCourseApi"
 import { useAuth } from "@/context/auth-context/useAuth"
 import type { CourseResponse } from "@/services/api/response/courseResponse"
@@ -21,7 +21,7 @@ const AssignedCoursesPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(9)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
 
@@ -109,7 +109,7 @@ const AssignedCoursesPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex-1 overflow-auto">
-        <main className="container mx-auto px-4 py-8">
+        <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-1/3 mb-6"></div>
             <div className="space-y-4">
@@ -125,15 +125,15 @@ const AssignedCoursesPage: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-auto">
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 flex items-center text-foreground">
               <BookOpen className="mr-3 text-primary" size={32} />
               Khóa Học Nội Bộ
             </h1>
-            <p className="text-muted-foreground text-lg">Quản lý và chỉnh sửa các khóa học mà admin đã phân công</p>
+            <p className="text-muted-foreground text-lg">Quản lý và chỉnh sửa các khóa học mà chuyên gia đã phân công</p>
           </div>
 
           {/* Error Message */}
@@ -155,11 +155,11 @@ const AssignedCoursesPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap sm:flex-nowrap justify-start sm:justify-end">
               <select
                 value={creditRange}
                 onChange={(e) => handleCreditRangeChange(e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 text-sm"
                 aria-label="Lọc theo số tín chỉ"
               >
                 <option value="all">Tất cả tín chỉ</option>
@@ -174,7 +174,7 @@ const AssignedCoursesPage: React.FC = () => {
                   setPageSize(Number(e.target.value))
                   setPage(0)
                 }}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 text-sm"
                 aria-label="Số mục mỗi trang"
               >
                 <option value={6}>6 / trang</option>
@@ -183,7 +183,7 @@ const AssignedCoursesPage: React.FC = () => {
                 <option value={20}>20 / trang</option>
               </select>
 
-              <div className="flex border border-border rounded-md">
+              <div className="flex border border-border rounded-md shrink-0">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
                   size="sm"
@@ -224,84 +224,136 @@ const AssignedCoursesPage: React.FC = () => {
           ) : (
             <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
               {courses.map((course) => (
+                (() => {
+                  const currentStudents = course.currentStudents || 0
+                  const maxStudents = course.maxStudents || 0
+                  const enrollmentPercent = maxStudents > 0 ? Math.min(100, Math.round((currentStudents / maxStudents) * 100)) : 0
+
+                  return (
                 <div
                   key={course.id}
                   className={`bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 ${
-                    viewMode === "list" ? "flex items-center p-4" : "p-6"
+                    viewMode === "list" ? "p-6" : "p-6"
                   }`}
                 >
                   {viewMode === "grid" ? (
                     <>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-card-foreground mb-2 line-clamp-2">
-                            {course.courseName}
-                          </h3>
+                      <h3 className="text-lg font-semibold text-card-foreground mb-2 line-clamp-2 min-h-[3.5rem] leading-snug">
+                        {course.courseName}
+                      </h3>
+
+                      <p className="text-xl text-foreground/85 mb-4 line-clamp-3 min-h-[5.75rem]">
+                        {course.description || "Chưa có mô tả cho khóa học này"}
+                      </p>
+
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-muted-foreground text-xl">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Users className="w-4 h-4" />
+                            {currentStudents}/{maxStudents} học sinh
+                          </span>
+                          <span className="font-medium">{enrollmentPercent}%</span>
                         </div>
+                        <progress
+                          className={`mt-1.5 h-2 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-muted ${
+                            enrollmentPercent > 0
+                              ? "[&::-webkit-progress-value]:bg-emerald-500 [&::-moz-progress-bar]:bg-emerald-500"
+                              : "[&::-webkit-progress-value]:bg-muted-foreground/40 [&::-moz-progress-bar]:bg-muted-foreground/40"
+                          }`}
+                          value={currentStudents}
+                          max={Math.max(maxStudents, 1)}
+                        />
                       </div>
 
-                      {course.description && (
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{course.description}</p>
-                      )}
-
-                      <div className="space-y-3 mb-6">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Users className="w-4 h-4 mr-2" />
-                          <span>
-                            {course.currentStudents || 0}/{course.maxStudents || 0} học sinh
-                          </span>
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Clock className="w-4 h-4 mr-2" />
-                          <span>{course.credits || 0} tín chỉ</span>
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          <span>
-                            Cập nhật:{" "}
-                            {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString("vi-VN") : "N/A"}
-                          </span>
-                        </div>
+                      <div className="flex items-center flex-wrap gap-x-5 gap-y-2 text-muted-foreground text-xl mb-5">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Clock className="w-4 h-4" />
+                          {course.credits || 0} tín chỉ
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Calendar className="w-4 h-4" />
+                          {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString("vi-VN") : "N/A"}
+                        </span>
                       </div>
 
-                      <div className="flex space-x-2">
-                        <Button asChild className="flex-1">
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <Button variant="outline" asChild className="h-12 text-xl border-border/70">
                           <Link to={`/teacher/courses/${course.id}/edit`}>
                             <Edit className="w-4 h-4 mr-2" />
                             Chỉnh sửa
                           </Link>
                         </Button>
-                        <Button variant="outline" asChild className="flex-1 bg-transparent">
+                        <Button asChild className="h-12 text-xl font-semibold shadow-sm bg-blue-600 hover:bg-blue-700 text-white">
                           <Link to={`/teacher/courses/${course.id}/manage`}>Đóng gói</Link>
                         </Button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-card-foreground mb-1">{course.courseName}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">{course.description}</p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>
-                            {course.currentStudents || 0}/{course.maxStudents || 0} học sinh
+                      <div className="flex-1 space-y-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <h3 className="text-2xl font-semibold text-card-foreground leading-tight">{course.courseName}</h3>
+                          <span
+                            className={`inline-flex items-center rounded-md px-3 py-1 text-sm font-medium ${
+                              currentStudents >= maxStudents && maxStudents > 0
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-emerald-100 text-emerald-700"
+                            }`}
+                          >
+                            {currentStudents >= maxStudents && maxStudents > 0 ? "Đã đầy" : "Đang mở"}
                           </span>
-                          <span>{course.credits || 0} tín chỉ</span>
+                        </div>
+
+                        <p className="text-foreground/85 text-xl leading-relaxed line-clamp-2">
+                          {course.description || "Chưa có mô tả cho khóa học này"}
+                        </p>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="inline-flex items-center gap-2 text-xl">
+                              <Users className="w-4 h-4" />
+                              {currentStudents}/{maxStudents} học sinh
+                            </span>
+                            <span className="text-xl font-medium">{enrollmentPercent}%</span>
+                          </div>
+                          <progress
+                            className="h-2 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-emerald-500 [&::-moz-progress-bar]:bg-emerald-500"
+                            value={currentStudents}
+                            max={Math.max(maxStudents, 1)}
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground text-xl">
+                          <span className="inline-flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            {course.credits || 0} tín chỉ
+                          </span>
+                          <span className="inline-flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            Cập nhật: {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString("vi-VN") : "N/A"}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex space-x-2 ml-4">
-                        <Button asChild size="sm">
+
+                      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Button variant="outline" asChild className="h-12 text-xl border-border/70">
                           <Link to={`/teacher/courses/${course.id}/edit`}>
                             <Edit className="w-4 h-4 mr-2" />
                             Chỉnh sửa
                           </Link>
                         </Button>
-                        <Button variant="outline" asChild size="sm">
-                          <Link to={`/teacher/courses/${course.id}/manage`}>Đóng gói</Link>
+                        <Button asChild className="h-12 text-xl font-semibold shadow-sm bg-blue-600 hover:bg-blue-700 text-white">
+                          <Link to={`/teacher/courses/${course.id}/manage`}>
+                            Đóng gói
+                            <ArrowUpRight className="w-4 h-4 ml-2" />
+                          </Link>
                         </Button>
                       </div>
                     </>
                   )}
                 </div>
+                  )
+                })()
               ))}
             </div>
           )}

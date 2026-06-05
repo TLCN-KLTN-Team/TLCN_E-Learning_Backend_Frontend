@@ -9,7 +9,7 @@ import type { AdminRevenueResponse } from "../response/revenueResponse";
  */
 export const getAdminRevenue = async (): Promise<AdminRevenueResponse> => {
   const response = await axiosInstance.get<ApiResponse<AdminRevenueResponse>>(
-    "course-management/admin/revenue"
+    "/course-management/admin/revenue"
   );
   return response.data.result;
 };
@@ -25,7 +25,7 @@ export const getAdminRevenueByDateRange = async (
   endDate: string
 ): Promise<AdminRevenueResponse> => {
   const response = await axiosInstance.get<ApiResponse<AdminRevenueResponse>>(
-    "course-management/admin/revenue/range",
+    "/course-management/admin/revenue/range",
     {
       params: { startDate, endDate }
     }

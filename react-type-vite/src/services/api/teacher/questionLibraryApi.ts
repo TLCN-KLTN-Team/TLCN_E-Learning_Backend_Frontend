@@ -12,6 +12,8 @@ export interface QuestionLibraryResponse {
   educationalUnitId?: number
   cloId?: number
   cloCode?: string
+  courseId?: number
+  courseName?: string
   attachments?: string[]
   answers: AnswerResponse[]
 }
@@ -20,6 +22,7 @@ export interface AnswerResponse {
   id: number
   content: string
   isCorrect: boolean
+  orderIndex?: number
 }
 
 export interface QuestionLibraryRequest {
@@ -125,7 +128,7 @@ export const deleteLibraryQuestion = async (id: number): Promise<void> => {
   await axiosInstance.delete(`/course-management/teacher/questions/${id}`)
 }
 
-export const importQuestionsFromCsv = async (file: File): Promise<{
+export const importQuestionsFromCsv = async (file: File, cloId: number): Promise<{
   successCount: number
   errorCount: number
   errors: string[]
@@ -139,7 +142,7 @@ export const importQuestionsFromCsv = async (file: File): Promise<{
     errorCount: number
     errors: string[]
     importedQuestions: QuestionLibraryResponse[]
-  }>>(`/course-management/teacher/questions/import`, formData, {
+  }>>(`/course-management/teacher/questions/import?cloId=${cloId}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

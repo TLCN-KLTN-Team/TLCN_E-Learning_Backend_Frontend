@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams} from "react-router-dom";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 import {
@@ -7,7 +7,6 @@ import {
   verifyPublicCertificateByHash,
 } from "@/services/api/anonymous/certificate.api";
 import type { PublicCertificateVerificationResponse } from "@/services/api/response/publicCertificateVerificationResponse";
-import { PUBLIC_ROUTES } from "@/constants/routes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -248,30 +247,32 @@ export default function CertificateVerificationPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-800">
-              <GraduationCap className="w-6 h-6" />
-              Xác minh chứng chỉ
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              {verifyStatus.icon}
-              <Badge variant="outline" className={verifyStatus.badgeClass}>
-                {verifyStatus.label}
-              </Badge>
-            </div>
+        {(data || errorMessage) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-slate-800">
+                <GraduationCap className="w-6 h-6" />
+                Xác minh chứng chỉ
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                {verifyStatus.icon}
+                <Badge variant="outline" className={verifyStatus.badgeClass}>
+                  {verifyStatus.label}
+                </Badge>
+              </div>
 
-            {errorMessage && (
-              <div className="text-red-600 text-sm">{errorMessage}</div>
-            )}
+              {errorMessage && (
+                <div className="text-red-600 text-sm">{errorMessage}</div>
+              )}
 
-            <div className="text-sm text-slate-600">
-              {data?.message || "Không có thông tin xác minh"}
-            </div>
-          </CardContent>
-        </Card>
+              <div className="text-sm text-slate-600">
+                {data?.message || "Không có thông tin xác minh"}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {data?.found && certificate && (
           <Card>
@@ -324,16 +325,6 @@ export default function CertificateVerificationPage() {
           </Card>
         )}
 
-        <div className="pt-2">
-          <Link to={PUBLIC_ROUTES.HOME}>
-            <Button
-              variant="outline"
-              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-            >
-              Quay về trang chủ
-            </Button>
-          </Link>
-        </div>
       </div>
     </div>
   );

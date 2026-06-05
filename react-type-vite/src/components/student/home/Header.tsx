@@ -14,6 +14,7 @@ import {
   LogOut,
   UserCircle,
   BookOpen,
+  History,
   Heart,
   LibraryBig,
   Bell,
@@ -233,7 +234,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
         { name: "Giỏ hàng của tôi", icon: ShoppingCart, href: "/cart" },
         { name: "Danh sách yêu thích", icon: Heart, href: "/wishlist" },
         { name: "Chỉnh sửa hồ sơ", icon: UserCircle, href: "/edit-profile" },
-        { name: "Lịch sử đơn hàng", icon: ShoppingCart, href: "/purchase-history" },
+        { name: "Lịch sử đơn hàng", icon: History, href: "/purchase-history" },
       ],
     },
     {
@@ -262,7 +263,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
           href: "/payment-methods",
         },
         { name: "Gói đăng ký", icon: CreditCard, href: "/subscriptions" },
-        { name: "Lịch sử mua", icon: ShoppingCart, href: "/purchase-history" },
+        { name: "Lịch sử mua", icon: History, href: "/purchase-history" },
         { name: "Ưu đãi Udemy", icon: Settings, href: "/offers" },      ],
     },
     {

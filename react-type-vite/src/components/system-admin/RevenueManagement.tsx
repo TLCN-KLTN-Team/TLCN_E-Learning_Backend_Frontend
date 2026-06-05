@@ -175,7 +175,9 @@ const SystemRevenueTab: React.FC<{
         <div className="bg-blue-50 p-4 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Tổng doanh thu (10%)</p>
+              <p className="text-sm text-gray-600">
+                Phí nền tảng ({data.sharePercentage ?? 10}%)
+              </p>
               <p className="text-2xl font-bold text-blue-600">
                 {formatCurrency(data.totalRevenue)}
               </p>
@@ -343,6 +345,14 @@ const CoursesRevenueTab: React.FC<{
   formatCurrency: (value: number) => string;
   headerStyles: string;
 }> = ({ data, formatCurrency, headerStyles }) => {
+  if (data.length === 0) {
+    return (
+      <div className="text-center py-12 text-gray-500">
+        Không có dữ liệu
+      </div>
+    );
+  }
+
   // Sort courses by revenue
   const sortedCourses = [...data].sort((a, b) => b.revenue - a.revenue);
   const topCourses = sortedCourses.slice(0, 10);

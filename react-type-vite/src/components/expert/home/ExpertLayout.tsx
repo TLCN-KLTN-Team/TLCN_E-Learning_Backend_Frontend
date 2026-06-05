@@ -6,6 +6,7 @@ import ExpertHeader from "./ExpertHeader";
 
 const ExpertLayout: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     console.log("ExpertLayout rendering...");
 
@@ -15,10 +16,12 @@ const ExpertLayout: React.FC = () => {
             <ExpertSidebar
                 isSidebarOpen={isSidebarOpen}
                 setIsSidebarOpen={setIsSidebarOpen}
+                collapsed={isCollapsed}
+                onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
             />
 
             {/* Main Content */}
-            <div className="flex-1 ml-0 lg:ml-64 transition-all duration-300">
+            <div className={`flex-1 transition-all duration-300 ease-in-out ${isCollapsed ? "lg:ml-16" : "lg:ml-72"}`}>
                 {/* Expert header */}
                 <ExpertHeader
                     isSidebarOpen={isSidebarOpen}

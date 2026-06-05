@@ -87,7 +87,7 @@ const AdminEarningsChart: React.FC = () => {
 
     ctx.fillStyle = "#6c757d"
     ctx.font = "12px Arial"
-    ctx.fillText("Hoàn thành", cx, cy + 16)
+    ctx.fillText("Nội bộ", cx, cy + 16)
 
     // Legend
     const legendX = cx
@@ -100,13 +100,13 @@ const AdminEarningsChart: React.FC = () => {
     ctx.fillStyle = "#334155"
     ctx.font = "12px Arial"
     ctx.textAlign = "left"
-    ctx.fillText(`Hoàn thành ${(internalPct * 100).toFixed(1)}%`, legendX - gap + 20, legendY + 3)
+    ctx.fillText(`Nội bộ ${(internalPct * 100).toFixed(1)}%`, legendX - gap + 20, legendY + 3)
 
     // External legend
     ctx.fillStyle = externalColor
     ctx.fillRect(legendX + 10, legendY - 8, 14, 14)
     ctx.fillStyle = "#334155"
-    ctx.fillText(`Chưa hoàn thành ${(externalPct * 100).toFixed(1)}%`, legendX + 30, legendY + 3)
+    ctx.fillText(`Bên ngoài ${(externalPct * 100).toFixed(1)}%`, legendX + 30, legendY + 3)
   }, [internalStudentRatio])
 
   return (
@@ -145,7 +145,7 @@ const AdminEarningsChart: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm border h-full">
         {/* Card header */}
         <div className="p-4 border-b">
-          <h5 className="text-lg font-semibold text-gray-900 m-0">Phân tích tỉ lệ hoàn thành</h5>
+          <h5 className="text-lg font-semibold text-gray-900 m-0">Phân tích tỉ lệ</h5>
         </div>
 
         {/* Card body */}

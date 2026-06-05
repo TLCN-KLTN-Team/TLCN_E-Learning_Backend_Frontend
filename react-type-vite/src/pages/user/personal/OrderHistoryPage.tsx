@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
@@ -19,9 +20,11 @@ import Footer from "@/components/student/home/Footer";
 import OrderService, {
     type OrderResponse,
 } from "@/services/api/user/orderApi";
+import { createRoute } from "@/constants/routes";
 import { toast } from "react-toastify";
 
 const OrderHistoryPage: React.FC = () => {
+    const navigate = useNavigate();
     const [orders, setOrders] = useState<OrderResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedItemForRefund, setSelectedItemForRefund] = useState<{
@@ -123,6 +126,15 @@ const OrderHistoryPage: React.FC = () => {
         }
     };
 
+    const handleGoToCourse = (courseId: number, paymentStatus: string) => {
+        if (paymentStatus === "REFUNDED") {
+            navigate(createRoute.courseDetail(courseId));
+            return;
+        }
+
+        navigate(createRoute.courseLearning(courseId));
+    };
+
 
     if (loading) {
         return (
@@ -201,7 +213,11 @@ const OrderHistoryPage: React.FC = () => {
                                     <div className="divide-y divide-gray-100 dark:divide-gray-800">
                                         {order.orderItems.map((item) => (
                                             <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
-                                                <div className="flex items-start gap-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleGoToCourse(item.courseId, item.paymentStatus)}
+                                                    className="flex items-start gap-4 text-left rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+                                                >
                                                     <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-md flex-shrink-0 overflow-hidden">
                                                         {item.thumbnailUrl ? (
                                                             <img 
@@ -226,7 +242,7 @@ const OrderHistoryPage: React.FC = () => {
                                                             {getPaymentStatusLabel(item.paymentStatus)}
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </button>
 
                                                 {/* Refund Button Logic */}
                                                 {item.paymentStatus === "PAID" && (

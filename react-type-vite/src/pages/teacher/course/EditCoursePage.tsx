@@ -4,7 +4,6 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, BookOpen, AlertCircle, Loader2 } from 'lucide-react'
 import CourseBuilder from "@/components/teacher/course/CourseBuilder"
@@ -174,56 +173,44 @@ const EditCoursePageContent: React.FC = () => {
             {activeTab === "info" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Thông Tin Cơ Bản</h2>
+                  <h2 className="text-2xl font-bold mb-2">Thông tin cơ bản</h2>
                   <p className="text-gray-600">Xem thông tin chi tiết về khóa học</p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium mb-1">Thông tin chỉ để xem</p>
+                    <p>Thông tin cơ bản của khóa học không thể chỉnh sửa. Vui lòng liên hệ quản trị viên nếu cần thay đổi.</p>
+                  </div>
                 </div>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Thông Tin Khóa Học</CardTitle>
+                    <CardTitle>Thông tin khóa học</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Course Name - Read Only */}
                     <div>
-                      <label htmlFor="courseName" className="block text-sm font-medium mb-2">
-                        Tên Khóa Học
-                      </label>
-                      <Input
-                        id="courseName"
-                        name="courseName"
-                        value={courseData.courseName}
-                        disabled
-                        className="bg-gray-50 cursor-not-allowed"
-                      />
+                      <p className="block text-sm font-medium mb-2">Tên khóa học</p>
+                      <div className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700">
+                        {courseData.courseName}
+                      </div>
                     </div>
 
                     {/* Credits and Max Students - Read Only */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="credits" className="block text-sm font-medium mb-2">
-                          Số Tín Chỉ
-                        </label>
-                        <Input
-                          id="credits"
-                          name="credits"
-                          type="number"
-                          value={courseData.credits}
-                          disabled
-                          className="bg-gray-50 cursor-not-allowed"
-                        />
+                        <p className="block text-sm font-medium mb-2">Số tín chỉ</p>
+                        <div className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700">
+                          {courseData.credits}
+                        </div>
                       </div>
                       <div>
-                        <label htmlFor="maxStudents" className="block text-sm font-medium mb-2">
-                          Số Học Sinh Tối Đa
-                        </label>
-                        <Input
-                          id="maxStudents"
-                          name="maxStudents"
-                          type="number"
-                          value={courseData.maxStudents}
-                          disabled
-                          className="bg-gray-50 cursor-not-allowed"
-                        />
+                        <p className="block text-sm font-medium mb-2">Số học sinh tối đa</p>
+                        <div className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700">
+                          {courseData.maxStudents}
+                        </div>
                         <p className="text-xs text-gray-500 mt-1">
                           Hiện tại có {courseData.currentStudents} học sinh đã đăng ký
                         </p>
@@ -232,25 +219,9 @@ const EditCoursePageContent: React.FC = () => {
 
                     {/* Description - Read Only */}
                     <div>
-                      <label htmlFor="description" className="block text-sm font-medium mb-2">
-                        Mô Tả Khóa Học
-                      </label>
-                      <textarea
-                        id="description"
-                        name="description"
-                        value={courseData.description || "Chưa có mô tả"}
-                        disabled
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed text-gray-700"
-                      />
-                    </div>
-
-                    {/* Info Box */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-                      <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">Thông tin chỉ để xem</p>
-                        <p>Thông tin cơ bản của khóa học không thể chỉnh sửa. Vui lòng liên hệ quản trị viên nếu cần thay đổi.</p>
+                      <p className="block text-sm font-medium mb-2">Mô tả khóa học</p>
+                      <div className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700 min-h-24 whitespace-pre-wrap">
+                        {courseData.description || "Chưa có mô tả"}
                       </div>
                     </div>
                   </CardContent>

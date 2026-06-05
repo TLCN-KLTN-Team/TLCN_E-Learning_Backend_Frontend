@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Mail, Phone, Shield, Calendar, Briefcase } from "lucide-react";
+import { User, Mail, Phone, Shield, Briefcase } from "lucide-react";
 import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 

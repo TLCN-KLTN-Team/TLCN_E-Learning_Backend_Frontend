@@ -103,7 +103,7 @@ const PublicCoursesPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex-1 overflow-auto">
-        <main className="container mx-auto px-4 py-8">
+        <main className="px-4 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-1/3 mb-6"></div>
             <div className="space-y-4">
@@ -119,8 +119,8 @@ const PublicCoursesPage: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-auto">
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
+      <main className="px-4 py-8">
+        <div className="w-full max-w-full">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 flex items-center text-foreground">
@@ -186,14 +186,14 @@ const PublicCoursesPage: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <div className="flex items-center space-x-2">
-                <select value={creditRange} onChange={(e) => { setCreditRange(e.target.value); setPage(0); }} className="border rounded-md p-1 bg-background">
+                <select aria-label="Chọn số tín chỉ" value={creditRange} onChange={(e) => { setCreditRange(e.target.value); setPage(0); }} className="border rounded-md p-1 bg-background">
                   <option value="all">Tất cả tín chỉ</option>
                   <option value="1-2">1-2</option>
                   <option value="3-4">3-4</option>
                   <option value="5+">5+</option>
                 </select>
 
-                <select value={updatedRange} onChange={(e) => { setUpdatedRange(e.target.value); setPage(0); }} className="border rounded-md p-1 bg-background">
+                <select aria-label="Lọc theo thời gian cập nhật" value={updatedRange} onChange={(e) => { setUpdatedRange(e.target.value); setPage(0); }} className="border rounded-md p-1 bg-background">
                   <option value="">Cập nhật: Tất cả</option>
                   <option value="7d">7 ngày</option>
                   <option value="30d">30 ngày</option>
@@ -291,7 +291,7 @@ const PublicCoursesPage: React.FC = () => {
                             }}
                           >
                             <Users className="w-4 h-4 mr-1.5" />
-                            Chấm bài
+                            Chi tiết
                           </Button>
                         </div>
                       </CardContent>
@@ -340,7 +340,7 @@ const PublicCoursesPage: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <label className="text-sm text-muted-foreground">Hiển thị</label>
-                <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }} className="border rounded-md p-1 bg-background">
+                <select aria-label="Số mục trên trang" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }} className="border rounded-md p-1 bg-background">
                   <option value={10}>10</option>
                   <option value={20}>20</option>
                   <option value={50}>50</option>

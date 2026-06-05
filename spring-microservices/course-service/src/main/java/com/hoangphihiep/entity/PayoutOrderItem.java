@@ -67,6 +67,9 @@ public class PayoutOrderItem implements Serializable {
     @Column(name = "settled_at")
     private LocalDateTime settledAt;
 
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
+
     @Column(name = "transaction_reference")
     private String transactionReference;
 
