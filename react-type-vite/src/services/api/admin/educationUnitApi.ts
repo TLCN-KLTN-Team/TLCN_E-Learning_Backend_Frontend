@@ -2,6 +2,8 @@ import axiosInstance from "../httpClient/axiosInstance";
 import type { EducationalUnitRequest } from "../request/educationUnitRequest";
 import type { ApiResponse } from "../response/apiResponse";
 import type { EducationalUnitResponse } from "../response/educationalUnitResponse";
+import type { DepartmentStatResponse } from "../response/departmentStatResponse";
+import type { RecentActivityResponse } from "../response/recentActivityResponse";
 
 const PREFIX = "/course-management/educational-unit";
 
@@ -27,4 +29,18 @@ export const updateEducationalUnit = async (
     data
   );
   return response.data.result;
+};
+
+export const getDepartmentStats = async (): Promise<DepartmentStatResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<DepartmentStatResponse[]>>(
+    `${PREFIX}/department-stats`
+  );
+  return response.data.result || [];
+};
+
+export const getRecentActivities = async (): Promise<RecentActivityResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<RecentActivityResponse[]>>(
+    `${PREFIX}/recent-activities`
+  );
+  return response.data.result || [];
 };

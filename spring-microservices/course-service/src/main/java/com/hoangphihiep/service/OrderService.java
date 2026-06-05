@@ -22,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -311,6 +312,7 @@ public class OrderService {
                     .orElseThrow(() -> new AppException(ErrorCode.ESCROW_NOT_FOUND));
 
             escrowItem.setStatus(PayoutOrderItemStatus.REFUNDED);
+            escrowItem.setRefundedAt(LocalDateTime.now());
             escrowItem.setCanRefund(false);
             payoutOrderItemService.getPayoutOrderItemRepository().save(escrowItem);
 

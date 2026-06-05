@@ -15,7 +15,7 @@ import type {
 // ==================== API Functions ====================
 
 /**
- * Get system-wide revenue statistics (SUPER_ADMIN's 10% share)
+ * Get system-wide revenue statistics (SUPER_ADMIN's platform share)
  * @returns System revenue data with monthly breakdown
  */
 export const getSystemRevenue = async (): Promise<SystemRevenueResponse> => {
@@ -75,36 +75,14 @@ export const getAllTeachersRevenueByDateRange = async (
 };
 
 /**
- * Get all courses revenue aggregated (for system admin overview)
- * This aggregates all courses from all teachers
+ * Get all courses revenue aggregated (backend-calculated)
  * @returns List of all courses with revenue statistics
  */
 export const getAllCoursesRevenue = async (): Promise<CourseRevenueDetail[]> => {
-  // Get all teachers revenue, then flatten their courseRevenueDetails
-  const teachersRevenue = await getAllTeachersRevenue();
-
-  // Flatten all courses from all teachers
-  const allCourses = teachersRevenue.flatMap(
-    teacher => teacher.courseRevenueDetails || []
+  const response = await axiosInstance.get<ApiResponse<CourseRevenueDetail[]>>(
+    "/course-management/super-admin/revenue/courses"
   );
-
-  // Group by courseId and aggregate
-  const courseMap = new Map<string, CourseRevenueDetail>();
-
-  allCourses.forEach(course => {
-    if (courseMap.has(course.courseId)) {
-      const existing = courseMap.get(course.courseId)!;
-      existing.revenue += course.revenue;
-      existing.totalSales += course.totalSales;
-      existing.totalStudents += course.totalStudents;
-      // Average rating: simple average (can be improved with weighted average)
-      existing.averageRating = (existing.averageRating + course.averageRating) / 2;
-    } else {
-      courseMap.set(course.courseId, { ...course });
-    }
-  });
-
-  return Array.from(courseMap.values());
+  return response.data.result;
 };
 
 /**
@@ -117,29 +95,11 @@ export const getAllCoursesRevenueByDateRange = async (
   startDate: string,
   endDate: string
 ): Promise<CourseRevenueDetail[]> => {
-  // Get all teachers revenue by date range, then flatten their courseRevenueDetails
-  const teachersRevenue = await getAllTeachersRevenueByDateRange(startDate, endDate);
-
-  // Flatten all courses from all teachers
-  const allCourses = teachersRevenue.flatMap(
-    teacher => teacher.courseRevenueDetails || []
-  );
-
-  // Group by courseId and aggregate
-  const courseMap = new Map<string, CourseRevenueDetail>();
-
-  allCourses.forEach(course => {
-    if (courseMap.has(course.courseId)) {
-      const existing = courseMap.get(course.courseId)!;
-      existing.revenue += course.revenue;
-      existing.totalSales += course.totalSales;
-      existing.totalStudents += course.totalStudents;
-      // Average rating: simple average (can be improved with weighted average)
-      existing.averageRating = (existing.averageRating + course.averageRating) / 2;
-    } else {
-      courseMap.set(course.courseId, { ...course });
+  const response = await axiosInstance.get<ApiResponse<CourseRevenueDetail[]>>(
+    "/course-management/super-admin/revenue/courses/range",
+    {
+      params: { startDate, endDate }
     }
-  });
-
-  return Array.from(courseMap.values());
+  );
+  return response.data.result;
 };

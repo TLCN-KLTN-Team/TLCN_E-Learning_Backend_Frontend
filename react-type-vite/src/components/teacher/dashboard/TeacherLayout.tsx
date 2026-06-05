@@ -28,8 +28,8 @@ const TeacherLayout: React.FC = () => {
         className={`
         fixed top-0 left-0 h-full bg-card border-r border-border z-50 transition-all duration-300 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        ${sidebarCollapsed ? "lg:w-16" : "lg:w-64"}
-        w-64
+        ${sidebarCollapsed ? "lg:w-16" : "lg:w-72"}
+        w-72
       `}
       >
         <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={toggleCollapse} />
@@ -39,7 +39,7 @@ const TeacherLayout: React.FC = () => {
       <div
         className={`
         transition-all duration-300 ease-in-out
-        ${sidebarCollapsed ? "lg:ml-16" : "lg:ml-64"}
+        ${sidebarCollapsed ? "lg:ml-16" : "lg:ml-72"}
         ml-0
       `}
       >

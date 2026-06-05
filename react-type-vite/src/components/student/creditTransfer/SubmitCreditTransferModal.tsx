@@ -121,9 +121,9 @@ const SubmitCreditTransferModal: React.FC<SubmitCreditTransferModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-4xl p-6 max-h-[96vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Đăng ký Quy đổi tín chỉ</DialogTitle>
+                    <DialogTitle className="leading-normal">Đăng ký Quy đổi tín chỉ</DialogTitle>
                     <DialogDescription className="sr-only">
                         Điền ghi chú nếu cần để tạo yêu cầu quy đổi tín chỉ.
                     </DialogDescription>

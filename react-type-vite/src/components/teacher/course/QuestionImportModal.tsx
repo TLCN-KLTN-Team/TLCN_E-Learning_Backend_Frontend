@@ -1,12 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import Modal from "@/components/ui/modal"
 import { Upload, FileText, Download, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 import { importQuestionsFromCsv } from "@/services/api/teacher/questionLibraryApi"
 import { toast } from "react-toastify"
+import { getTeacherActiveClos, type CourseObjectiveResponse } from "@/services/api/teacher/courseObjectiveApi"
+import { Label } from "@/components/ui/label"
 
 interface QuestionImportModalProps {
   isOpen: boolean
@@ -26,6 +28,48 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
     errorCount: number
     errors: string[]
   } | null>(null)
+  const [availableClos, setAvailableClos] = useState<CourseObjectiveResponse[]>([])
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
+  const [selectedCloId, setSelectedCloId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const loadClos = async () => {
+      try {
+        const clos = await getTeacherActiveClos()
+        setAvailableClos(clos)
+
+        if (clos.length > 0) {
+          const firstCourseId = clos[0].courseId
+          setSelectedCourseId(firstCourseId)
+          
+          const courseClos = clos.filter((item) => item.courseId === firstCourseId)
+          if (courseClos.length > 0) {
+            setSelectedCloId(courseClos[0].id)
+          }
+        }
+      } catch (error) {
+        console.error("Error loading CLOs:", error)
+        toast.error("Không thể tải danh sách chuẩn đầu ra")
+      }
+    }
+
+    loadClos()
+  }, [isOpen])
+
+  const availableCourses = Array.from(
+    new Map(
+      availableClos.map((item) => [item.courseId, {
+        courseId: item.courseId,
+        courseName: item.courseName || `Khóa học #${item.courseId}`,
+      }])
+    ).values()
+  )
+
+  const filteredClos = selectedCourseId
+    ? availableClos.filter((item) => item.courseId === selectedCourseId)
+    : []
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -40,9 +84,19 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
       return
     }
 
+    if (!selectedCourseId) {
+      toast.error("Vui lòng chọn khóa học")
+      return
+    }
+
+    if (!selectedCloId) {
+      toast.error("Vui lòng chọn chuẩn đầu ra (CĐR)")
+      return
+    }
+
     try {
       setUploading(true)
-      const response = await importQuestionsFromCsv(file)
+      const response = await importQuestionsFromCsv(file, selectedCloId)
       
       setResult({
         successCount: response.successCount,
@@ -212,6 +266,8 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
   const handleClose = () => {
     setFile(null)
     setResult(null)
+    setSelectedCourseId(null)
+    setSelectedCloId(null)
     onClose()
   }
 
@@ -259,6 +315,68 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
             <Download className="h-4 w-4 mr-2" />
             Tải File Mẫu Excel (.xlsx)
           </Button>
+        </div>
+
+        {/* Course and CLO Selection */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 space-y-4">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
+            <FileText className="h-4 w-4 text-blue-600" />
+            Chọn chuẩn đầu ra áp dụng cho các câu hỏi import
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="courseSelect" className="flex items-center text-sm font-medium text-gray-700">
+                Khóa học <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <select
+                id="courseSelect"
+                value={selectedCourseId ? String(selectedCourseId) : ""}
+                onChange={(e) => {
+                  const nextCourseId = e.target.value ? Number(e.target.value) : null
+                  setSelectedCourseId(nextCourseId)
+                  
+                  if (nextCourseId) {
+                    const courseClos = availableClos.filter((item) => item.courseId === nextCourseId)
+                    if (courseClos.length > 0) {
+                      setSelectedCloId(courseClos[0].id)
+                    } else {
+                      setSelectedCloId(null)
+                    }
+                  } else {
+                    setSelectedCloId(null)
+                  }
+                }}
+                className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm focus:border-blue-500 focus:outline-none transition-colors"
+              >
+                <option value="">Chọn khóa học</option>
+                {availableCourses.map((course) => (
+                  <option key={course.courseId} value={String(course.courseId)}>
+                    {course.courseName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cloSelect" className="flex items-center text-sm font-medium text-gray-700">
+                CĐR đánh giá <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <select
+                id="cloSelect"
+                value={selectedCloId ? String(selectedCloId) : ""}
+                onChange={(e) => setSelectedCloId(e.target.value ? Number(e.target.value) : null)}
+                disabled={!selectedCourseId}
+                className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm focus:border-blue-500 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                <option value="">{selectedCourseId ? "Chọn CĐR" : "Vui lòng chọn khóa học trước"}</option>
+                {filteredClos.map((clo) => (
+                  <option key={clo.id} value={String(clo.id)}>
+                    {clo.code} - {clo.description || (clo.courseName || `Khóa học #${clo.courseId}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* File Upload */}
@@ -332,7 +450,7 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={!file || uploading}
+            disabled={!file || uploading || !selectedCloId}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             {uploading ? (

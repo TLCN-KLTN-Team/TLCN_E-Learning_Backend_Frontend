@@ -3,23 +3,27 @@
 import {
     Package,
     LogOut,
-    Globe,
     X,
-    Settings,
     Tv,
     BookOpen,
-    CheckCircle
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 import type React from "react";
-// import { useState } from "react"; // Removed unused import
 import { Link, useLocation } from "react-router-dom";
 import "../../../styles/admin.css"; // Reuse admin styles
-import { Button } from '@/components/ui/button';
-import logo from '@/assets/open-edu-light.png';
+import { useAuth } from "@/context/auth-context/useAuth";
+import { toast } from "react-toastify";
+
+// Note: Using dark logo for light background
+import openEduIcon from "@/assets/open-edu-dark.png";
 
 interface ExpertSidebarProps {
     isSidebarOpen: boolean;
     setIsSidebarOpen: (open: boolean) => void;
+    collapsed?: boolean;
+    onToggleCollapse?: () => void;
 }
 
 interface MenuItem {
@@ -35,38 +39,51 @@ interface MenuItem {
     }[];
 }
 
+interface MenuGroup {
+    group?: string;
+    items: MenuItem[];
+}
+
 const ExpertSidebar: React.FC<ExpertSidebarProps> = ({
     isSidebarOpen,
     setIsSidebarOpen,
+    collapsed = false,
+    onToggleCollapse,
 }) => {
     const location = useLocation();
+    const { logout } = useAuth();
 
-    // Expert specific menu items
-    const menuItems: MenuItem[] = [
+    // Expert specific menu items grouped
+    const menuGroups: MenuGroup[] = [
         {
-            id: "courses",
-            label: "Khóa học",
-            icon: Tv,
-            path: "/expert/courses",
-        },
-        {
-            id: "published-courses",
-            label: "Duyệt Khóa Học Thương Mại",
-            icon: Package,
-            path: "/expert/published-courses",
-        },
-        {
-            id: "equivalent-courses-list",
-            label: "Quản lý Quy đổi",
-            icon: BookOpen,
-            path: "/expert/equivalent-courses",
-        },
-        {
-            id: "credit-transfers",
-            label: "Phê duyệt Tín chỉ",
-            icon: CheckCircle,
-            path: "/expert/credit-transfers",
-        },
+            group: "Đào tạo",
+            items: [
+                {
+                    id: "courses",
+                    label: "Khóa học",
+                    icon: Tv,
+                    path: "/expert/courses",
+                },
+                {
+                    id: "published-courses",
+                    label: "Duyệt Khóa Học Thương Mại",
+                    icon: Package,
+                    path: "/expert/published-courses",
+                },
+                {
+                    id: "equivalent-courses-list",
+                    label: "Quản lý Quy đổi",
+                    icon: BookOpen,
+                    path: "/expert/equivalent-courses",
+                },
+                {
+                    id: "credit-transfers",
+                    label: "Phê duyệt Tín chỉ",
+                    icon: CheckCircle,
+                    path: "/expert/credit-transfers",
+                },
+            ]
+        }
     ];
 
     const isActive = (path: string) => {
@@ -84,42 +101,13 @@ const ExpertSidebar: React.FC<ExpertSidebarProps> = ({
         }
     };
 
-    const renderMenuItem = (item: MenuItem) => {
-        const Icon = item.icon;
-        const hasChildren = item.children && item.children.length > 0;
-
-        return (
-            <div key={item.id} className="mb-1">
-                {hasChildren ? (
-                    <Button
-                        onClick={() => handleMenuClick(item)}
-                        className="w-full flex items-center justify-between px-3 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded transition-colors no-transition"
-                        style={{
-                            backgroundColor: "transparent",
-                            border: "none",
-                            cursor: "pointer",
-                        }}>
-                        <div className="flex items-center">
-                            <Icon className="w-5 h-5 mr-3" />
-                            <span>{item.label}</span>
-                        </div>
-                    </Button>
-                ) : (
-                    <Link
-                        to={item.path!}
-                        onClick={() => handleMenuClick(item)}
-                        className={`no-transition flex items-center px-3 py-3 rounded transition-colors ${isActive(item.path!)
-                            ? "bg-blue-600 text-white font-medium"
-                            : "text-gray-300 hover:bg-gray-700 hover:text-white"
-                            }`}
-                        style={{ textDecoration: "none", display: "flex" }}
-                    >
-                        <Icon className="w-5 h-5 mr-3" />
-                        <span>{item.label}</span>
-                    </Link>
-                )}
-            </div>
-        );
+    const handleLogout = (e: React.MouseEvent) => {
+        e.preventDefault();
+        logout();
+        toast.success("Đăng xuất thành công!");
+        if (window.innerWidth < 1024) {
+            setIsSidebarOpen(false);
+        }
     };
 
     return (
@@ -127,110 +115,97 @@ const ExpertSidebar: React.FC<ExpertSidebarProps> = ({
             {/* Mobile Overlay */}
             {isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 lg:hidden"
-                    style={{ zIndex: 30 }}
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}
 
             {/* Sidebar */}
-            <nav
-                className={`admin-sidebar w-64 bg-gray-900 text-white flex flex-col h-screen fixed left-0 top-0 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen
-                    ? "translate-x-0 sidebar-open"
-                    : "-translate-x-full lg:translate-x-0"
-                    }`}
-                style={{
-                    zIndex: 50,
-                    backgroundColor: "#111827",
-                    position: "fixed",
-                    left: 0,
-                    top: 0,
-                    height: "100vh",
-                    width: "16rem",
-                }}
-            >
-                {/* Navigation */}
-                <div
-                    className="flex-1 overflow-y-auto"
-                    style={{ position: "relative", zIndex: 51 }}
-                >
-                    <div className="p-4 space-y-1">
-                        {/* Header with Close Button */}
-                        <div className="mb-8">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center justify-between h-16 lg:h-20">
-                                    {/* Logo */}
-                                    <Link
-                                        to="/"
-                                        className="flex items-center max-w-[140px] lg:max-w-[180px] decoration-none no-hover-effect"
-                                        style={{ textDecoration: "none" }}
-                                    >
-                                        <img
-                                            src={logo}
-                                            alt="OpenEdu - E-Learning Platform"
-                                            className="h-6 lg:h-8 w-auto max-w-full object-contain"
-                                        />
-                                    </Link>
-                                    {/* Mobile Close Button */}
-                                    <Button
-                                        onClick={() => setIsSidebarOpen(false)}
-                                        className="lg:hidden p-1 text-gray-400 hover:text-white transition-colors"
-                                        style={{ zIndex: 52 }}
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </Button>
-                                </div>
-                            </div>
+            <div className={`fixed lg:fixed inset-y-0 left-0 z-50 bg-background border-r border-border transform transition-all duration-300 ease-in-out flex flex-col ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${collapsed ? "lg:w-16 w-72" : "w-72"}`}>
+                <div className="flex items-center justify-between px-4 border-b border-border h-[73px]">
+                    {!collapsed && (
+                        <div className="flex items-center space-x-2 overflow-hidden">
+                            <Link to="/expert">
+                                <img src={openEduIcon} alt="OpenEdu" className="h-8 w-auto min-w-[32px]" />
+                            </Link>
+                        </div>
+                    )}
+                    <button
+                        onClick={onToggleCollapse}
+                        className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent transition-colors"
+                    >
+                        {collapsed ? (
+                            <ChevronRight className="w-4 h-4 text-gray-500" />
+                        ) : (
+                            <ChevronLeft className="w-4 h-4 text-gray-500" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent text-gray-500 transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                            {/* Dynamic Menu Items */}
-                            <div className="space-y-1">{menuItems.map(renderMenuItem)}</div>
+                {/* Navigation Content */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col pt-4">
+                    <div className="px-3 space-y-6">
+                        {menuGroups.map((group, groupIndex) => (
+                            <div key={groupIndex} className="space-y-1">
+                                {group.group && !collapsed && (
+                                    <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 truncate">
+                                        {group.group}
+                                    </h3>
+                                )}
+                                {group.items.map((item) => {
+                                    const Icon = item.icon;
+                                    const active = item.path ? isActive(item.path) : false;
 
-                            {/* Footer */}
-                            <div className="px-4 pb-4 mt-8 pt-6 border-t border-gray-700">
-                                <div className="flex justify-between items-center mb-3">
-                                    <Link
-                                        to="/admin/settings"
-                                        className="no-transition text-gray-400 hover:text-white transition-colors"
-                                        title="Cài đặt"
-                                        onClick={() => {
-                                            if (window.innerWidth < 1024) {
-                                                setIsSidebarOpen(false);
-                                            }
-                                        }}
-                                    >
-                                        <Settings className="w-5 h-5" />
-                                    </Link>
-                                    <Link
-                                        to="/"
-                                        className="no-transition text-gray-400 hover:text-white transition-colors"
-                                        title="Trang chủ"
-                                        onClick={() => {
-                                            if (window.innerWidth < 1024) {
-                                                setIsSidebarOpen(false);
-                                            }
-                                        }}
-                                    >
-                                        <Globe className="w-5 h-5" />
-                                    </Link>
-                                    <Link
-                                        to="/login"
-                                        className="no-transition text-gray-400 hover:text-white transition-colors"
-                                        title="Đăng xuất"
-                                        onClick={() => {
-                                            if (window.innerWidth < 1024) {
-                                                setIsSidebarOpen(false);
-                                            }
-                                        }}
-                                    >
-                                        <LogOut className="w-5 h-5" />
-                                    </Link>
-                                </div>
+                                    return (
+                                        <div key={item.id}>
+                                            <Link
+                                                to={item.path!}
+                                                onClick={() => handleMenuClick(item)}
+                                                title={collapsed ? item.label : undefined}
+                                                className={`flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group relative ${active
+                                                    ? "bg-blue-600 text-white font-medium shadow-sm"
+                                                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                                    }`}
+                                            >
+                                                <Icon
+                                                    className={`w-5 h-5 flex-shrink-0 ${collapsed ? "mx-auto" : "mr-3"} ${active ? "text-white" : "text-gray-500 group-hover:text-gray-900"
+                                                        }`}
+                                                />
+                                                {!collapsed && (
+                                                    <span className="flex-1 truncate">{item.label}</span>
+                                                )}
+                                                {active && (
+                                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-r-full lg:hidden" />
+                                                )}
+                                            </Link>
+                                        </div>
+                                    );
+                                })}
                             </div>
+                        ))}
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="p-4 border-t border-gray-200 bg-gray-50/50 mt-6">
+                        <div className="space-y-1">
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center w-full px-3 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-red-600 rounded-lg transition-all duration-200 group mt-1"
+                                title={collapsed ? "Đăng xuất" : undefined}
+                            >
+                                <LogOut className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} group-hover:text-red-600`} />
+                                {!collapsed && <span className="truncate">Đăng xuất</span>}
+                            </button>
                         </div>
                     </div>
-                    {/* Ensure all containers are closed before ending nav */}
                 </div>
-            </nav>
+            </div>
         </>
     );
 };

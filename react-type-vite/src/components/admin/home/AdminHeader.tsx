@@ -265,8 +265,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   }, [isNotificationOpen, isProfileOpen]);
 
   return (
-    <nav className="bg-white border-b border-gray-200 py-2 md:py-4.5">
-      <div className="container-fluid px-4 md:px-6">
+    <nav className="bg-white border-b border-gray-200 h-[73px] flex items-center w-full">
+      <div className="container-fluid px-4 md:px-6 w-full">
         <div className="flex items-center justify-between w-full">
           {/* Left side - Mobile logo and sidebar toggle */}
           <div className="flex items-center">

@@ -4,8 +4,6 @@ import {
   Users,
   BookOpen,
   Building,
-  TrendingUp,
-  TrendingDown,
 } from "lucide-react";
 import * as educationUnitApi from "@/services/api/admin/educationUnitApi";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
@@ -113,6 +111,7 @@ const AdminStatsCards: React.FC = () => {
                 <p className="text-3xl font-bold text-gray-900 mb-2">
                   {stat.value.toLocaleString()}
                 </p>
+                {/* 
                 <div className="flex items-center space-x-1">
                   {stat.trending === "up" ? (
                     <TrendingUp className="w-3 h-3 text-green-500" />
@@ -127,6 +126,7 @@ const AdminStatsCards: React.FC = () => {
                   </span>
                   <span className="text-xs text-gray-500">vs tháng trước</span>
                 </div>
+                */}
               </div>
               <div className={`${stat.bgColor} p-3 rounded-full`}>
                 <Icon className={`w-6 h-6 ${stat.textColor}`} />

@@ -48,6 +48,22 @@ public class SystemAdminRevenueController {
         return ResponseEntity.ok(ApiResponse.success(revenue, "Get teachers revenue successfully"));
     }
 
+    @GetMapping("/courses")
+    public ResponseEntity<ApiResponse<?>> getAllCoursesRevenue() {
+        log.info("Getting all courses revenue");
+        var revenue = payoutOrderItemService.getAllCoursesRevenue();
+        return ResponseEntity.ok(ApiResponse.success(revenue, "Get courses revenue successfully"));
+    }
+
+    @GetMapping("/courses/range")
+    public ResponseEntity<ApiResponse<?>> getAllCoursesRevenueByRange(
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        log.info("Getting all courses revenue from {} to {}", startDate, endDate);
+        var revenue = payoutOrderItemService.getAllCoursesRevenueByRange(startDate, endDate);
+        return ResponseEntity.ok(ApiResponse.success(revenue, "Get courses revenue successfully"));
+    }
+
     @GetMapping("/admins")
     public ResponseEntity<ApiResponse<?>> getAllAdminsRevenue() {
         log.info("Getting all admins revenue");

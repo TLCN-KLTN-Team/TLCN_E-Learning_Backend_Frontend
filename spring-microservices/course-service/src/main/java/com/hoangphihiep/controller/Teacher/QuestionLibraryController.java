@@ -94,9 +94,10 @@ public class QuestionLibraryController {
     @PostMapping("/import")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Map<String, Object>> importQuestions(
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("cloId") Integer cloId) {
 
-        Map<String, Object> result = questionLibraryService.importQuestionsFromCsv(file);
+        Map<String, Object> result = questionLibraryService.importQuestionsFromCsv(file, cloId);
 
         return ApiResponse.<Map<String, Object>>builder()
                 .result(result)

@@ -208,8 +208,15 @@ public class QuestionLibraryService {
     }
 
     @Transactional
-    public Map<String, Object> importQuestionsFromCsv(MultipartFile file) {
+    public Map<String, Object> importQuestionsFromCsv(MultipartFile file, Integer cloId) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String mappedTeacherId = resolveMappedTeacherId(teacherId);
+
+        CourseObjective courseObjective = courseObjectiveRepository.findById(cloId)
+            .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
+        if (courseObjective.getCourse() == null || !mappedTeacherId.equals(courseObjective.getCourse().getIdTeacher())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
 
         List<Question> importedQuestions = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -236,6 +243,7 @@ public class QuestionLibraryService {
                 try {
                     Question question = parseExcelRow(row, teacherId);
                     if (question != null) {
+                        question.setCourseObjective(courseObjective);
                         Question savedQuestion = questionRepository.save(question);
                         importedQuestions.add(savedQuestion);
                         successCount++;
@@ -301,6 +309,8 @@ public class QuestionLibraryService {
                 answer.setIsCorrect(isCorrect);
                 answer.setOrderIndex(answerIndex++);
                 answer.setQuestion(question);
+                answer.setCreatedAt(new Date());
+                answer.setUpdateAt(new Date());
                 answers.add(answer);
             }
         }
@@ -369,6 +379,10 @@ public class QuestionLibraryService {
         if (question.getCourseObjective() != null) {
             response.setCloId(question.getCourseObjective().getId());
             response.setCloCode(question.getCourseObjective().getCode());
+            if (question.getCourseObjective().getCourse() != null) {
+                response.setCourseId(question.getCourseObjective().getCourse().getId());
+                response.setCourseName(question.getCourseObjective().getCourse().getCourseName());
+            }
         }
         response.setAttachments(question.getAttachments());
         response.setCreatedAt(question.getCreatedAt());

@@ -29,4 +29,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Integer>
     
     @Query("SELECT COUNT(d) FROM Department d WHERE d.educationalUnit.id = :educationalUnitId")
     long countByEducationalUnitId(@Param("educationalUnitId") Integer educationalUnitId);
+
+    @Query("SELECT d FROM Department d WHERE d.educationalUnit.id = :educationalUnitId")
+    List<Department> findByEducationalUnitId(@Param("educationalUnitId") Integer educationalUnitId);
 }

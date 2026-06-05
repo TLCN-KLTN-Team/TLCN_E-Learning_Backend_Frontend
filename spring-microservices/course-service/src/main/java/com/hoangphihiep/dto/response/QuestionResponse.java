@@ -34,6 +34,8 @@ public class QuestionResponse {
     private Integer educationalUnitId;
     private Integer cloId;
     private String cloCode;
+    private Integer courseId;
+    private String courseName;
 
     private Date createdAt;
 

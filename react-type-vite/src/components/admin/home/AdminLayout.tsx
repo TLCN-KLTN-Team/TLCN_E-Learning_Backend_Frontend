@@ -6,6 +6,7 @@ import AdminHeader from "./AdminHeader";
 
 const AdminLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   console.log("AdminLayout rendering..."); // Debug log
 
@@ -15,10 +16,12 @@ const AdminLayout: React.FC = () => {
         <AdminSidebar
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
+          collapsed={isCollapsed}
+          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
         />
 
         {/* Main Content */}
-        <div className="flex-1 ml-0 lg:ml-64 transition-all duration-300">
+        <div className={`flex-1 ml-0 ${isCollapsed ? "lg:ml-16" : "lg:ml-64"} transition-all duration-300`}>
           {/* Header */}
           <AdminHeader
             isSidebarOpen={isSidebarOpen}

@@ -18,11 +18,10 @@ const CourseCard = ({ course }: CourseCardProps) => {
   };
 
   return (
-    <div className="student-dashboard-course-card hover:translate-y-[-4px] hover:shadow-lg transition-all duration-300">
-      <Link
-        to={`/student/dashboard/course/classes/${course.classId}`}
-        className="relative cursor-pointer block"
-      >
+    <Link
+      to={`/student/dashboard/course/classes/${course.classId}`}
+      className="student-dashboard-course-card hover:translate-y-[-4px] hover:shadow-lg transition-all duration-300 relative cursor-pointer block"
+    >
         <div className="w-full h-48 overflow-hidden">
           <img
             src="https://res.cloudinary.com/dm7wobbxu/image/upload/v1766208954/pngtree-people-studying-and-learning-in-room-couch-banner-graphic-vector-png-image_52216108_pigaoq.jpg"
@@ -33,12 +32,13 @@ const CourseCard = ({ course }: CourseCardProps) => {
         <div className="absolute top-3 right-3">
           <button
             className="student-dashboard-card-action-btn"
+            aria-label="Tùy chọn khóa học"
+            title="Tùy chọn khóa học"
             onClick={(e) => e.preventDefault()}
           >
             <MoreVertical className="w-4 h-4 student-dashboard-card-action-icon" />
           </button>
         </div>
-      </Link>
 
       <div className="p-4">
         <h3 className="font-semibold text-lg student-dashboard-course-title mb-2 line-clamp-2">
@@ -68,7 +68,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

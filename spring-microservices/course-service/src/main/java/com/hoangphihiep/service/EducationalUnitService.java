@@ -9,6 +9,9 @@ import com.hoangphihiep.entity.Department;
 import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseProgress;
 import com.hoangphihiep.entity.EducationalUnit;
+import com.hoangphihiep.entity.CourseEnrollment;
+import com.hoangphihiep.entity.OrderItem;
+import java.util.stream.Collectors;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.mapper.EducationalUnitMapper;
@@ -37,6 +40,8 @@ import java.util.concurrent.CompletableFuture;
 public class EducationalUnitService {
 
     private final EducationalUnitRepository educationalUnitRepository;
+    private final CourseEnrollmentRepository courseEnrollmentRepository;
+    private final OrderItemRepository orderItemRepository;
     private final UserRepository userRepository;
     private final FileHandlerRepository fileHandlerRepository;
     private final EducationalUnitMapper educationalUnitMapper;
@@ -402,52 +407,32 @@ public class EducationalUnitService {
             double totalRatios = 0.0;
             int courseCount = 0;
             
-            // For each course, calculate the ratio of internal students
             for (Course course : courses) {
-                // Get all enrollments for this course with active progress
-                List<CourseProgress> courseProgresses = courseProgressRepository.findByCourseId(course.getId());
+                // Internal students: enrolled via classes in CourseEnrollment
+                List<CourseEnrollment> enrollments = courseEnrollmentRepository.findByCourseIdAndStatus(course.getId(), "ACTIVE");
+                Set<String> internalUsers = enrollments.stream()
+                        .map(CourseEnrollment::getStudentId)
+                        .collect(Collectors.toSet());
                 
-                if (courseProgresses.isEmpty()) {
-                    log.debug("No active progress records for course {}", course.getId());
-                    continue;
+                // External students: purchased via OrderItem -> PublishedCourse -> Course
+                List<OrderItem> orderItems = orderItemRepository.findByOriginalCourseId(course.getId());
+                Set<String> externalUsers = orderItems.stream()
+                        .map(oi -> oi.getOrder().getIdUser())
+                        .collect(Collectors.toSet());
+                
+                Set<String> allUsers = new HashSet<>();
+                allUsers.addAll(internalUsers);
+                allUsers.addAll(externalUsers);
+                
+                int totalStudents = allUsers.size();
+                
+                if (totalStudents > 0) {
+                    double courseRatio = (double) internalUsers.size() / totalStudents;
+                    log.debug("Course {}: {}/{} internal students = {}", course.getId(), internalUsers.size(), totalStudents, courseRatio);
+                    
+                    totalRatios += courseRatio;
+                    courseCount++;
                 }
-                
-                // Filter only those with progress > 0
-                List<CourseProgress> activeProgresses = courseProgresses.stream()
-                        .filter(cp -> cp.getProgressPercentage() > 0)
-                        .toList();
-                
-                if (activeProgresses.isEmpty()) {
-                    log.debug("No active progress (>0%) for course {}", course.getId());
-                    continue;
-                }
-
-
-                long totalStudents = userInfoApi.countStudentsByEducationalUnit(eduId).getResult();
-                System.out.println ("id của edu: " + eduId);
-                System.out.println ("Tổng sinh viên trong đơn vị đào tạo: " + totalStudents);
-                int internalStudents = 0;
-                
-                // Check each student to see if they belong to the same educational unit
-                for (CourseProgress progress : activeProgresses) {
-                    try {
-                        StudentResponse student = studentRepository.getStudentById(progress.getIdUser()).getResult();
-
-                        Integer eduUnitId = Integer.parseInt(student.getEducationalUnitId());
-
-                        if (eduUnitId.equals(eduId)) {
-                            internalStudents++;
-                        }
-                    } catch (Exception e) {
-                        log.warn("Failed to get educational unit for student {}: {}", progress.getIdUser(), e.getMessage());
-                    }
-                }
-                
-                double courseRatio = (double) internalStudents / totalStudents;
-                log.debug("Course {}: {}/{} internal students = {}", course.getId(), internalStudents, totalStudents, courseRatio);
-                
-                totalRatios += courseRatio;
-                courseCount++;
             }
             
             if (courseCount == 0) {
@@ -462,6 +447,142 @@ public class EducationalUnitService {
         } catch (Exception e) {
             log.error("Error calculating average internal student ratio for admin {}: {}", adminId, e.getMessage(), e);
             return 0.0;
+        }
+    }
+
+    public List<DepartmentStatResponse> getDepartmentStats(String adminId) {
+        try {
+            Optional<EducationalUnit> educationalUnit = educationalUnitRepository.findByIdAdmin(adminId);
+            if (educationalUnit.isEmpty()) {
+                return Collections.emptyList();
+            }
+            Integer eduId = educationalUnit.get().getId();
+
+            List<Department> departments = departmentRepository.findByEducationalUnitId(eduId);
+            List<TeacherResponse> teachers = teacherRepository.getTeachersByEducationalUnitNoPage(eduId).getResult();
+            List<StudentResponse> students = studentRepository.getAllStudentsByEducationalUnit(eduId).getResult();
+
+            Map<String, String> teacherToDept = new HashMap<>();
+            if (teachers != null) {
+                for (TeacherResponse teacher : teachers) {
+                    if (teacher.getDepartmentId() != null) {
+                        teacherToDept.put(teacher.getId(), teacher.getDepartmentId());
+                        if (teacher.getTeacherId() != null) {
+                            teacherToDept.put(teacher.getTeacherId(), teacher.getDepartmentId());
+                        }
+                    }
+                }
+            }
+
+            // Count courses per department
+            List<Course> courses = courseRepository.findByEducationalUnitId(eduId);
+            Map<String, Integer> courseCountByDept = new HashMap<>();
+            if (courses != null) {
+                for (Course course : courses) {
+                    String deptId = teacherToDept.get(course.getIdTeacher());
+                    if (deptId != null) {
+                        courseCountByDept.put(deptId, courseCountByDept.getOrDefault(deptId, 0) + 1);
+                    }
+                }
+            }
+
+            // Count students per department
+            Map<String, Integer> studentCountByDept = new HashMap<>();
+            if (students != null) {
+                for (StudentResponse student : students) {
+                    if (student.getDepartmentId() != null) {
+                        studentCountByDept.put(student.getDepartmentId(), studentCountByDept.getOrDefault(student.getDepartmentId(), 0) + 1);
+                    }
+                }
+            }
+
+            List<DepartmentStatResponse> result = new ArrayList<>();
+            for (Department dept : departments) {
+                String deptIdStr = String.valueOf(dept.getId());
+                result.add(DepartmentStatResponse.builder()
+                        .departmentId(deptIdStr)
+                        .departmentName(dept.getName())
+                        .courseCount(courseCountByDept.getOrDefault(deptIdStr, 0))
+                        .studentCount(studentCountByDept.getOrDefault(deptIdStr, 0))
+                        .build());
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("Error getting department stats: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    public List<RecentActivityResponse> getRecentActivities(String adminId) {
+        try {
+            Optional<EducationalUnit> educationalUnit = educationalUnitRepository.findByIdAdmin(adminId);
+            if (educationalUnit.isEmpty()) {
+                return Collections.emptyList();
+            }
+            Integer eduId = educationalUnit.get().getId();
+
+            List<RecentActivityResponse> activities = new ArrayList<>();
+            Pageable top10 = PageRequest.of(0, 10);
+
+            // Fetch recent internal enrollments
+            Page<CourseEnrollment> recentEnrollments = courseEnrollmentRepository.findRecentByEducationalUnitId(eduId, top10);
+            if (recentEnrollments.hasContent()) {
+                for (CourseEnrollment ce : recentEnrollments.getContent()) {
+                    UserResponse user = null;
+                    try {
+                        user = userInfoApi.getUserInfo(ce.getStudentId()).getResult();
+                    } catch (Exception ex) {
+                        // ignore
+                    }
+                    String studentName = (user != null && user.getFirstName() != null) 
+                            ? (user.getFirstName() + " " + user.getLastName()) 
+                            : "Một học viên";
+                    String className = ce.getCourseClass() != null ? ce.getCourseClass().getClassName() : "";
+                    
+                    activities.add(RecentActivityResponse.builder()
+                            .id("ENR_" + ce.getId())
+                            .title("Ghi danh lớp học")
+                            .description(studentName + " vừa được ghi danh vào lớp " + className + " thuộc khóa " + ce.getCourse().getCourseName())
+                            .date(ce.getEnrolledAt())
+                            .type("INTERNAL")
+                            .build());
+                }
+            }
+
+            // Fetch recent external orders
+            Page<OrderItem> recentOrders = orderItemRepository.findRecentByEducationalUnitId(eduId, top10);
+            if (recentOrders.hasContent()) {
+                for (OrderItem oi : recentOrders.getContent()) {
+                    UserResponse user = null;
+                    try {
+                        user = userInfoApi.getUserInfo(oi.getOrder().getIdUser()).getResult();
+                    } catch (Exception ex) {
+                        // ignore
+                    }
+                    String studentName = (user != null && user.getFirstName() != null) 
+                            ? (user.getFirstName() + " " + user.getLastName()) 
+                            : "Một học viên";
+                    
+                    activities.add(RecentActivityResponse.builder()
+                            .id("ORD_" + oi.getId())
+                            .title("Đăng ký khóa học")
+                            .description(studentName + " vừa mua khóa học " + oi.getCourse().getCourse().getCourseName())
+                            .date(oi.getOrder().getOrderDate() != null ? new Date(oi.getOrder().getOrderDate().getTime()) : new Date())
+                            .type("EXTERNAL")
+                            .build());
+                }
+            }
+
+            // Sort by date descending and take top 10
+            return activities.stream()
+                    .filter(a -> a.getDate() != null)
+                    .sorted((a, b) -> b.getDate().compareTo(a.getDate()))
+                    .limit(10)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("Error getting recent activities: {}", e.getMessage(), e);
+            return Collections.emptyList();
         }
     }
 

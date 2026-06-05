@@ -1,8 +1,8 @@
 import type React from "react";
 import AdminStatsCards from "../../components/admin/home/AdminStatsCards";
 import AdminEarningsChart from "../../components/admin/home/AdminEarningsChart";
-import AdminTopInstructors from "../../components/admin/home/AdminTopInstructors";
-import AdminNoticeBoard from "../../components/admin/home/AdminNoticeBoard";
+import AdminDepartmentStats from "../../components/admin/home/AdminDepartmentStats";
+import AdminRecentActivities from "../../components/admin/home/AdminRecentActivities";
 import AdminEducationalUnitInfo from "@/components/admin/home/AdminEducationalUnitInfo";
 import AdminProfileInfo from "@/components/admin/home/AdminProfileInfo";
 
@@ -32,8 +32,8 @@ const AdminDashboardPage: React.FC = () => {
 
       {/* Bottom Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <AdminTopInstructors />
-        <AdminNoticeBoard />
+        <AdminDepartmentStats />
+        <AdminRecentActivities />
         <AdminProfileInfo />
       </div>
     </>
