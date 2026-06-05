@@ -58,10 +58,17 @@ public interface ChannelService {
     BasicChannelResponse getBasicChannelById(String channelId);
 
     /**
-     * Get all basic channels in a section.
+     * Get basic channels in a section, filtered by the current user's role.
+     * <p>
+     * - TEACHER: returns all channels in the section (full visibility for management).
+     * - STUDENT / MODERATOR: returns only channels where the user has an ACTIVE ChannelMember record.
+     * <p>
+     * Role is resolved from the JWT {@code roles} claim via Spring Security authorities
+     * (prefix {@code ROLE_}). Membership lookup uses the index {@code (sectionId, userId)}
+     * on {@code channel_members} — two indexed queries total for the student path.
      *
      * @param sectionId Section ID
-     * @return List of basic channel information
+     * @return List of basic channel information visible to the current user
      */
     List<BasicChannelResponse> getBasicChannels(String sectionId);
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  CheckCircle,
   Download,
   FileText,
   Loader2,
@@ -54,6 +55,8 @@ const SubmitAssignmentModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(3);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const phase = derivePhase(
@@ -68,6 +71,25 @@ const SubmitAssignmentModal = ({
     if (isOpen) document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [isOpen, onClose]);
+
+  // Reset success state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSubmitSuccess(false);
+      setCountdown(3);
+    }
+  }, [isOpen]);
+
+  // Auto-close countdown after successful submit
+  useEffect(() => {
+    if (!submitSuccess) return;
+    if (countdown <= 0) {
+      onClose();
+      return;
+    }
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [submitSuccess, countdown, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -139,7 +161,8 @@ const SubmitAssignmentModal = ({
       );
       setSubmissions(refreshed ?? []);
       setPendingFiles([]);
-      toast.success("Đã nộp bài thành công");
+      setSubmitSuccess(true);
+      setCountdown(3);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Nộp bài thất bại");
     } finally {
@@ -166,6 +189,30 @@ const SubmitAssignmentModal = ({
           onChange={handleFilePick}
         />
 
+        {submitSuccess && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12 px-6 text-center animate-in fade-in duration-300">
+            <div className="rounded-full bg-green-500/20 p-4">
+              <CheckCircle className="w-14 h-14 text-green-400" />
+            </div>
+            <div>
+              <p className="text-white text-lg font-semibold">Nộp bài thành công!</p>
+              <p className="text-gray-400 text-sm mt-1">
+                Nhóm đã nộp bài. Cửa sổ sẽ tự đóng sau{" "}
+                <span className="text-indigo-400 font-medium">{countdown}</span> giây…
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors"
+            >
+              Đóng ngay
+            </button>
+          </div>
+        )}
+
+        {!submitSuccess && (
+        <>
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-700">
           <div>
             <h3 className="text-white font-semibold flex items-center gap-2">
@@ -320,6 +367,8 @@ const SubmitAssignmentModal = ({
             Nộp bài
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

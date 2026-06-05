@@ -211,6 +211,93 @@ export interface CrossReviewScoreResponse {
   updatedAt: string;
 }
 
+/** UC-41 Batch: một entry trong batch submit */
+export interface CrossReviewBatchEntry {
+  reviewedChannelId: string;
+  score: number;
+  comment?: string;
+}
+
+/** UC-41 Batch: payload khi nhóm nhấn "Nộp bài chấm" */
+export interface CrossReviewBatchSubmitRequest {
+  entries: CrossReviewBatchEntry[];
+}
+
+/** UC-41 Batch: response sau khi nộp batch thành công */
+export interface CrossReviewScoreOfGroupResponse {
+  id: string;
+  reviewerChannelId: string;
+  assignmentSessionId: string;
+  submittedByUserId: string;
+  entries: CrossReviewBatchEntry[];
+  submittedAt: string;
+  updatedAt: string;
+}
+
+/** UC-41: kết quả tính điểm cuối cùng theo thuật toán Median */
+export interface FinalScoreResponse {
+  channelId: string;
+  selfScore?: number | null;
+  medianScore?: number | null;
+  finalScore?: number | null;
+  usedSelfScore: boolean;
+  reviewerCount: number;
+}
+
+// UC-41: trạng thái thu điểm của phiên làm bài
+export const ScoreCollectionStatus = {
+  PENDING: "PENDING",
+  COLLECTING: "COLLECTING",
+  COLLECTED: "COLLECTED",
+  FAILED: "FAILED",
+} as const;
+
+export type ScoreCollectionStatus =
+  (typeof ScoreCollectionStatus)[keyof typeof ScoreCollectionStatus];
+
+export interface AssignmentSessionResponse {
+  id: string;
+  sectionId: string;
+  name: string;
+  description?: string | null;
+  submissionDeadline: string;       // ISO instant
+  crossReviewDeadline?: string | null;
+  allowCrossReview: boolean;
+  channels: BasicChannelResponse[];
+  submittedChannelIds: string[];
+  totalChannels: number;
+  submittedCount: number;
+  scoreCollectionStatus?: ScoreCollectionStatus | null;
+  scoreCollectionError?: string | null;
+  scoreCollectedAt?: string | null;
+  createdAt: string;
+}
+
+export interface PeerScoreEntryResponse {
+  reviewerChannelId: string;
+  score: number | null;
+  comment?: string | null;
+  submittedAt: string;
+}
+
+export interface GroupFinalScoreResponse {
+  id: string;
+  assignmentSessionId: string;
+  channelId: string;
+  sectionId: string;
+  peerScores: PeerScoreEntryResponse[];
+  selfScore?: number | null;
+  medianPeerScore?: number | null;
+  finalScore?: number | null;
+  usedSelfScore: boolean;
+  reviewerCount: number;
+  memberUserIds?: string[];
+  /** "CALCULATED" | "NO_SUBMISSION" | "NO_PEERS" | "SENT_TO_LMS" */
+  status?: string | null;
+  calculatedAt?: string | null;
+  sentToLmsAt?: string | null;
+}
+
 export interface AttachmentItem {
   id: string;
   fileName: string;

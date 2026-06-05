@@ -61,10 +61,10 @@ const GroupChannelModal = ({
           </label>
           <input
             type="number"
-            min="1"
+            min="2"
             value={membersPerGroup}
             onChange={(e) =>
-              onMembersPerGroupChange(parseInt(e.target.value) || 1)
+              onMembersPerGroupChange(parseInt(e.target.value) || 2)
             }
             className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />

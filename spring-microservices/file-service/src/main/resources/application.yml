@@ -20,7 +20,7 @@ spring:
     name: file-handler-service
   data:
     mongodb:
-      uri: mongodb+srv://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@${MONGO_DB_HOST:hackathon.n5sib2v.mongodb.net}/${MONGO_DB_NAME:ai_db}?retryWrites=true&w=majority&appName=Hackathon
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb+srv://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@hackathon.n5sib2v.mongodb.net/file_db?retryWrites=true&w=majority&appName=Hackathon}
       auto-index-creation: true
   servlet:
     multipart:

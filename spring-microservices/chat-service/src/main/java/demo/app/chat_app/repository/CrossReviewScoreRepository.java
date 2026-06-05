@@ -19,4 +19,8 @@ public interface CrossReviewScoreRepository extends MongoRepository<CrossReviewS
      * đã nhận được từ các nhóm chấm chéo.
      */
     List<CrossReviewScore> findByReviewedUserIdsContaining(String userId);
+
+    /** Tất cả điểm nhận được trong một session — dùng để collect nếu cần tra cứu từng cặp. */
+    List<CrossReviewScore> findAllByAssignmentSessionIdAndReviewedChannelId(
+            String assignmentSessionId, String reviewedChannelId);
 }

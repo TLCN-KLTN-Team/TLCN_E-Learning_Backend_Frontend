@@ -131,7 +131,16 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAccountStatus(AccountStatus.PENDING_VERIFICATION);
         user.setEmailVerified(false);
-        user.setRole(Role.USER);
+
+        Role assignedRole = Role.STUDENT;
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            try {
+                assignedRole = Role.valueOf(request.getRoles().iterator().next().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                assignedRole = Role.STUDENT;
+            }
+        }
+        user.setRole(assignedRole);
 
         this.sendEmailVerification(request);
         try {

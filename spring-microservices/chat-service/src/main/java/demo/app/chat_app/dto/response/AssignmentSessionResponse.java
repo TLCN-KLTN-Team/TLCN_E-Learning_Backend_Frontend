@@ -35,5 +35,10 @@ public class AssignmentSessionResponse {
     int totalChannels;
     int submittedCount;
 
+    /** "PENDING" | "COLLECTING" | "COLLECTED" | "FAILED" | null */
+    String scoreCollectionStatus;
+    String scoreCollectionError;
+    Instant scoreCollectedAt;
+
     Instant createdAt;
 }

@@ -91,6 +91,8 @@ public enum ErrorCode {
 
 
     INVALID_FILE_NAME("FILE_5006", "Tên file không hợp lệ", HttpStatus.INTERNAL_SERVER_ERROR),
+    AUTH_UPLOAD_FAILED("FILE_5012", "Upload file xác thực lên Cloudinary thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    SIGNED_URL_FAILED("FILE_5013", "Tạo signed URL thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Cross-service / resource errors
     RESOURCE_NOT_FOUND("BIZ_4001", "Không tìm thấy tài nguyên yêu cầu", HttpStatus.NOT_FOUND),

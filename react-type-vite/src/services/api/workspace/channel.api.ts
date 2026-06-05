@@ -1,6 +1,7 @@
 import axiosInstance from "../httpClient/axiosInstance";
 import type { ApiResponse } from "../response/apiResponse";
 import type {
+  AssignmentSessionResponse,
   AttachmentCategory,
   AttachmentResponse,
   BasicChannelResponse,
@@ -10,8 +11,11 @@ import type {
   ChatMessageRequest,
   ChatMessageResponse,
   CreateChannelRequest,
+  CrossReviewBatchSubmitRequest,
+  CrossReviewScoreOfGroupResponse,
   CrossReviewScoreResponse,
   CrossReviewSubmitRequest,
+  GroupFinalScoreResponse,
   SessionGroupSubmissionsResponse,
   UserResponse,
 } from "@/types/chat.types";
@@ -176,6 +180,21 @@ export const submitCrossReview = async (
 };
 
 /**
+ * UC-41 Batch: nhóm nhấn "Nộp bài chấm" — gửi toàn bộ điểm đã lưu cục bộ lên server.
+ * Upsert CrossReviewScoreOfGroup; đồng thời upsert từng CrossReviewScore riêng lẻ.
+ */
+export const submitBatchCrossReview = async (
+  channelId: string,
+  payload: CrossReviewBatchSubmitRequest,
+): Promise<CrossReviewScoreOfGroupResponse> => {
+  const response = await axiosInstance.post<ApiResponse<CrossReviewScoreOfGroupResponse>>(
+    `${CHANNEL_API_BASE_URL}/${channelId}/cross-review/batch-submit`,
+    payload,
+  );
+  return response.data.result;
+};
+
+/**
  * UC-41: tất cả điểm nhóm này đã nộp trong session — FE prefill theo từng nhóm.
  * Trả về [] nếu chưa submit lần nào.
  */
@@ -198,6 +217,41 @@ export const getSessionSubmissions = async (
 ): Promise<AttachmentResponse[]> => {
   const response = await axiosInstance.get<ApiResponse<AttachmentResponse[]>>(
     `${CHANNEL_API_BASE_URL}/${channelId}/session-submissions`,
+  );
+  return response.data.result ?? [];
+};
+
+// ─── UC-41: Assignment Session management (teacher) ──────────────────────────
+
+/** Lấy tất cả phiên làm bài trong một section. */
+export const getSessionsBySectionId = async (
+  sectionId: string,
+): Promise<AssignmentSessionResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<AssignmentSessionResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/sessions/section/${sectionId}`,
+  );
+  return response.data.result ?? [];
+};
+
+/**
+ * Thu điểm thủ công cho một phiên (idempotent — nếu đã COLLECTED thì trả kết quả cũ).
+ * Dành cho giáo viên khi auto-collect thất bại hoặc muốn chắc chắn.
+ */
+export const collectSessionScores = async (
+  sessionId: string,
+): Promise<GroupFinalScoreResponse[]> => {
+  const response = await axiosInstance.post<ApiResponse<GroupFinalScoreResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/sessions/${sessionId}/collect-scores`,
+  );
+  return response.data.result ?? [];
+};
+
+/** Lấy kết quả điểm đã tính của một phiên (đọc từ DB, không tính lại). */
+export const getSessionScores = async (
+  sessionId: string,
+): Promise<GroupFinalScoreResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<GroupFinalScoreResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/sessions/${sessionId}/scores`,
   );
   return response.data.result ?? [];
 };

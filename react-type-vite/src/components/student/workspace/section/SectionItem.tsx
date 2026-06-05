@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trophy } from "lucide-react";
 import type {
   SectionResponse,
   ChannelResponse,
@@ -15,6 +15,7 @@ interface SectionItemProps {
   onInvitePeople?: (channel: ChannelResponse) => void;
   onChannelSettings?: (channel: ChannelResponse) => void;
   onCreateChannel?: (sectionId: string) => void;
+  onManageSession?: (sectionId: string, sectionName: string) => void;
   isExpanded: boolean;
   onToggle: () => void;
 }
@@ -24,6 +25,7 @@ const SectionItem = ({
   selectedChannel,
   onChannelSelect,
   onCreateChannel,
+  onManageSession,
   isExpanded,
   onToggle,
 }: SectionItemProps) => {
@@ -71,6 +73,15 @@ const SectionItem = ({
           <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide truncate">
             {section.name}
           </span>
+        </button>
+
+        {/* Session Management Button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onManageSession?.(section.id, section.name); }}
+          className="p-1 hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+          title="Quản lý phiên điểm"
+        >
+          <Trophy className="w-3.5 h-3.5 text-gray-500 hover:text-yellow-400" />
         </button>
 
         {/* Create Channel Button */}

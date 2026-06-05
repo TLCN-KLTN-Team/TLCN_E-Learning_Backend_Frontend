@@ -4,7 +4,6 @@ import { addHours, addMinutes, format, parseISO } from "date-fns";
 import { getUsersByKeyword } from "@/services/api/workspace/workspace.api";
 import { toast } from "react-toastify";
 import type {
-  ChannelResponse,
   UserChatInfo,
   BulkRandomChannelRequest,
   BulkRandomChannelResponse,
@@ -20,13 +19,14 @@ import { bulkRandomCreateChannels } from "@/services/api/workspace/channel.api";
 interface AddChannelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onChannelCreated?: (newChannel: ChannelResponse) => void;
+  onChannelCreated?: (sectionId: string) => void;
   sectionId?: string;
 }
 
 const AddChannelModal = ({
   isOpen,
   onClose,
+  onChannelCreated,
   sectionId,
 }: AddChannelModalProps) => {
   const { sectionId: sectionIdFromParams } = useParams();
@@ -51,6 +51,8 @@ const AddChannelModal = ({
   const [crossReviewDeadlineLocal, setCrossReviewDeadlineLocal] = useState<string>(
     () => format(addHours(addMinutes(new Date(), 15), 2), "yyyy-MM-dd'T'HH:mm"),
   );
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Student search states (only for TEXT)
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,59 +129,65 @@ const AddChannelModal = ({
       }
     }
 
-    try {
-      if (!targetSectionId) {
-        toast.error("Không xác định được phần học. Vui lòng thử lại.");
+    if (!targetSectionId) {
+      toast.error("Không xác định được phần học. Vui lòng thử lại.");
+      return;
+    }
+
+    if (selectedType === ChannelType.GROUP) {
+      if (!submissionDeadlineLocal) {
+        toast.error("Vui lòng chọn hạn nộp bài hợp lệ");
         return;
       }
-
-      if (selectedType === ChannelType.GROUP) {
-        if (!submissionDeadlineLocal) {
-          toast.error("Vui lòng chọn hạn nộp bài hợp lệ");
+      if (allowCrossReview) {
+        if (!crossReviewDeadlineLocal) {
+          toast.error("Vui lòng chọn hạn chấm chéo");
           return;
         }
-        if (allowCrossReview) {
-          if (!crossReviewDeadlineLocal) {
-            toast.error("Vui lòng chọn hạn chấm chéo");
-            return;
-          }
-          if (
-            parseISO(crossReviewDeadlineLocal) <=
-            addHours(parseISO(submissionDeadlineLocal), 1)
-          ) {
-            toast.error("Hạn chấm chéo phải sau hạn nộp ít nhất 1 giờ");
-            return;
-          }
+        if (
+          parseISO(crossReviewDeadlineLocal) <=
+          addHours(parseISO(submissionDeadlineLocal), 1)
+        ) {
+          toast.error("Hạn chấm chéo phải sau hạn nộp ít nhất 1 giờ");
+          return;
         }
       }
+    }
 
-      const requestData: BulkRandomChannelRequest = {
-        sectionId: targetSectionId,
-        description: channelDescription.trim(),
-        channelName: channelName.trim(),
-        channelType: selectedType,
-        submissionDeadline: submissionDeadlineLocal,
-        crossReviewDeadline: allowCrossReview
-          ? crossReviewDeadlineLocal
-          : undefined,
-        membersPerGroup: membersPerGroup,
-        allowCrossReview: allowCrossReview,
-      };
+    const requestData: BulkRandomChannelRequest = {
+      sectionId: targetSectionId,
+      description: channelDescription.trim(),
+      channelName: channelName.trim(),
+      channelType: selectedType,
+      submissionDeadline: submissionDeadlineLocal,
+      crossReviewDeadline: allowCrossReview
+        ? crossReviewDeadlineLocal
+        : undefined,
+      membersPerGroup: membersPerGroup,
+      allowCrossReview: allowCrossReview,
+    };
 
-      console.log("🚀 Creating channel with data:", requestData);
-
+    setIsSubmitting(true);
+    try {
       const newChannel: BulkRandomChannelResponse =
         await bulkRandomCreateChannels(requestData);
 
       if (newChannel) {
-        console.log("New channels created:", newChannel);
+        const count = newChannel.channels?.length ?? 0;
+        toast.success(
+          count > 1
+            ? `Đã tạo thành công ${count} kênh!`
+            : `Đã tạo kênh "${channelName.trim()}" thành công!`,
+        );
+        onChannelCreated?.(targetSectionId);
       }
 
-      // Reset form
       handleClose();
     } catch (error) {
       console.error("Error creating channel:", error);
       toast.error("Không thể tạo channel. Vui lòng thử lại!");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -220,7 +228,7 @@ const AddChannelModal = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !isSubmitting) {
         handleClose();
       }
     };
@@ -232,7 +240,7 @@ const AddChannelModal = ({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, handleClose]);
+  }, [isOpen, handleClose, isSubmitting]);
 
   if (!isOpen) return null;
 
@@ -241,7 +249,7 @@ const AddChannelModal = ({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-[2px] transition-all duration-300"
-        onClick={handleClose}
+        onClick={isSubmitting ? undefined : handleClose}
       />
 
       {/* Modal Panel */}
@@ -253,8 +261,9 @@ const AddChannelModal = ({
             <p className="text-sm text-gray-400 mt-1">{channelName}</p>
           </div>
           <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            onClick={isSubmitting ? undefined : handleClose}
+            disabled={isSubmitting}
+            className="text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
@@ -431,16 +440,43 @@ const AddChannelModal = ({
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 text-gray-300 hover:text-red-500 transition-colors"
+                disabled={isSubmitting}
+                className="px-4 py-2 text-gray-300 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={!channelName.trim()}
-                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+                disabled={!channelName.trim() || isSubmitting}
+                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
               >
-                Tạo kênh
+                {isSubmitting ? (
+                  <>
+                    <svg
+                      className="animate-spin w-4 h-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Đang tạo...
+                  </>
+                ) : (
+                  "Tạo kênh"
+                )}
               </button>
             </div>
           </form>

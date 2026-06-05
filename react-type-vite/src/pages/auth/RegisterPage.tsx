@@ -189,6 +189,7 @@ const RegisterPage = () => {
       phoneNumber: formData.phoneNumber.trim(),
       password: formData.password.trim(),
       confirmPassword: formData.confirmPassword.trim(),
+      roles: ["STUDENT"],
     };
 
     // Step 2: Register user and send verification code

@@ -67,6 +67,8 @@ public enum ErrorCode {
     CROSS_REVIEW_NOT_MEMBER("CH_4010", "Bạn không thuộc nhóm chấm chéo này", HttpStatus.FORBIDDEN),
     CROSS_REVIEW_SCORE_INVALID("CH_4011", "Điểm phải nằm trong khoảng 0 – 10", HttpStatus.BAD_REQUEST),
     ASSIGNMENT_SESSION_NOT_FOUND("CH_4012", "Không tìm thấy phiên làm bài tập", HttpStatus.NOT_FOUND),
+    SCORE_COLLECTION_FAILED("CH_4013", "Thu thập điểm thất bại, vui lòng thử lại", HttpStatus.INTERNAL_SERVER_ERROR),
+    SCORE_COLLECTION_IN_PROGRESS("CH_4014", "Đang thu thập điểm, vui lòng đợi", HttpStatus.CONFLICT),
 
     // Message Errors (MSG_xxxx)
     MESSAGE_NOT_FOUND("MSG_5001", "Không tìm thấy tin nhắn", HttpStatus.NOT_FOUND),

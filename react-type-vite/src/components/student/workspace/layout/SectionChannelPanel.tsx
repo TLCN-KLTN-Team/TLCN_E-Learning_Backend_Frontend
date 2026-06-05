@@ -7,9 +7,10 @@ import type {
   SectionResponse,
 } from "@/types/chat.types";
 import { SectionList } from "../section";
-import { AddChannelModal, InvitePeopleModal } from "../channel";
+import { AddChannelModal, InvitePeopleModal, SessionManagementModal } from "../channel";
 import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
 import { getChannel } from "@/services/api/workspace/channel.api";
+
 
 interface SectionChannelPanelProps {
   selectedWorkspace: WorkspaceResponse | null;
@@ -36,6 +37,12 @@ const SectionChannelPanel = ({
   >(new Map());
   const [selectedChannelForAction, setSelectedChannelForAction] =
     useState<ChannelResponse | null>(null);
+
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [sessionModalTarget, setSessionModalTarget] = useState<{
+    sectionId: string;
+    sectionName: string;
+  } | null>(null);
 
   // Handle invite people to a specific channel
   const handleInvitePeople = (channel: ChannelResponse) => {
@@ -125,22 +132,13 @@ const SectionChannelPanel = ({
     });
   };
 
-  // Handle channel created callback
-  const handleChannelCreated = (newChannel: ChannelResponse) => {
-    // Refresh sections to show new channel
-    if (selectedWorkspace) {
-      getSectionsByWorkspaceId(selectedWorkspace.id)
-        .then((sectionsData) => {
-          setSections(sectionsData);
-          toast.success(`Kênh "${newChannel.name}" đã được tạo thành công!`);
-        })
-        .catch((error) => {
-          console.error("Error refreshing sections:", error);
-          toast.error(
-            "Không thể làm mới danh sách kênh. Vui lòng tải lại trang.",
-          );
-        });
-    }
+  const handleChannelCreated = (_sectionId: string) => {
+    // Modal closes itself after creation; no reload needed
+  };
+
+  const handleManageSession = (sectionId: string, sectionName: string) => {
+    setSessionModalTarget({ sectionId, sectionName });
+    setShowSessionModal(true);
   };
 
   // Handle channel select - fetch full details if needed
@@ -230,6 +228,7 @@ const SectionChannelPanel = ({
                 onInvitePeople={handleInvitePeople}
                 onChannelSettings={handleChannelSettings}
                 onCreateChannel={handleCreateChannel}
+                onManageSession={handleManageSession}
                 expandedSections={expandedSections}
                 onToggleSection={handleToggleSection}
               />
@@ -261,6 +260,19 @@ const SectionChannelPanel = ({
         sectionId={selectedSectionIdForCreate ?? undefined}
         onChannelCreated={handleChannelCreated}
       />
+
+      {/* Session Management Modal */}
+      {sessionModalTarget && (
+        <SessionManagementModal
+          isOpen={showSessionModal}
+          onClose={() => {
+            setShowSessionModal(false);
+            setSessionModalTarget(null);
+          }}
+          sectionId={sessionModalTarget.sectionId}
+          sectionName={sessionModalTarget.sectionName}
+        />
+      )}
 
       {/* Channel Settings Modal */}
       {/* {showSettingsModal && selectedChannelForAction && (
