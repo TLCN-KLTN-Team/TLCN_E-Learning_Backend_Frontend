@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Plus, Trophy } from "lucide-react";
+import { useAuth } from "@/context/auth-context/useAuth";
 import type {
   SectionResponse,
   ChannelResponse,
@@ -29,6 +30,8 @@ const SectionItem = ({
   isExpanded,
   onToggle,
 }: SectionItemProps) => {
+  const { user } = useAuth();
+  const isTeacher = user?.roles?.includes("TEACHER") || user?.role === "TEACHER";
   const [channels, setChannels] = useState<BasicChannelResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -75,23 +78,28 @@ const SectionItem = ({
           </span>
         </button>
 
-        {/* Session Management Button */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onManageSession?.(section.id, section.name); }}
-          className="p-1 hover:bg-gray-700 rounded transition-colors flex-shrink-0"
-          title="Quản lý phiên điểm"
-        >
-          <Trophy className="w-3.5 h-3.5 text-gray-500 hover:text-yellow-400" />
-        </button>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Session Management Button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onManageSession?.(section.id, section.name); }}
+            className="p-1 hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+            title="Quản lý phiên điểm"
+          >
+            <Trophy className="w-3.5 h-3.5 text-gray-500 hover:text-yellow-400" />
+          </button>
 
-        {/* Create Channel Button */}
-        <button
-          onClick={handleCreateChannel}
-          className="p-1 hover:bg-gray-700 rounded transition-colors flex-shrink-0"
-          title="Tạo kênh mới"
-        >
-          <Plus className="w-3.5 h-3.5 text-gray-500 hover:text-white" />
-        </button>
+          {/* Create Channel Button - TEACHER only */}
+          {isTeacher && (
+            <button
+              onClick={handleCreateChannel}
+              className="p-1 hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+              title="Tạo kênh mới"
+            >
+              <Plus className="w-3.5 h-3.5 text-gray-500 hover:text-white" />
+            </button>
+          )}
+        </div>
+
       </div>
 
       {/* Channels in Section - When Expanded */}

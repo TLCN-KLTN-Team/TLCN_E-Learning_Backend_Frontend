@@ -69,6 +69,9 @@ public class GroupFinalScore {
     /** Thời điểm đã gửi sang course-service (null nếu chưa). */
     Instant sentToLmsAt;
 
+    /** true nếu giáo viên đã chỉnh sửa finalScore thủ công sau khi tính tự động. */
+    boolean manuallyOverridden;
+
     // ─────────────────────────────────────────────────────────────────────
 
     @Data

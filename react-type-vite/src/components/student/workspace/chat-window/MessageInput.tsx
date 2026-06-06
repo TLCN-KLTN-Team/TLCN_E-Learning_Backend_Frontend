@@ -69,11 +69,8 @@ const MessageInput = ({
     selectedChannel.crossReviewDeadline,
     selectedChannel.allowCrossReview,
   );
-  const isLocked = phase !== ChannelPhase.OPEN;
-  const lockMessage =
-    phase === ChannelPhase.REVIEW
-      ? "Đã hết hạn nộp. Đang trong giai đoạn chấm chéo."
-      : "Kênh đã hết hạn. Không thể gửi tin nhắn hoặc upload file.";
+  const isLocked = phase === ChannelPhase.LOCKED;
+  const lockMessage = "Kênh đã hết hạn. Không thể gửi tin nhắn hoặc upload file.";
 
   const handleSendMessage = () => {
     const hasMessage = newMessage.trim().length > 0;

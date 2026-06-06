@@ -127,7 +127,7 @@ public class FileUploadService {
 
             // UC-41: track SUBMISSION messageId trong AssignmentSession
             if (effectiveCategory == AttachmentCategory.SUBMISSION && channel.getAssignmentSessionId() != null) {
-                trackSubmissionInSession(channel.getAssignmentSessionId(), chatMessage.getId());
+                trackSubmissionInSession(channel.getAssignmentSessionId(), channel.getId(), chatMessage.getId());
             }
 
             uploadStatusMap.put(chatMessage.getId(), "COMPLETED");
@@ -208,7 +208,7 @@ public class FileUploadService {
 
             // UC-41: track SUBMISSION messageId trong AssignmentSession
             if (effectiveCategory == AttachmentCategory.SUBMISSION && channel.getAssignmentSessionId() != null) {
-                trackSubmissionInSession(channel.getAssignmentSessionId(), chatMessage.getId());
+                trackSubmissionInSession(channel.getAssignmentSessionId(), channel.getId(), chatMessage.getId());
             }
 
             uploadStatusMap.put(chatMessage.getId(), "COMPLETED");
@@ -431,11 +431,18 @@ public class FileUploadService {
     }
 
     /**
-     * UC-41: thêm messageId vào danh sách submittedFileMessageIds của session.
+     * UC-41: ghi nhận một bài nộp (file SUBMISSION) vào AssignmentSession.
+     * - submittedFileMessageIds: lưu messageId của file (cho panel "Bài đã nộp").
+     * - submittedChannelIds: đánh dấu channel là "đã nộp" — đây là nguồn sự thật
+     *   mà ScoreCollectionService dùng để thu thập peerScores. Trước đây chỉ
+     *   submitPractices()/scheduler mới điền list này, nên nhóm upload file nhưng
+     *   không bấm "chốt nộp" bị tính nhầm là NO_SUBMISSION.
      * Idempotent — không thêm trùng. Gọi sau khi lưu message SUBMISSION thành công.
      */
-    private void trackSubmissionInSession(String sessionId, String messageId) {
+    private void trackSubmissionInSession(String sessionId, String channelId, String messageId) {
         assignmentSessionRepository.findById(sessionId).ifPresent(session -> {
+            boolean changed = false;
+
             List<String> ids = session.getSubmittedFileMessageIds();
             if (ids == null) {
                 ids = new ArrayList<>();
@@ -443,9 +450,24 @@ public class FileUploadService {
             }
             if (!ids.contains(messageId)) {
                 ids.add(messageId);
+                changed = true;
+            }
+
+            List<String> submittedChannels = session.getSubmittedChannelIds();
+            if (submittedChannels == null) {
+                submittedChannels = new ArrayList<>();
+                session.setSubmittedChannelIds(submittedChannels);
+            }
+            if (channelId != null && !submittedChannels.contains(channelId)) {
+                submittedChannels.add(channelId);
+                changed = true;
+            }
+
+            if (changed) {
                 session.setUpdatedAt(Instant.now());
                 assignmentSessionRepository.save(session);
-                log.info("UC-41: tracked submission messageId={} in session={}", messageId, sessionId);
+                log.info("UC-41: tracked submission messageId={} channelId={} in session={}",
+                        messageId, channelId, sessionId);
             }
         });
     }

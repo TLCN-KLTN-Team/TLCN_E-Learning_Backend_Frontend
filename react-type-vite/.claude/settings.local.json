@@ -8,10 +8,25 @@
       "Bash(xargs grep -l \"AssignmentSession\\\\|CrossReview\\\\|scoreCollection\\\\|collectScore\")",
       "Bash(xargs grep -l \"ScoreCollectionStatus\\\\|CrossReviewScore\\\\|GroupFinalScore\")",
       "Bash(xargs grep -l \"Scheduled\\\\|collectAndCalculate\\\\|ScoreCollectionService\")",
-      "Bash(xargs grep -l \"session\\\\|Session\")"
+      "Bash(xargs grep -l \"session\\\\|Session\")",
+      "Bash(git -C \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite\" status)",
+      "Bash(git -C \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite\" log --oneline -5)",
+      "Bash(git -C \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite\" diff --staged --stat)",
+      "Bash(git -C 'e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite' commit -m ' *)",
+      "Bash(xargs grep -l \"cross.*review\\\\|CrossReview\\\\|submitCrossReview\\\\|submitBatchCrossReview\")",
+      "Bash(xargs grep -l \"submitCrossReview\\\\|submitBatchCrossReview\")",
+      "Bash(Remove-Item \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\spring-microservices\\\\chat-service\\\\src\\\\main\\\\java\\\\demo\\\\app\\\\chat_app\\\\model\\\\workspace\\\\CrossReviewScore.java\" -Force)",
+      "Bash(Remove-Item \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\spring-microservices\\\\chat-service\\\\src\\\\main\\\\java\\\\demo\\\\app\\\\chat_app\\\\model\\\\workspace\\\\CrossReviewScoreOfGroup.java\" -Force)",
+      "Bash(Remove-Item \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\spring-microservices\\\\chat-service\\\\src\\\\main\\\\java\\\\demo\\\\app\\\\chat_app\\\\repository\\\\CrossReviewScoreRepository.java\" -Force)",
+      "Bash(Remove-Item \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\spring-microservices\\\\chat-service\\\\src\\\\main\\\\java\\\\demo\\\\app\\\\chat_app\\\\repository\\\\CrossReviewScoreOfGroupRepository.java\" -Force)",
+      "Bash(Write-Host \"Deleted 4 old files\")",
+      "Bash(mvn -q -o compile)",
+      "PowerShell(mvn -q -f \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\spring-microservices\\\\chat-service\\\\pom.xml\" compile -DskipTests 2>&1)",
+      "Bash(git stash *)"
     ],
     "additionalDirectories": [
-      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\scheduler"
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\scheduler",
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\exception"
     ]
   }
 }
