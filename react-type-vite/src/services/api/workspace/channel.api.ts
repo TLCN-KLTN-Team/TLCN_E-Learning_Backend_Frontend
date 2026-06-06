@@ -223,6 +223,16 @@ export const getSessionSubmissions = async (
 
 // ─── UC-41: Assignment Session management (teacher) ──────────────────────────
 
+/** Lấy thông tin một phiên làm bài theo ID. */
+export const getSessionById = async (
+  sessionId: string,
+): Promise<AssignmentSessionResponse> => {
+  const response = await axiosInstance.get<ApiResponse<AssignmentSessionResponse>>(
+    `${CHANNEL_API_BASE_URL}/sessions/${sessionId}`,
+  );
+  return response.data.result;
+};
+
 /** Lấy tất cả phiên làm bài trong một section. */
 export const getSessionsBySectionId = async (
   sectionId: string,
@@ -254,6 +264,35 @@ export const getSessionScores = async (
     `${CHANNEL_API_BASE_URL}/sessions/${sessionId}/scores`,
   );
   return response.data.result ?? [];
+};
+
+/**
+ * Giáo viên xác nhận gửi điểm sang LMS (course-service qua Kafka).
+ * Chỉ gọi được sau khi đã collect. Idempotent — cho phép gửi lại sau khi chỉnh sửa.
+ */
+export const sendScoresToLms = async (
+  sessionId: string,
+): Promise<GroupFinalScoreResponse[]> => {
+  const response = await axiosInstance.post<ApiResponse<GroupFinalScoreResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/sessions/${sessionId}/send-scores-to-lms`,
+  );
+  return response.data.result ?? [];
+};
+
+/**
+ * Giáo viên chỉnh sửa điểm cuối của một nhóm cụ thể (ghi đè finalScore).
+ * Backend đặt manuallyOverridden = true, không tính lại từ peer scores.
+ */
+export const updateGroupScore = async (
+  sessionId: string,
+  channelId: string,
+  finalScore: number,
+): Promise<GroupFinalScoreResponse> => {
+  const response = await axiosInstance.put<ApiResponse<GroupFinalScoreResponse>>(
+    `${CHANNEL_API_BASE_URL}/sessions/${sessionId}/scores/${channelId}`,
+    { finalScore },
+  );
+  return response.data.result;
 };
 
 export const uploadChannelFile = async (

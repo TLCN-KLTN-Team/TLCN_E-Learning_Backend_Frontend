@@ -3,6 +3,7 @@ package demo.app.chat_app.controller;
 import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
 import demo.app.chat_app.dto.request.CrossReviewBatchSubmitRequest;
 import demo.app.chat_app.dto.request.CrossReviewSubmitRequest;
+import demo.app.chat_app.dto.request.UpdateGroupScoreRequest;
 import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.model.enums.AttachmentCategory;
 import demo.app.chat_app.model.workspace.GroupFinalScore;
@@ -318,6 +319,52 @@ public class ChannelController {
                 .build();
     }
 
+    /**
+     * Giáo viên xác nhận gửi điểm sang LMS (course-service qua Kafka).
+     * Chỉ gọi được sau khi đã collect (COLLECTED hoặc SENT_TO_LMS).
+     * Idempotent: cho phép gửi lại sau khi chỉnh sửa điểm thủ công.
+     */
+    @PostMapping("/sessions/{sessionId}/send-scores-to-lms")
+    public ApiResponse<List<GroupFinalScoreResponse>> sendScoresToLms(@PathVariable String sessionId) {
+        List<GroupFinalScore> scores = scoreCollectionService.sendScoresToLms(sessionId);
+        List<GroupFinalScoreResponse> responses = scores.stream()
+                .map(this::toGroupFinalScoreResponse)
+                .toList();
+        return ApiResponse.<List<GroupFinalScoreResponse>>builder()
+                .result(responses)
+                .message("Scores sent to LMS successfully")
+                .build();
+    }
+
+    /**
+     * [DEV/TEST ONLY] Reset scoreCollectionStatus về null + xóa GroupFinalScore cũ để force recompute.
+     * Gọi endpoint này rồi gọi lại collect-scores để tính lại từ đầu.
+     */
+    @PostMapping("/sessions/{sessionId}/reset-collection")
+    public ApiResponse<Void> resetScoreCollection(@PathVariable String sessionId) {
+        scoreCollectionService.resetScoreCollection(sessionId);
+        return ApiResponse.<Void>builder()
+                .message("Score collection reset successfully — call collect-scores to recompute")
+                .build();
+    }
+
+    /**
+     * Giáo viên chỉnh sửa điểm cuối của một nhóm (ghi đè finalScore thủ công).
+     * Đặt manuallyOverridden = true; không tính lại từ peer scores.
+     */
+    @PutMapping("/sessions/{sessionId}/scores/{channelId}")
+    public ApiResponse<GroupFinalScoreResponse> updateGroupScore(
+            @PathVariable String sessionId,
+            @PathVariable String channelId,
+            @Valid @RequestBody UpdateGroupScoreRequest request) {
+        GroupFinalScore updated = scoreCollectionService.updateGroupFinalScore(
+                sessionId, channelId, request.getFinalScore());
+        return ApiResponse.<GroupFinalScoreResponse>builder()
+                .result(toGroupFinalScoreResponse(updated))
+                .message("Group score updated successfully")
+                .build();
+    }
+
     private GroupFinalScoreResponse toGroupFinalScoreResponse(GroupFinalScore s) {
         List<GroupFinalScoreResponse.PeerScoreEntryResponse> peers = s.getPeerScores() == null
                 ? List.of()
@@ -344,6 +391,7 @@ public class ChannelController {
                 .status(s.getStatus() != null ? s.getStatus().name() : null)
                 .calculatedAt(s.getCalculatedAt())
                 .sentToLmsAt(s.getSentToLmsAt())
+                .manuallyOverridden(s.isManuallyOverridden())
                 .build();
     }
 }

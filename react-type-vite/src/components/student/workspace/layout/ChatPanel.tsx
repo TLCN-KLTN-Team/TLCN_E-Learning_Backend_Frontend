@@ -6,6 +6,7 @@ import ChannelInfoPanel from "../chat-window/ChannelInfoPanel";
 import ChannelWorkspace from "../channel/ChannelWorkspace";
 import ChannelFilesPanel from "../channel/ChannelFilesPanel";
 import TimeBasedChannelView from "../channel/TimeBasedChannelView";
+import AssignmentSessionPanel from "../channel/AssignmentSessionPanel";
 import {
   ChannelType,
   type ChannelResponse,
@@ -119,6 +120,11 @@ const ChatPanel = ({
             onClose={() => setShowFilesPanel(false)}
             channel={selectedChannel}
           />
+        )}
+
+        {/* UC-41: session overview + teacher score panel, chỉ cho GROUP channel có session */}
+        {isGroupChannel && selectedChannel.assignmentSessionId && (
+          <AssignmentSessionPanel channel={selectedChannel} />
         )}
 
         {/* Messages Area */}

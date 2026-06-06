@@ -12,14 +12,12 @@ import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.model.workspace.AssignmentSession;
 import demo.app.chat_app.model.workspace.Channel;
 import demo.app.chat_app.model.workspace.ChannelMember;
-import demo.app.chat_app.model.workspace.CrossReviewScore;
-import demo.app.chat_app.model.workspace.CrossReviewScoreOfGroup;
 import demo.app.chat_app.model.workspace.MemberStatus;
+import demo.app.chat_app.model.workspace.PeerReview;
 import demo.app.chat_app.repository.AssignmentSessionRepository;
 import demo.app.chat_app.repository.ChannelMemberRepository;
 import demo.app.chat_app.repository.ChannelRepository;
-import demo.app.chat_app.repository.CrossReviewScoreOfGroupRepository;
-import demo.app.chat_app.repository.CrossReviewScoreRepository;
+import demo.app.chat_app.repository.PeerReviewRepository;
 import demo.app.chat_app.repository.httpclient.NotificationRepository;
 import demo.app.chat_app.service.CrossReviewService;
 import demo.app.chat_app.service.util.ChannelPhase;
@@ -36,7 +34,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -48,9 +46,12 @@ public class CrossReviewServiceImpl implements CrossReviewService {
     ChannelRepository channelRepository;
     AssignmentSessionRepository assignmentSessionRepository;
     ChannelMemberRepository channelMemberRepository;
-    CrossReviewScoreRepository scoreRepository;
-    CrossReviewScoreOfGroupRepository batchRepository;
+    PeerReviewRepository peerReviewRepository;
     NotificationRepository notificationRepository;
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Submit đơn lẻ
+    // ─────────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -64,67 +65,55 @@ public class CrossReviewServiceImpl implements CrossReviewService {
             throw new AppException(ErrorCode.CROSS_REVIEW_NOT_ALLOWED);
         }
 
-        String reviewedChannelId = request.getReviewedChannelId();
-
-        // Validate reviewed channel thuộc cùng AssignmentSession.
-        if (reviewerChannel.getAssignmentSessionId() == null) {
+        String sessionId = reviewerChannel.getAssignmentSessionId();
+        if (sessionId == null) {
             throw new AppException(ErrorCode.ASSIGNMENT_SESSION_NOT_FOUND);
         }
-        boolean sameSession = assignmentSessionRepository
-                .findById(reviewerChannel.getAssignmentSessionId())
+
+        String reviewedChannelId = request.getReviewedChannelId();
+
+        boolean sameSession = assignmentSessionRepository.findById(sessionId)
                 .map(s -> s.getChannelIds() != null && s.getChannelIds().contains(reviewedChannelId))
                 .orElse(false);
         if (!sameSession) {
             throw new AppException(ErrorCode.NO_CROSS_REVIEW_TARGET);
         }
-        // Chỉ cho phép chấm trong phase REVIEW.
+
         if (ChannelPhase.of(reviewerChannel, Instant.now()) != ChannelPhase.REVIEW) {
             throw new AppException(ErrorCode.CHANNEL_LOCKED);
         }
 
-        // Người submit phải là thành viên ACTIVE của reviewerChannel.
-        ChannelMember reviewerMember = channelMemberRepository
-                .findByChannelIdAndUserId(channelId, currentUserId)
+        channelMemberRepository.findByChannelIdAndUserId(channelId, currentUserId)
+                .filter(m -> m.getStatus() == MemberStatus.ACTIVE)
                 .orElseThrow(() -> new AppException(ErrorCode.CROSS_REVIEW_NOT_MEMBER));
-        if (reviewerMember.getStatus() != MemberStatus.ACTIVE) {
-            throw new AppException(ErrorCode.CROSS_REVIEW_NOT_MEMBER);
-        }
 
         if (request.getScore() == null || request.getScore() < 0.0 || request.getScore() > 10.0) {
             throw new AppException(ErrorCode.CROSS_REVIEW_SCORE_INVALID);
         }
 
-        // Snapshot userId của nhóm bị chấm để query hồ sơ sinh viên.
-        List<ChannelMember> reviewedMembers = channelMemberRepository
-                .findByChannelIdAndStatus(reviewedChannelId, MemberStatus.ACTIVE);
-        List<String> reviewedUserIds = reviewedMembers.stream()
-                .map(ChannelMember::getUserId)
-                .toList();
-
-        String sessionId = reviewerChannel.getAssignmentSessionId();
         Instant now = Instant.now();
-        CrossReviewScore score = scoreRepository
-                .findByReviewerChannelIdAndReviewedChannelId(channelId, reviewedChannelId)
-                .orElseGet(() -> CrossReviewScore.builder()
+        PeerReview review = peerReviewRepository
+                .findByAssignmentSessionIdAndReviewerChannelIdAndReviewedChannelId(
+                        sessionId, channelId, reviewedChannelId)
+                .orElseGet(() -> PeerReview.builder()
+                        .assignmentSessionId(sessionId)
                         .reviewerChannelId(channelId)
                         .reviewedChannelId(reviewedChannelId)
-                        .assignmentSessionId(sessionId)
                         .submittedAt(now)
                         .build());
 
-        score.setReviewerUserId(currentUserId);
-        score.setReviewedUserIds(reviewedUserIds);
-        score.setAssignmentSessionId(sessionId);
-        score.setScore(request.getScore());
-        score.setComment(request.getComment());
-        score.setUpdatedAt(now);
-        if (score.getSubmittedAt() == null) {
-            score.setSubmittedAt(now);
-        }
+        review.setSubmittedByUserId(currentUserId);
+        review.setScore(request.getScore());
+        review.setComment(request.getComment());
+        review.setUpdatedAt(now);
+        if (review.getSubmittedAt() == null) review.setSubmittedAt(now);
 
-        CrossReviewScore saved = scoreRepository.save(score);
+        PeerReview saved = peerReviewRepository.save(review);
 
-        notifyReviewedMembers(saved, reviewerChannel, currentUserId);
+        List<String> reviewedUserIds = getActiveUserIds(reviewedChannelId);
+        notifyReviewedMembers(saved.getId(), channelId, reviewedChannelId,
+                reviewerChannel.getName(), saved.getScore(), saved.getComment(),
+                reviewedUserIds, currentUserId);
 
         return toResponse(saved);
     }
@@ -160,7 +149,6 @@ public class CrossReviewServiceImpl implements CrossReviewService {
                 .filter(m -> m.getStatus() == MemberStatus.ACTIVE)
                 .orElseThrow(() -> new AppException(ErrorCode.CROSS_REVIEW_NOT_MEMBER));
 
-        // Validate mọi entry
         for (CrossReviewBatchEntry entry : request.getEntries()) {
             if (!session.getChannelIds().contains(entry.getReviewedChannelId())) {
                 throw new AppException(ErrorCode.NO_CROSS_REVIEW_TARGET);
@@ -171,65 +159,39 @@ public class CrossReviewServiceImpl implements CrossReviewService {
         }
 
         Instant now = Instant.now();
+        List<PeerReview> savedReviews = new ArrayList<>();
 
-        // Build entries cho CrossReviewScoreOfGroup
-        List<CrossReviewScoreOfGroup.ReviewEntry> groupEntries = request.getEntries().stream()
-                .map(e -> CrossReviewScoreOfGroup.ReviewEntry.builder()
-                        .reviewedChannelId(e.getReviewedChannelId())
-                        .score(e.getScore())
-                        .comment(e.getComment())
-                        .build())
-                .collect(Collectors.toList());
-
-        // Upsert CrossReviewScoreOfGroup
-        CrossReviewScoreOfGroup batch = batchRepository
-                .findByReviewerChannelIdAndAssignmentSessionId(channelId, sessionId)
-                .orElseGet(() -> CrossReviewScoreOfGroup.builder()
-                        .reviewerChannelId(channelId)
-                        .assignmentSessionId(sessionId)
-                        .submittedAt(now)
-                        .build());
-
-        batch.setSubmittedByUserId(currentUserId);
-        batch.setEntries(groupEntries);
-        batch.setUpdatedAt(now);
-        if (batch.getSubmittedAt() == null) batch.setSubmittedAt(now);
-
-        CrossReviewScoreOfGroup savedBatch = batchRepository.save(batch);
-
-        // Đồng thời upsert từng CrossReviewScore riêng lẻ và gom reviewedUserIds để notify
         for (CrossReviewBatchEntry entry : request.getEntries()) {
-            List<ChannelMember> reviewedMembers = channelMemberRepository
-                    .findByChannelIdAndStatus(entry.getReviewedChannelId(), MemberStatus.ACTIVE);
-            List<String> reviewedUserIds = reviewedMembers.stream()
-                    .map(ChannelMember::getUserId).toList();
-
-            CrossReviewScore score = scoreRepository
-                    .findByReviewerChannelIdAndReviewedChannelId(channelId, entry.getReviewedChannelId())
-                    .orElseGet(() -> CrossReviewScore.builder()
+            PeerReview review = peerReviewRepository
+                    .findByAssignmentSessionIdAndReviewerChannelIdAndReviewedChannelId(
+                            sessionId, channelId, entry.getReviewedChannelId())
+                    .orElseGet(() -> PeerReview.builder()
+                            .assignmentSessionId(sessionId)
                             .reviewerChannelId(channelId)
                             .reviewedChannelId(entry.getReviewedChannelId())
-                            .assignmentSessionId(sessionId)
                             .submittedAt(now)
                             .build());
 
-            score.setReviewerUserId(currentUserId);
-            score.setReviewedUserIds(reviewedUserIds);
-            score.setAssignmentSessionId(sessionId);
-            score.setScore(entry.getScore());
-            score.setComment(entry.getComment());
-            score.setUpdatedAt(now);
-            if (score.getSubmittedAt() == null) score.setSubmittedAt(now);
+            review.setSubmittedByUserId(currentUserId);
+            review.setScore(entry.getScore());
+            review.setComment(entry.getComment());
+            review.setUpdatedAt(now);
+            if (review.getSubmittedAt() == null) review.setSubmittedAt(now);
 
-            CrossReviewScore savedScore = scoreRepository.save(score);
-            notifyReviewedMembers(savedScore, reviewerChannel, currentUserId);
+            PeerReview saved = peerReviewRepository.save(review);
+            savedReviews.add(saved);
+
+            List<String> reviewedUserIds = getActiveUserIds(entry.getReviewedChannelId());
+            notifyReviewedMembers(saved.getId(), channelId, entry.getReviewedChannelId(),
+                    reviewerChannel.getName(), saved.getScore(), saved.getComment(),
+                    reviewedUserIds, currentUserId);
         }
 
-        return toBatchResponse(savedBatch);
+        return toBatchResponse(channelId, sessionId, currentUserId, savedReviews, now);
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // UC-41 Tính điểm cuối cùng
+    // UC-41 Tính điểm cuối cùng (on-demand, trước khi collect chính thức)
     // ─────────────────────────────────────────────────────────────────────
 
     @Override
@@ -242,21 +204,17 @@ public class CrossReviewServiceImpl implements CrossReviewService {
             throw new AppException(ErrorCode.ASSIGNMENT_SESSION_NOT_FOUND);
         }
 
-        // Lấy tất cả batch trong session
-        List<CrossReviewScoreOfGroup> allBatches = batchRepository.findAllByAssignmentSessionId(sessionId);
+        List<PeerReview> allReviews = peerReviewRepository.findAllByAssignmentSessionId(sessionId);
 
         Double selfScore = null;
         List<Double> peerScores = new ArrayList<>();
 
-        for (CrossReviewScoreOfGroup batch : allBatches) {
-            for (CrossReviewScoreOfGroup.ReviewEntry entry : batch.getEntries()) {
-                if (!channelId.equals(entry.getReviewedChannelId())) continue;
-
-                if (channelId.equals(batch.getReviewerChannelId())) {
-                    selfScore = entry.getScore();
-                } else {
-                    peerScores.add(entry.getScore());
-                }
+        for (PeerReview review : allReviews) {
+            if (!channelId.equals(review.getReviewedChannelId())) continue;
+            if (channelId.equals(review.getReviewerChannelId())) {
+                selfScore = review.getScore();
+            } else {
+                peerScores.add(review.getScore());
             }
         }
 
@@ -266,13 +224,11 @@ public class CrossReviewServiceImpl implements CrossReviewService {
         boolean usedSelfScore = false;
 
         if (medianScore == null) {
-            // Chưa có ai chấm chéo → dùng self (hoặc null)
             finalScore = selfScore;
             usedSelfScore = selfScore != null;
         } else if (selfScore == null) {
             finalScore = medianScore;
         } else {
-            // Áp dụng quy tắc: chênh ≤ 0.5 → dùng self
             if (Math.abs(selfScore - medianScore) <= 0.5) {
                 finalScore = selfScore;
                 usedSelfScore = true;
@@ -291,61 +247,47 @@ public class CrossReviewServiceImpl implements CrossReviewService {
                 .build();
     }
 
-    private Double calcMedian(List<Double> scores) {
-        List<Double> sorted = new ArrayList<>(scores);
-        Collections.sort(sorted);
-        int n = sorted.size();
-        if (n % 2 == 1) return sorted.get(n / 2);
-        return (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2.0;
-    }
-
-    private CrossReviewScoreOfGroupResponse toBatchResponse(CrossReviewScoreOfGroup batch) {
-        List<CrossReviewScoreOfGroupResponse.EntryResponse> entries = batch.getEntries() == null
-                ? List.of()
-                : batch.getEntries().stream()
-                        .map(e -> CrossReviewScoreOfGroupResponse.EntryResponse.builder()
-                                .reviewedChannelId(e.getReviewedChannelId())
-                                .score(e.getScore())
-                                .comment(e.getComment())
-                                .build())
-                        .toList();
-        return CrossReviewScoreOfGroupResponse.builder()
-                .id(batch.getId())
-                .reviewerChannelId(batch.getReviewerChannelId())
-                .assignmentSessionId(batch.getAssignmentSessionId())
-                .submittedByUserId(batch.getSubmittedByUserId())
-                .entries(entries)
-                .submittedAt(batch.getSubmittedAt())
-                .updatedAt(batch.getUpdatedAt())
-                .build();
-    }
+    // ─────────────────────────────────────────────────────────────────────
+    // Prefill form chấm chéo
+    // ─────────────────────────────────────────────────────────────────────
 
     @Override
     public List<CrossReviewScoreResponse> getMyReviews(String channelId) {
-        channelRepository.findById(channelId)
+        Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
-        return scoreRepository.findAllByReviewerChannelId(channelId).stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
-    @Override
-    public List<CrossReviewScoreResponse> getScoresForStudent(String userId) {
-        return scoreRepository.findByReviewedUserIdsContaining(userId).stream()
+        String sessionId = channel.getAssignmentSessionId();
+        if (sessionId == null) return List.of();
+        return peerReviewRepository
+                .findAllByAssignmentSessionIdAndReviewerChannelId(sessionId, channelId)
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────
 
-    private void notifyReviewedMembers(CrossReviewScore saved, Channel reviewerChannel, String senderId) {
-        String reviewerName = reviewerChannel.getName() != null ? reviewerChannel.getName() : "Nhóm khác";
-        String message = String.format(
-                "%s đã chấm bài của bạn: %.1f/10 điểm",
-                reviewerName, saved.getScore());
-        String link = "/workspace/channel/" + saved.getReviewedChannelId();
+    private List<String> getActiveUserIds(String channelId) {
+        return channelMemberRepository.findByChannelIdAndStatus(channelId, MemberStatus.ACTIVE)
+                .stream()
+                .map(ChannelMember::getUserId)
+                .toList();
+    }
 
-        for (String userId : saved.getReviewedUserIds()) {
+    private void notifyReviewedMembers(String scoreId,
+                                        String reviewerChannelId,
+                                        String reviewedChannelId,
+                                        String reviewerName,
+                                        Double score,
+                                        String comment,
+                                        List<String> reviewedUserIds,
+                                        String senderId) {
+        String displayName = reviewerName != null ? reviewerName : "Nhóm khác";
+        String message = String.format("%s đã chấm bài của bạn: %.1f/10 điểm", displayName, score);
+        String link = "/workspace/channel/" + reviewedChannelId;
+
+        for (String userId : reviewedUserIds) {
             if (userId == null || userId.isBlank()) continue;
             try {
                 notificationRepository.sendNotification(NotificationMessage.builder()
@@ -355,11 +297,11 @@ public class CrossReviewServiceImpl implements CrossReviewService {
                         .message(message)
                         .link(link)
                         .data(CrossReviewNotificationData.builder()
-                                .scoreId(saved.getId())
-                                .reviewerChannelId(saved.getReviewerChannelId())
-                                .reviewedChannelId(saved.getReviewedChannelId())
-                                .score(saved.getScore())
-                                .comment(saved.getComment())
+                                .scoreId(scoreId)
+                                .reviewerChannelId(reviewerChannelId)
+                                .reviewedChannelId(reviewedChannelId)
+                                .score(score)
+                                .comment(comment)
                                 .build())
                         .build());
             } catch (Exception ex) {
@@ -368,17 +310,62 @@ public class CrossReviewServiceImpl implements CrossReviewService {
         }
     }
 
-    private CrossReviewScoreResponse toResponse(CrossReviewScore s) {
-        return CrossReviewScoreResponse.builder()
-                .id(s.getId())
-                .reviewerChannelId(s.getReviewerChannelId())
-                .reviewedChannelId(s.getReviewedChannelId())
-                .reviewerUserId(s.getReviewerUserId())
-                .score(s.getScore())
-                .comment(s.getComment())
-                .submittedAt(s.getSubmittedAt())
-                .updatedAt(s.getUpdatedAt())
+    private CrossReviewScoreOfGroupResponse toBatchResponse(
+            String reviewerChannelId,
+            String sessionId,
+            String submittedByUserId,
+            List<PeerReview> reviews,
+            Instant fallbackTime) {
+
+        List<CrossReviewScoreOfGroupResponse.EntryResponse> entries = reviews.stream()
+                .map(r -> CrossReviewScoreOfGroupResponse.EntryResponse.builder()
+                        .reviewedChannelId(r.getReviewedChannelId())
+                        .score(r.getScore())
+                        .comment(r.getComment())
+                        .build())
+                .toList();
+
+        Instant submittedAt = reviews.stream()
+                .map(PeerReview::getSubmittedAt)
+                .filter(Objects::nonNull)
+                .min(Instant::compareTo)
+                .orElse(fallbackTime);
+        Instant updatedAt = reviews.stream()
+                .map(PeerReview::getUpdatedAt)
+                .filter(Objects::nonNull)
+                .max(Instant::compareTo)
+                .orElse(fallbackTime);
+
+        return CrossReviewScoreOfGroupResponse.builder()
+                .id(reviews.isEmpty() ? null : reviews.get(0).getId())
+                .reviewerChannelId(reviewerChannelId)
+                .assignmentSessionId(sessionId)
+                .submittedByUserId(submittedByUserId)
+                .entries(entries)
+                .submittedAt(submittedAt)
+                .updatedAt(updatedAt)
                 .build();
+    }
+
+    private CrossReviewScoreResponse toResponse(PeerReview r) {
+        return CrossReviewScoreResponse.builder()
+                .id(r.getId())
+                .reviewerChannelId(r.getReviewerChannelId())
+                .reviewedChannelId(r.getReviewedChannelId())
+                .reviewerUserId(r.getSubmittedByUserId())
+                .score(r.getScore())
+                .comment(r.getComment())
+                .submittedAt(r.getSubmittedAt())
+                .updatedAt(r.getUpdatedAt())
+                .build();
+    }
+
+    private Double calcMedian(List<Double> scores) {
+        List<Double> sorted = new ArrayList<>(scores);
+        Collections.sort(sorted);
+        int n = sorted.size();
+        if (n % 2 == 1) return sorted.get(n / 2);
+        return (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2.0;
     }
 
     private String currentUserId() {

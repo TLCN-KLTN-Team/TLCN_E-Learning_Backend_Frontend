@@ -213,6 +213,7 @@ const ChannelFilesPanel = ({
   /** Bản nháp điểm lưu cục bộ: reviewedChannelId → {score, comment} */
   const [draftScores, setDraftScores] = useState<Record<string, LocalDraft>>({});
   const [batchSubmitting, setBatchSubmitting] = useState(false);
+  const [reviewVersion, setReviewVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingCategory, setUploadingCategory] = useState<AttachmentCategory | null>(null);
   const generalInputRef = useRef<HTMLInputElement>(null);
@@ -322,10 +323,11 @@ const ChannelFilesPanel = ({
         comment: d.comment.trim() || undefined,
       }));
       await submitBatchCrossReview(channel.id, { entries });
-      // Reload điểm đã nộp từ server và xóa drafts
+      // Reload điểm đã nộp từ server, xóa drafts, force remount form để hiện lịch sử
       const refreshed = await getMyCrossReviews(channel.id);
       setMyReviews(refreshed ?? []);
       setDraftScores({});
+      setReviewVersion((v) => v + 1);
       toast.success(`Đã nộp bài chấm thành công (${entries.length} nhóm)`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Nộp bài chấm thất bại");
@@ -403,7 +405,7 @@ const ChannelFilesPanel = ({
                   <div className="space-y-2">
                     {groupSubmissions.map((g) => (
                       <GroupReviewForm
-                        key={g.channelId}
+                        key={`${g.channelId}-v${reviewVersion}`}
                         group={g}
                         submitted={myReviewMap[g.channelId]}
                         draft={draftScores[g.channelId]}

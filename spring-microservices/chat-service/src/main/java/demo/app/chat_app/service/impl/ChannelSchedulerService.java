@@ -1,7 +1,9 @@
 package demo.app.chat_app.service.impl;
 
+import demo.app.chat_app.model.workspace.AssignmentSession;
 import demo.app.chat_app.model.workspace.Channel;
 import demo.app.chat_app.model.workspace.ChannelStatus;
+import demo.app.chat_app.repository.AssignmentSessionRepository;
 import demo.app.chat_app.repository.ChannelRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +13,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * UC-41: scheduler chạy mỗi 60s để chuyển trạng thái channel GROUP
@@ -34,6 +39,7 @@ import java.util.List;
 public class ChannelSchedulerService {
 
     ChannelRepository channelRepository;
+    AssignmentSessionRepository assignmentSessionRepository;
 
     @Scheduled(fixedDelayString = "${app.scheduler.channel-lock-interval-ms:60000}")
     public void runChannelLockTransitions() {
@@ -65,6 +71,43 @@ public class ChannelSchedulerService {
             channel.setUpdatedAt(now);
         }
         channelRepository.saveAll(channels);
+        backfillSubmittedChannelIds(channels, now);
+    }
+
+    /**
+     * Nhóm không tự nộp trước deadline vẫn phải được tính là đã "nộp" để
+     * buildWithPeerScores() không bỏ qua khi thu thập điểm.
+     * Gom theo assignmentSessionId để tối thiểu số lần ghi MongoDB.
+     */
+    private void backfillSubmittedChannelIds(List<Channel> channels, Instant now) {
+        Map<String, List<String>> sessionToChannels = channels.stream()
+                .filter(c -> c.getAssignmentSessionId() != null)
+                .collect(Collectors.groupingBy(
+                        Channel::getAssignmentSessionId,
+                        Collectors.mapping(Channel::getId, Collectors.toList())));
+
+        if (sessionToChannels.isEmpty()) return;
+
+        List<AssignmentSession> sessions = assignmentSessionRepository.findAllById(sessionToChannels.keySet());
+        List<AssignmentSession> toSave = new ArrayList<>();
+
+        for (AssignmentSession session : sessions) {
+            List<String> channelIds = sessionToChannels.get(session.getId());
+            boolean changed = false;
+            for (String channelId : channelIds) {
+                if (!session.getSubmittedChannelIds().contains(channelId)) {
+                    session.getSubmittedChannelIds().add(channelId);
+                    changed = true;
+                    log.info("UC-41: auto-submit channel {} into session {} (deadline passed)", channelId, session.getId());
+                }
+            }
+            if (changed) {
+                session.setUpdatedAt(now);
+                toSave.add(session);
+            }
+        }
+
+        if (!toSave.isEmpty()) assignmentSessionRepository.saveAll(toSave);
     }
 
     /**

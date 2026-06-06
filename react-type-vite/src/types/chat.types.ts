@@ -250,6 +250,7 @@ export const ScoreCollectionStatus = {
   COLLECTING: "COLLECTING",
   COLLECTED: "COLLECTED",
   FAILED: "FAILED",
+  SENT_TO_LMS: "SENT_TO_LMS",
 } as const;
 
 export type ScoreCollectionStatus =
@@ -296,6 +297,7 @@ export interface GroupFinalScoreResponse {
   status?: string | null;
   calculatedAt?: string | null;
   sentToLmsAt?: string | null;
+  manuallyOverridden?: boolean;
 }
 
 export interface AttachmentItem {

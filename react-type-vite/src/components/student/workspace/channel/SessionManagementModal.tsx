@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X, Trophy, AlertCircle, CheckCircle2, Loader2, Users } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -87,11 +87,44 @@ const ScoreStatusLabel = ({ status }: { status: string | null | undefined }) => 
 const ScoreTable = ({
   scores,
   channels,
+  isTeacher,
 }: {
   scores: GroupFinalScoreResponse[];
   channels: BasicChannelResponse[];
+  isTeacher: boolean;
 }) => {
   const nameMap = new Map(channels.map((c) => [c.id, c.name]));
+
+  // Sinh viên chỉ xem điểm cuối của nhóm mình — không có breakdown.
+  if (!isTeacher) {
+    const mine = scores[0];
+    if (!mine) return null;
+    const showFinal =
+      mine.status === "CALCULATED" ||
+      mine.status === "SENT_TO_LMS" ||
+      mine.manuallyOverridden;
+    return (
+      <div className="mt-3 rounded-lg border border-gray-600 bg-gray-750 px-4 py-3 flex items-center justify-between gap-2">
+        <span className="text-xs text-gray-400 flex items-center gap-1.5">
+          <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+          Điểm cuối của nhóm bạn
+        </span>
+        {showFinal && mine.finalScore != null ? (
+          <span className="text-lg font-bold text-white">
+            {mine.finalScore.toFixed(1)}
+          </span>
+        ) : (
+          <span className="text-xs text-gray-500 italic">
+            {mine.status === "NO_SUBMISSION"
+              ? "Nhóm chưa nộp bài"
+              : mine.status === "NO_PEERS"
+              ? "Chưa có nhóm nào chấm"
+              : "Chưa có điểm"}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="mt-3 overflow-x-auto rounded-lg border border-gray-600">
@@ -149,7 +182,7 @@ const SessionCard = ({
 }: {
   session: AssignmentSessionResponse;
   isTeacher: boolean;
-  onCollect: (sessionId: string) => Promise<void>;
+  onCollect: (sessionId: string) => Promise<GroupFinalScoreResponse[]>;
 }) => {
   const [scores, setScores] = useState<GroupFinalScoreResponse[]>([]);
   const [collecting, setCollecting] = useState(false);
@@ -173,7 +206,7 @@ const SessionCard = ({
     setCollecting(true);
     try {
       const result = await onCollect(session.id);
-      setScores(result as unknown as GroupFinalScoreResponse[]);
+      setScores(result);
       setScoresLoaded(true);
     } finally {
       setCollecting(false);
@@ -267,7 +300,7 @@ const SessionCard = ({
 
       {/* Score table */}
       {scoresLoaded && scores.length > 0 && (
-        <ScoreTable scores={scores} channels={session.channels} />
+        <ScoreTable scores={scores} channels={session.channels} isTeacher={isTeacher} />
       )}
     </div>
   );
@@ -290,14 +323,44 @@ export const SessionManagementModal = ({
     user?.role === "EDUCATOR" ||
     false;
 
+  const fetchSessions = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!opts?.silent) setLoading(true);
+      try {
+        const data = await getSessionsBySectionId(sectionId);
+        setSessions(data);
+      } catch {
+        if (!opts?.silent) toast.error("Không thể tải thông tin phiên làm bài");
+      } finally {
+        if (!opts?.silent) setLoading(false);
+      }
+    },
+    [sectionId],
+  );
+
+  // Tải lần đầu khi mở modal
   useEffect(() => {
     if (!isOpen) return;
-    setLoading(true);
-    getSessionsBySectionId(sectionId)
-      .then(setSessions)
-      .catch(() => toast.error("Không thể tải thông tin phiên làm bài"))
-      .finally(() => setLoading(false));
-  }, [isOpen, sectionId]);
+    fetchSessions();
+  }, [isOpen, fetchSessions]);
+
+  // Auto-collect chạy ở backend mỗi 5 phút sau crossReviewDeadline; modal không
+  // tự biết status đổi nên poll lại im lặng cho tới khi mọi phiên đã thu xong.
+  // Chỉ poll các phiên backend SẼ tự thu (khớp điều kiện ScoreCollectionScheduler):
+  // allowCrossReview = true, đã qua hạn chấm chéo, status chưa COLLECTED/SENT_TO_LMS.
+  const isPolling = sessions.some(
+    (s) =>
+      s.allowCrossReview &&
+      isSessionEnded(s) &&
+      s.scoreCollectionStatus !== "COLLECTED" &&
+      s.scoreCollectionStatus !== "SENT_TO_LMS",
+  );
+
+  useEffect(() => {
+    if (!isOpen || !isPolling) return;
+    const id = setInterval(() => fetchSessions({ silent: true }), 15000);
+    return () => clearInterval(id);
+  }, [isOpen, isPolling, fetchSessions]);
 
   const handleCollect = async (sessionId: string): Promise<GroupFinalScoreResponse[]> => {
     const scores = await collectSessionScores(sessionId);
@@ -339,7 +402,14 @@ export const SessionManagementModal = ({
             <Trophy className="w-5 h-5 text-yellow-400 flex-shrink-0" />
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-white">Quản lý phiên điểm</h2>
-              <p className="text-xs text-gray-400 truncate">{sectionName}</p>
+              <p className="text-xs text-gray-400 truncate flex items-center gap-1.5">
+                <span className="truncate">{sectionName}</span>
+                {isPolling && (
+                  <span className="inline-flex items-center gap-1 text-indigo-300 flex-shrink-0">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Đang tự động cập nhật…
+                  </span>
+                )}
+              </p>
             </div>
           </div>
           <button

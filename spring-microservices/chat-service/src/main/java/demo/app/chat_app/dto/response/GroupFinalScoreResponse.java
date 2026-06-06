@@ -37,6 +37,7 @@ public class GroupFinalScoreResponse {
 
     Instant calculatedAt;
     Instant sentToLmsAt;
+    boolean manuallyOverridden;
 
     @Data
     @Builder
