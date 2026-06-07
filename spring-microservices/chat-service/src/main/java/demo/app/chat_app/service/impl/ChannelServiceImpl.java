@@ -1,9 +1,11 @@
 package demo.app.chat_app.service.impl;
 
+import demo.app.chat_app.dto.event.AssignmentSessionCreatedEvent;
 import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
 import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.events.ClassCreatedEvent;
 import demo.app.chat_app.events.EnrollStudentsEvent;
+import demo.app.chat_app.kafka.producer.AssignmentSessionEventPublisher;
 import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.mapper.ChannelMapper;
@@ -35,6 +37,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ChannelServiceImpl implements ChannelService {
+
+    /** Thang điểm chấm chéo nhóm (0–10) — khớp với ScoreCollectionServiceImpl. */
+    static final int CROSS_REVIEW_MAX_SCORE = 10;
+
     WorkspaceRepository workspaceRepository;
     SectionRepository sectionRepository;
     ChannelRepository channelRepository;
@@ -42,6 +48,7 @@ public class ChannelServiceImpl implements ChannelService {
     ChannelMemberService channelMemberService;
     ChannelMapper channelMapper;
     ChatMessageServiceImpl chatMessageService;
+    AssignmentSessionEventPublisher assignmentSessionEventPublisher;
 
     @Override
     public Channel createFirstChannelInSectionWhenStudentsEnrolled(ClassCreatedEvent event) {
@@ -403,6 +410,8 @@ public class ChannelServiceImpl implements ChannelService {
         final String sessionId = session.getId();
 
         List<BasicChannelResponse> bulkChannelResponses = new ArrayList<>();
+        // channelId → thành viên nhóm, để publish ASSIGNMENT_SESSION_CREATED cho course-service.
+        List<AssignmentSessionCreatedEvent.GroupEntry> groupEntries = new ArrayList<>();
         groupAssignments.forEach((groupNum, memberIds) -> {
             String channelName = String.format("%s - Nhóm %d", request.getChannelName(), groupNum);
             ChannelCreationRequest groupChannelRequest = ChannelCreationRequest.builder()
@@ -419,6 +428,10 @@ public class ChannelServiceImpl implements ChannelService {
                     .build();
             BasicChannelResponse channelResponse = this.createChannel(groupChannelRequest);
             bulkChannelResponses.add(channelResponse);
+            groupEntries.add(AssignmentSessionCreatedEvent.GroupEntry.builder()
+                    .channelId(channelResponse.getId())
+                    .memberUserIds(new ArrayList<>(memberIds))
+                    .build());
         });
 
         // Ghi danh sách channelIds vào session sau khi tất cả channel đã được tạo
@@ -431,6 +444,21 @@ public class ChannelServiceImpl implements ChannelService {
 
         log.info("UC-41: created AssignmentSession {} with {} channels for section {}",
                 sessionId, channelIds.size(), section.getId());
+
+        // Đồng bộ sang course-service: tạo sẵn GroupAssignment cho mỗi nhóm (status SUBMISSION).
+        assignmentSessionEventPublisher.publishSessionCreated(AssignmentSessionCreatedEvent.builder()
+                .sessionId(sessionId)
+                .sectionId(section.getId())
+                .workspaceId(workspace.getId())
+                .classId(section.getClassId())
+                .courseId(workspace.getCourseId())
+                .name(session.getName())
+                .description(session.getDescription())
+                .submissionDeadline(session.getSubmissionDeadline())
+                .crossReviewDeadline(session.getCrossReviewDeadline())
+                .maxScore(CROSS_REVIEW_MAX_SCORE)
+                .groups(groupEntries)
+                .build());
 
         return BulkRandomChannelResponse.builder()
                 .assignmentSessionId(sessionId)
@@ -620,9 +648,14 @@ public class ChannelServiceImpl implements ChannelService {
                 .map(channelMapper::toBasicChannelResponse)
                 .collect(Collectors.toList());
 
+        Integer classId = sectionRepository.findById(session.getSectionId())
+                .map(Section::getClassId)
+                .orElse(null);
+
         return AssignmentSessionResponse.builder()
                 .id(session.getId())
                 .sectionId(session.getSectionId())
+                .classId(classId)
                 .name(session.getName())
                 .description(session.getDescription())
                 .submissionDeadline(session.getSubmissionDeadline())
@@ -641,8 +674,9 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public List<AssignmentSessionResponse> getAssignmentSessionsBySection(String sectionId) {
-        sectionRepository.findById(sectionId)
+        Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_EXISTED));
+        Integer classId = section.getClassId();
 
         return assignmentSessionRepository.findAllBySectionId(sectionId).stream()
                 .map(session -> {
@@ -655,6 +689,7 @@ public class ChannelServiceImpl implements ChannelService {
                     return AssignmentSessionResponse.builder()
                             .id(session.getId())
                             .sectionId(session.getSectionId())
+                            .classId(classId)
                             .name(session.getName())
                             .description(session.getDescription())
                             .submissionDeadline(session.getSubmissionDeadline())

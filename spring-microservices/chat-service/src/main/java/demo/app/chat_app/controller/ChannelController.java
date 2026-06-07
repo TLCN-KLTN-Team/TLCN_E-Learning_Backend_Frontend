@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -292,6 +293,7 @@ public class ChannelController {
      * Giáo viên retry thu thập điểm thủ công (khi auto-collect thất bại).
      * Idempotent: nếu đã COLLECTED thì trả về kết quả cũ.
      */
+    @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/sessions/{sessionId}/collect-scores")
     public ApiResponse<List<GroupFinalScoreResponse>> collectScores(@PathVariable String sessionId) {
         List<GroupFinalScore> scores = scoreCollectionService.collectAndCalculate(sessionId);
@@ -305,8 +307,10 @@ public class ChannelController {
     }
 
     /**
-     * Lấy kết quả điểm cuối của một session (đọc từ GroupFinalScore đã lưu).
+     * [TEACHER] Lấy TẤT CẢ điểm của một session với đầy đủ breakdown
+     * (điểm từng nhóm chấm, điểm tự chấm, trung vị, điểm cuối).
      */
+    @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/sessions/{sessionId}/scores")
     public ApiResponse<List<GroupFinalScoreResponse>> getSessionScores(@PathVariable String sessionId) {
         List<GroupFinalScore> scores = scoreCollectionService.getSessionScores(sessionId);
@@ -320,12 +324,30 @@ public class ChannelController {
     }
 
     /**
+     * [STUDENT] Lấy điểm của nhóm mà người gọi thuộc về trong session.
+     * Chỉ trả về điểm cuối — breakdown được ẩn. Trả về [] nếu không thuộc nhóm nào.
+     */
+    @GetMapping("/sessions/{sessionId}/my-score")
+    public ApiResponse<List<GroupFinalScoreResponse>> getMySessionScore(@PathVariable String sessionId) {
+        List<GroupFinalScore> scores = scoreCollectionService.getMyGroupScores(sessionId);
+        List<GroupFinalScoreResponse> responses = scores.stream()
+                .map(this::toGroupFinalScoreResponse)
+                .toList();
+        return ApiResponse.<List<GroupFinalScoreResponse>>builder()
+                .result(responses)
+                .message("My group score retrieved successfully")
+                .build();
+    }
+
+    /**
      * Giáo viên xác nhận gửi điểm sang LMS (course-service qua Kafka).
      * Chỉ gọi được sau khi đã collect (COLLECTED hoặc SENT_TO_LMS).
      * Idempotent: cho phép gửi lại sau khi chỉnh sửa điểm thủ công.
      */
+    @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/sessions/{sessionId}/send-scores-to-lms")
-    public ApiResponse<List<GroupFinalScoreResponse>> sendScoresToLms(@PathVariable String sessionId) {
+    public ApiResponse<List<GroupFinalScoreResponse>> sendScoresToLms(
+            @PathVariable String sessionId) {
         List<GroupFinalScore> scores = scoreCollectionService.sendScoresToLms(sessionId);
         List<GroupFinalScoreResponse> responses = scores.stream()
                 .map(this::toGroupFinalScoreResponse)
@@ -352,6 +374,7 @@ public class ChannelController {
      * Giáo viên chỉnh sửa điểm cuối của một nhóm (ghi đè finalScore thủ công).
      * Đặt manuallyOverridden = true; không tính lại từ peer scores.
      */
+    @PreAuthorize("hasRole('TEACHER')")
     @PutMapping("/sessions/{sessionId}/scores/{channelId}")
     public ApiResponse<GroupFinalScoreResponse> updateGroupScore(
             @PathVariable String sessionId,
@@ -376,6 +399,14 @@ public class ChannelController {
                                 .submittedAt(p.getSubmittedAt())
                                 .build())
                         .toList();
+        GroupFinalScore.PeerScoreEntry sr = s.getSelfReview();
+        GroupFinalScoreResponse.PeerScoreEntryResponse selfReview = sr == null ? null
+                : GroupFinalScoreResponse.PeerScoreEntryResponse.builder()
+                        .reviewerChannelId(sr.getReviewerChannelId())
+                        .score(sr.getScore())
+                        .comment(sr.getComment())
+                        .submittedAt(sr.getSubmittedAt())
+                        .build();
         return GroupFinalScoreResponse.builder()
                 .id(s.getId())
                 .assignmentSessionId(s.getAssignmentSessionId())
@@ -383,6 +414,7 @@ public class ChannelController {
                 .sectionId(s.getSectionId())
                 .peerScores(peers)
                 .selfScore(s.getSelfScore())
+                .selfReview(selfReview)
                 .medianPeerScore(s.getMedianPeerScore())
                 .finalScore(s.getFinalScore())
                 .usedSelfScore(s.isUsedSelfScore())

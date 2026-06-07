@@ -10,11 +10,15 @@ import demo.app.chat_app.model.workspace.GroupFinalScore;
 import demo.app.chat_app.model.workspace.MemberStatus;
 import demo.app.chat_app.model.workspace.PeerReview;
 import demo.app.chat_app.model.workspace.ScoreCollectionStatus;
+import demo.app.chat_app.model.workspace.Section;
+import demo.app.chat_app.model.workspace.Workspace;
 import demo.app.chat_app.repository.AssignmentSessionRepository;
 import demo.app.chat_app.repository.ChannelMemberRepository;
 import demo.app.chat_app.repository.ChatMessageRepository;
 import demo.app.chat_app.repository.GroupFinalScoreRepository;
 import demo.app.chat_app.repository.PeerReviewRepository;
+import demo.app.chat_app.repository.SectionRepository;
+import demo.app.chat_app.repository.WorkspaceRepository;
 import demo.app.chat_app.service.ScoreCollectionService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -50,8 +54,13 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
     ChannelMemberRepository channelMemberRepository;
     ChatMessageRepository chatMessageRepository;
     GroupFinalScoreRepository finalScoreRepository;
+    SectionRepository sectionRepository;
+    WorkspaceRepository workspaceRepository;
     KafkaTemplate<String, String> scoreKafkaTemplate;
     ObjectMapper objectMapper;
+
+    /** Chấm chéo nhóm dùng thang 0–10 (xem updateGroupFinalScore). */
+    static final int CROSS_REVIEW_MAX_SCORE = 10;
 
     @NonFinal
     @Value("${kafka.topic.score-events}")
@@ -100,21 +109,27 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
 
     @Override
     public List<GroupFinalScore> getSessionScores(String sessionId) {
+        // Dành cho giáo viên: trả về toàn bộ điểm của session với đầy đủ breakdown.
+        // Phân quyền ROLE_TEACHER được enforce ở tầng controller (@PreAuthorize).
         sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_SESSION_NOT_FOUND));
 
-        List<GroupFinalScore> scores = finalScoreRepository.findAllByAssignmentSessionId(sessionId);
+        return finalScoreRepository.findAllByAssignmentSessionId(sessionId);
+    }
 
-        // TEACHER xem tất cả điểm; sinh viên chỉ xem điểm của nhóm mình thuộc về.
+    @Override
+    public List<GroupFinalScore> getMyGroupScores(String sessionId) {
+        // Dành cho sinh viên: chỉ trả về điểm của nhóm mình thuộc về, đã ẩn breakdown.
+        sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_SESSION_NOT_FOUND));
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isTeacher = auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_TEACHER"));
-        if (isTeacher) {
-            return scores;
+        String userId = auth != null ? auth.getName() : null;
+        if (userId == null) {
+            return List.of();
         }
 
-        String userId = auth != null ? auth.getName() : null;
-        return scores.stream()
+        return finalScoreRepository.findAllByAssignmentSessionId(sessionId).stream()
                 .filter(s -> s.getMemberUserIds() != null && s.getMemberUserIds().contains(userId))
                 .map(this::redactForStudent)
                 .toList();
@@ -128,6 +143,7 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
     private GroupFinalScore redactForStudent(GroupFinalScore s) {
         s.setPeerScores(Collections.emptyList());
         s.setSelfScore(null);
+        s.setSelfReview(null);
         s.setMedianPeerScore(null);
         return s;
     }
@@ -281,11 +297,19 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
         List<PeerReview> reviews = byReviewed.getOrDefault(channelId, List.of());
 
         Double selfScore = null;
+        GroupFinalScore.PeerScoreEntry selfReview = null;
         List<GroupFinalScore.PeerScoreEntry> peerEntries = new ArrayList<>();
 
         for (PeerReview review : reviews) {
             if (channelId.equals(review.getReviewerChannelId())) {
+                // Tự chấm: giữ điểm cho công thức median + bản ghi đầy đủ để hiển thị.
                 selfScore = review.getScore();
+                selfReview = GroupFinalScore.PeerScoreEntry.builder()
+                        .reviewerChannelId(review.getReviewerChannelId())
+                        .score(review.getScore())
+                        .comment(review.getComment())
+                        .submittedAt(review.getSubmittedAt())
+                        .build();
             } else {
                 peerEntries.add(GroupFinalScore.PeerScoreEntry.builder()
                         .reviewerChannelId(review.getReviewerChannelId())
@@ -313,6 +337,7 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
                 .memberUserIds(memberUserIds)
                 .peerScores(peerEntries)
                 .selfScore(selfScore)
+                .selfReview(selfReview)
                 .status(status)
                 .calculatedAt(now)
                 .build();
@@ -335,7 +360,7 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
             record.setStatus(GroupFinalScore.CollectStatus.NO_PEERS);
             return finalScoreRepository.save(record);
         }
-
+        peerScoreValues.add(record.getSelfScore());
         Double medianScore = calcMedian(peerScoreValues);
         Double selfScore = record.getSelfScore();
 
@@ -370,8 +395,11 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
     }
 
     private Double calcMedian(List<Double> scores) {
+        // Sorting acceding to natural order (ascending)
         List<Double> sorted = new ArrayList<>(scores);
         Collections.sort(sorted);
+
+        // use binary search to find middle element(s)
         int n = sorted.size();
         if (n % 2 == 1) return sorted.get(n / 2);
         return (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2.0;
@@ -385,13 +413,35 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
                             .memberUserIds(s.getMemberUserIds())
                             .finalScore(s.getFinalScore())
                             .status(s.getStatus() != null ? s.getStatus().name() : null)
+                            .comments(extractComments(s))
                             .build())
                     .toList();
+
+            // Resolve khóa liên kết phía course-service từ chat-service:
+            //   Section.classId → CourseClass.id ; Workspace.courseId → Course.id
+            Section section = sectionRepository.findById(session.getSectionId()).orElse(null);
+            Integer classId = section != null ? section.getClassId() : null;
+            Integer courseId = null;
+            if (section != null && section.getWorkspaceId() != null) {
+                Workspace workspace = workspaceRepository.findById(section.getWorkspaceId()).orElse(null);
+                courseId = workspace != null ? workspace.getCourseId() : null;
+            }
+            if (classId == null) {
+                log.warn("Session {} không xác định được classId — course-service sẽ không gắn được vào lớp",
+                        session.getId());
+            }
 
             ScoreCalculatedEvent eventData = ScoreCalculatedEvent.builder()
                     .sessionId(session.getId())
                     .sectionId(session.getSectionId())
                     .workspaceId(session.getWorkspaceId())
+                    .classId(classId)
+                    .courseId(courseId)
+                    .name(session.getName())
+                    .description(session.getDescription())
+                    .submissionDeadline(session.getSubmissionDeadline())
+                    .crossReviewDeadline(session.getCrossReviewDeadline())
+                    .maxScore(CROSS_REVIEW_MAX_SCORE)
                     .scores(entries)
                     .build();
 
@@ -407,5 +457,21 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
         } catch (Exception e) {
             log.error("Failed to publish score event for session {}: {}", session.getId(), e.getMessage());
         }
+    }
+
+    /**
+     * Trích danh sách nhận xét nhóm NHẬN được từ các nhóm chấm chéo — chỉ nội dung text,
+     * không kèm thông tin nhóm nào chấm (course-service chỉ lưu đánh giá, không lưu nhóm đánh giá).
+     */
+    private List<String> extractComments(GroupFinalScore score) {
+        if (score.getPeerScores() == null) {
+            return List.of();
+        }
+        return score.getPeerScores().stream()
+                .map(GroupFinalScore.PeerScoreEntry::getComment)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(c -> !c.isEmpty())
+                .toList();
     }
 }

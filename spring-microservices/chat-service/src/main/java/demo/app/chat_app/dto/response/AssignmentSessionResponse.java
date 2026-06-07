@@ -22,6 +22,10 @@ import java.util.List;
 public class AssignmentSessionResponse {
     String id;
     String sectionId;
+
+    /** ID lớp học bên course-service (Section.classId) — FE dùng để liệt kê Assignment khi gửi điểm sang LMS. */
+    Integer classId;
+
     String name;
     String description;
 

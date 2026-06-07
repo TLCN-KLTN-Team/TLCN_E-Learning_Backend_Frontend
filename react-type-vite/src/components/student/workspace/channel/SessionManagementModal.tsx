@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { X, Trophy, AlertCircle, CheckCircle2, Loader2, Users } from "lucide-react";
+import { X, Trophy, AlertCircle, CheckCircle2, Loader2, Users, Send } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "react-toastify";
@@ -14,7 +14,10 @@ import {
   collectSessionScores,
   getSessionsBySectionId,
   getSessionScores,
+  getMySessionScore,
+  sendScoresToLms,
 } from "@/services/api/workspace/channel.api";
+import { hasRole } from "@/utils/roleUtils";
 
 interface SessionManagementModalProps {
   isOpen: boolean;
@@ -188,19 +191,29 @@ const SessionCard = ({
   const [collecting, setCollecting] = useState(false);
   const [scoresLoaded, setScoresLoaded] = useState(false);
 
+  // UC-41: gửi điểm sang LMS — giáo viên chọn Assignment đích của lớp rồi gửi.
+  const [sending, setSending] = useState(false);
+  const [sentToLms, setSentToLms] = useState(
+    session.scoreCollectionStatus === "SENT_TO_LMS",
+  );
+
   const ended = isSessionEnded(session);
   const status = session.scoreCollectionStatus;
   const canCollect = isTeacher && ended && status !== "COLLECTED" && status !== "COLLECTING";
+  // Sau khi đã thu điểm, giáo viên mới được chọn assignment + gửi sang LMS.
+  const canSendToLms =
+    isTeacher && (status === "COLLECTED" || status === "SENT_TO_LMS");
 
-  // Auto-load scores nếu đã collect
+  // Auto-load scores nếu đã collect. Giáo viên lấy hết điểm; sinh viên chỉ lấy nhóm mình.
   useEffect(() => {
     if (status === "COLLECTED" && !scoresLoaded) {
-      getSessionScores(session.id)
+      const fetchScores = isTeacher ? getSessionScores : getMySessionScore;
+      fetchScores(session.id)
         .then(setScores)
         .catch(() => {})
         .finally(() => setScoresLoaded(true));
     }
-  }, [session.id, status, scoresLoaded]);
+  }, [session.id, status, scoresLoaded, isTeacher]);
 
   const handleCollect = async () => {
     setCollecting(true);
@@ -210,6 +223,21 @@ const SessionCard = ({
       setScoresLoaded(true);
     } finally {
       setCollecting(false);
+    }
+  };
+
+  const handleSendToLms = async () => {
+    setSending(true);
+    try {
+      const result = await sendScoresToLms(session.id);
+      setScores(result);
+      setScoresLoaded(true);
+      setSentToLms(true);
+      toast.success("Đã gửi điểm sang LMS thành công!");
+    } catch {
+      toast.error("Gửi điểm sang LMS thất bại");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -302,6 +330,41 @@ const SessionCard = ({
       {scoresLoaded && scores.length > 0 && (
         <ScoreTable scores={scores} channels={session.channels} isTeacher={isTeacher} />
       )}
+
+      {/* Gửi điểm sang LMS (chỉ giáo viên, sau khi đã thu điểm) */}
+      {canSendToLms && (
+        <div className="mt-3 space-y-2 rounded-lg border border-gray-600 bg-gray-800/60 p-3">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-300">
+            <Send className="w-3.5 h-3.5 text-indigo-400" />
+            Gửi điểm sang hệ thống điểm (LMS)
+          </div>
+          {sentToLms && (
+            <p className="flex items-center gap-1 text-xs text-blue-300">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Đã gửi điểm sang LMS. Có thể gửi lại sau khi chỉnh sửa điểm.
+            </p>
+          )}
+          {session.classId == null && (
+            <p className="text-xs text-yellow-400">
+              Phiên này chưa xác định được lớp học — điểm vẫn được gửi nhưng có thể không gắn được vào lớp trong LMS.
+            </p>
+          )}
+          <button
+            onClick={handleSendToLms}
+            disabled={sending}
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors"
+          >
+            {sending ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang gửi...
+              </>
+            ) : (
+              <>
+                <Send className="w-3.5 h-3.5" /> {sentToLms ? "Gửi lại" : "Gửi điểm"}
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -316,11 +379,11 @@ export const SessionManagementModal = ({
   const [sessions, setSessions] = useState<AssignmentSessionResponse[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Role giáo viên trong toàn hệ thống là "TEACHER" (xem roleUtils / ProtectedRoute).
   const isTeacher =
-    user?.roles?.includes("educator") ||
-    user?.role === "educator" ||
-    user?.roles?.includes("EDUCATOR") ||
-    user?.role === "EDUCATOR" ||
+    hasRole("TEACHER") ||
+    user?.roles?.includes("TEACHER") ||
+    user?.role === "TEACHER" ||
     false;
 
   const fetchSessions = useCallback(

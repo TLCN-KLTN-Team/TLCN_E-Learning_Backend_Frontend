@@ -26,9 +26,11 @@ import {
   collectSessionScores,
   getSessionById,
   getSessionScores,
+  getMySessionScore,
   sendScoresToLms,
   updateGroupScore,
 } from "@/services/api/workspace/channel.api";
+import { hasRole } from "@/utils/roleUtils";
 
 interface AssignmentSessionPanelProps {
   channel: ChannelResponse;
@@ -178,6 +180,34 @@ const GroupScoreSection = ({
         </td>
       </tr>
 
+      {/* Dòng tự chấm — đánh dấu badge để phân biệt với điểm peer (không tính median) */}
+      {(score.selfReview || score.selfScore != null) && (
+        <tr className="border-b border-gray-700/60 bg-indigo-900/10 hover:bg-indigo-900/20">
+          <td className="px-3 py-1.5 text-gray-300 text-xs">
+            <div className="flex flex-col gap-0.5">
+              <span className="flex items-center gap-1.5">
+                <span>{groupName}</span>
+                <span className="inline-flex items-center rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700 px-1.5 py-0.5 text-[10px] font-medium">
+                  Tự chấm
+                </span>
+              </span>
+              {score.selfReview?.comment && (
+                <span className="text-gray-500 italic text-[10px] truncate max-w-[140px]">
+                  {score.selfReview.comment}
+                </span>
+              )}
+            </div>
+          </td>
+          <td className="px-3 py-1.5 text-center text-indigo-200 text-xs font-medium">
+            {(score.selfReview?.score ?? score.selfScore) != null
+              ? (score.selfReview?.score ?? score.selfScore)!.toFixed(1)
+              : "—"}
+          </td>
+          <td className="px-3 py-1.5 text-center text-gray-500 text-xs">—</td>
+          <td className="px-3 py-1.5 text-center text-gray-500 text-xs">—</td>
+        </tr>
+      )}
+
       {/* Các dòng điểm từ từng nhóm chấm */}
       {score.peerScores.length > 0 ? (
         score.peerScores.map((p: PeerScoreEntryResponse, i: number) => (
@@ -281,11 +311,11 @@ const GroupScoreSection = ({
 
 const AssignmentSessionPanel = ({ channel }: AssignmentSessionPanelProps) => {
   const { user } = useAuth();
+  // Role giáo viên trong toàn hệ thống là "TEACHER" (xem roleUtils / ProtectedRoute).
   const isTeacher =
-    user?.roles?.includes("educator") ||
-    user?.role === "educator" ||
-    user?.roles?.includes("EDUCATOR") ||
-    user?.role === "EDUCATOR" ||
+    hasRole("TEACHER") ||
+    user?.roles?.includes("TEACHER") ||
+    user?.role === "TEACHER" ||
     false;
 
   const [session, setSession] = useState<AssignmentSessionResponse | null>(null);
@@ -295,6 +325,7 @@ const AssignmentSessionPanel = ({ channel }: AssignmentSessionPanelProps) => {
   const [sending, setSending] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [scoresLoaded, setScoresLoaded] = useState(false);
+  // UC-41: chọn Assignment đích của lớp để gửi điểm chấm chéo sang LMS.
 
   const sessionId = channel.assignmentSessionId;
 
@@ -317,7 +348,9 @@ const AssignmentSessionPanel = ({ channel }: AssignmentSessionPanelProps) => {
     if (!session || scoresLoaded) return;
     const s = session.scoreCollectionStatus;
     if (s !== "COLLECTED" && s !== "SENT_TO_LMS") return;
-    getSessionScores(session.id)
+    // Giáo viên xem hết điểm; sinh viên chỉ lấy điểm nhóm mình.
+    const fetchScores = isTeacher ? getSessionScores : getMySessionScore;
+    fetchScores(session.id)
       .then((result) => {
         setScores(result);
         if (isTeacher && result.length > 0) setExpanded(true);
@@ -472,29 +505,36 @@ const AssignmentSessionPanel = ({ channel }: AssignmentSessionPanelProps) => {
             </div>
           </div>
 
-          {/* Nút Gửi sang LMS — hiện sau progress, chỉ giáo viên khi đã có điểm */}
+          {/* Gửi sang LMS — hiện sau progress, chỉ giáo viên khi đã có điểm */}
           {hasScores && (
-            <button
-              onClick={handleSendToLms}
-              disabled={sending}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                alreadySentToLms
-                  ? "bg-blue-700 hover:bg-blue-600"
-                  : "bg-emerald-700 hover:bg-emerald-600"
-              }`}
-            >
-              {sending ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Đang gửi điểm...
-                </>
-              ) : (
-                <>
-                  <Send className="w-3.5 h-3.5" />
-                  {alreadySentToLms ? "Gửi điểm lại sang LMS" : "Gửi điểm sang LMS"}
-                </>
+            <div className="space-y-2">
+              {session.classId == null && (
+                <p className="text-xs text-yellow-400">
+                  Phiên này chưa xác định được lớp học — điểm vẫn được gửi nhưng có thể không gắn được vào lớp trong LMS.
+                </p>
               )}
-            </button>
+              <button
+                onClick={handleSendToLms}
+                disabled={sending}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  alreadySentToLms
+                    ? "bg-blue-700 hover:bg-blue-600"
+                    : "bg-emerald-700 hover:bg-emerald-600"
+                }`}
+              >
+                {sending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Đang gửi điểm...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    {alreadySentToLms ? "Gửi điểm lại sang LMS" : "Gửi điểm sang LMS"}
+                  </>
+                )}
+              </button>
+            </div>
           )}
 
           {/* Error message */}
