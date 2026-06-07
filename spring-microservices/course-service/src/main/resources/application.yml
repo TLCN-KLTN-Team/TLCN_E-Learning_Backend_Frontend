@@ -37,6 +37,14 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: course-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: manual_immediate
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -136,6 +144,7 @@ kafka:
   topic:
     course-events: course-events
     class-events: class-events
+    score-events: score-events
 
 management:
   endpoints:

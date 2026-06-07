@@ -31,6 +31,7 @@ import type { CourseClassResponse } from "@/services/api/response/courseClassRes
 import QuizDetailModal from "@/components/student/course/QuizDetailModal";
 import AssignmentDetailModal from "@/components/student/course/AssignmentDetailModal";
 import LessonDiscussionModal from "@/components/student/course/LessonDiscussionModal";
+import GroupAssignmentsTab from "@/components/student/course/GroupAssignmentsTab";
 import type { ProgressStatsResponse } from "@/services/api/response/progressStatsResponse";
 import * as progressApi from "@/services/api/student/progressApi";
 import {
@@ -1059,6 +1060,10 @@ const CourseDetail = () => {
                   </div>
                 )}
             </div>
+          )}
+
+          {activeTab === "group_assignments" && (
+            <GroupAssignmentsTab classId={Number(id)} />
           )}
 
           {activeTab === "score_feedback" && (

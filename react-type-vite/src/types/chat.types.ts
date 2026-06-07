@@ -259,6 +259,8 @@ export type ScoreCollectionStatus =
 export interface AssignmentSessionResponse {
   id: string;
   sectionId: string;
+  /** ID lớp học bên course-service (Section.classId) — dùng để liệt kê Assignment khi gửi điểm sang LMS. */
+  classId?: number | null;
   name: string;
   description?: string | null;
   submissionDeadline: string;       // ISO instant
@@ -288,6 +290,8 @@ export interface GroupFinalScoreResponse {
   sectionId: string;
   peerScores: PeerScoreEntryResponse[];
   selfScore?: number | null;
+  /** Bản ghi tự chấm đầy đủ (score + comment + thời điểm), null nếu nhóm không tự chấm. */
+  selfReview?: PeerScoreEntryResponse | null;
   medianPeerScore?: number | null;
   finalScore?: number | null;
   usedSelfScore: boolean;

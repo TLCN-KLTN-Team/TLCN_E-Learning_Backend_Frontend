@@ -256,7 +256,10 @@ export const collectSessionScores = async (
   return response.data.result ?? [];
 };
 
-/** Lấy kết quả điểm đã tính của một phiên (đọc từ DB, không tính lại). */
+/**
+ * [TEACHER] Lấy TẤT CẢ điểm của một phiên với đầy đủ breakdown.
+ * Backend khoá ROLE_TEACHER — sinh viên gọi sẽ bị 403, dùng getMySessionScore thay thế.
+ */
 export const getSessionScores = async (
   sessionId: string,
 ): Promise<GroupFinalScoreResponse[]> => {
@@ -267,8 +270,24 @@ export const getSessionScores = async (
 };
 
 /**
+ * [STUDENT] Lấy điểm của nhóm mình trong một phiên (chỉ điểm cuối, ẩn breakdown).
+ * Trả về [] nếu người gọi không thuộc nhóm nào trong phiên.
+ */
+export const getMySessionScore = async (
+  sessionId: string,
+): Promise<GroupFinalScoreResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<GroupFinalScoreResponse[]>>(
+    `${CHANNEL_API_BASE_URL}/sessions/${sessionId}/my-score`,
+  );
+  return response.data.result ?? [];
+};
+
+/**
  * Giáo viên xác nhận gửi điểm sang LMS (course-service qua Kafka).
  * Chỉ gọi được sau khi đã collect. Idempotent — cho phép gửi lại sau khi chỉnh sửa.
+ *
+ * course-service tự tạo "Bài tập nhóm" (GroupAssignment) theo sessionId từ metadata trong event,
+ * nên không cần chọn bài tập đích.
  */
 export const sendScoresToLms = async (
   sessionId: string,

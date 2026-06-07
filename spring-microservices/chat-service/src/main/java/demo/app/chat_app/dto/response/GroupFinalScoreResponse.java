@@ -25,6 +25,8 @@ public class GroupFinalScoreResponse {
 
     List<PeerScoreEntryResponse> peerScores;
     Double selfScore;
+    /** Bản ghi tự chấm đầy đủ (score + comment + thời điểm), null nếu nhóm không tự chấm. */
+    PeerScoreEntryResponse selfReview;
     Double medianPeerScore;
     Double finalScore;
     boolean usedSelfScore;

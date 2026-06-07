@@ -50,6 +50,12 @@ public class GroupFinalScore {
     /** Điểm tự chấm của nhóm (null nếu không có self-review). */
     Double selfScore;
 
+    /**
+     * Bản ghi tự chấm đầy đủ của nhóm (score + comment + thời điểm), null nếu không có.
+     * Tách khỏi peerScores (không tính vào median); dùng để hiển thị/đối chiếu.
+     */
+    PeerScoreEntry selfReview;
+
     /** Median của peerScores.score (null nếu NO_PEERS). */
     Double medianPeerScore;
 

@@ -22,14 +22,27 @@ public interface ScoreCollectionService {
     List<GroupFinalScore> collectAndCalculate(String sessionId);
 
     /**
-     * Lấy kết quả điểm cuối đã thu thập của một session.
+     * Lấy TẤT CẢ điểm cuối đã thu thập của một session (dành cho giáo viên).
+     * Trả về full breakdown: peerScores, selfScore, medianPeerScore, finalScore của mọi nhóm.
+     * Endpoint gọi method này phải được khoá ROLE_TEACHER.
      */
     List<GroupFinalScore> getSessionScores(String sessionId);
+
+    /**
+     * Lấy điểm của nhóm mà người gọi (sinh viên) thuộc về trong một session.
+     * Chỉ trả về điểm cuối (finalScore) — breakdown (peerScores/selfScore/medianPeerScore)
+     * được ẩn để không lộ ai đã chấm bao nhiêu. userId lấy từ SecurityContext.
+     * Trả về [] nếu người gọi không thuộc nhóm nào trong session.
+     */
+    List<GroupFinalScore> getMyGroupScores(String sessionId);
 
     /**
      * Giáo viên xác nhận gửi điểm sang course-service (LMS) qua Kafka.
      * Chỉ gọi được khi session đã ở trạng thái COLLECTED hoặc SENT_TO_LMS.
      * Idempotent: cho phép gửi lại sau khi chỉnh sửa điểm thủ công.
+     *
+     * <p>course-service tự dựng GroupAssignment theo sessionId từ metadata trong event nên KHÔNG
+     * cần giáo viên chọn Assignment đích — event mang theo classId/courseId/tên/deadline/thang điểm.</p>
      *
      * @throws AppException(SCORE_NOT_COLLECTED_YET) nếu chưa collect
      */

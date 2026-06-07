@@ -32,3 +32,6 @@ dist-ssr
 .github/*
 .vercel
 .claude/*
+
+# onboarding scratch doc (per-session context, not for commit)
+ONBOARDING.md
