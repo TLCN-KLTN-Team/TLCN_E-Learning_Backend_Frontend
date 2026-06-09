@@ -17,6 +17,7 @@ import type {
 
 import CartService from "@/services/api/user/cart.api";
 import WishlistService from "@/services/api/user/wishlist.api";
+import { AppError } from "@/errors";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
 import RecommendedCourses from "./RecommendedCourses";
@@ -31,6 +32,7 @@ const CourseDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
+  const [isCartLoading, setIsCartLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );
@@ -38,6 +40,16 @@ const CourseDetail: React.FC = () => {
   const [reviewStats, setReviewStats] = useState<ReviewStatsResponse | null>(
     null
   );
+  // Show a compact course-info bar (covering the main Header) once the hero
+  // scrolls out of view.
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setShowStickyHeader(window.scrollY > 320);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const toggleSection = (sectionId: number) => {
     setExpandedSections((prev) => {
@@ -143,19 +155,33 @@ const CourseDetail: React.FC = () => {
   };
 
   const handleCartAction = async () => {
+    if (isInCart) {
+      // Navigate to cart page
+      navigate("/cart");
+      return;
+    }
+
+    // Guard against double-submit: rapid clicks would race past the backend's
+    // duplicate check and trigger a unique-key violation.
+    if (isCartLoading) return;
+
+    setIsCartLoading(true);
     try {
-      if (isInCart) {
-        // Navigate to cart page
-        navigate("/cart");
-      } else {
-        // Add to cart
-        await CartService.addToCart(Number(courseId));
-        setIsInCart(true);
-        toast.success("Đã thêm vào giỏ hàng!");
-      }
+      await CartService.addToCart(Number(courseId));
+      setIsInCart(true);
+      toast.success("Đã thêm vào giỏ hàng!");
     } catch (error) {
       console.error("Error adding to cart:", error);
-      toast.error("Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
+      // CART_6002 = course already in cart (e.g. added from another tab); the
+      // course is in the cart, so reflect that instead of showing a hard error.
+      if (error instanceof AppError && error.code === "CART_6002") {
+        setIsInCart(true);
+        toast.info("Khóa học đã có trong giỏ hàng!");
+      } else {
+        toast.error("Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
+      }
+    } finally {
+      setIsCartLoading(false);
     }
   };
 
@@ -187,6 +213,62 @@ const CourseDetail: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Site Header */}
       <Header />
+
+      {/* Sticky course-info bar — slides in over the main Header on scroll */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-[110] bg-[#1c1d1f] text-white shadow-lg transition-transform duration-300 ${
+          showStickyHeader ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 lg:h-20 flex items-center justify-between gap-4">
+          {/* Course info */}
+          <div className="min-w-0">
+            <h2 className="font-bold text-sm lg:text-lg truncate">
+              {course.courseName}
+            </h2>
+            <div className="hidden sm:flex items-center gap-2 text-xs mt-0.5 flex-wrap">
+              <span className="px-1.5 py-0.5 bg-yellow-400 text-gray-900 font-bold rounded">
+                Bán chạy nhất
+              </span>
+              <span className="text-yellow-400 font-bold">
+                {course.rating.toFixed(1)}
+              </span>
+              <Star className="w-3.5 h-3.5 text-yellow-400 fill-current" />
+              <span className="text-blue-300 underline">
+                ({reviewStats?.totalReviews || 0} xếp hạng)
+              </span>
+              <span className="text-gray-300">
+                {course.studentCount?.toLocaleString()} học viên
+              </span>
+            </div>
+          </div>
+
+          {/* Action */}
+          <div className="flex items-center gap-4 flex-shrink-0">
+            {!course.purchaserStatus && (
+              <span className="hidden md:inline text-xl font-bold">
+                {course.coursePrice}
+              </span>
+            )}
+            {!course.purchaserStatus ? (
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold whitespace-nowrap"
+                onClick={handleCartAction}
+                disabled={isCartLoading}
+              >
+                {isInCart ? "Tới giỏ hàng" : "Thêm vào giỏ hàng"}
+              </Button>
+            ) : (
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold whitespace-nowrap"
+                onClick={handleLearnNow}
+              >
+                Bắt đầu học
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Course Header Section - Dark Background like Udemy */}
       <div className="bg-[#1c1d1f] pt-20">
@@ -499,7 +581,7 @@ const CourseDetail: React.FC = () => {
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Thành tích đạt được</h2>
               <div
-                className="text-sm text-gray-700 space-y-2"
+                className="course-rich-text text-sm text-gray-700 space-y-2"
                 dangerouslySetInnerHTML={{
                   __html: decodeHTMLEntities(course.learnerAchievements || ""),
                 }}
@@ -510,7 +592,7 @@ const CourseDetail: React.FC = () => {
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Mô tả khóa học</h2>
               <div
-                className="text-sm text-gray-700 space-y-3"
+                className="course-rich-text text-sm text-gray-700 space-y-3"
                 dangerouslySetInnerHTML={{
                   __html: decodeHTMLEntities(course.description || ""),
                 }}
@@ -521,7 +603,7 @@ const CourseDetail: React.FC = () => {
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Đối tượng tham gia</h2>
               <div
-                className="text-sm text-gray-700"
+                className="course-rich-text text-sm text-gray-700"
                 dangerouslySetInnerHTML={{
                   __html: decodeHTMLEntities(course.courseLearner || ""),
                 }}
@@ -674,9 +756,9 @@ const CourseDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Reviews List */}
+              {/* Reviews List — 2-column feedback cards */}
               {reviews.length > 0 ? (
-                <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
                   {reviews.slice(0, 4).map((review) => {
                     // Get initials from reviewer name
                     const initials =
@@ -709,90 +791,95 @@ const CourseDetail: React.FC = () => {
                     }
 
                     return (
-                      <div key={review.id} className="space-y-3">
-                        <div className="flex gap-4">
-                          {/* Avatar */}
-                          <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            {review.createdByAvatar ? (
-                              <img
-                                src={review.createdByAvatar}
-                                alt={review.createdByName || "Reviewer"}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-white text-sm font-bold">
-                                {initials}
-                              </span>
-                            )}
-                          </div>
+                      <div
+                        key={review.id}
+                        className="border-t border-gray-200 py-6"
+                      >
+                        {/* Header: avatar + name + menu */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/* Avatar */}
+                            <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {review.createdByAvatar ? (
+                                <img
+                                  src={review.createdByAvatar}
+                                  alt={review.createdByName || "Reviewer"}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-white text-sm font-bold">
+                                  {initials}
+                                </span>
+                              )}
+                            </div>
 
-                          {/* Review Content */}
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <h4 className="font-bold text-sm">
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-sm truncate">
                                 {review.createdByName}
                               </h4>
-                              <button className="text-gray-400 hover:text-gray-600">
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                                </svg>
-                              </button>
-                            </div>
-
-                            {/* Rating and Date */}
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="flex items-center">
-                                {renderStars(review.rate)}
+                              {/* Rating and Date */}
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <div className="flex items-center">
+                                  {renderStars(review.rate)}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {timeAgo}
+                                </span>
                               </div>
-                              <span className="text-xs text-gray-500">
-                                {timeAgo}
-                              </span>
-                            </div>
-
-                            {/* Comment */}
-                            <p className="text-sm text-gray-700 mb-3">
-                              {review.content}
-                            </p>
-
-                            {/* Helpful buttons */}
-                            <div className="flex items-center gap-4 text-sm">
-                              <span className="text-gray-600">Hữu ích?</span>
-                              <button className="flex items-center gap-1 hover:text-purple-600">
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-                                  />
-                                </svg>
-                              </button>
-                              <button className="flex items-center gap-1 hover:text-purple-600">
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
-                                  />
-                                </svg>
-                              </button>
                             </div>
                           </div>
+
+                          <button className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                            <svg
+                              className="w-5 h-5"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        {/* Comment */}
+                        <p className="text-sm text-gray-700 mb-4 leading-relaxed">
+                          {review.content}
+                        </p>
+
+                        {/* Helpful buttons */}
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-gray-600">
+                            Bạn thấy hữu ích?
+                          </span>
+                          <button className="text-gray-500 hover:text-purple-600 transition-colors">
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                              />
+                            </svg>
+                          </button>
+                          <button className="text-gray-500 hover:text-purple-600 transition-colors">
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+                              />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                     );
@@ -808,17 +895,20 @@ const CourseDetail: React.FC = () => {
               {reviews.length > 4 && (
                 <Button
                   variant="outline"
-                  className="w-auto border-gray-900 font-semibold"
+                  className="w-auto border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold"
                 >
-                  Xem tất cả {reviews.length} đánh giá
+                  Hiện tất cả {reviews.length} đánh giá
                 </Button>
               )}
             </div>
           </div>
 
           {/* Right Sidebar - Course Card */}
-          <div className="lg:col-span-1">
-            <Card className="p-0 bg-white shadow-xl lg:sticky lg:top-24 overflow-hidden">
+          {/* Pulled up into the dark hero on load (lg:-mt-80), then stays sticky
+              (top-24 = below the 80px fixed header) and follows scroll until the
+              left content column ends near the footer. */}
+          <div className="relative z-30 lg:col-span-1 lg:-mt-80">
+            <Card className="course-card-rise p-0 bg-white shadow-2xl ring-1 ring-black/5 rounded-xl lg:sticky lg:top-24 overflow-hidden">
               {/* Video Preview */}
               <div className="relative group cursor-pointer">
                 {course.courseVideo ? (
@@ -838,16 +928,16 @@ const CourseDetail: React.FC = () => {
                       alt={`${course.courseName}: Master the Fundamentals`}
                       className="w-full h-52 object-cover"
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center group-hover:bg-opacity-40 transition-all">
+                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-3 group-hover:bg-black/50 transition-all">
                       <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                         <div className="w-0 h-0 border-t-8 border-t-transparent border-l-12 border-l-gray-900 border-b-8 border-b-transparent ml-1"></div>
                       </div>
+                      <span className="text-white text-sm font-semibold drop-shadow">
+                        Xem trước khóa học này
+                      </span>
                     </div>
                   </>
                 )}
-                <span className="absolute top-3 left-3 bg-white px-2 py-1 text-xs font-medium rounded">
-                  Preview this course
-                </span>
               </div>
 
               {/* Pricing Section */}
@@ -868,6 +958,7 @@ const CourseDetail: React.FC = () => {
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg font-semibold"
                       onClick={handleCartAction}
+                      disabled={isCartLoading}
                     >
                       {isInCart ? "Tới giỏ hàng" : "Thêm vào giỏ hàng"}
                     </Button>

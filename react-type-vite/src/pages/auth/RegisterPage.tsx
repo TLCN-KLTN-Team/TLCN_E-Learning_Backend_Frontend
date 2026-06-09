@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import type { RegisterData } from "@/context/auth-context/types";
 import { toast } from "react-toastify";
-import { isAfter } from "date-fns";
 import {
   Eye,
   EyeClosed,
@@ -41,7 +41,6 @@ const RegisterPage = () => {
     phoneNumber: "",
     password: "",
     confirmPassword: "",
-    dob: undefined,
     agreeToTerms: false,
   });
 
@@ -107,21 +106,6 @@ const RegisterPage = () => {
           return "Mật khẩu không khớp, vui lòng thử lại";
         }
         break;
-      case "dob": {
-        if (!value) {
-          return "Vui lòng chọn ngày sinh của bạn";
-        }
-        const today = new Date();
-        const birthDate = new Date(value as string);
-        const age = today.getFullYear() - birthDate.getFullYear();
-        if (age < 13) {
-          return "Yêu cầu từ 13 tuổi trở lên để đăng ký";
-        }
-        if (isAfter(birthDate, today)) {
-          return "Ngày sinh không thể trong tương lai";
-        }
-        break;
-      }
       case "agreeToTerms":
         if (!value) {
           return "Bạn phải đồng ý với các điều khoản và điều kiện để đăng ký";
@@ -176,8 +160,18 @@ const RegisterPage = () => {
 
     setErrors(newErrors);
 
+    // Đánh dấu tất cả field là đã chạm để hiển thị lỗi
+    setTouchedFields(new Set(Object.keys(formData)));
+
+    // Chặn submit nếu còn lỗi
+    if (Object.keys(newErrors).length > 0) {
+      toast.error("Vui lòng kiểm tra lại thông tin đã nhập");
+      return;
+    }
+
     if (user) {
       navigate("/");
+      return;
     }
 
     // Trim all text fields before submission
@@ -300,9 +294,30 @@ const RegisterPage = () => {
   };
 
   const registerRender = () => {
+    const container = {
+      hidden: {},
+      show: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+    };
+    const item = {
+      hidden: { opacity: 0, y: 14 },
+      show: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.4, ease: "easeOut" },
+      },
+    } as const;
     return (
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <motion.form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+        variants={container}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
           {/* First Name Field */}
           <div className="space-y-2">
             <label
@@ -311,9 +326,9 @@ const RegisterPage = () => {
             >
               Tên
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <UserRound className="w-4 h-4 text-gray-400" />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <UserRound className="w-4 h-4 text-gray-400 transition-colors duration-200 group-focus-within:text-blue-600" />
               </div>
               <input
                 id="firstName"
@@ -324,10 +339,10 @@ const RegisterPage = () => {
                 onChange={handleInputChange}
                 onBlur={() => handleFieldBlur("firstName")}
                 className={cn(
-                  "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  "auth-input text-gray-700 w-full pl-10 pr-3 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white text-sm placeholder-gray-400 transition-all duration-200",
                   errors.firstName
                     ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
+                    : "border-slate-200 hover:border-slate-300 focus:border-blue-500"
                 )}
                 placeholder="Nhập tên"
               />
@@ -347,9 +362,9 @@ const RegisterPage = () => {
             >
               Họ
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <UserRound className="w-4 h-4 text-gray-400" />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <UserRound className="w-4 h-4 text-gray-400 transition-colors duration-200 group-focus-within:text-blue-600" />
               </div>
               <input
                 id="lastName"
@@ -363,7 +378,7 @@ const RegisterPage = () => {
                   "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
                   errors.lastName
                     ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
+                    : "border-slate-200 hover:border-slate-300 focus:border-blue-500"
                 )}
                 placeholder="Nhập họ"
               />
@@ -382,9 +397,9 @@ const RegisterPage = () => {
             >
               Địa chỉ Email
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="w-4 h-4 text-gray-400" />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Mail className="w-4 h-4 text-gray-400 transition-colors duration-200 group-focus-within:text-blue-600" />
               </div>
               <input
                 id="email"
@@ -398,7 +413,7 @@ const RegisterPage = () => {
                   "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
                   errors.email
                     ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
+                    : "border-slate-200 hover:border-slate-300 focus:border-blue-500"
                 )}
                 placeholder="Nhập e-mail"
               />
@@ -416,9 +431,9 @@ const RegisterPage = () => {
             >
               Số điện thoại
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <UserRound className="w-4 h-4 text-gray-400" />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <UserRound className="w-4 h-4 text-gray-400 transition-colors duration-200 group-focus-within:text-blue-600" />
               </div>
               <input
                 id="phoneNumber"
@@ -432,7 +447,7 @@ const RegisterPage = () => {
                   "auth-input text-gray-700 w-full pl-9 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
                   errors.phoneNumber
                     ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
+                    : "border-slate-200 hover:border-slate-300 focus:border-blue-500"
                 )}
                 placeholder="Nhập số điện thoại"
               />
@@ -443,10 +458,13 @@ const RegisterPage = () => {
               </p>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Password Fields */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
           {/* Password Field */}
           <div className="space-y-2">
             <label
@@ -455,9 +473,9 @@ const RegisterPage = () => {
             >
               Mật khẩu
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <LockKeyhole className="w-4 h-4 text-gray-400" />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <LockKeyhole className="w-4 h-4 text-gray-400 transition-colors duration-200 group-focus-within:text-blue-600" />
               </div>
               <input
                 id="password"
@@ -468,10 +486,10 @@ const RegisterPage = () => {
                 onChange={handleInputChange}
                 onBlur={() => handleFieldBlur("password")}
                 className={cn(
-                  "auth-input text-gray-700 w-full pl-9 pr-12 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  "auth-input text-gray-700 w-full pl-10 pr-12 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white text-sm placeholder-gray-400 transition-all duration-200",
                   errors.password
                     ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
+                    : "border-slate-200 hover:border-slate-300 focus:border-blue-500"
                 )}
                 placeholder="Nhập mật khẩu"
               />
@@ -504,9 +522,9 @@ const RegisterPage = () => {
             >
               Xác nhận mật khẩu
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <LockKeyhole className="w-4 h-4 text-gray-400" />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <LockKeyhole className="w-4 h-4 text-gray-400 transition-colors duration-200 group-focus-within:text-blue-600" />
               </div>
               <input
                 id="confirmPassword"
@@ -517,10 +535,10 @@ const RegisterPage = () => {
                 onChange={handleInputChange}
                 onBlur={() => handleFieldBlur("confirmPassword")}
                 className={cn(
-                  "auth-input text-gray-700 w-full pl-9 pr-12 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm placeholder-gray-400 transition-all",
+                  "auth-input text-gray-700 w-full pl-10 pr-12 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white text-sm placeholder-gray-400 transition-all duration-200",
                   errors.confirmPassword
                     ? "border-red-300 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
+                    : "border-slate-200 hover:border-slate-300 focus:border-blue-500"
                 )}
                 placeholder="Nhập lại mật khẩu"
               />
@@ -544,10 +562,10 @@ const RegisterPage = () => {
               </p>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Terms Agreement */}
-        <div className="space-y-2">
+        <motion.div variants={item} className="space-y-2">
           <div className="flex items-start space-x-2">
             <input
               id="agreeToTerms"
@@ -574,9 +592,10 @@ const RegisterPage = () => {
               {errors.agreeToTerms}
             </p>
           )}
-        </div>
+        </motion.div>
 
         {/* Register Button */}
+        <motion.div variants={item}>
         <Button
           type="submit"
           disabled={!formData.agreeToTerms || isRegistering}
@@ -591,9 +610,10 @@ const RegisterPage = () => {
             "Tạo tài khoản"
           )}
         </Button>
+        </motion.div>
 
         {/* Divider */}
-        <div className="relative">
+        <motion.div variants={item} className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300" />
           </div>
@@ -602,27 +622,27 @@ const RegisterPage = () => {
               Hoặc tiếp tục với
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Social Login Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <motion.div variants={item} className="grid grid-cols-2 gap-3">
           <GoogleButton />
           <FacebookButton />
-        </div>
+        </motion.div>
 
         {/* Sign In Link */}
-        <div className="text-center pt-4">
+        <motion.div variants={item} className="text-center pt-4">
           <p className="text-sm text-gray-600">
             Bạn đã có tài khoản?{" "}
-            <a
-              href="/login"
+            <NavLink
+              to="/login"
               className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
               Đăng nhập ngay
-            </a>
+            </NavLink>
           </p>
-        </div>
-      </form>
+        </motion.div>
+      </motion.form>
     );
   };
 

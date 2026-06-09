@@ -1,12 +1,10 @@
-import welcome from "../../assets/images/element/02.svg";
-import ava1 from "../../assets/images/avatar/01.jpg";
-import ava2 from "../../assets/images/avatar/02.jpg";
-import ava3 from "../../assets/images/avatar/03.jpg";
-import ava4 from "../../assets/images/avatar/04.jpg";
+import { motion } from "framer-motion";
 import { useTheme } from "@/context/theme-context";
 
-import authLogo from "@/assets/auth-logo.png";
+import authLogo from "@/assets/Login_logo.png";
 import { NavLink } from "react-router-dom";
+import AuthHero from "./AuthHero";
+import AuthBackdrop from "./AuthBackdrop";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -29,29 +27,31 @@ const AuthLayout = ({
   // Register layout with background image and centered form
   if (isRegister) {
     return (
-      <div
-        className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-6 lg:px-12 py-6 lg:py-8 relative"
-        style={{
-          backgroundImage: `url(${welcome})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-purple-900/40"></div>
+      <div className="h-screen overflow-hidden bg-slate-50 flex items-center justify-center px-6 lg:px-12 py-6 lg:py-8 relative">
+        {/* Nền trang trí động */}
+        <AuthBackdrop />
 
         {/* Centered Register Form with better padding */}
-        <div className="relative z-10 w-full max-w-2xl">
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative z-10 w-full max-w-2xl"
+        >
           {/* Form with enhanced padding */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-6 lg:p-8">
+          <div className="bg-white rounded-2xl shadow-[0_8px_40px_-12px_rgba(15,23,42,0.18)] ring-1 ring-slate-100 p-6 lg:p-9">
             {/* Header với logo và welcome message */}
             <div className="text-center space-y-4 mb-6">
               {/* Logo */}
-              <div className="flex justify-center mb-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.15, duration: 0.4 }}
+                className="flex justify-center mb-4"
+              >
                 <NavLink
                   to="/"
-                  className="ml-2 text-2xl font-bold text-gray-900 hover:cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-2xl bg-blue-50 p-2.5 ring-1 ring-blue-100 hover:cursor-pointer transition-shadow hover:shadow-md"
                 >
                   <img
                     src={authLogo}
@@ -59,86 +59,45 @@ const AuthLayout = ({
                     className="w-10 h-10 object-contain"
                   />
                 </NavLink>
-              </div>
+              </motion.div>
 
               {/* Welcome Message */}
-              <div className="space-y-2">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.4 }}
+                className="space-y-2"
+              >
                 <h2 className="text-xl lg:text-2xl font-bold text-gray-900">
                   {title}
                 </h2>
                 <p className="text-sm text-gray-600">{subtitle}</p>
-              </div>
+              </motion.div>
             </div>
             <div className="max-w-3xl">{children}</div>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   // Default login layout
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex px-4 lg:px-8 py-8">
-      {/* Left Side - Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-100 to-purple-100 items-center justify-center p-8 lg:p-12 ml-4 rounded-2xl shadow-lg">
-        <div className="max-w-lg text-center space-y-8">
-          {/* Welcome Text at Top */}
-          <div className="space-y-4">
-            <h1 className="heading-1 text-gray-800">
-              Chào mừng đến với OpenEdu!
-            </h1>
-            <p className="body-large text-gray-600">
-              Hãy cùng học điều gì đó mới hôm nay!
-            </p>
-          </div>
-
-          {/* Illustration/Welcome Image */}
-          <div className="w-full max-w-md mx-auto">
-            {illustration || (
-              <img
-                src={welcome}
-                alt="Welcome to our community"
-                className="w-full h-auto object-contain"
-              />
-            )}
-          </div>
-
-          {/* Student avatars at bottom */}
-          <div className="flex items-center justify-center space-x-3 pt-4">
-            <div className="flex -space-x-2">
-              <img
-                className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                src={ava1}
-                alt="Student 1"
-              />
-              <img
-                className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                src={ava2}
-                alt="Student 2"
-              />
-              <img
-                className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                src={ava3}
-                alt="Student 3"
-              />
-              <img
-                className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                src={ava4}
-                alt="Student 4"
-              />
-            </div>
-            <p className="body-small text-gray-600 ml-3">
-              Hơn 4000+ sinh viên đã tham gia
-            </p>
-          </div>
+    <div className="h-screen overflow-hidden bg-slate-50 flex px-4 lg:px-8 py-8">
+      {/* Left Side - Animated Hero */}
+      {illustration ? (
+        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-8 lg:p-12 ml-4 rounded-3xl bg-slate-50 ring-1 ring-slate-200/70">
+          <div className="w-full max-w-md mx-auto">{illustration}</div>
         </div>
-      </div>
+      ) : (
+        <AuthHero />
+      )}
 
       {/* Right Side - Form with better centering */}
       <div className="flex-1 flex items-center justify-center px-4 lg:px-8 mr-6">
         <div className="w-full max-w-md lg:max-w-lg space-y-4">
           {/* Form with enhanced styling */}
-          <div className="bg-white rounded-xl shadow-xl p-6 lg:p-8">
+          <div className="bg-white rounded-2xl shadow-[0_8px_40px_-12px_rgba(15,23,42,0.18)] ring-1 ring-slate-100 p-6 lg:p-9">
             {/* Header với logo và welcome message */}
             <div className="text-center space-y-4 mb-8">
               {/* Logo */}

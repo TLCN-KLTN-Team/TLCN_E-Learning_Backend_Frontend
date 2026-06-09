@@ -56,7 +56,7 @@ const LoginPage = () => {
     try {
       await emailApi.verifyAccount(emailToVerify, otpCode);
       toast.success(
-        "Xác minh tài khoản thành công! Đang chuyển hướng đến trang đăng nhập..."
+        "Xác minh tài khoản thành công! Đang chuyển hướng đến trang đăng nhập...",
       );
       // Delay để người dùng thấy thông báo thành công
       setTimeout(() => {
@@ -87,7 +87,7 @@ const LoginPage = () => {
       // OTP expired
       if (errorCode === "OTP_1019") {
         setOtpError(
-          "Mã OTP đã hết hạn (sau 1 phút 30 giây). Vui lòng nhấn 'Gửi lại mã xác nhận'"
+          "Mã OTP đã hết hạn (sau 1 phút 30 giây). Vui lòng nhấn 'Gửi lại mã xác nhận'",
         );
       }
       throw error;
@@ -116,7 +116,7 @@ const LoginPage = () => {
         message.includes("5 phút")
       ) {
         setOtpError(
-          "Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút"
+          "Bạn đã gửi lại mã xác nhận quá 3 lần. Vui lòng thử lại sau 5 phút",
         );
       } else {
         setOtpError(message);
@@ -168,7 +168,7 @@ const LoginPage = () => {
           // Tự động gửi lại OTP
           handleResendOtpFromLogin();
           toast.info(
-            "Tài khoản chưa được xác thực. Vui lòng xác thực tài khoản."
+            "Tài khoản chưa được xác thực. Vui lòng xác thực tài khoản.",
           );
         } else {
           toast.error(errorMessage);
@@ -212,9 +212,9 @@ const LoginPage = () => {
           >
             Email
           </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="w-5 h-5 text-gray-400" />
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <Mail className="w-5 h-5 text-gray-400 transition-colors duration-200 group-focus-within:text-blue-600" />
             </div>
             <input
               id="username"
@@ -224,7 +224,7 @@ const LoginPage = () => {
               value={formData.username}
               onChange={handleInputChange}
               disabled={isLoading}
-              className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-gray-900 placeholder-gray-400 transition-all duration-200 hover:border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="devzeus || devzeus@gmail.com"
               aria-describedby="username-description"
             />
@@ -251,9 +251,9 @@ const LoginPage = () => {
               Forgot password?
             </NavLink>
           </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <LockKeyhole className="w-5 h-5 text-gray-400" />
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <LockKeyhole className="w-5 h-5 text-gray-400 transition-colors duration-200 group-focus-within:text-blue-600" />
             </div>
             <input
               id="password"
@@ -263,7 +263,7 @@ const LoginPage = () => {
               value={formData.password}
               onChange={handleInputChange}
               disabled={isLoading}
-              className="w-full h-12 pl-10 pr-12 border border-gray-300 rounded-lg focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 pl-11 pr-12 bg-slate-50 border border-slate-200 rounded-xl text-gray-900 placeholder-gray-400 transition-all duration-200 hover:border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="••••••••"
               aria-describedby="password-description"
               style={{
@@ -308,7 +308,7 @@ const LoginPage = () => {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500/20 shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
@@ -342,12 +342,12 @@ const LoginPage = () => {
         <div className="text-center pt-4">
           <p className="text-sm text-gray-600">
             Bạn chưa có tài khoản?{" "}
-            <a
-              href="/register"
+            <NavLink
+              to="/register"
               className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
               Đăng ký tại đây
-            </a>
+            </NavLink>
           </p>
         </div>
       </form>
