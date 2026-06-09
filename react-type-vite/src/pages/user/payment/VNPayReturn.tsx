@@ -94,15 +94,15 @@ const VNPayReturn: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Header />
         <div className="pt-20 flex items-center justify-center min-h-[80vh]">
           <Card className="p-8 text-center max-w-md mx-auto shadow-lg">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
+            <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2 text-foreground">
               Đang xử lý kết quả thanh toán...
             </h2>
-            <p className="text-gray-600">Vui lòng đợi trong giây lát</p>
+            <p className="text-muted-foreground">Vui lòng đợi trong giây lát</p>
           </Card>
         </div>
       </div>
@@ -114,7 +114,7 @@ const VNPayReturn: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       <div className="pt-20 pb-8">
         <PaymentStatus
@@ -122,6 +122,7 @@ const VNPayReturn: React.FC = () => {
           amount={paymentResult?.amount}
           currency={paymentResult?.currency}
           orderId={orderId}
+          paymentMethod="VNPay"
           errorCode={errorCode}
           message={status === "success" ? paymentResult?.message : errorMessage}
         />

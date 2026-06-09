@@ -138,27 +138,27 @@ const OrderHistoryPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20 flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="min-h-screen bg-background pt-20 flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-background">
             <Header />
 
-            <main className="pt-24 pb-12">
+            <main className="pt-24 pb-16">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                            <ShoppingBag className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="p-2.5 bg-primary/10 rounded-xl">
+                            <ShoppingBag className="w-6 h-6 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <h1 className="font-heading text-2xl font-bold text-foreground">
                                 Lịch sử đơn hàng
                             </h1>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">
+                            <p className="text-muted-foreground text-sm mt-0.5">
                                 Quản lý các khóa học bạn đã mua và lịch sử giao dịch
                             </p>
                         </div>
@@ -166,37 +166,43 @@ const OrderHistoryPage: React.FC = () => {
 
                     <div className="space-y-6">
                         {orders.length === 0 ? (
-                            <Card className="p-12 text-center text-gray-500 dark:text-gray-400">
-                                Bạn chưa có đơn hàng nào.
+                            <Card className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
+                                <div className="p-4 bg-muted rounded-full">
+                                    <ShoppingBag className="w-8 h-8 text-muted-foreground" />
+                                </div>
+                                <p className="text-foreground font-medium">Bạn chưa có đơn hàng nào.</p>
+                                <p className="text-muted-foreground text-sm max-w-sm">
+                                    Khám phá các khóa học và bắt đầu hành trình học tập của bạn ngay hôm nay.
+                                </p>
                             </Card>
                         ) : (
                             orders.map((order) => (
                                 <Card
                                     key={order.id}
-                                    className="overflow-hidden border border-gray-200 dark:border-gray-800"
+                                    className="overflow-hidden p-0 gap-0 border-border shadow-sm"
                                 >
-                                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800">
+                                    <div className="bg-muted/50 px-5 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-border">
                                         <div className="space-y-1">
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                            <div className="text-xs uppercase tracking-wide text-muted-foreground">
                                                 Mã đơn hàng
                                             </div>
-                                            <div className="font-mono font-medium text-gray-900 dark:text-white">
+                                            <div className="font-mono font-medium text-foreground">
                                                 #{order.orderId}
                                             </div>
                                         </div>
                                         <div className="space-y-1">
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                            <div className="text-xs uppercase tracking-wide text-muted-foreground">
                                                 Ngày đặt
                                             </div>
-                                            <div className="font-medium text-gray-900 dark:text-white">
+                                            <div className="font-medium text-foreground">
                                                 {order.orderDate ? format(new Date(order.orderDate), "dd 'thg' MM, yyyy", { locale: vi }) : "N/A"}
                                             </div>
                                         </div>
                                         <div className="space-y-1">
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                            <div className="text-xs uppercase tracking-wide text-muted-foreground">
                                                 Tổng tiền
                                             </div>
-                                            <div className="font-bold text-gray-900 dark:text-white">
+                                            <div className="font-bold text-foreground">
                                                 {new Intl.NumberFormat("vi-VN", {
                                                     style: "currency",
                                                     currency: order.currency || "VND",
@@ -210,32 +216,32 @@ const OrderHistoryPage: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                                    <div className="divide-y divide-border">
                                         {order.orderItems.map((item) => (
-                                            <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+                                            <div key={item.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/40 transition-colors">
                                                 <button
                                                     type="button"
                                                     onClick={() => handleGoToCourse(item.courseId, item.paymentStatus)}
-                                                    className="flex items-start gap-4 text-left rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+                                                    className="flex items-start gap-4 text-left rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                 >
-                                                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-md flex-shrink-0 overflow-hidden">
+                                                    <div className="w-16 h-16 bg-muted rounded-md flex-shrink-0 overflow-hidden">
                                                         {item.thumbnailUrl ? (
-                                                            <img 
-                                                                src={item.thumbnailUrl} 
+                                                            <img
+                                                                src={item.thumbnailUrl}
                                                                 alt={item.courseName}
-                                                                className="block w-full h-full min-w-full min-h-full object-cover" 
+                                                                className="block w-full h-full min-w-full min-h-full object-cover"
                                                             />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center">
-                                                                <ShoppingBag className="w-6 h-6 text-gray-400" />
+                                                                <ShoppingBag className="w-6 h-6 text-muted-foreground" />
                                                             </div>
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+                                                        <h4 className="font-semibold text-foreground mb-1">
                                                             {item.courseName}
                                                         </h4>
-                                                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                                                        <p className="text-sm font-medium text-foreground mb-1">
                                                             {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(item.price)}
                                                         </p>
                                                         <div className={`text-xs font-medium ${getPaymentStatusColor(item.paymentStatus)}`}>
@@ -249,7 +255,7 @@ const OrderHistoryPage: React.FC = () => {
                                                     <Dialog>
                                                         <DialogTrigger asChild>
                                                             <Button variant="outline" size="sm"
-                                                                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900/30 dark:hover:bg-red-900/20"
+                                                                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:border-red-900/40 dark:hover:bg-red-900/20"
                                                                 onClick={() => setSelectedItemForRefund({ id: item.id, name: item.courseName })}
                                                             >
                                                                 <RefreshCw className="w-4 h-4 mr-1.5" />
@@ -260,7 +266,7 @@ const OrderHistoryPage: React.FC = () => {
                                                             <DialogHeader>
                                                                 <DialogTitle>Yêu cầu hoàn tiền</DialogTitle>
                                                                 <DialogDescription>
-                                                                    Bạn có chắc chắn muốn yêu cầu hoàn tiền cho khóa học <span className="font-semibold text-gray-900 dark:text-white">{item.courseName}</span>?
+                                                                    Bạn có chắc chắn muốn yêu cầu hoàn tiền cho khóa học <span className="font-semibold text-foreground">{item.courseName}</span>?
                                                                 </DialogDescription>
                                                             </DialogHeader>
 

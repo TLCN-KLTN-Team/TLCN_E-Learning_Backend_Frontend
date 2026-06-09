@@ -9,7 +9,7 @@ export const navigation = [
   { name: "Trang chủ", href: PUBLIC_ROUTES.HOME },
   {
     name: "Khóa học",
-    href: "#courses",
+    href: "/courses",
     features: [
       { name: "Tất cả khóa học", href: PUBLIC_ROUTES.COURSES },
       { name: "Trang học tập số", href: STUDENT_ROUTES.DASHBOARD },

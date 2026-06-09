@@ -47,7 +47,19 @@
       "Bash(git -C \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite\" diff --stat)",
       "Bash(git -C \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite\" rev-parse --abbrev-ref --symbolic-full-name @{u})",
       "Bash(git -C \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite\" add -A)",
-      "Bash(git -C \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite\" status --short)"
+      "Bash(git -C \"e:\\\\TLCN\\\\TLCN_E-Learning\\\\react-type-vite\" status --short)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\('tailwindcss-animate:', \\(p.dependencies&&p.dependencies['tailwindcss-animate']\\)||\\(p.devDependencies&&p.devDependencies['tailwindcss-animate']\\)||'NO'\\)\" 2>nul)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.app.json 2>&1)",
+      "Bash(node -p \"require\\('./package.json'\\).devDependencies?.tailwindcss || require\\('./package.json'\\).dependencies?.tailwindcss\")",
+      "Bash(grep -rn \"@config\\\\|@theme\" src/ *.css)",
+      "Bash(grep -n \"tailwind\" vite.config.*)",
+      "Bash(ls postcss.config.*)",
+      "Bash(cat postcss.config.*)",
+      "Bash(grep -rn \"\\\\.text-foreground\\\\b\\\\|\\\\.bg-background\\\\b\\\\|\\\\.hover\\\\\\\\\\\\\\\\:text-bs-primary\\\\|hover\\\\\\\\:text-bs-primary\" src/styles/ src/index.css)",
+      "Bash(npx @tailwindcss/cli -i src/index.css -o /tmp/tw-out.css)",
+      "Bash(grep -c \"hover\\\\\\\\\\\\\\\\:text-bs-primary\" /tmp/tw-out.css)",
+      "Bash(npx @tailwindcss/cli -i src/index.css -o /tmp/tw-out2.css)",
+      "Bash(grep -o \"hover\\\\\\\\\\\\\\\\:text-\\\\[#066ac9\\\\][^}]*}\" /tmp/tw-out2.css)"
     ],
     "additionalDirectories": [
       "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\scheduler",
@@ -63,7 +75,8 @@
       "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\chat-service\\src\\main\\java\\demo\\app\\chat_app\\kafka\\producer",
       "\\tmp",
       "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\course-service\\src\\main\\java\\com\\hoangphihiep\\dto\\response",
-      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\course-service\\src\\main\\java\\com\\hoangphihiep\\controller\\student"
+      "e:\\TLCN\\TLCN_E-Learning\\spring-microservices\\course-service\\src\\main\\java\\com\\hoangphihiep\\controller\\student",
+      "e:\\TLCN\\TLCN_E-Learning\\react-type-vite"
     ]
   }
 }

@@ -328,18 +328,53 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                         />
                       </svg>
                     </a>
-                    <div className="absolute left-0 top-full pt-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-300 ease-in-out z-[110]">
-                      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-lg p-3 min-w-[220px] whitespace-nowrap backdrop-blur-sm">
-                        {item.features.map((feature, index) => (
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out z-[120]">
+                      {/* Caret pointer */}
+                      <div
+                        className="absolute left-1/2 -translate-x-1/2 top-[7px] w-3 h-3 rotate-45 border-l border-t"
+                        style={{
+                          backgroundColor: "var(--bs-body-bg)",
+                          borderColor: "var(--bs-border-color)",
+                        }}
+                      />
+                      <div
+                        className="relative border shadow-xl rounded-xl p-2 min-w-[240px] whitespace-nowrap"
+                        style={{
+                          backgroundColor: "var(--bs-body-bg)",
+                          borderColor: "var(--bs-border-color)",
+                          color: "var(--bs-body-color)",
+                        }}
+                      >
+                        {item.features.map((feature) => (
                           <NavLink
                             key={feature.name}
                             to={feature.href}
-                            className={`block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200 font-medium ${index > 0
-                              ? "border-t border-gray-100 dark:border-gray-700"
-                              : ""
-                              }`}
+                            className="group/item flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 no-hover-effect"
+                            style={{ color: "var(--bs-body-color)" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "var(--bs-primary-bg-subtle)";
+                              e.currentTarget.style.color = "var(--bs-primary)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "transparent";
+                              e.currentTarget.style.color = "var(--bs-body-color)";
+                            }}
                           >
-                            {feature.name}
+                            <span>{feature.name}</span>
+                            <svg
+                              className="w-4 h-4 opacity-0 -translate-x-1 transition-all duration-200 group-hover/item:opacity-100 group-hover/item:translate-x-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
                           </NavLink>
                         ))}
                       </div>
@@ -365,7 +400,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
             {user && (
               <button
                 onClick={() => navigate("/wishlist")}
-                className="p-2 text-foreground hover:text-bs-primary transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 text-gray-700 dark:text-gray-300 hover:text-[#066ac9] dark:hover:text-[#6ea8fe] transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                 aria-label="Wishlist"
               >
                 <Heart className="w-5 h-5" />
@@ -376,7 +411,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
             {user && (
               <button
                 onClick={() => navigate("/cart")}
-                className="p-2 text-foreground hover:text-bs-primary transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 text-gray-700 dark:text-gray-300 hover:text-[#066ac9] dark:hover:text-[#6ea8fe] transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                 aria-label="Cart"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -391,10 +426,10 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                     setIsNotificationOpen(!isNotificationOpen);
                     setIsProfileOpen(false);
                   }}
-                  className="relative p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  className="relative p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-[#066ac9] dark:hover:text-[#6ea8fe] transition-colors"
                   aria-label="Notifications"
                 >
-                  <Bell className="w-4 h-4 md:w-5 md:h-5 text-gray-600 dark:text-gray-300" />
+                  <Bell className="w-4 h-4 md:w-5 md:h-5" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
                   )}
@@ -671,7 +706,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
             {user && (
               <button
                 onClick={() => navigate("/wishlist")}
-                className="p-2 text-foreground hover:text-bs-primary transition-colors"
+                className="p-2 text-gray-700 dark:text-gray-300 hover:text-[#066ac9] dark:hover:text-[#6ea8fe] transition-colors"
                 aria-label="Wishlist"
               >
                 <Heart className="w-5 h-5" />
@@ -682,7 +717,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
             {user && (
               <button
                 onClick={() => navigate("/cart")}
-                className="p-2 text-foreground hover:text-bs-primary transition-colors"
+                className="p-2 text-gray-700 dark:text-gray-300 hover:text-[#066ac9] dark:hover:text-[#6ea8fe] transition-colors"
                 aria-label="Cart"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -693,7 +728,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
             {user && (
               <button
                 onClick={() => navigate(STUDENT_ROUTES.NOTIFICATIONS, { state: { background: location } })}
-                className="relative p-2 text-foreground hover:text-bs-primary transition-colors"
+                className="relative p-2 text-gray-700 dark:text-gray-300 hover:text-[#066ac9] dark:hover:text-[#6ea8fe] transition-colors"
                 aria-label="Notifications"
               >
                 <Bell className="w-5 h-5" />

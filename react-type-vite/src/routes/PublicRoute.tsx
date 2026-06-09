@@ -1,6 +1,7 @@
 import { Route } from "react-router-dom";
 import Home from "../pages/student/home/Home";
-import AuthPage from "../pages/auth/AuthPage";
+import LoginPage from "../pages/auth/LoginPage";
+import RegisterPage from "../pages/auth/RegisterPage";
 import GoogleAuthenticate from "../pages/auth/GoogleAuthenticate";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import Contact from "../pages/student/home/Contact";
@@ -27,15 +28,11 @@ import {
 // Public routes - accessible by anonymous users
 const PublicRoutes = [
   <Route key="home" path={PUBLIC_ROUTES.HOME} element={<Home />} />,
-  <Route
-    key="login"
-    path={PUBLIC_ROUTES.LOGIN}
-    element={<AuthPage isLoggin={true} />}
-  />,
+  <Route key="login" path={PUBLIC_ROUTES.LOGIN} element={<LoginPage />} />,
   <Route
     key="register"
     path={PUBLIC_ROUTES.REGISTER}
-    element={<AuthPage isLoggin={false} />}
+    element={<RegisterPage />}
   />,
   <Route
     key="google-auth-callback"
