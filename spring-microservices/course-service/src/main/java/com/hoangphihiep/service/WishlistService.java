@@ -38,6 +38,7 @@ public class WishlistService {
                         .duration(10)
                         .originalPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
                         .currentPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .thumbnail(course.getCourseImage())
                         .build()
                 ).toList();
 

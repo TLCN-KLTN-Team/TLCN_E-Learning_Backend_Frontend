@@ -57,60 +57,30 @@ export default function SourceSelection({
 
         {/* Source Type Selector */}
         {!hideTopicOption && (
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="flex gap-1 mt-4 p-1 rounded-xl bg-muted/60 border border-border">
             {(["document", "topic"] as const).map((type) => {
               const isSelected = sourceType === type;
-              const hasContent = type === "document" ? fileName : topic;
+              const hasContent = type === "document" ? !!fileName : !!topic;
 
               return (
                 <button
                   key={type}
                   onClick={() => onSourceTypeChange(type)}
-                  className={`group flex items-center gap-3 rounded-lg border-2 p-4 text-left transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
-                    isSelected && hasContent
-                      ? "border-primary bg-primary/10 shadow-lg"
-                      : isSelected
-                        ? "border-primary bg-primary/5 shadow-md animate-pulse-once"
-                        : "border-border hover:border-primary/40 hover:shadow-md"
+                  className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isSelected
+                      ? "bg-emerald-500 text-white shadow-sm cursor-default pointer-events-none"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted active:scale-[0.97]"
                   }`}
                 >
                   {type === "document" ? (
-                    <FileText
-                      className={`h-5 w-5 shrink-0 transition-all duration-300 ${
-                        isSelected && hasContent
-                          ? "text-primary animate-bounce-once"
-                          : isSelected
-                            ? "text-primary scale-110"
-                            : "text-muted-foreground group-hover:scale-110"
-                      }`}
-                    />
+                    <FileText className="h-4 w-4 shrink-0" />
                   ) : (
-                    <Lightbulb
-                      className={`h-5 w-5 shrink-0 transition-all duration-300 ${
-                        isSelected && hasContent
-                          ? "text-primary animate-bounce-once"
-                          : isSelected
-                            ? "text-primary scale-110"
-                            : "text-muted-foreground group-hover:scale-110"
-                      }`}
-                    />
+                    <Lightbulb className="h-4 w-4 shrink-0" />
                   )}
-                  <div>
-                    <p
-                      className={`font-medium transition-colors duration-300 ${
-                        isSelected && hasContent
-                          ? "text-primary"
-                          : "text-foreground"
-                      }`}
-                    >
-                      {type === "document" ? documentLabel : topicLabel}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {type === "document"
-                        ? "Upload PDF, DOC, DOCX, TXT"
-                        : "Nhập chủ đề bất kỳ"}
-                    </p>
-                  </div>
+                  <span>{type === "document" ? documentLabel : topicLabel}</span>
+                  {isSelected && hasContent && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground/70" />
+                  )}
                 </button>
               );
             })}

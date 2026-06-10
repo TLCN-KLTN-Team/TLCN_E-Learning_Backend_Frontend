@@ -210,7 +210,7 @@ const LoginPage = () => {
             htmlFor="username"
             className="block text-sm font-semibold text-gray-900"
           >
-            Email
+            Email <label className="text-gray-500 italic">hoặc</label> Tên đăng nhập
           </label>
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -225,11 +225,11 @@ const LoginPage = () => {
               onChange={handleInputChange}
               disabled={isLoading}
               className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-gray-900 placeholder-gray-400 transition-all duration-200 hover:border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="devzeus || devzeus@gmail.com"
+              placeholder="devzeus@gmail.com hoặc devzeus"
               aria-describedby="username-description"
             />
             <span id="username-description" className="sr-only">
-              Nhập email của bạn
+              Nhập email hoặc tên đăng nhập của bạn
             </span>
           </div>
         </div>

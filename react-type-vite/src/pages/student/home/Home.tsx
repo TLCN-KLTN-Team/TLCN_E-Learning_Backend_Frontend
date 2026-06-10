@@ -20,6 +20,7 @@ import type {
   ReviewCardResponse,
 } from "@/types/course.types";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/auth-context/useAuth";
 
 // Import animated components
 import {
@@ -46,6 +47,7 @@ import { useNavigate } from "react-router-dom";
 const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   // State for API data
   const [educationalUnits, setEducationalUnits] = useState<
@@ -67,8 +69,8 @@ const Home = () => {
 
       const results = await Promise.allSettled([
         getAllEducationalUnits(),
-        getCoursesByRating(),
-        getBestSellerCourses(),
+        getCoursesByRating(isAuthenticated),
+        getBestSellerCourses(isAuthenticated),
         getTop5Reviews(),
       ]);
 
@@ -114,7 +116,7 @@ const Home = () => {
     };
 
     fetchHomeData();
-  }, []);
+  }, [isAuthenticated]);
 
   // Map reviews to testimonials format for the slider
   const testimonials = reviews.map((review) => ({

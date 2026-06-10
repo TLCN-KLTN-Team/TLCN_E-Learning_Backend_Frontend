@@ -26,5 +26,6 @@ public class WishlistResponse {
         String originalPrice;
         String currentPrice;
         int numberOfLessons;
+        String thumbnail;
     }
 }

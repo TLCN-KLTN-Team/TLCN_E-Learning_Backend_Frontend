@@ -58,18 +58,9 @@ public class UserPublishedCourseService {
     public List<PublishedCourseCardResponse> getCoursesByRating() {
         List<PublishedCourse> courses = publishedCourseRepository.findAll();
         return courses.stream()
-                .filter(course -> reviewService.calculateAverageRatingForCourse(course.getId()) > 4.5)
-                .map(course -> PublishedCourseCardResponse.builder()
-                        .id(course.getId())
-                        .courseName(course.getCourse().getCourseName())
-                        .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
-                        .authorName(course.getAuthorName())
-                        .thumbnailUrl(course.getCourseImage())
-                        .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
-                        .reviewCount(course.getReview().size())
-                        .studentCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
-                        .category(course.getCourseType().getCourseTypeName())
-                        .build())
+                .filter(course -> reviewService.calculateAverageRatingForCourse(course.getId()) > 4.5
+                    && !orderService.isCoursePurchasedByCurrentUser(course.getId()))
+                .map(this::toCardResponse)
                 .toList();
     }
 
@@ -79,18 +70,23 @@ public class UserPublishedCourseService {
         List<PublishedCourse> courses = publishedCourseRepository.findTopBestSellingCourses(limit);
 
         return courses.stream()
-                .map(course -> PublishedCourseCardResponse.builder()
-                        .id(course.getId())
-                        .courseName(course.getCourse().getCourseName())
-                        .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
-                        .authorName(course.getAuthorName())
-                        .thumbnailUrl(course.getCourseImage())
-                        .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
-                        .reviewCount(course.getReview().size())
-                        .studentCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
-                        .category(course.getCourseType().getCourseTypeName())
-                        .build())
+                .filter(course -> !orderService.isCoursePurchasedByCurrentUser(course.getId()))
+                .map(this::toCardResponse)
                 .toList();
+    }
+
+    private PublishedCourseCardResponse toCardResponse(PublishedCourse course) {
+        return PublishedCourseCardResponse.builder()
+                .id(course.getId())
+                .courseName(course.getCourse().getCourseName())
+                .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                .authorName(course.getAuthorName())
+                .thumbnailUrl(course.getCourseImage())
+                .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
+                .reviewCount(course.getReview().size())
+                .studentCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
+                .category(course.getCourseType().getCourseTypeName())
+                .build();
     }
 
 

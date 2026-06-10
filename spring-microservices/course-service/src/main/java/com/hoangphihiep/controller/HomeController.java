@@ -18,22 +18,6 @@ public class HomeController {
     private final UserPublishedCourseService userPublishedCourseService;
     private final ReviewService reviewService;
 
-    @GetMapping("/educational-units")
-    public ApiResponse<?> getAllEducationalUnits() {
-        return ApiResponse.success(
-                educationalUnitService.getAllEducationalUnits(),
-                "Lay danh sach cac don vi dao tao thanh cong"
-        );
-    }
-
-    @GetMapping("/educational-units/{id}")
-    public ApiResponse<?> getEducationalUnitById(@PathVariable Integer id) {
-        return ApiResponse.success(
-                educationalUnitService.getEducationalUnitById(id),
-                "Lay danh sach cac don vi " + id + " dao tao thanh cong"
-        );
-    }
-
     @GetMapping("/courses/ratings")
     public ApiResponse<?> getCoursesFollowRatings(){
         return ApiResponse.success(
@@ -58,4 +42,19 @@ public class HomeController {
         );
     }
 
+    @GetMapping("/educational-units")
+    public ApiResponse<?> getAllEducationalUnits() {
+        return ApiResponse.success(
+                educationalUnitService.getAllEducationalUnits(),
+                "Lay danh sach cac don vi dao tao thanh cong"
+        );
+    }
+
+    @GetMapping("/educational-units/{id}")
+    public ApiResponse<?> getEducationalUnitById(@PathVariable Integer id) {
+        return ApiResponse.success(
+                educationalUnitService.getEducationalUnitById(id),
+                "Lay danh sach cac don vi " + id + " dao tao thanh cong"
+        );
+    }
 }

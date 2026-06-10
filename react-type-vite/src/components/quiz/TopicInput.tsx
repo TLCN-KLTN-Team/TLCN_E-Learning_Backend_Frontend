@@ -1,4 +1,5 @@
 import { Lightbulb, CheckCircle } from "lucide-react";
+import RichTextEditor from "@/components/shared/RichTextEditor";
 import "@/styles/ai-study-mode.css";
 
 interface Props {
@@ -18,9 +19,11 @@ export default function TopicInput({
   title = "Chủ đề",
   description = "Nhập chủ đề bất kỳ để tạo nội dung",
   icon,
-  placeholder = "Ví dụ: Lập trình web với React...",
-  label = "Chủ đề",
+  placeholder = "Ví dụ: Lập trình web với React, các khái niệm OOP...",
+  label = "Nội dung chủ đề",
 }: Props) {
+  const hasContent = topic.replace(/<[^>]*>/g, "").trim().length > 0;
+
   return (
     <div className="ai-section-card space-y-4">
       {/* Header */}
@@ -38,26 +41,21 @@ export default function TopicInput({
         </div>
       </div>
 
-      {/* Input */}
+      {/* Rich text editor */}
       <div className="space-y-2">
         <label
           className={`text-sm font-medium transition-colors duration-300 flex items-center gap-1 ${
-            topic ? "text-primary" : "text-muted-foreground"
+            hasContent ? "text-primary" : "text-muted-foreground"
           }`}
         >
-          {topic && <CheckCircle className="h-3.5 w-3.5" />}
+          {hasContent && <CheckCircle className="h-3.5 w-3.5" />}
           {label}
         </label>
-        <input
-          type="text"
+        <RichTextEditor
           value={topic}
-          onChange={(e) => onTopicChange(e.target.value)}
+          onChange={onTopicChange}
           placeholder={placeholder}
-          className={`w-full rounded-lg border-2 bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all duration-300 ${
-            topic
-              ? "border-primary text-foreground focus:ring-primary/20 shadow-sm"
-              : "border-border text-foreground focus:ring-ring hover:border-primary/40"
-          }`}
+          minHeight="260px"
         />
       </div>
     </div>
