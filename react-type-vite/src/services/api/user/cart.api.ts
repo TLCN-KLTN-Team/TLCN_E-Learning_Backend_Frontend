@@ -9,13 +9,11 @@ export interface CartCourse {
   authorName: string;
   rating: number;
   duration: number;
-  originalPrice: string;
   currentPrice: string;
+  thumbnail?: string;
 }
 
 export interface CartResponse {
-  originalPrice: string;
-  discountedPrice: string;
   amount: string;
   cartCourses: CartCourse[];
   favoriteCourses: CartCourse[];

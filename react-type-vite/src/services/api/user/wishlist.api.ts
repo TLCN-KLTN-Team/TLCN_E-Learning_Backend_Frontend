@@ -9,10 +9,9 @@ export interface WishlistCourse {
   authorName: string;
   rating: number;
   duration: number;
-  originalPrice: string;
   currentPrice: string;
   numberOfLessons: number;
-  thumbnailUrl?: string;
+  thumbnail?: string;
 }
 
 export interface WishlistResponse {

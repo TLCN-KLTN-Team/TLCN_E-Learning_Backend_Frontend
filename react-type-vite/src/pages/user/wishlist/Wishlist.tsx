@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Star, ShoppingCart } from "lucide-react";
+import {
+  Heart,
+  Star,
+  ShoppingCart,
+  Clock,
+  ArrowRight,
+  X,
+} from "lucide-react";
 import Header from "@/components/student/home/Header";
 import Footer from "@/components/student/home/Footer";
 
@@ -69,12 +76,12 @@ const Wishlist = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-background text-foreground">
         <Header />
         <div className="pt-20 pb-8 flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
+            <p className="text-muted-foreground">
               Đang tải danh sách yêu thích...
             </p>
           </div>
@@ -85,57 +92,68 @@ const Wishlist = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
 
-      <main className="pt-20 pb-8">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Danh sách yêu thích
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            {wishlistCourses.length} khóa học trong danh sách yêu thích
-          </p>
+      <main className="pt-24 pb-16">
+        <div className="container mx-auto px-4 sm:px-6">
+          {/* Page heading */}
+          <div className="flex items-center gap-3 mb-8">
+            <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-rose-500/10 text-rose-500">
+              <Heart className="w-6 h-6 fill-current" />
+            </span>
+            <div>
+              <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-foreground">
+                Danh sách yêu thích
+                <span className="inline-flex items-center justify-center min-w-7 h-7 px-2.5 rounded-full bg-rose-500 text-white text-sm font-bold">
+                  {wishlistCourses.length}
+                </span>
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {wishlistCourses.length} khóa học đã lưu để học sau
+              </p>
+            </div>
+          </div>
 
           {wishlistCourses.length === 0 ? (
-            <Card className="p-12 text-center">
-              <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <Card className="items-center text-center py-16 px-6 border-dashed">
+              <span className="flex items-center justify-center w-16 h-16 rounded-full bg-rose-500/10 text-rose-500 mb-4">
+                <Heart className="w-8 h-8" />
+              </span>
+              <h3 className="text-xl font-semibold text-foreground mb-2">
                 Danh sách yêu thích trống
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Thêm khóa học yêu thích để học sau
+              <p className="text-muted-foreground mb-6 max-w-sm">
+                Lưu lại những khóa học bạn quan tâm để dễ dàng quay lại học sau.
               </p>
-              <Button
-                onClick={() => navigate("/courses")}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
+              <Button onClick={() => navigate("/courses")} size="lg">
                 Khám phá khóa học
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {wishlistCourses.map((course) => (
                 <Card
                   key={course.courseId}
-                  className="overflow-hidden hover:shadow-lg transition-shadow"
+                  className="group gap-0 p-0 overflow-hidden border-border transition-all hover:border-primary/40 hover:shadow-md"
                 >
                   {/* Course Thumbnail */}
                   <div
-                    className="relative h-40 bg-gradient-to-br from-blue-500 to-purple-600 cursor-pointer"
+                    className="relative h-40 bg-gradient-to-br from-primary to-primary/60 cursor-pointer overflow-hidden"
                     onClick={() =>
                       navigate(`/courses/course/${course.courseId}`)
                     }
                   >
-                    {course.thumbnailUrl ? (
+                    {course.thumbnail ? (
                       <img
-                        src={course.thumbnailUrl}
+                        src={course.thumbnail}
                         alt={course.courseName}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <Heart className="w-16 h-16 text-white opacity-50" />
+                        <Heart className="w-14 h-14 text-primary-foreground/40" />
                       </div>
                     )}
 
@@ -145,56 +163,56 @@ const Wishlist = () => {
                         e.stopPropagation();
                         removeFromWishlist(course.courseId);
                       }}
-                      className="absolute top-2 right-2 bg-white/90 hover:bg-white p-2 rounded-full transition-colors"
-                      aria-label="Remove from wishlist"
+                      className="absolute top-2 right-2 p-2 rounded-full bg-card/90 text-muted-foreground backdrop-blur-sm shadow-sm hover:bg-card hover:text-destructive transition-colors"
+                      aria-label="Xóa khỏi danh sách yêu thích"
                     >
-                      <Heart className="w-4 h-4 text-black fill-black" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
                   {/* Course Info */}
-                  <div className="p-4">
+                  <div className="flex flex-col flex-1 p-4">
                     <h3
-                      className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 cursor-pointer hover:text-blue-600"
+                      className="font-semibold text-foreground mb-1 line-clamp-2 cursor-pointer transition-colors hover:text-primary"
                       onClick={() =>
                         navigate(`/courses/course/${course.courseId}`)
                       }
                     >
                       {course.courseName}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-sm text-muted-foreground mb-3">
                       {course.authorName}
                     </p>
 
                     {/* Stats */}
-                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span>{course.rating.toFixed(1)}</span>
-                      </div>
-                      <span>•</span>
-                      <span>{course.duration} giờ</span>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
+                      <span className="inline-flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span className="font-medium text-foreground">
+                          {course.rating.toFixed(1)}
+                        </span>
+                      </span>
+                      <span className="text-border">|</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {course.duration} giờ
+                      </span>
                     </div>
 
                     {/* Price */}
-                    <div className="mb-4">
-                      <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    <div className="flex items-baseline gap-2 mb-4 mt-auto">
+                      <span className="inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-lg font-bold text-primary">
                         {course.currentPrice}
-                      </div>
-                      {course.originalPrice !== course.currentPrice && (
-                        <div className="text-sm text-gray-400 line-through">
-                          {course.originalPrice}
-                        </div>
-                      )}
+                      </span>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="space-y-2">
                       <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        className="w-full"
                         onClick={() => moveToCart(course.courseId)}
                       >
-                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        <ShoppingCart className="w-4 h-4" />
                         Chuyển vào giỏ hàng
                       </Button>
                       <Button

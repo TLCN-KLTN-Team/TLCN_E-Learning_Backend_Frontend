@@ -29,5 +29,6 @@ public class CartResponse {
         double duration;
         String originalPrice;
         String currentPrice;
+        String thumbnail;
     }
 }

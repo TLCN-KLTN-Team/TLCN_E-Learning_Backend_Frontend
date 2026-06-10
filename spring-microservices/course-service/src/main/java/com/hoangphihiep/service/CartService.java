@@ -13,8 +13,10 @@ import com.hoangphihiep.repository.PublishedCourseRepository;
 import com.hoangphihiep.utils.CurrencyUtils;
 import com.hoangphihiep.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -60,21 +62,27 @@ public class CartService {
         return cart.getCourses().contains(course);
     }
 
+    @Transactional
     public void addToCart(Integer courseId){
         PublishedCourse course = publishedCourseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHED_COURSE_NOT_FOUND));
-        Cart cart = cartRepository.findByUserId(JwtUtils.getCurrentUserId())
-                .orElse(null);
-        if (cart.getId() == null) {
-            cart = this.createCart();
-        }
+        Cart cart = this.getEntity();
 
         if (cart.getCourses().contains(course)) {
             throw new AppException(ErrorCode.COURSE_ALREADY_IN_CART);
         }
 
         cart.addCourse(course);
-        cartRepository.save(cart);
+        try {
+            // saveAndFlush so a concurrent duplicate insert fails here (inside the
+            // try) instead of at transaction commit, where we could not catch it.
+            cartRepository.saveAndFlush(cart);
+        } catch (DataIntegrityViolationException ex) {
+            // Two near-simultaneous adds of the same course race past the contains()
+            // guard; the cart_detail PK rejects the second insert. The end state is
+            // still "course is in cart", so surface a clean domain error.
+            throw new AppException(ErrorCode.COURSE_ALREADY_IN_CART);
+        }
     }
 
     public void addWishlistItemToCart(Integer courseId) {
@@ -128,6 +136,7 @@ public class CartService {
 //                        .duration(course.getDuration())
                         .originalPrice(currencyUtils.formatCurrency(course.getCoursePrice().multiply(BigDecimal.valueOf(2.5))))
                         .currentPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .thumbnail(course.getCourseImage())
                         .build())
                 .toList();
 
@@ -141,6 +150,7 @@ public class CartService {
                         .duration(10)
                         .originalPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
                         .currentPrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                        .thumbnail(course.getCourseImage())
                         .build()
                 ).toList();
 

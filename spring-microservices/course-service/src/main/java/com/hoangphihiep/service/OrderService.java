@@ -46,7 +46,26 @@ public class OrderService {
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
 
+    /** Tên principal khi request không kèm token (Spring AnonymousAuthenticationToken). */
+    private static final String ANONYMOUS_USER = "anonymousUser";
+
     // ... existing code ...
+
+    /**
+     * Kiểm tra người dùng hiện tại có đang sở hữu khóa học này không: tồn tại OrderItem chứa khóa học
+     * với trạng thái PAID trong một đơn hàng đã hoàn tất. Khóa học đã bị hoàn trả (REFUNDED / đang
+     * chờ hoàn trả) sẽ không còn là PAID nên được xem là chưa sở hữu — dùng để ẩn khỏi danh sách gợi ý
+     * những khóa người dùng đã mua, đồng thời hiển thị lại khóa đã hoàn trả.
+     *
+     * <p>Các endpoint /anonymous/home/** có thể được gọi mà không có token, khi đó trả về {@code false}.
+     */
+    public boolean isCoursePurchasedByCurrentUser(Integer publishedCourseId) {
+        String userId = JwtUtils.getCurrentUserId();
+        if (userId == null || ANONYMOUS_USER.equals(userId)) {
+            return false;
+        }
+        return orderItemRepository.existsByUserIdAndCourseIdAndOrderCompleted(userId, publishedCourseId);
+    }
 
     @Transactional
     public void createOrder(CreationOrderRequest request) {
