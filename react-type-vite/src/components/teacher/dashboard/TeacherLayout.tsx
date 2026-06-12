@@ -8,7 +8,7 @@ import Header from "./header"
 
 const TeacherLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
@@ -26,20 +26,20 @@ const TeacherLayout: React.FC = () => {
       {/* Sidebar */}
       <div
         className={`
-        fixed top-0 left-0 h-full bg-card border-r border-border z-50 transition-all duration-300 ease-in-out
+        fixed top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-border z-50 transition-all duration-300 ease-in-out shadow-xl lg:shadow-none
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        ${sidebarCollapsed ? "lg:w-16" : "lg:w-72"}
-        w-72
+        ${sidebarCollapsed ? "lg:w-16" : "lg:w-56"}
+        w-56
       `}
       >
-        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={toggleCollapse} />
+        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={toggleCollapse} onClose={() => setSidebarOpen(false)} />
       </div>
 
       {/* Main content */}
       <div
         className={`
         transition-all duration-300 ease-in-out
-        ${sidebarCollapsed ? "lg:ml-16" : "lg:ml-72"}
+        ${sidebarCollapsed ? "lg:ml-16" : "lg:ml-56"}
         ml-0
       `}
       >

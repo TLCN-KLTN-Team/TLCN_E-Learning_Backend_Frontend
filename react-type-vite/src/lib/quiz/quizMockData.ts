@@ -16,6 +16,7 @@ export interface QuizQuestion {
   score: number;
   tags: string[];
   answers?: string[]; // for FILL_IN_THE_BLANK
+  cloId?: number;
 }
 
 export interface DifficultyConfig {

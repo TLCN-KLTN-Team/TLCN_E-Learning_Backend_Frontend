@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hoangphihiep.dto.request.CourseRequest;
 import com.hoangphihiep.dto.request.DepartmentRequest;
 import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.dto.response.teacher.CourseCardResponse;
 import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.CourseClass;
 import com.hoangphihiep.entity.Department;
@@ -670,6 +671,25 @@ public class CourseService {
             log.error("Error occurred while fetching paginated courses for teacher: {}", teacherId, e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
+    }
+
+    public List<CourseCardResponse> getCourseCardsByUserId(String userId) {
+        // Validate teacher exists
+        ApiResponse<TeacherResponse> teacherResponse = teacherRepository.getTeacherByTeacherId(userId);
+        if (teacherResponse.getResult() == null) {
+            throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
+        }
+
+        List<Course> coursesOfTeacher = courseRepository.findByIdTeacher(teacherResponse.getResult().getTeacherId());
+
+        return coursesOfTeacher.stream()
+                .map(course -> CourseCardResponse.builder()
+                        .courseId(course.getId())
+                        .courseName(course.getCourseName())
+                        .build())
+                .collect(Collectors.toList());
+
+
     }
 
     public Page<CourseResponse> getCoursesByExpertId(String expertId, int page, int size, String search) {

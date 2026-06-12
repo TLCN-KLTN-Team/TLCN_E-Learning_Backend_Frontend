@@ -23,4 +23,7 @@ public interface CourseObjectiveRepository extends JpaRepository<CourseObjective
 
     @Query("SELECT co FROM CourseObjective co WHERE co.isActive = true AND co.course.idTeacher = :teacherId ORDER BY co.course.id, co.code")
     List<CourseObjective> findActiveByTeacherId(@Param("teacherId") String teacherId);
+
+    @Query("SELECT co FROM CourseObjective co WHERE co.course.id = :courseId AND co.isActive = true ORDER BY co.code")
+    List<CourseObjective> findActiveByCourseId(@Param("courseId") Integer courseId);
 }

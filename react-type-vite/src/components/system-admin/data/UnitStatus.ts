@@ -28,6 +28,32 @@ export const getStatusStyle = (status: string) => {
   }
 };
 
+export const getUnitTypeLabel = (type: string): string => {
+  switch (type?.toUpperCase()) {
+    case "UNIVERSITY":
+      return "Đại học";
+    case "COLLEGE":
+      return "Cao đẳng";
+    case "INTERMEDIATE":
+      return "Trung cấp";
+    default:
+      return type || "—";
+  }
+};
+
+export const getUnitTypeStyle = (type: string): string => {
+  switch (type?.toUpperCase()) {
+    case "UNIVERSITY":
+      return "bg-blue-100 text-blue-800 border border-blue-200";
+    case "COLLEGE":
+      return "bg-violet-100 text-violet-800 border border-violet-200";
+    case "INTERMEDIATE":
+      return "bg-teal-100 text-teal-800 border border-teal-200";
+    default:
+      return "bg-gray-100 text-gray-600 border border-gray-200";
+  }
+};
+
 export const unitData = [
   {
     id: 1,

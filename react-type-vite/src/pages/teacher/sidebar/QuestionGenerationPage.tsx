@@ -3,7 +3,6 @@ import { Sparkles, Loader2, Brain } from "lucide-react";
 import SourceSelection from "@/components/quiz/SourceSelection";
 import QuizConfiguration from "@/components/quiz/QuizConfiguration";
 import QuizEditor from "@/components/quiz/QuizEditor";
-import SaveToQuestionBankModal from "@/components/quiz/SaveToQuestionBankModal";
 import type {
   QuizQuestion,
   QuestionType,
@@ -37,7 +36,6 @@ const QuestionGenerationPage = () => {
 
   const [generatedQuiz, setGeneratedQuiz] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showSaveModal, setShowSaveModal] = useState(false);
 
   const totalQuestions = useMemo(() => {
     let total = 0;
@@ -133,8 +131,8 @@ const QuestionGenerationPage = () => {
     [],
   );
 
-  const handleSave = useCallback(() => {
-    setShowSaveModal(true);
+  const handleSaveComplete = useCallback(() => {
+    setGeneratedQuiz([]);
   }, []);
 
 
@@ -215,17 +213,10 @@ const QuestionGenerationPage = () => {
           questions={generatedQuiz}
           onUpdateQuestion={handleUpdateQuestion}
           onRegenerate={handleGenerate}
-          onSave={handleSave}
+          onSaveComplete={handleSaveComplete}
           loading={loading}
         />
       </main>
-
-      <SaveToQuestionBankModal
-        isOpen={showSaveModal}
-        questions={generatedQuiz}
-        onClose={() => setShowSaveModal(false)}
-        onSuccess={() => setShowSaveModal(false)}
-      />
     </div>
   );
 };

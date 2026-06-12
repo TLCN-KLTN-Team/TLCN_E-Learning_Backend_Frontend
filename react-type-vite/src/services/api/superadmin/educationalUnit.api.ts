@@ -56,20 +56,18 @@ export const sendFeedbackToEducationalUnit = async (
 export const changeEducationalUnitStatus = async (
   unitId: number,
   status: "suspend" | "reactive",
-  reason: string
+  reason: string,
+  unitName: string,
+  representativeEmail: string
 ): Promise<void> => {
-  const formData = new FormData();
-  formData.append("reason", reason);
-
-  await axiosInstance.put(
-    `${PREFIX}/change-status/${unitId}?status=${status}`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  const backendStatus = status === "suspend" ? "SUSPENDED" : "REACTIVATE";
+  await axiosInstance.put(`${PREFIX}/update-status/${unitId}`, {
+    status: backendStatus,
+    reason,
+    unitId,
+    unitName,
+    representativeEmail,
+  });
 };
 
 const updateEducationalUnitStatus = async (

@@ -14,7 +14,7 @@ import {
   ShoppingBag,
   FileCheck2,
   Sparkles,
-  
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/auth-context/useAuth";
@@ -63,51 +63,65 @@ const groupedMenuItems = [
       },
     ],
   },
-  // Tiện ích group removed per user request
-]
+];
 
 interface SidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
+  onClose?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
+const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse, onClose }) => {
   const location = useLocation();
   const { logout } = useAuth();
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    onClose?.();
     logout();
     toast.success("Đăng xuất thành công!");
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      <div className="flex items-center justify-between px-4 border-b border-border h-[73px]">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 border-b border-border h-[73px] flex-shrink-0">
         {!collapsed && (
           <div className="flex items-center space-x-2">
             <img src={openEduIcon} alt="OpenEdu" className="h-8 w-auto" />
           </div>
         )}
-        <button
-          onClick={onToggleCollapse}
-          className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent transition-colors"
-        >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-        </button>
+        <div className="flex items-center gap-1 ml-auto">
+          {/* Desktop: collapse toggle */}
+          <button
+            onClick={onToggleCollapse}
+            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent transition-colors"
+          >
+            {collapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
+          {/* Mobile: close drawer */}
+          <button
+            onClick={onClose}
+            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Đóng sidebar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 p-3">
+      {/* Navigation */}
+      <div className="flex-1 p-3 overflow-y-auto">
         <div className="space-y-5">
           {groupedMenuItems.map((group, groupIndex) => (
             <div key={group.group} className="space-y-2">
               {!collapsed && (
-                <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
                   {group.group}
                 </p>
               )}
@@ -119,38 +133,42 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
                   return (
                     <Link
                       key={item.name}
-                      className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group relative ${isActive
-                        ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-                        }`}
+                      className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group relative ${
+                        isActive
+                          ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
+                          : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
                       to={item.path}
                       title={collapsed ? item.name : undefined}
+                      onClick={() => onClose?.()}
                     >
                       {isActive && !collapsed && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-800 rounded-r-full" />
                       )}
                       <item.icon
-                        className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"} ${isActive ? "text-white" : ""}`}
+                        className={`w-5 h-5 flex-shrink-0 ${collapsed ? "mx-auto" : "mr-3"} ${isActive ? "text-white" : ""}`}
                       />
-                      {!collapsed && <span className="leading-tight whitespace-nowrap">{item.name}</span>}
+                      {!collapsed && (
+                        <span className="leading-tight whitespace-nowrap">{item.name}</span>
+                      )}
                     </Link>
                   );
                 })}
               </div>
 
               {!collapsed && groupIndex < groupedMenuItems.length - 1 && (
-                <div className="border-t border-gray-200 pt-2" />
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-2" />
               )}
             </div>
           ))}
 
-          <div className="border-t border-gray-200 pt-4">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
             <button
               onClick={handleLogout}
-              className="flex items-center w-full px-3 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-red-600 rounded-lg transition-all duration-200 group"
+              className="flex items-center w-full px-3 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-all duration-200 group"
               title={collapsed ? "Đăng xuất" : undefined}
             >
-              <LogOut className={`w-5 h-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
+              <LogOut className={`w-5 h-5 flex-shrink-0 ${collapsed ? "mx-auto" : "mr-3"}`} />
               {!collapsed && <span>Đăng xuất</span>}
             </button>
           </div>

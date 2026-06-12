@@ -22,7 +22,6 @@ import type {
 import { PeriodType, EducationType } from "@/types/dashboard.types";
 import {
   mockWeeklyVisitsData,
-  mockTrainingUnitDistribution,
   mockCourseCompletionData,
 } from "@/components/system-admin/data/dashboardMockData";
 import DashboardApiService from "@/services/api/superadmin/dashboard.api";
@@ -276,7 +275,21 @@ const SystemAdminDashboardPage: React.FC = () => {
         <UserDistributionChart />
 
         {/* Training Unit Status Chart */}
-        <TrainingUnitStatusChart data={mockTrainingUnitDistribution} />
+        <TrainingUnitStatusChart
+          data={(() => {
+            const org = dashboardData.organizationStatistics;
+            const active = safeValue(org?.activeOrganizations);
+            const inactive = safeValue(org?.inactiveOrganizations);
+            const total = safeValue(org?.totalOrganizations);
+            const pending = Math.max(0, total - active - inactive);
+            return [
+              { name: "Hoạt động", value: active },
+              { name: "Chờ duyệt", value: pending },
+              { name: "Không hoạt động", value: inactive },
+            ].filter((d) => d.value > 0);
+          })()}
+          total={safeValue(dashboardData.organizationStatistics?.totalOrganizations)}
+        />
 
         {/* Weekly Visits Bar Chart */}
         <WeeklyVisitsChart data={mockWeeklyVisitsData} />

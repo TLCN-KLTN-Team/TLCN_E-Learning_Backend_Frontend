@@ -14,12 +14,12 @@ const SystemAdminLayout: React.FC = () => {
   theme.setTheme("light");
 
   return (
-    <div className="flex h-screen bg-gray-50 system-admin">
+    <div className="flex h-screen overflow-hidden bg-gray-50 system-admin">
       <SystemAdminSidebar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
-      <div className="flex-1 flex flex-col bg-gray-50 transition-all duration-300">
+      <div className="flex-1 min-w-0 flex flex-col bg-gray-50 transition-all duration-300">
         <SystemAdminHeader
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}

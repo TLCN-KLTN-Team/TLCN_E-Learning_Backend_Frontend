@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Building2, Edit, FileDown, Loader2, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
-import { getStatusStyle, unitStatus } from "../data/UnitStatus";
+import { getStatusStyle, unitStatus, getUnitTypeLabel, getUnitTypeStyle } from "../data/UnitStatus";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import fileExportApi from "@/services/api/file/exportApi";
 
@@ -20,13 +20,7 @@ const TraningUnitItem = ({
 }: TraningUnitItemProps) => {
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleRowClick = () => {
-    onRowClick(unit.id);
-  };
-
-  const handleDropdownToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
+  const handleRowClick = () => onRowClick(unit.id);
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -36,7 +30,6 @@ const TraningUnitItem = ({
   const handleExportClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isExporting) return;
-
     try {
       setIsExporting(true);
       await fileExportApi.downloadEducationalUnitProfile(unit.id, unit.name);
@@ -54,75 +47,83 @@ const TraningUnitItem = ({
 
   return (
     <tr
-      key={unit.id}
-      className="hover:bg-gray-50 cursor-pointer"
+      className="hover:bg-gray-50 cursor-pointer transition-colors"
       onClick={handleRowClick}
     >
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-gray-400" />
-          <div>
-            <div className="text-sm font-medium text-gray-900">{unit.name}</div>
-            {/* Show mobile info */}
-            <div className="md:hidden text-xs text-gray-500 mt-1">học viên</div>
+      {/* Tên đơn vị */}
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded bg-blue-50 flex items-center justify-center shrink-0">
+            <Building2 className="w-3.5 h-3.5 text-blue-500" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]" title={unit.name}>
+              {unit.name}
+            </p>
+            {/* Extra info visible only on mobile */}
+            <p className="md:hidden text-xs text-gray-400 truncate">{unit.representativeName}</p>
           </div>
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-        <div className="text-sm text-gray-900">{unit.representativeName}</div>
+
+      {/* Người đại diện */}
+      <td className="px-4 py-3 hidden md:table-cell">
+        <p className="text-sm text-gray-800 truncate max-w-[160px]" title={unit.representativeName}>
+          {unit.representativeName || "—"}
+        </p>
       </td>
 
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
-        <div className="flex items-center gap-1">
-          {unit.representativeEmail}
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
-        <div className="flex items-center gap-1">{unit.type}</div>
+      {/* Email */}
+      <td className="px-4 py-3 hidden lg:table-cell">
+        <p className="text-sm text-gray-600 truncate max-w-[200px]" title={unit.representativeEmail}>
+          {unit.representativeEmail || "—"}
+        </p>
       </td>
 
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="relative">
-          <button
-            onClick={handleDropdownToggle}
-            className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 hover:opacity-80 transition-opacity
-              ${getStatusStyle(unit.status)}`}
-          >
-            {unitStatus(unit.status)}
-          </button>
-        </div>
+      {/* Loại hình */}
+      <td className="px-4 py-3 hidden lg:table-cell">
+        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${getUnitTypeStyle(unit.type)}`}>
+          {getUnitTypeLabel(unit.type)}
+        </span>
       </td>
 
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-        <div className="flex space-x-1 md:space-x-2">
+      {/* Trạng thái */}
+      <td className="px-4 py-3">
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusStyle(unit.status)}`}
+        >
+          {unitStatus(unit.status)}
+        </span>
+      </td>
+
+      {/* Thao tác */}
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-1">
           <button
             onClick={handleExportClick}
             disabled={isExporting}
             title="Xuất hồ sơ PDF"
-            className="text-emerald-600 hover:text-emerald-900 flex items-center gap-1 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-1.5 rounded text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {isExporting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <FileDown className="w-4 h-4" />
-            )}
-            <span className="hidden md:inline">
-              {isExporting ? "Đang xuất..." : "Xuất hồ sơ"}
-            </span>
+            {isExporting
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <FileDown className="w-4 h-4" />}
           </button>
-          <button
-            onClick={handleEditClick}
-            className="text-blue-600 hover:text-blue-900 flex items-center gap-1 p-1"
-          >
-            <Edit className="w-4 h-4" />
-            <span className="hidden md:inline">Sửa</span>
-          </button>
+          {(unit.status === "ACTIVE" || unit.status === "SUSPENDED") && (
+            <button
+              onClick={handleEditClick}
+              title="Chỉnh sửa trạng thái"
+              className="p-1.5 rounded text-blue-600 hover:bg-blue-50 transition-colors"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={(e) => e.stopPropagation()}
-            className="text-red-600 hover:text-red-900 flex items-center gap-1 p-1"
+            title="Xóa"
+            className="p-1.5 rounded text-red-500 hover:bg-red-50 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            <span className="hidden md:inline">Xóa</span>
           </button>
         </div>
       </td>
