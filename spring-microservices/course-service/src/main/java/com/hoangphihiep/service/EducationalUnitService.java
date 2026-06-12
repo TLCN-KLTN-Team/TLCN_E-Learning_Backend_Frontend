@@ -149,9 +149,16 @@ public class EducationalUnitService {
                 educationalUnits.getContent().stream()
                         .map(eu -> {
                             EducationalUnitResponse response = educationalUnitMapper.toEducationalUnitResponse(eu);
-                            // Fetch and set representative info
-                            UserResponse userInfo = userInfoApi.getUserInfo(eu.getIdAdmin()).getResult();
-                            log.info("Fetched user info for admin ID {}: {}", eu.getIdAdmin(), userInfo);
+                            UserResponse userInfo = null;
+                            try {
+                                userInfo = userInfoApi.getUserInfo(eu.getIdAdmin()).getResult();
+                                log.info("Fetched user info for admin ID {}: {}", eu.getIdAdmin(), userInfo);
+                            } catch (Exception ex) {
+                                log.warn("Failed to get admin info for educational unit {}, adminId={}: {}",
+                                        eu.getId(), eu.getIdAdmin(), ex.getMessage());
+                                userInfo = UserResponse.builder()
+                                        .firstName("Unknown").lastName("").email("").phoneNumber("").build();
+                            }
                             response.setRepresentativeName(userInfo.getFirstName() + " " + userInfo.getLastName());
                             response.setRepresentativeEmail(userInfo.getEmail());
                             response.setRepresentativePhone(userInfo.getPhoneNumber());

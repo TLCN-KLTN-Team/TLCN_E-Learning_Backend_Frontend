@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hoangphihiep.dto.request.*;
 import com.hoangphihiep.dto.response.*;
+import com.hoangphihiep.dto.response.teacher.CourseCardResponse;
 import com.hoangphihiep.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class TeacherCourseController {
     private final ContentPublishService contentPublishService;
     private final CourseClassService classService;
     private final CourseEnrollmentService enrollmentService;
+    private final CourseObjectiveService courseObjectiveService;
 
     @GetMapping("/{courseId}/classes")
     public ApiResponse<Page<CourseClassResponse>> getClassesByCourse(
@@ -128,6 +130,25 @@ public class TeacherCourseController {
 
         return ApiResponse.<Page<CourseResponse>>builder()
                 .result(courses)
+                .build();
+    }
+
+    /*
+    * Get all course of teacher, just include name and id, for dropdown in frontend
+    * */
+    @GetMapping("/{teacherId}/cards")
+    public ApiResponse<List<CourseCardResponse>> getCourseCardsByTeacher(@PathVariable String teacherId) {
+        List<CourseCardResponse> courses = courseService.getCourseCardsByUserId(teacherId);
+
+        return ApiResponse.<List<CourseCardResponse>>builder()
+                .result(courses)
+                .build();
+    }
+
+    @GetMapping("/{courseId}/clos")
+    public ApiResponse<List<CourseObjectiveResponse>> getClosByCourse(@PathVariable Integer courseId) {
+        return ApiResponse.<List<CourseObjectiveResponse>>builder()
+                .result(courseObjectiveService.getActiveCourseObjectivesByCourseId(courseId))
                 .build();
     }
 

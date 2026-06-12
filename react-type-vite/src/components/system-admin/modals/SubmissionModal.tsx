@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   ShieldAlert,
 } from "lucide-react";
-import { getStatusStyle, unitStatus } from "../data/UnitStatus";
+import { getStatusStyle, unitStatus, getUnitTypeLabel, getUnitTypeStyle } from "../data/UnitStatus";
 import React, { useState } from "react";
 import type { EducationalUnitResponse } from "@/services/api/response/educationalUnitResponse";
 import { toast } from "react-toastify";
@@ -84,7 +84,7 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
     }
 
     try {
-      await changeEducationalUnitStatus(unit.id, "suspend", feedback);
+      await changeEducationalUnitStatus(unit.id, "suspend", feedback, unit.name, unit.representativeEmail ?? "");
       toast.success("Tạm dừng đơn vị đào tạo thành công");
       window.location.reload();
       onClose();
@@ -102,7 +102,7 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
     }
 
     try {
-      await changeEducationalUnitStatus(unit.id, "reactive", feedback);
+      await changeEducationalUnitStatus(unit.id, "reactive", feedback, unit.name, unit.representativeEmail ?? "");
       toast.success("Kích hoạt lại đơn vị đào tạo thành công");
       window.location.reload();
       onClose();
@@ -243,7 +243,9 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                   <span className="text-sm font-medium text-gray-700">
                     Loại hình:
                   </span>
-                  <span className="text-sm text-gray-900">{unit.type}</span>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${getUnitTypeStyle(unit.type)}`}>
+                    {getUnitTypeLabel(unit.type)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gray-400" />
@@ -583,8 +585,8 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                 Tạm dừng
               </button>
             </>
-          ) : unit?.status === "SUSPEND" ? (
-            // Trạng thái SUSPEND: hiển thị KÍCH HOẠT LẠI và ĐÓNG
+          ) : unit?.status === "SUSPENDED" ? (
+            // Trạng thái SUSPENDED: hiển thị KÍCH HOẠT LẠI và ĐÓNG
             <>
               <button
                 onClick={onClose}

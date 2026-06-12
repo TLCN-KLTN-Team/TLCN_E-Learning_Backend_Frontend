@@ -95,6 +95,14 @@ public class CourseObjectiveService {
             return courseObjectiveMapper.toCourseObjectiveResponseList(objectives);
     }
 
+    @Transactional(readOnly = true)
+    public List<CourseObjectiveResponse> getActiveCourseObjectivesByCourseId(Integer courseId) {
+        courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+        List<CourseObjective> objectives = courseObjectiveRepository.findActiveByCourseId(courseId);
+        return courseObjectiveMapper.toCourseObjectiveResponseList(objectives);
+    }
+
     @Transactional
     public CourseObjectiveResponse updateCourseObjective(Integer cloId, String code, String description) {
         CourseObjective clo = courseObjectiveRepository.findById(cloId)

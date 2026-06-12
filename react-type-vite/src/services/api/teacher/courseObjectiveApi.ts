@@ -16,3 +16,10 @@ export const getTeacherActiveClos = async (): Promise<CourseObjectiveResponse[]>
   )
   return response.data.result
 }
+
+export const getTeacherClosByCourse = async (courseId: number): Promise<CourseObjectiveResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<CourseObjectiveResponse[]>>(
+    `/course-management/teacher/courses/${courseId}/clos`
+  )
+  return response.data.result
+}

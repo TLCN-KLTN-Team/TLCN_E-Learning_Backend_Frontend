@@ -178,7 +178,7 @@ const ExpertSidebar: React.FC<ExpertSidebarProps> = ({
                                                         }`}
                                                 />
                                                 {!collapsed && (
-                                                    <span className="flex-1 truncate">{item.label}</span>
+                                                    <span className="leading-tight whitespace-nowrap">{item.label}</span>
                                                 )}
                                                 {active && (
                                                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-r-full lg:hidden" />

@@ -43,6 +43,18 @@ export const getTeacherCourses = async (
   }
 }
 
+export interface CourseCardResponse {
+  courseId: number;
+  courseName: string;
+}
+
+export const getTeacherCourseCards = async (teacherId: string): Promise<CourseCardResponse[]> => {
+  const response = await axiosInstance.get<ApiResponse<CourseCardResponse[]>>(
+    `/course-management/teacher/courses/${teacherId}/cards`
+  );
+  return response.data.result;
+}
+
 /**
  * Get course by ID
  * @param courseId - The course ID
