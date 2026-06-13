@@ -144,21 +144,30 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                 <div className="flex-1 w-full overflow-y-auto overflow-x-hidden flex flex-col items-center rounded-lg min-h-0">
                     <div
                         ref={certificateRef}
-                        className="relative bg-white w-full max-w-[800px] aspect-[1.414/1] flex flex-col items-center justify-between p-4 sm:p-8 md:p-12 shadow-md border border-gray-200 overflow-hidden shrink-0 font-serif"
+                        className="relative bg-white w-full max-w-[800px] aspect-[1.414/1] flex flex-col items-center justify-between p-4 sm:p-8 md:p-12 shadow-md border border-gray-200 overflow-hidden shrink-0"
+                        style={{ fontFamily: "'Times New Roman', Georgia, 'Palatino Linotype', serif" }}
                     >
                         {/* Khung viền trang trí */}
                         <div className="absolute inset-2 sm:inset-4 border-[3px] sm:border-4 border-double border-yellow-500 pointer-events-none z-0"></div>
                         <div className="absolute inset-3 sm:inset-6 border border-blue-900 pointer-events-none z-0"></div>
 
-                        {/* Góc họa tiết */}
-                        <div className="absolute top-0 left-0 w-0 h-0 border-t-[64px] border-t-blue-900 border-r-[64px] border-r-transparent sm:border-t-[96px] sm:border-r-[96px] z-0"></div>
-                        <div className="absolute top-0 right-0 w-0 h-0 border-t-[64px] border-t-blue-900 border-l-[64px] border-l-transparent sm:border-t-[96px] sm:border-l-[96px] z-0"></div>
-                        <div className="absolute bottom-0 left-0 w-0 h-0 border-b-[64px] border-b-blue-900 border-r-[64px] border-r-transparent sm:border-b-[96px] sm:border-r-[96px] z-0"></div>
-                        <div className="absolute bottom-0 right-0 w-0 h-0 border-b-[64px] border-b-blue-900 border-l-[64px] border-l-transparent sm:border-b-[96px] sm:border-l-[96px] z-0"></div>
+                        {/* Góc họa tiết - dùng SVG để không bị tràn */}
+                        <svg className="absolute top-0 left-0 z-0 pointer-events-none" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <polygon points="0,0 80,0 0,80" fill="#1e3a5f"/>
+                        </svg>
+                        <svg className="absolute top-0 right-0 z-0 pointer-events-none" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <polygon points="80,0 0,0 80,80" fill="#1e3a5f"/>
+                        </svg>
+                        <svg className="absolute bottom-0 left-0 z-0 pointer-events-none" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <polygon points="0,80 80,80 0,0" fill="#1e3a5f"/>
+                        </svg>
+                        <svg className="absolute bottom-0 right-0 z-0 pointer-events-none" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <polygon points="80,80 0,80 80,0" fill="#1e3a5f"/>
+                        </svg>
 
                         {/* Header */}
                         <div className="z-10 mt-2 sm:mt-4 text-center w-full px-4">
-                            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-widest text-blue-900 uppercase mb-1 font-serif">CHỨNG CHỈ</h1>
+                            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-widest text-blue-900 uppercase mb-1" style={{ fontFamily: "'Times New Roman', Georgia, serif" }}>CHỨNG CHỈ</h1>
                             <p className="text-xs sm:text-sm md:text-lg text-yellow-600 tracking-[0.1em] sm:tracking-[0.2em] font-semibold uppercase">HOÀN THÀNH KHÓA HỌC</p>
                         </div>
 

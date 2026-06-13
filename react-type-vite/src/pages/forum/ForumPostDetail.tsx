@@ -7,10 +7,10 @@ import { getAccessToken } from '@/utils/localStorageVariables';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, Link as LinkIcon, Trash2, ChevronDown, ChevronUp, Bookmark, BookmarkCheck, Pencil, ThumbsDown, ThumbsUp, Lock, Pin, MoreHorizontal } from 'lucide-react';
+import { Heart, Link as LinkIcon, Trash2, ChevronDown, ChevronUp, Bookmark, BookmarkCheck, Pencil, ThumbsDown, ThumbsUp, Lock, Pin, MoreHorizontal, Share2 } from 'lucide-react';
 import ForumSidebar from '@/components/forum/ForumSidebar';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
-import { Share2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ReportDialog } from '@/components/forum/ReportDialog';
 import { useForumModeration } from '@/hooks/useForumModeration';
@@ -25,6 +25,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { decodeHTMLEntities } from '@/utils/htmlCleaner';
 import RichTextEditor from '@/components/shared/RichTextEditor';
 import {
@@ -79,7 +80,7 @@ const ForumPostDetail: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { isSuperAdmin, pinPost, unpinPost, lockPost, unlockPost, softDeletePost } = useForumModeration();
+    const { isSuperAdmin, pinPost, unpinPost, lockPost, unlockPost, softDeletePost, softDeleteComment } = useForumModeration();
     const [postData, setPostData] = useState<PostResponse | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -96,11 +97,40 @@ const ForumPostDetail: React.FC = () => {
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    const [reportUpdateModalOpen, setReportUpdateModalOpen] = useState(false);
+    const [reportUpdateData, setReportUpdateData] = useState<{ reportId: string, status: string, notes: string } | null>(null);
+
     const [isExpanded, setIsExpanded] = useState(false);
     const [showToggle, setShowToggle] = useState(false);
     const contentRef = React.useRef<HTMLDivElement>(null);
 
     const [activeId, setActiveId] = useState<string>('start');
+
+    const updatePostViewCount = (viewCount: number) => {
+        setPostData(prev =>
+            prev
+                ? {
+                    ...prev,
+                    post: {
+                        ...prev.post,
+                        viewCount,
+                    },
+                }
+                : prev
+        );
+    };
+
+    const parsePostUpdate = (data: any) => {
+        if (typeof data !== 'string') {
+            return data;
+        }
+
+        try {
+            return JSON.parse(data);
+        } catch {
+            return data;
+        }
+    };
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -142,6 +172,15 @@ const ForumPostDetail: React.FC = () => {
             loadPost(id);
             loadComments(id);
 
+            // Increment view count only once when the page is first visited
+            forumApi.incrementView(id)
+                .then((res) => {
+                    updatePostViewCount(res.data.viewCount);
+                })
+                .catch(() => {
+                    // Silently ignore view count errors
+                });
+
             // Connect WebSocket
             const token = getAccessToken();
             if (token) {
@@ -151,8 +190,16 @@ const ForumPostDetail: React.FC = () => {
                     });
 
                     forumDiscussionWS.subscribeToPostUpdates(id, (data) => {
-                        if (data === "vote_update") {
-                            loadPost(id); // Reload to get new vote counts
+                        const update = parsePostUpdate(data);
+
+                        if (update === "vote_update") {
+                            // Reload vote counts only (not full post to avoid viewCount inflation)
+                            loadPostVotesOnly(id);
+                            return;
+                        }
+
+                        if (update?.type === "view_update" && update.postId === id) {
+                            updatePostViewCount(update.viewCount);
                         }
                     });
                 }).catch(err => console.error("WS connect error", err));
@@ -166,6 +213,30 @@ const ForumPostDetail: React.FC = () => {
             }
         };
     }, [id]);
+
+    /** Refresh only the vote counts & isLiked fields without re-calling getPostDetail (which would inflate views) */
+    const loadPostVotesOnly = async (postId: string) => {
+        try {
+            const res = await forumApi.getPostDetail(postId);
+            setPostData(prev =>
+                prev
+                    ? {
+                        ...prev,
+                        upvotes: res.data.upvotes,
+                        downvotes: res.data.downvotes,
+                        isLiked: res.data.isLiked,
+                        liked: res.data.liked,
+                        post: {
+                            ...prev.post,
+                            score: res.data.post.score,
+                        },
+                    }
+                    : res.data
+            );
+        } catch (error) {
+            console.error('Error refreshing vote counts', error);
+        }
+    };
 
     useEffect(() => {
         if (contentRef.current && postData) {
@@ -239,7 +310,17 @@ const ForumPostDetail: React.FC = () => {
     const loadPost = async (postId: string) => {
         try {
             const res = await forumApi.getPostDetail(postId);
-            setPostData(res.data);
+            setPostData(prev =>
+                prev?.post?.id === postId
+                    ? {
+                        ...res.data,
+                        post: {
+                            ...res.data.post,
+                            viewCount: Math.max(prev.post.viewCount ?? 0, res.data.post.viewCount ?? 0),
+                        },
+                    }
+                    : res.data
+            );
         } catch (error) {
             console.error("Error loading post", error);
         } finally {
@@ -258,16 +339,34 @@ const ForumPostDetail: React.FC = () => {
 
     const handleVote = async (type: 'UP' | 'DOWN') => {
         if (!id || !postData) return;
+        if (!user) {
+            toast({
+                title: 'Bạn chưa đăng nhập',
+                description: 'Vui lòng đăng nhập để vote bài viết.',
+                variant: 'destructive',
+                duration: 3000,
+            });
+            return;
+        }
         try {
             await forumApi.vote({ targetId: id, targetType: 'POST', type });
-            loadPost(id);
-        } catch (error) {
-            console.error("Error voting", error);
+            // Only refresh vote counts, not the full post (avoids inflating viewCount)
+            loadPostVotesOnly(id);
+        } catch (error: any) {
+            const message = error?.response?.data?.message || 'Không thể vote bài viết này.';
+            toast({
+                title: 'Vote thất bại',
+                description: message,
+                variant: 'destructive',
+                duration: 3000,
+            });
         }
     };
 
     const handleSubmitComment = async () => {
-        if (!id || !newComment.trim()) return;
+        // Strip HTML tags to check for actual content (TinyMCE returns '<p></p>' for empty)
+        const plainText = newComment.replace(/<[^>]*>/g, '').trim();
+        if (!id || !plainText) return;
         try {
             if (editingComment) {
                 const res = await forumApi.updateComment(id, editingComment.id, {
@@ -397,7 +496,15 @@ const ForumPostDetail: React.FC = () => {
 
     const handleVoteComment = async (commentId: string, type: 'UP' | 'DOWN') => {
         if (!id) return;
-
+        if (!user) {
+            toast({
+                title: 'Bạn chưa đăng nhập',
+                description: 'Vui lòng đăng nhập để vote bình luận.',
+                variant: 'destructive',
+                duration: 3000,
+            });
+            return;
+        }
         try {
             await forumApi.vote({
                 targetId: commentId,
@@ -405,8 +512,14 @@ const ForumPostDetail: React.FC = () => {
                 type,
             });
             await loadComments(id);
-        } catch (error) {
-            console.error('Error voting comment', error);
+        } catch (error: any) {
+            const message = error?.response?.data?.message || 'Không thể vote bình luận này.';
+            toast({
+                title: 'Vote thất bại',
+                description: message,
+                variant: 'destructive',
+                duration: 3000,
+            });
         }
     };
 
@@ -504,10 +617,6 @@ const ForumPostDetail: React.FC = () => {
 
     const handleDeleteComment = async (comment: Comment) => {
         if (!id) return;
-
-        const confirmed = window.confirm('Xóa bình luận này? Các trả lời bên dưới cũng sẽ bị xóa.');
-        if (!confirmed) return;
-
         try {
             await forumApi.deleteComment(id, comment.id);
             if (editingComment?.id === comment.id) {
@@ -533,7 +642,7 @@ const ForumPostDetail: React.FC = () => {
     };
 
     const renderCommentNode = (comment: CommentTreeNode, depth = 0): React.ReactNode => {
-        const canManageComment = user?.id === comment.userId;
+        const canManageComment = user?.id === comment.userId || isSuperAdmin;
         const isRecentlyEdited = comment.updatedAt && comment.updatedAt !== comment.createdAt;
 
         return (
@@ -610,14 +719,34 @@ const ForumPostDetail: React.FC = () => {
                                 >
                                     <Pencil size={16} />
                                 </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50"
-                                    onClick={() => handleDeleteComment(comment)}
-                                >
-                                    <Trash2 size={16} />
-                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                        >
+                                            <Trash2 size={16} />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Xóa bình luận?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Bình luận và tất cả các trả lời bên dưới sẽ bị xóa vĩnh viễn.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={() => handleDeleteComment(comment)}
+                                                className="bg-red-600 hover:bg-red-700 text-white"
+                                            >
+                                                Xóa
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </>
                         )}
                         <Button
@@ -653,9 +782,36 @@ const ForumPostDetail: React.FC = () => {
             </div>
 
             <div className="flex-1 py-8 px-4 lg:px-8 max-w-7xl mx-auto w-full">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 leading-tight">
-                    {post.title}
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 leading-tight flex items-center gap-2">
+                    {post.isPinned && (
+                        <span title="Bài viết được ghim" className="flex items-center justify-center p-1 bg-purple-50 rounded-full">
+                            <Pin size={20} className="text-purple-500 fill-purple-500 shrink-0" />
+                        </span>
+                    )}
+                    {post.isLocked && (
+                        <span title="Bài viết bị khóa" className="flex items-center justify-center p-1 bg-orange-50 rounded-full">
+                            <Lock size={20} className="text-orange-500 shrink-0" />
+                        </span>
+                    )}
+                    <span>{post.title}</span>
                 </h1>
+
+                {/* Category & Tags */}
+                <div className="flex items-center gap-2 mb-6 -mt-3">
+                    {(() => {
+                        const category = categories.find(c => c.id === post.categoryId);
+                        return category ? (
+                            <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 font-medium px-2 py-0.5 text-xs">
+                                {category.name}
+                            </Badge>
+                        ) : null;
+                    })()}
+                    {post.tags?.map((tag, index) => (
+                        <Badge key={`tag-${index}`} variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200 font-normal px-2 py-0.5 text-xs">
+                            {tag}
+                        </Badge>
+                    ))}
+                </div>
 
                 <div className="flex gap-8">
                     {/* Main Content (Left) */}
@@ -719,7 +875,7 @@ const ForumPostDetail: React.FC = () => {
                                             </AlertDialog>
                                         </>
                                     )}
-                                    
+
                                     {/* Report & Moderation Controls */}
                                     <div className="ml-4 flex items-center gap-2">
                                         <ReportDialog targetId={post.id} targetType="POST" triggerClassName="ml-1" />
@@ -730,58 +886,71 @@ const ForumPostDetail: React.FC = () => {
                                                     <PopoverTrigger asChild>
                                                         <button
                                                             type="button"
-                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-blue-200 bg-blue-50 text-blue-700 transition-colors hover:bg-blue-100"
-                                                            title="SuperAdmin Controls"
+                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                                                            title="Công cụ quản trị"
                                                         >
                                                             <MoreHorizontal size={16} />
                                                         </button>
                                                     </PopoverTrigger>
-                                                    <PopoverContent align="end" className="w-72 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 p-3 shadow-lg">
-                                                        <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-blue-900">🛡️ SuperAdmin Controls</div>
-                                                        <div className="grid grid-cols-1 gap-2">
+                                                    <PopoverContent align="end" className="w-56 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                                                        <div className="mb-2 px-2 pt-1">
+                                                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Quản trị viên</p>
+                                                        </div>
+                                                        <div className="flex flex-col gap-1">
                                                             <button
-                                                                onClick={() => post.isPinned ? unpinPost(post.id) : pinPost(post.id)}
-                                                                className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                                                                    post.isPinned
-                                                                        ? 'bg-purple-600 text-white hover:bg-purple-700'
-                                                                        : 'bg-white text-purple-700 border border-purple-200 hover:bg-purple-50'
-                                                                }`}
+                                                                onClick={async () => {
+                                                                    if (post.isPinned) await unpinPost(post.id);
+                                                                    else await pinPost(post.id);
+                                                                    await loadPost(post.id);
+                                                                }}
+                                                                className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors ${post.isPinned
+                                                                    ? 'bg-blue-50 text-blue-700'
+                                                                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                                                                    }`}
                                                                 title={post.isPinned ? 'Bỏ ghim bài' : 'Ghim bài lên đầu'}
                                                             >
-                                                                <Pin size={16} fill={post.isPinned ? 'currentColor' : 'none'} />
-                                                                {post.isPinned ? 'Bỏ ghim bài' : 'Ghim bài'}
+                                                                <Pin size={16} fill={post.isPinned ? 'currentColor' : 'none'} className={post.isPinned ? 'text-blue-700' : 'text-gray-500'} />
+                                                                {post.isPinned ? 'Bỏ ghim bài' : 'Ghim bài viết'}
                                                             </button>
 
                                                             <button
-                                                                onClick={() => post.isLocked ? unlockPost(post.id) : lockPost(post.id)}
-                                                                className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                                                                    post.isLocked
-                                                                        ? 'bg-orange-600 text-white hover:bg-orange-700'
-                                                                        : 'bg-white text-orange-700 border border-orange-200 hover:bg-orange-50'
-                                                                }`}
+                                                                onClick={async () => {
+                                                                    if (post.isLocked) await unlockPost(post.id);
+                                                                    else await lockPost(post.id);
+                                                                    await loadPost(post.id);
+                                                                }}
+                                                                className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors ${post.isLocked
+                                                                    ? 'bg-amber-50 text-amber-700'
+                                                                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                                                                    }`}
                                                                 title={post.isLocked ? 'Mở khóa bài' : 'Khóa bài'}
                                                             >
-                                                                <Lock size={16} fill={post.isLocked ? 'currentColor' : 'none'} />
-                                                                {post.isLocked ? 'Mở khóa bài' : 'Khóa bài'}
+                                                                <Lock size={16} fill={post.isLocked ? 'currentColor' : 'none'} className={post.isLocked ? 'text-amber-700' : 'text-gray-500'} />
+                                                                {post.isLocked ? 'Mở khóa bài' : 'Khóa bài viết'}
                                                             </button>
+
+                                                            <div className="my-1 h-px bg-gray-100" />
 
                                                             <AlertDialog>
                                                                 <AlertDialogTrigger asChild>
-                                                                    <button className="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition-all hover:bg-red-50">
+                                                                    <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700">
                                                                         <Trash2 size={16} />
-                                                                        Xóa bài
+                                                                        Xóa bài viết
                                                                     </button>
                                                                 </AlertDialogTrigger>
                                                                 <AlertDialogContent>
                                                                     <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Xóa bài viết (Moderation)?</AlertDialogTitle>
+                                                                        <AlertDialogTitle>Xóa bài viết (Quản trị)?</AlertDialogTitle>
                                                                         <AlertDialogDescription>
                                                                             Bài viết sẽ bị ẩn khỏi công khai nhưng dữ liệu sẽ được lưu giữ cho audit.
                                                                         </AlertDialogDescription>
                                                                     </AlertDialogHeader>
                                                                     <AlertDialogFooter>
                                                                         <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                                                        <AlertDialogAction onClick={() => softDeletePost(post.id)} className="bg-red-600 hover:bg-red-700">
+                                                                        <AlertDialogAction onClick={async () => {
+                                                                            const success = await softDeletePost(post.id);
+                                                                            if (success) navigate('/forum');
+                                                                        }} className="bg-red-600 hover:bg-red-700">
                                                                             Xóa
                                                                         </AlertDialogAction>
                                                                     </AlertDialogFooter>
@@ -835,12 +1004,33 @@ const ForumPostDetail: React.FC = () => {
                                                                                         Người báo cáo: {report.reporterName || 'Người dùng ẩn danh'}
                                                                                     </div>
                                                                                 </div>
-                                                                                <span className="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-800">
-                                                                                    {getReportStatusLabel(report.status)}
-                                                                                </span>
+                                                                                {isSuperAdmin ? (
+                                                                                    <select
+                                                                                        className="text-[11px] font-medium text-amber-900 bg-amber-100 border border-amber-300 rounded-full px-2 py-1 outline-none cursor-pointer"
+                                                                                        value={report.status}
+                                                                                        onChange={(e) => {
+                                                                                            setReportUpdateData({
+                                                                                                reportId: report.id,
+                                                                                                status: e.target.value,
+                                                                                                notes: report.notes || ""
+                                                                                            });
+                                                                                            setReportUpdateModalOpen(true);
+                                                                                        }}
+                                                                                    >
+                                                                                        <option value="PENDING">Đang chờ</option>
+                                                                                        <option value="UNDER_REVIEW">Đang xem xét</option>
+                                                                                        <option value="RESOLVED">Đã giải quyết</option>
+                                                                                        <option value="DISMISSED">Bỏ qua</option>
+                                                                                    </select>
+                                                                                ) : (
+                                                                                    <span className="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-800">
+                                                                                        {getReportStatusLabel(report.status)}
+                                                                                    </span>
+                                                                                )}
                                                                             </div>
                                                                             {report.notes && (
-                                                                                <div className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                                                                                <div className="mt-2 text-sm text-gray-700 whitespace-pre-wrap border-t border-amber-100 pt-2">
+                                                                                    <span className="font-semibold text-amber-800 text-xs">Ghi chú: </span>
                                                                                     {report.notes}
                                                                                 </div>
                                                                             )}
@@ -1090,16 +1280,16 @@ const ForumPostDetail: React.FC = () => {
                                                 </button>
                                             </div>
                                         )}
-                                        <textarea
-                                            className="w-full p-3 bg-gray-50 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[100px]"
-                                            placeholder={editingComment ? 'Chỉnh sửa nội dung bình luận...' : 'Viết câu trả lời của bạn...'}
+                                        <RichTextEditor
                                             value={newComment}
-                                            onChange={(e) => setNewComment(e.target.value)}
+                                            onChange={setNewComment}
+                                            placeholder={editingComment ? 'Chỉnh sửa nội dung bình luận...' : 'Viết bình luận, đặt câu hỏi hoặc chia sẻ ý kiến của bạn...'}
+                                            minHeight="180px"
                                         />
                                         <div className="flex justify-end mt-2">
                                             <Button
                                                 onClick={handleSubmitComment}
-                                                disabled={!newComment.trim()}
+                                                disabled={!newComment.replace(/<[^>]*>/g, '').trim()}
                                                 className="bg-blue-600 text-white hover:bg-blue-700 hover:text-white"
                                             >
                                                 {editingComment ? 'Lưu chỉnh sửa' : 'Gửi trả lời'}
@@ -1177,6 +1367,47 @@ const ForumPostDetail: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Moderation Notes Modal */}
+            <Dialog open={reportUpdateModalOpen} onOpenChange={setReportUpdateModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Cập nhật trạng thái báo cáo</DialogTitle>
+                        <DialogDescription>
+                            Nhập ghi chú quản trị (không bắt buộc) cho thay đổi trạng thái này.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <textarea
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            rows={3}
+                            placeholder="Ví dụ: Đã khóa bài viết vì vi phạm nội quy..."
+                            value={reportUpdateData?.notes || ""}
+                            onChange={(e) => setReportUpdateData(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setReportUpdateModalOpen(false)}>Hủy</Button>
+                        <Button
+                            className="bg-amber-600 hover:bg-amber-700 text-white"
+                            onClick={async () => {
+                                if (!reportUpdateData || !postData?.post?.id) return;
+                                try {
+                                    await forumApi.updateReportStatus(reportUpdateData.reportId, reportUpdateData.status, reportUpdateData.notes);
+                                    toast({ title: 'Đã cập nhật trạng thái báo cáo', duration: 2000 });
+                                    const res = await forumApi.getReportsForTarget(postData.post.id);
+                                    setTargetReports(res.data ?? []);
+                                    setReportUpdateModalOpen(false);
+                                } catch (err) {
+                                    toast({ variant: 'destructive', title: 'Lỗi cập nhật trạng thái' });
+                                }
+                            }}
+                        >
+                            Cập nhật
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div >
     );
 };

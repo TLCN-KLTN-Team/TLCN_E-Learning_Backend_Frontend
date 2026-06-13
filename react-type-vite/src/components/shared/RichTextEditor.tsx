@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { Editor } from '@tinymce/tinymce-react';
+import axiosInstance from "@/services/api/httpClient/axiosInstance";
 
 interface RichTextEditorProps {
   value: string;
@@ -8,23 +9,31 @@ interface RichTextEditorProps {
   disabled?: boolean;
   className?: string;
   minHeight?: string;
+  /**
+   * Backend endpoint to upload images (relative to VITE_BASE_URL).
+   * Defaults to the forum image upload endpoint.
+   * The endpoint must accept multipart/form-data with field "file"
+   * and return JSON { location: "<url>" } (TinyMCE format).
+   */
+  uploadEndpoint?: string;
 }
+
+const DEFAULT_UPLOAD_ENDPOINT = "/chat/forum/upload-image";
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
-  placeholder = "Nhập nội dung bài học...",
+  placeholder = "Nhập nội dung...",
   disabled = false,
   className = "",
-  minHeight = "400px"
+  minHeight = "400px",
+  uploadEndpoint = DEFAULT_UPLOAD_ENDPOINT,
 }) => {
   const editorRef = useRef(null);
 
   // Clean HTML by removing tracking attributes
   const cleanHTML = (html: string): string => {
     if (!html) return html;
-    
-    // Remove data-start, data-end, and other tracking attributes
     return html
       .replace(/\s*data-start="[^"]*"/g, '')
       .replace(/\s*data-end="[^"]*"/g, '')
@@ -34,10 +43,37 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   const handleEditorChange = (content: string) => {
-    // Clean the content before saving
     const cleanedContent = cleanHTML(content);
     onChange(cleanedContent);
   };
+
+  /**
+   * TinyMCE images_upload_handler — uploads to our backend via axiosInstance
+   * so the Authorization header is included automatically.
+   */
+  const handleImageUpload = (blobInfo: any): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append("file", blobInfo.blob(), blobInfo.filename());
+
+      axiosInstance
+        .post<{ location: string; url?: string }>(uploadEndpoint, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+        .then((res) => {
+          // TinyMCE expects the resolved string to be the image URL
+          const url = res.data.location || res.data.url;
+          if (url) {
+            resolve(url);
+          } else {
+            reject("Phản hồi upload không hợp lệ.");
+          }
+        })
+        .catch((err) => {
+          console.error("Image upload failed", err);
+          reject("Tải ảnh lên thất bại. Vui lòng thử lại.");
+        });
+    });
 
   return (
     <div className={className}>
@@ -57,7 +93,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             'anchor', 'searchreplace', 'visualblocks', 'code', 'codesample', 'fullscreen',
             'insertdatetime', 'media', 'table', 'help', 'wordcount'
           ],
-          toolbar: 'undo redo | blocks | ' +
+          toolbar:
+            'undo redo | blocks | ' +
             'bold italic forecolor backcolor | alignleft aligncenter ' +
             'alignright alignjustify | bullist numlist outdent indent | ' +
             'removeformat | link image media | codesample code fullscreen | help',
@@ -68,6 +105,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               line-height: 1.6;
               padding: 10px;
             }
+            img { max-width: 100%; height: auto; border-radius: 6px; }
           `,
           placeholder: placeholder,
           branding: false,
@@ -76,34 +114,24 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4',
           font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 36pt 48pt',
           language: 'vi',
-          // Disable tracking and collaboration features
           track_changes: false,
           collaborative_editing: false,
-          // Clean paste
           paste_as_text: false,
           paste_data_images: true,
           paste_remove_styles_if_webkit: false,
           paste_webkit_styles: 'all',
-          // Image upload
-          images_upload_handler: (blobInfo: any) => new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              resolve(reader.result as string);
-            };
-            reader.onerror = () => reject('Image upload failed');
-            reader.readAsDataURL(blobInfo.blob());
-          }),
-          // Extended valid elements to prevent stripping
-          extended_valid_elements: 'span[*],div[*],p[*],strong[*],em[*],ul[*],ol[*],li[*],h1[*],h2[*],h3[*],h4[*],br[*]',
-          // Setup
+          // Real server upload — replaces the old base64 fallback
+          images_upload_handler: handleImageUpload,
+          // Allow dragging images directly into the editor
+          automatic_uploads: true,
+          file_picker_types: 'image',
+          extended_valid_elements: 'span[*],div[*],p[*],strong[*],em[*],ul[*],ol[*],li[*],h1[*],h2[*],h3[*],h4[*],br[*],img[*]',
           setup: (editor: any) => {
             editor.on('init', () => {
               if (disabled) {
                 editor.mode.set('readonly');
               }
             });
-            
-            // Remove tracking attributes on paste
             editor.on('PastePostProcess', (e: any) => {
               e.node.innerHTML = cleanHTML(e.node.innerHTML);
             });

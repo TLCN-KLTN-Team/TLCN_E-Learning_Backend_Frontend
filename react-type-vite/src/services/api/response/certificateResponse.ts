@@ -13,6 +13,7 @@ export interface CertificateResponse {
     finalScore?: number;
     grade?: string;
     certificateHash?: string;
+    pdfHash?: string;
     pdfUrl?: string;
     tokenUri?: string;
     tokenId?: string;

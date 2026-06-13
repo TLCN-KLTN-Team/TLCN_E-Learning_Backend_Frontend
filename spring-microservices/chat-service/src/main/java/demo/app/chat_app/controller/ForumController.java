@@ -20,14 +20,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/forum")
@@ -38,6 +41,7 @@ public class ForumController {
     private final SimpMessagingTemplate messagingTemplate;
 
     // Categories
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/categories")
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
         return ResponseEntity.ok(forumService.createCategory(category));
@@ -86,6 +90,35 @@ public class ForumController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Increment view count once per page visit.
+     * Separated from getPostDetail to avoid inflating views on every vote/WebSocket reload.
+     */
+    @PostMapping("/posts/{postId}/view")
+    public ResponseEntity<Map<String, Object>> incrementViewCount(@PathVariable String postId) {
+        long viewCount = forumService.incrementViewCount(postId);
+        Map<String, Object> update = Map.of(
+                "type", "view_update",
+                "postId", postId,
+                "viewCount", viewCount
+        );
+
+        messagingTemplate.convertAndSend("/topic/posts/" + postId + "/update", update);
+        messagingTemplate.convertAndSend("/topic/forum/posts/view", update);
+
+        return ResponseEntity.ok(update);
+    }
+
+    /**
+     * Upload image for use inside TinyMCE forum posts or comments.
+     * Returns {"location": "<cloudinary_url>"} as expected by TinyMCE images_upload_handler.
+     */
+    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadForumImage(
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(forumService.uploadForumImage(file));
+    }
+
     @GetMapping("/bookmarks")
     public ResponseEntity<List<Post>> getBookmarkedPosts(@AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
@@ -117,9 +150,9 @@ public class ForumController {
             @RequestBody CreateCommentRequest request,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        // Force postId from path to match request (or just use path)
-        if (!postId.equals(request.getPostId())) {
-             // Basic validation, could throw error
+        // Enforce that the postId in the request body matches the path variable
+        if (request.getPostId() == null || !postId.equals(request.getPostId())) {
+            return ResponseEntity.badRequest().build();
         }
         Comment createdComment = forumService.createComment(request, userId);
         messagingTemplate.convertAndSend("/topic/posts/" + postId + "/comments", createdComment);
@@ -286,8 +319,9 @@ public class ForumController {
     }
 
     /**
-     * Get reports for a specific post or comment
+     * Get reports for a specific post or comment (SuperAdmin only)
      */
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @GetMapping("/{targetId}/reports")
     public ResponseEntity<List<ViolationReportResponse>> getReportsForTarget(@PathVariable String targetId) {
         return ResponseEntity.ok(forumService.getReportsForTarget(targetId));

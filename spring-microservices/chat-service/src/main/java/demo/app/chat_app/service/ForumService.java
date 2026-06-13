@@ -22,8 +22,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -40,6 +42,8 @@ import java.util.regex.Matcher;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.springframework.web.multipart.MultipartFile;
+import com.cloudinary.Cloudinary;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +59,7 @@ public class ForumService {
     private final GetUserClient getUserClient;
     private final MongoTemplate mongoTemplate;
     private final NotificationRepository notificationRepository;
+    private final Cloudinary cloudinary;
 
     public Category createCategory(Category category) {
         category.setCreatedAt(LocalDateTime.now());
@@ -148,6 +153,9 @@ public class ForumService {
     private Criteria buildPostCriteria(String categoryId, String tag, String search, String sortBy) {
         List<Criteria> criteriaList = new ArrayList<>();
 
+        // Always exclude soft-deleted posts from public listing
+        criteriaList.add(Criteria.where("deleted").ne(true));
+
         if (categoryId != null && !categoryId.isBlank()) {
             criteriaList.add(Criteria.where("categoryId").is(categoryId.trim()));
         }
@@ -168,20 +176,13 @@ public class ForumService {
             criteriaList.add(Criteria.where("commentCount").is(0L));
         }
 
-        if (criteriaList.isEmpty()) {
-            return null;
-        }
-
-        if (criteriaList.size() == 1) {
-            return criteriaList.get(0);
-        }
-
         return new Criteria().andOperator(criteriaList.toArray(new Criteria[0]));
     }
 
     private Sort buildSort(String sortBy) {
         if ("hot".equalsIgnoreCase(sortBy)) {
             return Sort.by(
+                    Sort.Order.desc("isPinned"),
                     Sort.Order.desc("score"),
                     Sort.Order.desc("viewCount"),
                     Sort.Order.desc("createdAt")
@@ -189,10 +190,16 @@ public class ForumService {
         }
 
         if ("unanswered".equalsIgnoreCase(sortBy)) {
-            return Sort.by(Sort.Order.desc("createdAt"));
+            return Sort.by(
+                    Sort.Order.desc("isPinned"),
+                    Sort.Order.desc("createdAt")
+            );
         }
 
-        return Sort.by(Sort.Order.desc("createdAt"));
+        return Sort.by(
+                Sort.Order.desc("isPinned"),
+                Sort.Order.desc("createdAt")
+        );
     }
 
     public List<String> getAllTags() {
@@ -205,22 +212,26 @@ public class ForumService {
     public PostResponse getPostDetail(String postId, String userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        
-        // Increment view count (async or simple update)
-        post.setViewCount(post.getViewCount() + 1);
-        postRepository.save(post);
-        
+
+        // Reject soft-deleted posts for non-admin callers
+        if (post.isDeleted()) {
+            throw new RuntimeException("Post not found");
+        }
+
+        // NOTE: viewCount is incremented via a dedicated endpoint (POST /posts/{id}/view)
+        // to avoid inflating views on every vote/reload.
+
         long upvotes = voteRepository.countByTargetIdAndTargetTypeAndType(postId, VoteTargetType.POST, VoteType.UP);
         long downvotes = voteRepository.countByTargetIdAndTargetTypeAndType(postId, VoteTargetType.POST, VoteType.DOWN);
-        long comments = commentRepository.countByPostId(postId);
-        
+        long comments = commentRepository.countByPostIdAndDeletedFalse(postId);
+
         boolean isLiked = false;
         if (userId != null && !userId.isEmpty()) {
-             isLiked = voteRepository.findByUserIdAndTargetIdAndTargetType(userId, postId, VoteTargetType.POST)
-                     .map(vote -> vote.getType() == VoteType.UP)
-                     .orElse(false);
+            isLiked = voteRepository.findByUserIdAndTargetIdAndTargetType(userId, postId, VoteTargetType.POST)
+                    .map(vote -> vote.getType() == VoteType.UP)
+                    .orElse(false);
         }
-        
+
         return PostResponse.builder()
                 .post(post)
                 .upvotes(upvotes)
@@ -230,6 +241,30 @@ public class ForumService {
                 .authorName(post.getAuthorName())
                 .authorAvatar(post.getAuthorAvatar())
                 .build();
+    }
+
+    /**
+     * Increment view count for a post – called once per page visit via dedicated endpoint.
+     * Separated from getPostDetail to prevent view inflation on vote/reload.
+     */
+    public long incrementViewCount(String postId) {
+        Query query = Query.query(
+                Criteria.where("_id").is(postId)
+                        .and("deleted").ne(true)
+        );
+        Update update = new Update().inc("viewCount", 1);
+        Post updatedPost = mongoTemplate.findAndModify(
+                query,
+                update,
+                FindAndModifyOptions.options().returnNew(true),
+                Post.class
+        );
+
+        if (updatedPost == null) {
+            throw new RuntimeException("Post not found");
+        }
+
+        return updatedPost.getViewCount();
     }
 
     public List<Post> getBookmarkedPosts(String userId) {
@@ -341,7 +376,8 @@ public class ForumService {
     }
 
     public List<Comment> getCommentsForPost(String postId, String userId) {
-        List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
+        // Only return non-deleted comments to regular users
+        List<Comment> comments = commentRepository.findByPostIdAndDeletedFalseOrderByCreatedAtAsc(postId);
         comments.forEach(comment -> {
             long upvotes = voteRepository.countByTargetIdAndTargetTypeAndType(comment.getId(), VoteTargetType.COMMENT, VoteType.UP);
             long downvotes = voteRepository.countByTargetIdAndTargetTypeAndType(comment.getId(), VoteTargetType.COMMENT, VoteType.DOWN);
@@ -445,6 +481,21 @@ public class ForumService {
     }
 
     public void vote(VoteRequest request, String userId) {
+        // Prevent users from voting on their own posts or comments
+        if (request.getTargetType() == VoteTargetType.POST) {
+            postRepository.findById(request.getTargetId()).ifPresent(post -> {
+                if (post.getUserId() != null && post.getUserId().equals(userId)) {
+                    throw new RuntimeException("Bạn không thể vote bài viết của chính mình");
+                }
+            });
+        } else if (request.getTargetType() == VoteTargetType.COMMENT) {
+            commentRepository.findById(request.getTargetId()).ifPresent(comment -> {
+                if (comment.getUserId() != null && comment.getUserId().equals(userId)) {
+                    throw new RuntimeException("Bạn không thể vote bình luận của chính mình");
+                }
+            });
+        }
+
         Optional<Vote> existingVote = voteRepository.findByUserIdAndTargetIdAndTargetType(
                 userId, request.getTargetId(), request.getTargetType());
 
@@ -824,8 +875,16 @@ public class ForumService {
         comment.setDeleted(true);
         comment.setDeletedAt(LocalDateTime.now());
         comment.setUpdatedAt(LocalDateTime.now());
+        commentRepository.save(comment);
 
-        return commentRepository.save(comment);
+        // Update post's comment count to reflect the soft deletion
+        postRepository.findById(comment.getPostId()).ifPresent(post -> {
+            long remaining = commentRepository.countByPostIdAndDeletedFalse(comment.getPostId());
+            post.setCommentCount(remaining);
+            postRepository.save(post);
+        });
+
+        return comment;
     }
 
     /**
@@ -871,5 +930,38 @@ public class ForumService {
                 .moderatorId(report.getModeratorId())
                 .moderatorNotes(report.getModeratorNotes())
                 .build();
+    }
+
+    /**
+     * Upload an image for forum posts or comments to Cloudinary.
+     * Returns a map with {"url": "...", "location": "..."}  ––  TinyMCE expects the "location" key.
+     */
+    public Map<String, String> uploadForumImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("File is empty");
+        }
+        try {
+            java.util.Map<String, Object> uploadParams = new java.util.HashMap<>();
+            uploadParams.put("resource_type", "image");
+            uploadParams.put("public_id", "forum_" + System.currentTimeMillis());
+            uploadParams.put("unique_filename", true);
+            uploadParams.put("access_mode", "public");
+            uploadParams.put("quality", "auto");
+            uploadParams.put("fetch_format", "auto");
+
+            java.util.Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
+
+            Map<String, String> result = new java.util.HashMap<>();
+            String url = uploadResult.get("secure_url").toString();
+            result.put("url", url);
+            result.put("location", url); // TinyMCE images_upload_handler reads "location"
+            result.put("publicId", uploadResult.get("public_id").toString());
+
+            log.info("Forum image uploaded: {}", url);
+            return result;
+        } catch (Exception e) {
+            log.error("Error uploading forum image", e);
+            throw new RuntimeException("Image upload failed: " + e.getMessage());
+        }
     }
 }

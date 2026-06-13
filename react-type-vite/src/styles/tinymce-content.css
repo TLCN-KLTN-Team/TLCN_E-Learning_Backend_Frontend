@@ -1,5 +1,21 @@
 /* TinyMCE Content Styles - Add this to your global CSS */
 
+/* Keep TinyMCE dialogs, menus, and popovers above app modals. */
+.tox-tinymce-aux,
+.tox-dialog-wrap,
+.tox-dialog-wrap .tox-dialog,
+.tox-menu,
+.tox-pop,
+.tox-pop__dialog,
+.tox-silver-sink {
+  pointer-events: auto !important;
+  z-index: 10060 !important;
+}
+
+.tox-dialog-wrap .tox-dialog__backdrop {
+  z-index: 10059 !important;
+}
+
 /* Make sure HTML elements render properly */
 .lesson-content p {
   margin-bottom: 1rem;

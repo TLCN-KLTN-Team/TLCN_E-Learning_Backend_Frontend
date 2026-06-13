@@ -6,11 +6,11 @@ import { useAuth } from '@/context/auth-context/useAuth';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import ForumSidebar from '@/components/forum/ForumSidebar';
-// import { MessageSquare, Eye, Clock, Pin } from 'lucide-react'; // Removed unused
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bookmark, BookmarkCheck, Search } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Lock, Pin, Search } from 'lucide-react';
 import {
     isForumBookmarked,
     readForumBookmarks,
@@ -18,6 +18,8 @@ import {
 } from '@/utils/forumEngagement';
 
 type ForumSortBy = 'newest' | 'hot' | 'unanswered';
+
+const PAGE_SIZE = 10;
 
 const ForumHome: React.FC = () => {
     const { user } = useAuth();
@@ -30,6 +32,10 @@ const ForumHome: React.FC = () => {
     const [sortBy, setSortBy] = useState<ForumSortBy>('newest');
     const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const [totalPosts, setTotalPosts] = useState(0);
     const filtersRef = useRef({
         categoryId: undefined as string | undefined,
         tag: undefined as string | undefined,
@@ -68,20 +74,31 @@ const ForumHome: React.FC = () => {
         };
     }, [selectedCategory, selectedTag, searchTerm, sortBy]);
 
-    const loadPosts = async () => {
-        setLoading(true);
+    const loadPosts = async (page = 0) => {
+        if (page === 0) {
+            setLoading(true);
+        } else {
+            setLoadingMore(true);
+        }
         try {
             const res = await forumApi.getPosts({
                 categoryId: filtersRef.current.categoryId,
                 tag: filtersRef.current.tag,
                 search: filtersRef.current.searchTerm,
                 sortBy: filtersRef.current.sortBy,
+                page,
+                size: PAGE_SIZE,
             });
-            setPosts(res.data.content);
+            const { content, totalElements, last } = res.data;
+            setPosts(prev => page === 0 ? content : [...prev, ...content]);
+            setTotalPosts(totalElements ?? 0);
+            setHasMore(!last);
+            setCurrentPage(page);
         } catch (error) {
             console.error("Failed to load posts", error);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
@@ -92,7 +109,9 @@ const ForumHome: React.FC = () => {
         }
 
         const timeout = window.setTimeout(() => {
-            loadPosts();
+            // Reset to page 0 whenever filters change
+            setCurrentPage(0);
+            loadPosts(0);
         }, 250);
 
         return () => window.clearTimeout(timeout);
@@ -104,10 +123,23 @@ const ForumHome: React.FC = () => {
             forumDiscussionWS.connect(token).then(() => {
                 forumDiscussionWS.subscribeToAllPosts(
                     () => {
-                        loadPosts();
+                        // Reload from page 0 on new post
+                        loadPosts(0);
                     },
                     (deletedPostId) => {
                         setPosts(prev => prev.filter(p => p.id !== deletedPostId));
+                    },
+                    (update) => {
+                        setPosts(prev => prev.map(post =>
+                            post.id === update.postId
+                                ? { ...post, viewCount: update.viewCount }
+                                : post
+                        ));
+                        setSavedBookmarks(prev => prev.map(post =>
+                            post.id === update.postId
+                                ? { ...post, viewCount: update.viewCount }
+                                : post
+                        ));
                     }
                 );
             }).catch(err => console.error("WS connect error", err));
@@ -257,6 +289,11 @@ const ForumHome: React.FC = () => {
                         >
                             Chưa có ai trả lời
                         </button>
+                        {!showBookmarksOnly && totalPosts > 0 && (
+                            <span className="ml-auto text-xs text-gray-400">
+                                {totalPosts} bài viết
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -293,7 +330,17 @@ const ForumHome: React.FC = () => {
                             <div className="flex-1 min-w-0 pr-4">
                                 <div className="flex items-start gap-3 justify-between">
                                     <Link to={`/forum/posts/${post.id}`} className="block min-w-0 flex-1">
-                                        <h3 className="text-base font-medium text-gray-900 group-hover:text-blue-600 transition-colors truncate mb-1">
+                                        <h3 className="text-base font-medium text-gray-900 group-hover:text-blue-600 transition-colors truncate mb-1 flex items-center gap-1.5">
+                                            {post.isPinned && (
+                                                <span title="Bài viết được ghim">
+                                                    <Pin size={14} className="text-purple-500 fill-purple-500 shrink-0" />
+                                                </span>
+                                            )}
+                                            {post.isLocked && (
+                                                <span title="Bài viết bị khóa">
+                                                    <Lock size={14} className="text-orange-500 shrink-0" />
+                                                </span>
+                                            )}
                                             {post.title}
                                         </h3>
                                     </Link>
@@ -308,13 +355,21 @@ const ForumHome: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center gap-3 text-xs text-gray-500">
-                                    {/* Pinned Icon (Mock if needed) */}
-                                    {/* <Pin size={12} className="text-gray-400 rotate-45" /> */}
-
-                                    {/* Tags */}
+                                    {/* Category & Tags */}
                                     <div className="flex items-center gap-2">
+                                        {/* Category Badge */}
+                                        {(() => {
+                                            const category = categories.find(c => c.id === post.categoryId);
+                                            return category ? (
+                                                <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 font-medium px-1.5 py-0 h-5 text-[10px]">
+                                                    {category.name}
+                                                </Badge>
+                                            ) : null;
+                                        })()}
+
+                                        {/* Tags */}
                                         {post.tags && post.tags.map((tag, index) => (
-                                            <Badge key={index} variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200 font-normal px-1.5 py-0 h-5 text-[10px]">
+                                            <Badge key={`tag-${index}`} variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200 font-normal px-1.5 py-0 h-5 text-[10px]">
                                                 {tag}
                                             </Badge>
                                         ))}
@@ -357,6 +412,20 @@ const ForumHome: React.FC = () => {
                             </div>
                         </div>
                     ))}
+
+                    {/* Load More Button */}
+                    {!showBookmarksOnly && hasMore && (
+                        <div className="px-6 py-4 border-t">
+                            <Button
+                                variant="outline"
+                                className="w-full text-sm text-gray-600 hover:text-gray-900"
+                                onClick={() => loadPosts(currentPage + 1)}
+                                disabled={loadingMore}
+                            >
+                                {loadingMore ? 'Đang tải...' : `Xem thêm bài viết`}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

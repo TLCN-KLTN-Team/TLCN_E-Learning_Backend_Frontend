@@ -1,7 +1,7 @@
 import { Client } from '@stomp/stompjs';
 import type { Message, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { type Comment, type Post } from '../api/forumApi';
+import { type Comment, type ForumPostViewUpdate, type Post } from '../api/forumApi';
 
 class ForumDiscussionWebSocketService {
     private client: Client | null = null;
@@ -63,7 +63,8 @@ class ForumDiscussionWebSocketService {
     // Subscribe to global forum updates (New Post, Delete Post)
     subscribeToAllPosts(
         onNewPost: (post: Post) => void,
-        onDeletePost: (postId: string) => void
+        onDeletePost: (postId: string) => void,
+        onViewUpdate?: (update: ForumPostViewUpdate) => void
     ): void {
         if (!this.client?.connected) return;
 
@@ -90,6 +91,17 @@ class ForumDiscussionWebSocketService {
                 console.error("Error parsing delete post", e);
             }
         }));
+
+        if (onViewUpdate) {
+            subs.push(this.client.subscribe(`/topic/forum/posts/view`, (message: Message) => {
+                try {
+                    const update: ForumPostViewUpdate = JSON.parse(message.body);
+                    onViewUpdate(update);
+                } catch (e) {
+                    console.error("Error parsing post view update", e);
+                }
+            }));
+        }
 
         this.subscriptions.set("ALL_POSTS", subs);
     }

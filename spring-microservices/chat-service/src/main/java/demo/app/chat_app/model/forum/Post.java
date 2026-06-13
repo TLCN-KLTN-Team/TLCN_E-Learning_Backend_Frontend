@@ -44,7 +44,10 @@ public class Post {
     private boolean hundredUpvotesNotified;
     
     // Moderation fields
+    @com.fasterxml.jackson.annotation.JsonProperty("isPinned")
     private boolean isPinned; // Pinned by SuperAdmin
+    
+    @com.fasterxml.jackson.annotation.JsonProperty("isLocked")
     private boolean isLocked; // Comments disabled by SuperAdmin
     private ModerationStatus moderationStatus; // Approval status
     

@@ -57,6 +57,8 @@ export const getLibraryQuestions = async (params: {
   questionType?: string
   difficultyLevel?: string
   tags?: string
+  courseId?: number
+  cloId?: number
   sortBy?: string
   sortDirection?: string
 }): Promise<QuestionLibraryListResponse> => {

@@ -71,6 +71,9 @@ public class Certificate {
     private String certificateHash;
 
     // PDF & NFT Metadata
+    @Column(name = "pdf_hash", length = 64)
+    private String pdfHash;
+
     @Column(name = "pdf_cid")
     private String pdfCid;
 

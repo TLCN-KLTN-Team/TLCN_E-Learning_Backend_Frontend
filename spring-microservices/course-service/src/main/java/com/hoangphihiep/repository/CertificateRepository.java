@@ -11,4 +11,5 @@ public interface CertificateRepository extends JpaRepository<Certificate, Intege
     Optional<Certificate> findByUserIdAndPublishedCourse_Id(String userId, Integer publishedCourseId);
     Optional<Certificate> findByCertificateCode(String certificateCode);
     Optional<Certificate> findByCertificateHash(String certificateHash);
+    Optional<Certificate> findByPdfHash(String pdfHash);
 }

@@ -29,6 +29,7 @@ public class CertificateResponse {
     private Double finalScore;
     private String grade;
     private String certificateHash;
+    private String pdfHash;
     private String pdfCid;
     private String metadataCid;
     private String pdfUrl;
@@ -52,6 +53,7 @@ public class CertificateResponse {
                 .finalScore(certificate.getFinalScore())
                 .grade(certificate.getGrade())
                 .certificateHash(certificate.getCertificateHash())
+                .pdfHash(certificate.getPdfHash())
                 .pdfCid(certificate.getPdfCid())
                 .metadataCid(certificate.getMetadataCid())
                 .pdfUrl(certificate.getPdfUrl())

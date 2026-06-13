@@ -34,6 +34,9 @@ public class QuestionLibraryController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String questionType,
             @RequestParam(required = false) String difficultyLevel,
+            @RequestParam(required = false) Integer courseId,
+            @RequestParam(required = false) Integer cloId,
+            @RequestParam(required = false) String tags,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection) {
 
@@ -41,7 +44,7 @@ public class QuestionLibraryController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<QuestionResponse> questionPage = questionLibraryService.getLibraryQuestions(
-                search, questionType, difficultyLevel, pageable);
+                search, questionType, difficultyLevel, courseId, cloId, tags, pageable);
 
         Map<String, Object> response = new HashMap<>();
         response.put("questions", questionPage.getContent());

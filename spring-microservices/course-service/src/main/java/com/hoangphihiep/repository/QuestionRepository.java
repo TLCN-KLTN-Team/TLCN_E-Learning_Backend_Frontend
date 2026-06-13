@@ -37,6 +37,25 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
                                                      @Param("difficultyLevel") String difficultyLevel, 
                                                      Pageable pageable);
 
+    @Query("SELECT q FROM Question q WHERE q.teacherId = :teacherId " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "LOWER(q.questionText) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(q.tags) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(q.questionType) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:questionType IS NULL OR :questionType = '' OR q.questionType = :questionType) " +
+           "AND (:difficultyLevel IS NULL OR :difficultyLevel = '' OR q.difficultyLevel = :difficultyLevel) " +
+           "AND (:courseId IS NULL OR q.courseObjective.course.id = :courseId) " +
+           "AND (:cloId IS NULL OR q.courseObjective.id = :cloId) " +
+           "AND (:tag IS NULL OR :tag = '' OR LOWER(q.tags) LIKE LOWER(CONCAT('%', :tag, '%')))")
+    Page<Question> findQuestionsWithFilters(@Param("teacherId") String teacherId,
+                                            @Param("search") String search,
+                                            @Param("questionType") String questionType,
+                                            @Param("difficultyLevel") String difficultyLevel,
+                                            @Param("courseId") Integer courseId,
+                                            @Param("cloId") Integer cloId,
+                                            @Param("tag") String tag,
+                                            Pageable pageable);
+
     @Query("SELECT q FROM Question q LEFT JOIN FETCH q.answers WHERE q.id = :id")
     Optional<Question> findByIdWithAnswers(@Param("id") Integer id);
 }

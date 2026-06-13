@@ -147,8 +147,8 @@ const PendingCoursesPage = () => {
   };
 
   return (
-    <div className="p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-8 bg-gray-50 min-h-screen flex flex-col">
+      <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -249,11 +249,11 @@ const PendingCoursesPage = () => {
 
         {/* Courses List */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex items-center justify-center py-20 flex-1">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
         ) : courses.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
+          <div className="bg-white rounded-lg shadow p-12 text-center flex-1 flex flex-col items-center justify-center min-h-[400px]">
             <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Không có khóa học nào
@@ -265,7 +265,7 @@ const PendingCoursesPage = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1">
             {courses.map((course) => (
               <div
                 key={course.id}
