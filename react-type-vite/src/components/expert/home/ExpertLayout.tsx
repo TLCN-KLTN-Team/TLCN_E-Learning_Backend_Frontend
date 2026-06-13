@@ -21,7 +21,7 @@ const ExpertLayout: React.FC = () => {
             />
 
             {/* Main Content */}
-            <div className={`flex-1 transition-all duration-300 ease-in-out ${isCollapsed ? "lg:ml-16" : "lg:ml-72"}`}>
+            <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isCollapsed ? "lg:ml-16" : "lg:ml-72"}`}>
                 {/* Expert header */}
                 <ExpertHeader
                     isSidebarOpen={isSidebarOpen}
@@ -29,7 +29,7 @@ const ExpertLayout: React.FC = () => {
                 />
 
                 {/* Dynamic Page Content */}
-                <div className="p-4 md:p-6 lg:pl-10 lg:pt-4">
+                <div className="flex-1 flex flex-col p-4 md:p-6 lg:pl-10 lg:pt-4">
                     <Outlet />
                 </div>
             </div>

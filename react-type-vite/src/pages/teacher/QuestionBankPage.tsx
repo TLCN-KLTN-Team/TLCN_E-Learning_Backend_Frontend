@@ -22,6 +22,7 @@ import {
   deleteLibraryQuestion,
   type QuestionLibraryResponse,
 } from "@/services/api/teacher/questionLibraryApi"
+import { getTeacherActiveClos, type CourseObjectiveResponse } from "@/services/api/teacher/courseObjectiveApi"
 import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
 import QuestionBankModal from "@/components/teacher/course/QuestionBankModal"
@@ -50,8 +51,10 @@ const QuestionBankPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [questionType, setQuestionType] = useState<string>("ALL")
   const [difficultyLevel, setDifficultyLevel] = useState<string>("ALL")
+  const [availableClos, setAvailableClos] = useState<CourseObjectiveResponse[]>([])
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("ALL")
+  const [selectedCloId, setSelectedCloId] = useState<string>("ALL")
   const [selectedTag, setSelectedTag] = useState<string>("ALL")
-  const [availableTags, setAvailableTags] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(0)
   const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
@@ -61,6 +64,31 @@ const QuestionBankPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionLibraryResponse | undefined>(undefined)
+
+  useEffect(() => {
+    const loadClos = async () => {
+      try {
+        const clos = await getTeacherActiveClos()
+        setAvailableClos(clos)
+      } catch (error) {
+        console.error("Error loading CLOs:", error)
+      }
+    }
+    loadClos()
+  }, [])
+
+  const availableCourses = Array.from(
+    new Map(
+      availableClos.map((item) => [item.courseId, {
+        courseId: item.courseId,
+        courseName: item.courseName || `Khóa học #${item.courseId}`,
+      }])
+    ).values()
+  )
+
+  const filteredClos = selectedCourseId && selectedCourseId !== "ALL"
+    ? availableClos.filter((item) => item.courseId === Number(selectedCourseId))
+    : availableClos
 
   const fetchQuestions = async () => {
     try {
@@ -72,6 +100,8 @@ const QuestionBankPage: React.FC = () => {
         questionType: questionType && questionType !== "ALL" ? questionType : undefined,
         difficultyLevel: difficultyLevel && difficultyLevel !== "ALL" ? difficultyLevel : undefined,
         tags: selectedTag && selectedTag !== "ALL" ? selectedTag : undefined,
+        courseId: selectedCourseId && selectedCourseId !== "ALL" ? Number(selectedCourseId) : undefined,
+        cloId: selectedCloId && selectedCloId !== "ALL" ? Number(selectedCloId) : undefined,
         sortBy: "id",
         sortDirection: "DESC",
       })
@@ -80,14 +110,6 @@ const QuestionBankPage: React.FC = () => {
       setTotalPages(response.totalPages)
       setTotalItems(response.totalItems)
       setCurrentPage(response.currentPage)
-
-      const tags = new Set<string>()
-      response.questions.forEach((q) => {
-        if (q.tags) {
-          q.tags.split(",").forEach((tag) => tags.add(tag.trim()))
-        }
-      })
-      setAvailableTags(Array.from(tags).sort())
     } catch (error) {
       console.error("Error fetching questions:", error)
       toast.error("Không thể tải danh sách câu hỏi")
@@ -98,7 +120,7 @@ const QuestionBankPage: React.FC = () => {
 
   useEffect(() => {
     fetchQuestions()
-  }, [currentPage, pageSize, searchTerm, questionType, difficultyLevel, selectedTag])
+  }, [currentPage, pageSize, searchTerm, questionType, difficultyLevel, selectedTag, selectedCourseId, selectedCloId])
 
   const handleDelete = async () => {
     if (!questionToDelete) return
@@ -121,6 +143,16 @@ const QuestionBankPage: React.FC = () => {
       setQuestionToDelete(null)
     }
   }
+
+  // Extract unique tags from the current list of questions
+  const availableTags = Array.from(
+    new Set(
+      questions
+        .map((q) => q.tags)
+        .filter(Boolean)
+        .flatMap((tags) => tags?.split(',').map(t => t.trim()))
+    )
+  ).filter(Boolean) as string[]
 
   const openDeleteDialog = (id: number) => {
     setQuestionToDelete(id)
@@ -214,9 +246,9 @@ const QuestionBankPage: React.FC = () => {
 
         {/* Filters */}
         <div className="bg-card rounded-lg border p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Search */}
-            <div>
+            <div className="min-w-0">
               <Label htmlFor="search" className="text-sm font-medium mb-2 flex items-center">
                 <Search className="h-4 w-4 mr-1.5" />
                 Tìm kiếm
@@ -234,13 +266,13 @@ const QuestionBankPage: React.FC = () => {
             </div>
 
             {/* Question Type Filter */}
-            <div>
+            <div className="min-w-0">
               <Label htmlFor="questionType" className="text-sm font-medium mb-2 flex items-center">
                 <FileText className="h-4 w-4 mr-1.5" />
                 Loại câu hỏi
               </Label>
               <Select value={questionType} onValueChange={setQuestionType}>
-                <SelectTrigger id="questionType">
+                <SelectTrigger id="questionType" className="w-full">
                   <SelectValue placeholder="Loại câu hỏi" />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50 shadow-lg border-gray-200">
@@ -254,13 +286,13 @@ const QuestionBankPage: React.FC = () => {
             </div>
 
             {/* Difficulty Filter */}
-            <div>
+            <div className="min-w-0">
               <Label htmlFor="difficulty" className="text-sm font-medium mb-2 flex items-center">
                 <FileText className="h-4 w-4 mr-1.5" />
                 Độ khó
               </Label>
               <Select value={difficultyLevel} onValueChange={setDifficultyLevel}>
-                <SelectTrigger id="difficulty">
+                <SelectTrigger id="difficulty" className="w-full">
                   <SelectValue placeholder="Độ khó" />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50 shadow-lg border-gray-200">
@@ -272,23 +304,77 @@ const QuestionBankPage: React.FC = () => {
               </Select>
             </div>
 
-            {/* Tag Filter */}
-            <div>
-              <Label htmlFor="tag" className="text-sm font-medium mb-2 flex items-center">
-                <Tag className="h-4 w-4 mr-1.5" />
-                Lọc theo Tag
+            {/* Course Filter */}
+            <div className="min-w-0">
+              <Label htmlFor="course" className="text-sm font-medium mb-2 flex items-center">
+                <BookOpen className="h-4 w-4 mr-1.5" />
+                Khóa học
               </Label>
-              <Select value={selectedTag} onValueChange={setSelectedTag}>
-                <SelectTrigger id="tag">
-                  <SelectValue placeholder="Chọn tag" />
+              <Select 
+                value={selectedCourseId} 
+                onValueChange={(val) => {
+                  setSelectedCourseId(val)
+                  setSelectedCloId("ALL")
+                }}
+              >
+                <SelectTrigger id="course" className="w-full">
+                  <SelectValue placeholder="Chọn khóa học" />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50 shadow-lg border-gray-200">
-                  <SelectItem value="ALL">Tất cả</SelectItem>
+                  <SelectItem value="ALL">Tất cả khóa học</SelectItem>
+                  {availableCourses.map((course) => (
+                    <SelectItem key={course.courseId} value={String(course.courseId)}>
+                      {course.courseName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* CLO Filter */}
+            <div className="min-w-0">
+              <Label htmlFor="clo" className="text-sm font-medium mb-2 flex items-center">
+                <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                Chuẩn đầu ra
+              </Label>
+              <Select value={selectedCloId} onValueChange={setSelectedCloId}>
+                <SelectTrigger id="clo" className="w-full">
+                  <SelectValue placeholder="Chọn CĐR" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50 shadow-lg border-gray-200">
+                  <SelectItem value="ALL">Tất cả CĐR</SelectItem>
+                  {filteredClos.map((clo) => (
+                    <SelectItem key={clo.id} value={String(clo.id)}>
+                      {clo.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tag Filter */}
+            <div className="min-w-0">
+              <Label htmlFor="tag" className="text-sm font-medium mb-2 flex items-center">
+                <Tag className="h-4 w-4 mr-1.5" />
+                Tag
+              </Label>
+              <Select value={selectedTag} onValueChange={setSelectedTag}>
+                <SelectTrigger id="tag" className="w-full">
+                  <SelectValue placeholder="Lọc theo Tag" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50 shadow-lg border-gray-200">
+                  <SelectItem value="ALL">Tất cả Tags</SelectItem>
                   {availableTags.map((tag) => (
                     <SelectItem key={tag} value={tag}>
                       {tag}
                     </SelectItem>
                   ))}
+                  {/* Nếu người dùng chọn một tag không có trong list hiện tại nhưng đang active, vẫn hiển thị nó */}
+                  {selectedTag !== "ALL" && !availableTags.includes(selectedTag) && (
+                    <SelectItem key={selectedTag} value={selectedTag}>
+                      {selectedTag}
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -387,7 +473,12 @@ const QuestionBankPage: React.FC = () => {
                             ) : (
                               <XCircle className="h-4 w-4 flex-shrink-0 text-gray-400" />
                             )}
-                            <span className={answer.isCorrect ? "font-medium" : ""}>
+                            <span className={answer.isCorrect ? "font-medium flex items-center" : "flex items-center"}>
+                              {question.questionType === 'FILL_IN_THE_BLANK' && (
+                                <span className="mr-2 px-1.5 py-0.5 bg-white border border-gray-200 rounded text-xs text-gray-500 font-bold">
+                                  Ô {index + 1}
+                                </span>
+                              )}
                               {answer.content}
                             </span>
                           </div>
@@ -465,6 +556,7 @@ const QuestionBankPage: React.FC = () => {
         onClose={() => setModalOpen(false)}
         onSuccess={handleModalSuccess}
         question={selectedQuestion}
+        availableTags={availableTags}
       />
 
       {/* Question Import Modal */}

@@ -53,6 +53,12 @@ export interface BookmarkToggleResponse {
     bookmarked: boolean;
 }
 
+export interface ForumPostViewUpdate {
+    type: 'view_update';
+    postId: string;
+    viewCount: number;
+}
+
 export interface Comment {
     id: string;
     postId: string;
@@ -185,13 +191,22 @@ const forumApi = {
         return axiosInstance.delete<void>(`/chat/forum/posts/${postId}/comments/${commentId}`);
     },
     getComments: (postId: string) => {
-        return axiosInstance.get<Comment[]>(`/chat/forum/posts/${postId}/comments`);
+        // Use publicClient so non-authenticated users can also read comments
+        return publicClient.get<Comment[]>(`/chat/forum/posts/${postId}/comments`);
     },
     vote: (data: VoteRequest) => {
         return axiosInstance.post<void>("/chat/forum/interactions/vote", data);
     },
     getTags: () => {
         return publicClient.get<string[]>("/chat/forum/tags");
+    },
+
+    /**
+     * Increment view count – call once when user first opens a post.
+     * Uses publicClient so anonymous users also increment the counter.
+     */
+    incrementView: (postId: string) => {
+        return publicClient.post<ForumPostViewUpdate>(`/chat/forum/posts/${postId}/view`);
     },
 
     // ==================== MODERATION METHODS ====================
@@ -254,6 +269,20 @@ const forumApi = {
     // Get reports for specific target
     getReportsForTarget: (targetId: string) => {
         return axiosInstance.get<ViolationReportResponse[]>(`/chat/forum/${targetId}/reports`);
+    },
+
+    /**
+     * Upload an image for use in forum posts or comments (TinyMCE).
+     * Returns { location: "<cloudinary_url>" } as expected by TinyMCE images_upload_handler.
+     */
+    uploadImage: (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return axiosInstance.post<{ location: string; url: string; publicId: string }>(
+            '/chat/forum/upload-image',
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
     },
 };
 

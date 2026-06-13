@@ -39,20 +39,11 @@ public class QuestionLibraryService {
     private final FileHandlerRepository fileHandlerRepository;
     private final TeacherRepository teacherRepository;
 
-    public Page<QuestionResponse> getLibraryQuestions(String search, String questionType, String difficultyLevel, Pageable pageable) {
+    public Page<QuestionResponse> getLibraryQuestions(String search, String questionType, String difficultyLevel, Integer courseId, Integer cloId, String tags, Pageable pageable) {
         String teacherId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        Page<Question> questions;
-        
-        if (questionType != null && !questionType.isEmpty()) {
-            questions = questionRepository.findLibraryQuestionsByType(teacherId, questionType, pageable);
-        } else if (difficultyLevel != null && !difficultyLevel.isEmpty()) {
-            questions = questionRepository.findLibraryQuestionsByDifficulty(teacherId, difficultyLevel, pageable);
-        } else if (search != null && !search.isEmpty()) {
-            questions = questionRepository.searchLibraryQuestions(teacherId, search, pageable);
-        } else {
-            questions = questionRepository.findLibraryQuestionsByTeacher(teacherId, pageable);
-        }
+        Page<Question> questions = questionRepository.findQuestionsWithFilters(
+                teacherId, search, questionType, difficultyLevel, courseId, cloId, tags, pageable);
 
         return questions.map(this::toQuestionResponse);
     }

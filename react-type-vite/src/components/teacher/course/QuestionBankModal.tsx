@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, Save, X, FileQuestion, CheckSquare, Tag, Hash, Edit, Upload, Image as ImageIcon } from "lucide-react"
+import { Plus, Trash2, Save, X, FileQuestion, CheckSquare, Tag, Hash, Edit, Upload, Image as ImageIcon, ChevronDown } from "lucide-react"
 import {
   createLibraryQuestion,
   updateLibraryQuestion,
@@ -31,6 +31,7 @@ interface QuestionBankModalProps {
   onSuccess: () => void
   question?: QuestionLibraryResponse
   educationalUnitId?: number
+  availableTags?: string[]
 }
 
 const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
@@ -39,6 +40,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
   onSuccess,
   question,
   educationalUnitId,
+  availableTags = [],
 }) => {
   const [formData, setFormData] = useState<QuestionLibraryRequest>({
     questionText: "",
@@ -56,6 +58,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
   const [availableClos, setAvailableClos] = useState<CourseObjectiveResponse[]>([])
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showTagDropdown, setShowTagDropdown] = useState(false)
   const [imageFiles, setImageFiles] = useState<File[]>([]) // Store File objects
   const [imagePreviews, setImagePreviews] = useState<string[]>([]) // Store preview URLs
 
@@ -543,15 +546,15 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                 </div>
               </div>
 
-              {/* Score & Tags */}
+              {/* Score */}
               <div className="bg-purple-50 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                  <Tag size={16} className="mr-2" />
+                  <Hash size={16} className="mr-2" />
                   Thông Tin Bổ Sung
                   <span className="text-gray-400 ml-2 text-xs">(Tùy chọn)</span>
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="w-full md:w-1/2 space-y-2">
                     <Label htmlFor="score" className="flex items-center text-sm font-medium text-gray-700">
                       <Hash size={14} className="mr-2 text-purple-600" />
                       Điểm số
@@ -563,22 +566,65 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                       step={0.5}
                       value={formData.score}
                       onChange={(e) => setFormData({ ...formData, score: Number(e.target.value) })}
-                      className="w-full border-gray-300 focus:border-purple-500"
+                      className="w-full border-gray-300 focus:border-purple-500 bg-white"
                     />
                   </div>
-
-                  <div className="space-y-2">
+                  <div className="w-full md:w-1/2 space-y-2">
                     <Label htmlFor="tags" className="flex items-center text-sm font-medium text-gray-700">
                       <Tag size={14} className="mr-2 text-purple-600" />
-                      Tags (phân cách bằng dấu phẩy)
+                      Tags
                     </Label>
-                    <Input
-                      id="tags"
-                      value={formData.tags}
-                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                      placeholder="VD: toán học, đại số, bậc 2"
-                      className="w-full border-gray-300 focus:border-purple-500"
-                    />
+                    <div className="relative flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Input
+                          id="tags"
+                          placeholder="Nhập tag, phân cách bằng dấu phẩy (,)"
+                          value={formData.tags}
+                          onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                          className="w-full border-gray-300 focus:border-purple-500 bg-white"
+                        />
+                        {availableTags && availableTags.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setShowTagDropdown(!showTagDropdown)}
+                            className="shrink-0 bg-white border-gray-300 hover:bg-gray-100"
+                            title="Chọn từ gợi ý"
+                          >
+                            <ChevronDown className={`h-4 w-4 transition-transform ${showTagDropdown ? 'rotate-180' : ''}`} />
+                          </Button>
+                        )}
+                      </div>
+
+                      {showTagDropdown && availableTags && availableTags.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 p-3 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-gray-500">Gợi ý tag (click để thêm):</span>
+                            <button type="button" onClick={() => setShowTagDropdown(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                              <X size={14} />
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {availableTags.map((tag) => (
+                              <span
+                                key={tag}
+                                onClick={() => {
+                                  const currentTags = formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+                                  if (!currentTags.includes(tag)) {
+                                    currentTags.push(tag)
+                                    setFormData({ ...formData, tags: currentTags.join(', ') })
+                                  }
+                                }}
+                                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 cursor-pointer hover:bg-purple-200 transition-colors border border-purple-200"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

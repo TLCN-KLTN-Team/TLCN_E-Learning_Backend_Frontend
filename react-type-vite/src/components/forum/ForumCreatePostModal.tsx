@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import forumApi, { type Category } from '@/services/api/forumApi';
 import { useAuth } from '@/context/auth-context/useAuth';
+import { useForumModeration } from '@/hooks/useForumModeration';
+import { useToast } from '@/hooks/use-toast';
 import {
     Dialog,
     DialogContent,
@@ -18,7 +20,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, ChevronsUpDown, Plus, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Check, ChevronsUpDown, Hash, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import RichTextEditor from '@/components/shared/RichTextEditor';
 
@@ -30,6 +33,8 @@ interface ForumCreatePostModalProps {
 const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, categories }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { isSuperAdmin } = useForumModeration();
+    const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -97,18 +102,13 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
         setLoading(true);
         try {
             let finalCategoryId = formData.categoryId;
-            console.log("Submitting form:", { formData, newCategoryName, categories });
 
-
-            // If creating a new category
-            if (newCategoryName) {
+            // If creating a new category (SuperAdmin only)
+            if (newCategoryName && isSuperAdmin) {
                 const newCatRes = await forumApi.createCategory({
                     name: newCategoryName,
                     description: `Chủ đề: ${newCategoryName}`
                 });
-                console.log("Create Category Response:", newCatRes);
-
-                // Handle response if wrapped in result property
                 // @ts-ignore
                 finalCategoryId = newCatRes.data.result ? newCatRes.data.result.id : newCatRes.data.id;
             } else if (!finalCategoryId) {
@@ -116,8 +116,21 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
             }
 
             if (!finalCategoryId) {
-                console.log("Validation failed: No Category ID", { finalCategoryId, formData });
-                alert("Vui lòng chọn hoặc nhập chủ đề!");
+                toast({
+                    variant: 'destructive',
+                    title: 'Thiếu chủ đề',
+                    description: 'Vui lòng chọn chủ đề cho bài viết.',
+                });
+                setLoading(false);
+                return;
+            }
+
+            if (!formData.content.trim()) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Thiếu nội dung',
+                    description: 'Vui lòng nhập nội dung bài viết.',
+                });
                 setLoading(false);
                 return;
             }
@@ -131,27 +144,29 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                 authorName: user ? `${user.firstName} ${user.lastName}` : 'Người dùng ẩn danh',
                 authorAvatar: user?.avatarUrl || ''
             });
-            console.log("Create Post Response:", res);
 
-            // Handle response if wrapped in result property
             // @ts-ignore
             const createdPostId = res.data.result ? res.data.result.id : res.data.id;
-
+            setOpen(false);
             if (createdPostId) {
                 navigate(`/forum/posts/${createdPostId}`);
             } else {
                 navigate('/forum');
-                window.location.reload();
             }
         } catch (error) {
-            console.error("Error creating post", error);
+            console.error('Error creating post', error);
+            toast({
+                variant: 'destructive',
+                title: 'Không thể đăng bài',
+                description: 'Có lỗi xảy ra. Vui lòng thử lại sau.',
+            });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={setOpen} modal={false}>
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
@@ -159,6 +174,9 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
             <DialogContent
                 overlayClassName="bg-transparent"
                 className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto z-[10000]"
+                onInteractOutside={(event) => {
+                    event.preventDefault();
+                }}
             >
                 <DialogHeader>
                     <DialogTitle>Tạo bài viết mới</DialogTitle>
@@ -223,7 +241,8 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                                         className="mb-2 h-9"
                                     />
                                     <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                        {searchTerm.trim() && !categories.some(c => c.name.toLowerCase() === searchTerm.trim().toLowerCase()) && (
+                                        {/* Option tạo chủ đề mới: chỉ hiện với SuperAdmin */}
+                                        {searchTerm.trim() && isSuperAdmin && !categories.some(c => c.name.toLowerCase() === searchTerm.trim().toLowerCase()) && (
                                             <div
                                                 className="flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-slate-100 text-blue-600"
                                                 onClick={(e) => {
@@ -274,63 +293,86 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="tags">Thẻ (Tags)</Label>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                            {tags.map((tag, index) => (
-                                <div key={index} className="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-sm">
-                                    <span>#{tag}</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeTag(tag)}
-                                        className="text-gray-400 hover:text-red-500 ml-1"
-                                        title="Xóa thẻ"
-                                        aria-label="Xóa thẻ"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            ))}
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="tags">Thẻ (Tags)</Label>
+                            <span className={`text-xs ${tags.length >= 5 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
+                                {tags.length}/5
+                            </span>
                         </div>
-                        <div className="flex gap-2 relative">
-                            <Input
-                                id="tags"
-                                placeholder="Nhập thẻ và nhấn Enter hoặc chọn từ gợi ý..."
-                                value={tagInput}
-                                onChange={e => setTagInput(e.target.value)}
-                                onKeyDown={handleTagKeyDown}
-                                onBlur={() => {
-                                    // Delay hide to allow click
-                                    setTimeout(() => setTagInput(prev => prev), 200);
-                                }}
-                            />
-                            <Button type="button" variant="outline" onClick={addTag}>
-                                <Plus size={16} />
-                            </Button>
 
-                            {/* Tag Suggestions */}
-                            {tagInput.trim() && (
-                                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
-                                    {existingTags
-                                        .filter(t => t.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(t))
-                                        .map(tag => (
-                                            <div
-                                                key={tag}
-                                                className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                                                onClick={() => {
-                                                    if (tags.length >= 5) return;
-                                                    setTags([...tags, tag]);
-                                                    setTagInput("");
-                                                }}
-                                            >
-                                                #{tag}
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            )}
-                        </div>
-                        <p className="text-xs text-gray-500">
-                            Thêm tối đa 5 thẻ để bài viết dễ dàng được tìm thấy hơn.
+                        {/* Selected tags */}
+                        {tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {tags.map((tag, index) => (
+                                    <Badge key={index} variant="secondary" className="gap-1 pl-2 pr-1.5 py-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">
+                                        <Hash size={9} />
+                                        {tag}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeTag(tag)}
+                                            className="ml-0.5 rounded-full hover:text-red-500 transition-colors"
+                                            aria-label="Xóa thẻ"
+                                        >
+                                            <X size={11} />
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Input */}
+                        {tags.length < 5 && (
+                            <div className="flex gap-2">
+                                <Input
+                                    id="tags"
+                                    placeholder="Nhập thẻ và nhấn Enter..."
+                                    value={tagInput}
+                                    onChange={e => setTagInput(e.target.value)}
+                                    onKeyDown={handleTagKeyDown}
+                                    className="text-sm"
+                                />
+                                <Button type="button" variant="outline" onClick={addTag} className="shrink-0">
+                                    <Plus size={16} />
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Inline tag suggestions */}
+                        {tags.length < 5 && (
+                            (() => {
+                                const suggested = existingTags
+                                    .filter(t => !tags.includes(t))
+                                    .filter(t => tagInput.trim() ? t.toLowerCase().includes(tagInput.toLowerCase()) : true)
+                                    .slice(0, 8);
+                                return suggested.length > 0 ? (
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-400">
+                                            {tagInput.trim() ? 'Gợi ý phù hợp:' : 'Thẻ phổ biến:'}
+                                        </p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {suggested.map(tag => (
+                                                <button
+                                                    key={tag}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (tags.length >= 5) return;
+                                                        setTags([...tags, tag]);
+                                                        setTagInput("");
+                                                    }}
+                                                    className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                                >
+                                                    <Hash size={9} />
+                                                    {tag}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : null;
+                            })()
+                        )}
+
+                        <p className="text-xs text-gray-400">
+                            Thêm tối đa 5 thẻ để bài viết dễ tìm kiếm hơn.
                         </p>
                     </div>
 
@@ -353,7 +395,7 @@ const ForumCreatePostModal: React.FC<ForumCreatePostModalProps> = ({ children, c
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                             Hủy
                         </Button>
-                        <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={loading}>
+                        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
                             {loading ? 'Đang đăng...' : 'Đăng bài'}
                         </Button>
                     </div>

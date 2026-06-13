@@ -23,11 +23,8 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.charset.StandardCharsets;
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+
 import org.web3j.crypto.Keys;
 import org.web3j.crypto.Sign;
 import org.web3j.utils.Numeric;
@@ -188,6 +185,7 @@ public class CertificateService {
                 byte[] pdfBytes = renderCertificatePdf(certificatePreview);
                 String pdfCid = uploadPdfToPinata(certificateCode, pdfBytes);
                 String pdfUrl = toIpfsUri(pdfCid);
+                String pdfHash = computeSha256Hex(pdfBytes);
 
                 HashMap<String, Object> metadataPayload = new HashMap<>();
                 metadataPayload.put("name", "Certificate of Completion - " + courseName);
@@ -219,6 +217,7 @@ public class CertificateService {
                         .finalScore(finalScore)
                         .grade(grade)
                         .certificateHash(certificateHash)
+                        .pdfHash(pdfHash)
                         .studentWallet(walletAddress)
                         .pdfCid(pdfCid)
                         .metadataCid(metadataCid)
@@ -309,6 +308,7 @@ public class CertificateService {
                     byte[] pdfBytes = renderCertificatePdf(certificatePreview);
                     String pdfCid = uploadPdfToPinata(certificateCode, pdfBytes);
                     String pdfUrl = toIpfsUri(pdfCid);
+                    String pdfHash = computeSha256Hex(pdfBytes);
 
                     HashMap<String, Object> metadataPayload = new HashMap<>();
                     metadataPayload.put("name", "Certificate of Completion - " + courseName);
@@ -340,6 +340,7 @@ public class CertificateService {
                             .finalScore(finalScore)
                             .grade(grade)
                             .certificateHash(certificateHash)
+                            .pdfHash(pdfHash)
                             .studentWallet(studentWallet)
                             .pdfCid(pdfCid)
                             .metadataCid(metadataCid)
@@ -704,12 +705,30 @@ public class CertificateService {
         return "ipfs://" + ipfsHash;
     }
 
-    public PublicCertificateVerificationResponse verifyCertificatePublicByHash(String certificateHash) {
-        CertificateResponse certificate = getCertificateByHash(certificateHash);
+    public PublicCertificateVerificationResponse verifyCertificatePublicByHash(String inputHash) {
+        // First try to find by PDF hash (SHA-256 of the actual PDF bytes)
+        CertificateResponse certificate = null;
+        Optional<Certificate> byPdfHash = certificateRepository.findByPdfHash(inputHash);
+        if (byPdfHash.isPresent()) {
+            certificate = toCertificateResponse(byPdfHash.get());
+            log.info("Certificate found by pdfHash: {}", inputHash);
+        } else {
+            // Fallback: try finding by certificateHash (legacy or metadata hash)
+            certificate = getCertificateByHash(inputHash);
+            if (certificate != null) {
+                log.info("Certificate found by certificateHash: {}", inputHash);
+            }
+        }
+
+        // Use the inputHash as the lookup key for on-chain verification;
+        // when found by pdfHash, on-chain verification uses the stored certificateHash
+        String onChainLookupHash = (certificate != null && certificate.getCertificateHash() != null)
+                ? certificate.getCertificateHash()
+                : inputHash;
 
         if (certificate == null) {
             try {
-                Web3jService.OnChainCertificateData onChainData = web3jService.verifyCertificateByHash(certificateHash);
+                Web3jService.OnChainCertificateData onChainData = web3jService.verifyCertificateByHash(onChainLookupHash);
 
                 if (onChainData.isValid()) {
                     CertificateResponse onChainCertificate = CertificateResponse.builder()
@@ -720,7 +739,7 @@ public class CertificateService {
                             .issueDate(onChainData.getIssueDate())
                             .contractAddress(web3jService.getContractAddress())
                             .status(CertificateStatus.ISSUED)
-                            .certificateHash(certificateHash)
+                            .certificateHash(inputHash)
                             .build();
 
                     return PublicCertificateVerificationResponse.builder()
@@ -744,7 +763,7 @@ public class CertificateService {
                         .message("Certificate hash not found or not valid on-chain")
                         .build();
             } catch (Exception exception) {
-                log.warn("Certificate hash verification failed. hash={}", certificateHash, exception);
+                log.warn("Certificate hash verification failed. hash={}", inputHash, exception);
                 return PublicCertificateVerificationResponse.builder()
                         .found(false)
                         .onChainChecked(false)
@@ -763,7 +782,7 @@ public class CertificateService {
         String maskedUserId = maskUserId(certificate.getUserId());
 
         try {
-            Web3jService.OnChainCertificateData onChainData = web3jService.verifyCertificateByHash(certificateHash);
+            Web3jService.OnChainCertificateData onChainData = web3jService.verifyCertificateByHash(onChainLookupHash);
             onChainChecked = true;
             onChainValid = onChainData.isValid();
             onChainUserId = onChainData.getUserId();
@@ -772,7 +791,7 @@ public class CertificateService {
 
             boolean coreDataMatched = Objects.equals(certificate.getUserId(), onChainUserId)
                     && Objects.equals(certificate.getCourseId(), onChainPublishedCourseId)
-                    && Objects.equals(certificate.getCertificateHash(), certificateHash);
+                    && Objects.equals(certificate.getCertificateHash(), onChainLookupHash);
 
             dataMatched = onChainData.isValid() && coreDataMatched;
 
@@ -784,7 +803,6 @@ public class CertificateService {
                 message = "Chứng chỉ tồn tại nhưng không hợp lệ trên blockchain";
             }
         } catch (Exception exception) {
-            log.warn("Unable to verify certificate hash on-chain. hash={}", certificateHash, exception);
             message = "Certificate hash found in platform records. On-chain check is temporarily unavailable";
         }
 
@@ -845,6 +863,20 @@ public class CertificateService {
         int visibleTail = Math.min(3, Math.max(1, length / 3));
         String tail = userId.substring(length - visibleTail);
         return "***" + tail;
+    }
+
+    private String computeSha256Hex(byte[] data) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(data);
+            StringBuilder hex = new StringBuilder(hashBytes.length * 2);
+            for (byte b : hashBytes) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to compute SHA-256 of bytes", e);
+        }
     }
 
     private String generateSha256Hex(String content) {
