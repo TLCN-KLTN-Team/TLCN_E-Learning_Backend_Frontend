@@ -52,6 +52,8 @@ const QuizModalEditor: React.FC<{
   const [availableClos, setAvailableClos] = useState<CourseObjectiveResponse[]>([])
   const [blueprintDraft, setBlueprintDraft] = useState<{ cloId: number; percentage: number }[]>([])
   const [randomQuestionCount, setRandomQuestionCount] = useState(10)
+  const [generationMode, setGenerationMode] = useState<"count" | "score">("count")
+  const [targetScore, setTargetScore] = useState(10)
 
   const filteredClos = useMemo(
     () => availableClos.filter((clo) => clo.courseId === Number(courseId)),
@@ -141,8 +143,13 @@ const QuizModalEditor: React.FC<{
       return
     }
 
-    if (!Number.isFinite(randomQuestionCount) || randomQuestionCount <= 0) {
+    if (generationMode === "count" && (!Number.isFinite(randomQuestionCount) || randomQuestionCount <= 0)) {
       toast.warning("Số câu cần sinh phải lớn hơn 0")
+      return
+    }
+
+    if (generationMode === "score" && (!Number.isFinite(targetScore) || targetScore <= 0)) {
+      toast.warning("Tổng điểm mục tiêu phải lớn hơn 0")
       return
     }
 
@@ -192,50 +199,98 @@ const QuizModalEditor: React.FC<{
         groupedByClo.set(question.cloId, existing)
       }
 
-      const targetCount = Math.floor(randomQuestionCount)
-      const rawAllocations = selectedBlueprintRows.map((row) => {
-        const exact = (targetCount * row.percentage) / 100
-        return {
-          cloId: row.cloId,
-          base: Math.floor(exact),
-          fractional: exact - Math.floor(exact),
-        }
-      })
-
-      let assignedCount = rawAllocations.reduce((sum, item) => sum + item.base, 0)
-      let remaining = Math.max(0, targetCount - assignedCount)
-
-      rawAllocations
-        .sort((a, b) => b.fractional - a.fractional)
-        .forEach((item) => {
-          if (remaining <= 0) return
-          item.base += 1
-          remaining -= 1
+      let rawAllocations: { cloId: number; base?: number; fractional?: number; targetScore?: number }[] = []
+      
+      if (generationMode === "count") {
+        const targetCount = Math.floor(randomQuestionCount)
+        rawAllocations = selectedBlueprintRows.map((row) => {
+          const exact = (targetCount * row.percentage) / 100
+          return {
+            cloId: row.cloId,
+            base: Math.floor(exact),
+            fractional: exact - Math.floor(exact),
+          }
         })
+
+        let assignedCount = rawAllocations.reduce((sum, item) => sum + (item.base || 0), 0)
+        let remaining = Math.max(0, targetCount - assignedCount)
+
+        rawAllocations
+          .sort((a, b) => (b.fractional || 0) - (a.fractional || 0))
+          .forEach((item) => {
+            if (remaining <= 0) return
+            item.base = (item.base || 0) + 1
+            remaining -= 1
+          })
+      } else {
+        const targetTotal = Number(targetScore)
+        rawAllocations = selectedBlueprintRows.map((row) => {
+          return {
+            cloId: row.cloId,
+            targetScore: (targetTotal * row.percentage) / 100,
+          }
+        })
+      }
 
       const currentQuestionIds = new Set((quiz.questions || []).map((q) => q.id).filter(Boolean) as number[])
       const pickedIds = new Set<number>()
       const pickedQuestions: QuestionLibraryResponse[] = []
 
       let shortage = 0
+      let missingScore = 0
+
       for (const allocation of rawAllocations) {
-        const pool = shuffle(
-          (groupedByClo.get(allocation.cloId) || []).filter(
-            (question) => !pickedIds.has(question.id) && !currentQuestionIds.has(question.id)
-          )
+        const pool = (groupedByClo.get(allocation.cloId) || []).filter(
+          (question) => !pickedIds.has(question.id) && !currentQuestionIds.has(question.id)
         )
 
-        const takeCount = Math.min(allocation.base, pool.length)
-        shortage += Math.max(0, allocation.base - takeCount)
+        if (generationMode === "count") {
+          const shuffledPool = shuffle(pool)
+          const takeCount = Math.min(allocation.base!, shuffledPool.length)
+          shortage += Math.max(0, allocation.base! - takeCount)
 
-        for (let index = 0; index < takeCount; index++) {
-          const question = pool[index]
-          pickedQuestions.push(question)
-          pickedIds.add(question.id)
+          for (let index = 0; index < takeCount; index++) {
+            const question = shuffledPool[index]
+            pickedQuestions.push(question)
+            pickedIds.add(question.id)
+          }
+        } else {
+          const target = allocation.targetScore!
+          let bestSubset: QuestionLibraryResponse[] = []
+          let bestSum = 0
+
+          for (let i = 0; i < 50; i++) {
+            const shuffled = shuffle(pool)
+            let currentSubset: QuestionLibraryResponse[] = []
+            let currentSum = 0
+            for (const q of shuffled) {
+              const s = q.score || 10
+              if (currentSum + s <= target) {
+                currentSum += s
+                currentSubset.push(q)
+              }
+              if (currentSum === target) break
+            }
+            if (currentSum === target) {
+              bestSubset = currentSubset
+              bestSum = currentSum
+              break
+            }
+            if (currentSum > bestSum) {
+              bestSum = currentSum
+              bestSubset = currentSubset
+            }
+          }
+
+          bestSubset.forEach(q => {
+            pickedQuestions.push(q)
+            pickedIds.add(q.id)
+          })
+          missingScore += Math.max(0, target - bestSum)
         }
       }
 
-      if (shortage > 0) {
+      if (generationMode === "count" && shortage > 0) {
         const fallbackPool = shuffle(
           dedupedCandidates.filter(
             (question) => !pickedIds.has(question.id) && !currentQuestionIds.has(question.id)
@@ -247,6 +302,40 @@ const QuizModalEditor: React.FC<{
           pickedQuestions.push(question)
           pickedIds.add(question.id)
         }
+      } else if (generationMode === "score" && missingScore > 0) {
+        const fallbackPool = dedupedCandidates.filter(
+          (question) => !pickedIds.has(question.id) && !currentQuestionIds.has(question.id)
+        )
+        const target = missingScore
+        let bestSubset: QuestionLibraryResponse[] = []
+        let bestSum = 0
+
+        for (let i = 0; i < 50; i++) {
+          const shuffled = shuffle(fallbackPool)
+          let currentSubset: QuestionLibraryResponse[] = []
+          let currentSum = 0
+          for (const q of shuffled) {
+            const s = q.score || 10
+            if (currentSum + s <= target) {
+              currentSum += s
+              currentSubset.push(q)
+            }
+            if (currentSum === target) break
+          }
+          if (currentSum === target) {
+            bestSubset = currentSubset
+            bestSum = currentSum
+            break
+          }
+          if (currentSum > bestSum) {
+            bestSum = currentSum
+            bestSubset = currentSubset
+          }
+        }
+        bestSubset.forEach(q => {
+          pickedQuestions.push(q)
+          pickedIds.add(q.id)
+        })
       }
 
       if (pickedQuestions.length === 0) {
@@ -261,12 +350,24 @@ const QuizModalEditor: React.FC<{
 
       handleQuestionsChange([...(quiz.questions || []), ...newQuestions])
 
-      if (pickedQuestions.length < targetCount) {
-        toast.warning(
-          `Chỉ sinh được ${pickedQuestions.length}/${targetCount} câu do ngân hàng chưa đủ câu hỏi phù hợp.`
-        )
+      if (generationMode === "count") {
+        const targetCount = Math.floor(randomQuestionCount)
+        if (pickedQuestions.length < targetCount) {
+          toast.warning(
+            `Chỉ sinh được ${pickedQuestions.length}/${targetCount} câu do ngân hàng chưa đủ câu hỏi phù hợp.`
+          )
+        } else {
+          toast.success(`Đã sinh ${pickedQuestions.length} câu hỏi theo ma trận CĐR.`)
+        }
       } else {
-        toast.success(`Đã sinh ${pickedQuestions.length} câu hỏi theo ma trận CĐR.`)
+        const totalPickedScore = pickedQuestions.reduce((sum, q) => sum + (q.score || 10), 0)
+        if (totalPickedScore < targetScore) {
+          toast.warning(
+            `Chỉ sinh được ${totalPickedScore}/${targetScore} điểm do ngân hàng chưa đủ câu hỏi phù hợp.`
+          )
+        } else {
+          toast.success(`Đã sinh ${pickedQuestions.length} câu hỏi (tổng ${totalPickedScore} điểm) theo ma trận CĐR.`)
+        }
       }
     } catch (error) {
       console.error("Error generating questions by blueprint:", error)
@@ -405,16 +506,16 @@ const QuizModalEditor: React.FC<{
               <div className="space-y-2">
                 {blueprintDraft.map((row, index) => (
                   <div key={`draft-${index}`} className="grid grid-cols-12 gap-2 items-end bg-white rounded border p-2">
-                    <div className="col-span-7">
+                    <div className="col-span-7 min-w-0">
                       <Label className="text-xs">CĐR</Label>
                       <Select
                         value={String(row.cloId)}
                         onValueChange={(value) => updateBlueprintRow(index, { cloId: Number(value) })}
                       >
-                        <SelectTrigger className="bg-white">
+                        <SelectTrigger className="w-full bg-white text-left">
                           <SelectValue placeholder="Chọn CĐR" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white z-50">
+                        <SelectContent className="bg-white z-[10000]">
                           {filteredClos
                             .filter((clo) => clo.id === row.cloId || !selectedCloIds.has(clo.id))
                             .map((clo) => (
@@ -457,28 +558,52 @@ const QuizModalEditor: React.FC<{
 
             <div className="grid grid-cols-12 gap-2 items-end">
               <div className="col-span-4">
-                <Label className="text-xs">Số câu cần sinh</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={randomQuestionCount}
-                  onChange={(e) => setRandomQuestionCount(Math.max(1, Number(e.target.value) || 1))}
-                />
+                <Label className="text-xs">Chế độ sinh</Label>
+                <Select value={generationMode} onValueChange={(val: any) => setGenerationMode(val)}>
+                  <SelectTrigger className="w-full bg-white text-left">
+                    <SelectValue placeholder="Chọn chế độ" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-[10000]">
+                    <SelectItem value="count">Theo số lượng câu hỏi</SelectItem>
+                    <SelectItem value="score">Theo tổng điểm</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="col-span-8">
+              <div className="col-span-4">
+                {generationMode === "count" ? (
+                  <>
+                    <Label className="text-xs">Số câu cần sinh</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={randomQuestionCount}
+                      onChange={(e) => setRandomQuestionCount(Math.max(1, Number(e.target.value) || 1))}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Label className="text-xs">Tổng điểm mục tiêu</Label>
+                    <Input
+                      type="number"
+                      min={0.5}
+                      step={0.5}
+                      value={targetScore}
+                      onChange={(e) => setTargetScore(Math.max(0.5, Number(e.target.value) || 10))}
+                    />
+                  </>
+                )}
+              </div>
+              <div className="col-span-4">
                 <Button
                   type="button"
                   onClick={handleGenerateQuestionsByBlueprint}
                   disabled={isGeneratingQuestions || blueprintDraft.length === 0}
-                  className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700 h-10"
                 >
                   {isGeneratingQuestions ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang sinh câu hỏi...
-                    </>
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Sinh ngẫu nhiên theo ma trận CĐR"
+                    "Sinh câu hỏi"
                   )}
                 </Button>
               </div>

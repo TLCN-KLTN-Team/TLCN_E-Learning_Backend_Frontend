@@ -81,6 +81,31 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(apiResponse);
     }
 
+    @ExceptionHandler(value = org.springframework.dao.DataIntegrityViolationException.class)
+    ResponseEntity<ApiResponse> handlingDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException exception) {
+        log.error("DataIntegrityViolationException: ", exception);
+        ApiResponse apiResponse = new ApiResponse();
+
+        apiResponse.setCode(String.valueOf(ErrorCode.DATA_INTEGRITY_VIOLATION.getCode()));
+        
+        String message = ErrorCode.DATA_INTEGRITY_VIOLATION.getMessage();
+        Throwable rootCause = exception.getRootCause();
+        if (rootCause != null) {
+            String rootMsg = rootCause.getMessage();
+            if (rootMsg != null) {
+                if (rootMsg.contains("Data too long") || rootMsg.contains("Data truncation")) {
+                    message = "Dữ liệu nhập vào quá dài so với giới hạn cho phép. Vui lòng kiểm tra và rút ngắn lại.";
+                } else if (rootMsg.contains("Duplicate entry")) {
+                    message = "Dữ liệu đã tồn tại trong hệ thống (trùng mã hoặc giá trị duy nhất).";
+                }
+            }
+        }
+        
+        apiResponse.setMessage(message);
+
+        return ResponseEntity.badRequest().body(apiResponse);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse> handlingRuntimeException(RuntimeException exception) {
         ApiResponse apiResponse = new ApiResponse();

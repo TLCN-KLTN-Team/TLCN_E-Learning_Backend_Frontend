@@ -44,7 +44,7 @@ public class AiRecommendationService {
     private final ReviewService reviewService;
     private final OrderService orderService;
 
-    @Value("${AI_SERVICE_URL:http://localhost:8002/api/v1/recommend}")
+    @Value("${AI_SERVICE_URL:http://localhost:8004/api/v1/recommend}")
     private String aiServiceUrl;
 
     public List<PublishedCourseCardResponse> getRecommendedCourses() {

@@ -93,6 +93,10 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
       errors.maxStudents = "Sĩ số tối đa phải ít nhất là 1";
     }
 
+    if (formData.description && formData.description.length > 1000) {
+      errors.description = "Mô tả không được vượt quá 1000 ký tự";
+    }
+
     // Check for duplicate class code (only when creating new class)
     if (!editingClass && classes.some(cls => cls.classCode === formData.classCode.trim())) {
       errors.classCode = "Mã lớp học đã tồn tại";
@@ -567,16 +571,30 @@ const ClassManagementModal: React.FC<ClassManagementModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Mô Tả
-                      </label>
+                      <div className="flex justify-between items-center">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Mô Tả
+                        </label>
+                        <span className="text-xs text-gray-400">
+                          {(formData.description || "").length}/1000 ký tự
+                        </span>
+                      </div>
                       <textarea
                         value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 transition-colors"
+                        onChange={(e) => {
+                          setFormData({ ...formData, description: e.target.value });
+                          if (formErrors.description) setFormErrors({ ...formErrors, description: "" });
+                        }}
+                        className={`w-full px-3 py-2 border rounded-lg focus:border-blue-500 transition-colors ${
+                          formErrors.description ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
+                        }`}
                         rows={3}
+                        maxLength={1000}
                         placeholder="Mô tả tùy chọn cho lớp học này..."
                       />
+                      {formErrors.description && (
+                        <p className="text-red-500 text-sm">{formErrors.description}</p>
+                      )}
                     </div>
                   </div>
                 )}

@@ -80,7 +80,7 @@ const ForumPostDetail: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { isSuperAdmin, pinPost, unpinPost, lockPost, unlockPost, softDeletePost, softDeleteComment } = useForumModeration();
+    const { isSuperAdmin, pinPost, unpinPost, lockPost, unlockPost, softDeletePost } = useForumModeration();
     const [postData, setPostData] = useState<PostResponse | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
