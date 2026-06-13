@@ -82,8 +82,8 @@ const TraningUnitItem = ({
 
       {/* Loại hình */}
       <td className="px-4 py-3 hidden lg:table-cell">
-        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${getUnitTypeStyle(unit.type)}`}>
-          {getUnitTypeLabel(unit.type)}
+        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${getUnitTypeStyle(unit.type || "")}`}>
+          {getUnitTypeLabel(unit.type || "")}
         </span>
       </td>
 

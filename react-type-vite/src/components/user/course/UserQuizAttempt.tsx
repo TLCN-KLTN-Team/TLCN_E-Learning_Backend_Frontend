@@ -37,6 +37,15 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
   const quizId = quizIdProp ? String(quizIdProp) : quizIdParam
   const navigate = useNavigate()
 
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArray = [...array]
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[newArray[i], newArray[j]] = [newArray[j], newArray[i]]
+    }
+    return newArray
+  }
+
   const [viewMode, setViewMode] = useState<ViewMode>('taking')
   const [quizViewMode, setQuizViewMode] = useState<QuizViewMode>('single')
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -59,7 +68,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
       const savedState = localStorage.getItem(`quiz-attempt-${quizId}`)
       if (savedState) {
         try {
-          const { attemptId, timeLeft: savedTimeLeft, answers, timestamp, flaggedQuestions: savedFlagged } = JSON.parse(savedState)
+          const { attemptId, timeLeft: savedTimeLeft, answers, timestamp, flaggedQuestions: savedFlagged, shuffledQuestions: savedShuffledQuestions } = JSON.parse(savedState)
           const elapsed = Math.floor((Date.now() - timestamp) / 1000)
           const newTimeLeft = Math.max(0, savedTimeLeft - elapsed)
 
@@ -79,7 +88,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
               setFlaggedQuestions(new Set(savedFlagged))
             }
 
-            loadQuizData(true)
+            loadQuizData(true, savedShuffledQuestions)
             return
           } else {
             localStorage.removeItem(`quiz-attempt-${quizId}`)
@@ -111,17 +120,18 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
   }, [viewMode])
 
   useEffect(() => {
-    if (viewMode === 'taking' && currentAttemptId && quizId) {
+    if (viewMode === 'taking' && currentAttemptId && quizId && quiz) {
       const state = {
         attemptId: currentAttemptId,
         timeLeft,
         answers: Array.from(userAnswers.values()),
         timestamp: Date.now(),
-        flaggedQuestions: Array.from(flaggedQuestions)
+        flaggedQuestions: Array.from(flaggedQuestions),
+        shuffledQuestions: Array.from(quiz.questions)
       }
       localStorage.setItem(`quiz-attempt-${quizId}`, JSON.stringify(state))
     }
-  }, [viewMode, currentAttemptId, timeLeft, userAnswers, quizId, flaggedQuestions])
+  }, [viewMode, currentAttemptId, timeLeft, userAnswers, quizId, flaggedQuestions, quiz])
 
   useEffect(() => {
     if (viewMode === 'result' && attemptResult) {
@@ -131,7 +141,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
     }
   }, [viewMode, attemptResult])
 
-  const loadQuizData = async (skipAutoStart = false) => {
+  const loadQuizData = async (skipAutoStart = false, savedQuestions?: QuestionResponse[]) => {
     try {
       setLoading(true)
       console.log('🔄 Đang load quiz với ID:', quizId)
@@ -143,6 +153,20 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
       console.log('✅ Quiz data nhận được:', quizData)
       console.log('📝 Chi tiết questions:', quizData.questions)
       console.log('📜 Lịch sử attempts:', history)
+
+      if (savedQuestions && savedQuestions.length > 0) {
+        quizData.questions = savedQuestions
+      } else if (quizData.questions) {
+        let questionsArray = Array.from(quizData.questions)
+        questionsArray = shuffleArray(questionsArray)
+        questionsArray.forEach(q => {
+          if (q.answers) {
+            q.answers = shuffleArray(Array.from(q.answers))
+          }
+        })
+        quizData.questions = questionsArray
+      }
+
       setQuiz(quizData)
       setAttemptHistory(history)
 
@@ -491,7 +515,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
 
   // Taking Quiz View
   if (viewMode === 'taking') {
-    const questionsArray = Array.from(quiz.questions).sort((a, b) => a.orderIndex - b.orderIndex)
+    const questionsArray = Array.from(quiz.questions)
 
     console.log('📝 Rendering questions:')
     console.log('- Tổng số questions:', questionsArray.length)
@@ -661,7 +685,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
             </p>
 
             <div className="flex flex-wrap gap-3">
-              {question.answers && Array.from(question.answers).sort((a, b) => a.orderIndex - b.orderIndex).map((answer) => {
+              {question.answers && Array.from(question.answers).map((answer) => {
                 const isUsed = usedAnswerIds.has(answer.id)
                 return (
                   <div
@@ -692,7 +716,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
       console.log('Question.answers type:', typeof question.answers)
       console.log('Question.answers:', question.answers)
       console.log('Is array?', Array.isArray(question.answers))
-      const answersArray = Array.from(question.answers).sort((a, b) => a.orderIndex - b.orderIndex)
+      const answersArray = Array.from(question.answers)
 
       console.log('answersArray sau khi sort:', answersArray)
       console.log('answersArray length:', answersArray.length)
@@ -1044,7 +1068,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
 
   // Result View
   if (viewMode === 'result' && attemptResult) {
-    const questionsArray = Array.from(quiz.questions).sort((a, b) => a.orderIndex - b.orderIndex)
+    const questionsArray = Array.from(quiz.questions)
     const answersByQuestion = new Map(attemptResult.answers.map(answer => [answer.questionId, answer]))
 
     return (
@@ -1157,7 +1181,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
             <div className="space-y-4">
               {questionsArray.map((question, idx) => {
                 const attemptAnswer = answersByQuestion.get(question.id)
-                const answersArray = Array.from(question.answers || []).sort((a, b) => a.orderIndex - b.orderIndex)
+                const answersArray = Array.from(question.answers || [])
                 const answerById = new Map(answersArray.map(a => [a.id, a]))
                 const correctAnswers = answersArray.filter(a => a.isCorrect)
 

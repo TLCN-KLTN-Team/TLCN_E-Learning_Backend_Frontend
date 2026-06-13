@@ -243,8 +243,8 @@ const SubmissionModal = ({ unit, isOpen, onClose }: SubmissionModalProps) => {
                   <span className="text-sm font-medium text-gray-700">
                     Loại hình:
                   </span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${getUnitTypeStyle(unit.type)}`}>
-                    {getUnitTypeLabel(unit.type)}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${getUnitTypeStyle(unit.type || "")}`}>
+                    {getUnitTypeLabel(unit.type || "")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

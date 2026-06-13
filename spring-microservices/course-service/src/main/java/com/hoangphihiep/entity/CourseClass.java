@@ -51,7 +51,7 @@ public class CourseClass implements Serializable {
     @Column(name = "status")
     private String status = "ACTIVE";
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Temporal(TemporalType.TIMESTAMP)

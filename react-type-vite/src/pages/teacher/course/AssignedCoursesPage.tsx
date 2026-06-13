@@ -21,7 +21,7 @@ const AssignedCoursesPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(9)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
 
@@ -276,15 +276,17 @@ const AssignedCoursesPage: React.FC = () => {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <Button variant="outline" asChild className="h-12 text-xl border-border/70">
-                          <Link to={`/teacher/courses/${course.id}/edit`}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Chỉnh sửa
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" asChild className="h-10 text-sm px-1 lg:px-2 border-border/70">
+                          <Link to={`/teacher/courses/${course.id}/edit`} className="flex items-center justify-center">
+                            <Edit className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                            <span className="truncate">Chỉnh sửa</span>
                           </Link>
                         </Button>
-                        <Button asChild className="h-12 text-xl font-semibold shadow-sm bg-blue-600 hover:bg-blue-700 text-white">
-                          <Link to={`/teacher/courses/${course.id}/manage`}>Đóng gói</Link>
+                        <Button asChild className="h-10 text-sm px-1 lg:px-2 font-semibold shadow-sm bg-blue-600 hover:bg-blue-700 text-white">
+                          <Link to={`/teacher/courses/${course.id}/manage`} className="flex items-center justify-center">
+                            <span className="truncate">Đóng gói</span>
+                          </Link>
                         </Button>
                       </div>
                     </>
@@ -335,17 +337,17 @@ const AssignedCoursesPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Button variant="outline" asChild className="h-12 text-xl border-border/70">
-                          <Link to={`/teacher/courses/${course.id}/edit`}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Chỉnh sửa
+                      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Button variant="outline" asChild className="h-10 text-sm px-2 border-border/70">
+                          <Link to={`/teacher/courses/${course.id}/edit`} className="flex items-center justify-center">
+                            <Edit className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                            <span className="truncate">Chỉnh sửa</span>
                           </Link>
                         </Button>
-                        <Button asChild className="h-12 text-xl font-semibold shadow-sm bg-blue-600 hover:bg-blue-700 text-white">
-                          <Link to={`/teacher/courses/${course.id}/manage`}>
-                            Đóng gói
-                            <ArrowUpRight className="w-4 h-4 ml-2" />
+                        <Button asChild className="h-10 text-sm px-2 font-semibold shadow-sm bg-blue-600 hover:bg-blue-700 text-white">
+                          <Link to={`/teacher/courses/${course.id}/manage`} className="flex items-center justify-center">
+                            <span className="truncate">Đóng gói</span>
+                            <ArrowUpRight className="w-3.5 h-3.5 ml-1.5 shrink-0" />
                           </Link>
                         </Button>
                       </div>

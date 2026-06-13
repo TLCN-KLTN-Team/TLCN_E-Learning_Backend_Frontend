@@ -40,6 +40,15 @@ const QuizTakingPage: React.FC = () => {
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set())
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArray = [...array]
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[newArray[i], newArray[j]] = [newArray[j], newArray[i]]
+    }
+    return newArray
+  }
+
   // Map question types to Vietnamese
   const getQuestionTypeLabel = (type: string) => {
     const typeMap: Record<string, string> = {
@@ -69,7 +78,7 @@ const QuizTakingPage: React.FC = () => {
       const savedState = localStorage.getItem(`quiz-taking-${quizId}`)
       if (savedState) {
         try {
-          const { answers: savedAnswers, timeRemaining: savedTimeRemaining, timestamp, flaggedQuestions: savedFlagged } = JSON.parse(savedState)
+          const { answers: savedAnswers, timeRemaining: savedTimeRemaining, timestamp, flaggedQuestions: savedFlagged, shuffledQuestions: savedShuffledQuestions } = JSON.parse(savedState)
           const elapsed = Math.floor((Date.now() - timestamp) / 1000)
           const newTimeRemaining = Math.max(0, savedTimeRemaining - elapsed)
 
@@ -88,7 +97,7 @@ const QuizTakingPage: React.FC = () => {
             }
 
             // Still need to load quiz data
-            fetchQuizData(true) // Pass flag to skip time reset
+            fetchQuizData(true, savedShuffledQuestions) // Pass flag to skip time reset and pass saved shuffled questions
             return
           } else {
             // Clear expired state
@@ -136,21 +145,30 @@ const QuizTakingPage: React.FC = () => {
         answers: Array.from(answers.values()),
         timeRemaining,
         timestamp: Date.now(),
-        flaggedQuestions: Array.from(flaggedQuestions)
+        flaggedQuestions: Array.from(flaggedQuestions),
+        shuffledQuestions: questions
       }
       localStorage.setItem(`quiz-taking-${quizId}`, JSON.stringify(state))
     }
-  }, [quizId, quiz, answers, timeRemaining, flaggedQuestions])
+  }, [quizId, quiz, answers, timeRemaining, flaggedQuestions, questions])
 
-  const fetchQuizData = async (skipTimeReset = false) => {
+  const fetchQuizData = async (skipTimeReset = false, savedQuestions?: QuestionResponse[]) => {
     try {
       const quizData = await quizApi.getQuizDetail(Number(quizId))
       setQuiz(quizData)
 
-      if (quizData.questions) {
-        const questionsArray = Array.from(quizData.questions).sort(
-          (a, b) => a.orderIndex - b.orderIndex
-        )
+      if (savedQuestions && savedQuestions.length > 0) {
+        setQuestions(savedQuestions)
+      } else if (quizData.questions) {
+        let questionsArray = Array.from(quizData.questions)
+        questionsArray = shuffleArray(questionsArray)
+        
+        questionsArray.forEach(q => {
+          if (q.answers) {
+            q.answers = shuffleArray(Array.from(q.answers))
+          }
+        })
+        
         setQuestions(questionsArray)
       }
 
@@ -425,7 +443,6 @@ const QuizTakingPage: React.FC = () => {
           <div className="flex flex-wrap gap-3">
             {question.answers &&
               Array.from(question.answers)
-                .sort((a, b) => a.orderIndex - b.orderIndex)
                 .map((answer) => {
                   const isUsed = usedAnswerIds.has(answer.id)
                   return (
@@ -555,7 +572,6 @@ const QuizTakingPage: React.FC = () => {
             <>
               {question.answers &&
                 Array.from(question.answers)
-                  .sort((a, b) => a.orderIndex - b.orderIndex)
                   .map((answer) => {
                     const isSelected = currentAnswer?.selectedAnswerIds?.includes(answer.id)
                     return (
@@ -591,7 +607,6 @@ const QuizTakingPage: React.FC = () => {
             <>
               {question.answers &&
                 Array.from(question.answers)
-                  .sort((a, b) => a.orderIndex - b.orderIndex)
                   .map((answer) => (
                     <label
                       key={answer.id}

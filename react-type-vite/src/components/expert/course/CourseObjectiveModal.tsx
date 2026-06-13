@@ -65,7 +65,6 @@ const CourseObjectiveModal: React.FC<CourseObjectiveModalProps> = ({
       setCloCode("");
       setCloDescription("");
       await loadCourseObjectives();
-      onSuccess?.();
     } catch (error: any) {
       console.error("Error creating CĐR:", error);
       const message = error?.response?.data?.message || "Không thể tạo CĐR";
@@ -87,7 +86,6 @@ const CourseObjectiveModal: React.FC<CourseObjectiveModalProps> = ({
         toast.success("Đã kích hoạt lại CĐR");
       }
       await loadCourseObjectives();
-      onSuccess?.();
     } catch (error: any) {
       console.error("Error toggling CĐR status:", error);
       const message = error?.response?.data?.message || "Không thể cập nhật trạng thái CĐR";

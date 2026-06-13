@@ -211,6 +211,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
       // Add orderIndex to answers based on array position
       const formDataWithOrder = {
         ...formData,
+        score: Number(formData.score) || 0,
         // Only include tags if it has content
         tags: formData.tags?.trim() || undefined,
         answers: formData.answers.map((answer, index) => ({
@@ -565,7 +566,7 @@ const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
                       min={0}
                       step={0.5}
                       value={formData.score}
-                      onChange={(e) => setFormData({ ...formData, score: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, score: e.target.value as any })}
                       className="w-full border-gray-300 focus:border-purple-500 bg-white"
                     />
                   </div>

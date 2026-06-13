@@ -118,8 +118,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           collaborative_editing: false,
           paste_as_text: false,
           paste_data_images: true,
-          paste_remove_styles_if_webkit: false,
-          paste_webkit_styles: 'all',
           // Real server upload — replaces the old base64 fallback
           images_upload_handler: handleImageUpload,
           // Allow dragging images directly into the editor
@@ -133,6 +131,20 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               }
             });
             editor.on('PastePostProcess', (e: any) => {
+              // Remove inline styles that might make pasted text look blurry or have wrong colors
+              const allElements = e.node.querySelectorAll('*');
+              allElements.forEach((el: any) => {
+                el.style.color = '';
+                el.style.backgroundColor = '';
+                el.style.fontFamily = '';
+                el.style.fontSize = '';
+                el.style.fontWeight = '';
+                el.style.lineHeight = '';
+                // If style attribute is empty, remove it
+                if (!el.getAttribute('style')) {
+                  el.removeAttribute('style');
+                }
+              });
               e.node.innerHTML = cleanHTML(e.node.innerHTML);
             });
           }

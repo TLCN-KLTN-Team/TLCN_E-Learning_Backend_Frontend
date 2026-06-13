@@ -158,11 +158,10 @@ export default function QuizEditor({
           </h2>
           {selectedCourseId && (
             <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                allAssigned
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${allAssigned
                   ? "bg-emerald-100 text-emerald-700"
                   : "bg-amber-100 text-amber-700"
-              }`}
+                }`}
             >
               {assignedCount}/{questions.length} câu đã gán CĐR
             </span>
@@ -289,52 +288,51 @@ function QuestionCard({
       {(q.questionType === "SINGLE_CHOICE" ||
         q.questionType === "MULTIPLE_CHOICE" ||
         q.questionType === "TRUE_FALSE") && (
-        <div className="space-y-2">
-          {q.options.map((opt, oi) => (
-            <div key={opt.id} className="flex items-center gap-2">
-              {q.questionType === "MULTIPLE_CHOICE" ? (
+          <div className="space-y-2">
+            {q.options.map((opt, oi) => (
+              <div key={opt.id} className="flex items-center gap-2">
+                {q.questionType === "MULTIPLE_CHOICE" ? (
+                  <input
+                    type="checkbox"
+                    checked={opt.isCorrect}
+                    onChange={() => {
+                      const newOpts = q.options.map((o, i) =>
+                        i === oi ? { ...o, isCorrect: !o.isCorrect } : o
+                      );
+                      onUpdate({ options: newOpts });
+                    }}
+                    className="h-4 w-4 rounded border-border text-primary accent-primary"
+                  />
+                ) : (
+                  <input
+                    type="radio"
+                    name={`q_${q.id}`}
+                    checked={opt.isCorrect}
+                    onChange={() => {
+                      const newOpts = q.options.map((o, i) => ({
+                        ...o,
+                        isCorrect: i === oi,
+                      }));
+                      onUpdate({ options: newOpts });
+                    }}
+                    className="h-4 w-4 border-border text-primary accent-primary"
+                  />
+                )}
                 <input
-                  type="checkbox"
-                  checked={opt.isCorrect}
-                  onChange={() => {
-                    const newOpts = q.options.map((o, i) =>
-                      i === oi ? { ...o, isCorrect: !o.isCorrect } : o
-                    );
+                  type="text"
+                  value={opt.text}
+                  onChange={(e) => {
+                    const newOpts = [...q.options];
+                    newOpts[oi] = { ...newOpts[oi], text: e.target.value };
                     onUpdate({ options: newOpts });
                   }}
-                  className="h-4 w-4 rounded border-border text-primary accent-primary"
+                  className={`flex-1 rounded-md border px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${opt.isCorrect ? "bg-success/5 border-success/30" : "bg-background"
+                    }`}
                 />
-              ) : (
-                <input
-                  type="radio"
-                  name={`q_${q.id}`}
-                  checked={opt.isCorrect}
-                  onChange={() => {
-                    const newOpts = q.options.map((o, i) => ({
-                      ...o,
-                      isCorrect: i === oi,
-                    }));
-                    onUpdate({ options: newOpts });
-                  }}
-                  className="h-4 w-4 border-border text-primary accent-primary"
-                />
-              )}
-              <input
-                type="text"
-                value={opt.text}
-                onChange={(e) => {
-                  const newOpts = [...q.options];
-                  newOpts[oi] = { ...newOpts[oi], text: e.target.value };
-                  onUpdate({ options: newOpts });
-                }}
-                className={`flex-1 rounded-md border px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
-                  opt.isCorrect ? "bg-success/5 border-success/30" : "bg-background"
-                }`}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+              </div>
+            ))}
+          </div>
+        )}
 
       {/* FILL_IN_THE_BLANK answers */}
       {q.questionType === "FILL_IN_THE_BLANK" && (
@@ -414,13 +412,12 @@ function QuestionCard({
             onUpdate({ cloId: e.target.value ? Number(e.target.value) : undefined })
           }
           disabled={!courseSelected}
-          className={`w-full rounded-md border px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
-            !courseSelected
+          className={`w-full rounded-md border px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${!courseSelected
               ? "bg-muted text-muted-foreground cursor-not-allowed"
               : q.cloId
                 ? "bg-background border-border"
                 : "bg-destructive/5 border-destructive/40"
-          }`}
+            }`}
         >
           <option value="">
             {!courseSelected ? "Chọn khóa học trước" : "Chọn chuẩn đầu ra"}

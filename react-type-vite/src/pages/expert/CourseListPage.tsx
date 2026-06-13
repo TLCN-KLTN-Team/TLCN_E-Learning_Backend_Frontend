@@ -173,6 +173,10 @@ const CourseListPage: React.FC = () => {
     setSelectedCourse(null);
   };
 
+  const handleUpdateWithoutClose = () => {
+    loadCourses();
+  };
+
   const handleViewDetail = (course: CourseResponse) => {
     setSelectedCourse(course);
     setShowCourseDetail(true);
@@ -1015,7 +1019,7 @@ const CourseListPage: React.FC = () => {
         onClose={() => setShowClassManagement(false)}
         course={selectedCourse}
         educationalUnitId={educationalUnitId}
-        onSuccess={handleSuccess}
+        onSuccess={handleUpdateWithoutClose}
       />
     </div>
   );
