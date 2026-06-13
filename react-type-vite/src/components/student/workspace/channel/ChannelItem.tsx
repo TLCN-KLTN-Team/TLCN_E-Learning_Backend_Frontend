@@ -5,21 +5,25 @@ interface ChannelItemProps {
   channel: BasicChannelResponse;
   isSelected: boolean;
   onSelect: (channel: BasicChannelResponse) => void;
-  onInvitePeople?: BasicChannelResponse
-  onSettings?: BasicChannelResponse
+  onInvitePeople?: (channel: BasicChannelResponse) => void;
+  onSettings?: (channel: BasicChannelResponse) => void;
 }
 
 const ChannelItem = ({
   channel,
   isSelected,
   onSelect,
+  onInvitePeople,
+  onSettings,
 }: ChannelItemProps) => {
   const handleInvitePeople = (e: React.MouseEvent) => {
     e.stopPropagation();
+    onInvitePeople?.(channel);
   };
 
   const handleSettings = (e: React.MouseEvent) => {
     e.stopPropagation();
+    onSettings?.(channel);
   };
 
   return (

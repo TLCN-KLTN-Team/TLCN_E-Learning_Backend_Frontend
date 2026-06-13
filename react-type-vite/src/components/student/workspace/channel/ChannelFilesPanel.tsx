@@ -8,6 +8,7 @@ import {
   Loader2,
   Save,
   Send,
+  Trophy,
   Upload,
   X,
 } from "lucide-react";
@@ -18,17 +19,22 @@ import {
   type AttachmentResponse,
   type ChannelResponse,
   type CrossReviewScoreResponse,
+  type ScoreCollectionStatus,
   type SessionGroupSubmissionsResponse,
 } from "@/types/chat.types";
 import {
+  collectSessionScores,
   getChannelAttachments,
   getCrossReviewAttachments,
   getMyCrossReviews,
+  getSessionById,
   getSessionSubmissions,
   submitBatchCrossReview,
   uploadChannelFile,
 } from "@/services/api/workspace/channel.api";
 import { derivePhase } from "@/utils/channelPhase";
+import { useAuth } from "@/context/auth-context/useAuth";
+import { hasRole } from "@/utils/roleUtils";
 
 interface ChannelFilesPanelProps {
   isOpen: boolean;
@@ -206,6 +212,13 @@ const ChannelFilesPanel = ({
   onClose,
   channel,
 }: ChannelFilesPanelProps) => {
+  const { user } = useAuth();
+  const isTeacher =
+    hasRole("TEACHER") ||
+    user?.roles?.includes("TEACHER") ||
+    user?.role === "TEACHER" ||
+    false;
+
   const [generalFiles, setGeneralFiles] = useState<AttachmentResponse[]>([]);
   const [submissionFiles, setSubmissionFiles] = useState<AttachmentResponse[]>([]);
   const [groupSubmissions, setGroupSubmissions] = useState<SessionGroupSubmissionsResponse[]>([]);
@@ -216,6 +229,9 @@ const ChannelFilesPanel = ({
   const [reviewVersion, setReviewVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingCategory, setUploadingCategory] = useState<AttachmentCategory | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<ScoreCollectionStatus | null>(null);
+  const [sessionStatusLoaded, setSessionStatusLoaded] = useState(false);
+  const [collecting, setCollecting] = useState(false);
   const generalInputRef = useRef<HTMLInputElement>(null);
   const submissionInputRef = useRef<HTMLInputElement>(null);
 
@@ -231,6 +247,7 @@ const ChannelFilesPanel = ({
     if (!isOpen) return;
     let cancelled = false;
     setIsLoading(true);
+    setSessionStatusLoaded(false);
 
     const loadSubmissions = channel.assignmentSessionId
       ? getSessionSubmissions(channel.id)
@@ -257,6 +274,21 @@ const ChannelFilesPanel = ({
     } else {
       setGroupSubmissions([]);
       setMyReviews([]);
+      // Giáo viên cần biết trạng thái thu điểm khi phiên đã khoá.
+      if (phase === ChannelPhase.LOCKED && isTeacher && channel.assignmentSessionId) {
+        loaders.push(
+          getSessionById(channel.assignmentSessionId)
+            .then((s) => {
+              if (!cancelled) {
+                setSessionStatus(s.scoreCollectionStatus ?? null);
+                setSessionStatusLoaded(true);
+              }
+            })
+            .catch(() => {
+              if (!cancelled) setSessionStatusLoaded(true);
+            }),
+        );
+      }
     }
 
     Promise.allSettled(loaders).finally(() => {
@@ -264,7 +296,7 @@ const ChannelFilesPanel = ({
     });
 
     return () => { cancelled = true; };
-  }, [isOpen, channel.id, showCrossReview]);
+  }, [isOpen, channel.id, showCrossReview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleUploadClick = (category: AttachmentCategory) => {
     if (!canUpload) return;
@@ -333,6 +365,20 @@ const ChannelFilesPanel = ({
       toast.error(err instanceof Error ? err.message : "Nộp bài chấm thất bại");
     } finally {
       setBatchSubmitting(false);
+    }
+  };
+
+  const handleCollect = async () => {
+    if (!channel.assignmentSessionId) return;
+    setCollecting(true);
+    try {
+      await collectSessionScores(channel.assignmentSessionId);
+      setSessionStatus("COLLECTED" as ScoreCollectionStatus);
+      toast.success("Thu điểm thành công!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Thu điểm thất bại");
+    } finally {
+      setCollecting(false);
     }
   };
 
@@ -445,8 +491,36 @@ const ChannelFilesPanel = ({
             )}
 
             {phase === ChannelPhase.LOCKED && (
-              <div className="rounded-md border border-red-700 bg-red-950/40 px-3 py-2 text-red-300 text-xs">
-                Kênh đã hết hạn. Chỉ giảng viên còn quyền thao tác.
+              <div className="space-y-2">
+                <div className="rounded-md border border-red-700 bg-red-950/40 px-3 py-2 text-red-300 text-xs">
+                  Kênh đã hết hạn. Chỉ giảng viên còn quyền thao tác.
+                </div>
+                {isTeacher && channel.assignmentSessionId && sessionStatusLoaded && (
+                  sessionStatus === "COLLECTED" || sessionStatus === "SENT_TO_LMS" ? (
+                    <div className="flex items-center gap-1.5 text-xs text-green-400">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Điểm đã được thu
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleCollect}
+                      disabled={collecting || sessionStatus === "COLLECTING"}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
+                    >
+                      {collecting || sessionStatus === "COLLECTING" ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Đang thu điểm...
+                        </>
+                      ) : (
+                        <>
+                          <Trophy className="w-3.5 h-3.5" />
+                          {sessionStatus === "FAILED" ? "Thu điểm lại" : "Thu điểm"}
+                        </>
+                      )}
+                    </button>
+                  )
+                )}
               </div>
             )}
             {phase === ChannelPhase.REVIEW && !channel.allowCrossReview && (

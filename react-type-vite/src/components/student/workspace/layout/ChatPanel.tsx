@@ -39,7 +39,7 @@ const ChatPanel = ({
   onRetry,
 }: ChatPanelProps) => {
   // Default open per wireframe (Discord-style channel info panel pinned right).
-  const [showInfoPanel, setShowInfoPanel] = useState(true);
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
   const [showFilesPanel, setShowFilesPanel] = useState(false);
 
   const toggleInfoPanel = () => setShowInfoPanel((v) => !v);
@@ -104,7 +104,7 @@ const ChatPanel = ({
   return (
     <div className="flex-1 flex bg-gray-900 border-l border-gray-700 min-h-0">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col relative min-w-0">
+      <div className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
         <ChatHeader
           selectedChannel={selectedChannel}
           onTogglePanel={toggleInfoPanel}

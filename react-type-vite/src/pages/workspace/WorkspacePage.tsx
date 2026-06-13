@@ -142,7 +142,7 @@ const WorkspacePageContent = () => {
   );
 
   return (
-    <div className="h-screen flex bg-gray-800">
+    <div className="h-screen flex bg-gray-800 overflow-hidden">
       {/* Left Panel - Workspaces */}
       <WorkspaceSidebar
         workspaces={getVisibleWorkspaces()}

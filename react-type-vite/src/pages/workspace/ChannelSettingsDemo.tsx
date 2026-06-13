@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ChannelSettings } from "./settings/index.ts";
-import type { Channel } from "@/types/channel.types";
-import { ChannelType, ChannelStatus } from "@/types/channel.types";
+import type { ChannelResponse, UpdateChannelRequest } from "@/types/chat.types";
+import { ChannelType, ChannelScope, ChannelStatus } from "@/types/chat.types";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -18,22 +18,27 @@ export const ChannelSettingsDemo: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Mock channel data - Replace with actual data from your API/state
-  const mockChannel: Channel = {
+  const mockChannel: ChannelResponse = {
     id: "ch_123456",
-    participantHash: "u123_u456_u789",
-    channelName: "chao-mung-va-noi-quy",
+    sectionId: "section-12345",
+    name: "chao-mung-va-noi-quy",
+    slug: "chao-mung-va-noi-quy",
     description: "Let everyone know how to use this channel!",
-    workspaceId: "workspace-12345",
-    classId: 502,
-    memberIds: ["u123", "u456", "u789"],
-    isPrivate: true,
+    position: 0,
+    scope: ChannelScope.SECTION,
     type: ChannelType.TEXT,
     status: ChannelStatus.ACTIVE,
-    durationMinutes: 45,
+    isReadOnly: false,
+    isPublic: false,
+    memberCount: 3,
+    lastMessageId: null,
+    lastActivityAt: "2026-01-01T00:00:00Z",
+    messages: [],
+    createdAt: "2026-01-01T00:00:00Z",
   };
 
   // Handler for saving channel changes
-  const handleSaveChannel = async (channelData: Channel) => {
+  const handleSaveChannel = async (channelData: UpdateChannelRequest) => {
     console.log("Saving channel data:", channelData);
 
     // TODO: Implement your API call here
@@ -74,7 +79,7 @@ export const ChannelSettingsDemo: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <div className="text-[#949ba4]">Name:</div>
-              <div className="text-white">{mockChannel.channelName}</div>
+              <div className="text-white">{mockChannel.name}</div>
             </div>
             <div>
               <div className="text-[#949ba4]">Type:</div>
@@ -86,7 +91,7 @@ export const ChannelSettingsDemo: React.FC = () => {
             </div>
             <div>
               <div className="text-[#949ba4]">Members:</div>
-              <div className="text-white">{mockChannel.memberIds.length}</div>
+              <div className="text-white">{mockChannel.memberCount}</div>
             </div>
           </div>
 

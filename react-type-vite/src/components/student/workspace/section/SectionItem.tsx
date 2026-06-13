@@ -13,8 +13,8 @@ interface SectionItemProps {
   section: SectionResponse;
   selectedChannel: ChannelResponse | null;
   onChannelSelect: (channel: BasicChannelResponse) => void;
-  onInvitePeople?: (channel: ChannelResponse) => void;
-  onChannelSettings?: (channel: ChannelResponse) => void;
+  onInvitePeople?: (channel: BasicChannelResponse) => void;
+  onChannelSettings?: (channel: BasicChannelResponse) => void;
   onCreateChannel?: (sectionId: string) => void;
   onManageSession?: (sectionId: string, sectionName: string) => void;
   isExpanded: boolean;
@@ -25,6 +25,8 @@ const SectionItem = ({
   section,
   selectedChannel,
   onChannelSelect,
+  onInvitePeople,
+  onChannelSettings,
   onCreateChannel,
   onManageSession,
   isExpanded,
@@ -114,6 +116,8 @@ const SectionItem = ({
               channels={channels}
               selectedChannel={selectedChannel}
               onChannelSelect={onChannelSelect}
+              onInvitePeople={onInvitePeople}
+              onChannelSettings={onChannelSettings}
             />
           ) : (
             <div className="ml-8 py-2 text-xs text-gray-500 italic">

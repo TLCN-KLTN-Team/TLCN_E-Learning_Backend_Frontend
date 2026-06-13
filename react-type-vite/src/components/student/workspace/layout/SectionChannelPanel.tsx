@@ -5,11 +5,13 @@ import type {
   BasicChannelResponse,
   WorkspaceResponse,
   SectionResponse,
+  UpdateChannelRequest,
 } from "@/types/chat.types";
 import { SectionList } from "../section";
 import { AddChannelModal, InvitePeopleModal, SessionManagementModal } from "../channel";
+import { ChannelSettings } from "@/pages/workspace/settings/ChannelSettings.tsx";
 import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
-import { getChannel } from "@/services/api/workspace/channel.api";
+import { getChannel, updateChannel, softDeleteChannel } from "@/services/api/workspace/channel.api";
 
 
 interface SectionChannelPanelProps {
@@ -38,80 +40,81 @@ const SectionChannelPanel = ({
   const [selectedChannelForAction, setSelectedChannelForAction] =
     useState<ChannelResponse | null>(null);
 
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [sessionModalTarget, setSessionModalTarget] = useState<{
     sectionId: string;
     sectionName: string;
   } | null>(null);
+  const [inviteChannelName, setInviteChannelName] = useState<string>("");
 
-  // Handle invite people to a specific channel
-  const handleInvitePeople = (channel: ChannelResponse) => {
-    setSelectedChannelForAction(channel);
+  const handleInvitePeople = (channel: BasicChannelResponse) => {
+    setInviteChannelName(channel.name);
     setShowInviteModal(true);
   };
 
-  // const [showSettingsModal, setShowSettingsModal] = useState(false);
-
-  // Handle channel settings
-  const handleChannelSettings = (channel: ChannelResponse) => {
-    setSelectedChannelForAction(channel);
-    // setShowSettingsModal(true);
-    console.log("Channel settings for:", channel.name);
+  const handleChannelSettings = async (channel: BasicChannelResponse) => {
+    const cached = channelDetailsMap.get(channel.id);
+    if (cached) {
+      setSelectedChannelForAction(cached);
+      setShowSettingsModal(true);
+      return;
+    }
+    try {
+      const full = await getChannel(channel.id);
+      setChannelDetailsMap((prev) => {
+        const m = new Map(prev);
+        m.set(full.id, full);
+        return m;
+      });
+      setSelectedChannelForAction(full);
+      setShowSettingsModal(true);
+    } catch {
+      toast.error("Không thể tải thông tin kênh");
+    }
   };
 
-  // // Handle save channel settings
-  // const handleSaveChannelSettings = async (channelData: Channel) => {
-  //   try {
-  //     // TODO: Call API to update channel
-  //     console.log("Saving channel data:", channelData);
-  //     toast.success("Cập nhật channel thành công!");
-  //     setShowSettingsModal(false);
-  //     // Refresh sections to get updated channel data
-  //     if (selectedWorkspace) {
-  //       try {
-  //         const sectionsData = await getSectionsByWorkspaceId(
-  //           selectedWorkspace.id,
-  //         );
-  //         setSections(sectionsData);
-  //       } catch (error) {
-  //         console.error("Error refreshing sections:", error);
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error saving channel:", error);
-  //     toast.error("Không thể cập nhật channel");
-  //     throw error;
-  //   }
-  // };
+  const handleSaveChannelSettings = async (request: UpdateChannelRequest) => {
+    if (!selectedChannelForAction) return;
+    const updated = await updateChannel(selectedChannelForAction.id, request);
+    // Update cache
+    setChannelDetailsMap((prev) => {
+      const next = new Map(prev);
+      next.set(updated.id, updated);
+      return next;
+    });
+    // If this is the currently displayed channel, push the update up
+    if (selectedChannel?.id === updated.id) {
+      onChannelSelect(updated);
+    }
+    setSelectedChannelForAction(updated);
+    toast.success("Đã cập nhật thông tin kênh");
+  };
 
-  // // Handle delete channel
-  // const handleDeleteChannel = async (channelId: string) => {
-  //   try {
-  //     // TODO: Call API to delete channel
-  //     console.log("Deleting channel:", channelId);
-  //     toast.success("Xóa channel thành công!");
-  //     setShowSettingsModal(false);
-  //     // Refresh sections
-  //     if (selectedWorkspace) {
-  //       try {
-  //         const sectionsData = await getSectionsByWorkspaceId(
-  //           selectedWorkspace.id,
-  //         );
-  //         setSections(sectionsData);
-  //       } catch (error) {
-  //         console.error("Error refreshing sections:", error);
-  //       }
-  //     }
-  //     // If deleted channel was selected, clear selection
-  //     if (selectedChannel?.id === channelId) {
-  //       onChannelSelect(null as any);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error deleting channel:", error);
-  //     toast.error("Không thể xóa channel");
-  //     throw error;
-  //   }
-  // };
+  const handleDeleteChannel = async (channelId: string) => {
+    await softDeleteChannel(channelId);
+    setShowSettingsModal(false);
+    setSelectedChannelForAction(null);
+    // Evict from cache
+    setChannelDetailsMap((prev) => {
+      const next = new Map(prev);
+      next.delete(channelId);
+      return next;
+    });
+    if (selectedChannel?.id === channelId) {
+      onChannelSelect(null as unknown as ChannelResponse);
+    }
+    // Refresh sections to reflect the removed channel
+    if (selectedWorkspace) {
+      try {
+        const sectionsData = await getSectionsByWorkspaceId(selectedWorkspace.id);
+        setSections(sectionsData);
+      } catch {
+        // non-critical
+      }
+    }
+    toast.success("Đã xóa kênh thành công");
+  };
 
   // Handle create channel in section
   const handleCreateChannel = (sectionId: string) => {
@@ -199,7 +202,7 @@ const SectionChannelPanel = ({
 
   return (
     <>
-      <div className="w-64 bg-gray-900 flex flex-col border-l border-gray-200">
+      <div className="w-64 flex-shrink-0 bg-gray-900 flex flex-col border-l border-gray-200">
         {/* Workspace Name Header */}
         <div className="p-4 border-b border-gray-600 flex items-center justify-between">
           <h2 className="text-white font-semibold">
@@ -242,12 +245,10 @@ const SectionChannelPanel = ({
         isOpen={showInviteModal}
         onClose={() => {
           setShowInviteModal(false);
-          setSelectedChannelForAction(null);
+          setInviteChannelName("");
         }}
         workspaceName={selectedWorkspace?.name || ""}
-        channelName={
-          selectedChannelForAction?.name || selectedChannel?.name || "general"
-        }
+        channelName={inviteChannelName || selectedChannel?.name || "general"}
       />
 
       {/* Add Channel Modal */}
@@ -274,15 +275,17 @@ const SectionChannelPanel = ({
         />
       )}
 
-      {/* Channel Settings Modal */}
-      {/* {showSettingsModal && selectedChannelForAction && (
+      {showSettingsModal && selectedChannelForAction && (
         <ChannelSettings
-          channel={selectedChannel}
-          onClose={() => setShowSettingsModal(false)}
+          channel={selectedChannelForAction}
+          onClose={() => {
+            setShowSettingsModal(false);
+            setSelectedChannelForAction(null);
+          }}
           onSave={handleSaveChannelSettings}
           onDelete={handleDeleteChannel}
         />
-      )} */}
+      )}
     </>
   );
 };

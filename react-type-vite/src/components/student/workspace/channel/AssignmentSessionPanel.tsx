@@ -468,7 +468,8 @@ const AssignmentSessionPanel = ({ channel }: AssignmentSessionPanelProps) => {
 
       {/* Expanded content */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-gray-700/60">
+        <div className="border-t border-gray-700/60 max-h-[45vh] overflow-y-auto">
+        <div className="px-4 pb-4 space-y-3">
           {/* Deadlines */}
           <div className="grid grid-cols-2 gap-x-4 text-xs mt-3">
             <div>
@@ -648,6 +649,7 @@ const AssignmentSessionPanel = ({ channel }: AssignmentSessionPanelProps) => {
               })()}
             </div>
           )}
+        </div>
         </div>
       )}
     </div>

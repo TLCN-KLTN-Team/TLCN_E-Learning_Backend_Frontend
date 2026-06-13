@@ -8,10 +8,11 @@ import lombok.NoArgsConstructor;
 /**
  * UC-41 — Kết quả tính điểm cuối cùng của một nhóm sau giai đoạn chấm chéo.
  *
- * Thuật toán:
+ * Thuật toán (đồng bộ với ScoreCollectionService.applyMedianCalculation):
  *  1. Thu thập tất cả điểm chấm chéo mà nhóm nhận được từ các nhóm khác.
- *  2. Sắp xếp tăng dần → lấy Median (tránh bị kéo bởi outlier).
- *  3. So sánh điểm tự chấm (selfScore) với Median:
+ *  2. Sắp xếp tăng dần → lấy trung vị "biên trái" (phần tử ở index (n-1)/2).
+ *  3. So sánh điểm tự chấm (selfScore) với trung vị:
+ *     - chưa có peer hoặc nhóm chưa tự chấm → finalScore = null (giáo viên nhập tay)
  *     - |selfScore - median| ≤ 0.5 → dùng selfScore (ghi nhận trung thực)
  *     - |selfScore - median| > 0.5 → dùng median
  */
