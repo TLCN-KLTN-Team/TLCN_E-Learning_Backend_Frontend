@@ -1148,7 +1148,7 @@ export default function ReviewMain({
               questions={quizQuestions}
               onUpdateQuestion={handleUpdateQuestion}
               onRegenerate={handleGenerateQuiz}
-              onSave={handleSaveQuizSet}
+              onSaveComplete={handleSaveQuizSet}
               loading={generating}
             />
           </>

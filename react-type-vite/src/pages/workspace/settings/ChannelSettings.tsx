@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { X, Settings, Users, Shield, Puzzle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { ChannelResponse, UpdateChannelRequest, ChannelStatus as ChatChannelStatus } from "@/types/chat.types";
 import type { Channel } from "@/types/channel.types";
+import { ChannelType, ChannelStatus } from "@/types/channel.types";
 import { OverviewSection } from "./OverviewSection.tsx";
 import { MembersSection } from "./MembersSection.tsx";
 import { PermissionsSection } from "./PermissionsSection.tsx";
@@ -17,10 +19,26 @@ type SettingsTab =
   | "delete";
 
 interface ChannelSettingsProps {
-  channel: Channel;
+  channel: ChannelResponse;
   onClose: () => void;
-  onSave: (channelData: Channel) => Promise<void>;
+  onSave: (request: UpdateChannelRequest) => Promise<void>;
   onDelete: (channelId: string) => Promise<void>;
+}
+
+function toChannelForm(cr: ChannelResponse): Channel {
+  return {
+    id: cr.id,
+    participantHash: "",
+    channelName: cr.name,
+    description: cr.description ?? "",
+    workspaceId: cr.sectionId,
+    classId: null,
+    memberIds: [],
+    isPrivate: !cr.isPublic,
+    type: (cr.type === "VOICE" ? ChannelType.VOICE : ChannelType.TEXT),
+    status: (cr.status as unknown as ChannelStatus) ?? ChannelStatus.ACTIVE,
+    durationMinutes: 0,
+  };
 }
 
 export const ChannelSettings: React.FC<ChannelSettingsProps> = ({
@@ -30,7 +48,7 @@ export const ChannelSettings: React.FC<ChannelSettingsProps> = ({
   onDelete,
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>("overview");
-  const [channelData, setChannelData] = useState<Channel>(channel);
+  const [channelData, setChannelData] = useState<Channel>(() => toChannelForm(channel));
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -43,16 +61,22 @@ export const ChannelSettings: React.FC<ChannelSettingsProps> = ({
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await onSave(channelData);
+      const request: UpdateChannelRequest = {
+        name: channelData.channelName,
+        description: channelData.description,
+        status: channelData.status as unknown as ChatChannelStatus,
+        isPublic: !channelData.isPrivate,
+      };
+      await onSave(request);
       setHasChanges(false);
       toast({
-        title: "Success",
-        description: "Channel settings saved successfully",
+        title: "Thành công",
+        description: "Đã cập nhật thông tin kênh",
       });
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to save channel settings",
+        title: "Lỗi",
+        description: "Không thể cập nhật kênh. Vui lòng thử lại.",
         variant: "destructive",
       });
     } finally {
@@ -61,7 +85,7 @@ export const ChannelSettings: React.FC<ChannelSettingsProps> = ({
   };
 
   const handleCancel = () => {
-    setChannelData(channel);
+    setChannelData(toChannelForm(channel));
     setHasChanges(false);
   };
 

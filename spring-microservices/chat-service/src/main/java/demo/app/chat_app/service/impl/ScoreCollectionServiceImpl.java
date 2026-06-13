@@ -6,6 +6,7 @@ import demo.app.chat_app.exception.AppException;
 import demo.app.chat_app.exception.ErrorCode;
 import demo.app.chat_app.model.workspace.AssignmentSession;
 import demo.app.chat_app.model.workspace.ChannelMember;
+import demo.app.chat_app.model.workspace.ChannelRole;
 import demo.app.chat_app.model.workspace.GroupFinalScore;
 import demo.app.chat_app.model.workspace.MemberStatus;
 import demo.app.chat_app.model.workspace.PeerReview;
@@ -65,6 +66,10 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
     @NonFinal
     @Value("${kafka.topic.score-events}")
     String scoreEventsTopic;
+
+    @NonFinal
+    @Value("${app.frontend.base-url:http://localhost:3000}")
+    String frontendBaseUrl;
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -360,22 +365,26 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
             record.setStatus(GroupFinalScore.CollectStatus.NO_PEERS);
             return finalScoreRepository.save(record);
         }
-        peerScoreValues.add(record.getSelfScore());
+        // Trung vị "biên trái" chỉ từ điểm các nhóm khác (peerScores), không gộp selfScore.
         Double medianScore = calcMedian(peerScoreValues);
         Double selfScore = record.getSelfScore();
+        record.setMedianPeerScore(medianScore);
 
+        double threshold = 0.05 * CROSS_REVIEW_MAX_SCORE; // 5% thang điểm = 0.5 trên thang 10
         Double finalScore;
         boolean usedSelfScore = false;
         if (selfScore == null) {
+            // Có người chấm nhưng nhóm chưa tự chấm → không chốt tự động, để giáo viên nhập tay.
+            finalScore = null;
+        } else if (Math.abs(selfScore - medianScore) > threshold) {
+            // Chênh > 5% → nhóm tự chấm không trung thực → dùng trung vị của các nhóm peer.
             finalScore = medianScore;
-        } else if (Math.abs(selfScore - medianScore) <= 0.5) {
+        } else {
+            // Chênh ≤ 5% → ghi nhận tự đánh giá trung thực → dùng điểm tự chấm.
             finalScore = selfScore;
             usedSelfScore = true;
-        } else {
-            finalScore = medianScore;
         }
 
-        record.setMedianPeerScore(medianScore);
         record.setFinalScore(finalScore);
         record.setUsedSelfScore(usedSelfScore);
 
@@ -390,31 +399,39 @@ public class ScoreCollectionServiceImpl implements ScoreCollectionService {
         return channelMemberRepository
                 .findByChannelIdAndStatus(channelId, MemberStatus.ACTIVE)
                 .stream()
+                .filter(m -> m.getRole() != ChannelRole.TEACHER && m.getRole() != ChannelRole.OWNER)
                 .map(ChannelMember::getUserId)
                 .toList();
     }
 
+    /**
+     * Trung vị "biên trái" (lower median): sắp xếp tăng dần rồi lấy phần tử ở index (n-1)/2.
+     *  - n lẻ  → phần tử chính giữa (trung vị thật).
+     *  - n chẵn → phần tử BÊN TRÁI trong 2 phần tử giữa (không lấy trung bình) — theo yêu cầu nghiệp vụ.
+     */
     private Double calcMedian(List<Double> scores) {
-        // Sorting acceding to natural order (ascending)
         List<Double> sorted = new ArrayList<>(scores);
         Collections.sort(sorted);
-
-        // use binary search to find middle element(s)
-        int n = sorted.size();
-        if (n % 2 == 1) return sorted.get(n / 2);
-        return (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2.0;
+        return sorted.get((sorted.size() - 1) / 2);
     }
 
     private void publishScoreCalculatedEvent(AssignmentSession session, List<GroupFinalScore> scores) {
         try {
+            String workspaceId = session.getWorkspaceId();
             List<ScoreCalculatedEvent.ScoreEntry> entries = scores.stream()
-                    .map(s -> ScoreCalculatedEvent.ScoreEntry.builder()
-                            .channelId(s.getChannelId())
-                            .memberUserIds(s.getMemberUserIds())
-                            .finalScore(s.getFinalScore())
-                            .status(s.getStatus() != null ? s.getStatus().name() : null)
-                            .comments(extractComments(s))
-                            .build())
+                    .map(s -> {
+                        String channelUrl = (workspaceId != null && s.getChannelId() != null)
+                                ? frontendBaseUrl + "/workspaces/" + workspaceId + "/" + s.getChannelId()
+                                : null;
+                        return ScoreCalculatedEvent.ScoreEntry.builder()
+                                .channelId(s.getChannelId())
+                                .memberUserIds(s.getMemberUserIds())
+                                .finalScore(s.getFinalScore())
+                                .status(s.getStatus() != null ? s.getStatus().name() : null)
+                                .comments(extractComments(s))
+                                .channelUrl(channelUrl)
+                                .build();
+                    })
                     .toList();
 
             // Resolve khóa liên kết phía course-service từ chat-service:

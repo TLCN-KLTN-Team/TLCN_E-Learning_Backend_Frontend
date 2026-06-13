@@ -109,13 +109,15 @@ const ChannelTimer = ({
 
   if (target.phase === "LOCKED") {
     return (
-      <div className="flex items-center justify-center p-4 bg-red-100 border border-red-300 rounded-lg">
-        <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
-        <span className="text-red-700 font-medium">
-          {allowCrossReview
-            ? `Kênh "${channelName}" đã hết hạn chấm chéo`
-            : `Kênh "${channelName}" đã hết hạn nộp bài`}
+      <div
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-red-700 bg-red-900/40 text-red-300 text-xs font-medium"
+        title={allowCrossReview ? `Kênh "${channelName}" đã hết hạn chấm chéo` : `Kênh "${channelName}" đã hết hạn nộp bài`}
+      >
+        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+        <span className="hidden md:inline">
+          {allowCrossReview ? "Hết hạn chấm chéo" : "Hết hạn nộp bài"}
         </span>
+        <span className="md:hidden">Hết hạn</span>
       </div>
     );
   }
@@ -127,40 +129,32 @@ const ChannelTimer = ({
   const isReview = target.phase === "REVIEW";
 
   const colorText = isReview
-    ? "text-amber-600"
+    ? "text-amber-300"
     : isExpiring
-      ? "text-yellow-600"
-      : "text-green-600";
+      ? "text-yellow-300"
+      : "text-green-300";
+  const colorBorder = isReview
+    ? "border-amber-700"
+    : isExpiring
+      ? "border-yellow-700"
+      : "border-green-700";
   const colorBg = isReview
-    ? "bg-amber-50 border-amber-300"
+    ? "bg-amber-900/40"
     : isExpiring
-      ? "bg-yellow-100 border-yellow-300"
-      : "bg-green-100 border-green-300";
+      ? "bg-yellow-900/40"
+      : "bg-green-900/40";
 
   return (
     <div
-      className={`flex items-center justify-between p-4 rounded-lg border ${colorBg}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${colorBorder} ${colorBg} ${colorText} text-xs font-medium`}
+      title={`${target.label}${isReview ? " — Đang trong giai đoạn chấm chéo" : " — Sau hạn nộp, kênh sẽ khoá"}`}
     >
-      <div className="flex items-center space-x-3">
-        <Clock className={`w-5 h-5 ${colorText}`} />
-        <div>
-          <h4 className="text-gray-800 font-medium">{target.label}</h4>
-          <p className="text-sm text-gray-600">
-            {isReview
-              ? "Đang trong giai đoạn chấm chéo. Hết hạn chấm sẽ khoá kênh."
-              : "Sau hạn nộp, kênh sẽ chuyển sang trạng thái khoá."}
-          </p>
-        </div>
-      </div>
-
-      <div className="text-right">
-        <div className={`text-2xl font-bold ${colorText}`}>
-          {formatRemaining(remainingMs)}
-        </div>
-        {isExpiring && !isReview && (
-          <p className="text-xs text-yellow-700 mt-1">⚠️ Sắp hết thời gian!</p>
-        )}
-      </div>
+      <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+      <span className="hidden md:inline">{target.label}:</span>
+      <span className="font-mono font-bold tracking-wider">
+        {formatRemaining(remainingMs)}
+      </span>
+      {isExpiring && !isReview && <span title="Sắp hết thời gian!">⚠️</span>}
     </div>
   );
 };

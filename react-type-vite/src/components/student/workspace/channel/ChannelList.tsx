@@ -13,6 +13,8 @@ const ChannelList = ({
   channels,
   selectedChannel,
   onChannelSelect,
+  onInvitePeople,
+  onChannelSettings,
 }: ChannelListProps) => {
   const handleChannelSelect = (channel: BasicChannelResponse) => {
     onChannelSelect?.(channel);
@@ -26,6 +28,8 @@ const ChannelList = ({
           channel={channel}
           isSelected={selectedChannel?.id === channel.id}
           onSelect={handleChannelSelect}
+          onInvitePeople={onInvitePeople}
+          onSettings={onChannelSettings}
         />
       ))}
     </div>

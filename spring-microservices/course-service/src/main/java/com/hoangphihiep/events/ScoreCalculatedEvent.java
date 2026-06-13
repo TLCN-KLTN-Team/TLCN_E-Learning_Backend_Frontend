@@ -66,5 +66,7 @@ public class ScoreCalculatedEvent {
         private String status;
         /** Các đánh giá nhóm nhận được — chỉ nội dung nhận xét (không kèm nhóm chấm). */
         private List<String> comments;
+        /** Đường dẫn frontend tới kênh nhóm trong workspace để sinh viên xem chi tiết. */
+        private String channelUrl;
     }
 }

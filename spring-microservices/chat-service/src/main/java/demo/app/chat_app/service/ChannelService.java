@@ -1,6 +1,7 @@
 package demo.app.chat_app.service;
 
 import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
+import demo.app.chat_app.dto.request.UpdateChannelRequest;
 import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.events.ClassCreatedEvent;
 import demo.app.chat_app.events.EnrollStudentsEvent;
@@ -36,12 +37,12 @@ public interface ChannelService {
      * @param request Updated channel information
      * @return Updated channel information
      */
-    ChannelResponse updateChannel(String id, BulkRandomChannelRequest request);
+    ChannelResponse updateChannel(String id, UpdateChannelRequest request);
 
     /**
-     * Permanently delete a channel.
+     * Soft-delete a channel by setting its status to DELETED.
      *
-     * @param id Channel ID to delete
+     * @param id Channel ID to soft-delete
      */
     void deleteChannel(String id);
 

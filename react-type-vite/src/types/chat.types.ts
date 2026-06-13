@@ -125,6 +125,14 @@ export interface BulkRandomChannelResponse {
   channels: BasicChannelResponse[];
 }
 
+export interface UpdateChannelRequest {
+  name?: string;
+  description?: string;
+  status?: ChannelStatus;
+  isReadOnly?: boolean;
+  isPublic?: boolean;
+}
+
 export interface CreateChannelRequest {
   workspaceId: string;
   sectionId?: string;

@@ -56,10 +56,14 @@ public class GroupFinalScore {
      */
     PeerScoreEntry selfReview;
 
-    /** Median của peerScores.score (null nếu NO_PEERS). */
+    /** Trung vị "biên trái" của peerScores.score — phần tử ở index (n-1)/2 (null nếu NO_PEERS). */
     Double medianPeerScore;
 
-    /** Điểm cuối cùng theo công thức median. Null nếu NO_SUBMISSION hoặc NO_PEERS. */
+    /**
+     * Điểm cuối cùng theo công thức trung vị.
+     * Null nếu: NO_SUBMISSION, NO_PEERS, hoặc nhóm có người chấm nhưng chưa tự chấm
+     * (selfScore null → giáo viên nhập tay).
+     */
     Double finalScore;
 
     /** true nếu finalScore lấy từ selfScore (chênh lệch ≤ 0.5). */

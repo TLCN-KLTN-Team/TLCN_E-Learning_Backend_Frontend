@@ -15,12 +15,6 @@ const ALL_TYPES: QuestionType[] = [
 ];
 const DIFFICULTIES: Difficulty[] = ["EASY", "MEDIUM", "HARD"];
 
-const DIFF_LABELS: Record<Difficulty, string> = {
-  EASY: "Dễ",
-  MEDIUM: "Trung bình",
-  HARD: "Khó",
-};
-
 const TYPE_META: Record<
   QuestionType,
   {

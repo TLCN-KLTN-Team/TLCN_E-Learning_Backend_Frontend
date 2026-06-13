@@ -2,6 +2,7 @@ package demo.app.chat_app.service.impl;
 
 import demo.app.chat_app.dto.event.AssignmentSessionCreatedEvent;
 import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
+import demo.app.chat_app.dto.request.UpdateChannelRequest;
 import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.events.ClassCreatedEvent;
 import demo.app.chat_app.events.EnrollStudentsEvent;
@@ -511,8 +512,32 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     @Override
-    public ChannelResponse updateChannel(String id, BulkRandomChannelRequest request) {
-        return null;
+    public ChannelResponse updateChannel(String id, UpdateChannelRequest request) {
+        Channel channel = channelRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
+
+        if (request.getName() != null && !request.getName().isBlank()) {
+            channel.setName(request.getName().trim());
+            channel.setSlug(request.getName().trim().toLowerCase()
+                    .replaceAll("[^a-z0-9-]", "-")
+                    .replaceAll("-+", "-"));
+        }
+        if (request.getDescription() != null) {
+            channel.setDescription(request.getDescription());
+        }
+        if (request.getStatus() != null) {
+            channel.setStatus(request.getStatus());
+        }
+        if (request.getIsReadOnly() != null) {
+            channel.setReadOnly(request.getIsReadOnly());
+        }
+        if (request.getIsPublic() != null) {
+            channel.setPublic(request.getIsPublic());
+        }
+        channel.setUpdatedAt(Instant.now());
+
+        Channel saved = channelRepository.save(channel);
+        return channelMapper.toResponse(saved);
     }
 
     @Override
@@ -520,7 +545,9 @@ public class ChannelServiceImpl implements ChannelService {
         Channel channel = channelRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        channelRepository.delete(channel);
+        channel.setStatus(ChannelStatus.DELETED);
+        channel.setUpdatedAt(Instant.now());
+        channelRepository.save(channel);
     }
 
     @Override

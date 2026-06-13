@@ -211,30 +211,30 @@ public class CrossReviewServiceImpl implements CrossReviewService {
 
         for (PeerReview review : allReviews) {
             if (!channelId.equals(review.getReviewedChannelId())) continue;
+
             if (channelId.equals(review.getReviewerChannelId())) {
                 selfScore = review.getScore();
-            } else {
+            } else if (review.getScore() != null) {
                 peerScores.add(review.getScore());
             }
         }
 
-        Double medianScore = peerScores.isEmpty() ? null : calcMedian(peerScores);
+        // Trung vị "biên trái" của điểm các nhóm khác (null nếu chưa ai chấm).
+        Double medianScore = peerScores.isEmpty() ? null : calcLowerMedian(peerScores);
 
+        // Cùng công thức với ScoreCollectionService.applyMedianCalculation:
+        //  - chưa có peer hoặc nhóm chưa tự chấm → để null (giáo viên nhập tay)
+        //  - chênh |self − median| > 0.5 (5% thang 10) → không trung thực → dùng median
+        //  - chênh ≤ 0.5 → trung thực → dùng điểm tự chấm
         Double finalScore;
         boolean usedSelfScore = false;
-
-        if (medianScore == null) {
-            finalScore = selfScore;
-            usedSelfScore = selfScore != null;
-        } else if (selfScore == null) {
+        if (medianScore == null || selfScore == null) {
+            finalScore = null;
+        } else if (Math.abs(selfScore - medianScore) > 0.5) {
             finalScore = medianScore;
         } else {
-            if (Math.abs(selfScore - medianScore) <= 0.5) {
-                finalScore = selfScore;
-                usedSelfScore = true;
-            } else {
-                finalScore = medianScore;
-            }
+            finalScore = selfScore;
+            usedSelfScore = true;
         }
 
         return FinalScoreResponse.builder()
@@ -245,6 +245,17 @@ public class CrossReviewServiceImpl implements CrossReviewService {
                 .usedSelfScore(usedSelfScore)
                 .reviewerCount(peerScores.size())
                 .build();
+    }
+
+    /**
+     * Trung vị "biên trái" (lower median): sắp xếp tăng dần rồi lấy phần tử ở index (n-1)/2.
+     *  - n lẻ  → phần tử chính giữa (trung vị thật).
+     *  - n chẵn → phần tử BÊN TRÁI trong 2 phần tử giữa (không lấy trung bình).
+     */
+    private Double calcLowerMedian(List<Double> scores) {
+        List<Double> sorted = new ArrayList<>(scores);
+        Collections.sort(sorted);
+        return sorted.get((sorted.size() - 1) / 2);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -358,14 +369,6 @@ public class CrossReviewServiceImpl implements CrossReviewService {
                 .submittedAt(r.getSubmittedAt())
                 .updatedAt(r.getUpdatedAt())
                 .build();
-    }
-
-    private Double calcMedian(List<Double> scores) {
-        List<Double> sorted = new ArrayList<>(scores);
-        Collections.sort(sorted);
-        int n = sorted.size();
-        if (n % 2 == 1) return sorted.get(n / 2);
-        return (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2.0;
     }
 
     private String currentUserId() {

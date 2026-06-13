@@ -17,6 +17,7 @@ import type {
   CrossReviewSubmitRequest,
   GroupFinalScoreResponse,
   SessionGroupSubmissionsResponse,
+  UpdateChannelRequest,
   UserResponse,
 } from "@/types/chat.types";
 
@@ -72,6 +73,17 @@ export const sendMessage = async (
 
 export const softDeleteChannel = async (channelId: string): Promise<void> => {
   await axiosInstance.delete(`/server/channels/${channelId}/soft-delete`);
+};
+
+export const updateChannel = async (
+  channelId: string,
+  request: UpdateChannelRequest,
+): Promise<ChannelResponse> => {
+  const response = await axiosInstance.put<ApiResponse<ChannelResponse>>(
+    `${CHANNEL_API_BASE_URL}/update/${channelId}`,
+    request,
+  );
+  return response.data.result;
 };
 
 export const getMembersInChannel = async (

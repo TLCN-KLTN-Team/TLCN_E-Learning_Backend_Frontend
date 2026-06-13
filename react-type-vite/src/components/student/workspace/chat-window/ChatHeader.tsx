@@ -60,15 +60,13 @@ const ChatHeader = ({
 
       {/* UC-41: multi-phase countdown for GROUP channels with a deadline */}
       {isGroup && hasDeadline && (
-        <div className="min-w-[200px]">
-          <ChannelTimer
-            channelId={selectedChannel.id}
-            channelName={selectedChannel.name}
-            submissionDeadline={selectedChannel.submissionDeadline}
-            crossReviewDeadline={selectedChannel.crossReviewDeadline}
-            allowCrossReview={selectedChannel.allowCrossReview}
-          />
-        </div>
+        <ChannelTimer
+          channelId={selectedChannel.id}
+          channelName={selectedChannel.name}
+          submissionDeadline={selectedChannel.submissionDeadline}
+          crossReviewDeadline={selectedChannel.crossReviewDeadline}
+          allowCrossReview={selectedChannel.allowCrossReview}
+        />
       )}
 
       <button

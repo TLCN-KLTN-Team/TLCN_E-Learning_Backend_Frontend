@@ -34,10 +34,10 @@ const ChannelPanel = ({
     Map<string, ChannelResponse>
   >(new Map());
   const [selectedChannelForAction, setSelectedChannelForAction] =
-    useState<ChannelResponse | null>(null);
+    useState<BasicChannelResponse | null>(null);
 
   // Handle invite people to a specific channel
-  const handleInvitePeople = (channel: ChannelResponse) => {
+  const handleInvitePeople = (channel: BasicChannelResponse) => {
     setSelectedChannelForAction(channel);
     setShowInviteModal(true);
   };
@@ -45,7 +45,7 @@ const ChannelPanel = ({
   // const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Handle channel settings
-  const handleChannelSettings = (channel: ChannelResponse) => {
+  const handleChannelSettings = (channel: BasicChannelResponse) => {
     setSelectedChannelForAction(channel);
     // setShowSettingsModal(true);
     console.log("Channel settings for:", channel.name);
@@ -119,13 +119,13 @@ const ChannelPanel = ({
   };
 
   // Handle channel created callback
-  const handleChannelCreated = (newChannel: ChannelResponse) => {
+  const handleChannelCreated = (_sectionId: string) => {
     // Refresh sections to show new channel
     if (selectedWorkspace) {
       getSectionsByWorkspaceId(selectedWorkspace.id)
         .then((sectionsData) => {
           setSections(sectionsData);
-          toast.success(`Kênh "${newChannel.name}" đã được tạo thành công!`);
+          toast.success("Kênh đã được tạo thành công!");
         })
         .catch((error) => {
           console.error("Error refreshing sections:", error);

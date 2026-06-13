@@ -3,6 +3,7 @@ package demo.app.chat_app.controller;
 import demo.app.chat_app.dto.request.BulkRandomChannelRequest;
 import demo.app.chat_app.dto.request.CrossReviewBatchSubmitRequest;
 import demo.app.chat_app.dto.request.CrossReviewSubmitRequest;
+import demo.app.chat_app.dto.request.UpdateChannelRequest;
 import demo.app.chat_app.dto.request.UpdateGroupScoreRequest;
 import demo.app.chat_app.dto.response.*;
 import demo.app.chat_app.model.enums.AttachmentCategory;
@@ -96,23 +97,25 @@ public class ChannelController {
     }
 
     @PutMapping("/update/{channelId}")
-    public ApiResponse<ChannelResponse> updateChannel(@RequestBody BulkRandomChannelRequest request,
-                                                      @PathVariable String channelId){
-        try{
+    @PreAuthorize("hasRole('TEACHER')")
+    public ApiResponse<ChannelResponse> updateChannel(@RequestBody UpdateChannelRequest request,
+                                                      @PathVariable String channelId) {
+        try {
             ChannelResponse channelResponse = channelService.updateChannel(channelId, request);
             return ApiResponse.<ChannelResponse>builder()
                     .result(channelResponse)
                     .message("Channel updated successfully")
                     .build();
-        }catch (Exception e){
+        } catch (Exception e) {
             return ApiResponse.<ChannelResponse>builder()
                     .message("Failed to update channel: " + e.getMessage())
                     .build();
         }
     }
 
-    @DeleteMapping("/delete/{channelId}")
-    public ApiResponse<Void> deleteChannel(@PathVariable String channelId) {
+    @DeleteMapping("/{channelId}/soft-delete")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ApiResponse<Void> softDeleteChannel(@PathVariable String channelId) {
         try {
             channelService.deleteChannel(channelId);
             return ApiResponse.<Void>builder()

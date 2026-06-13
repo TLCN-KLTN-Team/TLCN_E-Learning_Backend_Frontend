@@ -28,7 +28,7 @@ export const getStatusStyle = (status: string) => {
   }
 };
 
-export const getUnitTypeLabel = (type: string): string => {
+export const getUnitTypeLabel = (type: string | undefined): string => {
   switch (type?.toUpperCase()) {
     case "UNIVERSITY":
       return "Đại học";
@@ -41,7 +41,7 @@ export const getUnitTypeLabel = (type: string): string => {
   }
 };
 
-export const getUnitTypeStyle = (type: string): string => {
+export const getUnitTypeStyle = (type: string | undefined): string => {
   switch (type?.toUpperCase()) {
     case "UNIVERSITY":
       return "bg-blue-100 text-blue-800 border border-blue-200";
