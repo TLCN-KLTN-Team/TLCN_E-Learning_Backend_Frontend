@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Clock,
   BookOpen,
+  Users,
 } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
@@ -41,17 +42,19 @@ const Course: React.FC = () => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
+  const autocompleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextSuggestionRef = useRef(false);
 
   // Get initial values from URL params
   const getInitialSearchTerm = () => searchParams.get("keyword") || "";
   const getInitialFilters = (): Filters => ({
-    minRating: parseInt(searchParams.get("minRating") || "0"),
+    minRating: parseFloat(searchParams.get("minRating") || "0"),
     category: searchParams.get("category") || "",
     levels: searchParams.getAll("levels"),
     practiceTypes: searchParams.getAll("practiceTypes"),
     fees: searchParams.getAll("fees"),
-    durations: [],
-    sort: "",
+    durations: searchParams.getAll("durations"),
+    sort: searchParams.get("sort") || "",
   });
 
   const [searchTerm, setSearchTerm] = useState(getInitialSearchTerm);
@@ -92,11 +95,9 @@ const Course: React.FC = () => {
     if (newFilters.category) {
       params.set("category", newFilters.category);
     }
-
     newFilters.fees.forEach((fee) => params.append("fees", fee));
-
     newFilters.practiceTypes.forEach((type) => params.append("practiceTypes", type));
-
+    newFilters.durations.forEach((d) => params.append("durations", d));
     if (newFilters.sort) {
       params.set("sort", newFilters.sort);
     }
@@ -119,6 +120,7 @@ const Course: React.FC = () => {
           filters.practiceTypes.length > 0 ? filters.practiceTypes : undefined,
           filters.fees.length > 0 ? filters.fees : undefined,
           filters.levels.length > 0 ? filters.levels : undefined,
+          filters.durations.length > 0 ? filters.durations : undefined,
           filters.category || undefined,
           filters.sort || undefined,
         );
@@ -163,30 +165,43 @@ const Course: React.FC = () => {
     loadCourseTypes();
   }, []);
 
-  // Fetch auto-completion suggestions
+  // Fetch auto-completion suggestions — debounced 300ms
   useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (!searchTerm || searchTerm.trim().length < 2) {
+    if (autocompleteTimerRef.current) {
+      clearTimeout(autocompleteTimerRef.current);
+    }
+
+    if (!searchTerm || searchTerm.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    if (skipNextSuggestionRef.current) {
+      skipNextSuggestionRef.current = false;
+      return;
+    }
+
+    autocompleteTimerRef.current = setTimeout(async () => {
+      setLoadingSuggestions(true);
+      try {
+        const response: CompletionSuggestionResponse =
+          await PublishedCourseService.autoCompletion(searchTerm, 5);
+        setSuggestions(response.titleSuggestions || []);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error("Error fetching suggestions:", error);
         setSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      } else {
-        setLoadingSuggestions(true);
-        try {
-          const response: CompletionSuggestionResponse =
-            await PublishedCourseService.autoCompletion(searchTerm, 5);
-          setSuggestions(response.titleSuggestions || []);
-          setShowSuggestions(true);
-        } catch (error) {
-          console.error("Error fetching suggestions:", error);
-          setSuggestions([]);
-        } finally {
-          setLoadingSuggestions(false);
-        }
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 300);
+
+    return () => {
+      if (autocompleteTimerRef.current) {
+        clearTimeout(autocompleteTimerRef.current);
       }
     };
-
-    fetchSuggestions();
   }, [searchTerm]);
 
   // Close suggestions when clicking outside
@@ -229,6 +244,7 @@ const Course: React.FC = () => {
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    skipNextSuggestionRef.current = true;
     setSearchTerm(suggestion);
     setShowSuggestions(false);
     updateUrlParams(suggestion, filters, 0);
@@ -271,6 +287,28 @@ const Course: React.FC = () => {
     setFilters(newFilters);
     updateUrlParams(searchTerm, newFilters, 0);
     setCurrentPage(0);
+  };
+
+  const hasActiveFilters =
+    filters.minRating > 0 ||
+    !!filters.category ||
+    filters.fees.length > 0 ||
+    filters.practiceTypes.length > 0 ||
+    filters.durations.length > 0 ||
+    filters.levels.length > 0;
+
+  const practiceTypeLabel: Record<string, string> = {
+    quiz: "Trắc nghiệm",
+    "practice-test": "Kiểm tra thực hành",
+    coding: "Bài tập coding",
+  };
+
+  const durationLabel: Record<string, string> = {
+    "0-1": "0–1 giờ",
+    "1-3": "1–3 giờ",
+    "3-6": "3–6 giờ",
+    "6-10": "6–10 giờ",
+    "10+": "Hơn 10 giờ",
   };
 
   const renderStars = (rating: number) => {
@@ -356,9 +394,6 @@ const Course: React.FC = () => {
                 )}
             </div>
 
-            <div className="text-xs text-gray-500 mt-2">
-              Gợi ý tự động sẽ xuất hiện khi bạn nhập từ khóa tìm kiếm
-            </div>
           </div>
 
           {/* Filter Controls - Full Width */}
@@ -416,6 +451,83 @@ const Course: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Active Filter Chips */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {filters.minRating > 0 && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-full">
+                  <Star className="w-3 h-3 fill-current" />
+                  {filters.minRating}+ sao
+                  <button
+                    onClick={() => updateFilter("minRating", 0)}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {filters.category && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-full">
+                  {filters.category}
+                  <button
+                    onClick={() => {
+                      const nf = { ...filters, category: "" };
+                      setFilters(nf);
+                      updateUrlParams(searchTerm, nf, 0);
+                      setCurrentPage(0);
+                    }}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {filters.fees.map((fee) => (
+                <span
+                  key={fee}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-full"
+                >
+                  {fee === "free" ? "Miễn phí" : "Có phí"}
+                  <button
+                    onClick={() => toggleArrayFilter("fees", fee)}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {filters.practiceTypes.map((type) => (
+                <span
+                  key={type}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-full"
+                >
+                  {practiceTypeLabel[type] ?? type}
+                  <button
+                    onClick={() => toggleArrayFilter("practiceTypes", type)}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {filters.durations.map((d) => (
+                <span
+                  key={d}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-full"
+                >
+                  <Clock className="w-3 h-3" />
+                  {durationLabel[d] ?? d}
+                  <button
+                    onClick={() => toggleArrayFilter("durations", d)}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Main Content Area with Filters and Course List */}
           <div className="flex flex-col lg:flex-row gap-6">
@@ -723,6 +835,11 @@ const Course: React.FC = () => {
                             {/* Course Info */}
                             <div className="flex-1 flex flex-col justify-between">
                               <div>
+                                {course.category && (
+                                  <span className="inline-block mb-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded">
+                                    {course.category}
+                                  </span>
+                                )}
                                 <h3 className="font-semibold text-lg mb-1 line-clamp-2">
                                   {course.courseName}
                                 </h3>
@@ -739,48 +856,24 @@ const Course: React.FC = () => {
                                     {renderStars(course.rating)}
                                   </div>
                                   <span className="text-sm text-gray-500">
-                                    ({course.reviewCount})
+                                    ({course.reviewCount.toLocaleString("vi-VN")})
                                   </span>
                                 </div>
 
                                 {/* Course Meta */}
-                                <div className="flex items-center gap-3 text-sm text-gray-600">
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    {course.duration}{" "}
-                                    {parseInt(course.duration) > 1
-                                      ? "tháng"
-                                      : "tháng"}
-                                  </span>
-                                  {/* {course.lectureCount && (
-                                    <span>
-                                      • {course.lectureCount} bài giảng
+                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                  {course.duration && (
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-4 h-4" />
+                                      {course.duration} tháng
                                     </span>
                                   )}
-                                  {course.level && (
-                                    <span>• {course.level}</span>
-                                  )} */}
+                                  <span className="flex items-center gap-1">
+                                    <Users className="w-4 h-4" />
+                                    {course.studentCount.toLocaleString("vi-VN")} học viên
+                                  </span>
                                 </div>
                               </div>
-
-                              {/* Badges */}
-                              {/* <div className="flex items-center gap-2 mt-2">
-                                {course.isBestSeller && (
-                                  <span className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded">
-                                    Bán chạy nhất
-                                  </span>
-                                )}
-                                {course.hasExercises && (
-                                  <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
-                                    Có bài tập
-                                  </span>
-                                )}
-                                {price === 0 && (
-                                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
-                                    Miễn phí
-                                  </span>
-                                )}
-                              </div> */}
                             </div>
 
                             {/* Price and Action */}

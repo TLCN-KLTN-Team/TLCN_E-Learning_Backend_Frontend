@@ -87,6 +87,9 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     
     @Query("SELECT c FROM Course c WHERE c.educationalUnit.id = :educationalUnitId")
     List<Course> findByEducationalUnitId(@Param("educationalUnitId") Integer educationalUnitId);
+
+    @Query("SELECT c FROM Course c WHERE c.educationalUnit.id = :educationalUnitId AND c.publishedCourse IS NOT NULL")
+    Page<Course> findPublishedByEducationalUnit(@Param("educationalUnitId") int educationalUnitId, Pageable pageable);
     
     // Dashboard KPI queries
     @Query("SELECT COUNT(c) FROM Course c WHERE c.publishedCourse IS NOT NULL AND " +

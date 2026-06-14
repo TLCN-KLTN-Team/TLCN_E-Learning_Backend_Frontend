@@ -142,6 +142,69 @@ public class EducationalUnitService {
                 .build();
     }
 
+    public PaginatedResponse<EducationalUnitDetailResponse.Teacher> getTeachersByEducationalUnitPaged(Integer id, int page, int size) {
+        if (!educationalUnitRepository.existsById(id)) {
+            throw new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND);
+        }
+        try {
+            PageResponse<TeacherResponse> teacherPage = teacherRepository
+                    .getTeachersByEducationalUnit(id, page, size, null).getResult();
+            List<EducationalUnitDetailResponse.Teacher> teachers = teacherPage.getContent().stream()
+                    .map(teacher -> {
+                        String deptName = "";
+                        if (teacher.getDepartmentId() != null && !teacher.getDepartmentId().isBlank()) {
+                            try {
+                                deptName = departmentRepo.findById(Integer.parseInt(teacher.getDepartmentId()))
+                                        .map(Department::getName).orElse("");
+                            } catch (Exception ignored) {}
+                        }
+                        return EducationalUnitDetailResponse.Teacher.builder()
+                                .id(teacher.getTeacherId())
+                                .name(teacher.getLastName() + " " + teacher.getFirstName())
+                                .avatarUrl(teacher.getAvatarUrl())
+                                .departmentName(deptName)
+                                .build();
+                    }).toList();
+            return PaginatedResponse.<EducationalUnitDetailResponse.Teacher>builder()
+                    .content(teachers)
+                    .page(page)
+                    .size(size)
+                    .totalElements(teacherPage.getTotalElements())
+                    .totalPages(teacherPage.getTotalPages())
+                    .build();
+        } catch (Exception e) {
+            log.error("Error fetching paged teachers for unit {}: {}", id, e.getMessage());
+            throw new AppException(ErrorCode.FEIGN_CLIENT_ERROR);
+        }
+    }
+
+    public PaginatedResponse<EducationalUnitDetailResponse.Course> getCoursesByEducationalUnitPaged(Integer id, int page, int size) {
+        if (!educationalUnitRepository.existsById(id)) {
+            throw new AppException(ErrorCode.EDUCATIONAL_UNIT_NOT_FOUND);
+        }
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Course> coursePage = courseRepository.findPublishedByEducationalUnit(id, pageable);
+        List<EducationalUnitDetailResponse.Course> courses = coursePage.getContent().stream()
+                .map(course -> EducationalUnitDetailResponse.Course.builder()
+                        .id(course.getPublishedCourse().getId())
+                        .name(course.getCourseName())
+                        .description(course.getDescription())
+                        .coverImageUrl(course.getPublishedCourse().getCourseImage())
+                        .price(currencyUtils.formatCurrency(course.getPublishedCourse().getCoursePrice()))
+                        .duration(50)
+                        .numberOfStudents(500)
+                        .averageRating(5)
+                        .build())
+                .toList();
+        return PaginatedResponse.<EducationalUnitDetailResponse.Course>builder()
+                .content(courses)
+                .page(page)
+                .size(size)
+                .totalElements(coursePage.getTotalElements())
+                .totalPages(coursePage.getTotalPages())
+                .build();
+    }
+
     public PaginatedResponse<EducationalUnitResponse> getAllEducationalUnitsAtSuperAdmin(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
         Page<EducationalUnit> educationalUnits = educationalUnitRepository.findAll(pageable);

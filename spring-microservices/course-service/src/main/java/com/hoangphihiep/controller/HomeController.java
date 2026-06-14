@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -55,6 +56,28 @@ public class HomeController {
         return ApiResponse.success(
                 educationalUnitService.getEducationalUnitById(id),
                 "Lay danh sach cac don vi " + id + " dao tao thanh cong"
+        );
+    }
+
+    @GetMapping("/educational-units/{id}/teachers")
+    public ApiResponse<?> getTeachersByEducationalUnit(
+            @PathVariable Integer id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size) {
+        return ApiResponse.success(
+                educationalUnitService.getTeachersByEducationalUnitPaged(id, page, size),
+                "Lay danh sach giang vien cua don vi dao tao thanh cong"
+        );
+    }
+
+    @GetMapping("/educational-units/{id}/courses")
+    public ApiResponse<?> getCoursesByEducationalUnit(
+            @PathVariable Integer id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+        return ApiResponse.success(
+                educationalUnitService.getCoursesByEducationalUnitPaged(id, page, size),
+                "Lay danh sach khoa hoc cua don vi dao tao thanh cong"
         );
     }
 }

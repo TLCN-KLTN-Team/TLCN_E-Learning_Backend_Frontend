@@ -17,6 +17,7 @@ const searchAndFiltersPublishedCourses = async (
   practiceTypes?: string[],
   fees?: string[],
   levels?: string[],
+  durations?: string[],
   category?: string,
   sortBy?: string
 ): Promise<PaginatedResponse<PublishedCourseResponse>> => {
@@ -34,6 +35,9 @@ const searchAndFiltersPublishedCourses = async (
   }
   if (levels && levels.length > 0) {
     levels.forEach((level) => params.append("levels", level));
+  }
+  if (durations && durations.length > 0) {
+    durations.forEach((d) => params.append("durations", d));
   }
   if (category) {
     params.append("category", category);
