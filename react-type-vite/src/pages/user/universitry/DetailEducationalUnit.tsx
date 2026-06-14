@@ -6,13 +6,46 @@ import { HeroBanner } from "@/components/university/HeroBanner";
 import { GeneralInfo } from "@/components/university/GeneralInfo";
 import { LecturersSection } from "@/components/university/LecturersSection";
 import { CoursesSection } from "@/components/university/CoursesSection";
-import { getEducationalUnitById } from "@/services/api/anonymous/home.api";
-import type { EducationalUnitDetailResponse } from "@/types/educational-unit.types";
+import {
+  getEducationalUnitById,
+  getTeachersByEducationalUnit,
+  getCoursesByEducationalUnit,
+} from "@/services/api/anonymous/home.api";
+import type {
+  EducationalUnitDetailResponse,
+  EducationalUnitTeacher,
+  EducationalUnitCourse,
+  PaginatedResponse,
+} from "@/types/educational-unit.types";
 
 import logo from "@/assets/university-hero.jpg";
 
 const DEFAULT_AVATAR = "https://via.placeholder.com/100";
 const DEFAULT_COURSE_IMAGE = "https://via.placeholder.com/300x200";
+
+const mapTeacher = (t: EducationalUnitTeacher) => ({
+  id: t.id,
+  name: t.name,
+  avatar: t.avatarUrl || DEFAULT_AVATAR,
+  department: t.departmentName,
+  email: "",
+  title: t.academicDegree || "Giảng viên",
+  bio: "",
+});
+
+const mapCourse = (c: EducationalUnitCourse) => ({
+  id: c.id.toString(),
+  title: c.name,
+  description: c.description || "Chưa có mô tả",
+  duration: `${c.duration} giờ`,
+  price: Number.parseFloat(c.price.replace(/[^0-9]/g, "")) || 0,
+  instructor: c.departmentName || "Chưa xác định",
+  thumbnail: c.coverImageUrl || DEFAULT_COURSE_IMAGE,
+  enrollmentCount: c.numberOfStudents,
+  rating: c.averageRating,
+  category: c.departmentName || "Chưa phân loại",
+  level: "Trung cấp",
+});
 
 const DetailEducationalUnit = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,39 +53,56 @@ const DetailEducationalUnit = () => {
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Fetch data from API
+  // Teachers pagination state
+  const [teachersData, setTeachersData] =
+    useState<PaginatedResponse<EducationalUnitTeacher> | null>(null);
+  const [teacherPage, setTeacherPage] = useState(0);
+  const [teachersLoading, setTeachersLoading] = useState(false);
+
+  // Courses pagination state
+  const [coursesData, setCoursesData] =
+    useState<PaginatedResponse<EducationalUnitCourse> | null>(null);
+  const [coursePage, setCoursePage] = useState(0);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+
+  // Fetch basic unit info (metadata, departments, totals)
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-
-      setLoading(true);
-      try {
-        const response = await getEducationalUnitById(Number(id));
-        setData(response);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    if (!id) return;
+    setLoading(true);
+    getEducationalUnitById(Number(id))
+      .then(setData)
+      .catch((err) => console.error("Error fetching unit:", err))
+      .finally(() => setLoading(false));
   }, [id]);
 
-  const handleFollow = () => {
-    setIsFollowing(!isFollowing);
-  };
+  // Fetch teachers page
+  useEffect(() => {
+    if (!id) return;
+    setTeachersLoading(true);
+    getTeachersByEducationalUnit(Number(id), teacherPage, 8)
+      .then(setTeachersData)
+      .catch((err) => console.error("Error fetching teachers:", err))
+      .finally(() => setTeachersLoading(false));
+  }, [id, teacherPage]);
+
+  // Fetch courses page
+  useEffect(() => {
+    if (!id) return;
+    setCoursesLoading(true);
+    getCoursesByEducationalUnit(Number(id), coursePage, 6)
+      .then(setCoursesData)
+      .catch((err) => console.error("Error fetching courses:", err))
+      .finally(() => setCoursesLoading(false));
+  }, [id, coursePage]);
+
+  const handleFollow = () => setIsFollowing(!isFollowing);
 
   const handleVisit = () => {
-    if (data?.website) {
-      window.open(data.website, "_blank");
-    }
+    if (data?.website) window.open(data.website, "_blank");
   };
 
   const handleContact = () => {
-    if (data?.email) {
-      window.location.href = `mailto:${data.email}`;
-    }
+    if (data?.email) window.location.href = `mailto:${data.email}`;
   };
 
   if (loading) {
@@ -84,36 +134,8 @@ const DetailEducationalUnit = () => {
     );
   }
 
-  // Prepare lecturers with default values
-  const lecturers = data.teachers.map((teacher) => ({
-    id: teacher.id,
-    name: teacher.name,
-    avatar: teacher.avatarUrl || DEFAULT_AVATAR,
-    department: teacher.departmentName,
-    email: "",
-    title: teacher.academicDegree || "Giảng viên",
-    bio: "",
-  }));
-
-  // Prepare courses with default values
-  const courses = data.courses.map((course) => ({
-    id: course.id.toString(),
-    title: course.name,
-    description: course.description || "Chưa có mô tả",
-    duration: `${course.duration} giờ`,
-    price: Number.parseFloat(course.price.replace(/[^0-9]/g, "")) || 0,
-    instructor: course.departmentName || "Chưa xác định",
-    thumbnail: course.coverImageUrl || DEFAULT_COURSE_IMAGE,
-    enrollmentCount: course.numberOfStudents,
-    rating: course.averageRating,
-    category: course.departmentName || "Chưa phân loại",
-    level: "Trung cấp",
-  }));
-
-  const categories = [
-    ...new Set(courses.map((c) => c.category).filter(Boolean)),
-  ] as string[];
-
+  const lecturers = (teachersData?.content ?? []).map(mapTeacher);
+  const courses = (coursesData?.content ?? []).map(mapCourse);
   const departments = data.departments || [];
 
   return (
@@ -145,9 +167,25 @@ const DetailEducationalUnit = () => {
           }}
         />
 
-        <LecturersSection lecturers={lecturers} departments={departments} />
+        <LecturersSection
+          lecturers={lecturers}
+          departments={departments}
+          currentPage={teacherPage}
+          totalPages={teachersData?.totalPages ?? 0}
+          totalElements={teachersData?.totalElements ?? 0}
+          loading={teachersLoading}
+          onPageChange={setTeacherPage}
+        />
 
-        <CoursesSection courses={courses} categories={categories} />
+        <CoursesSection
+          courses={courses}
+          categories={departments}
+          currentPage={coursePage}
+          totalPages={coursesData?.totalPages ?? 0}
+          totalElements={coursesData?.totalElements ?? 0}
+          loading={coursesLoading}
+          onPageChange={setCoursePage}
+        />
       </div>
 
       <Footer />

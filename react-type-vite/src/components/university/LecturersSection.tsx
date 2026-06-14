@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Mail, ExternalLink } from "lucide-react";
+import { Search, Mail, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Lecturer {
   id: string;
@@ -25,19 +25,29 @@ interface Lecturer {
 interface LecturersSectionProps {
   lecturers: Lecturer[];
   departments: string[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  loading?: boolean;
+  onPageChange: (page: number) => void;
 }
+
 const getAvatarByName = (name: string): string => {
   const words = name.trim().split(" ");
   if (words.length >= 2) {
-    return `${words[0].charAt(0)}${words[words.length - 1].charAt(
-      0
-    )}`.toUpperCase();
+    return `${words[0].charAt(0)}${words[words.length - 1].charAt(0)}`.toUpperCase();
   }
   return name.charAt(0).toUpperCase();
 };
+
 export function LecturersSection({
   lecturers,
   departments,
+  currentPage,
+  totalPages,
+  totalElements,
+  loading = false,
+  onPageChange,
 }: LecturersSectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
@@ -52,6 +62,11 @@ export function LecturersSection({
     return matchesSearch && matchesDepartment;
   });
 
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i);
+  const visiblePages = pageNumbers.filter(
+    (p) => p === 0 || p === totalPages - 1 || Math.abs(p - currentPage) <= 1
+  );
+
   return (
     <section className="p-10 md:py-16 bg-background">
       <div className="container mx-auto px-4">
@@ -60,6 +75,11 @@ export function LecturersSection({
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
               Đội ngũ Giảng viên
             </h2>
+            {totalElements > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {totalElements} giảng viên
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -92,83 +112,149 @@ export function LecturersSection({
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
-          {filteredLecturers.map((lecturer) => (
-            <Card
-              key={lecturer.id}
-              className="hover:shadow-lg transition-all duration-300 border"
-            >
-              <CardContent className="p-5">
-                <div className="flex flex-col items-center text-center gap-3">
-                  {/* Avatar */}
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src={lecturer.avatar} alt={lecturer.name} />
-                    <AvatarFallback className="bg-blue-600 text-white text-lg font-semibold">
-                      {getAvatarByName(lecturer.name)}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  {/* Info */}
-                  <div className="w-full">
-                    <h3 className="font-semibold text-foreground text-base mb-1">
-                      {lecturer.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {lecturer.title || "Giảng viên"}
-                    </p>
-                    <Badge
-                      variant="secondary"
-                      className="text-xs bg-blue-50 text-blue-700"
-                    >
-                      {lecturer.department}
-                    </Badge>
+        {loading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i} className="border animate-pulse">
+                <CardContent className="p-5">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 rounded-full bg-muted" />
+                    <div className="w-full space-y-2">
+                      <div className="h-4 bg-muted rounded w-3/4 mx-auto" />
+                      <div className="h-3 bg-muted rounded w-1/2 mx-auto" />
+                    </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+            {filteredLecturers.map((lecturer) => (
+              <Card
+                key={lecturer.id}
+                className="hover:shadow-lg transition-all duration-300 border"
+              >
+                <CardContent className="p-5">
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={lecturer.avatar} alt={lecturer.name} />
+                      <AvatarFallback className="bg-blue-600 text-white text-lg font-semibold">
+                        {getAvatarByName(lecturer.name)}
+                      </AvatarFallback>
+                    </Avatar>
 
-                {/* Actions */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                  {lecturer.email ? (
+                    <div className="w-full">
+                      <h3 className="font-semibold text-foreground text-base mb-1">
+                        {lecturer.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {lecturer.title || "Giảng viên"}
+                      </p>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-blue-50 text-blue-700"
+                      >
+                        {lecturer.department}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                    {lecturer.email ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-muted-foreground hover:text-blue-600 p-0 h-auto"
+                        onClick={() =>
+                          (window.location.href = `mailto:${lecturer.email}`)
+                        }
+                      >
+                        <Mail className="w-3.5 h-3.5 mr-1" />
+                        Email
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Chưa có email
+                      </span>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-xs text-muted-foreground hover:text-blue-600 p-0 h-auto"
+                      className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto"
                       onClick={() =>
-                        (window.location.href = `mailto:${lecturer.email}`)
+                        window.open(
+                          `${import.meta.env.VITE_APP_URL}/teacher/${lecturer.id}`,
+                          "_blank"
+                        )
                       }
                     >
-                      <Mail className="w-3.5 h-3.5 mr-1" />
-                      Email
+                      <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                      Hồ sơ
                     </Button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      Chưa có email
-                    </span>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto"
-                    onClick={() =>
-                      window.open(
-                        `${import.meta.env.VITE_APP_URL}/teacher/${lecturer.id}`,
-                        "_blank"
-                      )
-                    }
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                    Hồ sơ
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-        {filteredLecturers.length === 0 && (
+        {!loading && filteredLecturers.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg">
-              Không tìm thấy giảng viên phù hợp
+              Khong tìm thấy giảng viên nào phù hợp với tiêu chí của bạn. Hãy thử điều chỉnh từ khóa tìm kiếm hoặc bộ lọc khoa.
             </p>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 0 || loading}
+              className="gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Trước
+            </Button>
+
+            {visiblePages.map((p, idx) => {
+              const prev = visiblePages[idx - 1];
+              const showEllipsis = prev !== undefined && p - prev > 1;
+              return (
+                <span key={p} className="flex items-center gap-2">
+                  {showEllipsis && (
+                    <span className="text-muted-foreground px-1">...</span>
+                  )}
+                  <Button
+                    variant={p === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => onPageChange(p)}
+                    disabled={loading}
+                    className={
+                      p === currentPage
+                        ? "bg-blue-600 hover:bg-blue-700 text-white min-w-[36px]"
+                        : "min-w-[36px]"
+                    }
+                  >
+                    {p + 1}
+                  </Button>
+                </span>
+              );
+            })}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1 || loading}
+              className="gap-1"
+            >
+              Sau
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         )}
       </div>

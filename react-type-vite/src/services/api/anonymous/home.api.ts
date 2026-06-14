@@ -5,6 +5,9 @@ import type {
 import type {
   EducationalUnitCardResponse,
   EducationalUnitDetailResponse,
+  EducationalUnitTeacher,
+  EducationalUnitCourse,
+  PaginatedResponse,
 } from "@/types/educational-unit.types";
 import type { ApiResponse } from "../response/apiResponse";
 import publicAxiosInstance from "../httpClient/publicAxiosInstance";
@@ -73,6 +76,32 @@ export const getEducationalUnitById = async (
   const response = await publicAxiosInstance.get<
     ApiResponse<EducationalUnitDetailResponse>
   >(`${HOME_ENDPOINT}/educational-units/${id}`);
+  return response.data.result;
+};
+
+export const getTeachersByEducationalUnit = async (
+  id: number,
+  page = 0,
+  size = 8
+): Promise<PaginatedResponse<EducationalUnitTeacher>> => {
+  const response = await publicAxiosInstance.get<
+    ApiResponse<PaginatedResponse<EducationalUnitTeacher>>
+  >(`${HOME_ENDPOINT}/educational-units/${id}/teachers`, {
+    params: { page, size },
+  });
+  return response.data.result;
+};
+
+export const getCoursesByEducationalUnit = async (
+  id: number,
+  page = 0,
+  size = 6
+): Promise<PaginatedResponse<EducationalUnitCourse>> => {
+  const response = await publicAxiosInstance.get<
+    ApiResponse<PaginatedResponse<EducationalUnitCourse>>
+  >(`${HOME_ENDPOINT}/educational-units/${id}/courses`, {
+    params: { page, size },
+  });
   return response.data.result;
 };
 

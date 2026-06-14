@@ -1,3 +1,11 @@
+export interface PaginatedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 // Educational Unit Types
 
 export interface EducationalUnit {

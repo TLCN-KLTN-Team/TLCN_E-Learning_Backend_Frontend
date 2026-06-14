@@ -3,8 +3,8 @@ package com.hoangphihiep.repository.httpclient;
 import com.hoangphihiep.config.FeignClientConfig;
 import com.hoangphihiep.dto.request.TeacherRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
+import com.hoangphihiep.dto.response.PageResponse;
 import com.hoangphihiep.dto.response.TeacherResponse;
-import org.springframework.data.domain.Page;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +23,7 @@ public interface TeacherRepository {
     ApiResponse<TeacherResponse> getTeacherByTeacherId(@PathVariable String teacherId);
 
     @GetMapping("/teachers/by-educationalUnit/{educationalUnitId}")
-    ApiResponse<Page<TeacherResponse>> getTeachersByEducationalUnit(
+    ApiResponse<PageResponse<TeacherResponse>> getTeachersByEducationalUnit(
             @PathVariable int educationalUnitId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

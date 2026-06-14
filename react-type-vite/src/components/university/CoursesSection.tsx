@@ -10,7 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, Users, ArrowRight, BookOpen, Star } from "lucide-react";
+import {
+  Clock,
+  Users,
+  ArrowRight,
+  BookOpen,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface Course {
   id: string;
@@ -29,11 +37,21 @@ interface Course {
 interface CoursesSectionProps {
   courses: Course[];
   categories?: string[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  loading?: boolean;
+  onPageChange: (page: number) => void;
 }
 
 export function CoursesSection({
   courses,
   categories = [],
+  currentPage,
+  totalPages,
+  totalElements,
+  loading = false,
+  onPageChange,
 }: CoursesSectionProps) {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -52,10 +70,14 @@ export function CoursesSection({
       return 0;
     });
 
-  // Check if there are no courses at all
-  if (courses.length === 0) {
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i);
+  const visiblePages = pageNumbers.filter(
+    (p) => p === 0 || p === totalPages - 1 || Math.abs(p - currentPage) <= 1,
+  );
+
+  if (!loading && courses.length === 0 && currentPage === 0) {
     return (
-      <section className="p-10 md:py-16 bg-secondary/20 dark:bg-secondary/10">
+      <section className="p-10 md:py-16 bg-background">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
             Khóa học
@@ -72,13 +94,19 @@ export function CoursesSection({
   }
 
   return (
-    <section className="p-10 md:py-16 bg-secondary/20 dark:bg-secondary/10">
+    <section className="p-10 md:py-16 bg-background">
       <div className="container mx-auto px-4">
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
               Khóa học
             </h2>
+            {totalElements > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {totalElements} khóa học
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -108,102 +136,120 @@ export function CoursesSection({
               <SelectContent>
                 <SelectItem value="newest">Mới nhất</SelectItem>
                 <SelectItem value="popular">Phổ biến nhất</SelectItem>
-                <SelectItem value="price-low">Giá thấp đến cao</SelectItem>
-                <SelectItem value="price-high">Giá cao đến thấp</SelectItem>
+                <SelectItem value="price-low">Giá thấp → cao</SelectItem>
+                <SelectItem value="price-high">Giá cao → thấp</SelectItem>
                 <SelectItem value="name">Theo tên</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <div className="space-y-4">
-          {filteredCourses.map((course) => (
-            <Card
-              key={course.id}
-              className="overflow-hidden hover:shadow-lg transition-all duration-300 border"
-            >
-              <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row gap-4 p-5 md:p-6">
-                  {/* Thumbnail */}
-                  <div
-                    className="w-full md:w-48 h-32 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => navigate(`/courses/${course.id}`)}
-                  >
-                    {course.thumbnail ? (
-                      <img
-                        src={course.thumbnail}
-                        alt={course.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <BookOpen className="w-12 h-12 text-gray-400" />
+        {/* Grid */}
+        {loading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="border animate-pulse overflow-hidden">
+                <div className="w-full h-44 bg-muted" />
+                <CardContent className="p-4 space-y-3">
+                  <div className="h-5 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-full" />
+                  <div className="h-4 bg-muted rounded w-5/6" />
+                  <div className="flex justify-between items-center pt-1">
+                    <div className="h-5 bg-muted rounded w-1/4" />
+                    <div className="h-8 bg-muted rounded w-1/3" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+            {filteredCourses.map((course) => (
+              <Card
+                key={course.id}
+                className="overflow-hidden hover:shadow-lg transition-all duration-300 border flex flex-col cursor-pointer"
+                onClick={() => navigate(`/courses/${course.id}`)}
+              >
+                {/* Thumbnail */}
+                <div className="w-full h-44 bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 overflow-hidden">
+                  {course.thumbnail ? (
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <BookOpen className="w-12 h-12 text-gray-400" />
+                  )}
+                </div>
+
+                <CardContent className="p-4 flex flex-col flex-1">
+                  {/* Category */}
+                  {course.category && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 mb-2 w-fit"
+                    >
+                      {course.category}
+                    </Badge>
+                  )}
+
+                  {/* Title */}
+                  <h3 className="font-semibold text-foreground text-base mb-1 line-clamp-2 hover:text-blue-600 transition-colors">
+                    {course.title}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
+                    {course.description}
+                  </p>
+
+                  {/* Stats */}
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-3">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {course.duration}
+                    </span>
+                    {course.enrollmentCount !== undefined && (
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" />
+                        {course.enrollmentCount.toLocaleString("vi-VN")}
+                      </span>
+                    )}
+                    {course.rating != null && course.rating > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                        {course.rating.toFixed(1)}
+                      </span>
                     )}
                   </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                      <div className="flex-1">
-                        <h3
-                          className="text-lg font-semibold text-foreground mb-2 cursor-pointer hover:text-blue-600 transition-colors"
-                          onClick={() => navigate(`/courses/${course.id}`)}
-                        >
-                          {course.title}
-                        </h3>
-                        {course.category && (
-                          <Badge
-                            variant="secondary"
-                            className="text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                          >
-                            {course.category}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                      {course.description}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        {course.duration}
-                      </span>
-                      {course.enrollmentCount !== undefined && (
-                        <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <Users className="w-4 h-4" />
-                          {course.enrollmentCount.toLocaleString("vi-VN")}
-                        </span>
-                      )}
-                      {course.rating && (
-                        <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          {course.rating}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        {course.price.toLocaleString("vi-VN")} đ
-                      </div>
-                      <Button
-                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                        onClick={() => navigate(`/courses/${course.id}`)}
-                      >
-                        Đăng ký
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  {/* Price + CTA */}
+                  <div
+                    className="flex items-center justify-between pt-3 border-t border-border"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-base font-bold text-blue-600 dark:text-blue-400">
+                      {course.price === 0
+                        ? "Miễn phí"
+                        : `${course.price.toLocaleString("vi-VN")} đ`}
+                    </span>
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white gap-1 text-xs"
+                      onClick={() => navigate(`/courses/${course.id}`)}
+                    >
+                      Xem khóa học
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-        {filteredCourses.length === 0 && (
+        {!loading && filteredCourses.length === 0 && courses.length > 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg">
               Không tìm thấy khóa học phù hợp
@@ -211,11 +257,64 @@ export function CoursesSection({
           </div>
         )}
 
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 0 || loading}
+              className="gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Trước
+            </Button>
+
+            {visiblePages.map((p, idx) => {
+              const prev = visiblePages[idx - 1];
+              const showEllipsis = prev !== undefined && p - prev > 1;
+              return (
+                <span key={p} className="flex items-center gap-2">
+                  {showEllipsis && (
+                    <span className="text-muted-foreground px-1">...</span>
+                  )}
+                  <Button
+                    variant={p === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => onPageChange(p)}
+                    disabled={loading}
+                    className={
+                      p === currentPage
+                        ? "bg-blue-600 hover:bg-blue-700 text-white min-w-[36px]"
+                        : "min-w-[36px]"
+                    }
+                  >
+                    {p + 1}
+                  </Button>
+                </span>
+              );
+            })}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1 || loading}
+              className="gap-1"
+            >
+              Sau
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* View all link */}
         <div className="text-center mt-8">
           <Button
             variant="outline"
-            size="lg"
-            className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
+            onClick={() => navigate("/courses")}
           >
             Xem tất cả khóa học
             <ArrowRight className="w-4 h-4" />

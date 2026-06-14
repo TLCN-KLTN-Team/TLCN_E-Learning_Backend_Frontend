@@ -3,7 +3,10 @@ package com.hoangphihiep.utils;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import com.hoangphihiep.document.PublishedCourseDocument;
+import com.hoangphihiep.entity.Assignment;
+import com.hoangphihiep.entity.Course;
 import com.hoangphihiep.entity.PublishedCourse;
+import com.hoangphihiep.entity.Section;
 import com.hoangphihiep.exception.AppException;
 import com.hoangphihiep.exception.ErrorCode;
 import com.hoangphihiep.helper.Indices;
@@ -18,7 +21,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -89,9 +96,6 @@ public class ElasticSearchIndexInitializer {
     }
 
     private PublishedCourseDocument toCourseDocument(PublishedCourse course) {
-
-
-
         return PublishedCourseDocument.builder()
                 .id(course.getId().toString())
                 .courseName(course.getCourse().getCourseName())
@@ -99,11 +103,38 @@ public class ElasticSearchIndexInitializer {
                 .courseIntroduction(course.getCourseIntroduction())
                 .price(course.getCoursePrice())
                 .category(course.getCourseType().getCourseTypeName())
-                .level(null) // TODO: Add level field to PublishedCourse entity if needed
+                .level(null)
+                .instructor(course.getAuthorName())
+                .practiceTypes(derivePracticeTypes(course))
                 .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
                 .studentsCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
-
+                .createdAt(course.getCreatedAt() != null ?
+                        course.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null)
+                .updatedAt(course.getUpdatedAt() != null ?
+                        course.getUpdatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null)
                 .build();
+    }
+
+    private List<String> derivePracticeTypes(PublishedCourse publishedCourse) {
+        Set<String> types = new LinkedHashSet<>();
+        Course course = publishedCourse.getCourse();
+        if (course == null || course.getSections() == null) return List.of();
+
+        for (Section section : course.getSections()) {
+            if (section.getQuizs() != null && !section.getQuizs().isEmpty()) {
+                types.add("quiz");
+            }
+            if (section.getAssignments() != null && !section.getAssignments().isEmpty()) {
+                for (Assignment a : section.getAssignments()) {
+                    if ("coding".equalsIgnoreCase(a.getSubmissionType())) {
+                        types.add("coding");
+                    } else {
+                        types.add("practice-test");
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(types);
     }
 
     // different documents below here

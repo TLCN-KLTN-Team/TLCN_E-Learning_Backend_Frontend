@@ -4,7 +4,7 @@ import com.hoangphihiep.config.FeignClientConfig;
 import com.hoangphihiep.dto.request.ExpertRequest;
 import com.hoangphihiep.dto.response.ApiResponse;
 import com.hoangphihiep.dto.response.ExpertResponse;
-import org.springframework.data.domain.Page;
+import com.hoangphihiep.dto.response.PageResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +24,7 @@ public interface ExpertRepository {
     ApiResponse<ExpertResponse> getExpertByExpertId(@PathVariable String expertId);
 
     @GetMapping("/experts/by-educationalUnit/{educationalUnitId}")
-    ApiResponse<Page<ExpertResponse>> getExpertsByEducationalUnit(
+    ApiResponse<PageResponse<ExpertResponse>> getExpertsByEducationalUnit(
             @PathVariable int educationalUnitId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

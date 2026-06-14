@@ -150,19 +150,18 @@ public class CourseService {
         validateEducationalUnitAccess(educationalUnitId);
 
         try {
-            ApiResponse<Page<TeacherResponse>> response = teacherRepository.getTeachersByEducationalUnit(
+            ApiResponse<PageResponse<TeacherResponse>> response = teacherRepository.getTeachersByEducationalUnit(
                     educationalUnitId, page, size, search);
 
             if (response.getResult() == null) {
                 throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
             }
 
-            Page<TeacherResponse> teacherPage = response.getResult();
+            PageResponse<TeacherResponse> teacherPage = response.getResult();
 
-            // Batch populate để tối ưu hiệu suất
             List<TeacherResponse> populatedTeachers = batchPopulateTeacherDetails(teacherPage.getContent());
 
-            return new PageImpl<>(populatedTeachers, teacherPage.getPageable(), teacherPage.getTotalElements());
+            return new PageImpl<>(populatedTeachers, PageRequest.of(teacherPage.getNumber(), teacherPage.getSize()), teacherPage.getTotalElements());
 
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
@@ -186,19 +185,18 @@ public class CourseService {
         }
 
         try {
-            ApiResponse<Page<TeacherResponse>> response = teacherRepository.getTeachersByEducationalUnit(
+            ApiResponse<PageResponse<TeacherResponse>> response = teacherRepository.getTeachersByEducationalUnit(
                     educationalUnitId, page, size, search);
 
             if (response.getResult() == null) {
                 throw new AppException(ErrorCode.TEACHER_NOT_FOUND);
             }
 
-            Page<TeacherResponse> teacherPage = response.getResult();
+            PageResponse<TeacherResponse> teacherPage = response.getResult();
 
-            // Reuse batch populate logic
             List<TeacherResponse> populatedTeachers = batchPopulateTeacherDetails(teacherPage.getContent());
 
-            return new PageImpl<>(populatedTeachers, teacherPage.getPageable(), teacherPage.getTotalElements());
+            return new PageImpl<>(populatedTeachers, PageRequest.of(teacherPage.getNumber(), teacherPage.getSize()), teacherPage.getTotalElements());
 
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
@@ -287,18 +285,18 @@ public class CourseService {
         validateEducationalUnitAccess(educationalUnitId);
 
         try {
-            ApiResponse<Page<StudentResponse>> response = studentRepository.getStudentsByEducationalUnit(
+            ApiResponse<PageResponse<StudentResponse>> response = studentRepository.getStudentsByEducationalUnit(
                     educationalUnitId, page, size, search);
 
             if (response.getResult() == null) {
                 throw new AppException(ErrorCode.STUDENT_NOT_FOUND);
             }
 
-            Page<StudentResponse> studentPage = response.getResult();
+            PageResponse<StudentResponse> studentPage = response.getResult();
 
             List<StudentResponse> populatedStudents = batchPopulateStudentDetails(studentPage.getContent());
 
-            return new PageImpl<>(populatedStudents, studentPage.getPageable(), studentPage.getTotalElements());
+            return new PageImpl<>(populatedStudents, PageRequest.of(studentPage.getNumber(), studentPage.getSize()), studentPage.getTotalElements());
 
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
@@ -309,14 +307,15 @@ public class CourseService {
         validateEducationalUnitAccess(educationalUnitId);
 
         try {
-            ApiResponse<Page<ExpertResponse>> response = expertRepository.getExpertsByEducationalUnit(
+            ApiResponse<PageResponse<ExpertResponse>> response = expertRepository.getExpertsByEducationalUnit(
                     educationalUnitId, page, size, search);
 
             if (response.getResult() == null) {
                 throw new AppException(ErrorCode.EXPERT_NOT_FOUND);
             }
 
-            return response.getResult();
+            PageResponse<ExpertResponse> expertPage = response.getResult();
+            return new PageImpl<>(expertPage.getContent(), PageRequest.of(expertPage.getNumber(), expertPage.getSize()), expertPage.getTotalElements());
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }

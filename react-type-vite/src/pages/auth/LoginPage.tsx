@@ -4,6 +4,7 @@ import AuthLayout from "../../components/auth/AuthLayout";
 import { useAuth } from "@/context/auth-context/useAuth";
 import { toast } from "react-toastify";
 import { NavLink, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import GoogleButton from "@/components/shared/button/GoogleButton";
 import FacebookButton from "@/components/shared/button/FacebookButton";
 import { Eye, EyeClosed, LockKeyhole, Mail, Loader2 } from "lucide-react";
@@ -198,14 +199,33 @@ const LoginPage = () => {
     );
   }
 
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+  };
+  const item = {
+    hidden: { opacity: 0, y: 14 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.4, ease: "easeOut" },
+    },
+  } as const;
+
   return (
     <AuthLayout
       title="Welcome back!"
       subtitle="Nhập thông tin tài khoản của bạn để đăng nhập."
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <motion.form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+        variants={container}
+        initial="hidden"
+        animate="show"
+      >
         {/* Username Field */}
-        <div className="space-y-2">
+        <motion.div variants={item} className="space-y-2">
           <label
             htmlFor="username"
             className="block text-sm font-semibold text-gray-900"
@@ -232,10 +252,10 @@ const LoginPage = () => {
               Nhập email hoặc tên đăng nhập của bạn
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Password Field */}
-        <div className="space-y-2">
+        <motion.div variants={item} className="space-y-2">
           <div className="flex items-center justify-between">
             <label
               htmlFor="password"
@@ -287,10 +307,10 @@ const LoginPage = () => {
               Nhập mật khẩu ở đây
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Remember Me */}
-        <div className="flex items-center justify-start">
+        <motion.div variants={item} className="flex items-center justify-start">
           <input
             id="rememberMe"
             name="rememberMe"
@@ -302,26 +322,28 @@ const LoginPage = () => {
           <label htmlFor="rememberMe" className="ml-3 text-sm text-gray-700">
             Ghi nhớ đăng nhập
           </label>
-        </div>
+        </motion.div>
 
         {/* Login Button */}
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500/20 shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Đang đăng nhập...
-            </span>
-          ) : (
-            "Đăng nhập"
-          )}
-        </Button>
+        <motion.div variants={item}>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500/20 shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Đang đăng nhập...
+              </span>
+            ) : (
+              "Đăng nhập"
+            )}
+          </Button>
+        </motion.div>
 
         {/* Divider */}
-        <div className="relative">
+        <motion.div variants={item} className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300" />
           </div>
@@ -330,16 +352,16 @@ const LoginPage = () => {
               Hoặc đăng nhập với
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Social Login Buttons */}
-        <div className="grid grid-cols-2 gap-4">
+        <motion.div variants={item} className="grid grid-cols-2 gap-4">
           <GoogleButton disabled={isLoading} />
           <FacebookButton disabled={isLoading} />
-        </div>
+        </motion.div>
 
         {/* Sign Up Link */}
-        <div className="text-center pt-4">
+        <motion.div variants={item} className="text-center pt-4">
           <p className="text-sm text-gray-600">
             Bạn chưa có tài khoản?{" "}
             <NavLink
@@ -349,8 +371,8 @@ const LoginPage = () => {
               Đăng ký tại đây
             </NavLink>
           </p>
-        </div>
-      </form>
+        </motion.div>
+      </motion.form>
     </AuthLayout>
   );
 };

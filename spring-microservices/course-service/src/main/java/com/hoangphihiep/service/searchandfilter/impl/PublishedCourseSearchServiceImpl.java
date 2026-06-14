@@ -35,6 +35,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -93,9 +94,9 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
                 case "newest" -> sortOptions.add(SortOptions.of(s -> s
                         .field(f -> f.field("createdAt").order(SortOrder.Desc))
                 ));
-//                case "popular" -> sortOptions.add(SortOptions.of(s -> s
-//                        .field(f -> f.field("").order(SortOrder.Desc))
-//                ));
+                case "popular" -> sortOptions.add(SortOptions.of(s -> s
+                        .field(f -> f.field("studentsCount").order(SortOrder.Desc))
+                ));
                 default -> {
                     // No sorting applied
                 }
@@ -309,31 +310,44 @@ public class PublishedCourseSearchServiceImpl implements PublishedCourseSearchSe
         assert response.hits().total() != null;
         long totalHits = response.hits().total().value();
         int totalPages = (int) Math.ceil((double) totalHits / request.getSize());
-        log.debug("Search completed. Total hits: {}, Max score: {}", totalHits, 
+        log.debug("Search completed. Total hits: {}, Max score: {}", totalHits,
                 response.hits().maxScore());
 
-        List<PublishedCourse> publishedCourses = response.hits().hits()
-                .stream()
+        List<Hit<PublishedCourseDocument>> hits = response.hits().hits();
+
+        // Batch-fetch all courses in one query to avoid N+1
+        List<Integer> ids = hits.stream()
                 .map(Hit::source)
                 .filter(Objects::nonNull)
-                .map(doc -> publishedCourseRepository.findById(Integer.parseInt(doc.getId())).orElse(null))
-                .filter(Objects::nonNull)
+                .map(doc -> Integer.parseInt(doc.getId()))
                 .toList();
 
-        // Convert hits to response objects
-        List<PublishedCourseCardResponse> result = publishedCourses.stream()
-                .map(course -> PublishedCourseCardResponse.builder()
-                        .id(course.getId())
-                        .courseName(course.getCourseName())
-                        .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
-                        .amountPrice(course.getCoursePrice())
-                        .authorName(course.getAuthorName())
-                        .thumbnailUrl(course.getCourseImage())
-                        .rating(reviewService.calculateAverageRatingForCourse(course.getId()))
-                        .reviewCount(course.getReview().size())
-                        .studentCount(orderService.countNumberOfPurchasePerCourse(course.getId()))
-                        .category(course.getCourseType().getCourseTypeName())
-                        .build())
+        Map<Integer, PublishedCourse> courseMap = publishedCourseRepository.findAllById(ids)
+                .stream()
+                .collect(Collectors.toMap(PublishedCourse::getId, c -> c));
+
+        // Build response in ES hit order; use indexed rating/studentsCount to avoid further service calls
+        List<PublishedCourseCardResponse> result = hits.stream()
+                .map(Hit::source)
+                .filter(Objects::nonNull)
+                .map(doc -> {
+                    Integer id = Integer.parseInt(doc.getId());
+                    PublishedCourse course = courseMap.get(id);
+                    if (course == null) return null;
+                    return PublishedCourseCardResponse.builder()
+                            .id(id)
+                            .courseName(course.getCourseName())
+                            .coursePrice(currencyUtils.formatCurrency(course.getCoursePrice()))
+                            .amountPrice(course.getCoursePrice())
+                            .authorName(course.getAuthorName())
+                            .thumbnailUrl(course.getCourseImage())
+                            .rating(doc.getRating() != null ? doc.getRating() : 0.0)
+                            .reviewCount(course.getReview().size())
+                            .studentCount(doc.getStudentsCount() != null ? doc.getStudentsCount() : 0)
+                            .category(course.getCourseType().getCourseTypeName())
+                            .build();
+                })
+                .filter(Objects::nonNull)
                 .toList();
 
         return PaginatedResponse.<PublishedCourseCardResponse>builder()
