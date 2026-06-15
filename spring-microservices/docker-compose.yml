@@ -23,9 +23,9 @@ services:
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     ports:
       - "3306:3306"
     deploy:
@@ -57,8 +57,9 @@ services:
     healthcheck:
       test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 5
+      start_period: 60s
     ports:
       - "27017:27017"
     deploy:
@@ -96,8 +97,9 @@ services:
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
-      timeout: 5s
-      retries: 3
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     ports:
       - "6379:6379"
     deploy:
@@ -142,7 +144,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 120s
     ports:
       - "9200:9200"
     deploy:
@@ -192,7 +194,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 120s
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -223,8 +225,9 @@ services:
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "2181" ]
       interval: 10s
-      timeout: 5s
-      retries: 3
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
@@ -254,6 +257,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+      start_period: 60s
     ports:
       - "9092:9092"
     deploy:

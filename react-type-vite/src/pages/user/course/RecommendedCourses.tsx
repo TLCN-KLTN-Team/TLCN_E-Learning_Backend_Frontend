@@ -100,7 +100,7 @@ const RecommendedCourses: React.FC<RecommendedCoursesProps> = ({ currentCourseId
                 {courses.map((course) => (
                     <Link
                         key={course.id}
-                        to={`/course/${course.id}`}
+                        to={`/courses/${course.id}`}
                         className="group"
                     >
                         <Card className="h-full border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
