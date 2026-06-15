@@ -155,16 +155,16 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
       console.log('📜 Lịch sử attempts:', history)
 
       if (savedQuestions && savedQuestions.length > 0) {
-        quizData.questions = savedQuestions
+        quizData.questions = new Set(savedQuestions)
       } else if (quizData.questions) {
         let questionsArray = Array.from(quizData.questions)
         questionsArray = shuffleArray(questionsArray)
         questionsArray.forEach(q => {
           if (q.answers) {
-            q.answers = shuffleArray(Array.from(q.answers))
+            q.answers = new Set(shuffleArray(Array.from(q.answers))) as any
           }
         })
-        quizData.questions = questionsArray
+        quizData.questions = new Set(questionsArray)
       }
 
       setQuiz(quizData)

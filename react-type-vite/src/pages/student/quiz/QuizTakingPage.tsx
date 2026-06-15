@@ -165,7 +165,7 @@ const QuizTakingPage: React.FC = () => {
         
         questionsArray.forEach(q => {
           if (q.answers) {
-            q.answers = shuffleArray(Array.from(q.answers))
+            q.answers = new Set(shuffleArray(Array.from(q.answers))) as any
           }
         })
         

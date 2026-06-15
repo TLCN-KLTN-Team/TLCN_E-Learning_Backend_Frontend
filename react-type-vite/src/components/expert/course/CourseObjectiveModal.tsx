@@ -18,7 +18,6 @@ const CourseObjectiveModal: React.FC<CourseObjectiveModalProps> = ({
   onClose,
   course,
   educationalUnitId,
-  onSuccess,
 }) => {
   const [courseObjectives, setCourseObjectives] = useState<expertCourseApi.CourseObjectiveResponse[]>([]);
   const [cloCode, setCloCode] = useState("");
