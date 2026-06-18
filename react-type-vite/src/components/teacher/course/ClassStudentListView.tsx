@@ -5,12 +5,11 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, Plus, Search, AlertCircle, Loader2, Eye, Info } from 'lucide-react'
+import { Users, Plus, Search, AlertCircle, Loader2, Info } from 'lucide-react'
 import * as classApi from "@/services/api/teacher/classManagementApi";
 import type { ClassStudentStatsResponse } from "@/services/api/response/studentEnrollmentResponse"
 import type { CourseClassResponse } from "@/services/api/response/courseClassResponse"
 import AddStudentsToClassModal from "./AddStudentsToClassModal"
-import StudentDetailModal from "./StudentDetailModal"
 import type { StudentResponse } from "@/services/api/response/studentResponse"
 
 interface ClassStudentListViewProps {
@@ -103,8 +102,6 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [selectedStudent, setSelectedStudent] = useState<StudentResponse | null>(null)
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [showLegend, setShowLegend] = useState(true)
 
   useEffect(() => {
@@ -143,16 +140,14 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
     setIsAddModalOpen(false)
   }
 
-  const handleViewStudent = (student: StudentResponse) => {
-    setSelectedStudent(student)
-    setIsDetailModalOpen(true)
-  }
-
   const filteredStudents = students.filter(
-    (student) =>
-      student.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()),
+    (student) => {
+      const fullName = `${student.firstName} ${student.lastName}`.toLowerCase()
+      return fullName.includes(searchTerm.toLowerCase()) ||
+        student.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase())
+    }
   )
 
   if (loading) {
@@ -283,7 +278,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
                 </div>
               </div>
               <p className="mt-2 text-gray-600">
-                * Tiến độ = Trung bình (% Bài tập hoàn thành + % Quiz hoàn thành + % Bài học đã xem)
+                * Tiến độ = Trung bình (% Bài tập hoàn thành + % Bài kiểm tra hoàn thành + % Bài học đã xem)
               </p>
             </div>
           )}
@@ -298,12 +293,11 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
                     <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Họ Tên</th>
                     <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Email</th>
                     <th className="text-center py-3 px-4 font-semibold text-sm text-gray-700">Bài Tập</th>
-                    <th className="text-center py-3 px-4 font-semibold text-sm text-gray-700">Quiz</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm text-gray-700">Bài KT</th>
                     <th className="text-center py-3 px-4 font-semibold text-sm text-gray-700">Bài Học</th>
                     <th className="text-center py-3 px-4 font-semibold text-sm text-gray-700">Điểm TB</th>
                     <th className="text-center py-3 px-4 font-semibold text-sm text-gray-700">Tiến Độ</th>
                     <th className="text-center py-3 px-4 font-semibold text-sm text-gray-700">Trạng Thái</th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm text-gray-700">Hành Động</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -312,7 +306,7 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
                     return (
                       <tr key={student.studentId} className={`border-b border-gray-100 transition-colors ${getRowColorClass(progress)}`}>
                         <td className="py-3 px-4 font-medium">{student.studentId}</td>
-                        <td className="py-3 px-4 font-medium">{student.username}</td>
+                        <td className="py-3 px-4 font-medium">{student.firstName} {student.lastName}</td>
                         <td className="py-3 px-4 text-sm text-gray-600">{student.email}</td>
                         <td className="py-3 px-4 text-center">
                           <span className="text-sm font-medium">
@@ -353,18 +347,6 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
                                 : "Không Hoạt Động"}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewStudent(student)}
-                              className="text-blue-600 hover:text-blue-700"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
                       </tr>
                     )
                   })}
@@ -393,18 +375,6 @@ const ClassStudentListView: React.FC<ClassStudentListViewProps> = ({
         educationalUnitId={educationalUnitId}
         onStudentsAdded={handleAddStudents}
       />
-
-      {selectedStudent && (
-        <StudentDetailModal
-          isOpen={isDetailModalOpen}
-          onClose={() => {
-            setIsDetailModalOpen(false)
-            setSelectedStudent(null)
-          }}
-          student={selectedStudent}
-          classId={classData.id}
-        />
-      )}
     </div>
   )
 }

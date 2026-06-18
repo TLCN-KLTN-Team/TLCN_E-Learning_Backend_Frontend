@@ -458,11 +458,12 @@ const QuizResultPage: React.FC = () => {
                                     const answerId = selectedAnswerIds[currentBlankIndex]
                                     const selectedAnswer = allAnswers.find(a => a.id === answerId)
 
-                                    // Fix: Find correct answer by orderIndex matching blank position
-                                    // Each blank corresponds to an answer with the same orderIndex
-                                    const correctAnswer = allAnswers.find(a => {
-                                      return a.isCorrect && a.orderIndex === currentBlankIndex
-                                    })
+                                    // Fix: Find correct answer by sorting and matching index
+                                    // Each blank corresponds to an answer in the sorted correct answers array
+                                    const correctAnswersSorted = allAnswers
+                                      .filter(a => a.isCorrect)
+                                      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
+                                    const correctAnswer = correctAnswersSorted[currentBlankIndex]
 
                                     console.log(`Blank ${currentBlankIndex}:`)
                                     console.log('  - Answer ID:', answerId)

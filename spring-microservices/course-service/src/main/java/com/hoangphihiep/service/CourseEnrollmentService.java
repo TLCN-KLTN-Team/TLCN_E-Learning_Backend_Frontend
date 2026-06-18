@@ -58,9 +58,14 @@ public class CourseEnrollmentService {
             String userId = SecurityContextHolder.getContext().getAuthentication().getName();
             StudentResponse studentResponse = studentRepository.getStudentById(userId).getResult();
 
-            List<CourseEnrollment> enrollments = enrollmentRepository
-                    .findByStudentId(studentResponse.getStudentId(), Pageable.unpaged())
-                    .getContent();
+            List<CourseEnrollment> enrollments = new ArrayList<>();
+            enrollments.addAll(enrollmentRepository.findByStudentId(userId, Pageable.unpaged()).getContent());
+            if (studentResponse != null && studentResponse.getStudentId() != null) {
+                enrollments.addAll(enrollmentRepository.findByStudentId(studentResponse.getStudentId(), Pageable.unpaged()).getContent());
+            }
+            // Deduplicate by classId
+            enrollments = enrollments.stream()
+                    .collect(Collectors.collectingAndThen(Collectors.toMap(e -> e.getCourseClass().getId(), e -> e, (e1, e2) -> e1), map -> new ArrayList<>(map.values())));
 
             String normalizedSearch = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
             List<EnrolledCoursesResponse> enrolledCourses = enrollments.stream()
@@ -347,8 +352,9 @@ public class CourseEnrollmentService {
         }
 
         // Filter out already enrolled students
-        List<String> studentsToEnroll = studentIds.stream()
-                .filter(studentId -> !enrollmentRepository.existsByClassIdAndStudentId(classId, studentId))
+        List<StudentResponse> studentsToEnroll = validStudents.stream()
+                .filter(student -> !enrollmentRepository.existsByCourseIdAndStudentId(courseClass.getCourse().getId(), student.getId()) &&
+                                   !enrollmentRepository.existsByCourseIdAndStudentId(courseClass.getCourse().getId(), student.getStudentId()))
                 .collect(Collectors.toList());
 
         if (studentsToEnroll.isEmpty()) {
@@ -356,13 +362,13 @@ public class CourseEnrollmentService {
         }
 
         try {
-            // Create enrollments
+            // Create enrollments using UUID (student.getId())
             List<CourseEnrollment> enrollments = studentsToEnroll.stream()
-                    .map(studentId -> {
+                    .map(student -> {
                         CourseEnrollment enrollment = new CourseEnrollment();
                         enrollment.setCourse(courseClass.getCourse());
                         enrollment.setCourseClass(courseClass);
-                        enrollment.setStudentId(studentId);
+                        enrollment.setStudentId(student.getId()); // Store UUID
                         enrollment.setEnrolledAt(new Date());
                         enrollment.setStatus(ENROLLMENT_STATUS_ACTIVE);
                         return enrollment;
@@ -483,11 +489,22 @@ public class CourseEnrollmentService {
             System.out.println ("tổng số bài học: " + totalLessons);
             // Batch fetch student details with statistics
             List<StudentResponse> students = new ArrayList<>();
+            Set<String> processedUserIds = new HashSet<>();
             for (String studentId : studentIds) {
                 try {
-                    ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+                    ApiResponse<StudentResponse> response;
+                    if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+                        response = studentRepository.getStudentById(studentId);
+                    } else { // It's a student code
+                        response = studentRepository.getStudentByStudentId(studentId);
+                    }
+                    
                     if (response != null && response.getResult() != null) {
                         StudentResponse student = response.getResult();
+                        if (processedUserIds.contains(student.getId())) {
+                            continue; // Skip duplicate
+                        }
+                        processedUserIds.add(student.getId());
                         System.out.println ("user id của student: " + studentId);
                         // Calculate statistics for this student
                         enrichStudentWithStatistics(student, student.getId(), courseId, totalAssignments, totalQuizzes, totalLessons);
@@ -523,12 +540,12 @@ public class CourseEnrollmentService {
 
             List<StudentResponse> allStudents = allStudentsResponse.getResult();
 
-            // Get already enrolled student IDs for this class
-            List<String> enrolledStudentIds = enrollmentRepository.findStudentIdsByClassId(classId);
+            // Get already enrolled student IDs for the entire course
+            List<String> enrolledStudentIds = enrollmentRepository.findStudentIdsByCourseId(courseClass.getCourse().getId());
 
             // Filter out already enrolled students
             return allStudents.stream()
-                    .filter(student -> !enrolledStudentIds.contains(student.getId()))
+                    .filter(student -> !enrolledStudentIds.contains(student.getId()) && !enrolledStudentIds.contains(student.getStudentId()))
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
@@ -542,12 +559,23 @@ public class CourseEnrollmentService {
         CourseClass courseClass = classRepository.findById(classId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASS_NOT_FOUND));
 
-        if (!enrollmentRepository.existsByClassIdAndStudentId(classId, studentId)) {
-            throw new AppException(ErrorCode.COURSE_ENROLLMENT_NOT_FOUND);
-        }
-
         try {
+            // studentId could be student CODE or UUID. Let's get both to be safe.
+            String userId = studentId;
+            String studentCode = studentId;
+            try {
+                ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+                if (response != null && response.getResult() != null) {
+                    userId = response.getResult().getId();
+                }
+            } catch (Exception e) {
+                // Ignore, might already be a UUID
+            }
+
             enrollmentRepository.deleteByClassIdAndStudentId(classId, studentId);
+            if (!userId.equals(studentId)) {
+                enrollmentRepository.deleteByClassIdAndStudentId(classId, userId);
+            }
 
             // Update class current students count
             int currentCount = enrollmentRepository.countByClassId(classId);
@@ -643,7 +671,12 @@ public class CourseEnrollmentService {
 
         for (String studentId : studentIds) {
             try {
-                ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+                ApiResponse<StudentResponse> response;
+                if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+                    response = studentRepository.getStudentById(studentId);
+                } else { // It's a student code
+                    response = studentRepository.getStudentByStudentId(studentId);
+                }
 
                 if (response == null || response.getResult() == null) {
                     throw new AppException(ErrorCode.STUDENT_NOT_FOUND);
@@ -687,7 +720,7 @@ public class CourseEnrollmentService {
             student.setTotalQuizzes(totalQuizzes);
             student.setViewedLessons(viewedLessons);
             student.setTotalLessons(totalLessons);
-            student.setAverageScore(averageScore != null ? averageScore.intValue() : 0);
+            student.setAverageScore(averageScore != null ? averageScore : 0.0);
 
         } catch (Exception e) {
             log.warn("Error calculating statistics for student {}: {}", studentId, e.getMessage());
@@ -698,7 +731,7 @@ public class CourseEnrollmentService {
             student.setTotalQuizzes(totalQuizzes);
             student.setViewedLessons(0);
             student.setTotalLessons(totalLessons);
-            student.setAverageScore(0);
+            student.setAverageScore(0.0);
         }
     }
 
@@ -712,11 +745,11 @@ public class CourseEnrollmentService {
 
             // Calculate combined average
             if (avgAssignmentScore != null && avgQuizScore != null) {
-                return (avgAssignmentScore + avgQuizScore) / 2.0;
+                return ((avgAssignmentScore + avgQuizScore) / 2.0) / 10.0;
             } else if (avgAssignmentScore != null) {
-                return avgAssignmentScore;
+                return avgAssignmentScore / 10.0;
             } else if (avgQuizScore != null) {
-                return avgQuizScore;
+                return avgQuizScore / 10.0;
             }
 
             return null;
@@ -756,13 +789,25 @@ public class CourseEnrollmentService {
                 double totalScore = 0.0;
                 int completedCount = 0;
 
+                Set<String> processedUserIds = new HashSet<>();
+
                 // Calculate statistics for each student
                 for (String studentId : studentIds) {
                     try {
-                        // Get student's user ID
-                        ApiResponse<StudentResponse> studentResponse = studentRepository.getStudentByStudentId(studentId);
+                        ApiResponse<StudentResponse> studentResponse;
+                        if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+                            studentResponse = studentRepository.getStudentById(studentId);
+                        } else { // It's a student code
+                            studentResponse = studentRepository.getStudentByStudentId(studentId);
+                        }
+                        
                         if (studentResponse != null && studentResponse.getResult() != null) {
                             String userId = studentResponse.getResult().getId();
+
+                            if (processedUserIds.contains(userId)) {
+                                continue;
+                            }
+                            processedUserIds.add(userId);
 
                             // Calculate student's average score
                             Double studentAvgScore = calculateAverageScore(userId, courseId);
@@ -788,9 +833,10 @@ public class CourseEnrollmentService {
                 }
 
                 // Calculate averages
-                if (studentIds.size() > 0) {
-                    averageScore = totalScore / studentIds.size();
-                    completionRate = totalItems > 0 ? (double) completedCount / studentIds.size() : 0.0;
+                int uniqueCount = processedUserIds.size();
+                if (uniqueCount > 0) {
+                    averageScore = totalScore / uniqueCount;
+                    completionRate = totalItems > 0 ? (double) completedCount / uniqueCount : 0.0;
                 }
             }
 

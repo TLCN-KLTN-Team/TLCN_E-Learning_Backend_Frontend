@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, Filter, Download, Send, Clock, AlertCircle, 
+import {
+  Search, Filter, Download, Send, Clock, AlertCircle,
   Loader2, ArrowRight, CheckCircle, FileText, TrendingUp
 } from 'lucide-react';
 import * as assignmentGradingApi from '@/services/api/teacher/assignmentGradingApi';
 import type { AssignmentSubmissionResponse } from '@/services/api/response/assignmentSubmissionResponse';
 import type { GradingStatisticsResponse } from '@/services/api/response/gradingStatisticsResponse';
 import { useSelectedClass } from '@/context/teacher/SelectedClassContext';
+import { toast } from 'react-toastify';
 
 interface StudentAssignmentGradingProps {
   courseId: number;
 }
 
-const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({  
+const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
 }) => {
   // Get selectedClass from context
   const { selectedClass } = useSelectedClass();
@@ -43,7 +44,7 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
       setError(null);
       return;
     }
-    
+
     console.log('Class selected, fetching data for classId:', selectedClass.id);
     fetchData();
   }, [selectedClass]);
@@ -63,16 +64,16 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
       console.log('Fetching submissions...');
       const submissionsData = await assignmentGradingApi.getSubmissionsForClass(selectedClass.id);
       console.log('Submissions data received:', submissionsData);
-      
+
       // Transform data to flat submission list
-      const allSubmissions = submissionsData.flatMap(student => 
+      const allSubmissions = submissionsData.flatMap(student =>
         student.latestSubmissions.map(submission => ({
           ...submission,
           studentName: student.studentName,
           email: student.email,
         }))
       );
-      
+
       console.log('Transformed submissions:', allSubmissions);
       setSubmissions(allSubmissions);
 
@@ -86,7 +87,7 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
       console.error('Error fetching data:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Không thể tải dữ liệu';
       setError(errorMessage);
-      alert('Không thể tải dữ liệu: ' + errorMessage);
+      toast.error('Không thể tải dữ liệu: ' + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -118,7 +119,7 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
       console.log('Grade submitted successfully:', updatedSubmission);
 
       // Update submission in list
-      setSubmissions(prev => prev.map(s => 
+      setSubmissions(prev => prev.map(s =>
         s.id === selectedSubmission.id ? { ...s, ...updatedSubmission } : s
       ));
 
@@ -133,11 +134,11 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
       setGradingFeedback('');
       setSelectedSubmission(null);
 
-      alert('Chấm điểm thành công!');
+      toast.success('Chấm điểm thành công!');
     } catch (error: any) {
       console.error('Error grading submission:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Không thể chấm điểm';
-      alert('Không thể chấm điểm: ' + errorMessage);
+      toast.error('Không thể chấm điểm: ' + errorMessage);
     } finally {
       setGrading(false);
     }
@@ -149,8 +150,8 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
       submission.idUser?.includes(searchTerm) ||
       submission.assignmentTitle?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesFilter = 
-      filterStatus === 'all' || 
+    const matchesFilter =
+      filterStatus === 'all' ||
       (filterStatus === 'pending' && !submission.score) ||
       (filterStatus === 'graded' && submission.score !== null);
 
@@ -302,32 +303,29 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
         <div className="flex gap-2">
           <button
             onClick={() => setFilterStatus('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterStatus === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterStatus === 'all'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
           >
             <Filter className="inline h-4 w-4 mr-2" />
             Tất cả
           </button>
           <button
             onClick={() => setFilterStatus('pending')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterStatus === 'pending'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterStatus === 'pending'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
           >
             Chưa chấm
           </button>
           <button
             onClick={() => setFilterStatus('graded')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterStatus === 'graded'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterStatus === 'graded'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
           >
             Đã chấm
           </button>
@@ -340,8 +338,8 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
             <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">
-              {submissions.length === 0 
-                ? 'Chưa có bài nộp nào trong lớp này' 
+              {submissions.length === 0
+                ? 'Chưa có bài nộp nào trong lớp này'
                 : 'Không tìm thấy bài tập nào phù hợp với bộ lọc'}
             </p>
           </div>
@@ -349,9 +347,8 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
           filteredSubmissions.map((submission) => (
             <div
               key={submission.id}
-              className={`bg-white border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${
-                selectedSubmission?.id === submission.id ? 'ring-2 ring-blue-500' : 'border-gray-200'
-              }`}
+              className={`bg-white border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${selectedSubmission?.id === submission.id ? 'ring-2 ring-blue-500' : 'border-gray-200'
+                }`}
               onClick={() => setSelectedSubmission(submission)}
             >
               <div className="flex items-start justify-between gap-4">
@@ -359,11 +356,10 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold text-lg">{submission.assignmentTitle}</h3>
                     <span
-                      className={`px-2 py-1 text-xs font-semibold rounded ${
-                        submission.score !== null
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
+                      className={`px-2 py-1 text-xs font-semibold rounded ${submission.score !== null
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                        }`}
                     >
                       {submission.score !== null ? 'Đã chấm' : 'Chưa chấm'}
                     </span>
@@ -385,8 +381,8 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
                     <div>
                       <p className="font-medium">Điểm</p>
                       <p className="text-base font-bold text-blue-600">
-                        {submission.score !== null 
-                          ? `${submission.score}/${submission.maxScore || 100}` 
+                        {submission.score !== null
+                          ? `${submission.score}/${submission.maxScore}`
                           : 'Chưa chấm'}
                       </p>
                     </div>
@@ -420,15 +416,16 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
                       <FileText className="h-4 w-4" />
                       Nội dung bài nộp
                     </h4>
-                    
+
                     {/* Submission Text */}
                     {submission.submissionText && (
                       <div className="mb-4">
                         <p className="text-xs font-medium text-gray-700 mb-2">Văn bản:</p>
-                        <div className="bg-white border border-gray-200 rounded p-3 max-h-60 overflow-y-auto">
-                          <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                            {submission.submissionText}
-                          </p>
+                        <div className="bg-white border border-gray-200 rounded p-4 max-h-60 overflow-y-auto overflow-x-auto">
+                          <div
+                            className="text-sm text-gray-800"
+                            dangerouslySetInnerHTML={{ __html: submission.submissionText }}
+                          />
                         </div>
                       </div>
                     )}
@@ -483,14 +480,14 @@ const StudentAssignmentGrading: React.FC<StudentAssignmentGradingProps> = ({
                     )}
 
                     {/* No Content Message */}
-                    {!submission.submissionText && 
-                     !submission.submissionLink && 
-                     (!submission.submissionFiles || submission.submissionFiles.length === 0) && (
-                      <div className="text-center py-4">
-                        <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">Không có nội dung bài nộp</p>
-                      </div>
-                    )}
+                    {!submission.submissionText &&
+                      !submission.submissionLink &&
+                      (!submission.submissionFiles || submission.submissionFiles.length === 0) && (
+                        <div className="text-center py-4">
+                          <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500">Không có nội dung bài nộp</p>
+                        </div>
+                      )}
 
                     {/* Previous Feedback (if already graded) */}
                     {submission.feedback && (

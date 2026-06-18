@@ -154,7 +154,7 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                 <Users className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Tổng Lượt Thi</p>
+                <p className="text-sm text-gray-600">Tổng Lượt Kiểm Tra</p>
                 <p className="text-2xl font-bold">{statistics.totalAttempts}</p>
               </div>
             </div>
@@ -239,9 +239,8 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
           filteredResults.map((result) => (
             <div
               key={result.id}
-              className={`bg-white border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${
-                selectedResult?.id === result.id ? "ring-2 ring-blue-500" : "border-gray-200"
-              }`}
+              className={`bg-white border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${selectedResult?.id === result.id ? "ring-2 ring-blue-500" : "border-gray-200"
+                }`}
               onClick={() => setSelectedResult(selectedResult?.id === result.id ? null : result)}
             >
               <div className="flex items-start justify-between gap-4">
@@ -249,9 +248,8 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold text-lg">{result.quizTitle}</h3>
                     <span
-                      className={`px-2 py-1 text-xs font-semibold rounded ${
-                        result.isPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
+                      className={`px-2 py-1 text-xs font-semibold rounded ${result.isPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        }`}
                     >
                       {result.isPassed ? "Đạt" : "Không Đạt"}
                     </span>
@@ -324,9 +322,8 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                     {result.answers.map((answer, idx) => (
                       <div
                         key={answer.id}
-                        className={`p-4 rounded-lg border ${
-                          answer.isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-                        }`}
+                        className={`p-4 rounded-lg border ${answer.isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+                          }`}
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
@@ -334,7 +331,15 @@ const ExamResultsView: React.FC<ExamResultsViewProps> = () => {
                               Câu {idx + 1}: {answer.questionText}
                             </p>
                             <p className="text-xs text-gray-600 mb-2">
-                              Loại: {answer.questionType} | Điểm: {answer.questionScore}
+                              Loại: {
+                                answer.questionType === 'SINGLE_CHOICE' ? 'Một đáp án' :
+                                  answer.questionType === 'MULTIPLE_CHOICE' ? 'Nhiều đáp án' :
+                                    answer.questionType === 'TRUE_FALSE' ? 'Đúng/Sai' :
+                                      answer.questionType === 'FILL_IN_THE_BLANK' ? 'Điền khuyết' :
+                                        answer.questionType === 'SHORT_ANSWER' ? 'Câu trả lời ngắn' :
+                                          answer.questionType === 'ESSAY' ? 'Tự luận' :
+                                            answer.questionType
+                              } | Điểm: {answer.questionScore}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">

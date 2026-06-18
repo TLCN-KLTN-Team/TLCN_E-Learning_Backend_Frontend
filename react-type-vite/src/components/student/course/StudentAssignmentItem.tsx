@@ -39,6 +39,16 @@ const StudentAssignmentItem: React.FC<StudentAssignmentItemProps> = ({
     (1000 * 60 * 60 * 24)
   )
 
+  const getSubmissionTypeText = (type: string) => {
+    const map: Record<string, string> = {
+      UPLOAD_FILE: "Tải file lên",
+      TEXT: "Nhập văn bản",
+      LINK: "Gửi liên kết",
+      BOTH: "File hoặc văn bản",
+    }
+    return map[type] || type
+  }
+
   const getDeadlineStatus = () => {
     if (isDeadlinePassed) {
       return (
@@ -82,7 +92,7 @@ const StudentAssignmentItem: React.FC<StudentAssignmentItemProps> = ({
                   <Calendar className="h-3 w-3" />
                   {getDeadlineStatus()}
                 </span>
-                <span>{assignment.submissionType}</span>
+                <span>{getSubmissionTypeText(assignment.submissionType)}</span>
               </div>
             )}
           </div>
@@ -125,7 +135,7 @@ const StudentAssignmentItem: React.FC<StudentAssignmentItemProps> = ({
               <FileText className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-gray-500 text-xs">Loại nộp</p>
-                <p className="font-medium">{assignment.submissionType}</p>
+                <p className="font-medium">{getSubmissionTypeText(assignment.submissionType)}</p>
               </div>
             </div>
             {assignment.maxScore !== undefined && (

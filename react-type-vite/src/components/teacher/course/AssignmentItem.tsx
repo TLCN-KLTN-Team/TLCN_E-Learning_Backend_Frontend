@@ -88,6 +88,16 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
     (new Date(assignment.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
   )
 
+  const getSubmissionTypeText = (type: string) => {
+    const map: Record<string, string> = {
+      UPLOAD_FILE: "Tải file lên",
+      TEXT: "Nhập văn bản",
+      LINK: "Gửi liên kết",
+      BOTH: "File hoặc văn bản",
+    }
+    return map[type] || type
+  }
+
   return (
     <>
       <div
@@ -123,7 +133,7 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
                   </span>
                   <span className="flex items-center gap-1">
                     <FileText className="h-3 w-3" />
-                    {assignment.submissionType}
+                    {getSubmissionTypeText(assignment.submissionType)}
                   </span>
                   {assignment.submissionsCount !== undefined && (
                     <span className="flex items-center gap-1">
@@ -175,7 +185,7 @@ const AssignmentItem: React.FC<AssignmentItemProps> = ({
                 <FileText className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-gray-500 text-xs">Loại nộp</p>
-                  <p className="font-medium">{assignment.submissionType}</p>
+                  <p className="font-medium">{getSubmissionTypeText(assignment.submissionType)}</p>
                 </div>
               </div>
               {assignment.maxScore !== undefined && (

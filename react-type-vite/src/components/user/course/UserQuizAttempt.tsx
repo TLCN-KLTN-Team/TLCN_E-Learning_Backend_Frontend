@@ -1183,7 +1183,7 @@ export default function UserQuizAttempt({ quizIdProp, onQuizCompleted, onExit }:
                 const attemptAnswer = answersByQuestion.get(question.id)
                 const answersArray = Array.from(question.answers || [])
                 const answerById = new Map(answersArray.map(a => [a.id, a]))
-                const correctAnswers = answersArray.filter(a => a.isCorrect)
+                const correctAnswers = answersArray.filter(a => a.isCorrect).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
 
                 const renderUserAnswer = () => {
                   if (!attemptAnswer) {

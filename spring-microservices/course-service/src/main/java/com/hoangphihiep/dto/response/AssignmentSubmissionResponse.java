@@ -20,6 +20,8 @@ public class AssignmentSubmissionResponse {
 
     private String assignmentTitle;
 
+    private Integer maxScore;
+
     private String idUser;
 
     private String userName;

@@ -23,6 +23,7 @@ import {
   getLibraryQuestions,
   type QuestionLibraryResponse,
 } from "@/services/api/teacher/questionLibraryApi"
+import { getTeacherActiveClos, type CourseObjectiveResponse } from "@/services/api/teacher/courseObjectiveApi"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "react-toastify"
@@ -31,12 +32,14 @@ interface QuestionSelectorProps {
   isOpen: boolean
   onClose: () => void
   onSelect: (questions: QuestionLibraryResponse[]) => void
+  courseId?: number
 }
 
 const QuestionSelector: React.FC<QuestionSelectorProps> = ({
   isOpen,
   onClose,
   onSelect,
+  courseId,
 }) => {
   const [questions, setQuestions] = useState<QuestionLibraryResponse[]>([])
   const [selectedQuestions, setSelectedQuestions] = useState<Set<number>>(new Set())
@@ -48,8 +51,23 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
   const [totalPages, setTotalPages] = useState(0)
 
   const [tags, setTags] = useState("")
-
   const [availableTags, setAvailableTags] = useState<string[]>([])
+  const [cloId, setCloId] = useState<string>("all")
+  const [availableClos, setAvailableClos] = useState<CourseObjectiveResponse[]>([])
+
+  useEffect(() => {
+    const loadClos = async () => {
+      if (courseId) {
+        try {
+          const clos = await getTeacherActiveClos()
+          setAvailableClos(clos.filter(c => c.courseId === courseId))
+        } catch (error) {
+          console.error("Error loading CLOs:", error)
+        }
+      }
+    }
+    loadClos()
+  }, [courseId])
 
   const fetchQuestions = async () => {
     try {
@@ -60,7 +78,9 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
         search: searchTerm || undefined,
         questionType: questionType === "all" ? undefined : (questionType || undefined),
         difficultyLevel: difficultyLevel === "all" ? undefined : (difficultyLevel || undefined),
-        tags: tags || undefined,
+        tags: tags === "all" ? undefined : (tags || undefined),
+        courseId: courseId,
+        cloId: cloId === "all" ? undefined : (cloId ? Number(cloId) : undefined),
       })
 
       const response = await getLibraryQuestions({
@@ -69,7 +89,9 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
         search: searchTerm || undefined,
         questionType: questionType === "all" ? undefined : (questionType || undefined),
         difficultyLevel: difficultyLevel === "all" ? undefined : (difficultyLevel || undefined),
-        tags: tags || undefined,
+        tags: tags === "all" ? undefined : (tags || undefined),
+        courseId: courseId,
+        cloId: cloId === "all" ? undefined : (cloId ? Number(cloId) : undefined),
         sortBy: "id",
         sortDirection: "DESC",
       })
@@ -107,7 +129,7 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
     if (isOpen) {
       fetchQuestions()
     }
-  }, [isOpen, currentPage, searchTerm, questionType, difficultyLevel, tags])
+  }, [isOpen, currentPage, searchTerm, questionType, difficultyLevel, tags, cloId])
 
   const toggleQuestion = (questionId: number) => {
     const newSelected = new Set(selectedQuestions)
@@ -205,10 +227,10 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
           </div>
 
           {/* Row 2: Selects & Tag */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="min-w-0">
               <Select value={questionType} onValueChange={setQuestionType}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Loại câu hỏi" />
                 </SelectTrigger>
                 <SelectContent className="z-[10020] bg-white">
@@ -221,9 +243,9 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
               </Select>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <Select value={difficultyLevel} onValueChange={setDifficultyLevel}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Độ khó" />
                 </SelectTrigger>
                 <SelectContent className="z-[10020] bg-white">
@@ -235,9 +257,9 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
               </Select>
             </div>
 
-            <div className="relative">
+            <div className="relative min-w-0">
               <Select value={tags} onValueChange={setTags}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Lọc theo tag" />
                 </SelectTrigger>
                 <SelectContent className="z-[10020] bg-white">
@@ -245,6 +267,22 @@ const QuestionSelector: React.FC<QuestionSelectorProps> = ({
                   {availableTags.map((tag) => (
                     <SelectItem key={tag} value={tag}>
                       {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="relative min-w-0">
+              <Select value={cloId} onValueChange={setCloId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chuẩn đầu ra (CLO)" />
+                </SelectTrigger>
+                <SelectContent className="z-[10020] bg-white">
+                  <SelectItem value="all">Tất cả CLO</SelectItem>
+                  {availableClos.map((clo) => (
+                    <SelectItem key={clo.id} value={String(clo.id)}>
+                      {clo.code}
                     </SelectItem>
                   ))}
                 </SelectContent>

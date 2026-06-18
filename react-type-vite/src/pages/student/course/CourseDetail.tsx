@@ -116,8 +116,8 @@ const CourseDetail = () => {
       const completedLessonIds = new Set<number>(
         (detail?.lessonProgresses || [])
           .filter((lp) => {
-            console.log(`Lesson ${lp.lessonId}: completed=${lp.isCompleted}`);
-            return lp.isCompleted === true;
+            console.log(`Lesson ${lp.lessonId}: completed=${lp.completed || lp.isCompleted}`);
+            return lp.completed === true || lp.isCompleted === true;
           })
           .map((lp) => lp.lessonId)
       );
@@ -1005,7 +1005,15 @@ const CourseDetail = () => {
                                                 ).toLocaleDateString(
                                                   "vi-VN"
                                                 )}{" "}
-                                                •{assignment.submissionType}
+                                                • {assignment.submissionType === "UPLOAD_FILE"
+                                                  ? "Tải file lên"
+                                                  : assignment.submissionType === "TEXT"
+                                                  ? "Nhập văn bản"
+                                                  : assignment.submissionType === "LINK"
+                                                  ? "Gửi liên kết"
+                                                  : assignment.submissionType === "BOTH"
+                                                  ? "File hoặc văn bản"
+                                                  : assignment.submissionType}
                                                 {isCompleted && ` • Đã nộp`}
                                               </p>
                                             </div>

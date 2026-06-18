@@ -266,12 +266,12 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, educa
         <div>
           <h2 className="text-2xl font-semibold">Bước 2: Xây Dựng Khóa Học</h2>
           <p className="text-muted-foreground">
-            Cấu trúc nội dung khóa học bằng cách thêm các section, bài học và bài kiểm tra.
+            Cấu trúc nội dung khóa học bằng cách thêm các chương, bài học và bài kiểm tra.
           </p>
           <div className="flex items-center gap-4 mt-2 text-sm">
-            <span className="text-blue-600">💡 Kéo các section để sắp xếp lại</span>
+            <span className="text-blue-600">💡 Kéo các chương để sắp xếp lại</span>
             <span className="text-gray-500">
-              {sections.length} sections
+              {sections.length} chương
             </span>
             {hasUnsavedChanges && <span className="text-orange-600 font-medium">● Có thay đổi chưa lưu</span>}
           </div>
@@ -310,7 +310,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ courseId, sections, educa
             {/* Nút thêm section ở cuối danh sách */}
             <div className="flex justify-end pt-2">
               <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
-                <PlusCircle className="mr-2 h-4 w-4" /> Thêm Section
+                <PlusCircle className="mr-2 h-4 w-4" /> Thêm chương
               </Button>
             </div>
           </>

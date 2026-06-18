@@ -63,7 +63,12 @@ public class TeacherAssignmentService {
 
         for (String studentId : studentIds) {
             try {
-                ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+                ApiResponse<StudentResponse> response;
+                if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+                    response = studentRepository.getStudentById(studentId);
+                } else { // It's a student code
+                    response = studentRepository.getStudentByStudentId(studentId);
+                }
                 if (response != null && response.getResult() != null) {
                     StudentResponse student = response.getResult();
                     String userId = student.getId(); // This is the UUID
@@ -147,7 +152,12 @@ public class TeacherAssignmentService {
 
         for (String studentId : studentIds) {
             try {
-                ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+                ApiResponse<StudentResponse> response;
+                if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+                    response = studentRepository.getStudentById(studentId);
+                } else { // It's a student code
+                    response = studentRepository.getStudentByStudentId(studentId);
+                }
                 if (response != null && response.getResult() != null) {
                     userIds.add(response.getResult().getId());
                 }
@@ -217,7 +227,7 @@ public class TeacherAssignmentService {
 
             Double averageScore = studentSubmissions.stream()
                     .filter(s -> s.getScore() != null)
-                    .mapToDouble(s -> (s.getScore() * 100.0) / s.getAssignment().getMaxScore())
+                    .mapToDouble(s -> (s.getScore() * 10.0) / s.getAssignment().getMaxScore())
                     .average()
                     .orElse(0.0);
 
@@ -236,7 +246,7 @@ public class TeacherAssignmentService {
                     .submittedAssignments((int) totalSubmitted)
                     .gradedAssignments((int) graded)
                     .pendingAssignments((int) pending)
-                    .averageScore(averageScore.intValue())
+                    .averageScore(averageScore)
                     .latestSubmissions(latestSubmissions)
                     .build();
 

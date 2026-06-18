@@ -41,7 +41,7 @@ const EditCourseNavigationSidebar: React.FC<EditCourseNavigationSidebarProps> = 
       id: "content",
       label: "Nội Dung Khóa Học",
       icon: <FileText className="w-5 h-5" />,
-      description: "Quản lý sections và bài học",
+      description: "Quản lý chương và bài học",
     },
     {
       id: "class",

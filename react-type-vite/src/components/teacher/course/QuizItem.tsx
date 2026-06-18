@@ -18,6 +18,7 @@ import {
   Award,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { toast } from "react-toastify"
 import type { QuizResponse } from "@/services/api/response/quizResponse"
 import QuizVisibilityModal from "./QuizVisibilityModal"
 
@@ -149,11 +150,7 @@ const QuizItem: React.FC<QuizItemProps> = ({
                 e.stopPropagation()
                 // Check for temporary ID (timestamp)
                 if (quiz.id > 2000000000) {
-                  // Import toast if checking scope, assume it's available or use alert if component doesn't import toast?
-                  // QuizItem doesn't import toast currently.
-                  // I must import toast from react-toastify or similar. 
-                  // Wait, I need to check imports.
-                  alert("Vui lòng lưu thay đổi của khóa học trước khi cài đặt hiển thị cho bài kiểm tra mới.")
+                  toast.warning("Vui lòng lưu thay đổi của khóa học trước khi cài đặt hiển thị cho bài kiểm tra mới.")
                   return
                 }
                 setIsVisibilityModalOpen(true)

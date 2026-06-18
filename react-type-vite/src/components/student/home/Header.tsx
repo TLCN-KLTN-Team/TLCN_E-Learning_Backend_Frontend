@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../../context/theme-context";
 import { ThemeToggle } from "../../ui/ThemeToggle";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { STUDENT_ROUTES } from "@/constants/routes";
+import { STUDENT_ROUTES, USER_ROUTES } from "@/constants/routes";
+import { getAuthInfo } from "@/utils/auth.utils";
 import {
   Settings,
   ShoppingCart,
@@ -108,6 +109,18 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
       window.location.assign(target);
     } else {
       navigate(target);
+    }
+    setIsNotificationOpen(false);
+  };
+
+  const handleNavigateNotifications = () => {
+    const authInfo = getAuthInfo();
+    const role = authInfo?.role;
+    
+    if (role === "USER") {
+      navigate(USER_ROUTES.NOTIFICATIONS);
+    } else {
+      navigate(STUDENT_ROUTES.NOTIFICATIONS, { state: { background: location } });
     }
     setIsNotificationOpen(false);
   };
@@ -514,7 +527,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
                     </div>
                     <div className="p-3 text-center border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
                         <button
-                          onClick={() => { navigate(STUDENT_ROUTES.NOTIFICATIONS, { state: { background: location } }); setIsNotificationOpen(false); }}
+                          onClick={handleNavigateNotifications}
                           className="text-blue-600 hover:underline text-sm"
                         >
                           Xem tất cả thông báo
@@ -727,7 +740,7 @@ const Header = ({ variant = 'default' }: HeaderProps) => {
             {/* Notification Bell - Mobile */}
             {user && (
               <button
-                onClick={() => navigate(STUDENT_ROUTES.NOTIFICATIONS, { state: { background: location } })}
+                onClick={handleNavigateNotifications}
                 className="relative p-2 text-gray-700 dark:text-gray-300 hover:text-[#066ac9] dark:hover:text-[#6ea8fe] transition-colors"
                 aria-label="Notifications"
               >

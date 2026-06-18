@@ -71,7 +71,7 @@ public class SectionService {
         if (request.getCourseId() == null || request.getCourseId() <= 0) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
-        if (request.getSections() == null || request.getSections().isEmpty()) {
+        if (request.getSections() == null) {
             throw new AppException(ErrorCode.REQUIRED_FIELD_MISSING);
         }
 
@@ -81,7 +81,19 @@ public class SectionService {
         List<SectionResponse> responses = new ArrayList<>();
 
         try {
-            for (SectionRequest sectionRequest : request.getSections()) {
+            Set<Integer> requestSectionIds = request.getSections().stream()
+                    .filter(s -> s.getId() != null)
+                    .map(SectionRequest::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+            List<Section> existingSections = sectionRepository.findByCourseIdOrderByOrderIndex(course.getId());
+            for (Section existingSection : new ArrayList<>(existingSections)) {
+                if (!requestSectionIds.contains(existingSection.getId())) {
+                    course.getSections().remove(existingSection);
+                    sectionRepository.delete(existingSection);
+                }
+            }
+
+            for (SectionRequest sectionRequest : new ArrayList<>(request.getSections())) {
                 SectionResponse sectionResponse = upsertSection(
                         sectionRequest,
                         course,
@@ -103,7 +115,7 @@ public class SectionService {
     }
 
     @Transactional
-    private SectionResponse upsertSection(
+    public SectionResponse upsertSection(
             SectionRequest request,
             Course course,
             List<MultipartFile> lessonFiles,
@@ -141,17 +153,17 @@ public class SectionService {
             }
 
             // Process lessons
-            if (request.getLessons() != null && !request.getLessons().isEmpty()) {
+            if (request.getLessons() != null) {
                 upsertLessons(request.getLessons(), savedSection, lessonFiles);
             }
 
             // Process quizzes
-            if (request.getQuizzes() != null && !request.getQuizzes().isEmpty()) {
+            if (request.getQuizzes() != null) {
                 upsertQuizzes(request.getQuizzes(), savedSection, questionFiles);
             }
 
             // Process assignments
-            if (request.getAssignments() != null && !request.getAssignments().isEmpty()) {
+            if (request.getAssignments() != null) {
                 upsertAssignments(request.getAssignments(), savedSection, assignmentFiles, rubricFiles);
             }
 
@@ -210,9 +222,28 @@ public class SectionService {
             Section section,
             List<MultipartFile> lessonFiles) {
 
-        int lessonFileIndex = 0;
+        if (section.getLessons() != null) {
+            Set<Integer> requestLessonIds = lessonRequests.stream()
+                    .filter(l -> l.getId() != null)
+                    .map(LessonRequest::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+            List<Lesson> lessonsToRemove = new ArrayList<>();
+            for (Lesson existingLesson : new ArrayList<>(section.getLessons())) {
+                if (!requestLessonIds.contains(existingLesson.getId())) {
+                    lessonsToRemove.add(existingLesson);
+                }
+            }
+            for (Lesson lessonToRemove : lessonsToRemove) {
+                section.getLessons().remove(lessonToRemove);
+                lessonRepository.delete(lessonToRemove);
+            }
+        }
 
-        for (LessonRequest lessonRequest : lessonRequests) {
+        int lessonFileIndex = 0;
+        int lessonSeqIndex = 1;
+
+        for (LessonRequest lessonRequest : new ArrayList<>(lessonRequests)) {
+            lessonRequest.setNumberItem(lessonSeqIndex++);
             validateLessonRequest(lessonRequest);
             System.out.println ("Xác thực lesson thành công");
             Lesson lesson;
@@ -434,7 +465,26 @@ public class SectionService {
             Section section,
             List<MultipartFile> questionFiles) {
 
-        for (QuizRequest quizRequest : quizRequests) {
+        if (section.getQuizs() != null) {
+            Set<Integer> requestQuizIds = quizRequests.stream()
+                    .filter(q -> q.getId() != null)
+                    .map(QuizRequest::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+            List<Quiz> quizzesToRemove = new ArrayList<>();
+            for (Quiz existingQuiz : new ArrayList<>(section.getQuizs())) {
+                if (!requestQuizIds.contains(existingQuiz.getId())) {
+                    quizzesToRemove.add(existingQuiz);
+                }
+            }
+            for (Quiz quizToRemove : quizzesToRemove) {
+                section.getQuizs().remove(quizToRemove);
+                quizRepository.delete(quizToRemove);
+            }
+        }
+
+        int quizSeqIndex = 1;
+        for (QuizRequest quizRequest : new ArrayList<>(quizRequests)) {
+            quizRequest.setNumberItem(quizSeqIndex++);
             validateQuizRequest(quizRequest);
 
             Quiz quiz;
@@ -770,9 +820,28 @@ public class SectionService {
             List<MultipartFile> assignmentFiles,
             List<MultipartFile> rubricFiles) {
 
-        int assignmentFileIndex = 0;
+        if (section.getAssignments() != null) {
+            Set<Integer> requestAssignmentIds = assignmentRequests.stream()
+                    .filter(a -> a.getId() != null)
+                    .map(AssignmentRequest::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+            List<Assignment> assignmentsToRemove = new ArrayList<>();
+            for (Assignment existingAssignment : new ArrayList<>(section.getAssignments())) {
+                if (!requestAssignmentIds.contains(existingAssignment.getId())) {
+                    assignmentsToRemove.add(existingAssignment);
+                }
+            }
+            for (Assignment assignmentToRemove : assignmentsToRemove) {
+                section.getAssignments().remove(assignmentToRemove);
+                assignmentRepository.delete(assignmentToRemove);
+            }
+        }
 
-        for (AssignmentRequest assignmentRequest : assignmentRequests) {
+        int assignmentFileIndex = 0;
+        int assignmentSeqIndex = 1;
+
+        for (AssignmentRequest assignmentRequest : new ArrayList<>(assignmentRequests)) {
+            assignmentRequest.setNumberItem(assignmentSeqIndex++);
             validateAssignmentRequest(assignmentRequest);
 
             Assignment assignment;

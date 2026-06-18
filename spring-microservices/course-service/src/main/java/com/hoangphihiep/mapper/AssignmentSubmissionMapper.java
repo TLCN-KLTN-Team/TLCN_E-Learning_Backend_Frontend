@@ -10,6 +10,7 @@ public interface AssignmentSubmissionMapper {
 
     @Mapping(source = "assignment.id", target = "assignmentId")
     @Mapping(source = "assignment.title", target = "assignmentTitle")
+    @Mapping(source = "assignment.maxScore", target = "maxScore")
     @Mapping(source = "idUser", target = "idUser")
     @Mapping(target = "userName", ignore = true) // Sẽ set thủ công trong service
     AssignmentSubmissionResponse toAssignmentSubmissionResponse(AssignmentSubmission submission);

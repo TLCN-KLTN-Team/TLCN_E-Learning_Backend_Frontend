@@ -45,7 +45,7 @@ const CoursePackagingPage = () => {
     message: string
     description?: string
   } | null>(null)
-  
+
   const [publishStatus, setPublishStatus] = useState<ContentPublishStatusResponse | null>(null)
   const [sections, setSections] = useState<SectionResponse[]>([])
   const [courseTypes, setCourseTypes] = useState<CourseCategoryResponse[]>([])
@@ -78,11 +78,21 @@ const CoursePackagingPage = () => {
   const isPending = existingPublish?.status === 1;
   const isApproved = existingPublish?.status === 2;
   const isRejected = existingPublish?.status === 3;
-  
-  const canEdit = !existingPublish || 
-                  existingPublish.status === 0 || // Draft
-                  existingPublish.status === 3 ||  // Rejected
-                  (existingPublish.status === 2 && editMode); // Approved but in edit mode
+
+  const getStatusText = (status?: number) => {
+    switch (status) {
+      case 0: return "Bản nháp";
+      case 1: return "Đang chờ duyệt";
+      case 2: return "Đã phê duyệt";
+      case 3: return "Bị từ chối";
+      default: return existingPublish?.statusText || "Chưa xác định";
+    }
+  };
+
+  const canEdit = !existingPublish ||
+    existingPublish.status === 0 || // Draft
+    existingPublish.status === 3 ||  // Rejected
+    (existingPublish.status === 2 && editMode); // Approved but in edit mode
 
   useEffect(() => {
     if (courseId > 0) {
@@ -111,7 +121,7 @@ const CoursePackagingPage = () => {
         if (isPublished) {
           const publishedData = await coursePackagingApi.getPublishedCourse(courseId)
           setExistingPublish(publishedData)
-          
+
           setFormData({
             courseId: publishedData.course.id,
             courseTypeId: publishedData.courseType.id,
@@ -123,11 +133,11 @@ const CoursePackagingPage = () => {
             courseVideo: publishedData.courseVideo || "",
             learnerAchievements: publishedData.learnerAchievements || "",
             courseLearner: publishedData.courseLearner || "",
-            courseTarget: Array.isArray(publishedData.courseTarget) 
-              ? publishedData.courseTarget 
+            courseTarget: Array.isArray(publishedData.courseTarget)
+              ? publishedData.courseTarget
               : []
           })
-          
+
           // Set preview URLs for existing files
           if (publishedData.courseImage) {
             setImagePreview(publishedData.courseImage)
@@ -162,7 +172,7 @@ const CoursePackagingPage = () => {
         showNotification("error", "File quá lớn", "Kích thước ảnh không được vượt quá 10MB")
         return
       }
-      
+
       if (!file.type.startsWith('image/')) {
         showNotification("error", "File không hợp lệ", "Vui lòng chọn file ảnh")
         return
@@ -184,7 +194,7 @@ const CoursePackagingPage = () => {
         showNotification("error", "File quá lớn", "Kích thước video không được vượt quá 100MB")
         return
       }
-      
+
       if (!file.type.startsWith('video/')) {
         showNotification("error", "File không hợp lệ", "Vui lòng chọn file video")
         return
@@ -260,14 +270,13 @@ const CoursePackagingPage = () => {
       showNotification(
         "success",
         "Đã cập nhật",
-        `Đã ${newStatus ? "xuất bản" : "ẩn"} ${
-          type === "section"
-            ? "chương"
-            : type === "lesson"
+        `Đã ${newStatus ? "xuất bản" : "ẩn"} ${type === "section"
+          ? "chương"
+          : type === "lesson"
             ? "bài học"
             : type === "quiz"
-            ? "bài kiểm tra"
-            : "bài tập"
+              ? "bài kiểm tra"
+              : "bài tập"
         }`
       )
     } catch (error: any) {
@@ -310,14 +319,14 @@ const CoursePackagingPage = () => {
       console.log("Saving draft with formData:", formData)
       console.log("Course Image:", courseImage)
       console.log("Course Video:", courseVideo)
-      
+
       const result = await coursePackagingApi.createOrUpdateDraft(
         formData,
         courseImage || undefined,
         courseVideo || undefined
       )
       setExistingPublish(result)
-      
+
       // Update preview URLs if new files were uploaded
       if (result.courseImage) {
         setImagePreview(result.courseImage)
@@ -325,7 +334,7 @@ const CoursePackagingPage = () => {
       if (result.courseVideo) {
         setVideoPreview(result.courseVideo)
       }
-      
+
       showNotification("success", "Đã lưu bản nháp", "Thông tin khóa học đã được lưu")
     } catch (error: any) {
       console.error("Error saving draft:", error)
@@ -351,7 +360,7 @@ const CoursePackagingPage = () => {
         courseVideo || undefined
       )
       setExistingPublish(result)
-      
+
       // Update preview URLs if new files were uploaded
       if (result.courseImage) {
         setImagePreview(result.courseImage)
@@ -359,10 +368,10 @@ const CoursePackagingPage = () => {
       if (result.courseVideo) {
         setVideoPreview(result.courseVideo)
       }
-      
+
       // Exit edit mode after saving
       setEditMode(false)
-      
+
       showNotification("success", "Đã lưu thay đổi", "Thông tin khóa học đã được cập nhật")
     } catch (error: any) {
       showNotification("error", "Lỗi lưu thay đổi", error.message || "Không thể lưu thay đổi")
@@ -405,7 +414,7 @@ const CoursePackagingPage = () => {
 
       const result = await coursePackagingApi.submitForApproval(courseId)
       setExistingPublish(result)
-      
+
       showNotification(
         "success",
         "Đã gửi duyệt",
@@ -465,7 +474,7 @@ const CoursePackagingPage = () => {
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
           <p className="text-gray-600">Không thể tải dữ liệu khóa học</p>
-          <button 
+          <button
             onClick={() => navigate("/teacher/assigned-courses")}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
@@ -481,11 +490,10 @@ const CoursePackagingPage = () => {
       <div className="max-w-6xl mx-auto">
         {notification && (
           <div
-            className={`mb-6 p-4 rounded-lg border flex items-start gap-3 ${
-              notification.type === "success"
-                ? "bg-green-50 border-green-200 text-green-800"
-                : "bg-red-50 border-red-200 text-red-800"
-            }`}
+            className={`mb-6 p-4 rounded-lg border flex items-start gap-3 ${notification.type === "success"
+              ? "bg-green-50 border-green-200 text-green-800"
+              : "bg-red-50 border-red-200 text-red-800"
+              }`}
           >
             {notification.type === "success" ? (
               <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
@@ -501,7 +509,7 @@ const CoursePackagingPage = () => {
 
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            <button 
+            <button
               onClick={() => navigate("/teacher/assigned-courses")}
               className="px-4 py-2 border rounded-lg hover:bg-gray-100 flex items-center gap-2"
             >
@@ -514,23 +522,22 @@ const CoursePackagingPage = () => {
             </h1>
           </div>
           <p className="text-gray-600">
-            Chọn nội dung xuất bản, điền thông tin và gửi duyệt để đưa khóa học lên marketplace
+            Chọn nội dung xuất bản, điền thông tin và gửi duyệt để đưa khóa học lên sàn thương mại
           </p>
-          
+
           {existingPublish && (
-            <div className={`mt-4 px-4 py-3 rounded-lg border flex items-center justify-between ${
-              isPending ? 'bg-yellow-50 border-yellow-200' :
+            <div className={`mt-4 px-4 py-3 rounded-lg border flex items-center justify-between ${isPending ? 'bg-yellow-50 border-yellow-200' :
               isApproved ? 'bg-green-50 border-green-200' :
-              isRejected ? 'bg-red-50 border-red-200' :
-              'bg-blue-50 border-blue-200'
-            }`}>
+                isRejected ? 'bg-red-50 border-red-200' :
+                  'bg-blue-50 border-blue-200'
+              }`}>
               <div className="flex items-center gap-2">
                 {isPending && <Loader2 className="w-5 h-5 text-yellow-600 animate-spin" />}
                 {isApproved && <CheckCircle className="w-5 h-5 text-green-600" />}
                 {isRejected && <AlertCircle className="w-5 h-5 text-red-600" />}
                 {!isPending && !isApproved && !isRejected && <Lock className="w-5 h-5 text-blue-600" />}
                 <span className="font-semibold">
-                  Trạng thái: {existingPublish.statusText}
+                  Trạng thái: {getStatusText(existingPublish.status)}
                 </span>
                 {editMode && (
                   <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded font-medium">
@@ -558,8 +565,8 @@ const CoursePackagingPage = () => {
                 )}
                 {!editMode && (
                   <span className="text-sm text-gray-600">
-                    {isPending && "Đang chờ quản trị viên xét duyệt"}
-                    {isApproved && "Khóa học đã được phê duyệt"}
+                    {isPending && "Đang chờ chuyên gia phê duyệt"}
+                    {isApproved && "Khóa học đã được chuyên gia phê duyệt"}
                   </span>
                 )}
               </div>
@@ -577,11 +584,10 @@ const CoursePackagingPage = () => {
               key={step.key}
               onClick={() => setActiveStep(step.key as any)}
               disabled={!canEdit && step.key !== "review"}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition ${
-                activeStep === step.key
-                  ? "bg-blue-600 text-white"
-                  : "bg-white border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              }`}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition ${activeStep === step.key
+                ? "bg-blue-600 text-white"
+                : "bg-white border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                }`}
             >
               {idx + 1}. {step.label}
             </button>
@@ -594,7 +600,7 @@ const CoursePackagingPage = () => {
             <div>
               <h4 className="font-semibold text-yellow-800">Không thể chỉnh sửa</h4>
               <p className="text-sm text-yellow-700 mt-1">
-                {isPending && "Khóa học đang chờ duyệt. Bạn không thể chỉnh sửa cho đến khi quản trị viên xét duyệt."}
+                {isPending && "Khóa học đang chờ duyệt. Bạn không thể chỉnh sửa cho đến khi chuyên gia phê duyệt."}
                 {isApproved && !editMode && "Vui lòng nhấn nút 'Chỉnh Sửa' để bắt đầu chỉnh sửa khóa học."}
               </p>
             </div>
@@ -676,11 +682,10 @@ const CoursePackagingPage = () => {
                 return (
                   <div key={section.id} className="border rounded-lg overflow-hidden">
                     <div
-                      className={`p-4 flex items-center justify-between ${
-                        section.isPublished
-                          ? "bg-green-50 border-b border-green-200"
-                          : "bg-gray-50"
-                      }`}
+                      className={`p-4 flex items-center justify-between ${section.isPublished
+                        ? "bg-green-50 border-b border-green-200"
+                        : "bg-gray-50"
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-lg font-medium">{section.title}</span>
@@ -695,11 +700,10 @@ const CoursePackagingPage = () => {
                           toggleItemPublish("section", section.id, section.isPublished)
                         }
                         disabled={loading || !canEdit}
-                        className={`px-4 py-2 rounded-lg flex items-center gap-2 disabled:cursor-not-allowed ${
-                          section.isPublished
-                            ? "bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
-                            : "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                        }`}
+                        className={`px-4 py-2 rounded-lg flex items-center gap-2 disabled:cursor-not-allowed ${section.isPublished
+                          ? "bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                          : "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                          }`}
                       >
                         {section.isPublished ? (
                           <EyeOff className="w-4 h-4" />
@@ -731,11 +735,10 @@ const CoursePackagingPage = () => {
                                   toggleItemPublish("lesson", lesson.id, lesson.isPublished || false)
                                 }
                                 disabled={!canEdit}
-                                className={`text-xs px-3 py-1 rounded disabled:cursor-not-allowed ${
-                                  lesson.isPublished
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-gray-200 text-gray-700"
-                                }`}
+                                className={`text-xs px-3 py-1 rounded disabled:cursor-not-allowed ${lesson.isPublished
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-200 text-gray-700"
+                                  }`}
                               >
                                 {lesson.isPublished ? "✓ Đã xuất bản" : "Ẩn"}
                               </button>
@@ -766,11 +769,10 @@ const CoursePackagingPage = () => {
                                   toggleItemPublish("quiz", quiz.id, quiz.isPublished)
                                 }
                                 disabled={!canEdit}
-                                className={`text-xs px-3 py-1 rounded disabled:cursor-not-allowed ${
-                                  quiz.isPublished
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-gray-200 text-gray-700"
-                                }`}
+                                className={`text-xs px-3 py-1 rounded disabled:cursor-not-allowed ${quiz.isPublished
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-200 text-gray-700"
+                                  }`}
                               >
                                 {quiz.isPublished ? "✓ Đã xuất bản" : "Ẩn"}
                               </button>
@@ -805,11 +807,10 @@ const CoursePackagingPage = () => {
                                   )
                                 }
                                 disabled={!canEdit}
-                                className={`text-xs px-3 py-1 rounded disabled:cursor-not-allowed ${
-                                  assignment.isPublished
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-gray-200 text-gray-700"
-                                }`}
+                                className={`text-xs px-3 py-1 rounded disabled:cursor-not-allowed ${assignment.isPublished
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-200 text-gray-700"
+                                  }`}
                               >
                                 {assignment.isPublished ? "✓ Đã xuất bản" : "Ẩn"}
                               </button>
@@ -1060,9 +1061,9 @@ const CoursePackagingPage = () => {
                 <div className="space-y-3">
                   {imagePreview ? (
                     <div className="relative inline-block">
-                      <img 
-                        src={imagePreview} 
-                        alt="Course preview" 
+                      <img
+                        src={imagePreview}
+                        alt="Course preview"
                         className="w-64 h-40 object-cover rounded-lg border"
                       />
                       {canEdit && (
@@ -1090,9 +1091,8 @@ const CoursePackagingPage = () => {
                       />
                       <label
                         htmlFor="course-image"
-                        className={`inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer ${
-                          !canEdit ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                       >
                         Chọn Ảnh
                       </label>
@@ -1112,9 +1112,9 @@ const CoursePackagingPage = () => {
                 <div className="space-y-3">
                   {videoPreview ? (
                     <div className="relative inline-block">
-                      <video 
-                        src={videoPreview} 
-                        controls 
+                      <video
+                        src={videoPreview}
+                        controls
                         className="w-full max-w-md h-60 rounded-lg border"
                       />
                       {canEdit && (
@@ -1142,9 +1142,8 @@ const CoursePackagingPage = () => {
                       />
                       <label
                         htmlFor="course-video"
-                        className={`inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer ${
-                          !canEdit ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                       >
                         Chọn Video
                       </label>
@@ -1291,42 +1290,112 @@ const CoursePackagingPage = () => {
               </div>
 
               <div>
-                <h3 className="font-medium mb-2">Thông tin chi tiết:</h3>
-                <div className="border rounded-lg p-4 space-y-3">
+                <h3 className="font-medium mb-4 text-lg">Thông tin chi tiết:</h3>
+                
+                {/* Phần Text */}
+                <div className="mb-6 space-y-6">
+                  {/* Mô tả chi tiết (Trải dài full width) */}
                   {formData.description && (
-                    <div>
-                      <div className="text-sm font-medium text-gray-600">Mô tả:</div>
-                      <div className="text-sm mt-1 line-clamp-3">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2 border-b pb-2">
+                        Mô tả chi tiết
+                      </div>
+                      <div className="text-sm mt-1 max-h-48 overflow-y-auto pr-2 prose prose-sm max-w-none text-gray-600">
                         <MarkdownRenderer content={formData.description} />
                       </div>
                     </div>
                   )}
-                  {formData.courseIntroduction && (
-                    <div>
-                      <div className="text-sm font-medium text-gray-600">Giới thiệu:</div>
-                      <div className="text-sm mt-1 line-clamp-2">
-                        <MarkdownRenderer content={formData.courseIntroduction} />
+
+                  {/* 4 mục còn lại chia đều 2 cột */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Cột trái */}
+                    <div className="space-y-6">
+                      {formData.learnerAchievements && (
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                          <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2 border-b pb-2">
+                            Thành tựu học viên
+                          </div>
+                          <div className="text-sm mt-1 max-h-48 overflow-y-auto pr-2 prose prose-sm max-w-none text-gray-600">
+                            <MarkdownRenderer content={formData.learnerAchievements} />
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.courseTarget.length > 0 && (
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                          <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2 border-b pb-2">
+                            Mục tiêu khóa học
+                          </div>
+                          <ul className="text-sm mt-2 space-y-2 text-gray-600">
+                            {formData.courseTarget.map((target, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-blue-500 mt-0.5">•</span>
+                                <span>{target}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Cột phải */}
+                    <div className="space-y-6">
+                      {formData.courseIntroduction && (
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                          <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2 border-b pb-2">
+                            Giới thiệu
+                          </div>
+                          <div className="text-sm mt-1 max-h-48 overflow-y-auto pr-2 prose prose-sm max-w-none text-gray-600">
+                            <MarkdownRenderer content={formData.courseIntroduction} />
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.courseLearner && (
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                          <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2 border-b pb-2">
+                            Đối tượng học viên
+                          </div>
+                          <div className="text-sm mt-1 max-h-48 overflow-y-auto pr-2 prose prose-sm max-w-none text-gray-600">
+                            <MarkdownRenderer content={formData.courseLearner} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phần Media (Ảnh và Video) đưa xuống dưới */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {(imagePreview || courseImage) && (
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                      <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-blue-600" />
+                        Ảnh khóa học
+                      </div>
+                      <div className="rounded-lg overflow-hidden border bg-gray-50 flex items-center justify-center">
+                        <img
+                          src={imagePreview}
+                          alt="Course"
+                          className="w-full h-auto max-h-64 object-contain"
+                        />
                       </div>
                     </div>
                   )}
-                  {formData.courseTarget.length > 0 && (
-                    <div>
-                      <div className="text-sm font-medium text-gray-600">Mục tiêu:</div>
-                      <ul className="text-sm mt-1 space-y-1">
-                        {formData.courseTarget.map((target, idx) => (
-                          <li key={idx}>• {target}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {(imagePreview || courseImage) && (
-                    <div>
-                      <div className="text-sm font-medium text-gray-600 mb-2">Ảnh khóa học:</div>
-                      <img 
-                        src={imagePreview} 
-                        alt="Course" 
-                        className="w-48 h-32 object-cover rounded border"
-                      />
+                  
+                  {(videoPreview || courseVideo) && (
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                      <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-blue-600" />
+                        Video giới thiệu
+                      </div>
+                      <div className="rounded-lg overflow-hidden border bg-black flex items-center justify-center">
+                        <video
+                          src={videoPreview}
+                          controls
+                          className="w-full h-auto max-h-64 object-contain"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1336,29 +1405,29 @@ const CoursePackagingPage = () => {
                 !formData.description?.trim() ||
                 !formData.courseIntroduction?.trim() ||
                 publishStatus.publishedSections === 0) && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-yellow-800">Cần hoàn thiện thêm:</h4>
-                      <ul className="text-sm text-yellow-700 mt-1 space-y-1">
-                        {!formData.courseName?.trim() && (
-                          <li>• Chưa nhập tên khóa học</li>
-                        )}
-                        {!formData.description?.trim() && (
-                          <li>• Chưa có mô tả chi tiết khóa học</li>
-                        )}
-                        {!formData.courseIntroduction?.trim() && (
-                          <li>• Chưa có giới thiệu khóa học</li>
-                        )}
-                        {publishStatus.publishedSections === 0 && (
-                          <li>• Chưa xuất bản nội dung nào</li>
-                        )}
-                      </ul>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-yellow-800">Cần hoàn thiện thêm:</h4>
+                        <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                          {!formData.courseName?.trim() && (
+                            <li>• Chưa nhập tên khóa học</li>
+                          )}
+                          {!formData.description?.trim() && (
+                            <li>• Chưa có mô tả chi tiết khóa học</li>
+                          )}
+                          {!formData.courseIntroduction?.trim() && (
+                            <li>• Chưa có giới thiệu khóa học</li>
+                          )}
+                          {publishStatus.publishedSections === 0 && (
+                            <li>• Chưa xuất bản nội dung nào</li>
+                          )}
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
             <div className="flex justify-between mt-6">

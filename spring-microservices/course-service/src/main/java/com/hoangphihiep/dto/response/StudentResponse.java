@@ -51,7 +51,7 @@ public class StudentResponse {
 
     private Integer totalLessons;
 
-    private Integer averageScore;
+    private Double averageScore;
 
     private String accountStatus;
 

@@ -27,7 +27,7 @@ public class AssignmentGradingResponse {
 
     private Integer pendingAssignments;
 
-    private Integer averageScore;
+    private Double averageScore;
 
     private List<AssignmentSubmissionResponse> latestSubmissions;
 }

@@ -15,6 +15,7 @@ import Modal from "@/components/ui/modal"
 import assignmentApi from "@/services/api/student/assignmentApi"
 import type { AssignmentDetailResponse } from "@/services/api/response/assignmentDetailResponse"
 import type { AssignmentSubmissionResponse } from "@/services/api/response/assignmentSubmissionResponse"
+import RichTextEditor from "@/components/shared/RichTextEditor"
 
 interface AssignmentSubmitFormProps {
   assignment: AssignmentDetailResponse
@@ -169,13 +170,13 @@ const AssignmentSubmitForm: React.FC<AssignmentSubmitFormProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nội dung bài làm
                 </label>
-                <textarea
-                  value={submissionText}
-                  onChange={(e) => setSubmissionText(e.target.value)}
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập nội dung bài làm của bạn..."
-                />
+                <div className="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                  <RichTextEditor
+                    value={submissionText}
+                    onChange={(content) => setSubmissionText(content)}
+                    placeholder="Nhập nội dung bài làm của bạn..."
+                  />
+                </div>
               </div>
             )}
 
