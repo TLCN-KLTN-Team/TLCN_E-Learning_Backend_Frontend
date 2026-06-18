@@ -128,7 +128,7 @@ const EditQuizModal: React.FC<{
           {quiz?.id && (
             <QuizBlueprintConfig quizId={quiz.id} courseId={courseId} />
           )}
-          <QuestionList questions={formData.questions ?? []} onQuestionsChange={handleQuestionsChange} />
+          <QuestionList questions={formData.questions ?? []} onQuestionsChange={handleQuestionsChange} courseId={courseId} />
         </div>
 
         <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">

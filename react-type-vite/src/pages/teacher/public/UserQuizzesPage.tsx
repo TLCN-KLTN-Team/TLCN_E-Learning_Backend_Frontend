@@ -352,6 +352,8 @@ const StudentQuizzesPage: React.FC = () => {
                                     ? "Nhiều đáp án"
                                     : question.questionType === "TRUE_FALSE"
                                     ? "Đúng/Sai"
+                                    : question.questionType === "FILL_IN_THE_BLANK"
+                                    ? "Điền khuyết"
                                     : "Không xác định"}
                                 </div>
                               </div>

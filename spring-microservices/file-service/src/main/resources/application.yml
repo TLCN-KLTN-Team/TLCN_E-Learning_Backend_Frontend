@@ -24,7 +24,7 @@ spring:
       auto-index-creation: true
   servlet:
     multipart:
-      max-file-size: 20MB # 20MB = 2 * 10 * 1024 * 1024 bytes
+      max-file-size: 100MB
       max-request-size: 200MB
 
 cloudinary:

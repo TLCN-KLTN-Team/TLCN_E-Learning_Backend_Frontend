@@ -4,7 +4,8 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { BookPlus, Trash } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { BookPlus, Trash2, CheckCircle2, XCircle, Tag } from "lucide-react"
 import QuestionSelector from "./QuestionSelector"
 import type { QuestionRequest } from "@/services/api/request/questionRequest"
 import type { QuestionLibraryResponse } from "@/services/api/teacher/questionLibraryApi"
@@ -12,7 +13,8 @@ import type { QuestionLibraryResponse } from "@/services/api/teacher/questionLib
 const QuestionList: React.FC<{
   questions: QuestionRequest[]
   onQuestionsChange: (questions: QuestionRequest[]) => void
-}> = ({ questions, onQuestionsChange }) => {
+  courseId?: number
+}> = ({ questions, onQuestionsChange, courseId }) => {
   const [selectorOpen, setSelectorOpen] = useState(false)
 
   const handleSelectLibraryQuestions = (selectedQuestions: QuestionLibraryResponse[]) => {
@@ -24,6 +26,8 @@ const QuestionList: React.FC<{
       score: libQ.score || 10,
       difficultyLevel: libQ.difficultyLevel,
       tags: libQ.tags,
+      cloCode: libQ.cloCode,
+      courseName: libQ.courseName,
       attachments: libQ.attachments,
       orderIndex: questions.length + idx + 1,
       answers: libQ.answers.map((ans, ansIdx) => ({
@@ -34,6 +38,33 @@ const QuestionList: React.FC<{
     }))
     console.log('[QuestionList] Converted questions:', newQuestions)
     onQuestionsChange([...questions, ...newQuestions])
+  }
+
+  const getQuestionTypeLabel = (type: string) => {
+    const types: Record<string, string> = {
+      MULTIPLE_CHOICE: "Nhiều đáp án",
+      TRUE_FALSE: "Đúng/Sai",
+      SINGLE_CHOICE: "Một đáp án",
+      FILL_IN_THE_BLANK: "Điền khuyết",
+    }
+    return types[type] || type
+  }
+
+  const getDifficultyBadge = (difficulty?: string) => {
+    if (!difficulty) return null
+    const colors: Record<string, string> = {
+      EASY: "bg-green-100 text-green-800 border-transparent",
+      MEDIUM: "bg-yellow-100 text-yellow-800 border-transparent",
+      HARD: "bg-red-100 text-red-800 border-transparent",
+    }
+    const labels: Record<string, string> = {
+      EASY: "Dễ",
+      MEDIUM: "Trung bình",
+      HARD: "Khó",
+    }
+    return (
+      <Badge className={colors[difficulty] || ""}>{labels[difficulty] || difficulty}</Badge>
+    )
   }
 
   return (
@@ -48,93 +79,93 @@ const QuestionList: React.FC<{
         {questions.map((q, index) => (
           <div
             key={q.id || index}
-            className="group relative flex gap-4 p-5 rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md"
+            className="bg-card rounded-lg border p-4 hover:shadow-md transition-shadow relative"
           >
-            {/* Numbering Column */}
-            <div className="flex flex-col items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary ring-2 ring-background">
-                {index + 1}
-              </span>
-              <div className="w-px h-full bg-border/50 my-2" />
+            <div className="absolute top-4 right-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-destructive hover:text-destructive"
+                onClick={() => {
+                  const filtered = questions.filter((_, i) => i !== index)
+                  onQuestionsChange(filtered)
+                }}
+                title="Xóa câu hỏi"
+              >
+                <Trash2 className="h-4 w-4" />
+                Xóa
+              </Button>
             </div>
 
-            {/* Content Column */}
-            <div className="flex-1 space-y-3">
-              {/* Header: Badges & Actions */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex flex-wrap gap-2">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 pr-20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-transparent">Câu {index + 1}</Badge>
                   {q.questionType && (
-                    <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80">
-                      {q.questionType === 'MULTIPLE_CHOICE' ? 'Nhiều đáp án' :
-                        q.questionType === 'TRUE_FALSE' ? 'Đúng/Sai' :
-                          q.questionType === 'SINGLE_CHOICE' ? 'Một đáp án' : 'Điền khuyết'}
-                    </span>
+                    <Badge variant="outline">{getQuestionTypeLabel(q.questionType)}</Badge>
                   )}
-                  {q.difficultyLevel && (
-                    <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${q.difficultyLevel === 'EASY' ? 'border-transparent bg-green-100 text-green-700' :
-                      q.difficultyLevel === 'MEDIUM' ? 'border-transparent bg-yellow-100 text-yellow-700' :
-                        'border-transparent bg-red-100 text-red-700'
-                      }`}>
-                      {q.difficultyLevel === 'EASY' ? 'Dễ' : q.difficultyLevel === 'MEDIUM' ? 'Trung bình' : 'Khó'}
-                    </span>
+                  {getDifficultyBadge(q.difficultyLevel)}
+                  {q.cloCode && (
+                    <Badge className="bg-blue-100 text-blue-800 border-transparent">
+                      {q.courseName ? `${q.cloCode} - ${q.courseName}` : q.cloCode}
+                    </Badge>
                   )}
-                  <span className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
-                    {q.score} điểm
-                  </span>
-                  {q.tags && q.tags.split(',').map((tag, i) => (
-                    <span key={i} className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-normal text-muted-foreground border-border bg-background">
-                      {tag.trim()}
-                    </span>
-                  ))}
+                  {q.score && (
+                    <Badge variant="secondary">{q.score} điểm</Badge>
+                  )}
                 </div>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mt-1 -mr-2"
-                  onClick={() => {
-                    const filtered = questions.filter((_, i) => i !== index)
-                    onQuestionsChange(filtered)
-                  }}
-                  title="Xóa câu hỏi"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
+                <h3 className="text-lg font-medium mb-2">{q.questionText}</h3>
 
-              {/* Question Text */}
-              <div>
-                <p className="text-base font-medium leading-relaxed">
-                  {q.questionText}
-                </p>
-              </div>
-
-              {/* Answers */}
-              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Đáp án</p>
-                <div className="flex flex-col gap-3">
-                  {q.answers?.map((ans, idx) => (
-                    <div
-                      key={idx}
-                      className={`relative flex items-center gap-3 p-3 rounded-md border transition-colors ${ans.isCorrect
-                        ? 'bg-green-50/50 border-green-200 shadow-sm'
-                        : 'bg-background border-border hover:bg-accent/50'
-                        }`}
-                    >
-                      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium border ${ans.isCorrect
-                        ? 'bg-green-100 text-green-700 border-green-200'
-                        : 'bg-muted text-muted-foreground border-border'
-                        }`}>
-                        {q.questionType === 'FILL_IN_THE_BLANK' ? (idx + 1) : String.fromCharCode(65 + idx)}
-                      </div>
-                      <span className={`text-sm flex-1 ${ans.isCorrect ? 'text-green-900 font-medium' : 'text-foreground/90'}`}>
-                        {ans.content}
+                {q.tags && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <Tag className="h-4 w-4" />
+                    {q.tags.split(",").map((tag, i) => (
+                      <span
+                        key={i}
+                        className="bg-secondary px-2 py-1 rounded text-xs"
+                      >
+                        {tag.trim()}
                       </span>
-                      {ans.isCorrect && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-green-500" />
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+
+                {q.answers && q.answers.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {q.answers.map((answer, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex items-center gap-2 rounded-md border p-2 text-sm ${
+                          answer.isCorrect
+                            ? "border-green-200 bg-green-50 text-green-900"
+                            : "border-gray-200 bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        {answer.isCorrect ? (
+                          <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-600" />
+                        ) : (
+                          <XCircle className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                        )}
+                        <span className={answer.isCorrect ? "font-medium flex items-center" : "flex items-center"}>
+                          {q.questionType === 'FILL_IN_THE_BLANK' && (
+                            <span className="mr-2 px-1.5 py-0.5 bg-white border border-gray-200 rounded text-xs text-gray-500 font-bold">
+                              Ô {idx + 1}
+                            </span>
+                          )}
+                          {answer.content}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Chưa có đáp án
+                  </div>
+                )}
+
+                <div className="mt-2 text-sm text-muted-foreground">
+                  {q.answers?.length || 0} đáp án • {q.answers?.filter(a => a.isCorrect).length || 0} đáp án đúng
                 </div>
               </div>
             </div>
@@ -176,6 +207,7 @@ const QuestionList: React.FC<{
         isOpen={selectorOpen}
         onClose={() => setSelectorOpen(false)}
         onSelect={handleSelectLibraryQuestions}
+        courseId={courseId}
       />
     </Card>
   )

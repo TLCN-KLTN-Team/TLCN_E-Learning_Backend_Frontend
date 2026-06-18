@@ -231,7 +231,7 @@ public class UserPublishedCourseService {
                 .instructorId(teacher.getTeacherId())
                 .instructorName(fullName)
                 .instructorAvatar(avatarUrl)
-                .instructorTagline("Learn IT, Practice IT, Do IT")  // Default tagline, can be from DB
+                .instructorTagline("")  // Default tagline, can be from DB
                 .instructorBio(teacher.getDescription())
                 .socialUrl(teacher.getSocialUrl())
                 .instructorRating(avgRating != null ? avgRating : 0.0)

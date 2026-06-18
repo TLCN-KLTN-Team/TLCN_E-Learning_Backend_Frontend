@@ -329,7 +329,7 @@ const PendingCoursesPage = () => {
                     <div className="text-sm text-gray-600">
                       Giảng viên:{" "}
                       <span className="font-medium">
-                        {course.authorName}
+                        {formatName(course.authorName)}
                       </span>
                     </div>
                     <button
@@ -429,6 +429,14 @@ const PendingCoursesPage = () => {
       style: "currency",
       currency: "VND",
     }).format(price);
+  }
+
+  function formatName(name: string | undefined) {
+    if (!name) return "";
+    const parts = name.trim().split(" ");
+    if (parts.length <= 1) return name;
+    const lastName = parts.pop();
+    return `${lastName} ${parts.join(" ")}`;
   }
 };
 

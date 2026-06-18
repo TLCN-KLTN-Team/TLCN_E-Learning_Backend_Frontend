@@ -29,7 +29,7 @@ public class AssignmentSubmission implements Serializable {
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "submission_text", length = 5000)
+    @Column(name = "submission_text", columnDefinition = "LONGTEXT")
     private String submissionText;
 
     @ElementCollection

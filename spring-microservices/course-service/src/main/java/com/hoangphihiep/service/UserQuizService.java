@@ -168,30 +168,27 @@ public class UserQuizService {
 
                     // Lấy tất cả các đáp án đúng cho câu hỏi, sắp xếp theo orderIndex
                     List<Answer> correctAnswers = answerRepository
-                            .findByQuestionIdAndIsCorrect(question.getId(), true);
-                    
-                    // Tạo map: orderIndex -> correct answerId
-                    Map<Integer, Integer> correctAnswerMap = correctAnswers.stream()
-                            .collect(Collectors.toMap(
-                                Answer::getOrderIndex,
-                                Answer::getId
-                            ));
+                            .findByQuestionIdAndIsCorrect(question.getId(), true)
+                            .stream()
+                            .sorted(Comparator.comparing(Answer::getOrderIndex, Comparator.nullsLast(Comparator.naturalOrder())))
+                            .collect(Collectors.toList());
 
                     // Kiểm tra từng blank
                     int correctBlanks = 0;
                     for (int i = 0; i < answerRequest.getSelectedAnswerIds().size(); i++) {
                         Integer selectedAnswerId = answerRequest.getSelectedAnswerIds().get(i);
-                        Integer correctAnswerId = correctAnswerMap.get(i);
-                        
-                        if (selectedAnswerId != null && selectedAnswerId.equals(correctAnswerId)) {
-                            correctBlanks++;
+                        if (i < correctAnswers.size()) {
+                            Integer correctAnswerId = correctAnswers.get(i).getId();
+                            if (selectedAnswerId != null && selectedAnswerId.equals(correctAnswerId)) {
+                                correctBlanks++;
+                            }
                         }
                     }
 
-                    // Tính điểm: đúng hết mới có điểm
+                    // Tính điểm: Tính điểm từng phần
                     isCorrect = (correctBlanks == correctAnswers.size());
-                    if (isCorrect) {
-                        pointsAwarded = question.getScore();
+                    if (correctBlanks > 0 && !correctAnswers.isEmpty()) {
+                        pointsAwarded = question.getScore() * ((double) correctBlanks / correctAnswers.size());
                         earnedScore += pointsAwarded;
                     }
 

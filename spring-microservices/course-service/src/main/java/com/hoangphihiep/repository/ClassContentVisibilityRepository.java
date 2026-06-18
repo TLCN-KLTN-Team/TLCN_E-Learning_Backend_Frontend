@@ -12,6 +12,8 @@ public interface ClassContentVisibilityRepository extends JpaRepository<ClassCon
 
     List<ClassContentVisibility> findByContentTypeAndContentId(String contentType, Integer contentId);
 
+    List<ClassContentVisibility> findByCourseClassId(Integer classId);
+
     boolean existsByCourseClassIdAndContentTypeAndContentIdAndIsVisible(
             Integer classId, String contentType, Integer contentId, Boolean isVisible);
 }

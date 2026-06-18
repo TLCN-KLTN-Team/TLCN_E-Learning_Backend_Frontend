@@ -351,7 +351,7 @@ const EditAssignmentModal: React.FC<{
               className="w-full p-2 border rounded-lg transition-colors 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'"
               value={formData.maxScore || ""}
               onChange={handleChange}
-              placeholder="100"
+              placeholder="10"
               disabled={isLoading}
               min="0"
             />

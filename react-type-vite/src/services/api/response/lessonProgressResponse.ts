@@ -1,6 +1,7 @@
 export interface LessonProgressResponse {
   id: number;
   lessonId: number;
-  isCompleted: boolean;
+  isCompleted?: boolean;
+  completed?: boolean;
   courseProgressId: number;
 }

@@ -36,13 +36,11 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     @Deprecated
     Optional<CourseEnrollment> findByCourseIdAndStudentId(Integer courseId, String studentId);
 
-    @Deprecated
     boolean existsByCourseIdAndStudentId(Integer courseId, String studentId);
 
     @Deprecated
     int countByCourseId(Integer courseId);
 
-    @Deprecated
     @Query("SELECT ce.studentId FROM CourseEnrollment ce WHERE ce.course.id = :courseId")
     List<String> findStudentIdsByCourseId(@Param("courseId") Integer courseId);
 

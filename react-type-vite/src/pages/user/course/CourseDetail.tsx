@@ -216,9 +216,8 @@ const CourseDetail: React.FC = () => {
 
       {/* Sticky course-info bar — slides in over the main Header on scroll */}
       <div
-        className={`fixed top-0 left-0 right-0 z-[110] bg-[#1c1d1f] text-white shadow-lg transition-transform duration-300 ${
-          showStickyHeader ? "translate-y-0" : "-translate-y-full"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-[110] bg-[#1c1d1f] text-white shadow-lg transition-transform duration-300 ${showStickyHeader ? "translate-y-0" : "-translate-y-full"
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 lg:h-20 flex items-center justify-between gap-4">
           {/* Course info */}
@@ -627,8 +626,7 @@ const CourseDetail: React.FC = () => {
                   {course.authorName || "Jobskillshare Community"}
                 </button>
                 <p className="text-gray-600 text-sm">
-                  {course.teacherInfo?.instructorTagline ||
-                    "Learn IT, Practice IT, Do IT"}
+                  {course.teacherInfo?.instructorTagline}
                 </p>
 
                 {/* Teacher Avatar and Stats */}
@@ -1016,7 +1014,7 @@ const CourseDetail: React.FC = () => {
                     7 ngày hoàn tiền
                   </p>
                 </div>
-                
+
               </div>
             </Card>
           </div>

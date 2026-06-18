@@ -248,7 +248,17 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
                     <FileText className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-600">Loại nộp</p>
-                      <p className="font-medium">{assignment.submissionType}</p>
+                      <p className="font-medium">
+                        {assignment.submissionType === "UPLOAD_FILE"
+                          ? "Tải file lên"
+                          : assignment.submissionType === "TEXT"
+                          ? "Nhập văn bản"
+                          : assignment.submissionType === "LINK"
+                          ? "Gửi liên kết"
+                          : assignment.submissionType === "BOTH"
+                          ? "File hoặc văn bản"
+                          : assignment.submissionType}
+                      </p>
                     </div>
                   </div>
                   {assignment.maxScore && (
@@ -339,10 +349,11 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
 
                     {mySubmission.submissionText && (
                       <div>
-                        <p className="text-sm text-gray-600">Nội dung:</p>
-                        <p className="font-medium bg-white p-3 rounded border">
-                          {mySubmission.submissionText}
-                        </p>
+                        <p className="text-sm text-gray-600 mb-1">Nội dung:</p>
+                        <div 
+                          className="bg-white p-4 rounded-lg border border-gray-200 overflow-x-auto"
+                          dangerouslySetInnerHTML={{ __html: mySubmission.submissionText }}
+                        />
                       </div>
                     )}
 
@@ -393,7 +404,13 @@ const AssignmentDetailModal: React.FC<AssignmentDetailModalProps> = ({
                               : "bg-blue-100 text-blue-800"
                           }`}
                         >
-                          {mySubmission.status}
+                          {mySubmission.status === "GRADED"
+                            ? "Đã chấm điểm"
+                            : mySubmission.status === "LATE"
+                            ? "Nộp trễ"
+                            : mySubmission.status === "SUBMITTED"
+                            ? "Đã nộp"
+                            : mySubmission.status}
                         </span>
                       </div>
                     )}

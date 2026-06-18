@@ -62,6 +62,7 @@ import type { CertificateResponse } from "@/services/api/response/certificateRes
 import CertificateModal from "@/components/user/course/CertificateModal"
 import { Award } from "lucide-react"
 import AIQuizPracticeModeComponent from "@/components/user/course/AIQuizPracticeModeComponent";
+import RichTextEditor from "@/components/shared/RichTextEditor";
 
 import { ACTIVE_COURSE_NAVIGATION_CLASS } from "@/constants/couseStyle";
 
@@ -1273,7 +1274,6 @@ const CourseLearning: React.FC = () => {
                     (item) => item.isCompleted,
                   ).length;
                   const isExpanded = expandedSections.has(section.id);
-                  const totalMinutes = sectionItems.reduce((sum) => sum + 3, 0); // Mock duration
 
                   return (
                     <div key={section.id} className="border-b">
@@ -1305,8 +1305,7 @@ const CourseLearning: React.FC = () => {
                             {section.title}
                           </h3>
                           <p className="text-xs text-gray-600">
-                            {completedCount}/{sectionItems.length} |{" "}
-                            {totalMinutes} phút
+                            {completedCount}/{sectionItems.length} mục
                           </p>
                         </div>
                         <ChevronDown
@@ -1381,7 +1380,13 @@ const CourseLearning: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                           {getItemIcon(item.type)}
-                                          <span>3 phút</span>
+                                          <span>
+                                            {item.type === "lesson"
+                                              ? "Bài học"
+                                              : item.type === "quiz"
+                                                ? "Bài kiểm tra"
+                                                : "Bài tập"}
+                                          </span>
                                         </div>
                                       </div>
                                       {!actualItem.isCompleted && isActive && (
@@ -1465,7 +1470,13 @@ const CourseLearning: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                           {getItemIcon(item.type)}
-                                          <span>3 phút</span>
+                                          <span>
+                                            {item.type === "lesson"
+                                              ? "Bài học"
+                                              : item.type === "quiz"
+                                                ? "Bài kiểm tra"
+                                                : "Bài tập"}
+                                          </span>
                                         </div>
                                       </div>
                                     </button>
@@ -1532,7 +1543,13 @@ const CourseLearning: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                           {getItemIcon(item.type)}
-                                          <span>3 phút</span>
+                                          <span>
+                                            {item.type === "lesson"
+                                              ? "Bài học"
+                                              : item.type === "quiz"
+                                                ? "Bài kiểm tra"
+                                                : "Bài tập"}
+                                          </span>
                                         </div>
                                       </div>
                                     </button>
@@ -2908,10 +2925,11 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">
                   Nội dung:
                 </h3>
-                <div className="bg-white border border-green-300 rounded-lg p-4">
-                  <p className="text-gray-700 whitespace-pre-wrap">
-                    {submission.submissionText}
-                  </p>
+                <div className="bg-white border border-green-300 rounded-lg p-4 overflow-x-auto">
+                  <div
+                    className="text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: submission.submissionText }}
+                  />
                 </div>
               </div>
             )}
@@ -3161,11 +3179,9 @@ const AssignmentContent: React.FC<{ assignment: AssignmentResponse }> = ({
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Nội dung bài làm
                       </label>
-                      <textarea
+                      <RichTextEditor
                         value={submissionContent}
-                        onChange={(e) => setSubmissionContent(e.target.value)}
-                        rows={8}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(content) => setSubmissionContent(content)}
                         placeholder="Nhập nội dung bài làm của bạn..."
                       />
                     </div>

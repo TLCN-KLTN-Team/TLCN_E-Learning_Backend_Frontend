@@ -242,12 +242,12 @@ const AssignedCoursesPage: React.FC = () => {
                         {course.courseName}
                       </h3>
 
-                      <p className="text-xl text-foreground/85 mb-4 line-clamp-3 min-h-[5.75rem]">
+                      <p className="text-sm text-foreground/85 mb-4 line-clamp-3 min-h-[3.75rem]">
                         {course.description || "Chưa có mô tả cho khóa học này"}
                       </p>
 
                       <div className="mb-3">
-                        <div className="flex items-center justify-between text-muted-foreground text-xl">
+                        <div className="flex items-center justify-between text-muted-foreground text-sm">
                           <span className="inline-flex items-center gap-1.5">
                             <Users className="w-4 h-4" />
                             {currentStudents}/{maxStudents} học sinh
@@ -265,7 +265,7 @@ const AssignedCoursesPage: React.FC = () => {
                         />
                       </div>
 
-                      <div className="flex items-center flex-wrap gap-x-5 gap-y-2 text-muted-foreground text-xl mb-5">
+                      <div className="flex items-center flex-wrap gap-x-5 gap-y-2 text-muted-foreground text-sm mb-5">
                         <span className="inline-flex items-center gap-1.5">
                           <Clock className="w-4 h-4" />
                           {course.credits || 0} tín chỉ
@@ -306,17 +306,17 @@ const AssignedCoursesPage: React.FC = () => {
                           </span>
                         </div>
 
-                        <p className="text-foreground/85 text-xl leading-relaxed line-clamp-2">
+                        <p className="text-foreground/85 text-sm leading-relaxed line-clamp-2">
                           {course.description || "Chưa có mô tả cho khóa học này"}
                         </p>
 
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-muted-foreground">
-                            <span className="inline-flex items-center gap-2 text-xl">
+                            <span className="inline-flex items-center gap-2 text-sm">
                               <Users className="w-4 h-4" />
                               {currentStudents}/{maxStudents} học sinh
                             </span>
-                            <span className="text-xl font-medium">{enrollmentPercent}%</span>
+                            <span className="text-sm font-medium">{enrollmentPercent}%</span>
                           </div>
                           <progress
                             className="h-2 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-emerald-500 [&::-moz-progress-bar]:bg-emerald-500"
@@ -325,7 +325,7 @@ const AssignedCoursesPage: React.FC = () => {
                           />
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground text-xl">
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground text-sm">
                           <span className="inline-flex items-center gap-2">
                             <Clock className="w-4 h-4" />
                             {course.credits || 0} tín chỉ

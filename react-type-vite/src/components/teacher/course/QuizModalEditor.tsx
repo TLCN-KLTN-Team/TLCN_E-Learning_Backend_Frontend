@@ -111,6 +111,8 @@ const QuizModalEditor: React.FC<{
       score: libQ.score || 10,
       difficultyLevel: libQ.difficultyLevel,
       tags: libQ.tags,
+      cloCode: libQ.cloCode,
+      courseName: libQ.courseName,
       attachments: libQ.attachments,
       orderIndex: startOrderIndex + idx,
       answers: (libQ.answers || []).map((ans, ansIdx) => ({
@@ -613,7 +615,7 @@ const QuizModalEditor: React.FC<{
               Sau khi cấu hình ma trận, bạn có thể bấm nút sinh để hệ thống chọn ngẫu nhiên câu hỏi từ ngân hàng theo tỷ lệ CĐR.
             </p>
           </div>
-          <QuestionList questions={quiz.questions ?? []} onQuestionsChange={handleQuestionsChange} />
+          <QuestionList questions={quiz.questions ?? []} onQuestionsChange={handleQuestionsChange} courseId={Number(courseId)} />
         </div>
 
         <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">

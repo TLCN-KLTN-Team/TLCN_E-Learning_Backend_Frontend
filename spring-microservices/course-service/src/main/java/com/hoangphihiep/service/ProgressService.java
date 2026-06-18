@@ -29,6 +29,7 @@ public class ProgressService {
     private final QuizAttemptRepository quizAttemptRepository;
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
     private final CourseProgressMapper courseProgressMapper;
+    private final ClassContentVisibilityRepository visibilityRepository;
 
     public ProgressStatsResponse getClassProgressStats(Integer classId) {
         String userId = getCurrentUserId();
@@ -52,10 +53,24 @@ public class ProgressService {
         int totalQuizzes = 0;
         int totalAssignments = 0;
 
+        // Get all visible contents for this class
+        List<ClassContentVisibility> classVisibilities = visibilityRepository.findByCourseClassId(classId).stream()
+                .filter(v -> Boolean.TRUE.equals(v.getIsVisible()))
+                .toList();
+
         for (Section section : sections) {
-            totalLessons += section.getLessons().size();
-            totalQuizzes += section.getQuizs().size();
-            totalAssignments += section.getAssignments().size();
+            totalLessons += (int) section.getLessons().stream()
+                    .filter(lesson -> classVisibilities.stream()
+                            .anyMatch(v -> "LESSON".equals(v.getContentType()) && v.getContentId().equals(lesson.getId())))
+                    .count();
+            totalQuizzes += (int) section.getQuizs().stream()
+                    .filter(quiz -> classVisibilities.stream()
+                            .anyMatch(v -> "QUIZ".equals(v.getContentType()) && v.getContentId().equals(quiz.getId())))
+                    .count();
+            totalAssignments += (int) section.getAssignments().stream()
+                    .filter(assignment -> classVisibilities.stream()
+                            .anyMatch(v -> "ASSIGNMENT".equals(v.getContentType()) && v.getContentId().equals(assignment.getId())))
+                    .count();
         }
 
         // Calculate completed
@@ -74,14 +89,11 @@ public class ProgressService {
 
                 // Credit transfer approval marks the course as completed in CourseProgress.
                 // Keep class progress stats consistent with that completion state.
-                if (Boolean.TRUE.equals(courseProgress.getCompletedViaCreditTransfer())
-                        || courseProgress.isCompleted()) {
+                if (Boolean.TRUE.equals(courseProgress.getCompletedViaCreditTransfer())) {
                         completedLessons = totalLessons;
                         completedQuizzes = totalQuizzes;
                         completedAssignments = totalAssignments;
                         overallProgress = 100.0;
-                } else if (courseProgress.getProgressPercentage() > overallProgress) {
-                        overallProgress = courseProgress.getProgressPercentage();
                 }
 
         return ProgressStatsResponse.builder()
@@ -175,16 +187,37 @@ public class ProgressService {
     }
 
     private void updateCourseProgressPercentage(CourseProgress courseProgress, Course course) {
-        List<Section> sections = sectionRepository.findByCourse_IdAndIsPublishedTrue(course.getId());
+        // Get classId from enrollments
+        int classId = courseProgress.getCourse().getEnrollments().stream()
+                .filter(e -> e.getStudentId().equals(courseProgress.getIdUser()))
+                .map(e -> e.getCourseClass().getId())
+                .findFirst()
+                .orElse(-1);
+
+        // Get all visible sections
+        List<Section> sections = sectionRepository.findVisibleSectionsByClassId(course.getId(), classId);
+
+        List<ClassContentVisibility> classVisibilities = visibilityRepository.findByCourseClassId(classId).stream()
+                .filter(v -> Boolean.TRUE.equals(v.getIsVisible()))
+                .toList();
 
         int totalLessons = 0;
         int totalQuizzes = 0;
         int totalAssignments = 0;
 
         for (Section section : sections) {
-            totalLessons += section.getLessons().size();
-            totalQuizzes += section.getQuizs().size();
-            totalAssignments += section.getAssignments().size();
+            totalLessons += (int) section.getLessons().stream()
+                    .filter(lesson -> classVisibilities.stream()
+                            .anyMatch(v -> "LESSON".equals(v.getContentType()) && v.getContentId().equals(lesson.getId())))
+                    .count();
+            totalQuizzes += (int) section.getQuizs().stream()
+                    .filter(quiz -> classVisibilities.stream()
+                            .anyMatch(v -> "QUIZ".equals(v.getContentType()) && v.getContentId().equals(quiz.getId())))
+                    .count();
+            totalAssignments += (int) section.getAssignments().stream()
+                    .filter(assignment -> classVisibilities.stream()
+                            .anyMatch(v -> "ASSIGNMENT".equals(v.getContentType()) && v.getContentId().equals(assignment.getId())))
+                    .count();
         }
 
         int completedLessons = (int) courseProgress.getLessonProgresses().stream()
@@ -207,7 +240,12 @@ public class ProgressService {
         // Check if course is completed
         if (progressPercentage >= 100) {
             courseProgress.setCompleted(true);
-            courseProgress.setCompleteDate(new Date(System.currentTimeMillis()));
+            if (courseProgress.getCompleteDate() == null) {
+                courseProgress.setCompleteDate(new Date(System.currentTimeMillis()));
+            }
+        } else {
+            courseProgress.setCompleted(false);
+            courseProgress.setCompleteDate(null);
         }
 
         courseProgressRepository.save(courseProgress);

@@ -10,6 +10,8 @@ export interface QuestionRequest {
   score: number;
   difficultyLevel?: string; // EASY, MEDIUM, HARD
   tags?: string; // Comma-separated tags
+  cloCode?: string;
+  courseName?: string;
   createdAt?: string;
   updateAt?: string;
   answers: AnswerRequest[]; // Changed from Set to Array for frontend

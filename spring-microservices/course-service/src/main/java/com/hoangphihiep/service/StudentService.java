@@ -89,8 +89,12 @@ public class StudentService {
 
     public StudentResponse getStudentByStudentId(String studentId) {
         log.info("Getting student by studentId: {}", studentId);
-
-        ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+        ApiResponse<StudentResponse> response;
+        if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+            response = studentRepository.getStudentById(studentId);
+        } else { // It's a student code
+            response = studentRepository.getStudentByStudentId(studentId);
+        }
 
         if (response.getResult() == null) {
             throw new RuntimeException("Student not found: " + studentId);
@@ -105,7 +109,12 @@ public class StudentService {
         log.info("Getting student by studentId: {} in class: {}", studentId, classId);
 
         // Get student basic info from repository
-        ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+        ApiResponse<StudentResponse> response;
+        if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+            response = studentRepository.getStudentById(studentId);
+        } else { // It's a student code
+            response = studentRepository.getStudentByStudentId(studentId);
+        }
 
         if (response.getResult() == null) {
             throw new AppException(ErrorCode.STUDENT_NOT_FOUND);

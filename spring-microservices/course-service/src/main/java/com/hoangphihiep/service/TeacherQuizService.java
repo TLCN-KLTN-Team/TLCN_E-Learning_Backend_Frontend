@@ -47,7 +47,12 @@ public class TeacherQuizService {
 
         for (String studentId : studentIds) {
             try {
-                ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+                ApiResponse<StudentResponse> response;
+                if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+                    response = studentRepository.getStudentById(studentId);
+                } else { // It's a student code
+                    response = studentRepository.getStudentByStudentId(studentId);
+                }
                 if (response != null && response.getResult() != null) {
                     StudentResponse student = response.getResult();
                     userIds.add(student.getId());
@@ -81,7 +86,12 @@ public class TeacherQuizService {
 
         for (String studentId : studentIds) {
             try {
-                ApiResponse<StudentResponse> response = studentRepository.getStudentByStudentId(studentId);
+                ApiResponse<StudentResponse> response;
+                if (studentId.contains("-") && studentId.length() == 36) { // It's a UUID
+                    response = studentRepository.getStudentById(studentId);
+                } else { // It's a student code
+                    response = studentRepository.getStudentByStudentId(studentId);
+                }
                 if (response != null && response.getResult() != null) {
                     userIds.add(response.getResult().getId());
                 }
@@ -182,6 +192,7 @@ public class TeacherQuizService {
 
         List<AnswerOptionResponse> correctAnswers = allAnswers.stream()
                 .filter(Answer::getIsCorrect)
+                .sorted(Comparator.comparing(Answer::getOrderIndex, Comparator.nullsLast(Comparator.naturalOrder())))
                 .map(a -> AnswerOptionResponse.builder()
                         .id(a.getId())
                         .answerText(a.getContent())
@@ -196,15 +207,17 @@ public class TeacherQuizService {
         List<AnswerOptionResponse> selectedAnswers = new ArrayList<>();
         List<Integer> selectedAnswerIds;
 
-        if (attemptAnswer.getAnswerText() != null && attemptAnswer.getAnswerText().contains(",")) {
-            // Multiple choice - parse comma-separated IDs
+        if (attemptAnswer.getAnswerText() != null && !attemptAnswer.getAnswerText().isEmpty()) {
+            // Multiple choice or Fill in the blank - parse comma-separated IDs
             selectedAnswerIds = Arrays.stream(attemptAnswer.getAnswerText().split(","))
                     .map(String::trim)
+                    .filter(s -> !s.isEmpty())
                     .map(Integer::parseInt)
                     .collect(Collectors.toList());
 
-            selectedAnswers = allAnswers.stream()
-                    .filter(a -> selectedAnswerIds.contains(a.getId()))
+            selectedAnswers = selectedAnswerIds.stream()
+                    .map(id -> allAnswers.stream().filter(a -> a.getId().equals(id)).findFirst().orElse(null))
+                    .filter(Objects::nonNull)
                     .map(a -> AnswerOptionResponse.builder()
                             .id(a.getId())
                             .answerText(a.getContent())
