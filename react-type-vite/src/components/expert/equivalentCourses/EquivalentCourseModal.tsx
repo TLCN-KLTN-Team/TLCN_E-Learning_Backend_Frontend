@@ -40,6 +40,8 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
     const [publishedCourses, setPublishedCourses] = useState<PublicPublishedCourseResponse[]>([]);
     const [courses, setCourses] = useState<CourseResponse[]>([]);
     const [dropdownLoading, setDropdownLoading] = useState(false);
+    const [sourceSearch, setSourceSearch] = useState("");
+    const [targetSearch, setTargetSearch] = useState("");
 
     useEffect(() => {
         if (isOpen) {
@@ -94,8 +96,8 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
                 minAssignmentScore: undefined,
                 requiredRank: "",
             });
-            // setSourceSearch("");
-            // setTargetSearch("");
+            setSourceSearch("");
+            setTargetSearch("");
         }
     }, [equivalentCourse, isOpen]);
 
@@ -150,6 +152,17 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
 
     if (!isOpen) return null;
 
+    const filteredSourceCourses = publishedCourses.filter(course => 
+        course.courseName.toLowerCase().includes(sourceSearch.toLowerCase()) || 
+        course.id.toString().includes(sourceSearch) ||
+        (course.authorName && course.authorName.toLowerCase().includes(sourceSearch.toLowerCase()))
+    );
+
+    const filteredTargetCourses = courses.filter(course => 
+        course.courseName.toLowerCase().includes(targetSearch.toLowerCase()) || 
+        course.id.toString().includes(targetSearch)
+    );
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
@@ -184,10 +197,17 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
                         </div>
 
                         {/* Source Course Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
                                 Khóa học Nguồn (Bên ngoài)
                             </label>
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm theo tên, ID, hoặc tác giả..."
+                                value={sourceSearch}
+                                onChange={(e) => setSourceSearch(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            />
                             {dropdownLoading ? (
                                 <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
                             ) : (
@@ -198,7 +218,7 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
                                     required
                                 >
                                     <option value={0}>-- Chọn khóa học nguồn --</option>
-                                    {publishedCourses.map(course => (
+                                    {filteredSourceCourses.map(course => (
                                         <option key={course.id} value={course.id}>
                                             {course.courseName} (ID: {course.id}) - {course.authorName || 'N/A'}
                                         </option>
@@ -206,15 +226,22 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
                                 </select>
                             )}
                             <div className="mt-1 text-xs text-gray-500">
-                                *Tìm thấy {publishedCourses.length} khóa học công khai trên hệ thống
+                                *Hiển thị {filteredSourceCourses.length}/{publishedCourses.length} khóa học công khai
                             </div>
                         </div>
 
                         {/* Target Course Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">
                                 Khóa học Đích (Nội bộ)
                             </label>
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm theo tên hoặc ID..."
+                                value={targetSearch}
+                                onChange={(e) => setTargetSearch(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            />
                             {dropdownLoading ? (
                                 <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
                             ) : (
@@ -225,13 +252,16 @@ const EquivalentCourseModal: React.FC<EquivalentCourseModalProps> = ({
                                     required
                                 >
                                     <option value={0}>-- Chọn khóa học đích --</option>
-                                    {courses.map(course => (
+                                    {filteredTargetCourses.map(course => (
                                         <option key={course.id} value={course.id}>
                                             {course.courseName} (ID: {course.id})
                                         </option>
                                     ))}
                                 </select>
                             )}
+                            <div className="mt-1 text-xs text-gray-500">
+                                *Hiển thị {filteredTargetCourses.length}/{courses.length} khóa học nội bộ
+                            </div>
                         </div>
 
                         {/* Specific Requirements Section */}

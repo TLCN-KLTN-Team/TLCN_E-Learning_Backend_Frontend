@@ -37,8 +37,12 @@ export const convertAnswerResponseToRequest = (answer: AnswerResponse): AnswerRe
  * Converts Set<AnswerResponse> to AnswerRequest[] and removes unnecessary fields
  * Don't send ID if it's a temporary ID (for new questions)
  */
-export const convertQuestionResponseToRequest = (question: QuestionResponse): QuestionRequest => {
-  const answersArray = question.answers ? Array.from(question.answers).map(convertAnswerResponseToRequest) : []
+export const convertQuestionResponseToRequest = (question: QuestionResponse): QuestionRequest | null => {
+  if (!question) return null
+
+  const answersArray = question.answers 
+    ? Array.from(question.answers).filter(Boolean).map(convertAnswerResponseToRequest) 
+    : []
 
   return {
     ...(question.id && !isTemporaryId(question.id) && { id: question.id }),
@@ -55,7 +59,7 @@ export const convertQuestionResponseToRequest = (question: QuestionResponse): Qu
  * Convert array of QuestionResponse to QuestionRequest[]
  */
 export const convertQuestionsResponseToRequest = (questions: QuestionResponse[]): QuestionRequest[] => {
-  return questions.map(convertQuestionResponseToRequest)
+  return questions ? questions.filter(Boolean).map(convertQuestionResponseToRequest).filter((q): q is QuestionRequest => q !== null) : []
 }
 
 /**
@@ -102,13 +106,8 @@ export const convertQuizResponseToRequest = (quiz: QuizResponse): QuizRequest =>
     numberItem: quiz.numberItem,
     showResults: quiz.showResults,
     isPublished: quiz.isPublished,
-    startTime: quiz.startTime
-  ? new Date(quiz.startTime).toISOString()
-  : undefined,
-
-endTime: quiz.endTime
-  ? new Date(quiz.endTime).toISOString()
-  : undefined,
+    startTime: quiz.startTime || undefined,
+    endTime: quiz.endTime || undefined,
     questionIds, // Send question IDs for many-to-many relationship
     createdAt: quiz.createdAt instanceof Date ? quiz.createdAt.toISOString() : quiz.createdAt,
     updateAt: quiz.updateAt instanceof Date ? quiz.updateAt.toISOString() : quiz.updateAt,

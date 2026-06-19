@@ -58,6 +58,7 @@ import { getCourseQuizUnreadCount } from "@/services/api/courseQuizDiscussionApi
 import { getCourseAssignmentUnreadCount } from "@/services/api/courseAssignmentDiscussionApi"
 import { getCourseLessonDiscussionUnreadCount } from "@/services/api/courseLessonDiscussionApi"
 import * as certificateApi from "@/services/api/user/certificateApi"
+import { getUserById } from "@/services/api/userApi"
 import type { CertificateResponse } from "@/services/api/response/certificateResponse"
 import CertificateModal from "@/components/user/course/CertificateModal"
 import { Award } from "lucide-react"
@@ -473,7 +474,7 @@ const CourseLearning: React.FC = () => {
         setContentItems(updatedItems);
       }
     }
-  }, [completedLessons, completedQuizzes, completedAssignments]);
+  }, [completedLessons, completedQuizzes, completedAssignments, contentItems]);
 
   // Auto-hide sidebar when entering quiz/assignment mode and save state to localStorage
   useEffect(() => {
@@ -1614,13 +1615,13 @@ const CourseLearning: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Nội dung bài làm
                       </label>
-                      <textarea
-                        value={submissionContent}
-                        onChange={(e) => setSubmissionContent(e.target.value)}
-                        rows={8}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Nhập nội dung bài làm của bạn..."
-                      />
+                      <div className="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                        <RichTextEditor
+                          value={submissionContent}
+                          onChange={(content) => setSubmissionContent(content)}
+                          placeholder="Nhập nội dung bài làm của bạn..."
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -1888,10 +1889,47 @@ const ReviewsTab: React.FC = () => {
   const [reviewForm, setReviewForm] = useState({ rate: 5, content: "" });
   const [submitting, setSubmitting] = useState(false);
   const [showDeleteReviewConfirm, setShowDeleteReviewConfirm] = useState(false);
+  const [userDetails, setUserDetails] = useState<Record<string, { name: string; avatar?: string }>>({});
 
   useEffect(() => {
     loadReviews();
   }, [courseId]);
+
+  useEffect(() => {
+    const fetchUnknownUsers = async () => {
+      const unknownUserIds = [...new Set(reviews.map(r => r.createdById))].filter(
+        id => id && !userDetails[id]
+      );
+      
+      if (unknownUserIds.length === 0) return;
+
+      const newDetails = { ...userDetails };
+      let updated = false;
+
+      await Promise.all(unknownUserIds.map(async (id) => {
+        try {
+          const userData = await getUserById(id);
+          if (userData) {
+            newDetails[id] = {
+              name: `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userData.username || "Người dùng",
+              avatar: userData.avatarUrl || (userData as any).profilePicture
+            };
+            updated = true;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch user ${id}`, error);
+          newDetails[id] = { name: "Người dùng" };
+          updated = true;
+        }
+      }));
+
+      if (updated) {
+        setUserDetails(newDetails);
+      }
+    };
+
+    fetchUnknownUsers();
+  }, [reviews, userDetails]);
 
   const loadReviews = async () => {
     if (!courseId) return;
@@ -2371,18 +2409,26 @@ const ReviewsTab: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {filteredReviews.map((review) => (
+            {filteredReviews.map((review) => {
+              const displayName = userDetails[review.createdById]?.name || review.createdByName || "Người dùng";
+              const displayAvatar = userDetails[review.createdById]?.avatar || review.createdByAvatar;
+
+              return (
               <div key={review.id} className="border-b pb-6">
                 <div className="flex items-start gap-4">
                   {/* Avatar */}
-                  <div className="w-12 h-12 rounded-full bg-gray-800 text-white flex items-center justify-center font-semibold text-lg flex-shrink-0">
-                    {(review.createdByName || "U").charAt(0).toUpperCase()}
+                  <div className="w-12 h-12 rounded-full bg-gray-800 text-white flex items-center justify-center font-semibold text-lg flex-shrink-0 overflow-hidden">
+                    {displayAvatar ? (
+                      <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
+                    ) : (
+                      displayName.charAt(0).toUpperCase()
+                    )}
                   </div>
 
                   <div className="flex-1">
                     {/* Header */}
                     <div className="mb-2">
-                      <h3 className="font-semibold">{review.createdByName}</h3>
+                      <h3 className="font-semibold">{displayName}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex gap-1">
                           {[...Array(5)].map((_, i) => (
@@ -2409,7 +2455,7 @@ const ReviewsTab: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

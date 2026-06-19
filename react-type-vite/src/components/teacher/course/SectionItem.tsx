@@ -72,10 +72,10 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
   const quizzesArray = section.quizs ? Array.from(section.quizs) : []
   const assignmentsArray = section.assignments ? Array.from(section.assignments) : []
 
-  // Sắp xếp ngay từ đầu để dùng cho cả hiển thị và handler
-  const sortedLessons = [...lessonsArray].sort((a, b) => a.numberItem - b.numberItem)
-  const sortedQuizzes = [...quizzesArray].sort((a, b) => a.numberItem - b.numberItem)
-  const sortedAssignments = [...assignmentsArray].sort((a, b) => a.numberItem - b.numberItem)
+  // Sắp xếp ngay từ đầu để dùng cho cả hiển thị và handler. Xử lý trường hợp numberItem bị undefined hoặc null.
+  const sortedLessons = [...lessonsArray].sort((a, b) => (Number(a.numberItem) || 0) - (Number(b.numberItem) || 0))
+  const sortedQuizzes = [...quizzesArray].sort((a, b) => (Number(a.numberItem) || 0) - (Number(b.numberItem) || 0))
+  const sortedAssignments = [...assignmentsArray].sort((a, b) => (Number(a.numberItem) || 0) - (Number(b.numberItem) || 0))
 
   const handleLessonsReorder = (fromIndex: number, toIndex: number) => {
     const fromLesson = sortedLessons[fromIndex]
@@ -137,6 +137,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
 
     const newLesson: LessonResponse = {
       ...lessonData,
+      id: Date.now(),
       sectionId: section.id,
       sectionName: section.title,
       numberItem: nextNumberItem,
@@ -235,6 +236,8 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, index, courseId, edu
       passingScore: updatedQuizData.passingScore || 70,
       showResults: updatedQuizData.showResults || false,
       isPublished: updatedQuizData.isPublished || false,
+      startTime: updatedQuizData.startTime,
+      endTime: updatedQuizData.endTime,
       questions: new Set((updatedQuizData.questions || []) as any),
       updateAt: new Date(),
     }

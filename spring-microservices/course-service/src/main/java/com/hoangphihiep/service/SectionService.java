@@ -10,6 +10,7 @@ import com.hoangphihiep.mapper.AssignmentMapper;
 import com.hoangphihiep.mapper.SectionMapper;
 import com.hoangphihiep.repository.*;
 import com.hoangphihiep.repository.httpclient.FileHandlerRepository;
+import com.hoangphihiep.repository.QuizBlueprintRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class SectionService {
     private final AssignmentRepository assignmentRepository;
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
     private final QuizQuestionRepository quizQuestionRepository;
+    private final QuizBlueprintRepository quizBlueprintRepository;
     private final SectionMapper sectionMapper;
     private final FileHandlerRepository fileHandlerRepository;
     private final ContentVisibilityService contentVisibilityService;
@@ -240,10 +242,7 @@ public class SectionService {
         }
 
         int lessonFileIndex = 0;
-        int lessonSeqIndex = 1;
-
         for (LessonRequest lessonRequest : new ArrayList<>(lessonRequests)) {
-            lessonRequest.setNumberItem(lessonSeqIndex++);
             validateLessonRequest(lessonRequest);
             System.out.println ("Xác thực lesson thành công");
             Lesson lesson;
@@ -477,14 +476,14 @@ public class SectionService {
                 }
             }
             for (Quiz quizToRemove : quizzesToRemove) {
+                quizQuestionRepository.deleteByQuizId(quizToRemove.getId());
+                quizBlueprintRepository.deleteByQuizId(quizToRemove.getId());
                 section.getQuizs().remove(quizToRemove);
                 quizRepository.delete(quizToRemove);
             }
         }
 
-        int quizSeqIndex = 1;
         for (QuizRequest quizRequest : new ArrayList<>(quizRequests)) {
-            quizRequest.setNumberItem(quizSeqIndex++);
             validateQuizRequest(quizRequest);
 
             Quiz quiz;
@@ -838,10 +837,7 @@ public class SectionService {
         }
 
         int assignmentFileIndex = 0;
-        int assignmentSeqIndex = 1;
-
         for (AssignmentRequest assignmentRequest : new ArrayList<>(assignmentRequests)) {
-            assignmentRequest.setNumberItem(assignmentSeqIndex++);
             validateAssignmentRequest(assignmentRequest);
 
             Assignment assignment;
