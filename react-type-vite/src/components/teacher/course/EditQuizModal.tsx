@@ -51,8 +51,8 @@ const EditQuizModal: React.FC<{
         isPublished: false,
         sectionId,
         questions: convertedQuestions,
-        ...(quiz.startTime && quiz.startTime.trim() !== "" && { startTime: new Date(quiz.startTime).toISOString() }),
-        ...(quiz.endTime && quiz.endTime.trim() !== "" && { endTime: new Date(quiz.endTime).toISOString() }),
+        ...(quiz.startTime && quiz.startTime.trim() !== "" && { startTime: quiz.startTime }),
+        ...(quiz.endTime && quiz.endTime.trim() !== "" && { endTime: quiz.endTime }),
       })
     }
   }, [quiz, isOpen, sectionId])
@@ -96,8 +96,8 @@ const EditQuizModal: React.FC<{
         sectionId,
         numberItem: quiz.numberItem,
         questions: formData.questions,
-        startTime: formData.startTime ? new Date(formData.startTime).toISOString() : undefined,
-        endTime: formData.endTime ? new Date(formData.endTime).toISOString() : undefined,
+        startTime: formData.startTime || undefined,
+        endTime: formData.endTime || undefined,
       })
       onClose()
     } catch (err) {

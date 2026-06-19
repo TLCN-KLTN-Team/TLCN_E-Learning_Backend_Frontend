@@ -166,13 +166,13 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                         </svg>
 
                         {/* Header */}
-                        <div className="z-10 mt-2 sm:mt-4 text-center w-full px-4">
+                        <div className="z-10 mt-1 sm:mt-2 text-center w-full px-4">
                             <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-widest text-blue-900 uppercase mb-1" style={{ fontFamily: "'Times New Roman', Georgia, serif" }}>CHỨNG CHỈ</h1>
                             <p className="text-xs sm:text-sm md:text-lg text-yellow-600 tracking-[0.1em] sm:tracking-[0.2em] font-semibold uppercase">HOÀN THÀNH KHÓA HỌC</p>
                         </div>
 
                         {/* Tên học viên */}
-                        <div className="z-10 w-full flex flex-col items-center px-4 mt-1 sm:mt-2">
+                        <div className="z-10 w-full flex flex-col items-center px-4 mt-1">
                             <p className="text-xs sm:text-base text-gray-500 italic mb-1">Trân trọng trao tặng chứng chỉ này cho</p>
                             <h2
                                 className="text-xl sm:text-3xl md:text-4xl text-blue-800 my-1 px-4 border-b-2 border-gray-200 pb-1 font-bold italic text-center w-full max-w-[85%] break-words leading-tight"
@@ -182,22 +182,22 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                         </div>
 
                         {/* Thông tin khóa học */}
-                        <div className="z-10 w-full flex flex-col items-center px-4 mt-1 sm:mt-2">
+                        <div className="z-10 w-full flex flex-col items-center px-4 mt-1">
                             <p className="text-[10px] sm:text-base text-gray-500 mb-1">Vì đã hoàn thành xuất sắc khóa học</p>
                             <h3 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 w-full max-w-[90%] text-center break-words leading-tight">
                                 {courseName}
                             </h3>
                             <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 italic leading-snug text-center">
                                 Chứng chỉ này xác nhận việc hoàn thành khóa học thành công.
-                                <span className="block mt-1 font-semibold text-blue-800 not-italic">
+                                <span className="block mt-0.5 font-semibold text-blue-800 not-italic">
                                     Học lực: {displayGrade} (Điểm: {displayGpa})
                                 </span>
                             </p>
                         </div>
 
                         {/* Chữ ký & Badge */}
-                        <div className="z-10 w-full grid grid-cols-3 items-end px-4 sm:px-10 mb-6 sm:mb-8 mt-2 sm:mt-4">
-                            <div className="flex flex-col items-center text-center justify-end gap-1.5 sm:gap-2.5 h-[88px] sm:h-[128px] md:h-[150px]">
+                        <div className="z-10 w-full grid grid-cols-3 items-end px-4 sm:px-10 mb-4 sm:mb-6 mt-2">
+                            <div className="flex flex-col items-center text-center justify-end gap-1.5 sm:gap-2">
                                 <img
                                     src={qrUrl}
                                     alt="Mã QR xác minh chứng chỉ"
@@ -209,7 +209,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center">
+                            <div className="flex flex-col items-center justify-end mb-0.5">
                                 <div className="w-12 h-12 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-yellow-500 rounded-full flex flex-col items-center justify-center text-white shadow-md border-2 sm:border-4 border-white ring-1 ring-yellow-500 mb-1 sm:mb-2 z-10 shrink-0">
                                     <Award className="w-5 h-5 sm:w-8 sm:h-8 md:w-10 md:h-10" />
                                     {certificate.grade && (
@@ -223,7 +223,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-center text-center justify-end gap-1.5 sm:gap-2.5 h-[88px] sm:h-[128px] md:h-[150px]">
+                            <div className="flex flex-col items-center text-center justify-end gap-1.5 sm:gap-2">
                                 <div className="text-[10px] sm:text-sm md:text-lg font-bold text-gray-800 leading-tight">{issueDateStr}</div>
                                 <div className="w-20 sm:w-32 md:w-40">
                                     <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-400 to-transparent"></div>

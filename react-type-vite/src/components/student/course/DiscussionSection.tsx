@@ -28,6 +28,7 @@ import { uploadImage } from "@/services/api/fileUploadApi";
 import { toast } from "react-toastify";
 import { getAccessToken } from "@/utils/localStorageVariables";
 import type { User as UserType } from "@/context/auth-context/types";
+import { getUserById } from "@/services/api/userApi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,7 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
+  const [userDetails, setUserDetails] = useState<Record<string, { name: string; avatar?: string }>>({});
 
   useEffect(() => {
     if (!hasInitialized.current) {
@@ -78,6 +80,45 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
       }
     };
   }, [itemType, itemId]);
+
+  useEffect(() => {
+    const fetchUnknownUsers = async () => {
+      // Find unique user IDs that aren't the current user and we haven't fetched yet
+      const unknownUserIds = [...new Set(messages.map(m => m.userId))].filter(
+        id => id && id !== user?.id && !userDetails[id]
+      );
+      
+      if (unknownUserIds.length === 0) return;
+
+      const newDetails = { ...userDetails };
+      let updated = false;
+
+      // Fetch user details concurrently
+      await Promise.all(unknownUserIds.map(async (id) => {
+        try {
+          const userData = await getUserById(id);
+          if (userData) {
+            newDetails[id] = {
+              name: `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userData.username || "Người dùng",
+              avatar: userData.avatarUrl || (userData as any).profilePicture
+            };
+            updated = true;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch user ${id}`, error);
+          // Mark as fetched but unknown to prevent retry loops
+          newDetails[id] = { name: "Người dùng" };
+          updated = true;
+        }
+      }));
+
+      if (updated) {
+        setUserDetails(newDetails);
+      }
+    };
+
+    fetchUnknownUsers();
+  }, [messages, user?.id, userDetails]);
 
   const initializeDiscussion = async () => {
     try {
@@ -299,6 +340,18 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
 
   const handleLike = async (messageId: string) => {
     try {
+      // Optimistic update
+      setMessages((prev) => prev.map(msg => {
+        if (msg.id === messageId) {
+          return {
+            ...msg,
+            isLiked: !msg.isLiked,
+            likes: msg.isLiked ? msg.likes - 1 : msg.likes + 1
+          };
+        }
+        return msg;
+      }));
+
       let updatedMessage;
       if (itemType === "quiz") {
         updatedMessage = await toggleDiscussionLike(messageId);
@@ -342,6 +395,57 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
     if (diffHours < 24) return `${diffHours} giờ trước`;
     if (diffDays < 7) return `${diffDays} ngày trước`;
     return date.toLocaleDateString("vi-VN");
+  };
+
+  const isLikelyUuid = (value?: string): boolean => {
+    if (!value) return false;
+    return /^[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}$/i.test(value.trim());
+  };
+
+  const resolveDisplayName = (message: DiscussionMessage): string => {
+    if (user?.id && message.userId === user.id) {
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+      if (fullName) return fullName;
+      if (user.username && !isLikelyUuid(user.username)) return user.username;
+      return "Bạn";
+    }
+
+    if (userDetails[message.userId] && userDetails[message.userId].name !== "Người dùng") {
+      return userDetails[message.userId].name;
+    }
+
+    const rawName = [
+      (message as any).userName,
+      (message as any).displayName,
+      (message as any).fullName,
+      (message as any).senderName,
+      (message as any).username,
+    ].find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
+
+    if (rawName && !isLikelyUuid(rawName)) {
+      return rawName;
+    }
+
+    return userDetails[message.userId]?.name || "Người dùng";
+  };
+
+  const resolveAvatarUrl = (message: DiscussionMessage): string | undefined => {
+    if (user?.id && message.userId === user.id) {
+      return user.avatarUrl;
+    }
+
+    if (userDetails[message.userId]?.avatar) {
+      return userDetails[message.userId].avatar;
+    }
+
+    const messageAvatar = [
+      (message as any).userAvatar,
+      (message as any).avatarUrl,
+      (message as any).profilePicture,
+      (message as any).senderAvatar,
+    ].find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
+
+    return messageAvatar;
   };
 
   return (
@@ -393,40 +497,43 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
 
         {!isLoading && !error && messages.length > 0 && (
           <>
-            {messages.map((message) => (
+            {[...messages]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+              .map((message) => {
+              const isOwner = user?.id === message.userId;
+              const hasLiked = message.isLiked;
+              const displayName = resolveDisplayName(message);
+              const displayAvatar = resolveAvatarUrl(message);
+
+              return (
               <div
                 key={message.id}
-                className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                className={`flex gap-3 ${isOwner ? "flex-row-reverse" : "flex-row"} ${
                   message.isDeleted ? "opacity-50" : ""
                 }`}
               >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="flex-shrink-0">
-                    {message.userAvatar ? (
+                <div className="flex-shrink-0">
+                    {displayAvatar ? (
                       <img
-                        src={message.userAvatar}
-                        alt={message.userName}
-                        className="w-10 h-10 rounded-full"
+                        src={displayAvatar}
+                        alt={displayName}
+                        className="w-10 h-10 rounded-full object-cover shadow-sm"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <User className="w-5 h-5 text-blue-600" />
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shadow-sm">
+                        <User className="h-5 w-5 text-blue-600" />
                       </div>
                     )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900">
-                        {message.userName}
+                </div>
+
+                <div className={`flex flex-col flex-1 min-w-0 ${isOwner ? "items-end" : "items-start"}`}>
+                    <div className={`flex items-center gap-2 mb-1 ${isOwner ? "flex-row-reverse" : "flex-row"}`}>
+                      <span className="font-medium text-gray-900 text-sm">
+                        {displayName}
                       </span>
                       {message.userRole === "TEACHER" && (
                         <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
                           Giảng viên
-                        </span>
-                      )}
-                      {message.userId === user?.id && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                          Bạn
                         </span>
                       )}
                       <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -434,49 +541,49 @@ const DiscussionSection = ({ itemType, itemId, user }: DiscussionSectionProps) =
                         {formatTime(message.createdAt)}
                       </span>
                     </div>
-                    <p className="text-gray-700 whitespace-pre-wrap">
-                      {message.isDeleted ? "[Tin nhắn đã bị xóa]" : message.content}
-                    </p>
-                    {message.imageUrl && !message.isDeleted && (
-                      <img
-                        src={message.imageUrl}
-                        alt="Attachment"
-                        className="mt-2 max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(message.imageUrl, '_blank')}
-                      />
+
+                    <div className={`rounded-xl p-3 max-w-[85%] shadow-sm ${isOwner ? "bg-blue-600 text-white rounded-tr-sm" : "bg-white border border-gray-100 rounded-tl-sm text-gray-800"}`}>
+                        <p className={`text-sm whitespace-pre-wrap break-words ${isOwner ? "text-white" : "text-gray-800"}`}>
+                          {message.isDeleted ? "[Tin nhắn đã bị xóa]" : message.content}
+                        </p>
+                      {message.imageUrl && !message.isDeleted && (
+                        <img
+                          src={message.imageUrl}
+                          alt="Attachment"
+                          className="mt-2 max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => window.open(message.imageUrl, '_blank')}
+                        />
+                      )}
+                    </div>
+
+                    {!message.isDeleted && (
+                      <div className={`flex items-center gap-3 mt-1.5 ${isOwner ? "flex-row-reverse" : "flex-row"}`}>
+                        <button
+                          onClick={() => handleLike(message.id)}
+                          className={`flex items-center gap-1 text-xs transition-colors ${hasLiked
+                              ? "text-blue-600 font-medium"
+                              : "text-gray-500 hover:text-blue-600"
+                            }`}
+                        >
+                          <ThumbsUp
+                            className={`h-3.5 w-3.5 ${hasLiked ? "fill-current" : ""}`}
+                          />
+                          {message.likes > 0 && <span>{message.likes}</span>}
+                        </button>
+                        {isOwner && (
+                          <button
+                            onClick={() => setMessageToDelete(message.id)}
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Xóa</span>
+                          </button>
+                        )}
+                      </div>
                     )}
-                  </div>
                 </div>
-
-                {!message.isDeleted && (
-                  <div className="flex items-center gap-4 ml-13">
-                    <button
-                      onClick={() => handleLike(message.id)}
-                      className={`flex items-center gap-1 text-sm transition-colors ${
-                        message.isLiked
-                          ? "text-blue-600"
-                          : "text-gray-600 hover:text-blue-600"
-                      }`}
-                    >
-                      <ThumbsUp
-                        className={`w-4 h-4 ${message.isLiked ? "fill-current" : ""}`}
-                      />
-                      {message.likes > 0 && <span>{message.likes}</span>}
-                    </button>
-
-                    {message.userId === user?.id && (
-                      <button
-                        onClick={() => setMessageToDelete(message.id)}
-                        className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Xóa
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
-            ))}
+            )})}
             <div ref={messagesEndRef} />
           </>
         )}

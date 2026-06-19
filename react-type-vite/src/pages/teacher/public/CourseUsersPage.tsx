@@ -5,11 +5,11 @@ import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { 
-  ArrowLeft, 
-  Search, 
-  Users, 
-  Mail, 
+import {
+  ArrowLeft,
+  Search,
+  Users,
+  Mail,
   Calendar,
   ClipboardCheck,
   FileText,
@@ -23,13 +23,13 @@ import { toast } from "react-toastify"
 import teacherPublicApi, { type PublicCourseStudent } from "@/services/api/teacher/teacherPublicApi"
 import { CourseApiService } from "@/services/api/user/courseApi"
 
-interface Student extends PublicCourseStudent {}
+interface Student extends PublicCourseStudent { }
 
 // Helper function to calculate progress from lessons, quizzes, and assignments
 const calculateProgress = (student: Student): number => {
   const totalPublished = student.publishedLessons + student.publishedQuizzes + student.publishedAssignments
   if (totalPublished === 0) return 0
-  
+
   const totalCompleted = student.lessonsCompleted + student.quizzesTaken + student.assignmentsSubmitted
   return (totalCompleted / totalPublished) * 100
 }
@@ -73,9 +73,18 @@ const CourseStudentsPage: React.FC = () => {
     try {
       // Load students - backend sẽ tự load course info
       const studentsData = await teacherPublicApi.getCourseStudents(Number(courseId))
-      setStudents(studentsData)
-      setFilteredStudents(studentsData)
-      
+
+      // Đảm bảo số lượng hoàn thành không vượt quá tổng số (tránh lỗi tiến độ > 100% do làm bài nhiều lần)
+      const cappedStudentsData = studentsData.map(student => ({
+        ...student,
+        lessonsCompleted: Math.min(student.lessonsCompleted, student.publishedLessons),
+        quizzesTaken: Math.min(student.quizzesTaken, student.publishedQuizzes),
+        assignmentsSubmitted: Math.min(student.assignmentsSubmitted, student.publishedAssignments),
+      }))
+
+      setStudents(cappedStudentsData)
+      setFilteredStudents(cappedStudentsData)
+
       // Try to load course info for display (optional)
       try {
         const course = await CourseApiService.getCourseById(courseId)
@@ -167,7 +176,7 @@ const CourseStudentsPage: React.FC = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Quay lại danh sách khóa học
             </Button>
-            
+
             <h1 className="text-3xl font-bold mb-2 flex items-center text-foreground">
               <Users className="mr-3 text-primary" size={32} />
               Người dùng - {courseName || 'Khóa học'}
@@ -191,7 +200,7 @@ const CourseStudentsPage: React.FC = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Tiến độ TB</p>
                   <h3 className="text-2xl font-bold text-card-foreground">
-                    {students.length > 0 
+                    {students.length > 0
                       ? Math.round(students.reduce((sum, s) => sum + calculateProgress(s), 0) / students.length)
                       : 0}%
                   </h3>
@@ -247,8 +256,8 @@ const CourseStudentsPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -259,10 +268,6 @@ const CourseStudentsPage: React.FC = () => {
               <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
                 Lọc
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Xuất Excel
               </Button>
             </div>
           </div>

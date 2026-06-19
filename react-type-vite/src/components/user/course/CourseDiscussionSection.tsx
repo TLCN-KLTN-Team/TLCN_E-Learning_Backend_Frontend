@@ -28,6 +28,7 @@ import { uploadImage } from "@/services/api/fileUploadApi";
 import { toast } from "react-toastify";
 import { getAccessToken } from "@/utils/localStorageVariables";
 import type { User as UserType } from "@/context/auth-context/types";
+import { getUserById } from "@/services/api/userApi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ const CourseDiscussionSection = ({ itemType, itemId, publishedCourseId, user }: 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
+  const [userDetails, setUserDetails] = useState<Record<string, { name: string; avatar?: string }>>({});
 
   useEffect(() => {
     if (!hasInitialized.current) {
@@ -79,6 +81,45 @@ const CourseDiscussionSection = ({ itemType, itemId, publishedCourseId, user }: 
       }
     };
   }, [itemType, itemId, publishedCourseId]);
+
+  useEffect(() => {
+    const fetchUnknownUsers = async () => {
+      // Find unique user IDs that aren't the current user and we haven't fetched yet
+      const unknownUserIds = [...new Set(messages.map(m => m.userId))].filter(
+        id => id && id !== user?.id && !userDetails[id]
+      );
+      
+      if (unknownUserIds.length === 0) return;
+
+      const newDetails = { ...userDetails };
+      let updated = false;
+
+      // Fetch user details concurrently
+      await Promise.all(unknownUserIds.map(async (id) => {
+        try {
+          const userData = await getUserById(id);
+          if (userData) {
+            newDetails[id] = {
+              name: `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userData.username || "Người dùng",
+              avatar: userData.avatarUrl || (userData as any).profilePicture
+            };
+            updated = true;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch user ${id}`, error);
+          // Mark as fetched but unknown to prevent retry loops
+          newDetails[id] = { name: "Người dùng" };
+          updated = true;
+        }
+      }));
+
+      if (updated) {
+        setUserDetails(newDetails);
+      }
+    };
+
+    fetchUnknownUsers();
+  }, [messages, user?.id, userDetails]);
 
   const initializeDiscussion = async () => {
     try {
@@ -300,6 +341,24 @@ const CourseDiscussionSection = ({ itemType, itemId, publishedCourseId, user }: 
 
   const handleLike = async (messageId: string) => {
     try {
+      // Optimistic update
+      setMessages((prev) => prev.map(msg => {
+        if (msg.id === messageId) {
+          const currentUserId = user?.id || "";
+          const hasLiked = msg.likedBy?.includes(currentUserId);
+          const newLikedBy = hasLiked 
+            ? msg.likedBy?.filter(id => id !== currentUserId) || []
+            : [...(msg.likedBy || []), currentUserId];
+          
+          return {
+            ...msg,
+            likedBy: newLikedBy,
+            likes: newLikedBy.length
+          };
+        }
+        return msg;
+      }));
+
       if (itemType === "quiz") {
         await toggleCourseQuizDiscussionLike(messageId);
       } else if (itemType === "assignment") {
@@ -311,6 +370,57 @@ const CourseDiscussionSection = ({ itemType, itemId, publishedCourseId, user }: 
       console.error("Error toggling like:", err);
       toast.error("Không thể thích tin nhắn");
     }
+  };
+
+  const isLikelyUuid = (value?: string): boolean => {
+    if (!value) return false;
+    return /^[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}$/i.test(value.trim());
+  };
+
+  const resolveDisplayName = (message: DiscussionMessage): string => {
+    if (user?.id && message.userId === user.id) {
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+      if (fullName) return fullName;
+      if (user.username && !isLikelyUuid(user.username)) return user.username;
+      return "Bạn";
+    }
+
+    if (userDetails[message.userId] && userDetails[message.userId].name !== "Người dùng") {
+      return userDetails[message.userId].name;
+    }
+
+    const rawName = [
+      (message as any).userName,
+      (message as any).displayName,
+      (message as any).fullName,
+      (message as any).senderName,
+      (message as any).username,
+    ].find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
+
+    if (rawName && !isLikelyUuid(rawName)) {
+      return rawName;
+    }
+
+    return userDetails[message.userId]?.name || "Người dùng";
+  };
+
+  const resolveAvatarUrl = (message: DiscussionMessage): string | undefined => {
+    if (user?.id && message.userId === user.id) {
+      return user.avatarUrl;
+    }
+
+    if (userDetails[message.userId]?.avatar) {
+      return userDetails[message.userId].avatar;
+    }
+
+    const messageAvatar = [
+      (message as any).userAvatar,
+      (message as any).avatarUrl,
+      (message as any).profilePicture,
+      (message as any).senderAvatar,
+    ].find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
+
+    return messageAvatar;
   };
 
   if (isConnecting) {
@@ -361,47 +471,43 @@ const CourseDiscussionSection = ({ itemType, itemId, publishedCourseId, user }: 
             <p className="text-sm">Hãy là người đầu tiên bắt đầu thảo luận!</p>
           </div>
         ) : (
-          messages.map((message) => {
-            const isOwner = user?.id === message.userId;
-            const hasLiked = message.likedBy?.includes(user?.id || "");
-
-            // Debug log
-            if (isOwner) {
-              console.log("📨 Displaying message:", {
-                userName: message.userName,
-                userAvatar: message.userAvatar,
-                userId: message.userId
-              });
-            }
+          <>
+            {[...messages]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+              .map((message) => {
+              const isOwner = user?.id === message.userId;
+              const hasLiked = message.likedBy?.includes(user?.id || "");
+              const displayName = resolveDisplayName(message);
+              const displayAvatar = resolveAvatarUrl(message);
 
             return (
-              <div key={message.id} className="flex gap-3">
+              <div key={message.id} className={`flex gap-3 ${isOwner ? "flex-row-reverse" : "flex-row"}`}>
                 <div className="flex-shrink-0">
-                  {message.userAvatar ? (
+                  {displayAvatar ? (
                     <img 
-                      src={message.userAvatar} 
-                      alt={message.userName || "User"} 
-                      className="w-8 h-8 rounded-full object-cover"
+                      src={displayAvatar} 
+                      alt={displayName} 
+                      className="w-10 h-10 rounded-full object-cover shadow-sm"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <User className="h-4 w-4 text-blue-600" />
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shadow-sm">
+                      <User className="h-5 w-5 text-blue-600" />
                     </div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2 mb-1">
+                <div className={`flex flex-col flex-1 min-w-0 ${isOwner ? "items-end" : "items-start"}`}>
+                  <div className={`flex items-center gap-2 mb-1 ${isOwner ? "flex-row-reverse" : "flex-row"}`}>
                     <span className="font-medium text-gray-900 text-sm">
-                      {message.userName || "Người dùng"}
+                      {displayName}
                     </span>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {new Date(message.createdAt).toLocaleString("vi-VN")}
                     </span>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className={`rounded-xl p-3 max-w-[85%] shadow-sm ${isOwner ? "bg-blue-600 text-white rounded-tr-sm" : "bg-white border border-gray-100 rounded-tl-sm text-gray-800"}`}>
                     {message.content && (
-                      <p className="text-gray-800 text-sm whitespace-pre-wrap break-words">
+                      <p className={`text-sm whitespace-pre-wrap break-words ${isOwner ? "text-white" : "text-gray-800"}`}>
                         {message.content}
                       </p>
                     )}
@@ -413,26 +519,26 @@ const CourseDiscussionSection = ({ itemType, itemId, publishedCourseId, user }: 
                       />
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className={`flex items-center gap-3 mt-1.5 ${isOwner ? "flex-row-reverse" : "flex-row"}`}>
                     <button
                       onClick={() => handleLike(message.id)}
-                      className={`flex items-center gap-1 text-sm transition-colors ${
+                      className={`flex items-center gap-1 text-xs transition-colors ${
                         hasLiked
                           ? "text-blue-600 font-medium"
-                          : "text-gray-600 hover:text-blue-600"
+                          : "text-gray-500 hover:text-blue-600"
                       }`}
                     >
                       <ThumbsUp
-                        className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`}
+                        className={`h-3.5 w-3.5 ${hasLiked ? "fill-current" : ""}`}
                       />
                       <span>{message.likes || 0}</span>
                     </button>
                     {isOwner && (
                       <button
                         onClick={() => setMessageToDelete(message.id)}
-                        className="flex items-center gap-1 text-sm text-gray-600 hover:text-red-600 transition-colors"
+                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-600 transition-colors"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                         <span>Xóa</span>
                       </button>
                     )}
@@ -440,7 +546,8 @@ const CourseDiscussionSection = ({ itemType, itemId, publishedCourseId, user }: 
                 </div>
               </div>
             );
-          })
+          })}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>
