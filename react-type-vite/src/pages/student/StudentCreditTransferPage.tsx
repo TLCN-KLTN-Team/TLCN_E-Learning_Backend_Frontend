@@ -119,7 +119,7 @@ const StudentCreditTransferPage = () => {
             case "PENDING_EXPERT_REVIEW":
                 return {
                     actionable: false,
-                    label: "Chờ expert duyệt",
+                    label: "Chờ chuyên gia duyệt",
                     variant: "outline" as const,
                     className: "text-foreground",
                 };

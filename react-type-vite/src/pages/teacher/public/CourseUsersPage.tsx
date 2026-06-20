@@ -15,7 +15,6 @@ import {
   FileText,
   Award,
   Filter,
-  Download,
   RefreshCw,
   BookOpen
 } from "lucide-react"
@@ -55,6 +54,16 @@ const getCompletionColor = (completed: number, total: number): string => {
   if (percentage === 100) return "text-green-600"
   if (percentage >= 50) return "text-yellow-600"
   return "text-red-600"
+}
+
+// Helper function to format name from "Văn Nam Hoàng" to "Hoàng Văn Nam"
+const formatVietnameseName = (fullName: string): string => {
+  if (!fullName) return ""
+  const parts = fullName.trim().split(" ")
+  if (parts.length < 2) return fullName
+  const lastName = parts[parts.length - 1]
+  const firstName = parts.slice(0, parts.length - 1).join(" ")
+  return `${lastName} ${firstName}`
 }
 
 const CourseStudentsPage: React.FC = () => {
@@ -126,6 +135,7 @@ const CourseStudentsPage: React.FC = () => {
   useEffect(() => {
     const filtered = students.filter(
       (student) =>
+        formatVietnameseName(student.studentName).toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -318,7 +328,7 @@ const CourseStudentsPage: React.FC = () => {
                         <td className="px-6 py-4">
                           <div>
                             <div className="font-medium text-card-foreground">
-                              {student.studentName}
+                              {formatVietnameseName(student.studentName)}
                             </div>
                             <div className="text-sm text-muted-foreground flex items-center mt-1">
                               <Mail className="w-3 h-3 mr-1" />

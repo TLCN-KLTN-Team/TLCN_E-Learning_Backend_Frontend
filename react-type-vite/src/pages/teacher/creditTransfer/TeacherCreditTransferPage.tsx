@@ -12,6 +12,15 @@ import {
   type TeacherCreditTransferStatus,
 } from "@/services/api/teacher/creditTransferInterviewApi";
 
+const formatVietnameseName = (name: string): string => {
+  if (!name) return name;
+  const parts = name.trim().split(/\s+/);
+  if (parts.length <= 1) return name;
+  const lastName = parts[parts.length - 1];
+  const firstNames = parts.slice(0, parts.length - 1).join(" ");
+  return `${lastName} ${firstNames}`;
+};
+
 const TeacherCreditTransferPage: React.FC = () => {
   const [records, setRecords] = useState<CreditTransferResponse[]>([]);
   const [page, setPage] = useState(0);
@@ -175,7 +184,7 @@ const TeacherCreditTransferPage: React.FC = () => {
       case "INTERVIEW_SCORED":
         return "Đã chấm vấn đáp";
       case "PENDING_EXPERT_REVIEW":
-        return "Chờ expert duyệt";
+        return "Chờ chuyên gia duyệt";
       case "APPROVED":
         return "Đã duyệt";
       case "REJECTED":
@@ -196,7 +205,7 @@ const TeacherCreditTransferPage: React.FC = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Vấn đáp quy đổi tín chỉ</h1>
-        <p className="text-gray-600 text-sm">Giáo viên xếp lịch và chấm điểm vấn đáp trước khi expert duyệt cuối.</p>
+        <p className="text-gray-600 text-sm">Giáo viên xếp lịch và chấm điểm vấn đáp trước khi chuyên gia duyệt cuối.</p>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm mb-4 flex flex-col md:flex-row gap-3 items-center">
@@ -209,7 +218,7 @@ const TeacherCreditTransferPage: React.FC = () => {
           <option value="all">Tất cả</option>
           <option value="PENDING">Chờ xếp vấn đáp</option>
           <option value="INTERVIEW_SCHEDULED">Đã xếp lịch</option>
-          <option value="PENDING_EXPERT_REVIEW">Chờ expert duyệt</option>
+          <option value="PENDING_EXPERT_REVIEW">Chờ chuyên gia duyệt</option>
         </select>
 
         <form
@@ -255,7 +264,7 @@ const TeacherCreditTransferPage: React.FC = () => {
                 records.map((item) => (
                   <tr key={item.id} className="border-b">
                     <td className="px-4 py-3 text-sm">
-                      <div className="font-medium">{item.studentName}</div>
+                      <div className="font-medium">{formatVietnameseName(item.studentName)}</div>
                       <div className="text-xs text-gray-500">MSSV: {item.studentId}</div>
                     </td>
                     <td className="px-4 py-3 text-sm">{item.sourceCourseName}</td>
@@ -288,7 +297,7 @@ const TeacherCreditTransferPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsModalOpen(false)} />
           <div className="relative bg-white w-full max-w-3xl rounded-xl shadow-xl p-5 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-3">Hồ sơ #{selected.id} - {selected.studentName}</h3>
+            <h3 className="text-lg font-semibold mb-3">Hồ sơ #{selected.id} - {formatVietnameseName(selected.studentName)}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-4">
               <div><span className="text-gray-500">Môn nguồn:</span> {selected.sourceCourseName}</div>
@@ -340,14 +349,14 @@ const TeacherCreditTransferPage: React.FC = () => {
                   className="w-full border rounded px-3 py-2 text-sm"
                 />
                 <div className="flex items-center gap-2">
-                  <label className="inline-flex items-center px-3 py-2 text-sm border rounded cursor-pointer hover:bg-gray-50">
+                  <label className={`inline-flex items-center px-3 py-2 text-sm border rounded ${evidenceUploading || actionLoading || selected.status === "PENDING" || selected.status === "APPROVED" || selected.status === "REJECTED" ? "cursor-not-allowed opacity-50 bg-gray-100" : "cursor-pointer hover:bg-gray-50"}`}>
                     Upload video minh chứng
                     <input
                       type="file"
                       accept="video/*"
                       className="hidden"
                       onChange={handleEvidenceFileChange}
-                      disabled={evidenceUploading || actionLoading}
+                      disabled={evidenceUploading || actionLoading || selected.status === "PENDING" || selected.status === "APPROVED" || selected.status === "REJECTED"}
                     />
                   </label>
                   {evidenceUploading && <span className="text-xs text-gray-500">Đang tải video...</span>}
@@ -361,7 +370,7 @@ const TeacherCreditTransferPage: React.FC = () => {
                 variant="default"
                 className="bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 disabled:!bg-gray-200 disabled:!text-gray-700 disabled:!border-gray-300 disabled:!opacity-100"
               >
-                Lưu điểm & chuyển expert duyệt
+                Lưu điểm
               </Button>
             </div>
 
