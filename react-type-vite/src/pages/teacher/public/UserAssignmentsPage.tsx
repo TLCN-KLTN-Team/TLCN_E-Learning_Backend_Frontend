@@ -39,7 +39,7 @@ const StudentAssignmentsPage: React.FC = () => {
         try {
           const user = await getUserById(studentId)
           const displayName = user.firstName && user.lastName 
-            ? `${user.lastName} ${user.firstName}`
+            ? `${user.firstName} ${user.lastName}`
             : user.username || studentId
           setStudentName(displayName)
         } catch (error) {
@@ -200,7 +200,7 @@ const StudentAssignmentsPage: React.FC = () => {
                       {assignment.status === 'graded' ? (
                         <div>
                           <div className="text-3xl font-bold text-green-600 mb-1">
-                            {assignment.score}/{assignment.maxScore}
+                            {assignment.score}/10
                           </div>
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             <CheckCircle className="w-3 h-3 mr-1" />
@@ -219,9 +219,10 @@ const StudentAssignmentsPage: React.FC = () => {
                   {/* Assignment Content */}
                   <div className="mb-4">
                     <h4 className="font-medium text-card-foreground mb-2">Nội dung bài làm:</h4>
-                    <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground">
-                      {assignment.content}
-                    </div>
+                    <div 
+                      className="bg-muted rounded-lg p-4 text-sm text-muted-foreground overflow-y-auto max-h-96"
+                      dangerouslySetInnerHTML={{ __html: assignment.content }}
+                    />
                   </div>
 
                   {/* Files */}
@@ -264,16 +265,16 @@ const StudentAssignmentsPage: React.FC = () => {
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-card-foreground mb-2">
-                            Điểm (tối đa {assignment.maxScore})
+                            Điểm (tối đa 10)
                           </label>
                           <Input
                             type="number"
                             min="0"
-                            max={assignment.maxScore}
+                            max={10}
                             step="0.5"
                             value={tempScore}
                             onChange={(e) => setTempScore(e.target.value)}
-                            placeholder={`0 - ${assignment.maxScore}`}
+                            placeholder={`0 - 10`}
                             className="max-w-xs"
                           />
                         </div>
@@ -289,7 +290,10 @@ const StudentAssignmentsPage: React.FC = () => {
                           />
                         </div>
                         <div className="flex gap-2">
-                          <Button onClick={() => handleSaveGrade(assignment.submissionId)}>
+                          <Button 
+                            onClick={() => handleSaveGrade(assignment.submissionId)}
+                            className="bg-[#066ac9] hover:bg-[#0555a1] text-white border-0 shadow-sm"
+                          >
                             <CheckCircle className="w-4 h-4 mr-2" />
                             Lưu điểm
                           </Button>
@@ -312,6 +316,7 @@ const StudentAssignmentsPage: React.FC = () => {
                       <Button
                         onClick={() => handleStartGrading(assignment.submissionId, assignment.score, assignment.feedback)}
                         variant={assignment.status === 'graded' ? 'outline' : 'default'}
+                        className={assignment.status !== 'graded' ? 'bg-[#066ac9] hover:bg-[#0555a1] text-white border-0 shadow-sm' : ''}
                       >
                         <Award className="w-4 h-4 mr-2" />
                         {assignment.status === 'graded' ? 'Chỉnh sửa điểm' : 'Chấm điểm'}

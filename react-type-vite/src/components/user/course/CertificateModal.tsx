@@ -46,7 +46,17 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ open, onClose, cert
         typeof certificate?.finalScore === "number" && Number.isFinite(certificate.finalScore)
             ? certificate.finalScore
             : null;
-    const displayStudentName = studentName?.trim() || certificate?.studentName?.trim() || certificate?.userId || "Học viên";
+    const formatVietnameseName = (name: string): string => {
+        if (!name) return name;
+        const parts = name.trim().split(/\s+/);
+        if (parts.length <= 1) return name;
+        const lastName = parts[parts.length - 1];
+        const firstNames = parts.slice(0, parts.length - 1).join(" ");
+        return `${lastName} ${firstNames}`;
+    };
+
+    const rawStudentName = studentName?.trim() || certificate?.studentName?.trim() || certificate?.userId || "Học viên";
+    const displayStudentName = rawStudentName !== "Học viên" && !rawStudentName.match(/^[0-9]+$/) ? formatVietnameseName(rawStudentName) : rawStudentName;
     const displayGrade = certificate?.grade?.trim() || deriveGradeFromScore(finalScoreValue);
     const displayGpa = finalScoreValue !== null ? finalScoreValue.toFixed(1) : "Không có";
 

@@ -124,7 +124,7 @@ const CreditTransferDetailModal = ({
             case 'PENDING': return 'Chờ xếp vấn đáp';
             case 'INTERVIEW_SCHEDULED': return 'Đã xếp lịch';
             case 'INTERVIEW_SCORED': return 'Đã chấm vấn đáp';
-            case 'PENDING_EXPERT_REVIEW': return 'Chờ expert duyệt';
+            case 'PENDING_EXPERT_REVIEW': return 'Chờ chuyên gia duyệt';
             case 'APPROVED': return 'Đã duyệt';
             case 'REJECTED': return 'Từ chối';
             default: return status;

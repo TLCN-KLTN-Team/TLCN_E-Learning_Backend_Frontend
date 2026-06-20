@@ -64,7 +64,7 @@ const CreditTransferApprovalPage: React.FC = () => {
             case 'PENDING': return 'Chờ xếp vấn đáp';
             case 'INTERVIEW_SCHEDULED': return 'Đã xếp lịch';
             case 'INTERVIEW_SCORED': return 'Đã chấm vấn đáp';
-            case 'PENDING_EXPERT_REVIEW': return 'Chờ expert duyệt';
+            case 'PENDING_EXPERT_REVIEW': return 'Chờ chuyên gia duyệt';
             case 'APPROVED': return 'Đã duyệt';
             case 'REJECTED': return 'Từ chối';
             default: return status;
@@ -92,7 +92,7 @@ const CreditTransferApprovalPage: React.FC = () => {
                             <option value="all">Tất cả trạng thái</option>
                             <option value="PENDING">Chờ xếp vấn đáp</option>
                             <option value="INTERVIEW_SCHEDULED">Đã xếp lịch</option>
-                            <option value="PENDING_EXPERT_REVIEW">Chờ expert duyệt</option>
+                            <option value="PENDING_EXPERT_REVIEW">Chờ chuyên gia duyệt</option>
                             <option value="APPROVED">Đã duyệt</option>
                             <option value="REJECTED">Đã từ chối</option>
                         </select>

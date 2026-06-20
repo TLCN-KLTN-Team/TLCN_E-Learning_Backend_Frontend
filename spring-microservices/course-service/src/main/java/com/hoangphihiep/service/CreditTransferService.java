@@ -382,7 +382,8 @@ public class CreditTransferService {
         assertTeacherCanAccessCreditTransfer(creditTransfer, teacherId);
 
         if (creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCHEDULED
-                && creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCORED) {
+                && creditTransfer.getStatus() != CreditTransferStatus.INTERVIEW_SCORED
+                && creditTransfer.getStatus() != CreditTransferStatus.PENDING_EXPERT_REVIEW) {
             throw new RuntimeException("Yêu cầu không thể nộp minh chứng ở trạng thái hiện tại");
         }
 

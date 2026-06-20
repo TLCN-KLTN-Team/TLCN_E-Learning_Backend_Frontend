@@ -29,7 +29,7 @@ const StudentQuizzesPage: React.FC = () => {
         // Load user info first
         const user = await getUserById(studentId)
         const displayName = user.firstName && user.lastName 
-          ? `${user.lastName} ${user.firstName}`
+          ? `${user.firstName} ${user.lastName}`
           : user.username || studentId
         setStudentName(displayName)
 

@@ -34,7 +34,7 @@ const RecommendedCourses: React.FC<RecommendedCoursesProps> = ({ currentCourseId
                     // 1. Try fetching related courses by category
                     let data = await PublishedCourseService.searchAndFiltersPublishedCourses(
                         0, 5, undefined, undefined, undefined, undefined, undefined,
-                        category, "popular"
+                        [category], "popular"
                     );
 
                     console.log("RecommendedCourses: Category search result:", data);
