@@ -50,6 +50,7 @@ public class CourseEnrollmentService {
     private final LessonProgressRepository lessonProgressRepository;
     private final LessonRepository lessonRepository;
     private final NotificationRepository notificationRepository;
+    private final ProgressService progressService;
 
     private static final String ENROLLMENT_STATUS_ACTIVE = "ACTIVE";
 
@@ -79,15 +80,15 @@ public class CourseEnrollmentService {
                         response.setCourseName(course.getCourseName());
                         response.setEnrollmentDate(enrollment.getEnrolledAt().toString());
 
-                        int progressPercentage = calculateClassProgress(userId, course, Long.valueOf(enrollment.getCourseClass().getId()));
-                        response.setProgressPercentage(progressPercentage);
+                        double overallProgress = progressService.getClassProgressStats(enrollment.getCourseClass().getId()).getOverallProgress();
+                        response.setProgressPercentage(overallProgress);
                         return response;
                     })
                     .filter(response -> normalizedSearch.isEmpty()
                             || response.getCourseName().toLowerCase(Locale.ROOT).contains(normalizedSearch))
                     .sorted((left, right) -> {
                         if ("progress".equalsIgnoreCase(sortBy)) {
-                            return Integer.compare(right.getProgressPercentage(), left.getProgressPercentage());
+                            return Double.compare(right.getProgressPercentage(), left.getProgressPercentage());
                         }
                         return left.getCourseName().compareToIgnoreCase(right.getCourseName());
                     })
@@ -115,67 +116,6 @@ public class CourseEnrollmentService {
         }
     }
 
-    // Helper method to calculate progress for a specific class
-    private int calculateClassProgress(String userId, Course course, Long classId) {
-        try {
-            // Get course progress
-            CourseProgress courseProgress = courseProgressRepository
-                    .findByUserIdAndCourseId(userId, course.getId())
-                    .orElse(null);
-
-            if (courseProgress == null) {
-                return 0;
-            }
-
-            // If course was completed (including credit transfer), dashboard should show 100%.
-            if (Boolean.TRUE.equals(courseProgress.getCompletedViaCreditTransfer()) || courseProgress.isCompleted()) {
-                return 100;
-            }
-
-            // Get all visible sections for this class
-            List<Section> sections = sectionRepository.findVisibleSectionsByClassId(course.getId(), classId.intValue());
-
-            // Calculate totals
-            int totalLessons = 0;
-            int totalQuizzes = 0;
-            int totalAssignments = 0;
-
-            for (Section section : sections) {
-                totalLessons += section.getLessons().size();
-                totalQuizzes += section.getQuizs().size();
-                totalAssignments += section.getAssignments().size();
-            }
-
-            // Calculate completed
-                int completedLessons = (int) courseProgress.getLessonProgresses().stream()
-                    .filter(lp -> lp.getCompleted())
-                    .count();
-
-            int completedQuizzes = quizAttemptRepository.countDistinctQuizzesByUserAndCourse(userId, course.getId());
-            int completedAssignments = assignmentSubmissionRepository.countDistinctAssignmentsByUserAndCourse(userId, course.getId());
-
-            // Calculate overall progress
-            int totalItems = totalLessons + totalQuizzes + totalAssignments;
-            int completedItems = completedLessons + completedQuizzes + completedAssignments;
-            double overallProgress = totalItems > 0 ? ((double) completedItems / totalItems) * 100 : 0;
-
-            if (courseProgress.getProgressPercentage() > overallProgress) {
-                overallProgress = courseProgress.getProgressPercentage();
-            }
-
-            if (overallProgress < 0) {
-                overallProgress = 0;
-            }
-            if (overallProgress > 100) {
-                overallProgress = 100;
-            }
-
-            return (int) Math.round(overallProgress);
-        } catch (Exception e) {
-            log.error("Error calculating class progress", e);
-            return 0;
-        }
-    }
 
     public List<SectionResponse> getEnrolledCourseContentByClassIdStrict(Integer classId) {
         // Get userId from SecurityContext
