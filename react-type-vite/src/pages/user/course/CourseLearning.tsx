@@ -1911,7 +1911,7 @@ const ReviewsTab: React.FC = () => {
           const userData = await getUserById(id);
           if (userData) {
             newDetails[id] = {
-              name: `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userData.username || "Người dùng",
+              name: `${userData.lastName || ""} ${userData.firstName || ""}`.trim() || userData.username || "Người dùng",
               avatar: userData.avatarUrl || (userData as any).profilePicture
             };
             updated = true;

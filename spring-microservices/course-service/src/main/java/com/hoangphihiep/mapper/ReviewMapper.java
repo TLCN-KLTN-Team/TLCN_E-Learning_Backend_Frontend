@@ -24,7 +24,21 @@ public class ReviewMapper {
         try {
             UserResponse userResponse = userInfoApi.getUserInfo(review.getCreatedById()).getResult();
             if (userResponse != null) {
-                userName = userResponse.getUsername();
+                String fullName = "";
+                if (userResponse.getLastName() != null && !userResponse.getLastName().trim().isEmpty()) {
+                    fullName += userResponse.getLastName().trim();
+                }
+                if (userResponse.getFirstName() != null && !userResponse.getFirstName().trim().isEmpty()) {
+                    if (!fullName.isEmpty()) fullName += " ";
+                    fullName += userResponse.getFirstName().trim();
+                }
+                
+                if (!fullName.isEmpty()) {
+                    userName = fullName;
+                } else if (userResponse.getUsername() != null) {
+                    userName = userResponse.getUsername();
+                }
+                
                 userAvatar = userResponse.getAvatarUrl();
                 System.out.println("tên của user: " + userName);
             }

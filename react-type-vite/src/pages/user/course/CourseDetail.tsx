@@ -40,6 +40,8 @@ const CourseDetail: React.FC = () => {
   const [reviewStats, setReviewStats] = useState<ReviewStatsResponse | null>(
     null
   );
+  const [showAllReviews, setShowAllReviews] = useState(false);
+
   // Show a compact course-info bar (covering the main Header) once the hero
   // scrolls out of view.
   const [showStickyHeader, setShowStickyHeader] = useState(false);
@@ -310,10 +312,6 @@ const CourseDetail: React.FC = () => {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span>{course.duration}</span>
-            </div>
             <span>{course.studentCount?.toLocaleString()} students</span>
           </div>
 
@@ -757,7 +755,7 @@ const CourseDetail: React.FC = () => {
               {/* Reviews List — 2-column feedback cards */}
               {reviews.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
-                  {reviews.slice(0, 4).map((review) => {
+                  {(showAllReviews ? reviews : reviews.slice(0, 4)).map((review) => {
                     // Get initials from reviewer name
                     const initials =
                       review.createdByName
@@ -894,8 +892,9 @@ const CourseDetail: React.FC = () => {
                 <Button
                   variant="outline"
                   className="w-auto border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold"
+                  onClick={() => setShowAllReviews(!showAllReviews)}
                 >
-                  Hiện tất cả {reviews.length} đánh giá
+                  {showAllReviews ? "Ẩn bớt đánh giá" : `Hiện tất cả ${reviews.length} đánh giá`}
                 </Button>
               )}
             </div>

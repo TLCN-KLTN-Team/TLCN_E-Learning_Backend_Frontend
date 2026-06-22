@@ -14,5 +14,5 @@ public class EnrolledCoursesResponse {
     private long classId;
     private String courseName;
     private String enrollmentDate;
-    private int progressPercentage;
+    private double progressPercentage;
 }

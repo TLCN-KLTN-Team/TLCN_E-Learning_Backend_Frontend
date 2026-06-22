@@ -195,8 +195,10 @@ public class UserProgressService {
                 courseProgress.setCompleteDate(new Date(System.currentTimeMillis()));
             }
         } else {
-            courseProgress.setCompleted(false);
-            courseProgress.setCompleteDate(null);
+            if (!courseProgress.isCompleted() || courseProgress.getCompleteDate() == null) {
+                courseProgress.setCompleted(false);
+                courseProgress.setCompleteDate(null);
+            }
         }
 
         courseProgressRepository.save(courseProgress);

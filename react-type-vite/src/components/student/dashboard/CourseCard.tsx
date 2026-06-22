@@ -54,7 +54,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
             <span className="text-sm font-medium">Tiến độ học tập</span>
             <span className="text-sm student-dashboard-progress-text">
               {course.progressPercentage !== null && course.progressPercentage !== undefined
-                ? `${course.progressPercentage}%`
+                ? `${Number(course.progressPercentage).toFixed(1)}%`
                 : "0%"}
             </span>
           </div>
