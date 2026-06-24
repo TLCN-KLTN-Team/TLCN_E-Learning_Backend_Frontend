@@ -83,6 +83,14 @@ const WorkspacePageContent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected]);
 
+  // Clear backend WebSocket errors when switching channels
+  useEffect(() => {
+    if (selectedChannel?.id) {
+      clearErrors();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChannel?.id]);
+
   // Initialize WebSocket connection only once
   useEffect(() => {
     let mounted = true;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronRight, Plus, Trophy } from "lucide-react";
 import { useAuth } from "@/context/auth-context/useAuth";
 import type {
@@ -6,6 +6,7 @@ import type {
   ChannelResponse,
   BasicChannelResponse,
 } from "@/types/chat.types";
+import { ChannelType } from "@/types/chat.types";
 import { ChannelList } from "../channel";
 import { getListBasicChannelsBySectionId } from "@/services/api/workspace/channel.api";
 
@@ -37,6 +38,12 @@ const SectionItem = ({
   const [channels, setChannels] = useState<BasicChannelResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Refs để tránh stale closure — đọc latest value mà không trigger lại effect
+  const selectedChannelRef = useRef(selectedChannel);
+  selectedChannelRef.current = selectedChannel;
+  const onChannelSelectRef = useRef(onChannelSelect);
+  onChannelSelectRef.current = onChannelSelect;
+
   // Fetch channels when section is expanded
   useEffect(() => {
     if (isExpanded) {
@@ -47,6 +54,30 @@ const SectionItem = ({
             section.id,
           );
           setChannels(channelsData);
+
+          // Safety net: nếu chưa có channel nào được chọn (workspace init chưa hoàn thành),
+          // tự động chọn GROUP channel có deadline còn hiệu lực để mở WebSocket connection.
+          if (!selectedChannelRef.current) {
+            const now = new Date();
+            // Ưu tiên OPEN (submissionDeadline > now), rồi đến REVIEW (còn hạn chấm chéo)
+            const activeGroupChannel =
+              channelsData.find(
+                (ch) =>
+                  ch.type === ChannelType.GROUP &&
+                  ch.submissionDeadline &&
+                  new Date(ch.submissionDeadline) > now,
+              ) ??
+              channelsData.find(
+                (ch) =>
+                  ch.type === ChannelType.GROUP &&
+                  ch.allowCrossReview &&
+                  ch.crossReviewDeadline &&
+                  new Date(ch.crossReviewDeadline) > now,
+              );
+            if (activeGroupChannel) {
+              onChannelSelectRef.current(activeGroupChannel);
+            }
+          }
         } catch (error) {
           console.error("Error fetching channels:", error);
         } finally {
@@ -55,6 +86,7 @@ const SectionItem = ({
       };
       fetchChannels();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isExpanded, section.id, section.isPublic]);
 
   const handleCreateChannel = (e: React.MouseEvent) => {

@@ -89,13 +89,12 @@ class ChannelPhaseTest {
     }
 
     @Test
-    void assertOpenForMember_throwsChannelLocked_whenInReview() {
+    void assertOpenForMember_passes_whenInReview() {
+        // Nghiệp vụ mới: REVIEW cho phép chat và upload GENERAL — không throw.
         Instant past = Instant.now().minusSeconds(60);
         Instant future = Instant.now().plusSeconds(3600);
         Channel c = channel(true, past, future);
-        assertThatThrownBy(() -> ChannelPhase.assertOpenForMember(c))
-                .isInstanceOf(AppException.class)
-                .extracting(e -> ((AppException) e).getErrorCode())
-                .isEqualTo(ErrorCode.CHANNEL_LOCKED);
+        // không throw
+        ChannelPhase.assertOpenForMember(c);
     }
 }

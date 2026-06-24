@@ -25,10 +25,9 @@ public class ChatMessageUtils {
         chatMessageResponse.setMe(isMe);
         chatMessageResponse.setMessageType(chatMessage.getMessageType());
 
-        // get user profile info
         try {
             UserResponse senderProfile = getUserClient.getUser(chatMessage.getSender()).getResult();
-            chatMessageResponse.setSender(senderProfile);
+            chatMessageResponse.setSender(buildNickname(senderProfile));
         } catch (Exception e) {
             throw new AppException(ErrorCode.GET_USER_PROFILE_FAILED);
         }
@@ -42,14 +41,24 @@ public class ChatMessageUtils {
         chatMessageResponse.setMe(isMe);
         chatMessageResponse.setMessageType(chatMessage.getMessageType());
 
-        // get user profile info
         try {
             UserResponse senderProfile = getUserClient.getUser(chatMessage.getSender()).getResult();
-            chatMessageResponse.setSender(senderProfile);
+            chatMessageResponse.setSender(buildNickname(senderProfile));
         } catch (Exception e) {
             throw new AppException(ErrorCode.GET_USER_PROFILE_FAILED);
         }
 
         return chatMessageResponse;
+    }
+
+    private UserResponse buildNickname(UserResponse profile) {
+        if (profile == null) return null;
+        if (profile.getNickname() == null || profile.getNickname().isBlank()) {
+            String last = profile.getLastName() != null ? profile.getLastName() : "";
+            String first = profile.getFirstName() != null ? profile.getFirstName() : "";
+            String built = (last + " " + first).trim();
+            profile.setNickname(built.isBlank() ? null : built);
+        }
+        return profile;
     }
 }

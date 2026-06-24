@@ -80,6 +80,7 @@ export const useChatWebSocket = () => {
       onStompError: (frame) => {
         console.error("❌ STOMP error:", frame);
         isConnectingRef.current = false;
+        setIsConnected(false);
         setErrors((prev) => [
           ...prev,
           {

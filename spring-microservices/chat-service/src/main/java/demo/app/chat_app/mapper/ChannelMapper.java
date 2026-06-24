@@ -22,6 +22,10 @@ public interface ChannelMapper {
     List<ChannelResponse> toResponseList(List<Channel> channels);
 
     @Mapping(source = "public", target = "isPublic")
+    @Mapping(source = "type", target = "type")
+    @Mapping(source = "submissionDeadline", target = "submissionDeadline")
+    @Mapping(source = "crossReviewDeadline", target = "crossReviewDeadline")
+    @Mapping(source = "allowCrossReview", target = "allowCrossReview")
     BasicChannelResponse toBasicChannelResponse(Channel channel);
 
     @Named("computePhase")

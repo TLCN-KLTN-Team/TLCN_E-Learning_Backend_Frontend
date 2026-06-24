@@ -13,6 +13,8 @@ public class UserResponse {
     String username;
     String studentId;
     String nickname;
+    String firstName;
+    String lastName;
     String avatarUrl;
     boolean isOwner;
 }

@@ -36,6 +36,11 @@ function AppContent() {
   const state = location.state as { background?: Location } | null;
   const backgroundLocation = state && state.background ? state.background : null;
 
+  // Reset scroll position on every route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // Auto redirect khi app load - CỰC KỲ QUAN TRỌNG
   useEffect(() => {
     const auth = getAuthInfo();

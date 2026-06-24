@@ -6,13 +6,16 @@ import { getWorkspaces } from "@/services/api/workspace/workspace.api";
 import {
   getChannel,
   getPublicChannelBySectionId,
+  getListBasicChannelsBySectionId,
 } from "@/services/api/workspace/channel.api";
 import type {
+  BasicChannelResponse,
   ChannelResponse,
   UserResponse,
   SectionResponse,
   WorkspaceResponse,
 } from "@/types/chat.types";
+import { ChannelType } from "@/types/chat.types";
 import { getSectionsByWorkspaceId } from "@/services/api/workspace/section.api";
 
 export const useWorkspace = () => {
@@ -107,11 +110,54 @@ export const useWorkspace = () => {
         return;
       }
 
-      // Find public section and its public channel, then apply directly without extra API calls
       const fetchChannelsAndSelectGeneralChannel = async () => {
         try {
           const sections = await getSectionsByWorkspaceId(selectedWorkspace.id);
 
+          // Parallel-fetch basic channels for all sections to detect an active GROUP channel.
+          // Students belong to exactly one GROUP channel per assignment session — if one is found
+          // with a submission deadline still in the future, prefer it over the general channel so
+          // the WebSocket subscription for the countdown session opens immediately.
+          const now = new Date();
+          const sectionBasicChannels: { section: SectionResponse; channels: BasicChannelResponse[] }[] =
+            await Promise.all(
+              sections.map(async (section) => {
+                try {
+                  const channels = await getListBasicChannelsBySectionId(section.id);
+                  return { section, channels };
+                } catch {
+                  return { section, channels: [] as BasicChannelResponse[] };
+                }
+              }),
+            );
+
+          for (const { section, channels } of sectionBasicChannels) {
+            // Ưu tiên OPEN (submissionDeadline > now), rồi đến REVIEW (qua hạn nộp nhưng còn hạn chấm chéo)
+            const activeGroup =
+              channels.find(
+                (ch) =>
+                  ch.type === ChannelType.GROUP &&
+                  ch.submissionDeadline &&
+                  new Date(ch.submissionDeadline) > now,
+              ) ??
+              channels.find(
+                (ch) =>
+                  ch.type === ChannelType.GROUP &&
+                  ch.allowCrossReview &&
+                  ch.crossReviewDeadline &&
+                  new Date(ch.crossReviewDeadline) > now,
+              );
+            if (activeGroup) {
+              const fullChannel = await getChannel(activeGroup.id);
+              setSelectedChannel(fullChannel);
+              setSelectedSection(section);
+              navigateToWorkspacePath(selectedWorkspace.id, section.id, fullChannel.id);
+              initializedWorkspaceIdRef.current = selectedWorkspace.id;
+              return;
+            }
+          }
+
+          // No active GROUP channel — fall back to the public section's general channel.
           const publicSection = sections.find((sec) => sec.isPublic);
           if (!publicSection) {
             initializedWorkspaceIdRef.current = selectedWorkspace.id;
@@ -130,7 +176,6 @@ export const useWorkspace = () => {
             return;
           }
 
-          // Set state directly — publicChannel already has full data including sectionId
           setSelectedChannel(publicChannel);
           setSelectedSection(publicSection);
           navigateToWorkspacePath(

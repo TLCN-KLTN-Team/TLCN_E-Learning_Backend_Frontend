@@ -66,9 +66,16 @@ public class ChatRealtimeController {
             log.info("NEW_MESSAGE event broadcast for message: {} (clientMessageId: {})",
                     messageResponse.getId(), messageResponse.getClientMessageId());
             
+        } catch (AppException ae) {
+            log.warn("Business error sending message to channel {}: {}", request.getChannelId(), ae.getErrorCode());
+            String userId = WebsocketSessionUtil.getCurrentUserId(accessor);
+            messagingTemplate.convertAndSendToUser(userId, "/queue/errors",
+                    ae.getErrorCode().getMessage());
         } catch (Exception e) {
             log.error("Failed to send text message", e);
-            throw new AppException(ErrorCode.SEND_MESSAGE_FAILED);
+            String userId = WebsocketSessionUtil.getCurrentUserId(accessor);
+            messagingTemplate.convertAndSendToUser(userId, "/queue/errors",
+                    ErrorCode.SEND_MESSAGE_FAILED.getMessage());
         } finally {
             // Clean up ThreadLocal to prevent memory leaks
             WebSocketAuthInterceptor.clearToken();

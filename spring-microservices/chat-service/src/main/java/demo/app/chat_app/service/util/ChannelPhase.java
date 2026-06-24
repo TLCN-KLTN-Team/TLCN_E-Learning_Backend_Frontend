@@ -11,11 +11,10 @@ import java.time.Instant;
  * (submissionDeadline, crossReviewDeadline, allowCrossReview, now).
  *
  *   OPEN   — còn nộp bài, mọi hành động ghi đều cho phép
- *   REVIEW — đã qua hạn nộp, đang chấm chéo (chỉ khi allowCrossReview)
- *            chat & upload SUBMISSION mới bị khoá; reviewer của nhóm
- *            khác vẫn xem được attachment SUBMISSION qua endpoint
- *            cross-review.
- *   LOCKED — đã qua mốc cuối, mọi hành động đều khoá trừ giảng viên.
+ *   REVIEW — đã qua hạn nộp, đang trong phiên chấm điểm (allowCrossReview).
+ *            Chat và upload GENERAL vẫn được phép; chỉ SUBMISSION bị khoá
+ *            (frontend chặn qua SubmitAssignmentModal).
+ *   LOCKED — đã qua mốc cuối, mọi hành động ghi đều khoá.
  *
  * Channel.status cũ: ACTIVE → khi chuyển REVIEW set LOCKED
  *                            → khi chuyển LOCKED (post-cross-review) set ARCHIVED
@@ -44,7 +43,7 @@ public enum ChannelPhase {
     }
 
     public boolean isWriteAllowedForMember() {
-        return this == OPEN;
+        return this != LOCKED;
     }
 
     public boolean isCrossReviewAccessible() {
@@ -52,12 +51,12 @@ public enum ChannelPhase {
     }
 
     /**
-     * UC-41 guard: chỉ cho phép thành viên ghi (chat, upload, submit) trong phase OPEN.
-     * Channel không phải bài tập nhóm (submissionDeadline = null) cũng coi là OPEN.
-     * Throw AppException(CHANNEL_LOCKED) khi không thoả.
+     * UC-41 guard: cho phép thành viên ghi (chat, upload GENERAL) trong OPEN và REVIEW.
+     * Chỉ block khi LOCKED (phiên chấm điểm đã kết thúc hoàn toàn).
+     * Channel không phải bài tập nhóm (submissionDeadline = null) coi là OPEN — luôn pass.
      */
     public static void assertOpenForMember(Channel channel) {
-        if (of(channel, Instant.now()) != OPEN) {
+        if (of(channel, Instant.now()) == LOCKED) {
             throw new AppException(ErrorCode.CHANNEL_LOCKED);
         }
     }

@@ -166,9 +166,9 @@ public class Channel {
      * Hạn nộp bài của nhóm (chỉ Channel GROUP làm bài tập mới set).
      * Khi qua mốc này:
      *   - allowCrossReview=true  → vào phase REVIEW, status = LOCKED
-     *     (chặn chat, chặn upload mới của thành viên),
-     *     reviewer của nhóm khác vẫn truy cập được attachment
-     *     SUBMISSION qua endpoint cross-review.
+     *     Chat và upload GENERAL vẫn được phép; chỉ SUBMISSION bị khoá.
+     *     Reviewer của nhóm khác vẫn truy cập được attachment SUBMISSION
+     *     qua endpoint cross-review.
      *   - allowCrossReview=false → vào phase LOCKED, status = ARCHIVED.
      */
 
