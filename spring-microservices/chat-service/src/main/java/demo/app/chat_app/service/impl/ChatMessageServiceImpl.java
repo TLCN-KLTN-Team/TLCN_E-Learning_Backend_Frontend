@@ -53,7 +53,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
-        // UC-41: chặn gửi tin khi channel đã qua phase OPEN (LOCKED/ARCHIVED soft-lock)
+        // UC-41: chặn gửi tin khi channel LOCKED (phiên chấm điểm đã kết thúc). REVIEW vẫn cho phép.
         ChannelPhase.assertOpenForMember(channel);
 
         String userId = principal.getName();
@@ -126,7 +126,15 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         try {
             UserResponse profile = getUserClient.getUser(senderUserId).getResult();
             if (profile != null) {
-                return profile;
+                if (profile.getNickname() == null || profile.getNickname().isBlank()) {
+                    String last = profile.getLastName() != null ? profile.getLastName() : "";
+                    String first = profile.getFirstName() != null ? profile.getFirstName() : "";
+                    String built = (last + " " + first).trim();
+                    profile.setNickname(built.isBlank() ? null : built);
+                }
+                if (profile.getNickname() != null) {
+                    return profile;
+                }
             }
         } catch (Exception e) {
             log.info("Failed to fetch user profile for userId: {}", senderUserId);

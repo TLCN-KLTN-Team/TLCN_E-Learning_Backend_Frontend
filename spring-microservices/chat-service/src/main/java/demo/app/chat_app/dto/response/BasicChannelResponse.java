@@ -7,6 +7,8 @@ import demo.app.chat_app.model.workspace.ChannelType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.Instant;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,4 +20,9 @@ public class BasicChannelResponse {
 
     @JsonProperty("isPublic")
     boolean isPublic;
+
+    ChannelType type;
+    Instant submissionDeadline;
+    Instant crossReviewDeadline;
+    boolean allowCrossReview;
 }

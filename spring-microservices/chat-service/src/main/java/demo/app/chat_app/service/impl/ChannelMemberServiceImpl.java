@@ -13,6 +13,7 @@ import demo.app.chat_app.model.workspace.NotificationLevel;
 import demo.app.chat_app.repository.ChannelMemberRepository;
 import demo.app.chat_app.repository.ChannelRepository;
 import demo.app.chat_app.repository.httpclient.GetStudentClient;
+import demo.app.chat_app.repository.httpclient.GetUserClient;
 import demo.app.chat_app.repository.httpclient.TeacherClient;
 import demo.app.chat_app.service.ChannelMemberService;
 import lombok.AccessLevel;
@@ -37,6 +38,7 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
     ChannelRepository channelRepository;
     GetStudentClient getStudentClient;
     TeacherClient teacherClient;
+    GetUserClient getUserClient;
 
     /**
      * Create channel member từ userId (gọi API để lấy student info)
@@ -257,7 +259,6 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
 
     @Override
     public List<UserResponse> getActiveMembersInChannel(String channelId) {
-        // Verify channel exists
         channelRepository.findById(channelId)
                 .orElseThrow(() -> new AppException(ErrorCode.UN_EXISTING_CHANNEL));
 
@@ -265,14 +266,38 @@ public class ChannelMemberServiceImpl implements ChannelMemberService {
                 .findByChannelIdAndStatus(channelId, MemberStatus.ACTIVE);
 
         return members.stream()
-                .map(member -> UserResponse.builder()
-                        .id(member.getUserId())
-                        .nickname(member.getNickname())
-                        .studentId(member.getStudentId())
-                        .avatarUrl(member.getAvatarUrl())
-                        .isOwner(member.getRole() == ChannelRole.TEACHER)
-                        .build())
+                .map(member -> {
+                    String nickname = member.getNickname();
+                    if (nickname == null || nickname.isBlank()) {
+                        nickname = fetchAndPersistNickname(member);
+                    }
+                    return UserResponse.builder()
+                            .id(member.getUserId())
+                            .nickname(nickname)
+                            .studentId(member.getStudentId())
+                            .avatarUrl(member.getAvatarUrl())
+                            .isOwner(member.getRole() == ChannelRole.TEACHER)
+                            .build();
+                })
                 .toList();
+    }
+
+    private String fetchAndPersistNickname(ChannelMember member) {
+        try {
+            UserResponse profile = getUserClient.getUser(member.getUserId()).getResult();
+            if (profile == null) return null;
+            String last = profile.getLastName() != null ? profile.getLastName() : "";
+            String first = profile.getFirstName() != null ? profile.getFirstName() : "";
+            String built = (last + " " + first).trim();
+            if (!built.isBlank()) {
+                member.setNickname(built);
+                channelMemberRepository.save(member);
+                return built;
+            }
+        } catch (Exception e) {
+            log.warn("Cannot fetch nickname for userId={}: {}", member.getUserId(), e.getMessage());
+        }
+        return null;
     }
 
     @Override

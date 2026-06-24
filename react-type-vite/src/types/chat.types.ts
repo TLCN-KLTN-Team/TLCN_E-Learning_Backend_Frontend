@@ -90,6 +90,10 @@ export interface BasicChannelResponse {
   id: string;
   name: string;
   isPublic: boolean;
+  type?: ChannelType;
+  submissionDeadline?: string; // ISO instant — có khi là GROUP channel trong assignment session
+  crossReviewDeadline?: string; // ISO instant — null nếu allowCrossReview=false
+  allowCrossReview?: boolean;
 }
 
 export interface ChannelResponse {

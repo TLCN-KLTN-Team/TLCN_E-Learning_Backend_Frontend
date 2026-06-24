@@ -70,7 +70,7 @@ const MessageInput = ({
     selectedChannel.allowCrossReview,
   );
   const isLocked = phase === ChannelPhase.LOCKED;
-  const lockMessage = "Kênh đã hết hạn. Không thể gửi tin nhắn hoặc upload file.";
+  const lockMessage = "Phiên làm bài đã kết thúc. Không thể gửi tin nhắn hoặc upload file.";
 
   const handleSendMessage = () => {
     const hasMessage = newMessage.trim().length > 0;
