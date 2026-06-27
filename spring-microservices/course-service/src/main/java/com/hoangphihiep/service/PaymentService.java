@@ -66,8 +66,10 @@ public class PaymentService {
         vnp_Params.put("vnp_ReturnUrl", vnPayConfig.getVnp_ReturnUrl());
         vnp_Params.put("vnp_IpAddr", vnPayUtils.getIpAddress(httpRequest));
 
-        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        TimeZone tz = TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
+        Calendar cld = Calendar.getInstance(tz);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        formatter.setTimeZone(tz);
         String vnp_CreateDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
 
@@ -270,26 +272,26 @@ public class PaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<OrderPreviewResponse.CourseItem> items = courses.stream()
-                        .map(course -> {
-                                    BigDecimal convertedAmount = exchangeRateService.convertFromVND(course.getCoursePrice(), targetCurrency);
-                                    String formattedPrice = "VND".equals(request.getCurrency()) 
-                                        ? currencyUtils.formatCurrency(course.getCoursePrice()) 
-                                        : currencyUtils.formatAmount(convertedAmount, targetCurrency);
-                                    OrderPreviewResponse.CourseItem item = OrderPreviewResponse.CourseItem.builder()
-                                .id(course.getId())
-                                .courseName(course.getCourseName()!=null ? course.getCourseName():course.getCourse().getCourseName())
-                                .price(formattedPrice)
-                                .amount(course.getCoursePrice())
-                                .imageUrl(course.getCourseImage())
-                                .build();
+                .map(course -> {
+                            BigDecimal convertedAmount = exchangeRateService.convertFromVND(course.getCoursePrice(), targetCurrency);
+                            String formattedPrice = "VND".equals(request.getCurrency())
+                                    ? currencyUtils.formatCurrency(course.getCoursePrice())
+                                    : currencyUtils.formatAmount(convertedAmount, targetCurrency);
+                            OrderPreviewResponse.CourseItem item = OrderPreviewResponse.CourseItem.builder()
+                                    .id(course.getId())
+                                    .courseName(course.getCourseName()!=null ? course.getCourseName():course.getCourse().getCourseName())
+                                    .price(formattedPrice)
+                                    .amount(course.getCoursePrice())
+                                    .imageUrl(course.getCourseImage())
+                                    .build();
                             return item;
                         }
-                        ).toList();
+                ).toList();
 
         BigDecimal convertedTotalAmount = exchangeRateService.convertFromVND(totalAmount, targetCurrency);
-        String formattedTotalPrice = "VND".equals(request.getCurrency()) 
-            ? currencyUtils.formatCurrency(totalAmount) 
-            : currencyUtils.formatAmount(convertedTotalAmount, targetCurrency);
+        String formattedTotalPrice = "VND".equals(request.getCurrency())
+                ? currencyUtils.formatCurrency(totalAmount)
+                : currencyUtils.formatAmount(convertedTotalAmount, targetCurrency);
 
         return OrderPreviewResponse.builder()
                 .items(items)
