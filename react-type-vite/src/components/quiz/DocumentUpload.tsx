@@ -1,7 +1,18 @@
 import { Upload, CheckCircle, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import QuizService from "@/services/api/teacher/quizApi";
+import { getAccessToken } from "@/utils/localStorageVariables";
 import "@/styles/ai-study-mode.css";
+
+const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:8888/api/v1";
+
+async function summarizeExtractionFile(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const token = getAccessToken();
+  const headers: HeadersInit = { Accept: "text/event-stream" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return fetch(`${BASE_URL}/ai/parser/summary`, { method: "POST", headers, body: formData });
+}
 
 interface Props {
   fileName: string;
@@ -51,7 +62,7 @@ export default function DocumentUpload({
       summaryRef.current = "";
       setIsProcessing(true);
 
-      const response = await QuizService.summarizeExtractionFile(file);
+      const response = await summarizeExtractionFile(file);
       console.log("Response from API:", response);
 
       if (!response?.body) {
