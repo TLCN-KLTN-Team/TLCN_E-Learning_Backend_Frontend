@@ -32,7 +32,7 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 768M
+          memory: 1G
         reservations:
           cpus: '0.5'
           memory: 512M
@@ -123,7 +123,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms256m -Xmx512m
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
       - bootstrap.memory_lock=true
       - cluster.routing.allocation.disk.threshold_enabled=true
       - cluster.routing.allocation.disk.watermark.low=85%
@@ -151,7 +151,7 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 896M
+          memory: 2G
         reservations:
           cpus: '0.5'
           memory: 512M
@@ -160,6 +160,7 @@ services:
       options:
         max-size: "10m"
         max-file: "2"
+
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.12.0
@@ -180,7 +181,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 512M
+          memory: 1G
         reservations:
           cpus: '0.25'
           memory: 256M
@@ -264,7 +265,7 @@ services:
       resources:
         limits:
           cpus: '0.8'
-          memory: 768M
+          memory: 1G
         reservations:
           cpus: '0.4'
           memory: 512M
@@ -335,7 +336,7 @@ services:
       resources:
         limits:
           cpus: '0.8'
-          memory: 576M
+          memory: 768M
         reservations:
           cpus: '0.3'
           memory: 384M
@@ -422,11 +423,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.8'
-          memory: 576M
+          cpus: '1.0'
+          memory: 768M
         reservations:
           cpus: '0.3'
-          memory: 384M
+          memory: 512M
     logging:
       driver: "json-file"
       options:
@@ -516,7 +517,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 384M
+          memory: 768M
         reservations:
           cpus: '0.2'
           memory: 256M
@@ -572,7 +573,7 @@ services:
       resources:
         limits:
           cpus: '0.6'
-          memory: 384M
+          memory: 768M
         reservations:
           cpus: '0.2'
           memory: 256M
