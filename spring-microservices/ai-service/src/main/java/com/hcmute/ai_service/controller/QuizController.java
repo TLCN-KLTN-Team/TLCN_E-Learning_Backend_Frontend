@@ -23,36 +23,18 @@ public class QuizController {
     private final QuizService quizService;
 
     /**
-     * Generate quiz từ context sử dụng AI (luồng admin/giảng viên).
+     * Generate quiz từ context sử dụng AI (dùng chung cho cả user lẫn teacher).
      */
     @PostMapping("/generate")
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<GenerateQuizResponse> generateQuizFromContext(
             @Valid @RequestBody GenerateQuizRequest request) {
 
-        log.info("Received request to generate quiz");
-
-        GenerateQuizResponse response = quizService.generateQuiz(request);
-
-        return ApiResponse.success(
-                response,
-                "Quiz generated successfully"
-        );
-    }
-
-    /**
-     * Generate quiz từ context sử dụng AI (luồng học viên — nhận
-     * learning_outcomes ở Bước 1).
-     */
-    @PostMapping("/user/generate")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<GenerateQuizResponse> generateQuizFromContextForUser(
-            @Valid @RequestBody GenerateQuizRequest request) {
-
-        log.info("Received request to generate quiz for user flow (outcomes: {})",
+        log.info("Received request to generate quiz (context length: {}, outcomes: {})",
+                request.getContext() != null ? request.getContext().length() : 0,
                 request.getLearningOutcomes() != null ? request.getLearningOutcomes().size() : 0);
 
-        GenerateQuizResponse response = quizService.generateQuizForUser(request);
+        GenerateQuizResponse response = quizService.generateQuiz(request);
 
         return ApiResponse.success(
                 response,

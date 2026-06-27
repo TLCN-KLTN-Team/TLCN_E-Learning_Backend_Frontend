@@ -9,15 +9,11 @@ import axiosInstance from "../httpClient/axiosInstance";
 
 const QUIZ_API = "/ai/quiz";
 
-/**
- * Generate quiz cho luồng học viên (Bước 1 -> CĐR). Spring proxies sang
- * Python `/generate/user`.
- */
 export const generateQuizForUser = async (
   request: GenerateQuizUserRequest,
 ): Promise<GenerateQuizResponse> => {
   const response = await axiosInstance.post<ApiResponse<GenerateQuizResponse>>(
-    `${QUIZ_API}/user/generate`,
+    `${QUIZ_API}/generate`,
     request,
   );
   return response.data.result;
