@@ -32,8 +32,7 @@ const summarizeExtractionFile = async (file: File) => {
 };
 
 /**
- * Gọi endpoint /ai/quiz/generate (luồng giảng viên) — nhận learning_outcomes để
- * AI tập trung sinh câu hỏi bám sát chuẩn đầu ra của môn học.
+ * Gọi endpoint /ai/quiz/generate (luồng giảng viên) để tạo qui từ nguồn dữ liệu.
  */
 const generateQuiz = async (request: GenerateQuizUserRequest): Promise<GenerateQuizResponse> => {
     const response = await axiosInstance.post<ApiResponse<GenerateQuizResponse>>(

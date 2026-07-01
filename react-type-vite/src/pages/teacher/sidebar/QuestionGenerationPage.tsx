@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { Sparkles, Loader2, Brain } from "lucide-react";
 import SourceSelection from "@/components/quiz/SourceSelection";
 import QuizConfiguration from "@/components/quiz/QuizConfiguration";
-import QuizEditor from "@/components/quiz/QuizEditor";
+import TeacherQuizEditor from "@/components/quiz/TeacherQuizEditor";
 import type {
   QuizQuestion,
   QuestionType,
@@ -209,7 +209,7 @@ const QuestionGenerationPage = () => {
           </div>
         )}
 
-        <QuizEditor
+        <TeacherQuizEditor
           questions={generatedQuiz}
           onUpdateQuestion={handleUpdateQuestion}
           onRegenerate={handleGenerate}
