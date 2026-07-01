@@ -22,7 +22,7 @@ import {
 import "@/styles/ai-study-mode.css";
 import FlashcardViewer from "@/components/flashcard/FlashcardViewer";
 import FlashcardEditor from "@/components/flashcard/FlashcardEditor";
-import QuizEditor from "@/components/quiz/QuizEditor";
+import UserQuizEditor from "@/components/quiz/UserQuizEditor";
 import DocumentUpload from "@/components/quiz/DocumentUpload";
 import {
   generateFlashcards,
@@ -1144,7 +1144,7 @@ export default function ReviewMain({
               </div>
             )}
 
-            <QuizEditor
+            <UserQuizEditor
               questions={quizQuestions}
               onUpdateQuestion={handleUpdateQuestion}
               onRegenerate={handleGenerateQuiz}

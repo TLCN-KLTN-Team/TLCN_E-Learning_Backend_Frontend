@@ -1,4 +1,12 @@
-import { Pencil, RotateCcw, Save, Hash, Tag } from "lucide-react";
+import { useState } from "react";
+import {
+  Pencil,
+  RotateCcw,
+  Save,
+  Hash,
+  Tag,
+  Loader2,
+} from "lucide-react";
 import type { QuizQuestion, Difficulty } from "@/lib/quiz/quizMockData";
 import { QUESTION_TYPE_LABELS } from "@/lib/quiz/quizMockData";
 
@@ -8,17 +16,28 @@ interface Props {
   questions: QuizQuestion[];
   onUpdateQuestion: (id: string, updated: Partial<QuizQuestion>) => void;
   onRegenerate: () => void;
-  onSaveComplete: () => void;
+  onSaveComplete: () => Promise<void>;
   loading: boolean;
 }
 
-export default function QuizEditor({
+export default function UserQuizEditor({
   questions,
   onUpdateQuestion,
   onRegenerate,
   onSaveComplete,
   loading,
 }: Props) {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSaveComplete();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (questions.length === 0) return null;
 
   return (
@@ -36,19 +55,28 @@ export default function QuizEditor({
         <div className="flex gap-2">
           <button
             onClick={onRegenerate}
-            disabled={loading}
+            disabled={loading || saving}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Tạo lại
           </button>
           <button
-            onClick={onSaveComplete}
-            disabled={loading}
+            onClick={handleSave}
+            disabled={loading || saving}
             className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            <Save className="h-3.5 w-3.5" />
-            Lưu Quiz
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Đang lưu...
+              </>
+            ) : (
+              <>
+                <Save className="h-3.5 w-3.5" />
+                Lưu vào kho quiz
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -110,51 +138,54 @@ function QuestionCard({
       {(q.questionType === "SINGLE_CHOICE" ||
         q.questionType === "MULTIPLE_CHOICE" ||
         q.questionType === "TRUE_FALSE") && (
-          <div className="space-y-2">
-            {q.options.map((opt, oi) => (
-              <div key={opt.id} className="flex items-center gap-2">
-                {q.questionType === "MULTIPLE_CHOICE" ? (
-                  <input
-                    type="checkbox"
-                    checked={opt.isCorrect}
-                    onChange={() => {
-                      const newOpts = q.options.map((o, i) =>
-                        i === oi ? { ...o, isCorrect: !o.isCorrect } : o
-                      );
-                      onUpdate({ options: newOpts });
-                    }}
-                    className="h-4 w-4 rounded border-border text-primary accent-primary"
-                  />
-                ) : (
-                  <input
-                    type="radio"
-                    name={`q_${q.id}`}
-                    checked={opt.isCorrect}
-                    onChange={() => {
-                      const newOpts = q.options.map((o, i) => ({
-                        ...o,
-                        isCorrect: i === oi,
-                      }));
-                      onUpdate({ options: newOpts });
-                    }}
-                    className="h-4 w-4 border-border text-primary accent-primary"
-                  />
-                )}
+        <div className="space-y-2">
+          {q.options.map((opt, oi) => (
+            <div key={opt.id} className="flex items-center gap-2">
+              {q.questionType === "MULTIPLE_CHOICE" ? (
                 <input
-                  type="text"
-                  value={opt.text}
-                  onChange={(e) => {
-                    const newOpts = [...q.options];
-                    newOpts[oi] = { ...newOpts[oi], text: e.target.value };
+                  type="checkbox"
+                  checked={opt.isCorrect}
+                  onChange={() => {
+                    const newOpts = q.options.map((o, i) =>
+                      i === oi ? { ...o, isCorrect: !o.isCorrect } : o,
+                    );
                     onUpdate({ options: newOpts });
                   }}
-                  className={`flex-1 rounded-md border px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${opt.isCorrect ? "bg-success/5 border-success/30" : "bg-background"
-                    }`}
+                  className="h-4 w-4 rounded border-border text-primary accent-primary"
                 />
-              </div>
-            ))}
-          </div>
-        )}
+              ) : (
+                <input
+                  type="radio"
+                  name={`q_${q.id}`}
+                  checked={opt.isCorrect}
+                  onChange={() => {
+                    const newOpts = q.options.map((o, i) => ({
+                      ...o,
+                      isCorrect: i === oi,
+                    }));
+                    onUpdate({ options: newOpts });
+                  }}
+                  className="h-4 w-4 border-border text-primary accent-primary"
+                />
+              )}
+              <input
+                type="text"
+                value={opt.text}
+                onChange={(e) => {
+                  const newOpts = [...q.options];
+                  newOpts[oi] = { ...newOpts[oi], text: e.target.value };
+                  onUpdate({ options: newOpts });
+                }}
+                className={`flex-1 rounded-md border px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                  opt.isCorrect
+                    ? "bg-success/5 border-success/30"
+                    : "bg-background"
+                }`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* FILL_IN_THE_BLANK answers */}
       {q.questionType === "FILL_IN_THE_BLANK" && (
@@ -179,7 +210,9 @@ function QuestionCard({
           <label className="text-xs text-muted-foreground">Độ khó</label>
           <select
             value={q.difficulty}
-            onChange={(e) => onUpdate({ difficulty: e.target.value as Difficulty })}
+            onChange={(e) =>
+              onUpdate({ difficulty: e.target.value as Difficulty })
+            }
             className="w-full rounded-md border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {DIFFICULTIES.map((d) => (

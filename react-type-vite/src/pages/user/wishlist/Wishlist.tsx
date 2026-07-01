@@ -219,7 +219,7 @@ const Wishlist = () => {
                         variant="outline"
                         className="w-full"
                         onClick={() =>
-                          navigate(`/courses/course/${course.courseId}`)
+                          navigate(`/courses/${course.courseId}`)
                         }
                       >
                         Xem chi tiết
