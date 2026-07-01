@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -118,7 +119,12 @@ public class WishlistService {
             courses.addAll(cart.getCourses());
         }
 
-        courses.forEach(course -> this.removeFromWishlist(course.getId()));
+        FavoriteCourse favoriteCourse = this.getEntity();
+        Set<PublishedCourse> wishlistCourses = favoriteCourse.getCourses();
+        // Only remove courses that are actually in the wishlist to avoid WISH_7003 error
+        courses.stream()
+                .filter(wishlistCourses::contains)
+                .forEach(course -> this.removeFromWishlist(course.getId()));
     }
 
     public void clearWishlist() {
