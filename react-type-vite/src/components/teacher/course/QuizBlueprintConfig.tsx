@@ -21,6 +21,8 @@ import {
   validateBlueprint,
 } from "@/services/api/teacher/quizBlueprintApi"
 import { getTeacherActiveClos, type CourseObjectiveResponse } from "@/services/api/teacher/courseObjectiveApi"
+import { useQuizGenerator } from "@/hooks/useQuizGenerator"
+import type { QuestionRequest } from "@/services/api/request/questionRequest"
 
 type BlueprintRow = {
   id?: number
@@ -31,14 +33,40 @@ type BlueprintRow = {
 interface QuizBlueprintConfigProps {
   quizId: number
   courseId: number
+  hasAttempts?: boolean
+  currentQuestions?: QuestionRequest[]
+  onQuestionsGenerated?: (questions: QuestionRequest[]) => void
 }
 
-const QuizBlueprintConfig: React.FC<QuizBlueprintConfigProps> = ({ quizId, courseId }) => {
+const QuizBlueprintConfig: React.FC<QuizBlueprintConfigProps> = ({ 
+  quizId, 
+  courseId,
+  hasAttempts = false,
+  currentQuestions = [],
+  onQuestionsGenerated
+}) => {
   const [rows, setRows] = useState<BlueprintRow[]>([])
   const [clos, setClos] = useState<CourseObjectiveResponse[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [validating, setValidating] = useState(false)
+
+  const {
+    generationMode,
+    setGenerationMode,
+    randomQuestionCount,
+    setRandomQuestionCount,
+    targetScore,
+    setTargetScore,
+    isGeneratingQuestions,
+    generateQuestions,
+  } = useQuizGenerator({
+    onQuestionsGenerated: (newQuestions) => {
+      if (onQuestionsGenerated) {
+        onQuestionsGenerated([...currentQuestions, ...newQuestions])
+      }
+    }
+  })
 
   const filteredClos = useMemo(
     () => clos.filter((clo) => clo.courseId === courseId),
@@ -180,16 +208,17 @@ const QuizBlueprintConfig: React.FC<QuizBlueprintConfigProps> = ({ quizId, cours
             <div className="space-y-2">
               {rows.map((row, index) => (
                 <div key={`${row.id || "new"}-${index}`} className="grid grid-cols-12 gap-2 items-end bg-white rounded border p-2">
-                  <div className="col-span-7">
+                  <div className="col-span-7 min-w-0">
                     <Label className="text-xs">CĐR</Label>
                     <Select
+                      disabled={hasAttempts}
                       value={String(row.cloId)}
                       onValueChange={(value) => updateRow(index, { cloId: Number(value) })}
                     >
-                      <SelectTrigger className="bg-white">
+                      <SelectTrigger className="w-full bg-white text-left">
                         <SelectValue placeholder="Chọn CĐR" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white z-50">
+                      <SelectContent className="bg-white z-[10000]">
                         {filteredClos
                           .filter((clo) => clo.id === row.cloId || !selectedCloIds.has(clo.id))
                           .map((clo) => (
@@ -208,6 +237,7 @@ const QuizBlueprintConfig: React.FC<QuizBlueprintConfigProps> = ({ quizId, cours
                       min={0}
                       max={100}
                       value={row.percentage}
+                      disabled={hasAttempts}
                       onChange={(e) => updateRow(index, { percentage: Math.max(0, Number(e.target.value) || 0) })}
                     />
                   </div>
@@ -219,6 +249,7 @@ const QuizBlueprintConfig: React.FC<QuizBlueprintConfigProps> = ({ quizId, cours
                       onClick={() => removeRow(index)}
                       className="w-full text-red-600 border-red-200 hover:bg-red-50"
                       title="Xóa dòng"
+                      disabled={hasAttempts}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -229,12 +260,12 @@ const QuizBlueprintConfig: React.FC<QuizBlueprintConfigProps> = ({ quizId, cours
           )}
 
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={addRow}>
+            <Button type="button" variant="outline" onClick={addRow} disabled={hasAttempts}>
               <Plus className="h-4 w-4 mr-2" />
               Thêm CĐR
             </Button>
 
-            <Button type="button" onClick={saveAll} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button type="button" onClick={saveAll} disabled={saving || hasAttempts} className="bg-blue-600 hover:bg-blue-700 text-white">
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
               Lưu ma trận
             </Button>
@@ -248,6 +279,64 @@ const QuizBlueprintConfig: React.FC<QuizBlueprintConfigProps> = ({ quizId, cours
           <p className="text-xs text-blue-700">
             Gợi ý: lưu ma trận trước, sau đó bấm kiểm tra để xác nhận tổng tỷ lệ CĐR bằng 100%.
           </p>
+
+          {!hasAttempts && (
+            <div className="mt-6 pt-4 border-t border-blue-200">
+              <h4 className="text-sm font-semibold text-blue-800 mb-3">Tự động sinh câu hỏi</h4>
+              <div className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-4">
+                  <Label className="text-xs">Chế độ sinh</Label>
+                  <Select value={generationMode} onValueChange={(val: any) => setGenerationMode(val)}>
+                    <SelectTrigger className="w-full bg-white text-left">
+                      <SelectValue placeholder="Chọn chế độ" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-[10000]">
+                      <SelectItem value="count">Theo số lượng câu hỏi</SelectItem>
+                      <SelectItem value="score">Theo tổng điểm</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-4">
+                  {generationMode === "count" ? (
+                    <>
+                      <Label className="text-xs">Số câu cần sinh</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={randomQuestionCount}
+                        onChange={(e) => setRandomQuestionCount(Math.max(1, Number(e.target.value) || 1))}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Label className="text-xs">Tổng điểm mục tiêu</Label>
+                      <Input
+                        type="number"
+                        min={0.5}
+                        step={0.5}
+                        value={targetScore}
+                        onChange={(e) => setTargetScore(Math.max(0.5, Number(e.target.value) || 10))}
+                      />
+                    </>
+                  )}
+                </div>
+                <div className="col-span-4">
+                  <Button
+                    type="button"
+                    onClick={() => generateQuestions(rows, totalPercentage, currentQuestions, currentQuestions.length + 1)}
+                    disabled={isGeneratingQuestions || rows.length === 0}
+                    className="w-full bg-blue-600 text-white hover:bg-blue-700 h-10"
+                  >
+                    {isGeneratingQuestions ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Sinh câu hỏi"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
