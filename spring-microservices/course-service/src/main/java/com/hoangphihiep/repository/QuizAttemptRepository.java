@@ -14,8 +14,9 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Intege
         List<QuizAttempt> findByIdUserAndSubmittedAtIsNotNullOrderBySubmittedAtDesc(String idUser);
 
     List<QuizAttempt> findByQuizIdAndIdUserOrderBySubmittedAtDesc(Integer quizId, String userId);
-
     int countByQuizIdAndIdUser(Integer quizId, String userId);
+
+    int countByQuizId(Integer quizId);
 
     @Query("SELECT COUNT(DISTINCT qa.quiz.id) FROM QuizAttempt qa " +
             "WHERE qa.idUser = :userId " +

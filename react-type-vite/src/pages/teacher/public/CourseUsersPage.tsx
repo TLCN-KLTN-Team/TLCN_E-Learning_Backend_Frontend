@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { toast } from "react-toastify"
 import teacherPublicApi, { type PublicCourseStudent } from "@/services/api/teacher/teacherPublicApi"
-import { CourseApiService } from "@/services/api/user/courseApi"
+import { getCourseById } from "@/services/api/teacher/teacherCourseApi"
 
 interface Student extends PublicCourseStudent { }
 
@@ -96,7 +96,7 @@ const CourseStudentsPage: React.FC = () => {
 
       // Try to load course info for display (optional)
       try {
-        const course = await CourseApiService.getCourseById(courseId)
+        const course = await getCourseById(Number(courseId))
         if (course && course.courseName) {
           setCourseName(course.courseName)
         }

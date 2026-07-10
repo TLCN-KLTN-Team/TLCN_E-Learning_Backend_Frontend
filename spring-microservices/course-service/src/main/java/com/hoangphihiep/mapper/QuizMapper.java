@@ -4,6 +4,7 @@ import com.hoangphihiep.dto.response.QuestionResponse;
 import com.hoangphihiep.dto.response.QuizResponse;
 import com.hoangphihiep.entity.Quiz;
 import com.hoangphihiep.entity.QuizQuestion;
+import com.hoangphihiep.repository.QuizAttemptRepository;
 import com.hoangphihiep.repository.QuizQuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ public class QuizMapper {
     
     private final QuizQuestionRepository quizQuestionRepository;
     private final QuestionMapper questionMapper;
+    private final QuizAttemptRepository quizAttemptRepository;
     
     public QuizResponse toQuizResponse(Quiz quiz) {
         if (quiz == null) {
@@ -43,6 +45,9 @@ public class QuizMapper {
             response.setSectionId(quiz.getSection().getId());
             response.setSectionName(quiz.getSection().getTitle());
         }
+        
+        int attemptsCount = quizAttemptRepository.countByQuizId(quiz.getId());
+        response.setAttemptsCount(attemptsCount);
         
         // Load questions via many-to-many relationship
         List<QuizQuestion> quizQuestions = quizQuestionRepository.findByQuizIdOrderByOrderIndex(quiz.getId());

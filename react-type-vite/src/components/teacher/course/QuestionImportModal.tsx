@@ -43,7 +43,7 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
         if (clos.length > 0) {
           const firstCourseId = clos[0].courseId
           setSelectedCourseId(firstCourseId)
-          
+
           const courseClos = clos.filter((item) => item.courseId === firstCourseId)
           if (courseClos.length > 0) {
             setSelectedCloId(courseClos[0].id)
@@ -97,7 +97,7 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
     try {
       setUploading(true)
       const response = await importQuestionsFromCsv(file, selectedCloId)
-      
+
       setResult({
         successCount: response.successCount,
         errorCount: response.errorCount,
@@ -219,7 +219,7 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
           isCorrect4: false,
         },
         {
-          questionText: "Ngôn ngữ lập trình _____ được sử dụng để phát triển Android",
+          questionText: "Ngôn ngữ lập trình [___1___] được sử dụng để phát triển Android",
           questionType: "FILL_IN_THE_BLANK",
           score: 1,
           difficultyLevel: "EASY",
@@ -277,195 +277,195 @@ const QuestionImportModal: React.FC<QuestionImportModalProps> = ({
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Upload className="h-6 w-6 text-blue-600" />
-              Import Câu Hỏi từ File Excel
-            </h2>
-            <p className="text-gray-600 mt-1">
-              Tải lên file Excel (.xlsx) để import nhiều câu hỏi cùng lúc
-            </p>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Upload className="h-6 w-6 text-blue-600" />
+                Import Câu Hỏi từ File Excel
+              </h2>
+              <p className="text-gray-600 mt-1">
+                Tải lên file Excel (.xlsx) để import nhiều câu hỏi cùng lúc
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            Hướng dẫn định dạng file Excel
-          </h3>
-          <ul className="text-sm text-blue-800 space-y-1 ml-6 list-disc">
-            <li>File Excel (.xlsx) phải có header: questionText | questionType | score | difficultyLevel | tags | answer1 | isCorrect1 | answer2 | isCorrect2 | ...</li>
-            <li><strong>questionType:</strong> SINGLE_CHOICE, MULTIPLE_CHOICE, TRUE_FALSE, FILL_IN_THE_BLANK</li>
-            <li><strong>difficultyLevel:</strong> EASY, MEDIUM, HARD</li>
-            <li><strong>tags:</strong> Các tag cách nhau bởi dấu phẩy</li>
-            <li><strong>Đáp án:</strong> Mỗi đáp án cần 2 cột (nội dung và đúng/sai). Ví dụ: answer1 | isCorrect1 (true/false hoặc 1/0)</li>
-            <li><strong>Điền khuyết:</strong> Đánh dấu chỗ trống bằng _____ hoặc [blank]. Tất cả đáp án đều set isCorrect = true</li>
-            <li>Mỗi dòng trong Excel tương ứng với 1 câu hỏi</li>
-          </ul>
-        </div>
+          {/* Instructions */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Hướng dẫn định dạng file Excel
+            </h3>
+            <ul className="text-sm text-blue-800 space-y-1 ml-6 list-disc">
+              <li>File Excel (.xlsx) phải có header: questionText | questionType | score | difficultyLevel | tags | answer1 | isCorrect1 | answer2 | isCorrect2 | ...</li>
+              <li><strong>questionType:</strong> SINGLE_CHOICE, MULTIPLE_CHOICE, TRUE_FALSE, FILL_IN_THE_BLANK</li>
+              <li><strong>difficultyLevel:</strong> EASY, MEDIUM, HARD</li>
+              <li><strong>tags:</strong> Các tag cách nhau bởi dấu phẩy</li>
+              <li><strong>Đáp án:</strong> Mỗi đáp án cần 2 cột (nội dung và đúng/sai). Ví dụ: answer1 | isCorrect1 (true/false hoặc 1/0)</li>
+              <li><strong>Điền khuyết:</strong> Đánh dấu chỗ trống bằng _____ hoặc [blank]. Tất cả đáp án đều set isCorrect = true</li>
+              <li>Mỗi dòng trong Excel tương ứng với 1 câu hỏi</li>
+            </ul>
+          </div>
 
-        {/* Download Template Button */}
-        <div className="mb-6">
-          <Button
-            variant="outline"
-            onClick={handleDownloadTemplate}
-            className="w-full border-green-600 text-green-600 hover:bg-green-50"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Tải File Mẫu Excel (.xlsx)
-          </Button>
-        </div>
+          {/* Download Template Button */}
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={handleDownloadTemplate}
+              className="w-full border-green-600 text-green-600 hover:bg-green-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Tải File Mẫu Excel (.xlsx)
+            </Button>
+          </div>
 
-        {/* Course and CLO Selection */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 space-y-4">
-          <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
-            <FileText className="h-4 w-4 text-blue-600" />
-            Chọn chuẩn đầu ra áp dụng cho các câu hỏi import
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="courseSelect" className="flex items-center text-sm font-medium text-gray-700">
-                Khóa học <span className="text-red-500 ml-1">*</span>
-              </Label>
-              <select
-                id="courseSelect"
-                value={selectedCourseId ? String(selectedCourseId) : ""}
-                onChange={(e) => {
-                  const nextCourseId = e.target.value ? Number(e.target.value) : null
-                  setSelectedCourseId(nextCourseId)
-                  
-                  if (nextCourseId) {
-                    const courseClos = availableClos.filter((item) => item.courseId === nextCourseId)
-                    if (courseClos.length > 0) {
-                      setSelectedCloId(courseClos[0].id)
+          {/* Course and CLO Selection */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 space-y-4">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4 text-blue-600" />
+              Chọn chuẩn đầu ra áp dụng cho các câu hỏi import
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="courseSelect" className="flex items-center text-sm font-medium text-gray-700">
+                  Khóa học <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <select
+                  id="courseSelect"
+                  value={selectedCourseId ? String(selectedCourseId) : ""}
+                  onChange={(e) => {
+                    const nextCourseId = e.target.value ? Number(e.target.value) : null
+                    setSelectedCourseId(nextCourseId)
+
+                    if (nextCourseId) {
+                      const courseClos = availableClos.filter((item) => item.courseId === nextCourseId)
+                      if (courseClos.length > 0) {
+                        setSelectedCloId(courseClos[0].id)
+                      } else {
+                        setSelectedCloId(null)
+                      }
                     } else {
                       setSelectedCloId(null)
                     }
-                  } else {
-                    setSelectedCloId(null)
-                  }
-                }}
-                className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm focus:border-blue-500 focus:outline-none transition-colors"
-              >
-                <option value="">Chọn khóa học</option>
-                {availableCourses.map((course) => (
-                  <option key={course.courseId} value={String(course.courseId)}>
-                    {course.courseName}
-                  </option>
-                ))}
-              </select>
-            </div>
+                  }}
+                  className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm focus:border-blue-500 focus:outline-none transition-colors"
+                >
+                  <option value="">Chọn khóa học</option>
+                  {availableCourses.map((course) => (
+                    <option key={course.courseId} value={String(course.courseId)}>
+                      {course.courseName}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="cloSelect" className="flex items-center text-sm font-medium text-gray-700">
-                CĐR đánh giá <span className="text-red-500 ml-1">*</span>
-              </Label>
-              <select
-                id="cloSelect"
-                value={selectedCloId ? String(selectedCloId) : ""}
-                onChange={(e) => setSelectedCloId(e.target.value ? Number(e.target.value) : null)}
-                disabled={!selectedCourseId}
-                className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm focus:border-blue-500 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="">{selectedCourseId ? "Chọn CĐR" : "Vui lòng chọn khóa học trước"}</option>
-                {filteredClos.map((clo) => (
-                  <option key={clo.id} value={String(clo.id)}>
-                    {clo.code} - {clo.description || (clo.courseName || `Khóa học #${clo.courseId}`)}
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-2">
+                <Label htmlFor="cloSelect" className="flex items-center text-sm font-medium text-gray-700">
+                  CĐR đánh giá <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <select
+                  id="cloSelect"
+                  value={selectedCloId ? String(selectedCloId) : ""}
+                  onChange={(e) => setSelectedCloId(e.target.value ? Number(e.target.value) : null)}
+                  disabled={!selectedCourseId}
+                  className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm focus:border-blue-500 focus:outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  <option value="">{selectedCourseId ? "Chọn CĐR" : "Vui lòng chọn khóa học trước"}</option>
+                  {filteredClos.map((clo) => (
+                    <option key={clo.id} value={String(clo.id)}>
+                      {clo.code} - {clo.description || (clo.courseName || `Khóa học #${clo.courseId}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* File Upload */}
-        <div className="mb-6">
-          <label
-            htmlFor="csv-upload"
-            className="block w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition"
-          >
-            <input
-              id="csv-upload"
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            {file ? (
-              <div>
-                <p className="text-blue-600 font-medium">{file.name}</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {(file.size / 1024).toFixed(2)} KB
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-gray-600 font-medium">Click để chọn file Excel</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Hoặc kéo thả file vào đây
-                </p>
-              </div>
-            )}
-          </label>
-        </div>
+          {/* File Upload */}
+          <div className="mb-6">
+            <label
+              htmlFor="csv-upload"
+              className="block w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition"
+            >
+              <input
+                id="csv-upload"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              {file ? (
+                <div>
+                  <p className="text-blue-600 font-medium">{file.name}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(file.size / 1024).toFixed(2)} KB
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-gray-600 font-medium">Click để chọn file Excel</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Hoặc kéo thả file vào đây
+                  </p>
+                </div>
+              )}
+            </label>
+          </div>
 
-        {/* Import Result */}
-        {result && (
-          <div className="mb-6 space-y-3">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-green-800">
-                <CheckCircle2 className="h-5 w-5" />
-                <span className="font-semibold">
-                  Thành công: {result.successCount} câu hỏi
-                </span>
-              </div>
-            </div>
-
-            {result.errorCount > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-red-800 mb-2">
-                  <XCircle className="h-5 w-5" />
+          {/* Import Result */}
+          {result && (
+            <div className="mb-6 space-y-3">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-green-800">
+                  <CheckCircle2 className="h-5 w-5" />
                   <span className="font-semibold">
-                    Lỗi: {result.errorCount} câu hỏi
+                    Thành công: {result.successCount} câu hỏi
                   </span>
                 </div>
-                <div className="max-h-40 overflow-y-auto">
-                  {result.errors.map((error, index) => (
-                    <p key={index} className="text-sm text-red-700 ml-7">
-                      • {error}
-                    </p>
-                  ))}
-                </div>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose}>
-            Đóng
-          </Button>
-          <Button
-            onClick={handleUpload}
-            disabled={!file || uploading || !selectedCloId}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {uploading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Đang import...
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4 mr-2" />
-                Import Câu Hỏi
-              </>
-            )}
-          </Button>
-        </div>
+              {result.errorCount > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-red-800 mb-2">
+                    <XCircle className="h-5 w-5" />
+                    <span className="font-semibold">
+                      Lỗi: {result.errorCount} câu hỏi
+                    </span>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto">
+                    {result.errors.map((error, index) => (
+                      <p key={index} className="text-sm text-red-700 ml-7">
+                        • {error}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={handleClose}>
+              Đóng
+            </Button>
+            <Button
+              onClick={handleUpload}
+              disabled={!file || uploading || !selectedCloId}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {uploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Đang import...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Câu Hỏi
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

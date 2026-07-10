@@ -57,6 +57,8 @@ const EditQuizModal: React.FC<{
     }
   }, [quiz, isOpen, sectionId])
 
+  const hasAttempts = (quiz?.attemptsCount || 0) > 0
+
   const handleQuizChange = useCallback((updater: (draft: QuizRequest) => void) => {
     setFormData((prev) => {
       const newQuiz = { ...prev }
@@ -115,6 +117,18 @@ const EditQuizModal: React.FC<{
           <h2 className="text-2xl font-bold">Chỉnh Sửa Bài Kiểm Tra</h2>
         </div>
 
+        {hasAttempts && (
+          <div className="mx-6 mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-yellow-800">Bài kiểm tra đã có học sinh làm</p>
+              <p className="text-sm text-yellow-700">
+                Bạn không thể thay đổi cấu trúc đề thi (thêm/xóa câu hỏi, sửa ma trận CĐR) để đảm bảo tính toàn vẹn dữ liệu điểm số của học sinh.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md space-y-2">
@@ -126,9 +140,20 @@ const EditQuizModal: React.FC<{
           )}
           <QuizSettings settings={formData} onSettingsChange={handleSettingsChange} />
           {quiz?.id && (
-            <QuizBlueprintConfig quizId={quiz.id} courseId={courseId} />
+            <QuizBlueprintConfig 
+              quizId={quiz.id} 
+              courseId={courseId} 
+              hasAttempts={hasAttempts}
+              currentQuestions={formData.questions ?? []}
+              onQuestionsGenerated={handleQuestionsChange}
+            />
           )}
-          <QuestionList questions={formData.questions ?? []} onQuestionsChange={handleQuestionsChange} courseId={courseId} />
+          <QuestionList 
+            questions={formData.questions ?? []} 
+            onQuestionsChange={handleQuestionsChange} 
+            courseId={courseId} 
+            hasAttempts={hasAttempts}
+          />
         </div>
 
         <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">

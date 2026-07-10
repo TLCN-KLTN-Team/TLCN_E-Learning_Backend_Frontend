@@ -10,11 +10,14 @@ import QuestionSelector from "./QuestionSelector"
 import type { QuestionRequest } from "@/services/api/request/questionRequest"
 import type { QuestionLibraryResponse } from "@/services/api/teacher/questionLibraryApi"
 
-const QuestionList: React.FC<{
+interface QuestionListProps {
   questions: QuestionRequest[]
   onQuestionsChange: (questions: QuestionRequest[]) => void
   courseId?: number
-}> = ({ questions, onQuestionsChange, courseId }) => {
+  hasAttempts?: boolean
+}
+
+const QuestionList: React.FC<QuestionListProps> = ({ questions, onQuestionsChange, courseId, hasAttempts = false }) => {
   const [selectorOpen, setSelectorOpen] = useState(false)
 
   const handleSelectLibraryQuestions = (selectedQuestions: QuestionLibraryResponse[]) => {
@@ -38,6 +41,11 @@ const QuestionList: React.FC<{
     }))
     console.log('[QuestionList] Converted questions:', newQuestions)
     onQuestionsChange([...questions, ...newQuestions])
+  }
+
+  const removeQuestion = (index: number) => {
+    const filtered = questions.filter((_, i) => i !== index)
+    onQuestionsChange(filtered)
   }
 
   const getQuestionTypeLabel = (type: string) => {
@@ -82,19 +90,18 @@ const QuestionList: React.FC<{
             className="bg-card rounded-lg border p-4 hover:shadow-md transition-shadow relative"
           >
             <div className="absolute top-4 right-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1 text-destructive hover:text-destructive"
-                onClick={() => {
-                  const filtered = questions.filter((_, i) => i !== index)
-                  onQuestionsChange(filtered)
-                }}
-                title="Xóa câu hỏi"
-              >
-                <Trash2 className="h-4 w-4" />
-                Xóa
-              </Button>
+              {!hasAttempts && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-destructive hover:text-destructive"
+                  onClick={() => removeQuestion(index)}
+                  title="Xóa câu hỏi"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Xóa
+                </Button>
+              )}
             </div>
 
             <div className="flex items-start justify-between">
@@ -180,15 +187,17 @@ const QuestionList: React.FC<{
             <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
               Bài kiểm tra cần ít nhất một câu hỏi. Hãy thêm câu hỏi từ ngân hàng hoặc tạo mới.
             </p>
-            <Button
-              variant="outline"
-              onClick={() => setSelectorOpen(true)}
-            >
-              Thêm câu hỏi ngay
-            </Button>
+            {!hasAttempts && (
+              <Button
+                variant="outline"
+                onClick={() => setSelectorOpen(true)}
+              >
+                Thêm câu hỏi ngay
+              </Button>
+            )}
           </div>
         )}
-        {questions.length > 0 && (
+        {questions.length > 0 && !hasAttempts && (
           <div className="flex justify-center pt-4 border-t border-dashed">
             <Button
               variant="outline"
